@@ -1,0 +1,131 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath(appId) {
+      return /databases/$(database)/documents/artifacts/$(appId)/public/data/users/$(request.auth.uid);
+    }
+
+    function isActiveUser(appId) {
+      return isSignedIn()
+        && exists(profilePath(appId))
+        && get(profilePath(appId)).data.disabled != true;
+    }
+
+    function isAdminUser(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'ADMIN';
+    }
+
+    function isUsuarioRole(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'USUARIO';
+    }
+
+    function isTecnicoRole(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'TECNICO';
+    }
+
+    function tecnicoAsociado(appId) {
+      return get(profilePath(appId)).data.tecnicoAsociado;
+    }
+
+    function canCerrar(appId) {
+      return isAdminUser(appId) || (isActiveUser(appId) && get(profilePath(appId)).data.puedeCerrar == true);
+    }
+
+    match /artifacts/{appId}/public/data/users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdminUser(appId));
+      allow list: if isAdminUser(appId);
+      allow create, delete: if isAdminUser(appId);
+      // Registro de token de push: cada usuario puede agregar el suyo a su
+      // propio perfil (arrayUnion), sin tocar ningún otro campo.
+      allow update: if isAdminUser(appId)
+        || (
+          isSignedIn() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens'])
+        );
+    }
+
+    match /artifacts/{appId}/public/data/technicians/{docId} {
+      // TECNICO solo puede ver su propio técnico vinculado (el cliente debe
+      // hacer where('name','==', tecnicoAsociado); sin eso el list se rechaza).
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId)
+        || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId));
+
+      // Alta/baja/color son de ADMIN. El toggle de activo/inactivo (pantalla
+      // principal) también lo puede usar USUARIO (operativo, no estructural) y
+      // cada TECNICO sobre su propio técnico vinculado, nunca sobre otro.
+      allow create, delete: if isAdminUser(appId);
+      allow update: if isAdminUser(appId)
+        || (
+          (isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId)))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activo', 'activoUpdatedBy', 'activoUpdatedByRole', 'activoUpdatedAt'])
+        );
+    }
+
+    match /artifacts/{appId}/public/data/tickets/{docId} {
+      // TECNICO solo ve/edita sus propios tickets (los que tienen su nombre en
+      // "tecnico"); el cliente debe hacer el query con where('tecnico','==', ...)
+      // igualado a este valor, si no el list completo es rechazado.
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId)
+        || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
+
+      // Crear órdenes es acción de ADMIN/USUARIO; TECNICO no tiene esa UI.
+      allow create: if isAdminUser(appId) || isUsuarioRole(appId);
+
+      // TECNICO: solo su propio ticket, no puede reasignarlo/renumerarlo ni
+      // saltarse la aprobación poniéndolo FINALIZADO/CANCELADO/ELIMINADO directo.
+      allow update: if isAdminUser(appId) || isUsuarioRole(appId)
+        || (
+          isTecnicoRole(appId)
+          && resource.data.tecnico == tecnicoAsociado(appId)
+          && request.resource.data.tecnico == resource.data.tecnico
+          && request.resource.data.codigo == resource.data.codigo
+          && request.resource.data.tipoTrabajo == resource.data.tipoTrabajo
+          && request.resource.data.creado == resource.data.creado
+          && request.resource.data.estado != 'FINALIZADO'
+          && request.resource.data.estado != 'CANCELADO'
+          && request.resource.data.estado != 'ELIMINADO'
+        );
+
+      // El flujo normal borra vía "estado: ELIMINADO" (update, papelera). El borrado
+      // físico real solo lo usa el proceso de cierre (Reportes), reservado a canCerrar.
+      allow delete: if canCerrar(appId);
+    }
+
+    match /artifacts/{appId}/public/data/reports/{docId} {
+      allow read, write: if canCerrar(appId);
+    }
+
+    match /artifacts/{appId}/public/data/counters/{counterId} {
+      allow read: if isActiveUser(appId);
+      // Solo los dos campos esperados, "ultimo" numérico positivo, y nunca puede
+      // retroceder (evita que un cliente con bug/malicioso rompa la secuencia).
+      allow create: if isActiveUser(appId)
+        && request.resource.data.keys().hasOnly(['ultimo', 'actualizadoEn'])
+        && request.resource.data.ultimo is int && request.resource.data.ultimo > 0;
+      allow update: if isActiveUser(appId)
+        && request.resource.data.keys().hasOnly(['ultimo', 'actualizadoEn'])
+        && request.resource.data.ultimo is int
+        && request.resource.data.ultimo >= resource.data.ultimo;
+    }
+
+    match /artifacts/{appId}/public/data/config/{docId} {
+      allow read: if isActiveUser(appId);
+      allow write: if isAdminUser(appId);
+    }
+
+    // El orden semanal (campo "orden") solo lo arma ADMIN. Pero USUARIO
+    // también crea instalaciones, así que necesita poder avanzar el puntero
+    // ("turnoActualIndex") al asignar una — sin tocar la lista en sí.
+    match /artifacts/{appId}/public/data/config/turnoInstalaciones {
+      allow read: if isActiveUser(appId);
+      allow write: if isAdminUser(appId)
+        || (isUsuarioRole(appId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['turnoActualIndex']));
+    }
+  }
+}

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+/* Scrollbar a tono con la app (zinc/red), en vez del gris por defecto del navegador. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 #f4f4f5;
+}
+
+.dark * {
+  scrollbar-color: #52525b #09090b;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4f4f5;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d4d4d8;
+  border-radius: 9999px;
+  border: 2px solid #f4f4f5;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #52525b;
+  border-color: #09090b;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #dc2626;
+}

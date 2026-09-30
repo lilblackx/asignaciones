@@ -1,0 +1,19 @@
+name = "asignaciones-tomodat"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "seguimientons-f2026"
+# Orígenes que pueden llamar este Worker. Ajustar si cambia el dominio.
+ALLOWED_ORIGINS = "https://seguimientons-f2026.web.app,https://seguimientons-f2026.firebaseapp.com,http://localhost:5173"
+TOMODAT_BASE_URL = "https://mia4.tomodat.com/tomodat/api"
+# Punto central y radio (m) de la consulta. Con este punto y 300 km se trae el
+# catálogo completo de la red (probado: 50 km ya lo traía entero).
+TOMODAT_CENTRO = "10.6616,-71.7061"
+TOMODAT_RADIO = "300000"
+# Tipos de punto de acceso que cuentan como NAP (3 = CTO/NAP, 8 = MDT).
+TOMODAT_TIPOS = "3,8"
+
+# Secreto real, NO va acá: se carga con
+#   npx wrangler secret put TOMODAT_TOKEN
+# (token generado en Tomodat > configuración de usuario).
