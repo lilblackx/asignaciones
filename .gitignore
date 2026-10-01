@@ -41,3 +41,6 @@ ui-debug.log
 *.njsproj
 *.sln
 *.sw?
+
+# Clave API de Tomodat (secreto)
+tomodat api key.txt
