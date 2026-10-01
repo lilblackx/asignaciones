@@ -14,6 +14,7 @@ export function generarMensajeWhatsApp(ticket, tasaConfig) {
   const observacionVisible = ticket.observacionInterna === false && ticket.observacion ? ticket.observacion.trim() : '';
   const observaciones = observacionVisible ? `${avisoCobro} ${observacionVisible}` : avisoCobro;
   const enlaceNap = normalizarCoordenadasNap(ticket.napCoordenadas).enlace;
+  const enlace = getUbicacionUrl(ticket.ubicacion);
 
   return [
     ticket.codigo || '',
@@ -26,7 +27,9 @@ export function generarMensajeWhatsApp(ticket, tasaConfig) {
     `Materiales Utilizados: ${ticket.materiales || ''}`,
     `Operador: ${ticket.creado || ''}`,
     `Observaciones: ${observaciones}`,
-    ...(enlaceNap ? ['', `*Ubicación NAP:* ${enlaceNap}`] : []),
+    ...(enlace || enlaceNap ? [''] : []),
+    ...(enlace ? [`*Ubicación:* ${enlace}`] : []),
+    ...(enlaceNap ? [`*Ubicación NAP:* ${enlaceNap}`] : []),
   ].join('\n');
 }
 
