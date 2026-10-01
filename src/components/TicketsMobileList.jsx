@@ -1,3 +1,4 @@
+import { esProgramadaFutura } from '../utils/programada';
 import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, MapPin, MapPinOff, MessageCircle, Navigation, Network, Phone, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp } from '../utils/telefono';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
@@ -46,7 +47,7 @@ export default function TicketsMobileList({
         const enlaceNap = getEnlaceNavegacionNap(ticket.napCoordenadas);
         const envio = getEnvioInfo(ticket);
         return (
-        <div key={ticket.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${ticket.estado === 'ELIMINADO' ? 'border-red-500/50 dark:border-red-900/50' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'}`}>
+        <div key={ticket.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${ticket.estado === 'ELIMINADO' ? 'border-red-500/50 dark:border-red-900/50' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
           <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-start sm:items-center bg-zinc-50 dark:bg-zinc-950">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span className="font-black text-lg text-zinc-900 dark:text-white leading-none">{ticket.codigo || 'S/C'}</span>
