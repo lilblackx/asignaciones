@@ -13,11 +13,16 @@ const ETIQUETA_BOLD = new RegExp(`^(\\s*)\\*+\\s*${ETIQUETA}\\s*(?::\\s*\\*+|\\*
 // "*Posteadura:dm sn n01b01*": toda la línea en negrita, valor incluido
 const LINEA_BOLD = new RegExp(`^(\\s*)\\*+\\s*${ETIQUETA}\\s*:([^*]*?)\\s*\\*+\\s*$`);
 
+// "*Fuente: Sariana": asterisco de apertura sin cierre
+const LINEA_SIN_CIERRE = new RegExp(`^(\\s*)\\*\\s*${ETIQUETA}\\s*:([^*]*)$`);
+
 function normalizarLinea(linea) {
   const bold = linea.match(ETIQUETA_BOLD);
   if (bold) return `${bold[1]}*${bold[2].trim()}:*${bold[3]}`;
   const completa = linea.match(LINEA_BOLD);
   if (completa) return `${completa[1]}*${completa[2].trim()}:* ${completa[3].trim()}`;
+  const sinCierre = linea.match(LINEA_SIN_CIERRE);
+  if (sinCierre) return `${sinCierre[1]}*${sinCierre[2].trim()}:*${sinCierre[3]}`;
   return linea;
 }
 

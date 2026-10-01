@@ -195,8 +195,10 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       );
     }
 
+    const { ventaTecnico, ...datosOrden } = formData;
     const newTicket = {
-      ...formData,
+      ...datosOrden,
+      ...(ventaTecnico ? { ventaTecnico } : {}),
       ubicacion: normalizarUbicacion(formData.ubicacion).valor || '',
       napCoordenadas: normalizarCoordenadasNap(formData.napCoordenadas).valor || '',
       falla: finalFalla,

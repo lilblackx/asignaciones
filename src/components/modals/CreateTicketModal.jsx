@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ChevronDown, MapPin, Repeat, X } from 'lucide-react';
+import { AlertTriangle, ChevronDown, MapPin, Repeat, Star, X } from 'lucide-react';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchivados, buscarHistorialCliente, textoHace } from '../../utils/reincidencia';
 import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
+import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
 import Modal from '../Modal';
 import NapCoordenadasField from './NapCoordenadasField';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
@@ -30,6 +31,19 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
     const texto = e.target.value;
     handleCreateChange({ target: { name: 'plantillaOriginal', value: texto, type: 'text' } });
     const campos = parseInstalacionTemplate(texto);
+    // Si "Instalador:" ya trae un técnico registrado, la venta es suya: se le
+    // asigna de una vez (sin gastar el turno). Solo la primera vez que se detecta,
+    // para no pisar un cambio manual si siguen editando la plantilla.
+    if (esInstalacion) {
+      const vendedor = buscarTecnicoPorNombre(campos.instalador, technicians);
+      if (vendedor && formData.ventaTecnico !== vendedor.name) {
+        handleCreateChange({ target: { name: 'tecnico', value: vendedor.name, type: 'text' } });
+        handleCreateChange({ target: { name: 'ventaTecnico', value: vendedor.name, type: 'text' } });
+      } else if (!vendedor && formData.ventaTecnico) {
+        handleCreateChange({ target: { name: 'ventaTecnico', value: '', type: 'text' } });
+      }
+    }
+    delete campos.instalador;
     Object.entries(campos).forEach(([name, value]) => {
       // "Servicio a contratar" solo se traduce a TIPO para instalaciones (MRTV,
       // MTV...); una reconexión no tiene esa lista.
@@ -162,7 +176,14 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             emptyOptionLabel="N/A"
           />
 
-          {esInstalacion && turnoSugerido && (
+          {esInstalacion && esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
+            <div className="col-span-2 sm:col-span-5 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded px-2.5 py-2 text-[11px] text-emerald-800 dark:text-emerald-300">
+              <Star className="w-3.5 h-3.5 shrink-0 fill-current" aria-hidden="true" />
+              <span>Venta de <strong>{formData.tecnico}</strong>: se asigna directo y no consume el turno{turnoSugerido ? <> (el turno sugerido sigue siendo <strong>{turnoSugerido}</strong>)</> : null}.</span>
+            </div>
+          )}
+
+          {esInstalacion && turnoSugerido && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
             <TurnoSugeridoBanner
               wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded px-2.5 py-2 text-[11px] text-indigo-800 dark:text-indigo-300"
               turnoSugerido={turnoSugerido}

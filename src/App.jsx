@@ -18,6 +18,7 @@ import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
 import { esProgramadaFutura } from './utils/programada';
+import { esVentaDelTecnico } from './utils/tecnicoVenta';
 import { generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, tipoUsaPlantillaPromotora } from './utils/whatsapp';
 import { stripEmojis } from './utils/sanitizeInput';
 
@@ -50,7 +51,7 @@ const EMPTY_FORM = () => ({
   fechaProgramada: '',
   codigo: '', nombre: '', cedula: '', tipoDocumento: 'V', direccion: '', telefono: '', nap: '', napCoordenadas: '', ubicacion: '',
   tipoTrabajo: 'AVERÍA', falla: '', tecnico: '', observacion: '', observacionInterna: false, estado: 'PENDIENTE',
-  plantillaOriginal: ''
+  plantillaOriginal: '', ventaTecnico: ''
 });
 
 export default function App() {
@@ -240,7 +241,8 @@ export default function App() {
       if (esInstalacion) {
         // Consume el turno de quien haya quedado asignado (sugerido o elegido
         // a mano), no solo del sugerido — así igual queda al final de la fila.
-        if (formData.tecnico) avanzarTurno(formData.tecnico);
+        // Una venta del técnico (venía en la plantilla) no consume el turno.
+        if (formData.tecnico && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico)) avanzarTurno(formData.tecnico);
       }
       setWhatsappMessage(buildWhatsAppMessage(nuevoTicket));
     }
