@@ -44,6 +44,10 @@ async function consultar(codigo, signal, aplicar, setEstado) {
 export default function NapCoordenadasField({ variant, idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false }) {
   const estilo = ESTILOS[variant];
   const codigo = extraerCodigoNap(nap);
+  // Cajas sin código en su nombre ("NAP EDIF A-3", "NAP EBANO"): se busca el texto
+  // tal cual, solo con el botón (nunca sola, para no consultar mientras se escribe).
+  const textoLibre = String(nap || '').trim();
+  const consulta = codigo || (textoLibre.replace(/[^A-Za-z0-9]/g, '').length >= 5 && textoLibre.length <= 40 ? textoLibre : null);
   const parseada = normalizarCoordenadasNap(value);
   const [estado, setEstado] = useState(null);
   const onChangeRef = useRef(onChange);
@@ -67,7 +71,7 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
   const buscarAhora = () => {
     manualRef.current?.abort();
     manualRef.current = new AbortController();
-    consultar(codigo, manualRef.current.signal, aplicar, setEstado);
+    consultar(consulta, manualRef.current.signal, aplicar, setEstado);
   };
 
   const handleChange = (e) => {
@@ -75,29 +79,29 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
     onChange(valor ?? e.target.value);
   };
 
-  const mensaje = estado && estado.codigo === codigo ? estado : null;
+  const mensaje = estado && estado.codigo === consulta ? estado : null;
 
   return (
     <div className={wrapperClassName}>
       <div className="flex items-end justify-between gap-2">
         <label htmlFor={`${idPrefix}-nap-coords`} className={estilo.label}>COORDENADAS NAP <span className="font-normal normal-case text-zinc-400">(Lat / Lng, opcional)</span></label>
-        {codigo && (
+        {consulta && (
           <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 dark:text-violet-400 hover:underline disabled:opacity-60">
-            {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {codigo} en Tomodat
+            {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat
           </button>
         )}
       </div>
       <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error} className={`${estilo.input} ${parseada.error ? 'border-red-500' : estilo.ok}`} />
       {parseada.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
-      {mensaje?.tipo === 'buscando' && <p role="status" className="text-[10px] text-zinc-500 ml-1">Buscando {codigo} en Tomodat...</p>}
+      {mensaje?.tipo === 'buscando' && <p role="status" className="text-[10px] text-zinc-500 ml-1">Buscando {consulta} en Tomodat...</p>}
       {mensaje?.tipo === 'listo' && value && <p role="status" className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 ml-1">Coordenadas tomadas de Tomodat ({mensaje.nombre}).</p>}
-      {mensaje?.tipo === 'vacio' && <p role="status" className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {codigo} en Tomodat. Pega las coordenadas a mano.</p>}
+      {mensaje?.tipo === 'vacio' && <p role="status" className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'error' && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'opciones' && (
         <div role="group" aria-label="Varias cajas coinciden, elige una" className="flex flex-wrap gap-1 ml-1">
           <span className="w-full text-[10px] font-bold text-amber-700 dark:text-amber-400">Varias cajas coinciden, elige una:</span>
           {mensaje.opciones.map((p) => (
-            <button key={`${p.nombre}-${p.lat}-${p.lng}`} type="button" onClick={() => { aplicar(p); setEstado({ tipo: 'listo', codigo, nombre: p.nombre }); }} className="text-[10px] font-bold px-2 py-1 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
+            <button key={`${p.nombre}-${p.lat}-${p.lng}`} type="button" onClick={() => { aplicar(p); setEstado({ tipo: 'listo', codigo: consulta, nombre: p.nombre }); }} className="text-[10px] font-bold px-2 py-1 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
               {p.nombre} · {p.lat.toFixed(4)}, {p.lng.toFixed(4)}
             </button>
           ))}

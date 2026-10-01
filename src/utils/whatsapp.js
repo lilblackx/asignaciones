@@ -1,5 +1,6 @@
 import { TIPOS_POR_TRABAJO } from '../constants';
 import { extraerUbicacionDeTexto, getUbicacionUrl, normalizarCoordenadasNap } from './ubicacion';
+import { CODIGO_NAP, extraerCodigoNap } from './codigoNap';
 
 // La línea "Observaciones:" de la plantilla siempre lleva el aviso de cobro
 // (monto en Bs calculado según la tasa BCV del día). El campo "observacion" del
@@ -126,15 +127,7 @@ function interpretarCedula(valor, campos) {
   }
 }
 
-// Código de NAP tal como lo nombra Tomodat: letra, 2 dígitos, letra, 2 dígitos
-// (ej. N10D14), con sufijo opcional para cajas gemelas ("O07D05-2").
-const CODIGO_NAP = '[A-Z]\\d{2}[A-Z]\\d{2}(?:-\\d)?';
-
-// Código de NAP dentro de un texto libre ("NAP O10H37", "n10d14 - puerto 2"), o null.
-export function extraerCodigoNap(texto) {
-  const m = String(texto || '').match(new RegExp(`(?<![A-Z0-9])${CODIGO_NAP}(?![A-Z0-9])`, 'i'));
-  return m ? m[0].toUpperCase() : null;
-}
+export { extraerCodigoNap };
 
 // Rellena los campos que ya manejamos a partir de la plantilla cruda que pega
 // la promotora. Es "best effort": si una etiqueta no calza con el formato
