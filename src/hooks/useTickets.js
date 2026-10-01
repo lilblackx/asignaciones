@@ -374,6 +374,29 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     notifyTicketChange(ticket, updatedTicket);
   };
 
+  // Cierre directo de una orden PENDIENTE desde la tabla, sin pasar por el
+  // formulario de edición ni por la pre-finalización del técnico.
+  const finalizarTicket = async (ticket) => {
+    if (!firebaseUser || !ticket) return;
+
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'OPERADOR',
+      tipo: 'finalizado',
+      detalle: 'Marcado como FINALIZADO'
+    };
+
+    const updatedTicket = {
+      ...ticket,
+      estado: 'FINALIZADO',
+      historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
+    };
+
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id.toString()), updatedTicket);
+    setToastMsg({ type: 'success', text: 'Orden finalizada.' });
+    notifyTicketChange(ticket, updatedTicket);
+  };
+
   const softDeleteTicket = async (deletingTicketId) => {
     if (!firebaseUser || !deletingTicketId) return;
     const ticketToUpdate = tickets.find(t => t.id === deletingTicketId);
@@ -437,6 +460,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     guardarUbicacion,
     preFinalizarTicket,
     aprobarFinalizarTicket,
+    finalizarTicket,
     deleteTicketsByIds
   };
 }

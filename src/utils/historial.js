@@ -11,6 +11,7 @@ export function clasificarEvento(entrada) {
   if (/(ENVIADO|ASIGNADO) retirado/.test(d)) return 'envio-retirado';
   if (/^Marcado como PRE-FINALIZADO/.test(d)) return 'prefinalizado';
   if (/^Aprobado y marcado como FINALIZADO/.test(d)) return 'aprobado';
+  if (/^Marcado como FINALIZADO/.test(d)) return 'finalizado';
   if (/^Ubicación (agregada|modificada)/.test(d)) return 'ubicacion';
   if (/(^|\| )Técnico:/.test(d)) return 'tecnico';
   if (/Estado: CANCELADO/.test(d)) return 'cancelado';

@@ -21,7 +21,8 @@ export default function TicketsTable({
   onPegarUbicacion,
   onVerHistorial,
   onPreFinalizar,
-  onAprobarFinalizar
+  onAprobarFinalizar,
+  onFinalizar
 }) {
   // Con orden "más recientes" o por fecha las órdenes de un mismo día quedan
   // juntas: se agrupan bajo un encabezado. Con otros órdenes la fecha va en la fila.
@@ -171,6 +172,9 @@ export default function TicketsTable({
                         <button onClick={() => onCopyWhatsApp(ticket)} aria-label={`Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors" title="Copiar plantilla WhatsApp (marca como enviada)"><MessageCircle className="w-3.5 h-3.5" /></button>
                         {canEditTickets ? (
                           <>
+                            {ticket.estado === 'PENDIENTE' && (
+                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded transition-colors" title="Finalizar orden"><CheckCircle2 className="w-3.5 h-3.5" /></button>
+                            )}
                             {ticket.estado === 'PRE-FINALIZADO' && (
                               <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>
                             )}

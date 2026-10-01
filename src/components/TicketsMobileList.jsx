@@ -16,7 +16,8 @@ export default function TicketsMobileList({
   onCopyWhatsApp,
   onPegarUbicacion,
   onPreFinalizar,
-  onAprobarFinalizar
+  onAprobarFinalizar,
+  onFinalizar
 }) {
   if (filteredTickets.length === 0) {
     return (
@@ -199,6 +200,11 @@ export default function TicketsMobileList({
                 <button onClick={() => onCopyWhatsApp(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-sm transition-colors"><ClipboardCopy className="w-4 h-4" /> Plantilla</button>
                 {canEditTickets ? (
                   <>
+                    {ticket.estado === 'PENDIENTE' && (
+                      <button onClick={() => onFinalizar(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-sm transition-colors">
+                        <CheckCircle2 className="w-4 h-4" /> Finalizar
+                      </button>
+                    )}
                     {(ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA') && (
                       <button onClick={() => onAprobarFinalizar(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm transition-colors">
                         <CheckCheck className="w-4 h-4" /> Aprobar
