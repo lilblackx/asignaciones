@@ -2,6 +2,7 @@ import { ArrowDownAZ, CheckCheck, CheckCircle2, Clock, Edit, ExternalLink, Histo
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEnvioInfo, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
+import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
 
 const COLUMNAS = 9;
@@ -65,7 +66,7 @@ export default function TicketsTable({
                   </td>
                 </tr>
               ),
-              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''}`}>
+              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
                 <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${eliminado ? 'border-l-zinc-500' : tipoEstilo.borde} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex items-center">{ticket.codigo}</div>
                 </td>
