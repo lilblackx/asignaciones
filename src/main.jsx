@@ -5,36 +5,37 @@ import App from './App.jsx'
 import InstallGate from './components/InstallGate.jsx'
 import { registerSW } from 'virtual:pwa-register'
 import { setSwRegistration } from './lib/swRegistration'
+import { setUpdateAvailable } from './lib/updateAvailable'
+import UpdatePrompt from './components/UpdatePrompt.jsx'
 
 // Registro del Service Worker para habilitar la PWA. Chequea cada 15 min si hay
-// una versión nueva (no solo al abrir la app), y la aplica sola sin preguntar.
-// Para no interrumpir a alguien a mitad de cargar un ticket, no recarga de una:
-// espera a que la pestaña vuelva a estar visible (foco perdido y recuperado) o,
-// si ya estaba en segundo plano cuando se detectó, la aplica ahí mismo.
+// una versión nueva (no solo al abrir la app). Al detectarla muestra el aviso
+// "Actualización disponible" (UpdatePrompt) y el usuario decide cuándo recargar,
+// así no se interrumpe a alguien a mitad de cargar un ticket. Si la pestaña ya
+// estaba en segundo plano cuando se detectó, se aplica ahí mismo sin preguntar.
 const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
-let updateReady = false;
 
 const updateSW = registerSW({
   onRegisteredSW(_swUrl, registration) {
     if (!registration) return;
     setSwRegistration(registration);
     setInterval(() => registration.update(), UPDATE_CHECK_INTERVAL_MS);
+    // Además del intervalo, revisa al volver a la pestaña: así el aviso aparece
+    // en cuanto el usuario regresa, sin esperar hasta 15 min.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') registration.update();
+    });
   },
   onNeedRefresh() {
-    updateReady = true;
     if (document.visibilityState === 'hidden') {
       updateSW(true);
+      return;
     }
+    setUpdateAvailable(() => updateSW(true));
   },
   onOfflineReady() {
     console.log('La aplicación está lista para funcionar sin conexión.')
   },
-})
-
-document.addEventListener('visibilitychange', () => {
-  if (updateReady && document.visibilityState === 'visible') {
-    updateSW(true);
-  }
 })
 
 createRoot(document.getElementById('root')).render(
@@ -42,5 +43,6 @@ createRoot(document.getElementById('root')).render(
     <InstallGate>
       <App />
     </InstallGate>
+    <UpdatePrompt />
   </StrictMode>,
 )

@@ -25,7 +25,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       // sw propio (src/sw.js) en vez de uno generado: necesitamos que el mismo
       // Service Worker precachee (Workbox) Y reciba pushes de FCM en segundo plano.
       strategies: 'injectManifest',
