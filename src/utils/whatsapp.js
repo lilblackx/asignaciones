@@ -1,5 +1,6 @@
 import { TIPOS_POR_TRABAJO } from '../constants';
 import { extraerUbicacionDeTexto, getUbicacionUrl, normalizarCoordenadasNap } from './ubicacion';
+import { normalizarNegritas } from './negritas';
 import { CODIGO_NAP, extraerCodigoNap } from './codigoNap';
 
 // La línea "Observaciones:" de la plantilla siempre lleva el aviso de cobro
@@ -195,7 +196,7 @@ export function parseInstalacionTemplate(texto) {
 // ya trae un enlace de Maps propio no se duplica. El resto queda exactamente
 // como lo pegó la promotora.
 function aplicarCorrelativoYTecnico(plantilla, codigo, tecnico, ubicacion, napCoordenadas) {
-  const lineas = plantilla.split('\n');
+  const lineas = normalizarNegritas(plantilla).split('\n');
   if (lineas.length > 0) lineas[0] = codigo || lineas[0];
   const idxInstalador = lineas.findIndex(l => claveEtiqueta(limpiarLinea(l).split(':')[0] || '') === 'INSTALADOR');
   if (idxInstalador !== -1) {
