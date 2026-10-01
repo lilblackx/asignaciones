@@ -135,6 +135,9 @@ function interpretarCedula(valor, campos) {
 
 export { extraerCodigoNap };
 
+// Etiquetas donde las promotoras escriben notas libres (a veces con el NAP).
+const ETIQUETAS_NOTA = new Set(['NOTA', 'NOTAS', 'OBSERVACION', 'OBSERVACIONES']);
+
 // Rellena los campos que ya manejamos a partir de la plantilla cruda que pega
 // la promotora. Es "best effort": si una etiqueta no calza con el formato
 // esperado, simplemente no se autocompleta ese campo (queda para llenar a mano).
@@ -183,6 +186,16 @@ export function parseInstalacionTemplate(texto) {
   if (campos.nap === undefined) {
     const enTexto = String(texto || '').match(new RegExp(`\\bNAP\\W{0,4}(${CODIGO_NAP})`, 'i'));
     if (enTexto) campos.nap = enTexto[1].toUpperCase();
+  }
+  // O la nota solo dice "se puede hacer del O02E13", sin la palabra NAP: se
+  // busca el código suelto, pero solo desde la línea NOTA / Observación en
+  // adelante (así no se confunde con otros códigos de la plantilla, como la MAC).
+  if (campos.nap === undefined) {
+    const idxNota = lineas.findIndex(l => ETIQUETAS_NOTA.has(claveEtiqueta(l.split(':')[0] || '')));
+    if (idxNota !== -1) {
+      const codigo = extraerCodigoNap(lineas.slice(idxNota).join(' '));
+      if (codigo) campos.nap = codigo;
+    }
   }
   // Muchas promotoras pegan el enlace de Maps suelto, sin etiqueta.
   if (campos.ubicacion === undefined) {
