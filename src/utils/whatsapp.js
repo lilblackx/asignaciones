@@ -72,6 +72,8 @@ const ALIAS_CAMPOS = {
   'NAP': 'nap',
   'SERVICIO A CONTRATAR': 'falla',
   'SERVICIO': 'falla',
+  'INSTALADOR': 'instalador',
+  'TECNICO INSTALADOR': 'instalador',
   'UBICACION': 'ubicacion',
   'UBICACION GPS': 'ubicacion',
   'UBICACION MAPS': 'ubicacion',
