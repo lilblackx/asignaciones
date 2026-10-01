@@ -41,6 +41,11 @@ export default function FiltersBar({
               <option value="PRE-FINALIZADO">Pre-finalizados</option>
               {!isTecnico && <option value="PENDIENTE_SIN_TECNICO">Sin técnico</option>}
               <option value="INSTALACION_SIN_UBICACION">Instalaciones sin ubicación</option>
+              <optgroup label="Programadas">
+                <option value="PROG_HOY">Programadas: hoy / vencidas</option>
+                <option value="PROG_MANANA">Programadas: mañana</option>
+                <option value="PROG_FUTURAS">Programadas: futuras</option>
+              </optgroup>
               <option value="FINALIZADO">Finalizados</option>
               <option value="CANCELADO">Cancelados</option>
               <option value="ELIMINADOS">Eliminados</option>
@@ -59,6 +64,7 @@ export default function FiltersBar({
                 <option value="DEFECTO">Más recientes</option>
                 <option value="TECNICO">Técnico (A-Z)</option>
                 <option value="TIPO_TRABAJO">Tipo de Trabajo (A-Z)</option>
+                <option value="PROGRAMADA">Fecha programada (próximas primero)</option>
                 <optgroup label="Filtrar por Técnico">
                   {technicians.map(t => (
                     <option key={t.id} value={"TEC:" + t.name}>Solo: {t.name}</option>

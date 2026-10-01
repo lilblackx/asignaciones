@@ -17,6 +17,7 @@ import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
+import { esProgramadaFutura } from './utils/programada';
 import { generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, tipoUsaPlantillaPromotora } from './utils/whatsapp';
 import { stripEmojis } from './utils/sanitizeInput';
 
@@ -65,7 +66,7 @@ export default function App() {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg);
-  const { tickets, createTicket, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, deleteTicketsByIds } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, createTicket, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, finalizarTicket, deleteTicketsByIds } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, deleteTicketsByIds, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
   const { orden: ordenTurno, tecnicoSugerido, guardarOrden, avanzarTurno } = useTurnoInstalaciones(firebaseUser, technicians, setToastMsg);
@@ -179,10 +180,10 @@ export default function App() {
   // solo muestra activas) igual da 0 resultados — eso no es "tus filtros no
   // coinciden", es que no tiene trabajo pendiente ahora mismo.
   const hasActiveAssignments = isTecnico
-    ? ticketsParaVer.some(t => t.estado === 'PENDIENTE' || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
+    ? ticketsParaVer.some(t => (t.estado === 'PENDIENTE' && !esProgramadaFutura(t)) || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
     : tickets.length > 0;
 
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer);
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.
@@ -216,6 +217,7 @@ export default function App() {
   const [whatsappMessage, setWhatsappMessage] = useState(null);
   const [preFinalizarTarget, setPreFinalizarTarget] = useState(null);
   const [aprobarTarget, setAprobarTarget] = useState(null);
+  const [finalizarTarget, setFinalizarTarget] = useState(null);
   const [ubicacionTarget, setUbicacionTarget] = useState(null);
   const [historialTarget, setHistorialTarget] = useState(null);
 
@@ -272,6 +274,11 @@ export default function App() {
     await aprobarFinalizarTicket(ticket);
     setAprobarTarget(null);
   }, 'No se pudo aprobar la orden.');
+
+  const confirmFinalizar = conAviso(async () => {
+    await finalizarTicket(finalizarTarget);
+    setFinalizarTarget(null);
+  }, 'No se pudo finalizar la orden.');
 
   const confirmDelete = conAviso(async () => {
     await softDeleteTicket(deletingTicketId);
@@ -428,6 +435,7 @@ export default function App() {
             onPegarUbicacion={handlePegarUbicacion}
             onPreFinalizar={setPreFinalizarTarget}
             onAprobarFinalizar={setAprobarTarget}
+            onFinalizar={setFinalizarTarget}
           />
 
           <TicketsTable
@@ -446,6 +454,7 @@ export default function App() {
             onVerHistorial={setHistorialTarget}
             onPreFinalizar={setPreFinalizarTarget}
             onAprobarFinalizar={setAprobarTarget}
+            onFinalizar={setFinalizarTarget}
           />
 
           {hasMore && (
@@ -514,6 +523,19 @@ export default function App() {
             currentUsername={currentUser}
             technicians={technicians}
             onClose={() => setIsUsersModalOpen(false)}
+          />
+        )}
+
+        {finalizarTarget && (
+          <ConfirmModal
+            color="blue"
+            title="¿Finalizar Orden?"
+            description={`La orden ${finalizarTarget.codigo || ''} (${finalizarTarget.nombre || 'sin nombre'}) pasará a FINALIZADO y quedará registrado en el historial.`}
+            confirmLabel="Sí, Finalizar"
+            processingLabel="Finalizando..."
+            zIndexClass="z-[70]"
+            onCancel={() => setFinalizarTarget(null)}
+            onConfirm={confirmFinalizar}
           />
         )}
 
