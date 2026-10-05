@@ -215,7 +215,7 @@ function aplicarCorrelativoYTecnico(plantilla, codigo, tecnico, ubicacion, napCo
   if (lineas.length > 0) lineas[0] = codigo || lineas[0];
   const idxInstalador = lineas.findIndex(l => claveEtiqueta(limpiarLinea(l).split(':')[0] || '') === 'INSTALADOR');
   if (idxInstalador !== -1) {
-    lineas[idxInstalador] = `*Instalador:*${tecnico || ''}`;
+    lineas[idxInstalador] = `*Instalador:* ${tecnico || ''}`;
   }
   const enlace = getUbicacionUrl(ubicacion);
   let agregoAlFinal = false;
@@ -254,12 +254,12 @@ function generarMensajeInstalacionBasico(ticket) {
     ticket.codigo || '',
     `*Nap:* ${ticket.nap || ''}`,
     '',
-    `*Nombres  Completos:*${ticket.nombre || ''}`,
+    `*Nombres  Completos:* ${ticket.nombre || ''}`,
     `*C.I:* ${ticket.cedula || ''}`,
     `*NRO de teléfono:* ${ticket.telefono || ''}`,
-    `*Dirección completa:*${ticket.direccion || ''}`,
-    `*Instalador:*${ticket.tecnico || ''}`,
-    `*Observación:*${ticket.observacion || ''}`,
+    `*Dirección completa:* ${ticket.direccion || ''}`,
+    `*Instalador:* ${ticket.tecnico || ''}`,
+    `*Observación:* ${ticket.observacion || ''}`,
     ...(enlace || enlaceNap ? [''] : []),
     ...(enlace ? [`*Ubicación:* ${enlace}`] : []),
     ...(enlaceNap ? [`*Ubicación NAP:* ${enlaceNap}`] : []),

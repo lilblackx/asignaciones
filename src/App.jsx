@@ -67,7 +67,7 @@ export default function App() {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg);
-  const { tickets, createTicket, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, finalizarTicket, deleteTicketsByIds } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, finalizarTicket, deleteTicketsByIds } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, deleteTicketsByIds, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
   const { orden: ordenTurno, tecnicoSugerido, guardarOrden, avanzarTurno } = useTurnoInstalaciones(firebaseUser, technicians, setToastMsg);
@@ -478,6 +478,7 @@ export default function App() {
             formData={formData}
             handleCreateChange={handleCreateChange}
             handleCreateSubmit={handleCreateSubmit}
+            verificarCodigoManual={verificarCodigoManual}
             technicians={technicians}
             tickets={tickets}
             reports={reports}
@@ -491,6 +492,7 @@ export default function App() {
             editingTicket={editingTicket}
             handleEditChange={handleEditChange}
             handleEditSubmit={handleEditSubmit}
+            verificarCodigoManual={verificarCodigoManual}
             technicians={technicians}
             isTecnico={isTecnico}
             turnoSugerido={tecnicoSugerido}
