@@ -6,12 +6,16 @@ import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchi
 import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
 import Modal from '../Modal';
+import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import NapCoordenadasField from './NapCoordenadasField';
+import TelefonosField from './TelefonosField';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 
-export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, technicians, tickets, reports = [], turnoSugerido, onClose }) {
+export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], turnoSugerido, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
+  const [verificandoCodigo, setVerificandoCodigo] = useState(false);
+  const [saltoCodigo, setSaltoCodigo] = useState(null);
 
   const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
   const opcionesTipo = TIPOS_POR_TRABAJO[formData.tipoTrabajo] || [];
@@ -76,18 +80,35 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
     handleCreateChange({ target: { name: 'napCoordenadas', value, type: 'text' } });
   };
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    if (ubicacionParseada.error || napCoordenadasParseadas.error) return;
-    if (ticketDuplicado) {
-      setShowDuplicateConfirm(true);
+  // Último paso antes de guardar: un código manual que se salta números pide confirmación.
+  const verificarCodigoYGuardar = async () => {
+    setVerificandoCodigo(true);
+    const salto = await verificarCodigoManual(formData.tipoTrabajo, formData.codigo);
+    setVerificandoCodigo(false);
+    if (salto) {
+      setSaltoCodigo(salto);
       return;
     }
     doSubmit();
   };
 
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (ubicacionParseada.error || napCoordenadasParseadas.error || verificandoCodigo) return;
+    if (ticketDuplicado) {
+      setShowDuplicateConfirm(true);
+      return;
+    }
+    verificarCodigoYGuardar();
+  };
+
   const confirmDuplicateAndSubmit = () => {
     setShowDuplicateConfirm(false);
+    verificarCodigoYGuardar();
+  };
+
+  const confirmSaltoAndSubmit = () => {
+    setSaltoCodigo(null);
     doSubmit();
   };
 
@@ -214,7 +235,12 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-telefono" className="text-[10px] font-bold text-zinc-500 ml-1">TELÉFONO</label>
-            <input id="tk-telefono" type="text" maxLength="20" name="telefono" value={formData.telefono} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
+            <TelefonosField
+              id="tk-telefono"
+              value={formData.telefono}
+              onChange={(value) => handleCreateChange({ target: { name: 'telefono', value, type: 'text' } })}
+              inputClassName="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs"
+            />
           </div>
           <div className="col-span-2 sm:col-span-2 space-y-0.5">
             <label htmlFor="tk-nap" className="text-[10px] font-bold text-zinc-500 ml-1">NAP</label>
@@ -249,10 +275,19 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-2 sm:col-span-5 pt-1 flex gap-2 justify-end mt-1">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-xs transition-colors">Cancelar</button>
-            <button type="submit" disabled={isSubmitting} className={`px-4 py-1.5 text-white font-bold rounded-lg text-xs shadow-md transition-colors ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
+            <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`px-4 py-1.5 text-white font-bold rounded-lg text-xs shadow-md transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
       </div>
+
+      {saltoCodigo && (
+        <ConfirmCodigoAltoModal
+          salto={saltoCodigo}
+          isSubmitting={isSubmitting}
+          onCancel={() => setSaltoCodigo(null)}
+          onConfirm={confirmSaltoAndSubmit}
+        />
+      )}
 
       {showDuplicateConfirm && ticketDuplicado && (
         <Modal onClose={() => setShowDuplicateConfirm(false)} zIndexClass="z-[70]">
