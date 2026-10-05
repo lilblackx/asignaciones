@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "emulators": "firebase emulators:start",
     "seed:emulator": "node scripts/seed-emulator.mjs",
-    "test:rules": "node scripts/test-rules.mjs"
+    "test:rules": "node scripts/test-rules.mjs",
+    "test:correlativo": "node scripts/test-correlativo.mjs",
+    "test:asignar": "node scripts/test-asignar-tecnico.mjs",
+    "test:negritas": "node scripts/test-negritas.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

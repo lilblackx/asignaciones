@@ -1,32 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { generarCodigoBase, generarCorrelativo, sincronizarCorrelativoManual, obtenerPrefijoTipo, obtenerCodigoMes, maxNumeroExistente } from '../utils/correlativo';
+import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
 import { playAprobadoSound, playNuevaAsignacionSound, playPreFinalizadoSound } from '../utils/notificationSound';
 import { sendPush } from '../lib/notify';
 import { parsePotencia } from '../utils/potencia';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 
-// Antes de generar, se pone al día contra los tickets ya existentes (createTicket
-// nunca borra el "ultimo" guardado; solo lo adelanta si hay un número más alto por
-// ahí, típicamente por un código manual de antes de que existiera la sincronización).
-async function generarCorrelativoConCatchUp(tickets, tipoTrabajo, fecha = new Date()) {
-  const prefijo = obtenerPrefijoTipo(tipoTrabajo);
-  const mesCodigo = obtenerCodigoMes(fecha);
-  const catchUpMax = maxNumeroExistente(tickets, prefijo, mesCodigo, fecha.getFullYear());
-  return generarCorrelativo(db, appId, tipoTrabajo, fecha, catchUpMax);
-}
-
-// Instalación sin número aún ("IS", "IMZ", etc.). Si ya tiene técnico asignado,
-// le corresponde numerarse con la misma transacción del contador.
-async function resolveCodigoParaTecnico(tickets, codigoActual, tipoTrabajo, tecnicoFinal, fecha = new Date()) {
-  const esInstalacionSinNumero = /^I[A-Z]{1,2}$/.test(codigoActual || '');
-  const tieneTecnico = Boolean(tecnicoFinal && tecnicoFinal.toString().trim());
-  if (esInstalacionSinNumero && tieneTecnico) {
-    return await generarCorrelativoConCatchUp(tickets, tipoTrabajo, fecha);
-  }
-  return codigoActual;
-}
+// Envoltorios con la base de datos de la app; la lógica vive en utils/correlativo.js.
+const generarCorrelativoConCatchUp = (...args) => generarCorrelativoConCatchUpBase(db, appId, ...args);
+const guardarConNumeracion = (...args) => guardarConNumeracionBase(db, appId, ...args);
 
 export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify) {
   const [tickets, setTickets] = useState([]);
@@ -172,8 +155,37 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     return () => unsubTickets();
   }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
 
+  // Para los formularios: si el código escrito a mano se salta números (ej. "AO150"
+  // cuando va por AO15), devuelve { codigo, ultimo, esperado } para pedir confirmación.
+  // `ticketId` (al editar): no avisa si el código no cambió. Si no se puede consultar el
+  // contador, no bloquea el guardado.
+  const verificarCodigoManual = async (tipoTrabajo, codigo, ticketId = null) => {
+    const limpio = (codigo || '').trim().toUpperCase();
+    const original = ticketId ? tickets.find(t => t.id === ticketId) : null;
+    if (!limpio || (original && (original.codigo || '').toUpperCase() === limpio)) return null;
+    const fecha = original?.createdAt ? new Date(original.createdAt) : new Date();
+    try {
+      return await detectarSaltoManual(db, appId, tickets, tipoTrabajo, limpio, fecha);
+    } catch (err) {
+      console.error('No se pudo verificar el código manual:', err);
+      return null;
+    }
+  };
+
+  // Evita que un doble clic en "Crear" genere dos órdenes (y gaste dos números).
+  const creandoRef = useRef(false);
+
   const createTicket = async (formData) => {
-    if (!firebaseUser) return;
+    if (!firebaseUser || creandoRef.current) return;
+    creandoRef.current = true;
+    try {
+      return await crearTicketSinGuardia(formData);
+    } finally {
+      creandoRef.current = false;
+    }
+  };
+
+  const crearTicketSinGuardia = async (formData) => {
     const finalFalla = formData.falla.trim() === '' ? formData.tipoTrabajo : formData.falla;
     const newId = Date.now().toString();
 
@@ -181,22 +193,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const codigoManual = (formData.codigo || '').trim();
     const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
     const tieneTecnico = Boolean(formData.tecnico && formData.tecnico.trim());
-    const codigo = codigoManual
-      ? codigoManual.toUpperCase()
-      : (esInstalacion && !tieneTecnico)
-        ? generarCodigoBase(formData.tipoTrabajo)          // ej. "IS" — sin número mientras no tenga técnico
-        : await generarCorrelativoConCatchUp(tickets, formData.tipoTrabajo); // ej. "IS1" (instalación con técnico) / "AS184" / "VS12"
-
-    // Si el código se escribió a mano y sigue el patrón automático (ej. "AS4"),
-    // el próximo automático debe continuar desde ahí, no ignorar lo tecleado.
-    if (codigoManual) {
-      sincronizarCorrelativoManual(db, appId, formData.tipoTrabajo, codigo).catch(
-        (err) => console.error('No se pudo sincronizar el correlativo manual:', err)
-      );
-    }
-
     const { ventaTecnico, ...datosOrden } = formData;
-    const newTicket = {
+    const armarTicket = (codigo) => ({
       ...datosOrden,
       ...(ventaTecnico ? { ventaTecnico } : {}),
       ubicacion: normalizarUbicacion(formData.ubicacion).valor || '',
@@ -207,9 +205,32 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       createdAt: Date.now(),
       historialEdiciones: [],
       isAsignado: false,
-    };
+    });
+    const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', newId);
 
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', newId), newTicket);
+    let newTicket;
+    if (codigoManual || (esInstalacion && !tieneTecnico)) {
+      // "IS" — sin número mientras no tenga técnico; o código manual, que no consume el contador.
+      const codigo = codigoManual ? codigoManual.toUpperCase() : generarCodigoBase(formData.tipoTrabajo);
+      newTicket = armarTicket(codigo);
+      await setDoc(ticketRef, newTicket);
+
+      // Si el código se escribió a mano y sigue el patrón automático (ej. "AS4"),
+      // el próximo automático debe continuar desde ahí, no ignorar lo tecleado.
+      if (codigoManual) {
+        sincronizarCorrelativoManual(db, appId, formData.tipoTrabajo, codigo).catch(
+          (err) => console.error('No se pudo sincronizar el correlativo manual:', err)
+        );
+      }
+    } else {
+      // ej. "IS1" (instalación con técnico) / "AS184" / "VS12": el número y la orden
+      // se guardan en una sola transacción, así un fallo no deja un salto en el correlativo.
+      await generarCorrelativoConCatchUp(tickets, formData.tipoTrabajo, new Date(), (transaction, codigo) => {
+        newTicket = armarTicket(codigo);
+        transaction.set(ticketRef, newTicket);
+      });
+    }
+
     setToastMsg({ type: 'success', text: 'Orden creada exitosamente.' });
     notifyTicketChange(null, newTicket);
     return { id: newId, ...newTicket };
@@ -249,48 +270,52 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     }
 
     const originalTicket = tickets.find(t => t.id === editingTicket.id);
-    let ticketToSave = { ...editingTicket, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
-
     const ticketFecha = originalTicket?.createdAt ? new Date(originalTicket.createdAt) : new Date();
-    ticketToSave.codigo = await resolveCodigoParaTecnico(
+
+    const armarTicket = (codigo) => {
+      const ticketToSave = { ...editingTicket, codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
+      if (originalTicket) {
+        let cambios = [];
+        if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
+        if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(`Técnico: ${editingTicket.tecnico || 'Sin asignar'}`);
+        if (originalTicket.tipoTrabajo !== editingTicket.tipoTrabajo) cambios.push(`Trabajo: ${editingTicket.tipoTrabajo}`);
+        if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
+        if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);
+        if (originalTicket.observacion !== editingTicket.observacion) cambios.push(`Obs. modificada`);
+        if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
+        if ((originalTicket.ubicacion || '') !== ticketToSave.ubicacion) cambios.push('Ubicación modificada');
+        if ((originalTicket.napCoordenadas || '') !== ticketToSave.napCoordenadas) cambios.push(`Coord. NAP: ${ticketToSave.napCoordenadas || 'Vacías'}`);
+        if ((originalTicket.potenciaDbm ?? null) !== ticketToSave.potenciaDbm) cambios.push(`Potencia: ${ticketToSave.potenciaDbm ?? 'Vacía'}${ticketToSave.potenciaDbm != null ? ' dBm' : ''}`);
+
+        if (cambios.length > 0) {
+          const nuevaEdicion = {
+            fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+            operador: currentUser || 'OPERADOR',
+            detalle: cambios.join(' | ')
+          };
+          ticketToSave.historialEdiciones = [...(originalTicket.historialEdiciones || []), nuevaEdicion];
+        }
+      }
+      return ticketToSave;
+    };
+
+    const ticketToSave = await guardarConNumeracion(
       tickets,
+      editingTicket.id,
       editingTicket.codigo,
       editingTicket.tipoTrabajo,
       editingTicket.tecnico,
-      ticketFecha
+      ticketFecha,
+      armarTicket
     );
 
-    if (originalTicket) {
-      let cambios = [];
-      if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
-      if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(`Técnico: ${editingTicket.tecnico || 'Sin asignar'}`);
-      if (originalTicket.tipoTrabajo !== editingTicket.tipoTrabajo) cambios.push(`Trabajo: ${editingTicket.tipoTrabajo}`);
-      if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
-      if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);
-      if (originalTicket.observacion !== editingTicket.observacion) cambios.push(`Obs. modificada`);
-      if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
-      if ((originalTicket.ubicacion || '') !== ticketToSave.ubicacion) cambios.push('Ubicación modificada');
-      if ((originalTicket.napCoordenadas || '') !== ticketToSave.napCoordenadas) cambios.push(`Coord. NAP: ${ticketToSave.napCoordenadas || 'Vacías'}`);
-      if ((originalTicket.potenciaDbm ?? null) !== ticketToSave.potenciaDbm) cambios.push(`Potencia: ${ticketToSave.potenciaDbm ?? 'Vacía'}${ticketToSave.potenciaDbm != null ? ' dBm' : ''}`);
-
-      if (cambios.length > 0) {
-        const nuevaEdicion = {
-          fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
-          operador: currentUser || 'OPERADOR',
-          detalle: cambios.join(' | ')
-        };
-        ticketToSave.historialEdiciones = [...(originalTicket.historialEdiciones || []), nuevaEdicion];
-      }
-    }
-
-    // Corrección manual del código (no la generada recién arriba): sincroniza el contador también.
+    // Corrección manual del código (no la generada arriba): sincroniza el contador también.
     if (originalTicket && originalTicket.codigo !== editingTicket.codigo && ticketToSave.codigo === editingTicket.codigo) {
       sincronizarCorrelativoManual(db, appId, editingTicket.tipoTrabajo, editingTicket.codigo, ticketFecha).catch(
         (err) => console.error('No se pudo sincronizar el correlativo manual:', err)
       );
     }
 
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', editingTicket.id.toString()), ticketToSave);
     setToastMsg({ type: 'success', text: 'Orden actualizada correctamente.' });
     notifyTicketChange(originalTicket, ticketToSave);
     return true;
@@ -428,16 +453,20 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     };
 
     const ticketFecha = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
-    const codigoFinal = await resolveCodigoParaTecnico(tickets, ticket.codigo, ticket.tipoTrabajo, ticket.tecnico, ticketFecha);
-
-    const updatedTicket = {
-      ...ticket,
-      codigo: codigoFinal,
-      isAsignado: newValue,
-      historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
-    };
-
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id.toString()), updatedTicket);
+    const updatedTicket = await guardarConNumeracion(
+      tickets,
+      ticket.id,
+      ticket.codigo,
+      ticket.tipoTrabajo,
+      ticket.tecnico,
+      ticketFecha,
+      (codigo) => ({
+        ...ticket,
+        codigo,
+        isAsignado: newValue,
+        historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
+      })
+    );
     if (!silencioso) {
       setToastMsg({
         type: newValue ? 'success' : 'error',
@@ -456,6 +485,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   return {
     tickets,
     createTicket,
+    verificarCodigoManual,
     updateTicket,
     softDeleteTicket,
     toggleAsignado,
