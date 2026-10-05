@@ -4,13 +4,16 @@ import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubica
 import HistorialTimeline from '../HistorialTimeline';
 import ContactoCliente from '../ContactoCliente';
 import Modal from '../Modal';
+import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import NapCoordenadasField from './NapCoordenadasField';
+import TelefonosField from './TelefonosField';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 
-export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, technicians, turnoSugerido, onClose, isTecnico = false }) {
+export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, turnoSugerido, onClose, isTecnico = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saltoCodigo, setSaltoCodigo] = useState(null);
 
   const esInstalacion = editingTicket.tipoTrabajo?.toUpperCase().includes('INSTAL');
   const mostrarSugerencia = !isTecnico && esInstalacion && !editingTicket.tecnico && turnoSugerido;
@@ -32,12 +35,29 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
     handleEditChange({ target: { name: 'napCoordenadas', value, type: 'text' } });
   };
 
+  const guardar = async () => {
+    setIsSubmitting(true);
+    await handleEditSubmit({ preventDefault: () => {} });
+    setIsSubmitting(false);
+  };
+
+  // Un código corregido a mano que se salta números del correlativo pide confirmación.
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (potenciaParseada.error || ubicacionParseada.error || napCoordenadasParseadas.error) return;
+    if (potenciaParseada.error || ubicacionParseada.error || napCoordenadasParseadas.error || isSubmitting) return;
     setIsSubmitting(true);
-    await handleEditSubmit(e);
+    const salto = await verificarCodigoManual(editingTicket.tipoTrabajo, editingTicket.codigo, editingTicket.id);
     setIsSubmitting(false);
+    if (salto) {
+      setSaltoCodigo(salto);
+      return;
+    }
+    guardar();
+  };
+
+  const confirmSaltoAndSave = () => {
+    setSaltoCodigo(null);
+    guardar();
   };
 
   return (
@@ -129,7 +149,13 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           )}
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-telefono" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">TELÉFONO</label>
-            <input id="ed-telefono" disabled={isTecnico} type="text" maxLength="20" name="telefono" value={editingTicket.telefono || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
+            <TelefonosField
+              id="ed-telefono"
+              disabled={isTecnico}
+              value={editingTicket.telefono || ''}
+              onChange={(value) => handleEditChange({ target: { name: 'telefono', value, type: 'text' } })}
+              inputClassName="bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            />
           </div>
           <ContactoCliente telefono={editingTicket.telefono} nombre={editingTicket.nombre} className="col-span-2" />
           <div className="col-span-2 space-y-1">
@@ -180,6 +206,15 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           </div>
         </form>
       </div>
+
+      {saltoCodigo && (
+        <ConfirmCodigoAltoModal
+          salto={saltoCodigo}
+          isSubmitting={isSubmitting}
+          onCancel={() => setSaltoCodigo(null)}
+          onConfirm={confirmSaltoAndSave}
+        />
+      )}
     </Modal>
   );
 }

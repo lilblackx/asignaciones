@@ -1,6 +1,7 @@
 import { esProgramadaFutura } from '../utils/programada';
-import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, MapPin, MapPinOff, MessageCircle, Navigation, Network, Phone, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
-import { getEnlaceLlamada, getEnlaceWhatsApp } from '../utils/telefono';
+import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, MapPin, MapPinOff, Navigation, Network, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
+import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
+import TelefonoAccion from './TelefonoAccion';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getCreadoColor, getEnvioInfo, getEstadoColor, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -41,8 +42,7 @@ export default function TicketsMobileList({
   return (
     <div className="grid grid-cols-1 gap-4 lg:hidden">
       {filteredTickets.map(ticket => {
-        const enlaceLlamada = getEnlaceLlamada(ticket.telefono);
-        const enlaceWhatsApp = getEnlaceWhatsApp(ticket.telefono);
+        const hayTelefono = parseTelefonos(ticket.telefono).some(t => getEnlaceLlamada(t) || getEnlaceWhatsApp(t));
         const enlaceUbicacion = getEnlaceNavegacion(ticket.ubicacion);
         const enlaceNap = getEnlaceNavegacionNap(ticket.napCoordenadas);
         const envio = getEnvioInfo(ticket);
@@ -94,7 +94,7 @@ export default function TicketsMobileList({
                 </span>
               )
             )}
-            {ticket.estado !== 'ELIMINADO' && (enlaceLlamada || enlaceWhatsApp || enlaceUbicacion || enlaceNap) && (
+            {ticket.estado !== 'ELIMINADO' && (hayTelefono || enlaceUbicacion || enlaceNap) && (
               // Una sola fila (los que existan se reparten el ancho); texto corto y
               // aria-label completo para no gastar dos filas de alto por tarjeta.
               <div className="flex gap-2">
@@ -108,16 +108,8 @@ export default function TicketsMobileList({
                     <Network className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">NAP</span>
                   </a>
                 )}
-                {enlaceLlamada && (
-                  <a href={enlaceLlamada} aria-label={`Llamar a ${ticket.nombre}`} title="Llamar al cliente" className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                    <Phone className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">Llamar</span>
-                  </a>
-                )}
-                {enlaceWhatsApp && (
-                  <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" aria-label={`Escribir por WhatsApp a ${ticket.nombre}`} title="WhatsApp al cliente" className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors">
-                    <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">Chat</span>
-                  </a>
-                )}
+                <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
+                <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
               </div>
             )}
             <div className="flex items-start gap-2 text-sm">

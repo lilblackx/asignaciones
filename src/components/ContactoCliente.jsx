@@ -1,5 +1,6 @@
-import { MessageCircle, Navigation, Network, Phone } from 'lucide-react';
-import { getEnlaceLlamada, getEnlaceWhatsApp } from '../utils/telefono';
+import { Navigation, Network } from 'lucide-react';
+import { parseTelefonos, getEnlaceLlamada, getEnlaceWhatsApp } from '../utils/telefono';
+import TelefonoAccion from './TelefonoAccion';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap } from '../utils/ubicacion';
 
 const base = 'flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-bold transition-colors';
@@ -12,9 +13,8 @@ const base = 'flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded
 export default function ContactoCliente({ telefono, ubicacion, napCoordenadas, nombre, className = '' }) {
   const llegar = getEnlaceNavegacion(ubicacion);
   const nap = getEnlaceNavegacionNap(napCoordenadas);
-  const llamar = getEnlaceLlamada(telefono);
-  const chat = getEnlaceWhatsApp(telefono);
-  if (!llegar && !nap && !llamar && !chat) return null;
+  const hayTelefono = parseTelefonos(telefono).some(t => getEnlaceLlamada(t) || getEnlaceWhatsApp(t));
+  if (!llegar && !nap && !hayTelefono) return null;
 
   return (
     <div className={`flex gap-2 ${llegar ? '' : 'lg:hidden'} ${className}`}>
@@ -28,16 +28,8 @@ export default function ContactoCliente({ telefono, ubicacion, napCoordenadas, n
           <Network className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">NAP</span>
         </a>
       )}
-      {llamar && (
-        <a href={llamar} aria-label={`Llamar a ${nombre || 'el cliente'}`} title="Llamar al cliente" className={`${base} lg:hidden bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700`}>
-          <Phone className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">Llamar</span>
-        </a>
-      )}
-      {chat && (
-        <a href={chat} target="_blank" rel="noopener noreferrer" aria-label={`Escribir por WhatsApp a ${nombre || 'el cliente'}`} title="WhatsApp al cliente" className={`${base} lg:hidden bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50`}>
-          <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">Chat</span>
-        </a>
-      )}
+      <TelefonoAccion telefono={telefono} tipo="llamar" nombre={nombre} className={`${base} lg:hidden bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700`} />
+      <TelefonoAccion telefono={telefono} tipo="chat" nombre={nombre} className={`${base} lg:hidden bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50`} />
     </div>
   );
 }
