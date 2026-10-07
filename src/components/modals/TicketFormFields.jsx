@@ -1,5 +1,6 @@
-import { ChevronDown, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../../constants';
+import SelectMenu from '../SelectMenu';
 
 // Estilos por variante: 'create' (CreateTicketModal) y 'edit' (EditTicketModal).
 // Reproducen exactamente las clases originales de cada modal.
@@ -30,6 +31,9 @@ const STYLES = {
   },
 };
 
+const TIPOS_DOCUMENTO = ['V', 'E', 'J', 'G'].map(v => ({ value: v, label: v }));
+const TIPOS_TRABAJO_ITEMS = TIPOS_TRABAJO.map(t => ({ value: t, label: t }));
+
 // Formatea cédula/RIF con separador de miles, solo dígitos.
 function formatCedulaValue(rawValue) {
   return rawValue.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -45,22 +49,17 @@ export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento
     <div className={wrapperClassName}>
       <label htmlFor={`${idPrefix}-cedula`} className={s.label}>CÉDULA / RIF</label>
       <div className="flex gap-1">
-        <div className="relative shrink-0">
-          <select
+        <div className="shrink-0">
+          <SelectMenu
             id={`${idPrefix}-tipo-doc`}
+            ariaLabel="Tipo de documento (V, E, J, G)"
             disabled={disabled}
-            name="tipoDocumento"
             value={tipoDocumento}
-            onChange={onChange}
-            title="Tipo de documento (V, E, J, G)"
+            onChange={(v) => onChange({ target: { name: 'tipoDocumento', value: v, type: 'text' } })}
+            items={TIPOS_DOCUMENTO}
             className={s.selectTipoDoc}
-          >
-            <option value="V">V</option>
-            <option value="E">E</option>
-            <option value="J">J</option>
-            <option value="G">G</option>
-          </select>
-          <ChevronDown className="w-3 h-3 text-zinc-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+            chevronClassName="w-3 h-3 right-1.5"
+          />
         </div>
         <input
           id={`${idPrefix}-cedula`}
@@ -81,18 +80,23 @@ export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento
 
 export function TecnicoField({ variant, wrapperClassName, idPrefix, label, value, onChange, disabled = false, technicians, showSuggestion, turnoSugerido, emptyOptionLabel }) {
   const s = STYLES[variant];
+  const tecnicoItems = [
+    { value: '', label: emptyOptionLabel },
+    ...technicians.map(t => ({ value: t.name, label: showSuggestion && t.name === turnoSugerido ? `${t.name} (turno sugerido)` : t.name }))
+  ];
   return (
     <div className={wrapperClassName}>
       <label htmlFor={`${idPrefix}-tecnico`} className={s.label}>{label}</label>
-      <div className="relative">
-        <select id={`${idPrefix}-tecnico`} disabled={disabled} name="tecnico" value={value} onChange={onChange} className={s.selectTecnico}>
-          <option value="">{emptyOptionLabel}</option>
-          {technicians.map(t => (
-            <option key={t.id} value={t.name}>{showSuggestion && t.name === turnoSugerido ? `${t.name} (turno sugerido)` : t.name}</option>
-          ))}
-        </select>
-        <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-      </div>
+      <SelectMenu
+        id={`${idPrefix}-tecnico`}
+        ariaLabel={label}
+        disabled={disabled}
+        value={value}
+        onChange={(v) => onChange({ target: { name: 'tecnico', value: v, type: 'text' } })}
+        items={tecnicoItems}
+        className={s.selectTecnico}
+        chevronClassName="w-3.5 h-3.5 right-2"
+      />
     </div>
   );
 }
@@ -102,12 +106,16 @@ export function TipoTrabajoField({ variant, wrapperClassName, idPrefix, value, o
   return (
     <div className={wrapperClassName}>
       <label htmlFor={`${idPrefix}-tipo`} className={s.label}>TRABAJO</label>
-      <div className="relative">
-        <select id={`${idPrefix}-tipo`} disabled={disabled} name="tipoTrabajo" value={value} onChange={onChange} className={s.selectTipoTrabajo}>
-          {TIPOS_TRABAJO.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-      </div>
+      <SelectMenu
+        id={`${idPrefix}-tipo`}
+        ariaLabel="Trabajo"
+        disabled={disabled}
+        value={value}
+        onChange={(v) => onChange({ target: { name: 'tipoTrabajo', value: v, type: 'text' } })}
+        items={TIPOS_TRABAJO_ITEMS}
+        className={s.selectTipoTrabajo}
+        chevronClassName="w-3.5 h-3.5 right-2"
+      />
     </div>
   );
 }

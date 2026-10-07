@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ChevronDown, MapPin, Repeat, Star, X } from 'lucide-react';
+import { AlertTriangle, MapPin, Repeat, Star, X } from 'lucide-react';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchivados, buscarHistorialCliente, textoHace } from '../../utils/reincidencia';
 import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
 import Modal from '../Modal';
+import SelectMenu from '../SelectMenu';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
 import NapCoordenadasField from './NapCoordenadasField';
@@ -21,6 +22,10 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
   const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
   const opcionesTipo = TIPOS_POR_TRABAJO[formData.tipoTrabajo] || [];
+  const tipoItems = [
+    { value: '', label: opcionesTipo.length === 0 ? 'N/A' : 'Seleccione...' },
+    ...opcionesTipo.map(t => ({ value: t, label: t }))
+  ];
 
   const handleTipoTrabajoChange = (e) => {
     handleCreateChange(e);
@@ -238,13 +243,16 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-1 sm:col-span-2 space-y-0.5">
             <label htmlFor="tk-falla" className="text-[10px] font-bold text-zinc-500 ml-1">TIPO</label>
-            <div className="relative">
-              <select id="tk-falla" disabled={opcionesTipo.length === 0} name="falla" value={formData.falla} onChange={handleCreateChange} className="w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 pl-2 pr-7 py-1.5 rounded text-xs disabled:opacity-60 disabled:cursor-not-allowed">
-                <option value="">{opcionesTipo.length === 0 ? 'N/A' : 'Seleccione...'}</option>
-                {opcionesTipo.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-            </div>
+            <SelectMenu
+              id="tk-falla"
+              ariaLabel="Tipo"
+              disabled={opcionesTipo.length === 0}
+              value={formData.falla}
+              onChange={(v) => handleCreateChange({ target: { name: 'falla', value: v, type: 'text' } })}
+              items={tipoItems}
+              className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 pl-2 pr-7 py-1.5 rounded text-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              chevronClassName="w-3.5 h-3.5 right-2"
+            />
           </div>
           <div className="col-span-1 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-direccion" className="text-[10px] font-bold text-zinc-500 ml-1">DIRECCIÓN</label>

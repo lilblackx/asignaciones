@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ChevronDown, MapPin, X } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import HistorialTimeline from '../HistorialTimeline';
 import ContactoCliente from '../ContactoCliente';
 import Modal from '../Modal';
+import SelectMenu from '../SelectMenu';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
 import NapCoordenadasField from './NapCoordenadasField';
@@ -24,6 +25,12 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   const napCoordenadasParseadas = normalizarCoordenadasNap(editingTicket.napCoordenadas);
   const potenciaParseada = parsePotencia(editingTicket.potenciaDbm);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
+
+  const tipoItems = [
+    { value: '', label: opcionesTipo.length === 0 ? 'N/A' : 'Seleccione...' },
+    ...opcionesTipo.map(t => ({ value: t, label: t }))
+  ];
+  const estadoItems = ['PENDIENTE', 'PRE-FINALIZADO', ...(isTecnico ? [] : ['FINALIZADO', 'CANCELADO'])].map(v => ({ value: v, label: v }));
 
   const handleTipoTrabajoChange = (e) => {
     handleEditChange(e);
@@ -125,25 +132,29 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           />
           <div className="col-span-1 space-y-1">
             <label htmlFor="ed-falla" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">TIPO</label>
-            <div className="relative">
-              <select id="ed-falla" disabled={isTecnico || opcionesTipo.length === 0} name="falla" value={editingTicket.falla || ''} onChange={handleEditChange} className="w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-                <option value="">{opcionesTipo.length === 0 ? 'N/A' : 'Seleccione...'}</option>
-                {opcionesTipo.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-            </div>
+            <SelectMenu
+              id="ed-falla"
+              ariaLabel="Tipo"
+              disabled={isTecnico || opcionesTipo.length === 0}
+              value={editingTicket.falla || ''}
+              onChange={(v) => handleEditChange({ target: { name: 'falla', value: v, type: 'text' } })}
+              items={tipoItems}
+              className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              chevronClassName="w-3.5 h-3.5 right-2"
+            />
           </div>
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-estado" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">ESTADO</label>
-            <div className="relative">
-              <select id="ed-estado" disabled={isTecnico} name="estado" value={editingTicket.estado} onChange={handleEditChange} className="w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-                <option value="PENDIENTE">PENDIENTE</option>
-                <option value="PRE-FINALIZADO">PRE-FINALIZADO</option>
-                {!isTecnico && <option value="FINALIZADO">FINALIZADO</option>}
-                {!isTecnico && <option value="CANCELADO">CANCELADO</option>}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-            </div>
+            <SelectMenu
+              id="ed-estado"
+              ariaLabel="Estado"
+              disabled={isTecnico}
+              value={editingTicket.estado}
+              onChange={(v) => handleEditChange({ target: { name: 'estado', value: v, type: 'text' } })}
+              items={estadoItems}
+              className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              chevronClassName="w-3.5 h-3.5 right-2"
+            />
             {isTecnico && <p className="text-[9px] text-zinc-400 ml-1">Usa el botón "Pre-finalizar" de la lista para cambiar el estado.</p>}
           </div>
           <TecnicoField

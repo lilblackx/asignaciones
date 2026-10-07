@@ -1,9 +1,18 @@
 import { useState } from 'react';
-import { Ban, Check, CheckCircle2, ChevronDown, KeyRound, Pencil, ShieldCheck, User, X } from 'lucide-react';
+import { Ban, Check, CheckCircle2, KeyRound, Pencil, ShieldCheck, User, X } from 'lucide-react';
 import { ROLES } from '../../constants';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../../utils/passwordPolicy';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import Modal from '../Modal';
+import SelectMenu from '../SelectMenu';
+
+const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ADMIN].map(r => ({ value: r, label: r }));
+const ROL_NUEVO_ITEMS = [
+  { value: ROLES.USUARIO, label: 'USUARIO (sin Técnicos/Usuarios/Tasa)' },
+  { value: ROLES.TECNICO, label: 'TÉCNICO (asignaciones propias y pre-finalizar)' },
+  { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
+];
+const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
 
 const EMPTY_NEW_USER = { usuario: '', nombre: '', clave: '', role: ROLES.USUARIO, puedeCerrar: false, tecnicoAsociado: '' };
 
@@ -17,6 +26,9 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     setRoleDraft('');
     setTechDraft('');
   };
+
+  const techItemsInline = [{ value: '', label: 'Técnico...' }, ...technicians.map(t => ({ value: t.name, label: t.name }))];
+  const techItemsNuevo = [{ value: '', label: 'Selecciona el técnico...' }, ...technicians.map(t => ({ value: t.name, label: t.name }))];
 
   const onChangeRole = async (u, role) => {
     if (role === u.role) {
@@ -178,37 +190,32 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                             {u.role}
                           </span>
                         ) : (
-                          <select
+                          <SelectMenu
                             value={roleEditId === u.id ? roleDraft : u.role}
-                            onChange={(e) => onChangeRole(u, e.target.value)}
+                            onChange={(v) => onChangeRole(u, v)}
                             disabled={togglingId === u.id}
-                            aria-label={`Rol de ${u.username}`}
-                            className={`text-[9px] font-bold px-1 py-0.5 rounded border-0 cursor-pointer disabled:opacity-50 ${
+                            ariaLabel={`Rol de ${u.username}`}
+                            items={ROL_ITEMS}
+                            chevronClassName="w-2.5 h-2.5 right-0.5"
+                            className={`text-[9px] font-bold pl-1.5 pr-4 py-0.5 rounded border-0 cursor-pointer disabled:opacity-50 ${
                               (roleEditId === u.id ? roleDraft : u.role) === ROLES.ADMIN
                                 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                 : (roleEditId === u.id ? roleDraft : u.role) === ROLES.TECNICO
                                   ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                                   : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
                             }`}
-                          >
-                            <option value={ROLES.USUARIO}>{ROLES.USUARIO}</option>
-                            <option value={ROLES.TECNICO}>{ROLES.TECNICO}</option>
-                            <option value={ROLES.ADMIN}>{ROLES.ADMIN}</option>
-                          </select>
+                          />
                         )}
                         {roleEditId === u.id && (
                           <span className="inline-flex items-center gap-1">
-                            <select
+                            <SelectMenu
                               value={techDraft}
-                              onChange={(e) => setTechDraft(e.target.value)}
-                              aria-label={`Técnico asociado de ${u.username}`}
-                              className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-0"
-                            >
-                              <option value="">Técnico...</option>
-                              {technicians.map(t => (
-                                <option key={t.id || t.name} value={t.name}>{t.name}</option>
-                              ))}
-                            </select>
+                              onChange={setTechDraft}
+                              ariaLabel={`Técnico asociado de ${u.username}`}
+                              items={techItemsInline}
+                              chevronClassName="w-2.5 h-2.5 right-0.5"
+                              className="text-[9px] font-bold pl-1.5 pr-4 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-0"
+                            />
                             <button type="button" onClick={() => saveTechRole(u.id)} disabled={!techDraft || togglingId === u.id} aria-label={`Confirmar rol de ${u.username}`} className="p-0.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded disabled:opacity-40"><Check className="w-3 h-3" /></button>
                             <button type="button" onClick={cancelRoleEdit} aria-label="Cancelar" className="p-0.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"><X className="w-3 h-3" /></button>
                           </span>
@@ -267,42 +274,36 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
             </div>
             <div className="space-y-2">
               <label htmlFor="user-role" className="text-sm font-bold text-zinc-700 dark:text-zinc-300 ml-1">ROL</label>
-              <div className="relative">
-                <select id="user-role" value={newUser.role} onChange={(e) => { setNewUser({ ...newUser, role: e.target.value }); setUserError(''); }} className="w-full appearance-none bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm">
-                  <option value={ROLES.USUARIO}>USUARIO (sin Técnicos/Usuarios/Tasa)</option>
-                  <option value={ROLES.TECNICO}>TÉCNICO (asignaciones propias y pre-finalizar)</option>
-                  <option value={ROLES.ADMIN}>ADMIN (acceso total)</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-              </div>
+              <SelectMenu
+                id="user-role"
+                ariaLabel="Rol"
+                value={newUser.role}
+                onChange={(v) => { setNewUser({ ...newUser, role: v }); setUserError(''); }}
+                items={ROL_NUEVO_ITEMS}
+                className={SELECT_FORM_CLASS}
+                chevronClassName="w-4 h-4 right-3"
+              />
             </div>
 
             {newUser.role === ROLES.TECNICO && (
               <div className="space-y-2">
                 <label htmlFor="user-tecnico" className="text-sm font-bold text-zinc-700 dark:text-zinc-300 ml-1">VINCULAR CON TÉCNICO REGISTRADO</label>
-                <div className="relative">
-                  <select
-                    id="user-tecnico"
-                    required
-                    value={newUser.tecnicoAsociado}
-                    onChange={(e) => {
-                      const selTech = e.target.value;
-                      setNewUser({
-                        ...newUser,
-                        tecnicoAsociado: selTech,
-                        nombre: newUser.nombre || selTech
-                      });
-                      setUserError('');
-                    }}
-                    className="w-full appearance-none bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm"
-                  >
-                    <option value="">Selecciona el técnico...</option>
-                    {technicians.map(t => (
-                      <option key={t.id || t.name} value={t.name}>{t.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-                </div>
+                <SelectMenu
+                  id="user-tecnico"
+                  ariaLabel="Vincular con técnico registrado"
+                  value={newUser.tecnicoAsociado}
+                  onChange={(selTech) => {
+                    setNewUser({
+                      ...newUser,
+                      tecnicoAsociado: selTech,
+                      nombre: newUser.nombre || selTech
+                    });
+                    setUserError('');
+                  }}
+                  items={techItemsNuevo}
+                  className={SELECT_FORM_CLASS}
+                  chevronClassName="w-4 h-4 right-3"
+                />
                 <p className="text-[10px] text-zinc-500 ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
               </div>
             )}
