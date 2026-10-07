@@ -14,12 +14,17 @@ import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSug
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, turnoSugerido, onClose, isTecnico = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
+  const [intentoSinCoordenadas, setIntentoSinCoordenadas] = useState(false);
 
   const esInstalacion = editingTicket.tipoTrabajo?.toUpperCase().includes('INSTAL');
   const mostrarSugerencia = !isTecnico && esInstalacion && !editingTicket.tecnico && turnoSugerido;
   const opcionesTipo = TIPOS_POR_TRABAJO[editingTicket.tipoTrabajo] || [];
   const ubicacionParseada = normalizarUbicacion(editingTicket.ubicacion);
   const napCoordenadasParseadas = normalizarCoordenadasNap(editingTicket.napCoordenadas);
+  // Con NAP escrita no se guarda sin coordenadas; sin NAP no hacen falta. No
+  // aplica a técnicos: ellos solo pre-finalizan y no pueden bloquearse por esto.
+  const napCoordenadasRequeridas = !isTecnico && Boolean(editingTicket.nap?.trim());
+  const faltanNapCoordenadas = napCoordenadasRequeridas && !napCoordenadasParseadas.valor;
   const potenciaParseada = parsePotencia(editingTicket.potenciaDbm);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
 
@@ -44,6 +49,10 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   // Un código corregido a mano que se salta números del correlativo pide confirmación.
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (faltanNapCoordenadas) {
+      setIntentoSinCoordenadas(true);
+      return;
+    }
     if (potenciaParseada.error || ubicacionParseada.error || napCoordenadasParseadas.error || isSubmitting) return;
     setIsSubmitting(true);
     const salto = await verificarCodigoManual(editingTicket.tipoTrabajo, editingTicket.codigo, editingTicket.id);
@@ -170,6 +179,8 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             value={editingTicket.napCoordenadas}
             onChange={handleNapCoordenadasChange}
             autoBuscar
+            requerido={napCoordenadasRequeridas}
+            mostrarFalta={intentoSinCoordenadas && faltanNapCoordenadas}
           />
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-ubicacion" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">UBICACIÓN (Google Maps)</label>
