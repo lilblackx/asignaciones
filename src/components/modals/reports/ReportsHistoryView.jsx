@@ -1,5 +1,6 @@
 import { Calendar, Download, Eye, FileText } from 'lucide-react';
 import { exportReportToCsv } from '../../../utils/exportReport';
+import CierreAutomaticoConfig from './CierreAutomaticoConfig';
 
 function todayIsoDate() {
   const d = new Date();
@@ -9,10 +10,10 @@ function todayIsoDate() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onRequestCierre, onViewReport }) {
+export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onRequestCierre, onViewReport, isAdmin, usuario }) {
   return (
     <>
-      <div className="mb-8 p-6 bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/50 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="mb-4 p-6 bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/50 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div>
           <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" /> Cierre de Jornada
@@ -25,6 +26,8 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
           Ejecutar Cierre
         </button>
       </div>
+
+      <CierreAutomaticoConfig isAdmin={isAdmin} usuario={usuario} />
 
       <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 mb-4 uppercase tracking-wider">Historial de Reportes</h3>
 

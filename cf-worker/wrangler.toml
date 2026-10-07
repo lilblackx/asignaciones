@@ -2,6 +2,11 @@ name = "asignaciones-notify"
 main = "src/index.js"
 compatibility_date = "2024-11-01"
 
+# Cierre automático (config/cierreAutomatico, se edita en Reportes): el cron
+# revisa cada 5 minutos si llegó la hora configurada.
+[triggers]
+crons = ["*/5 * * * *"]
+
 [vars]
 FIREBASE_PROJECT_ID = "seguimientons-f2026"
 APP_ID = "default-app-id"
