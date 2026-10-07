@@ -184,7 +184,7 @@ export default function App() {
     ? ticketsParaVer.some(t => (t.estado === 'PENDIENTE' && !esProgramadaFutura(t)) || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
     : tickets.length > 0;
 
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico });
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.
@@ -193,6 +193,7 @@ export default function App() {
   const handleGoHome = () => {
     setSearchTerm('');
     setStatusFilter('TODOS');
+    setTipoFilter('TODOS');
     setSortBy('DEFECTO');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -404,6 +405,8 @@ export default function App() {
             setSearchTerm={setSearchTerm}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
+            tipoFilter={tipoFilter}
+            setTipoFilter={setTipoFilter}
             sortBy={sortBy}
             setSortBy={setSortBy}
             technicians={technicians}

@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { ArrowDownAZ, ChevronDown, Filter, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownAZ, ChevronDown, Filter, Search, SlidersHorizontal, Wrench } from 'lucide-react';
+import { TIPOS_TRABAJO } from '../constants';
 
 export default function FiltersBar({
   searchTerm, setSearchTerm,
   statusFilter, setStatusFilter,
+  tipoFilter, setTipoFilter,
   sortBy, setSortBy,
   technicians,
   isTecnico = false
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const activeFiltersCount = (statusFilter !== 'TODOS' ? 1 : 0) + (sortBy !== 'DEFECTO' ? 1 : 0);
+  const activeFiltersCount = (statusFilter !== 'TODOS' ? 1 : 0) + (tipoFilter !== 'TODOS' ? 1 : 0) + (sortBy !== 'DEFECTO' ? 1 : 0);
 
   return (
     <div className="mb-3 flex flex-col sm:flex-row gap-3">
@@ -49,6 +51,19 @@ export default function FiltersBar({
               <option value="FINALIZADO">Finalizados</option>
               <option value="CANCELADO">Cancelados</option>
               <option value="ELIMINADOS">Eliminados</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 sm:w-48">
+          <Wrench className="text-zinc-500 dark:text-zinc-400 w-4 h-4 shrink-0" aria-hidden="true" />
+          <label htmlFor="tipo-filter" className="sr-only">Filtrar por tipo de trabajo</label>
+          <div className="relative w-full">
+            <select id="tipo-filter" className="w-full appearance-none bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl py-2.5 pl-3 pr-8 focus:ring-2 focus:ring-red-600 outline-none font-medium text-sm shadow-sm transition-colors" value={tipoFilter} onChange={(e) => setTipoFilter(e.target.value)}>
+              <option value="TODOS">Todos los trabajos</option>
+              {TIPOS_TRABAJO.map(tipo => (
+                <option key={tipo} value={tipo.toUpperCase()}>{tipo}</option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
           </div>
