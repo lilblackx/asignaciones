@@ -3,6 +3,7 @@ import { Loader2, MapPin, Search } from 'lucide-react';
 import { normalizarCoordenadasNap } from '../../utils/ubicacion';
 import { extraerCodigoNap } from '../../utils/whatsapp';
 import { buscarNapTomodat } from '../../lib/tomodat';
+import { buscarNapConocida } from '../../utils/napsConocidas';
 
 const ESTILOS = {
   create: {
@@ -17,8 +18,20 @@ const ESTILOS = {
   },
 };
 
-async function consultar(codigo, signal, aplicar, setEstado) {
+// Coordenadas que ya se usaron en órdenes anteriores con el mismo código de NAP
+// (`conocidas`, la más reciente primero). Si todas coinciden se usan de una vez,
+// sin esperar a Tomodat; `saltarHistorial` (botón "Buscar en Tomodat") fuerza la
+// consulta. Si Tomodat falla o no encuentra la caja, se usa la última conocida.
+async function consultar(codigo, signal, aplicar, setEstado, conocidas = [], saltarHistorial = false) {
   const busqueda = {};
+  const delHistorial = () => {
+    aplicar(conocidas[0]);
+    setEstado({ tipo: 'listo', codigo, nombre: codigo, origen: 'historial' });
+  };
+  if (!saltarHistorial && conocidas.length === 1) {
+    delHistorial();
+    return;
+  }
   setEstado({ tipo: 'buscando', codigo, busqueda });
   try {
     let resultados = await buscarNapTomodat(codigo, signal);
@@ -27,7 +40,8 @@ async function consultar(codigo, signal, aplicar, setEstado) {
     const base = codigo.replace(/-\d$/, '');
     if (resultados.length === 0 && base !== codigo) resultados = await buscarNapTomodat(base, signal);
     if (resultados.length === 0) {
-      setEstado({ tipo: 'vacio', codigo });
+      if (conocidas.length > 0) delHistorial();
+      else setEstado({ tipo: 'vacio', codigo });
     } else if (resultados.length === 1) {
       aplicar(resultados[0]);
       setEstado({ tipo: 'listo', codigo, nombre: resultados[0].nombre });
@@ -36,7 +50,8 @@ async function consultar(codigo, signal, aplicar, setEstado) {
     }
   } catch (err) {
     if (err.name !== 'AbortError') {
-      setEstado({ tipo: 'error', codigo, mensaje: err.message });
+      if (conocidas.length > 0) delHistorial();
+      else setEstado({ tipo: 'error', codigo, mensaje: err.message });
     } else {
       // Búsqueda cancelada (el usuario pegó coordenadas, cambió la NAP, etc.): si su
       // "Buscando..." sigue en pantalla, se quita; si ya lo reemplazó otra búsqueda, no.
@@ -48,7 +63,7 @@ async function consultar(codigo, signal, aplicar, setEstado) {
 // Coordenadas de la NAP. Al pegar "Lat: X / Lng: Y" el campo queda solo con
 // "X, Y". Si el campo NAP trae un código (ej. N10D14), las coordenadas se piden
 // a Tomodat: solas al crear (autoBuscar, si el campo está vacío) o con el botón.
-export default function NapCoordenadasField({ variant, idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false }) {
+export default function NapCoordenadasField({ variant, idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false, napsConocidas }) {
   const estilo = ESTILOS[variant];
   const codigo = extraerCodigoNap(nap);
   // Cajas sin código en su nombre ("NAP EDIF A-3", "NAP EBANO"): se busca el texto
@@ -70,15 +85,15 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
     if (!autoBuscar || !codigo || value) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      consultar(codigo, controller.signal, (p) => onChangeRef.current(`${p.lat}, ${p.lng}`), setEstado);
+      consultar(codigo, controller.signal, (p) => onChangeRef.current(`${p.lat}, ${p.lng}`), setEstado, buscarNapConocida(napsConocidas, codigo));
     }, 700);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [autoBuscar, codigo, value]);
+  }, [autoBuscar, codigo, value, napsConocidas]);
 
   const buscarAhora = () => {
     manualRef.current?.abort();
     manualRef.current = new AbortController();
-    consultar(consulta, manualRef.current.signal, aplicar, setEstado);
+    consultar(consulta, manualRef.current.signal, aplicar, setEstado, buscarNapConocida(napsConocidas, codigo), true);
   };
 
   const handleChange = (e) => {
@@ -101,7 +116,7 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
       <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error} className={`${estilo.input} ${parseada.error ? 'border-red-500' : estilo.ok}`} />
       {parseada.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
       {mensaje?.tipo === 'buscando' && <p role="status" className="text-[10px] text-zinc-500 ml-1">Buscando {consulta} en Tomodat...</p>}
-      {mensaje?.tipo === 'listo' && value && <p role="status" className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 ml-1">Coordenadas tomadas de Tomodat ({mensaje.nombre}).</p>}
+      {mensaje?.tipo === 'listo' && value && <p role="status" className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 ml-1">{mensaje.origen === 'historial' ? `Coordenadas tomadas de órdenes anteriores (${mensaje.nombre}). Usa "Buscar en Tomodat" para verificarlas.` : `Coordenadas tomadas de Tomodat (${mensaje.nombre}).`}</p>}
       {mensaje?.tipo === 'vacio' && <p role="status" className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'error' && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'opciones' && (

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ROLES, siguienteColorTecnico } from './constants';
 import { getEnvioInfo } from './utils/ticketDisplay';
 import { normalizarUbicacion } from './utils/ubicacion';
@@ -26,6 +26,8 @@ import LoadingScreen from './components/LoadingScreen';
 import LoginScreen from './components/LoginScreen';
 import Toast from './components/Toast';
 import Header from './components/Header';
+import { aplanarArchivados } from './utils/reincidencia';
+import { construirNapsConocidas } from './utils/napsConocidas';
 import FiltersBar from './components/FiltersBar';
 import TechnicianWorkload from './components/TechnicianWorkload';
 import TicketsMobileList from './components/TicketsMobileList';
@@ -198,6 +200,8 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const { reportSearchTerm, setReportSearchTerm, archivedSearchResults } = useArchivedSearch(reports);
+  // Coordenadas de NAP ya usadas en órdenes anteriores: evitan esperar a Tomodat.
+  const napsConocidas = useMemo(() => construirNapsConocidas(tickets, aplanarArchivados(reports)), [tickets, reports]);
 
   const [isAddTechModalOpen, setIsAddTechModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
@@ -485,6 +489,7 @@ export default function App() {
             technicians={technicians}
             tickets={tickets}
             reports={reports}
+            napsConocidas={napsConocidas}
             turnoSugerido={tecnicoSugerido}
             onClose={() => setIsCreateModalOpen(false)}
           />
@@ -498,6 +503,7 @@ export default function App() {
             verificarCodigoManual={verificarCodigoManual}
             technicians={technicians}
             isTecnico={isTecnico}
+            napsConocidas={napsConocidas}
             turnoSugerido={tecnicoSugerido}
             onClose={() => setEditingTicket(null)}
           />
