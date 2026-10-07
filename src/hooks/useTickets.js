@@ -4,7 +4,8 @@ import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
 import { playAprobadoSound, playNuevaAsignacionSound, playPreFinalizadoSound } from '../utils/notificationSound';
 import { sendPush } from '../lib/notify';
-import { parsePotencia } from '../utils/potencia';import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
+import { parsePotencia } from '../utils/potencia';
+import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 
 // Envoltorios con la base de datos de la app; la lógica vive en utils/correlativo.js.
 const generarCorrelativoConCatchUp = (...args) => generarCorrelativoConCatchUpBase(db, appId, ...args);
@@ -176,10 +177,6 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   const createTicket = async (formData) => {
     if (!firebaseUser || creandoRef.current) return;
-    if ((formData.nap || '').trim() && !normalizarCoordenadasNap(formData.napCoordenadas).valor) {
-      setToastMsg({ type: 'error', text: 'Faltan las coordenadas de la NAP.' });
-      return;
-    }
     creandoRef.current = true;
     try {
       return await crearTicketSinGuardia(formData);
@@ -269,10 +266,6 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const napCoordenadas = normalizarCoordenadasNap(editingTicket.napCoordenadas);
     if (napCoordenadas.error) {
       setToastMsg({ type: 'error', text: `Coordenadas NAP: ${napCoordenadas.error}` });
-      return false;
-    }
-    if (role !== 'TECNICO' && (editingTicket.nap || '').trim() && !napCoordenadas.valor) {
-      setToastMsg({ type: 'error', text: 'Faltan las coordenadas de la NAP.' });
       return false;
     }
 

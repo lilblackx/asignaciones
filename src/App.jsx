@@ -234,19 +234,19 @@ export default function App() {
   const handleCreateSubmit = conAviso(async (e) => {
     e.preventDefault();
     const nuevoTicket = await createTicket(formData);
-    // Sin ticket (p. ej. faltan coordenadas NAP): deja el formulario abierto para no perder lo escrito.
-    if (!nuevoTicket) return;
     setIsCreateModalOpen(false);
     setFormData(EMPTY_FORM());
-    const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
-    if (esInstalacion) {
-      // Consume el turno de quien haya quedado asignado (sugerido o elegido
-      // a mano), no solo del sugerido — así igual queda al final de la fila.
-      // Una venta del técnico (venía en la plantilla) no consume el turno.
-      if (formData.tecnico && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico)) avanzarTurno(formData.tecnico);
+    if (nuevoTicket) {
+      const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
+      if (esInstalacion) {
+        // Consume el turno de quien haya quedado asignado (sugerido o elegido
+        // a mano), no solo del sugerido — así igual queda al final de la fila.
+        // Una venta del técnico (venía en la plantilla) no consume el turno.
+        if (formData.tecnico && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico)) avanzarTurno(formData.tecnico);
+      }
+      setWhatsappMessage(buildWhatsAppMessage(nuevoTicket));
     }
-    setWhatsappMessage(buildWhatsAppMessage(nuevoTicket));
-  },'No se pudo crear la orden.');
+  }, 'No se pudo crear la orden.');
 
   const handleEditChange = (e) => {
     const { name, value, type, checked } = e.target;
