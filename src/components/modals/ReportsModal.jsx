@@ -19,6 +19,8 @@ export default function ReportsModal({
   archivedSearchResults,
   getTecnicoColor,
   onRequestCierre,
+  isAdmin,
+  usuario,
   onClose
 }) {
   const [activeTab, setActiveTab] = useState('HISTORIAL');
@@ -88,6 +90,8 @@ export default function ReportsModal({
                       onLoadMoreReports={onLoadMoreReports}
                       onRequestCierre={onRequestCierre}
                       onViewReport={setSelectedReportForDetails}
+                      isAdmin={isAdmin}
+                      usuario={usuario}
                     />
                   )}
                 </>

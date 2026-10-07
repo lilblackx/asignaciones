@@ -579,6 +579,8 @@ export default function App() {
             archivedSearchResults={archivedSearchResults}
             getTecnicoColor={getTecnicoColor}
             onRequestCierre={handleRequestCierre}
+            isAdmin={isAdmin}
+            usuario={currentUser}
             onClose={() => setIsReportModalOpen(false)}
           />
         )}
