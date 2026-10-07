@@ -25,6 +25,10 @@ TOMODAT_RADIO = "300000"
 # Tipos de punto de acceso que cuentan como NAP (3 = CTO/NAP, 8 = MDT).
 TOMODAT_TIPOS = "3,8"
 
+# SmartOLT: datos del cliente por cédula (POST /onu). La llave va como secreto:
+#   npx wrangler secret put SMARTOLT_API_KEY
+SMARTOLT_BASE_URL = "https://networkspeed.smartolt.com"
+
 # Secreto real, NO va acá: se carga con
 #   npx wrangler secret put TOMODAT_TOKEN
 # (token generado en Tomodat > configuración de usuario).

@@ -2,7 +2,10 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 // Busca las coordenadas de una NAP en Tomodat a partir de su código (ej. N10D14).
 // El token de Tomodat vive solo aquí (secreto TOMODAT_TOKEN); la app nunca lo ve.
-// Solo hace lecturas: expone una única consulta, POST /nap { codigo }.
+// Solo hace lecturas. Consultas:
+//   POST /nap { codigo }     coordenadas de una caja NAP en Tomodat
+//   POST /onu { cedula }     datos del cliente en SmartOLT (ver buscarOnus)
+// El token de SmartOLT vive aquí también (secreto SMARTOLT_API_KEY).
 //
 // Descargar el catálogo completo de Tomodat es lento, así que las consultas
 // nunca esperan esa descarga si hay una copia guardada:
@@ -132,6 +135,103 @@ function buscar(puntos, codigo) {
     .map(({ nombre, tipo, lat, lng }) => ({ nombre, tipo, lat, lng }));
 }
 
+// ---------------------------------------------------------------------------
+// SmartOLT: datos del cliente a partir de su cédula, para autocompletar la
+// orden al crearla. Usa get_all_onus_details paginado y filtrado por nombre
+// (coincidencia parcial): cuenta contra el presupuesto general de la API, no
+// contra el export completo (15/hora). Cada búsqueda son 1 o 2 llamadas.
+// ---------------------------------------------------------------------------
+
+// Solo lo que necesita una orden nueva (nada de estado, señal ni datos de red).
+const CAMPOS_ONU = 'unique_external_id,name,address,zone_name,odb_name,latitude,longitude,contact';
+const MAX_ONUS = 10;
+
+const soloDigitos = (texto) => String(texto || '').replace(/\D/g, '');
+
+// ¿El texto contiene ese documento completo (no como parte de un número más largo)?
+// Tolera los puntos de miles: "V-12.345.678" contiene 12345678.
+export function contieneDocumento(texto, digitos) {
+  if (!digitos) return false;
+  const plano = String(texto || '').replace(/(?<=\d)\.(?=\d{3}(\D|$))/g, '');
+  return new RegExp(`(?<!\\d)${digitos}(?!\\d)`).test(plano);
+}
+
+const textoONulo = (v) => {
+  const t = String(v ?? '').trim();
+  return t === '' ? null : t;
+};
+
+// Respuesta de SmartOLT -> los datos para crear la orden. `zona` e `idExterno` solo
+// sirven para distinguir entre varias ONU del mismo cliente.
+export function mapearOnu(o) {
+  const lat = o.latitude === null || o.latitude === '' ? NaN : Number(o.latitude);
+  const lng = o.longitude === null || o.longitude === '' ? NaN : Number(o.longitude);
+  const coordenadasUtiles = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0);
+  return {
+    idExterno: textoONulo(o.unique_external_id),
+    nombre: textoONulo(o.name),
+    direccion: textoONulo(o.address),
+    telefono: textoONulo(o.contact),
+    nap: textoONulo(o.odb_name),
+    zona: textoONulo(o.zone_name),
+    latitud: coordenadasUtiles ? lat : null,
+    longitud: coordenadasUtiles ? lng : null,
+  };
+}
+
+async function consultarOnus(env, filtro, valor) {
+  const params = new URLSearchParams({ page: '1', page_size: '25', fields: CAMPOS_ONU, [filtro]: valor });
+  const res = await fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, { headers: { 'X-Token': env.SMARTOLT_API_KEY } });
+  if (res.status === 429) throw new Error(`SmartOLT limitó las consultas; reintenta en ${res.headers.get('Retry-After') || 'unos'} s`);
+  if (!res.ok) throw new Error(`SmartOLT respondió ${res.status}`);
+  const data = await res.json();
+  if (data?.status === false || !Array.isArray(data?.onus)) throw new Error(`SmartOLT: ${data?.error || 'respuesta inesperada'}`);
+  return data.onus;
+}
+
+// 12345678 -> "12.345.678": así guarda SmartOLT la cédula al final del nombre.
+export const conPuntosDeMiles = (digitos) => String(digitos).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+// Busca por nombre (con puntos de miles, como lo guardan; luego sin ellos) y, si no
+// hay coincidencia, por ID externo. Solo se devuelven las ONU que de verdad traen
+// esa cédula (la búsqueda de SmartOLT es parcial y "1234567" también aparece dentro
+// de "91234567"). Normalmente es una sola llamada.
+export async function buscarOnus(env, cedula) {
+  const digitos = soloDigitos(cedula);
+  const intentos = [
+    ['name', conPuntosDeMiles(digitos), 'name'],
+    ['name', digitos, 'name'],
+    ['external_id', digitos, 'unique_external_id'],
+  ];
+  for (const [filtro, valor, campo] of intentos) {
+    const exactas = (await consultarOnus(env, filtro, valor)).filter((o) => contieneDocumento(o[campo], digitos));
+    if (exactas.length > 0) return exactas.slice(0, MAX_ONUS).map(mapearOnu);
+  }
+  return [];
+}
+
+async function handleOnu(request, env, headers) {
+  if (!env.SMARTOLT_API_KEY || !env.SMARTOLT_BASE_URL) {
+    return new Response('SmartOLT no está configurado en el Worker.', { status: 503, headers });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response('JSON inválido', { status: 400, headers });
+  }
+  const digitos = soloDigitos(body?.cedula);
+  if (digitos.length < 6 || digitos.length > 12) {
+    return new Response('cedula debe tener entre 6 y 12 dígitos.', { status: 400, headers });
+  }
+  try {
+    return json({ resultados: await buscarOnus(env, digitos) }, 200, headers);
+  } catch (err) {
+    console.error(err);
+    return new Response(`No se pudo consultar SmartOLT: ${err.message}`, { status: 502, headers });
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
@@ -150,6 +250,7 @@ export default {
     }
 
     const { pathname } = new URL(request.url);
+    if (pathname === '/onu') return handleOnu(request, env, headers);
     if (pathname !== '/nap') return new Response('Not Found', { status: 404, headers });
 
     let body;
