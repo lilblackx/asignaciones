@@ -15,6 +15,24 @@ const DIAS = [
 const TODOS_LOS_DIAS = DIAS.map(d => d.valor);
 const HORA_POR_DEFECTO = '23:30';
 
+// Solo en desarrollo: muestra las notificaciones que manda el Worker al terminar
+// el cierre automático (mismos textos), para verlas sin esperar al cron.
+const NOTIFICACIONES_DE_PRUEBA = [
+  ['Cierre automático', '3 finalizadas y 1 canceladas archivadas.'],
+  ['Cierre automático', 'No había órdenes FINALIZADO ni CANCELADO para cerrar.'],
+  ['Cierre automático falló', 'No se pudo completar el cierre automático. Se reintentará; si persiste, haz el cierre manual.'],
+];
+
+async function simularNotificaciones() {
+  if (!('Notification' in window)) return 'Este navegador no soporta notificaciones.';
+  const permiso = await Notification.requestPermission();
+  if (permiso !== 'granted') return `Permiso de notificaciones: ${permiso}. Actívalo para este sitio.`;
+  NOTIFICACIONES_DE_PRUEBA.forEach(([titulo, body], i) => {
+    setTimeout(() => new Notification(titulo, { body, icon: '/icon-192x192.png', badge: '/icon-192x192.png', tag: `sim-cierre-${i}` }), i * 2500);
+  });
+  return 'Enviadas 3 notificaciones de prueba, una cada 2,5 s. Si no salen, revisa las notificaciones de Windows para tu navegador.';
+}
+
 const horaValida = (hora) => /^([01]\d|2[0-3]):[0-5]\d$/.test(hora || '');
 
 function formatoHora12(hora) {
@@ -34,6 +52,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
   const [draft, setDraft] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [mensajeSim, setMensajeSim] = useState('');
 
   const guardado = {
     activo: config?.activo === true,
@@ -144,6 +163,14 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
             {mensaje && <p role="status" className={`text-xs font-bold ${mensaje.tipo === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{mensaje.texto}</p>}
           </div>
           <p className="text-[11px] text-zinc-400">Si lo activas después de la hora de hoy, el primer cierre es el próximo día elegido.</p>
+          {import.meta.env.DEV && (
+            <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
+              <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-violet-700 dark:text-violet-400 hover:underline">
+                Simular notificaciones (solo desarrollo)
+              </button>
+              {mensajeSim && <p role="status" className="mt-1 text-[11px] text-zinc-500">{mensajeSim}</p>}
+            </div>
+          )}
         </div>
       )}
 
