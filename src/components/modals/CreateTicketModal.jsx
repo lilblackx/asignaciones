@@ -13,7 +13,7 @@ import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 
-export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], turnoSugerido, onClose }) {
+export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
   const [verificandoCodigo, setVerificandoCodigo] = useState(false);
@@ -281,6 +281,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             value={formData.napCoordenadas}
             onChange={handleNapCoordenadasChange}
             autoBuscar
+            napsConocidas={napsConocidas}
           />
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">

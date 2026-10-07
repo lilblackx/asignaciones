@@ -3,14 +3,29 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 // Busca las coordenadas de una NAP en Tomodat a partir de su código (ej. N10D14).
 // El token de Tomodat vive solo aquí (secreto TOMODAT_TOKEN); la app nunca lo ve.
 // Solo hace lecturas: expone una única consulta, POST /nap { codigo }.
+//
+// Descargar el catálogo completo de Tomodat es lento, así que las consultas
+// nunca esperan esa descarga si hay una copia guardada:
+//   - Un cron (ver wrangler.toml) la renueva cada pocos minutos y la guarda en KV
+//     (binding CATALOGO), compartida por todas las instancias del Worker.
+//   - Cada consulta lee de memoria o de KV. Si la copia está vencida, se responde
+//     igual con ella y se renueva por detrás (stale-while-revalidate).
+//   - Si Tomodat falla, se sigue sirviendo la última copia: las coordenadas de
+//     una NAP casi nunca cambian.
+//   - Solo la primera vez (sin ninguna copia) la consulta espera a Tomodat.
+// Sin el binding CATALOGO funciona igual, pero la copia vive solo en memoria.
 
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
-const CATALOGO_TTL_MS = 30 * 60 * 1000;
+const CATALOGO_TTL_MS = 15 * 60 * 1000; // pasado este tiempo la copia se renueva por detrás
+const CATALOGO_KV_KEY = 'catalogo';
+const CATALOGO_KV_EXPIRA_S = 7 * 24 * 60 * 60;
+const REINTENTO_TRAS_FALLO_MS = 60 * 1000;
 const MAX_RESULTADOS = 10;
 
 let cachedFirebaseJwks = null;
-let catalogo = null; // { puntos, expiraEn }
+let catalogo = null; // { puntos, actualizadoEn }
 let catalogoEnCurso = null;
+let proximoIntento = 0; // tras un fallo de Tomodat, no insistir en cada consulta
 
 function corsHeaders(env, origin) {
   const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim());
@@ -60,15 +75,48 @@ async function descargarCatalogo(env) {
     .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 }
 
-async function getCatalogo(env) {
-  if (catalogo && catalogo.expiraEn > Date.now()) return catalogo.puntos;
-  // Una sola descarga a la vez: las consultas simultáneas comparten la misma.
+// Una sola descarga a la vez: las consultas simultáneas comparten la misma.
+// Guarda el resultado en memoria y en KV.
+function refrescarCatalogo(env) {
   if (!catalogoEnCurso) {
     catalogoEnCurso = descargarCatalogo(env)
-      .then((puntos) => { catalogo = { puntos, expiraEn: Date.now() + CATALOGO_TTL_MS }; return puntos; })
+      .then(async (puntos) => {
+        catalogo = { puntos, actualizadoEn: Date.now() };
+        if (env.CATALOGO) {
+          await env.CATALOGO.put(CATALOGO_KV_KEY, JSON.stringify(catalogo), { expirationTtl: CATALOGO_KV_EXPIRA_S })
+            .catch((err) => console.error('No se pudo guardar el catálogo en KV:', err));
+        }
+        return puntos;
+      })
+      .catch((err) => { proximoIntento = Date.now() + REINTENTO_TRAS_FALLO_MS; throw err; })
       .finally(() => { catalogoEnCurso = null; });
   }
   return catalogoEnCurso;
+}
+
+async function leerCatalogoKv(env) {
+  if (!env.CATALOGO) return null;
+  try {
+    const guardado = await env.CATALOGO.get(CATALOGO_KV_KEY, { type: 'json', cacheTtl: 60 });
+    return Array.isArray(guardado?.puntos) ? guardado : null;
+  } catch (err) {
+    console.error('No se pudo leer el catálogo de KV:', err);
+    return null;
+  }
+}
+
+async function getCatalogo(env, ctx) {
+  const ahora = Date.now();
+  const copia = catalogo || await leerCatalogoKv(env);
+  if (copia) {
+    catalogo = copia;
+    if (ahora - copia.actualizadoEn > CATALOGO_TTL_MS && ahora >= proximoIntento) {
+      const renovacion = refrescarCatalogo(env).catch((err) => console.error('No se pudo renovar el catálogo:', err));
+      ctx?.waitUntil?.(renovacion);
+    }
+    return copia.puntos;
+  }
+  return refrescarCatalogo(env);
 }
 
 // Primero coincidencia exacta ("N10D14" o "NAP N10D14"; el "-2" cuenta como parte
@@ -85,7 +133,7 @@ function buscar(puntos, codigo) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
     const headers = corsHeaders(env, origin);
 
@@ -117,13 +165,18 @@ export default {
     }
 
     try {
-      const puntos = await getCatalogo(env);
+      const puntos = await getCatalogo(env, ctx);
       return json({ resultados: buscar(puntos, codigo) }, 200, headers);
     } catch (err) {
       console.error(err);
       return new Response(`No se pudo consultar Tomodat: ${err.message}`, { status: 502, headers });
     }
   },
+
+  // Cron: mantiene el catálogo fresco para que ninguna consulta espere a Tomodat.
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(refrescarCatalogo(env).catch((err) => console.error('Cron: no se pudo renovar el catálogo:', err)));
+  },
 };
 
-export { buscar, normalizar };
+export { buscar, normalizar, getCatalogo };

@@ -13,7 +13,7 @@ import { TIPOS_POR_TRABAJO } from '../../constants';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 
-export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, turnoSugerido, onClose, isTecnico = false }) {
+export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
@@ -200,6 +200,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             value={editingTicket.napCoordenadas}
             onChange={handleNapCoordenadasChange}
             autoBuscar
+            napsConocidas={napsConocidas}
           />
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-ubicacion" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">UBICACIÓN (Google Maps)</label>

@@ -2,6 +2,17 @@ name = "asignaciones-tomodat"
 main = "src/index.js"
 compatibility_date = "2024-11-01"
 
+# Renueva el catálogo de Tomodat cada 10 minutos para que ninguna consulta espere
+# la descarga (que es lenta).
+[triggers]
+crons = ["*/10 * * * *"]
+
+# Copia compartida del catálogo entre instancias del Worker (creada con
+#   npx wrangler kv namespace create CATALOGO).
+[[kv_namespaces]]
+binding = "CATALOGO"
+id = "f3b6ecaf48c24bc1aa8d145b8a4952e5"
+
 [vars]
 FIREBASE_PROJECT_ID = "seguimientons-f2026"
 # Orígenes que pueden llamar este Worker. Ajustar si cambia el dominio.
