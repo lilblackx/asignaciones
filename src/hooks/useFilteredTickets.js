@@ -14,6 +14,7 @@ function parseFecha(fechaStr) {
 export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false } = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('TODOS');
+  const [tipoFilter, setTipoFilter] = useState('TODOS');
   const [sortBy, setSortBy] = useState('DEFECTO');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -42,6 +43,10 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false 
       result = result.filter(t => t.tecnico === selectedTech);
     }
 
+    if (tipoFilter !== 'TODOS') {
+      result = result.filter(t => String(t.tipoTrabajo || '').toUpperCase() === tipoFilter);
+    }
+
     if (sortBy === 'TECNICO') {
       result.sort((a, b) => {
         const techA = (a.tecnico || 'ZZZ').toUpperCase();
@@ -62,7 +67,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false 
     }
 
     return result;
-  }, [tickets, searchTerm, statusFilter, sortBy, ocultarProgramadasFuturas]);
+  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas]);
 
   const visibleTickets = filteredTickets.slice(0, visibleCount);
   const hasMore = filteredTickets.length > visibleCount;
@@ -70,11 +75,13 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false 
 
   const setSearchTermAndReset = (v) => { setVisibleCount(PAGE_SIZE); setSearchTerm(v); };
   const setStatusFilterAndReset = (v) => { setVisibleCount(PAGE_SIZE); setStatusFilter(v); };
+  const setTipoFilterAndReset = (v) => { setVisibleCount(PAGE_SIZE); setTipoFilter(v); };
   const setSortByAndReset = (v) => { setVisibleCount(PAGE_SIZE); setSortBy(v); };
 
   return {
     searchTerm, setSearchTerm: setSearchTermAndReset,
     statusFilter, setStatusFilter: setStatusFilterAndReset,
+    tipoFilter, setTipoFilter: setTipoFilterAndReset,
     sortBy, setSortBy: setSortByAndReset,
     filteredTickets,
     visibleTickets,
