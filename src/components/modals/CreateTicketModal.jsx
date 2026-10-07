@@ -16,6 +16,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
   const [verificandoCodigo, setVerificandoCodigo] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
+  const [intentoSinCoordenadas, setIntentoSinCoordenadas] = useState(false);
 
   const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
   const opcionesTipo = TIPOS_POR_TRABAJO[formData.tipoTrabajo] || [];
@@ -92,8 +93,17 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
     doSubmit();
   };
 
+  // Sin NAP escrita se puede guardar sin coordenadas; con NAP escrita no se guarda
+  // hasta tener las coordenadas (de Tomodat o escritas a mano).
+  const napCoordenadasRequeridas = Boolean(formData.nap?.trim());
+  const faltanNapCoordenadas = napCoordenadasRequeridas && !napCoordenadasParseadas.valor;
+
   const onSubmit = (e) => {
     e.preventDefault();
+    if (faltanNapCoordenadas) {
+      setIntentoSinCoordenadas(true);
+      return;
+    }
     if (ubicacionParseada.error || napCoordenadasParseadas.error || verificandoCodigo) return;
     if (ticketDuplicado) {
       setShowDuplicateConfirm(true);
@@ -255,6 +265,8 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             value={formData.napCoordenadas}
             onChange={handleNapCoordenadasChange}
             autoBuscar
+            requerido={napCoordenadasRequeridas}
+            mostrarFalta={intentoSinCoordenadas && faltanNapCoordenadas}
           />
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">

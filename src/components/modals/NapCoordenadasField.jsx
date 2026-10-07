@@ -41,7 +41,7 @@ async function consultar(codigo, signal, aplicar, setEstado) {
 // Coordenadas de la NAP. Al pegar "Lat: X / Lng: Y" el campo queda solo con
 // "X, Y". Si el campo NAP trae un código (ej. N10D14), las coordenadas se piden
 // a Tomodat: solas al crear (autoBuscar, si el campo está vacío) o con el botón.
-export default function NapCoordenadasField({ variant, idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false }) {
+export default function NapCoordenadasField({ variant, idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false, requerido = false, mostrarFalta = false }) {
   const estilo = ESTILOS[variant];
   const codigo = extraerCodigoNap(nap);
   // Cajas sin código en su nombre ("NAP EDIF A-3", "NAP EBANO"): se busca el texto
@@ -84,15 +84,16 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
   return (
     <div className={wrapperClassName}>
       <div className="flex items-end justify-between gap-2">
-        <label htmlFor={`${idPrefix}-nap-coords`} className={estilo.label}>COORDENADAS NAP <span className="font-normal normal-case text-zinc-400">(Lat / Lng, opcional)</span></label>
+        <label htmlFor={`${idPrefix}-nap-coords`} className={estilo.label}>COORDENADAS NAP <span className="font-normal normal-case text-zinc-400">{requerido ? '(Lat / Lng, obligatorio si hay NAP)' : '(Lat / Lng, opcional)'}</span></label>
         {consulta && (
           <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 dark:text-violet-400 hover:underline disabled:opacity-60">
             {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat
           </button>
         )}
       </div>
-      <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error} className={`${estilo.input} ${parseada.error ? 'border-red-500' : estilo.ok}`} />
+      <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error || mostrarFalta} className={`${estilo.input} ${parseada.error || mostrarFalta ? 'border-red-500' : estilo.ok}`} />
       {parseada.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
+      {mostrarFalta && !parseada.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">Faltan las coordenadas de la NAP.</p>}
       {mensaje?.tipo === 'buscando' && <p role="status" className="text-[10px] text-zinc-500 ml-1">Buscando {consulta} en Tomodat...</p>}
       {mensaje?.tipo === 'listo' && value && <p role="status" className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 ml-1">Coordenadas tomadas de Tomodat ({mensaje.nombre}).</p>}
       {mensaje?.tipo === 'vacio' && <p role="status" className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
