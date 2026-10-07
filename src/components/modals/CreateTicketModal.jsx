@@ -9,6 +9,7 @@ import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
+import ClienteSmartOltField from './ClienteSmartOltField';
 import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
@@ -163,6 +164,12 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             tipoDocumento={formData.tipoDocumento}
             cedula={formData.cedula}
             onChange={handleCreateChange}
+          />
+          <ClienteSmartOltField
+            wrapperClassName="col-span-2 sm:col-span-5 -mt-1 space-y-0.5"
+            cedula={formData.cedula}
+            formData={formData}
+            onApply={(campos) => Object.entries(campos).forEach(([name, value]) => handleCreateChange({ target: { name, value, type: 'text' } }))}
           />
 
           {/* !isSubmitting evita el falso positivo: al crear, el listener de
