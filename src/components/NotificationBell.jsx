@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Bell, CheckCheck, ChevronRight, Clock, Trash2, UserCog, Wrench, X } from 'lucide-react';
+import { contarPendientes } from '../hooks/useInsigniaApp';
+import { Bell, CalendarCheck, CheckCheck, ChevronRight, Clock, Trash2, UserCog, Wrench, X } from 'lucide-react';
 
 function tiempoRelativo(timestamp) {
   const diffMs = Date.now() - timestamp;
@@ -15,6 +16,7 @@ function iconoPara(type) {
   if (type === 'prefinalizado') return <Clock className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
   if (type === 'tecnicoStatus') return <UserCog className="w-4 h-4 text-purple-500 shrink-0" aria-hidden="true" />;
   if (type === 'aprobado') return <CheckCheck className="w-4 h-4 text-blue-500 shrink-0" aria-hidden="true" />;
+  if (type === 'cierreAutomatico') return <CalendarCheck className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'nuevaAsignacion') return <Wrench className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
   return <Bell className="w-4 h-4 text-zinc-400 shrink-0" aria-hidden="true" />;
 }
@@ -22,6 +24,9 @@ function iconoPara(type) {
 export default function NotificationBell({ notifications, unreadCount, isOpen, setIsOpen, dismissNotification, clearAll, preFinalizadoCount = 0, onOpenPreFinalizados }) {
   const ref = useRef(null);
   const hayPendientes = preFinalizadoCount > 0;
+  // El icono no cambia de color: solo muestra un contador (el mismo que lleva la
+  // insignia de la app instalada).
+  const contador = contarPendientes(unreadCount, preFinalizadoCount);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -45,15 +50,15 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
     <div className="relative shrink-0" ref={ref}>
       <button
         onClick={handleToggle}
-        aria-label={`Notificaciones${unreadCount > 0 ? ` (${unreadCount} sin leer)` : ''}`}
+        aria-label={`Notificaciones${contador > 0 ? ` (${contador} pendientes)` : ''}`}
         aria-expanded={isOpen}
         title="Notificaciones"
-        className={`relative p-2 rounded-lg transition-colors border ${hayPendientes ? 'bg-amber-500 hover:bg-amber-400 text-black border-amber-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700'}`}
+        className="relative p-2 rounded-lg transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700"
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
-        {unreadCount > 0 && (
+        {contador > 0 && (
           <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-0.5 flex items-center justify-center leading-none">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {contador > 9 ? '9+' : contador}
           </span>
         )}
       </button>

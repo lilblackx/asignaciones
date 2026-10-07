@@ -29,6 +29,9 @@ onBackgroundMessage(messaging, (payload) => {
     badge: '/icon-192x192.png',
     data: payload.data || {},
   });
+  // Con la app cerrada no se sabe cuántas hay: insignia sin número en el icono
+  // instalado; al abrir la app se reemplaza por el contador real.
+  self.navigator.setAppBadge?.()?.catch(() => {});
 });
 
 self.addEventListener('notificationclick', (event) => {
