@@ -4,6 +4,7 @@ import { TIPOS_TRABAJO } from '../../constants';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
 import Modal from '../Modal';
+import SelectMenu from '../SelectMenu';
 
 const PAGE_SIZE = 25;
 const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO', 'ELIMINADO'];
@@ -17,6 +18,7 @@ function parseFecha(fecha) {
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
+const selectClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 pl-2 pr-7 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500';
 const inputClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-2 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500 [color-scheme:light] dark:[color-scheme:dark]';
 
 export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, onClose }) {
@@ -90,6 +92,10 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   };
   // Cada cambio de filtro vuelve a la primera página.
   const withReset = (setter) => (e) => { setter(e.target.value); setPage(0); setExpandedKey(null); };
+  const withResetValue = (setter) => (v) => { setter(v); setPage(0); setExpandedKey(null); };
+  const estadoItems = [{ value: '', label: 'Estado: todos' }, ...ESTADOS.map(s => ({ value: s, label: s }))];
+  const tipoItems = [{ value: '', label: 'Trabajo: todos' }, ...TIPOS_TRABAJO.map(s => ({ value: s, label: s }))];
+  const tecnicoItems = [{ value: '', label: 'Técnico: todos' }, ...tecnicos.map(s => ({ value: s, label: s }))];
 
   // Se renderiza solo una página a la vez: el DOM nunca pasa de PAGE_SIZE filas,
   // sin importar cuánto historial haya cargado.
@@ -113,18 +119,9 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             <input id="history-search" type="text" value={search} onChange={withReset(setSearch)} placeholder="Buscar por código, nombre, cédula, dirección, teléfono o técnico..." className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl focus:border-red-500 outline-none text-sm" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-            <select aria-label="Estado" value={estado} onChange={withReset(setEstado)} className={inputClass}>
-              <option value="">Estado: todos</option>
-              {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select aria-label="Tipo de trabajo" value={tipo} onChange={withReset(setTipo)} className={inputClass}>
-              <option value="">Trabajo: todos</option>
-              {TIPOS_TRABAJO.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select aria-label="Técnico" value={tecnico} onChange={withReset(setTecnico)} className={inputClass}>
-              <option value="">Técnico: todos</option>
-              {tecnicos.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
+            <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
+            <SelectMenu ariaLabel="Técnico" value={tecnico} onChange={withResetValue(setTecnico)} items={tecnicoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
             <input type="date" aria-label="Desde" title="Desde" value={desde} onChange={withReset(setDesde)} className={inputClass} />
             <input type="date" aria-label="Hasta" title="Hasta" value={hasta} onChange={withReset(setHasta)} className={inputClass} />
           </div>

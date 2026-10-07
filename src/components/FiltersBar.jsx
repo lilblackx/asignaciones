@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowDownAZ, ChevronDown, Filter, Search, SlidersHorizontal, Wrench } from 'lucide-react';
+import { ArrowDownAZ, Filter, Search, SlidersHorizontal, Wrench, X } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../constants';
+import SelectMenu from './SelectMenu';
 
 export default function FiltersBar({
   searchTerm, setSearchTerm,
@@ -11,7 +12,38 @@ export default function FiltersBar({
   isTecnico = false
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const limpiarFiltros = () => {
+    setStatusFilter('TODOS');
+    setTipoFilter('TODOS');
+    setSortBy('DEFECTO');
+  };
   const activeFiltersCount = (statusFilter !== 'TODOS' ? 1 : 0) + (tipoFilter !== 'TODOS' ? 1 : 0) + (sortBy !== 'DEFECTO' ? 1 : 0);
+
+  const statusItems = [
+    { value: 'TODOS', label: 'Activas' },
+    { value: 'PRE-FINALIZADO', label: 'Pre-finalizados' },
+    ...(!isTecnico ? [{ value: 'PENDIENTE_SIN_TECNICO', label: 'Sin técnico' }] : []),
+    { value: 'INSTALACION_SIN_UBICACION', label: 'Instalaciones sin ubicación' },
+    { group: 'Programadas', options: [
+      { value: 'PROG_HOY', label: 'Hoy / vencidas' },
+      { value: 'PROG_MANANA', label: 'Mañana' },
+      { value: 'PROG_FUTURAS', label: 'Futuras' }
+    ] },
+    { value: 'FINALIZADO', label: 'Finalizados' },
+    { value: 'CANCELADO', label: 'Cancelados' },
+    { value: 'ELIMINADOS', label: 'Eliminados' }
+  ];
+  const tipoItems = [
+    { value: 'TODOS', label: 'Todos los trabajos' },
+    ...TIPOS_TRABAJO.map(tipo => ({ value: tipo.toUpperCase(), label: tipo }))
+  ];
+  const sortItems = [
+    { value: 'DEFECTO', label: 'Más recientes' },
+    { value: 'TECNICO', label: 'Técnico (A-Z)' },
+    { value: 'TIPO_TRABAJO', label: 'Tipo de Trabajo (A-Z)' },
+    { value: 'PROGRAMADA', label: 'Fecha programada (próximas primero)' },
+    { group: 'Filtrar por Técnico', options: technicians.map(t => ({ value: 'TEC:' + t.name, label: 'Solo: ' + t.name })) }
+  ];
 
   return (
     <div className="mb-3 flex flex-col sm:flex-row gap-3">
@@ -34,61 +66,27 @@ export default function FiltersBar({
       </button>
 
       <div className={`${filtersOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row gap-3`}>
-        <div className="flex items-center gap-2 sm:w-48">
-          <Filter className="text-zinc-500 dark:text-zinc-400 w-4 h-4 shrink-0" aria-hidden="true" />
-          <label htmlFor="status-filter" className="sr-only">Filtrar por estado</label>
-          <div className="relative w-full">
-            <select id="status-filter" className="w-full appearance-none bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl py-2.5 pl-3 pr-8 focus:ring-2 focus:ring-red-600 outline-none font-medium text-sm shadow-sm transition-colors" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="TODOS">Activas</option>
-              <option value="PRE-FINALIZADO">Pre-finalizados</option>
-              {!isTecnico && <option value="PENDIENTE_SIN_TECNICO">Sin técnico</option>}
-              <option value="INSTALACION_SIN_UBICACION">Instalaciones sin ubicación</option>
-              <optgroup label="Programadas">
-                <option value="PROG_HOY">Programadas: hoy / vencidas</option>
-                <option value="PROG_MANANA">Programadas: mañana</option>
-                <option value="PROG_FUTURAS">Programadas: futuras</option>
-              </optgroup>
-              <option value="FINALIZADO">Finalizados</option>
-              <option value="CANCELADO">Cancelados</option>
-              <option value="ELIMINADOS">Eliminados</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-          </div>
+        <div className="sm:w-48">
+          <SelectMenu id="status-filter" ariaLabel="Filtrar por estado" icon={Filter} value={statusFilter} onChange={setStatusFilter} items={statusItems} />
         </div>
-        <div className="flex items-center gap-2 sm:w-48">
-          <Wrench className="text-zinc-500 dark:text-zinc-400 w-4 h-4 shrink-0" aria-hidden="true" />
-          <label htmlFor="tipo-filter" className="sr-only">Filtrar por tipo de trabajo</label>
-          <div className="relative w-full">
-            <select id="tipo-filter" className="w-full appearance-none bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl py-2.5 pl-3 pr-8 focus:ring-2 focus:ring-red-600 outline-none font-medium text-sm shadow-sm transition-colors" value={tipoFilter} onChange={(e) => setTipoFilter(e.target.value)}>
-              <option value="TODOS">Todos los trabajos</option>
-              {TIPOS_TRABAJO.map(tipo => (
-                <option key={tipo} value={tipo.toUpperCase()}>{tipo}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-          </div>
+        <div className="sm:w-48">
+          <SelectMenu id="tipo-filter" ariaLabel="Filtrar por tipo de trabajo" icon={Wrench} value={tipoFilter} onChange={setTipoFilter} items={tipoItems} />
         </div>
         {/* Para TECNICO, sus órdenes ya están aisladas a él mismo: ordenar u
             filtrar "por técnico" no tiene sentido (siempre sería él). */}
         {!isTecnico && (
-          <div className="flex items-center gap-2 sm:w-56">
-            <ArrowDownAZ className="text-zinc-500 dark:text-zinc-400 w-4 h-4 shrink-0" aria-hidden="true" />
-            <label htmlFor="sort-by" className="sr-only">Ordenar por</label>
-            <div className="relative w-full">
-              <select id="sort-by" className="w-full appearance-none bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl py-2.5 pl-3 pr-8 focus:ring-2 focus:ring-red-600 outline-none font-medium text-sm shadow-sm transition-colors" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="DEFECTO">Más recientes</option>
-                <option value="TECNICO">Técnico (A-Z)</option>
-                <option value="TIPO_TRABAJO">Tipo de Trabajo (A-Z)</option>
-                <option value="PROGRAMADA">Fecha programada (próximas primero)</option>
-                <optgroup label="Filtrar por Técnico">
-                  {technicians.map(t => (
-                    <option key={t.id} value={"TEC:" + t.name}>Solo: {t.name}</option>
-                  ))}
-                </optgroup>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-            </div>
+          <div className="sm:w-56">
+            <SelectMenu id="sort-by" ariaLabel="Ordenar por" icon={ArrowDownAZ} value={sortBy} onChange={setSortBy} items={sortItems} />
           </div>
+        )}
+        {activeFiltersCount > 0 && (
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            className="shrink-0 self-center flex items-center justify-center gap-1 px-1 py-1.5 font-bold text-xs text-red-600 dark:text-red-400 hover:underline"
+          >
+            <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar
+          </button>
         )}
       </div>
     </div>
