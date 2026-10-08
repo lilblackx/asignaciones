@@ -13,7 +13,10 @@ const ESPERA_AL_ESCRIBIR_MS = 900;
 // El estado se muestra con dos piezas: <ClienteSmartOltIcono> junto al campo de cédula
 // (un icono de estado y el botón de volver a buscar) y <ClienteSmartOltMensaje> debajo,
 // que solo escribe algo cuando no hay resultado, hay error o hay que elegir entre ONU.
-export function useClienteSmartOlt({ cedula, formData, onApply }) {
+//
+// `autoBuscar: false` apaga la búsqueda automática (el botón sigue funcionando). Se usa
+// con la plantilla de la promotora: es un cliente nuevo que aún no está en la OLT.
+export function useClienteSmartOlt({ cedula, formData, onApply, autoBuscar = true }) {
   const digitos = soloDigitos(cedula);
   const [estado, setEstado] = useState(null);
   const formRef = useRef(formData);
@@ -66,11 +69,11 @@ export function useClienteSmartOlt({ cedula, formData, onApply }) {
     const controller = new AbortController();
     const timer = setTimeout(() => {
       soltarAplicados(digitos);
-      if (digitos.length < MIN_DIGITOS_CEDULA) { setEstado(null); return; }
+      if (digitos.length < MIN_DIGITOS_CEDULA || !autoBuscar) { setEstado(null); return; }
       consultar(digitos, controller.signal);
-    }, digitos.length < MIN_DIGITOS_CEDULA ? 0 : ESPERA_AL_ESCRIBIR_MS);
+    }, digitos.length < MIN_DIGITOS_CEDULA || !autoBuscar ? 0 : ESPERA_AL_ESCRIBIR_MS);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [digitos, consultar, soltarAplicados]);
+  }, [digitos, autoBuscar, consultar, soltarAplicados]);
 
   const buscarAhora = () => {
     manualRef.current?.abort();
