@@ -46,6 +46,15 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
     tecnico: 'REINEL BRAVO', codigo: 'AS2', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'PENDIENTE'
   });
 
+  await base.collection('tickets').doc('gerardo-campos').set({
+    tecnico: 'GERARDO MOLERO', codigo: 'AS3', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'PENDIENTE',
+    nombre: 'CLIENTE', direccion: 'CALLE 1', nap: '', observacion: '', historialEdiciones: [{ detalle: 'creada' }]
+  });
+  await base.collection('tickets').doc('gerardo-finalizado').set({
+    tecnico: 'GERARDO MOLERO', codigo: 'AS4', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'FINALIZADO'
+  });
+  await base.collection('counters').doc('A_O_2026').set({ ultimo: 5, actualizadoEn: 0 });
+
   await base.collection('technicians').doc('GERARDO-MOLERO').set({ name: 'GERARDO MOLERO', color: 'bg-fuchsia-500 text-white', activo: true });
   await base.collection('technicians').doc('REINEL-BRAVO').set({ name: 'REINEL BRAVO', color: 'bg-green-500 text-white', activo: true });
 
@@ -172,6 +181,52 @@ await check('TECNICO NO puede tocar el turno de instalaciones', async () => {
 
 await check('ADMIN puede reordenar el turno de instalaciones', async () => {
   await assertSucceeds(turnoPath(asAdmin()).set({ orden: ['REINEL BRAVO', 'GERARDO MOLERO'], turnoActualIndex: 0, actualizadoPor: 'admin', actualizadoEn: Date.now() }));
+});
+
+// --- Campos que el TECNICO puede tocar en su propia orden ---
+const camposGerardo = (db) => ticketPath(db, 'gerardo-campos');
+
+await check('TECNICO puede pre-finalizar con NAP, potencia, observación e historial', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({
+    estado: 'PRE-FINALIZADO', nap: 'N10D14', potenciaDbm: -19.5, observacion: 'listo', observacionInterna: false,
+    napCoordenadas: '10.1,-71.1', historialEdiciones: [{ detalle: 'creada' }, { detalle: 'prefinalizado' }]
+  }));
+});
+
+await check('TECNICO NO puede cambiar nombre/dirección del cliente', async () => {
+  await assertFails(camposGerardo(asTecnico()).update({ nombre: 'OTRO' }));
+  await assertFails(camposGerardo(asTecnico()).update({ direccion: 'OTRA' }));
+});
+
+await check('TECNICO NO puede borrar entradas del historial', async () => {
+  await assertFails(camposGerardo(asTecnico()).update({ historialEdiciones: [{ detalle: 'inventada' }] }));
+});
+
+await check('TECNICO NO puede devolver una orden PRE-FINALIZADO a PENDIENTE', async () => {
+  await assertFails(camposGerardo(asTecnico()).update({ estado: 'PENDIENTE' }));
+});
+
+await check('TECNICO NO puede reabrir una orden FINALIZADO', async () => {
+  await assertFails(ticketPath(asTecnico(), 'gerardo-finalizado').update({ estado: 'PENDIENTE' }));
+});
+
+await check('TECNICO NO puede inventar un estado', async () => {
+  await assertFails(ticketPath(asTecnico(), 'gerardo-finalizado').update({ estado: 'LO-QUE-SEA' }));
+});
+
+// --- Contadores del correlativo ---
+const counterPath = (db) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('counters').doc('A_O_2026');
+
+await check('USUARIO puede avanzar un contador', async () => {
+  await assertSucceeds(counterPath(asUsuario()).update({ ultimo: 6, actualizadoEn: 1 }));
+});
+
+await check('TECNICO NO puede tocar los contadores', async () => {
+  await assertFails(counterPath(asTecnico()).update({ ultimo: 999999, actualizadoEn: 1 }));
+});
+
+await check('Nadie puede hacer retroceder un contador', async () => {
+  await assertFails(counterPath(asAdmin()).update({ ultimo: 1, actualizadoEn: 1 }));
 });
 
 await testEnv.cleanup();

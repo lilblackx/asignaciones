@@ -351,23 +351,27 @@ function valorJs(v) {
   return undefined;
 }
 
-async function leerConfigCierre(env, accessToken) {
-  const res = await fetch(`${docsBase(env)}/${rutaDatos(env)}/config/cierreAutomatico`, { headers: { Authorization: `Bearer ${accessToken}` } });
+// Documentos de config/ (cierreAutomatico, tasaBcv): lectura y escritura parcial.
+async function leerConfig(env, accessToken, nombre) {
+  const res = await fetch(`${docsBase(env)}/${rutaDatos(env)}/config/${nombre}`, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`No se pudo leer la configuración del cierre: ${await res.text()}`);
+  if (!res.ok) throw new Error(`No se pudo leer config/${nombre}: ${await res.text()}`);
   const doc = await res.json();
   return Object.fromEntries(Object.entries(doc.fields || {}).map(([k, v]) => [k, valorJs(v)]));
 }
 
-async function guardarConfigCierre(env, accessToken, campos) {
+async function guardarConfig(env, accessToken, nombre, campos) {
   const mascara = Object.keys(campos).map((k) => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
-  const res = await fetch(`${docsBase(env)}/${rutaDatos(env)}/config/cierreAutomatico?${mascara}`, {
+  const res = await fetch(`${docsBase(env)}/${rutaDatos(env)}/config/${nombre}?${mascara}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ fields: campos }),
   });
-  if (!res.ok) throw new Error(`No se pudo guardar el estado del cierre: ${await res.text()}`);
+  if (!res.ok) throw new Error(`No se pudo guardar config/${nombre}: ${await res.text()}`);
 }
+
+const leerConfigCierre = (env, accessToken) => leerConfig(env, accessToken, 'cierreAutomatico');
+const guardarConfigCierre = (env, accessToken, campos) => guardarConfig(env, accessToken, 'cierreAutomatico', campos);
 
 async function commitFirestore(env, accessToken, writes) {
   const res = await fetch(`${docsBase(env)}:commit`, {
@@ -458,6 +462,45 @@ export async function cierreAutomatico(env, ahoraMs = Date.now()) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Tasa BCV (euro): se actualiza sola UNA vez al día, por la mañana. El cron corre
+// cada pocos minutos; a partir de HORA_TASA (hora de Venezuela) toma la tasa de
+// DolarAPI si la guardada no es de hoy. Si la API falla, el siguiente cron lo
+// reintenta. Una tasa puesta a mano hoy cuenta como "ya actualizada": no se pisa.
+// ---------------------------------------------------------------------------
+
+const HORA_TASA = '07:00';
+const API_TASA_EUR_BCV = 'https://ve.dolarapi.com/v1/euros/oficial';
+
+// ¿Toca actualizar la tasa ahora? true si ya pasó la hora de hoy y la tasa
+// guardada no es de hoy (o no existe).
+export function debeActualizarTasa(config, ahoraMs) {
+  const { fecha } = fechaCaracas(ahoraMs);
+  if (ahoraMs < Date.parse(`${fecha}T${HORA_TASA}:00${OFFSET_ZONA}`)) return false;
+  if (config?.tasa && config.actualizadoEn && fechaCaracas(config.actualizadoEn).fecha === fecha) return false;
+  return true;
+}
+
+export async function actualizarTasaBcv(env, ahoraMs = Date.now()) {
+  const accessToken = await getGoogleAccessToken(env);
+  const config = await leerConfig(env, accessToken, 'tasaBcv');
+  if (!debeActualizarTasa(config, ahoraMs)) return { actualizada: false };
+
+  const res = await fetch(API_TASA_EUR_BCV);
+  if (!res.ok) throw new Error(`DolarAPI respondió ${res.status}`);
+  const tasa = Number((await res.json())?.promedio);
+  if (!Number.isFinite(tasa) || tasa <= 0) throw new Error('DolarAPI no trajo una tasa válida');
+
+  await guardarConfig(env, accessToken, 'tasaBcv', {
+    tasa: { doubleValue: Math.round(tasa * 100) / 100 },
+    fuente: { stringValue: 'automatica' },
+    actualizadoEn: { integerValue: String(ahoraMs) },
+    // Si nunca hubo monto base, el mismo valor por defecto que usaba la app.
+    ...(config?.montoBaseEUR ? {} : { montoBaseEUR: { integerValue: '1' } }),
+  });
+  return { actualizada: true, tasa };
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
@@ -523,8 +566,9 @@ export default {
     }
   },
 
-  // Cron (ver wrangler.toml): revisa si toca el cierre automático.
+  // Cron (ver wrangler.toml): revisa si toca el cierre automático y la tasa del día.
   async scheduled(_event, env, ctx) {
     ctx.waitUntil(cierreAutomatico(env).catch((err) => console.error('Cron de cierre automático:', err)));
+    ctx.waitUntil(actualizarTasaBcv(env).catch((err) => console.error('Cron de tasa BCV:', err)));
   },
 };
