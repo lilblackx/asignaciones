@@ -21,13 +21,16 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   const [verificandoCodigo, setVerificandoCodigo] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
+  const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
+  // Instalación con plantilla de la promotora pegada: ya trae todos los datos y el
+  // cliente es nuevo (aún no existe en la OLT), así que SmartOLT no se consulta solo.
+  const plantillaPegada = Boolean(esInstalacion && formData.plantillaOriginal?.trim());
   const clienteSmartOlt = useClienteSmartOlt({
     cedula: formData.cedula,
     formData,
+    autoBuscar: !plantillaPegada,
     onApply: (campos) => Object.entries(campos).forEach(([name, value]) => handleCreateChange({ target: { name, value, type: 'text' } })),
   });
-
-  const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
   const opcionesTipo = TIPOS_POR_TRABAJO[formData.tipoTrabajo] || [];
   const tipoItems = [
     { value: '', label: opcionesTipo.length === 0 ? 'N/A' : 'Seleccione...' },
