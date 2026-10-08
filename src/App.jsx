@@ -215,6 +215,13 @@ export default function App() {
   const [newTech, setNewTech] = useState({ name: '', color: null });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
+  // La orden tal como estaba al abrir Editar: al guardar solo se escribe lo que
+  // cambió respecto a ella, sin pisar lo que otro usuario guardó mientras tanto.
+  const [edicionBase, setEdicionBase] = useState(null);
+  const abrirEdicion = (ticket) => {
+    setEdicionBase(ticket);
+    setEditingTicket(ticket);
+  };
   const [deletingTicketId, setDeletingTicketId] = useState(null);
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -267,7 +274,7 @@ export default function App() {
   const handleEditSubmit = conAviso(async (e) => {
     e.preventDefault();
     const originalTicket = tickets.find(t => t.id === editingTicket.id);
-    const guardado = await updateTicket(editingTicket);
+    const guardado = await updateTicket(editingTicket, edicionBase);
     if (guardado === false) return; // validación rechazó: el modal sigue abierto con lo escrito
     // Si se le asignó (o cambió) técnico a una instalación desde Editar —no
     // solo al crearla—, también consume el turno, igual que en Nueva Asignación.
@@ -309,7 +316,7 @@ export default function App() {
       setUncheckWarningTicket(ticket);
     } else if (!ticket.tecnico) {
       setToastMsg({ type: 'error', text: 'Selecciona un técnico antes de marcar como enviada.' });
-      setEditingTicket(ticket);
+      abrirEdicion(ticket);
     } else {
       confirmToggleAsignado(ticket, true);
     }
@@ -444,7 +451,7 @@ export default function App() {
             hasAnyTickets={hasActiveAssignments}
             getTecnicoColor={getTecnicoColor}
             onToggleAsignado={handleToggleAsignado}
-            onEdit={setEditingTicket}
+            onEdit={abrirEdicion}
             onDelete={setDeletingTicketId}
             onCopyWhatsApp={handleCopyWhatsApp}
             onPegarUbicacion={handlePegarUbicacion}
@@ -462,7 +469,7 @@ export default function App() {
             setSortBy={setSortBy}
             getTecnicoColor={getTecnicoColor}
             onToggleAsignado={handleToggleAsignado}
-            onEdit={setEditingTicket}
+            onEdit={abrirEdicion}
             onDelete={setDeletingTicketId}
             onCopyWhatsApp={handleCopyWhatsApp}
             onPegarUbicacion={handlePegarUbicacion}

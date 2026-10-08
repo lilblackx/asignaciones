@@ -1,4 +1,5 @@
-import { doc, getDoc, runTransaction, setDoc } from 'firebase/firestore';
+import { doc, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
+import { cambiosDeTicket } from './cambiosTicket.js';
 
 // Códigos de mes: letra única salvo los 6 meses que colisionan
 // (Marzo/Mayo, Junio/Julio, Abril/Agosto)
@@ -184,18 +185,29 @@ export async function generarCorrelativoConCatchUp(db, appId, tickets, tipoTraba
 // le corresponde numerarse, y el número + el guardado van en una sola transacción
 // (si falla el guardado no se gasta número; si otro clic ya la numeró, se reutiliza ese).
 // `armarTicket(codigo)` debe ser pura: la transacción puede reintentarla.
-export async function guardarConNumeracion(db, appId, tickets, ticketId, codigoActual, tipoTrabajo, tecnicoFinal, fecha, armarTicket) {
+// `base` (la orden tal como la vio el usuario): si se pasa, solo se escriben los campos
+// que cambiaron respecto a ella (ver cambiosDeTicket), para no pisar lo que otro usuario
+// guardó mientras tanto. Sin `base` se escribe la orden completa.
+export async function guardarConNumeracion(db, appId, tickets, ticketId, codigoActual, tipoTrabajo, tecnicoFinal, fecha, armarTicket, base = null) {
   const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticketId.toString());
   const tieneTecnico = Boolean(tecnicoFinal && tecnicoFinal.toString().trim());
   if (!(esCodigoSinNumero(codigoActual) && tieneTecnico)) {
     const ticket = armarTicket(codigoActual);
-    await setDoc(ticketRef, ticket);
+    if (!base) await setDoc(ticketRef, ticket);
+    else {
+      const cambios = cambiosDeTicket(base, ticket);
+      if (Object.keys(cambios).length > 0) await updateDoc(ticketRef, cambios);
+    }
     return ticket;
   }
   let guardado;
   await generarCorrelativoConCatchUp(db, appId, tickets, tipoTrabajo, fecha, (transaction, codigo) => {
     guardado = armarTicket(codigo);
-    transaction.set(ticketRef, guardado);
+    if (!base) transaction.set(ticketRef, guardado);
+    else {
+      const cambios = cambiosDeTicket(base, guardado);
+      if (Object.keys(cambios).length > 0) transaction.update(ticketRef, cambios);
+    }
   }, ticketRef);
   return guardado;
 }

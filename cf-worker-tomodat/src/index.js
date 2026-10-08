@@ -55,6 +55,26 @@ async function verifyIdToken(idToken, projectId) {
   return payload;
 }
 
+// Un token válido de Firebase no basta: cualquiera puede crear una cuenta de Auth
+// con la apiKey pública. Solo cuenta quien tiene perfil en "users" y no está
+// deshabilitado. El perfil se lee con el propio token del usuario (las reglas le
+// dejan leer el suyo), así este Worker no necesita una cuenta de servicio.
+// Devuelve el rol, o null si no es un usuario activo de la app.
+const PERFIL_CACHE_MS = 60 * 1000;
+const perfiles = new Map(); // uid -> { rol, hasta }
+
+async function rolActivo(env, uid, idToken) {
+  const enCache = perfiles.get(uid);
+  if (enCache && enCache.hasta > Date.now()) return enCache.rol;
+  const url = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/artifacts/${env.APP_ID}/public/data/users/${encodeURIComponent(uid)}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${idToken}` } });
+  if (!res.ok && res.status !== 403 && res.status !== 404) throw new Error(`Firestore respondió ${res.status}`);
+  const perfil = res.ok ? await res.json() : null;
+  const rol = perfil && perfil.fields?.disabled?.booleanValue !== true ? perfil.fields?.role?.stringValue || null : null;
+  perfiles.set(uid, { rol, hasta: Date.now() + PERFIL_CACHE_MS });
+  return rol;
+}
+
 // Mayúsculas y solo letras/dígitos: "NAP O07D05-2" -> "NAPO07D052".
 const normalizar = (texto) => String(texto || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
@@ -243,14 +263,28 @@ export default {
     const authHeader = request.headers.get('Authorization') || '';
     const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (!idToken) return new Response('Falta Authorization Bearer', { status: 401, headers });
+    let payload;
     try {
-      await verifyIdToken(idToken, env.FIREBASE_PROJECT_ID);
+      payload = await verifyIdToken(idToken, env.FIREBASE_PROJECT_ID);
     } catch (err) {
       return new Response(`Token inválido: ${err.message}`, { status: 401, headers });
     }
 
+    let rol;
+    try {
+      rol = await rolActivo(env, payload.sub, idToken);
+    } catch (err) {
+      console.error('No se pudo verificar el perfil:', err);
+      return new Response('No se pudo verificar el usuario.', { status: 502, headers });
+    }
+    if (!rol) return new Response('Usuario sin acceso a la app.', { status: 403, headers });
+
     const { pathname } = new URL(request.url);
-    if (pathname === '/onu') return handleOnu(request, env, headers);
+    // Los datos del cliente (SmartOLT) solo los usa quien crea órdenes.
+    if (pathname === '/onu') {
+      if (rol !== 'ADMIN' && rol !== 'USUARIO') return new Response('Sin permiso para consultar clientes.', { status: 403, headers });
+      return handleOnu(request, env, headers);
+    }
     if (pathname !== '/nap') return new Response('Not Found', { status: 404, headers });
 
     let body;

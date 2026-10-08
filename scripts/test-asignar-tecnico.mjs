@@ -173,6 +173,42 @@ await check('armarTicket recibe el código final y lo que devuelve es lo que se 
   eq(enDb.isAsignado, true);
 });
 
+// Con `base` (la orden como la vio el usuario) solo se escribe lo que este cambió.
+const guardarDesde = (base, cambios) =>
+  guardarConNumeracion(db, APP_ID, [], base.id, base.codigo, base.tipoTrabajo, cambios.tecnico ?? base.tecnico, hoy,
+    (codigo) => ({ ...base, ...cambios, codigo }), base);
+
+await check('con base: no pisa lo que otro usuario guardó mientras tanto', async () => {
+  const base = { id: 'c1', codigo: `A${mes}5`, tipoTrabajo: 'AVERÍA', tecnico: 'JOSE', estado: 'PENDIENTE', ubicacion: '', historialEdiciones: [{ detalle: 'creada' }] };
+  await setDoc(ticketRef('c1'), base);
+  // Otro usuario: el técnico pre-finaliza y deja su entrada en el historial.
+  await setDoc(ticketRef('c1'), { ...base, estado: 'PRE-FINALIZADO', historialEdiciones: [...base.historialEdiciones, { detalle: 'prefinalizado' }] });
+  // Este usuario, con la versión vieja, solo agrega la ubicación.
+  await guardarDesde(base, { ubicacion: 'https://maps.google.com/?q=1,2', historialEdiciones: [...base.historialEdiciones, { detalle: 'ubicación' }] });
+  const enDb = await leer('c1');
+  eq(enDb.estado, 'PRE-FINALIZADO');
+  eq(enDb.ubicacion, 'https://maps.google.com/?q=1,2');
+  eq(enDb.historialEdiciones.map((e) => e.detalle).join(','), 'creada,prefinalizado,ubicación');
+});
+
+await check('con base: numerar una instalación tampoco pisa cambios ajenos', async () => {
+  const base = await nuevaInstalacion('c2', { nombre: 'VIEJO' });
+  await setDoc(ticketRef('c2'), { ...base, nombre: 'NUEVO' });
+  const guardado = await guardarDesde(base, { tecnico: 'EDGAR' });
+  const enDb = await leer('c2');
+  eq(enDb.codigo, guardado.codigo);
+  eq(enDb.tecnico, 'EDGAR');
+  eq(enDb.nombre, 'NUEVO');
+});
+
+await check('con base y sin cambios: no escribe nada', async () => {
+  const base = { id: 'c3', codigo: `A${mes}6`, tipoTrabajo: 'AVERÍA', tecnico: 'JOSE', estado: 'PENDIENTE' };
+  await setDoc(ticketRef('c3'), base);
+  await setDoc(ticketRef('c3'), { ...base, estado: 'CANCELADO' });
+  await guardarDesde(base, {});
+  eq((await leer('c3')).estado, 'CANCELADO');
+});
+
 await testEnv.cleanup();
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

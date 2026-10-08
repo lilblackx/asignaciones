@@ -1,15 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
 import { playAprobadoSound, playNuevaAsignacionSound, playPreFinalizadoSound } from '../utils/notificationSound';
 import { sendPush } from '../lib/notify';
 import { parsePotencia } from '../utils/potencia';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
+import { cambiosDeTicket } from '../utils/cambiosTicket';
 
 // Envoltorios con la base de datos de la app; la lógica vive en utils/correlativo.js.
 const generarCorrelativoConCatchUp = (...args) => generarCorrelativoConCatchUpBase(db, appId, ...args);
 const guardarConNumeracion = (...args) => guardarConNumeracionBase(db, appId, ...args);
+
+// Guarda solo lo que cambió entre `original` (como la vio el usuario) y `actualizada`:
+// si otro usuario editó la orden mientras tanto, sus cambios no se pierden.
+async function actualizarTicket(original, actualizada) {
+  const cambios = cambiosDeTicket(original, actualizada);
+  if (Object.keys(cambios).length === 0) return;
+  await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', original.id.toString()), cambios);
+}
 
 export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify) {
   const [tickets, setTickets] = useState([]);
@@ -238,7 +247,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // Devuelve false si la validación rechazó el guardado (el llamador debe dejar
   // el formulario abierto para no perder lo que se escribió).
-  const updateTicket = async (editingTicket) => {
+  // `base`: la orden como estaba al abrir Editar. Solo se guarda lo que cambió
+  // respecto a ella; sin `base` se compara con la versión más reciente.
+  const updateTicket = async (editingTicket, base = null) => {
     if (!firebaseUser || !editingTicket) return false;
 
     if (role === 'TECNICO' && editingTicket.estado === 'FINALIZADO') {
@@ -269,7 +280,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
-    const originalTicket = tickets.find(t => t.id === editingTicket.id);
+    const originalTicket = base || tickets.find(t => t.id === editingTicket.id);
     const ticketFecha = originalTicket?.createdAt ? new Date(originalTicket.createdAt) : new Date();
 
     const armarTicket = (codigo) => {
@@ -306,7 +317,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       editingTicket.tipoTrabajo,
       editingTicket.tecnico,
       ticketFecha,
-      armarTicket
+      armarTicket,
+      originalTicket || null
     );
 
     // Corrección manual del código (no la generada arriba): sincroniza el contador también.
@@ -340,7 +352,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ubicacion: ubicacion.valor,
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id.toString()), updatedTicket);
+    await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Ubicación guardada.' });
     notifyTicketChange(ticket, updatedTicket);
     return true;
@@ -375,7 +387,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id.toString()), updatedTicket);
+    await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden marcada como Pre-finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
   };
@@ -396,7 +408,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id.toString()), updatedTicket);
+    await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden aprobada y finalizada con éxito.' });
     notifyTicketChange(ticket, updatedTicket);
   };
@@ -419,7 +431,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id.toString()), updatedTicket);
+    await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
   };
@@ -434,7 +446,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         eliminadoPor: currentUser || 'OPERADOR',
         fechaEliminacion: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })
       };
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', deletingTicketId.toString()), updatedTicket);
+      await actualizarTicket(ticketToUpdate, updatedTicket);
     }
     setToastMsg({ type: 'success', text: 'Orden enviada a la papelera.' });
   };
@@ -465,7 +477,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         codigo,
         isAsignado: newValue,
         historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
-      })
+      }),
+      ticket
     );
     if (!silencioso) {
       setToastMsg({

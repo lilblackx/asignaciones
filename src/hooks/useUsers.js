@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { initializeApp, getApps, deleteApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from 'firebase/auth';
+import { connectAuthEmulator, getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from 'firebase/auth';
 import { collection, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, appId, firebaseConfig, NOTIFY_WORKER_URL } from '../lib/firebase';
 import { usernameToAuthEmail, normalizeUsername } from '../utils/authEmail';
 
 const SECONDARY_APP_NAME = 'user-admin-secondary';
+const USA_EMULADORES = import.meta.env.VITE_USE_EMULATORS === 'true';
 
-// createUserWithEmailAndPassword firma automáticamente con la cuenta recién
-// creada en la instancia de auth que se le pase. Usamos una app secundaria
+// Solo emulador. createUserWithEmailAndPassword firma automáticamente con la cuenta
+// recién creada en la instancia de auth que se le pase. Usamos una app secundaria
 // desechable para no reemplazar la sesión del admin que está creando el usuario.
 async function createAuthAccount(email, password) {
   const existing = getApps().find(a => a.name === SECONDARY_APP_NAME);
   const secondaryApp = existing || initializeApp(firebaseConfig, SECONDARY_APP_NAME);
   const secondaryAuth = getAuth(secondaryApp);
+  if (!existing) connectAuthEmulator(secondaryAuth, `http://${window.location.hostname}:9099`, { disableWarnings: true });
   try {
     const credential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     return credential.user.uid;
@@ -45,14 +47,39 @@ export function useUsers(firebaseUser, setToastMsg) {
       return;
     }
 
+    const perfil = {
+      username,
+      nombre: nombreCompleto,
+      role,
+      tecnicoAsociado: role === 'TECNICO' ? (tecnicoAsociado || '').trim() : null,
+      puedeCerrar: !!puedeCerrar,
+    };
+
+    // Producción: el alta la hace el Worker (cuenta + perfil), porque el registro
+    // público de Firebase Auth está cerrado. En el emulador no hay Worker.
+    if (!USA_EMULADORES) {
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        const res = await fetch(`${NOTIFY_WORKER_URL}/admin/create-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ ...perfil, email: usernameToAuthEmail(username), password: clave, createdBy })
+        });
+        if (!res.ok) {
+          setToastMsg({ type: 'error', text: (await res.text()) || 'No se pudo crear el usuario.' });
+          return;
+        }
+        setToastMsg({ type: 'success', text: 'Usuario creado exitosamente.' });
+      } catch {
+        setToastMsg({ type: 'error', text: 'No se pudo crear el usuario.' });
+      }
+      return;
+    }
+
     try {
       const uid = await createAuthAccount(usernameToAuthEmail(username), clave);
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', uid), {
-        username,
-        nombre: nombreCompleto,
-        role,
-        tecnicoAsociado: role === 'TECNICO' ? (tecnicoAsociado || '').trim() : null,
-        puedeCerrar: !!puedeCerrar,
+        ...perfil,
         disabled: false,
         createdAt: Date.now(),
         createdBy
