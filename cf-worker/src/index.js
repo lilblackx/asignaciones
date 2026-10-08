@@ -108,10 +108,19 @@ async function resolveTokens(env, accessToken, target) {
 }
 
 async function getUserDoc(env, accessToken, uid) {
-  const url = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/artifacts/${env.APP_ID}/public/data/users/${uid}`;
+  const url = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/artifacts/${env.APP_ID}/public/data/users/${encodeURIComponent(uid)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) return null;
   return res.json();
+}
+
+// Un token válido de Firebase no basta: cualquiera puede crear una cuenta de Auth
+// con la apiKey pública. Solo cuenta quien tiene perfil en "users" y no está
+// deshabilitado. Devuelve el rol, o null si no es un usuario activo de la app.
+async function rolActivo(env, accessToken, uid) {
+  const perfil = await getUserDoc(env, accessToken, uid);
+  if (!perfil || perfil.fields?.disabled?.booleanValue === true) return null;
+  return perfil.fields?.role?.stringValue || null;
 }
 
 function passwordPolicyError(password) {
@@ -150,9 +159,7 @@ async function handleResetPassword(request, env, headers, callerUid) {
 
   try {
     const accessToken = await getGoogleAccessToken(env);
-    const callerDoc = await getUserDoc(env, accessToken, callerUid);
-    const callerRole = callerDoc?.fields?.role?.stringValue;
-    if (callerRole !== 'ADMIN') {
+    if (await rolActivo(env, accessToken, callerUid) !== 'ADMIN') {
       return new Response('Solo un administrador puede cambiar claves de otros usuarios.', { status: 403, headers });
     }
 
@@ -170,6 +177,97 @@ async function handleResetPassword(request, env, headers, callerUid) {
     console.error(err);
     return new Response(`Error cambiando clave: ${err.message}`, { status: 500, headers });
   }
+}
+
+// Alta de usuario hecha por un ADMIN: crea la cuenta de Auth y su perfil. Va por
+// el Worker para poder cerrar el registro público de Firebase Auth (con el registro
+// abierto, cualquiera con la apiKey pública podía crearse una cuenta).
+const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO'];
+const USERNAME_VALIDO = /^[a-z0-9._-]{1,40}$/;
+
+async function crearCuentaAuth(env, accessToken, email, password) {
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(data?.error?.message || `Auth respondió ${res.status}`);
+    error.yaExiste = data?.error?.message === 'EMAIL_EXISTS';
+    throw error;
+  }
+  return data.localId;
+}
+
+async function borrarCuentaAuth(env, accessToken, uid) {
+  await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ localId: uid }),
+  });
+}
+
+async function handleCreateUser(request, env, headers, callerUid) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response('JSON inválido', { status: 400, headers });
+  }
+
+  const { email, password, username, nombre, role, tecnicoAsociado, puedeCerrar, createdBy } = body || {};
+  const nombreLimpio = String(nombre || '').trim();
+  if (!USERNAME_VALIDO.test(username || '') || !email || !nombreLimpio || !ROLES_VALIDOS.includes(role)) {
+    return new Response('Datos de usuario inválidos.', { status: 400, headers });
+  }
+  if (!email.startsWith(`${username}@`)) {
+    return new Response('El email no corresponde al usuario.', { status: 400, headers });
+  }
+  const policyError = passwordPolicyError(password);
+  if (policyError) return new Response(policyError, { status: 400, headers });
+
+  try {
+    const accessToken = await getGoogleAccessToken(env);
+    if (await rolActivo(env, accessToken, callerUid) !== 'ADMIN') {
+      return new Response('Solo un administrador puede crear usuarios.', { status: 403, headers });
+    }
+
+    let uid;
+    try {
+      uid = await crearCuentaAuth(env, accessToken, email, password);
+    } catch (err) {
+      if (err.yaExiste) return new Response('Ese usuario ya existe.', { status: 409, headers });
+      throw err;
+    }
+
+    const perfil = {
+      username: { stringValue: username },
+      nombre: { stringValue: nombreLimpio.slice(0, 100) },
+      role: { stringValue: role },
+      tecnicoAsociado: role === 'TECNICO' ? { stringValue: String(tecnicoAsociado || '').trim() } : { nullValue: null },
+      puedeCerrar: { booleanValue: puedeCerrar === true },
+      disabled: { booleanValue: false },
+      createdAt: { integerValue: String(Date.now()) },
+      createdBy: { stringValue: String(createdBy || '') },
+    };
+    const nombreDoc = `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${rutaDatos(env)}/users/${uid}`;
+    try {
+      await commitFirestore(env, accessToken, [{ update: { name: nombreDoc, fields: perfil }, currentDocument: { exists: false } }]);
+    } catch (err) {
+      // Sin perfil la cuenta no sirve para nada: se borra para no dejarla huérfana.
+      await borrarCuentaAuth(env, accessToken, uid).catch(() => {});
+      throw err;
+    }
+    return json({ ok: true, uid }, 200, headers);
+  } catch (err) {
+    console.error(err);
+    return new Response('No se pudo crear el usuario.', { status: 500, headers });
+  }
+}
+
+function json(data, status, headers) {
+  return new Response(JSON.stringify(data), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
 }
 
 async function sendToToken(accessToken, projectId, token, title, body) {
@@ -389,6 +487,9 @@ export default {
     if (pathname === '/admin/reset-password') {
       return handleResetPassword(request, env, headers, payload.sub);
     }
+    if (pathname === '/admin/create-user') {
+      return handleCreateUser(request, env, headers, payload.sub);
+    }
 
     let body;
     try {
@@ -404,8 +505,14 @@ export default {
 
     try {
       const accessToken = await getGoogleAccessToken(env);
+      // Avisar a un técnico es de quien asigna (ADMIN/USUARIO); avisar a los
+      // aprobadores lo hace también el TECNICO al pre-finalizar.
+      const rol = await rolActivo(env, accessToken, payload.sub);
+      const permitido = target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
+      if (!permitido) return new Response('Sin permiso para enviar esta notificación.', { status: 403, headers });
+
       const tokens = await resolveTokens(env, accessToken, target);
-      await Promise.all(tokens.map((t) => sendToToken(accessToken, env.FIREBASE_PROJECT_ID, t, title, messageBody)));
+      await Promise.all(tokens.map((t) => sendToToken(accessToken, env.FIREBASE_PROJECT_ID, t, String(title).slice(0, 100), String(messageBody || '').slice(0, 300))));
       return new Response(JSON.stringify({ sent: tokens.length }), {
         status: 200,
         headers: { ...headers, 'Content-Type': 'application/json' },
