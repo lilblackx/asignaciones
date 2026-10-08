@@ -39,7 +39,8 @@ function formatCedulaValue(rawValue) {
   return rawValue.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento, cedula, onChange, disabled = false }) {
+// `extra`: controles opcionales a la derecha del campo (p. ej. el estado de SmartOLT).
+export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento, cedula, onChange, disabled = false, extra = null }) {
   const s = STYLES[variant];
   const handleCedulaChange = (e) => {
     e.target.value = formatCedulaValue(e.target.value);
@@ -73,6 +74,7 @@ export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento
           onChange={handleCedulaChange}
           className={s.inputCedula}
         />
+        {extra}
       </div>
     </div>
   );
@@ -140,7 +142,7 @@ export function ObservacionField({ variant, wrapperClassName, idPrefix, value, c
 export function TurnoSugeridoBanner({ wrapperClassName, turnoSugerido }) {
   return (
     <div className={wrapperClassName}>
-      <Star className="w-3.5 h-3.5 shrink-0 fill-current" />
+      <Star className="w-3.5 h-3.5 shrink-0 fill-current text-red-600 dark:text-red-500" />
       <span>Turno sugerido para esta instalación: <strong>{turnoSugerido}</strong> (según el orden semanal configurado). Puedes elegir otro técnico si hace falta.</span>
     </div>
   );

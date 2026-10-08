@@ -9,7 +9,8 @@ import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
-import ClienteSmartOltField from './ClienteSmartOltField';
+import { ClienteSmartOltIcono, ClienteSmartOltMensaje } from './ClienteSmartOltField';
+import { useClienteSmartOlt } from '../../hooks/useClienteSmartOlt';
 import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
@@ -20,6 +21,11 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   const [verificandoCodigo, setVerificandoCodigo] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
+  const clienteSmartOlt = useClienteSmartOlt({
+    cedula: formData.cedula,
+    formData,
+    onApply: (campos) => Object.entries(campos).forEach(([name, value]) => handleCreateChange({ target: { name, value, type: 'text' } })),
+  });
 
   const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
   const opcionesTipo = TIPOS_POR_TRABAJO[formData.tipoTrabajo] || [];
@@ -164,13 +170,9 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             tipoDocumento={formData.tipoDocumento}
             cedula={formData.cedula}
             onChange={handleCreateChange}
+            extra={<ClienteSmartOltIcono cliente={clienteSmartOlt} />}
           />
-          <ClienteSmartOltField
-            wrapperClassName="col-span-2 sm:col-span-5 -mt-1 space-y-0.5"
-            cedula={formData.cedula}
-            formData={formData}
-            onApply={(campos) => Object.entries(campos).forEach(([name, value]) => handleCreateChange({ target: { name, value, type: 'text' } }))}
-          />
+          <ClienteSmartOltMensaje cliente={clienteSmartOlt} wrapperClassName="col-span-2 sm:col-span-5 -mt-1 space-y-0.5" />
 
           {/* !isSubmitting evita el falso positivo: al crear, el listener de
               Firestore trae el ticket recién creado (misma cédula, PENDIENTE)
@@ -236,7 +238,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           {esInstalacion && turnoSugerido && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
             <TurnoSugeridoBanner
-              wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded px-2.5 py-2 text-[11px] text-indigo-800 dark:text-indigo-300"
+              wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-[11px] text-zinc-700 dark:text-zinc-200"
               turnoSugerido={turnoSugerido}
             />
           )}

@@ -173,7 +173,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
 
           {mostrarSugerencia && (
             <TurnoSugeridoBanner
-              wrapperClassName="col-span-2 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded px-2.5 py-2 text-[11px] text-indigo-800 dark:text-indigo-300"
+              wrapperClassName="col-span-2 flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-[11px] text-zinc-700 dark:text-zinc-200"
               turnoSugerido={turnoSugerido}
             />
           )}
