@@ -6,15 +6,23 @@ export const soloDigitos = (texto) => String(texto || '').replace(/\D/g, '');
 export const MIN_DIGITOS_CEDULA = 7;
 
 // SmartOLT guarda el nombre y, después, el documento con su etiqueta y códigos:
-// "JUAN PEREZ C.I 12.345.678 (P150)", "... CI: 12.345.678 A1", "... V-12.345.678".
-// El nombre es lo que va antes del documento; lo que viene después (códigos de
-// plan, etc.) no es parte del nombre. Si el documento va al principio
-// ("V12345678 JUAN PEREZ"), el nombre es lo que le sigue.
-const ETIQUETA_DOCUMENTO = String.raw`C\.?\s*I\.?|C[EÉ]DULA|RIF|DNI|[VEJG]`;
+// "JUAN PEREZ C.I 12.345.678 (P150)", "... CI: 12.345.678 A1", "... C.l. 12.345.678"
+// (con L minúscula, un error de tipeo común), "... E-12.345.678". El nombre es lo que
+// va antes del documento, sin su etiqueta; lo que viene después (códigos de plan, etc.)
+// no es parte del nombre. Si el documento va al principio ("V12345678 JUAN PEREZ"), el
+// nombre es lo que le sigue.
 const LETRAS = 'A-Za-zÁÉÍÓÚÑáéíóúñ';
-const ETIQUETA_SUELTA = new RegExp(String.raw`(?<![${LETRAS}])(?:C\.?\s*I\.?|C[EÉ]DULA|RIF)[\s.:#-]*$`, 'i');
+
+// Etiqueta al final del texto: C.I, CI, C.I., C.l (L minúscula), C,I, Ci, .I, I, C.,
+// CÉDULA, RIF, V-, E-... Debe ir como palabra aparte ("Gil" no pierde la "l").
+const ETIQUETA_FINAL = new RegExp(
+  String.raw`(?:^|[\s,.;:-])(?:C\s*[.,]?\s*[Il1|]|[.,]?\s*[Il1|]|C[EÉ]DULA|C[EÉ]D|RIF|DNI|C|[VEJGP])[\s.,:;#-]*$`,
+  'i'
+);
 
 const recortar = (texto) => texto.replace(/^[\s\-_|:,.]+|[\s\-_|:,.]+$/g, '').replace(/\s{2,}/g, ' ');
+const quitarEtiqueta = (texto) => recortar(recortar(texto).replace(ETIQUETA_FINAL, ''));
+const tieneNombre = (texto) => new RegExp(String.raw`[${LETRAS}]{2}`).test(texto);
 
 export function limpiarNombre(nombre, cedula) {
   const digitos = soloDigitos(cedula);
@@ -22,17 +30,14 @@ export function limpiarNombre(nombre, cedula) {
   let resultado = texto;
   if (digitos) {
     const separador = String.raw`[.\s-]?`;
-    const documento = new RegExp(
-      String.raw`(?:(?<![${LETRAS}])(?:${ETIQUETA_DOCUMENTO})[\s.:#-]*)?(?<!\d)` + digitos.split('').join(separador) + String.raw`(?!\d)`,
-      'i'
-    );
+    const documento = new RegExp(String.raw`(?<!\d)` + digitos.split('').join(separador) + String.raw`(?!\d)`);
     const m = documento.exec(texto);
     if (m) {
-      const antes = recortar(texto.slice(0, m.index));
-      resultado = /[A-Za-zÁÉÍÓÚÑáéíóúñ]{2}/.test(antes) ? antes : texto.slice(m.index + m[0].length);
+      const antes = quitarEtiqueta(texto.slice(0, m.index));
+      resultado = tieneNombre(antes) ? antes : texto.slice(m.index + m[0].length);
     }
   }
-  return recortar(resultado.replace(/(\s*\([^)]*\))+\s*$/, '').replace(ETIQUETA_SUELTA, ''));
+  return quitarEtiqueta(recortar(resultado).replace(/(\s*\([^)]*\))+\s*$/, ''));
 }
 
 // El "contacto" de SmartOLT es texto libre ("Juan 0414-1234567 / 0424 7654321"):

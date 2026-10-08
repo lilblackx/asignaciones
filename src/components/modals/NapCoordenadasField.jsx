@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, MapPin, Search } from 'lucide-react';
+import { AlertTriangle, Loader2, MapPin, Search } from 'lucide-react';
 import { normalizarCoordenadasNap } from '../../utils/ubicacion';
 import { extraerCodigoNap } from '../../utils/whatsapp';
 import { buscarNapTomodat } from '../../lib/tomodat';
@@ -108,7 +108,7 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
       <div className="flex items-end justify-between gap-2">
         <label htmlFor={`${idPrefix}-nap-coords`} className={estilo.label}>COORDENADAS NAP <span className="font-normal normal-case text-zinc-400">(Lat / Lng, opcional)</span></label>
         {consulta && (
-          <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 dark:text-violet-400 hover:underline disabled:opacity-60">
+          <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400 hover:underline disabled:opacity-60">
             {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat
           </button>
         )}
@@ -120,13 +120,24 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
       {mensaje?.tipo === 'vacio' && <p role="status" className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'error' && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'opciones' && (
-        <div role="group" aria-label="Varias cajas coinciden, elige una" className="flex flex-wrap gap-1 ml-1">
-          <span className="w-full text-[10px] font-bold text-amber-700 dark:text-amber-400">Varias cajas coinciden, elige una:</span>
-          {mensaje.opciones.map((p) => (
-            <button key={`${p.nombre}-${p.lat}-${p.lng}`} type="button" onClick={() => { aplicar(p); setEstado({ tipo: 'listo', codigo: consulta, nombre: p.nombre }); }} className="text-[10px] font-bold px-2 py-1 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
-              {p.nombre} · {p.lat.toFixed(4)}, {p.lng.toFixed(4)}
-            </button>
-          ))}
+        <div role="group" aria-label="Varias cajas coinciden, elige una" className="mt-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-2">
+          <p className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
+            {mensaje.opciones.length} cajas coinciden. Elige cuál es:
+          </p>
+          <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+            {mensaje.opciones.map((p) => (
+              <button
+                key={`${p.nombre}-${p.lat}-${p.lng}`}
+                type="button"
+                onClick={() => { aplicar(p); setEstado({ tipo: 'listo', codigo: consulta, nombre: p.nombre }); }}
+                className="w-full text-left rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                <span className="block text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{p.nombre}</span>
+                <span className="block mt-0.5 text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {parseada.enlace && <a href={parseada.enlace} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Ver NAP en el mapa</a>}

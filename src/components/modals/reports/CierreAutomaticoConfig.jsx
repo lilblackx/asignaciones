@@ -165,7 +165,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
           <p className="text-[11px] text-zinc-400">Si lo activas después de la hora de hoy, el primer cierre es el próximo día elegido.</p>
           {import.meta.env.DEV && (
             <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
-              <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-violet-700 dark:text-violet-400 hover:underline">
+              <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline">
                 Simular notificaciones (solo desarrollo)
               </button>
               {mensajeSim && <p role="status" className="mt-1 text-[11px] text-zinc-500">{mensajeSim}</p>}
