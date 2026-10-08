@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
 import { playAprobadoSound, playNuevaAsignacionSound, playPreFinalizadoSound } from '../utils/notificationSound';
@@ -196,7 +196,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   const crearTicketSinGuardia = async (formData) => {
     const finalFalla = formData.falla.trim() === '' ? formData.tipoTrabajo : formData.falla;
-    const newId = Date.now().toString();
+    // Id automático de Firestore: con Date.now() dos órdenes creadas en el mismo
+    // milisegundo compartían id y la segunda pisaba a la primera.
+    const newId = doc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets')).id;
 
     // Código manual (si el usuario lo escribió) tiene prioridad y no consume el contador automático.
     const codigoManual = (formData.codigo || '').trim();
@@ -489,12 +491,6 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     return updatedTicket;
   };
 
-  const deleteTicketsByIds = async (ids) => {
-    for (const id of ids) {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id.toString()));
-    }
-  };
-
   return {
     tickets,
     createTicket,
@@ -505,7 +501,6 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     guardarUbicacion,
     preFinalizarTicket,
     aprobarFinalizarTicket,
-    finalizarTicket,
-    deleteTicketsByIds
+    finalizarTicket
   };
 }

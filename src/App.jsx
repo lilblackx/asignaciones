@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { ROLES, siguienteColorTecnico } from './constants';
 import { getEnvioInfo } from './utils/ticketDisplay';
 import { normalizarUbicacion } from './utils/ubicacion';
@@ -71,9 +71,9 @@ export default function App() {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg);
-  const { tickets, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, finalizarTicket, deleteTicketsByIds } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, finalizarTicket } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
-  const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, deleteTicketsByIds, setToastMsg);
+  const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
   const { orden: ordenTurno, tecnicoSugerido, guardarOrden, avanzarTurno } = useTurnoInstalaciones(firebaseUser, technicians, setToastMsg);
 
@@ -150,31 +150,8 @@ export default function App() {
     setToastMsg({ type: 'success', text: 'Tasa actualizada manualmente.' });
   }, 'No se pudo guardar la tasa.');
 
-  // Un solo intento por sesión: si el ADMIN abre la app y la tasa no es de hoy,
-  // se refresca sola. No sustituye un cron real (no hay backend en plan Spark),
-  // pero cubre el caso más común de "se me olvidó actualizarla".
-  const tasaAutoCheckDone = useRef(false);
-  useEffect(() => {
-    if (!isAdmin || tasaLoading || tasaAutoCheckDone.current) return;
-    tasaAutoCheckDone.current = true;
-
-    const esDeHoy = tasaConfig?.actualizadoEn && new Date(tasaConfig.actualizadoEn).toDateString() === new Date().toDateString();
-    if (esDeHoy) return;
-
-    (async () => {
-      const ok = await actualizarAutomatica();
-      setToastMsg({
-        type: ok ? 'success' : 'error',
-        text: ok
-          ? 'Tasa BCV desactualizada: se refrescó automáticamente al abrir la app.'
-          : 'La tasa BCV está desactualizada y no se pudo refrescar sola. Revísala en Tasa.'
-      });
-    })();
-    // Deliberadamente solo [isAdmin, tasaLoading]: el intento único por sesión ya
-    // lo controla el ref de arriba; sumar el resto de dependencias no cambia el
-    // comportamiento (el ref corta antes) pero sí dispara el effect de más.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, tasaLoading]);
+  // La tasa se actualiza sola una vez al día por la mañana (cron del Worker de
+  // notificaciones); el botón de Tasa permite actualizarla a mano en cualquier momento.
 
   // Para TECNICO: solo sus propias órdenes. Para otros: todos los tickets.
   const ticketsParaVer = isTecnico && tecnicoAsociado

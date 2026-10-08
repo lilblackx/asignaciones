@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { collection, doc, getDocs, limit, orderBy, query, setDoc, startAfter } from 'firebase/firestore';
+import { collection, doc, getDocs, limit, orderBy, query, startAfter, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 
 const REPORTS_PAGE_SIZE = 30;
+const MAX_ESCRITURAS_LOTE = 450; // Firestore admite 500 por lote
 
 function buildDesglose(items) {
   return items.reduce((acc, t) => {
@@ -27,7 +28,7 @@ function formatFecha(dateInput) {
 // "reports" solo crece con el tiempo y nunca se borra: sin límite, cada sesión
 // de un usuario con permiso de cierre descargaría el historial completo entero,
 // cada vez más pesado con los meses.
-export function useReports(firebaseUser, canCerrar, currentUser, tickets, deleteTicketsByIds, setToastMsg) {
+export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg) {
   const [reports, setReports] = useState([]);
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMoreReports, setHasMoreReports] = useState(true);
@@ -90,8 +91,21 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, delete
       createdAt: Date.now()
     };
 
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reports', reportId), newReport);
-    await deleteTicketsByIds(seleccionados.map(t => t.id));
+    // El reporte y los borrados van en el mismo lote (atómico): si falla, no queda
+    // un reporte con órdenes que siguen en la tabla y se archivarían dos veces.
+    // Con más de MAX_ESCRITURAS_LOTE órdenes, el resto se borra en lotes siguientes;
+    // como el reporte ya existe, un fallo ahí solo deja órdenes por borrar.
+    const ticketRef = (id) => doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id.toString());
+    const ids = seleccionados.map(t => t.id);
+    const primerLote = writeBatch(db);
+    primerLote.set(doc(db, 'artifacts', appId, 'public', 'data', 'reports', reportId), newReport);
+    ids.slice(0, MAX_ESCRITURAS_LOTE - 1).forEach(id => primerLote.delete(ticketRef(id)));
+    await primerLote.commit();
+    for (let i = MAX_ESCRITURAS_LOTE - 1; i < ids.length; i += MAX_ESCRITURAS_LOTE) {
+      const lote = writeBatch(db);
+      ids.slice(i, i + MAX_ESCRITURAS_LOTE).forEach(id => lote.delete(ticketRef(id)));
+      await lote.commit();
+    }
     return newReport;
   };
 

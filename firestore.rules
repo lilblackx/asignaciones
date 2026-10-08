@@ -77,19 +77,21 @@ service cloud.firestore {
       // Crear órdenes es acción de ADMIN/USUARIO; TECNICO no tiene esa UI.
       allow create: if isAdminUser(appId) || isUsuarioRole(appId);
 
-      // TECNICO: solo su propio ticket, no puede reasignarlo/renumerarlo ni
-      // saltarse la aprobación poniéndolo FINALIZADO/CANCELADO/ELIMINADO directo.
+      // TECNICO: solo su propio ticket y solo los campos de su trabajo (los que
+      // tiene habilitados en Pre-finalizar / Detalles). El estado solo puede pasar
+      // de PENDIENTE a PRE-FINALIZADO: nunca FINALIZADO/CANCELADO/ELIMINADO, ni
+      // reabrir una orden. El historial solo crece: no puede borrar entradas.
       allow update: if isAdminUser(appId) || isUsuarioRole(appId)
         || (
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
-          && request.resource.data.tecnico == resource.data.tecnico
-          && request.resource.data.codigo == resource.data.codigo
-          && request.resource.data.tipoTrabajo == resource.data.tipoTrabajo
-          && request.resource.data.creado == resource.data.creado
-          && request.resource.data.estado != 'FINALIZADO'
-          && request.resource.data.estado != 'CANCELADO'
-          && request.resource.data.estado != 'ELIMINADO'
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'observacion', 'observacionInterna', 'historialEdiciones'])
+          && (
+            request.resource.data.estado == resource.data.estado
+            || (resource.data.estado == 'PENDIENTE' && request.resource.data.estado == 'PRE-FINALIZADO')
+          )
+          && request.resource.data.get('historialEdiciones', []).hasAll(resource.data.get('historialEdiciones', []))
         );
 
       // El flujo normal borra vía "estado: ELIMINADO" (update, papelera). El borrado
@@ -103,12 +105,13 @@ service cloud.firestore {
 
     match /artifacts/{appId}/public/data/counters/{counterId} {
       allow read: if isActiveUser(appId);
-      // Solo los dos campos esperados, "ultimo" numérico positivo, y nunca puede
-      // retroceder (evita que un cliente con bug/malicioso rompa la secuencia).
-      allow create: if isActiveUser(appId)
+      // Solo numera quien crea/asigna órdenes (ADMIN/USUARIO). Solo los dos campos
+      // esperados, "ultimo" numérico positivo, y nunca puede retroceder (evita que
+      // un cliente con bug/malicioso rompa la secuencia).
+      allow create: if (isAdminUser(appId) || isUsuarioRole(appId))
         && request.resource.data.keys().hasOnly(['ultimo', 'actualizadoEn'])
         && request.resource.data.ultimo is int && request.resource.data.ultimo > 0;
-      allow update: if isActiveUser(appId)
+      allow update: if (isAdminUser(appId) || isUsuarioRole(appId))
         && request.resource.data.keys().hasOnly(['ultimo', 'actualizadoEn'])
         && request.resource.data.ultimo is int
         && request.resource.data.ultimo >= resource.data.ultimo;
