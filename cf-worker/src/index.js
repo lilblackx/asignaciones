@@ -35,7 +35,8 @@ async function getGoogleAccessToken(env) {
     return cachedGoogleToken.accessToken;
   }
 
-  const serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  // replace: el secreto cargado desde PowerShell puede traer BOM (U+FEFF) al inicio y JSON.parse lo rechaza.
+  const serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON.replace(/^﻿/, ''));
   const privateKey = await importPKCS8(serviceAccount.private_key, 'RS256');
 
   const assertion = await new SignJWT({
