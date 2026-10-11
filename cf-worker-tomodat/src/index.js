@@ -165,6 +165,30 @@ function buscar(puntos, codigo) {
 // Solo lo que necesita una orden nueva (nada de estado, señal ni datos de red).
 const CAMPOS_ONU = 'unique_external_id,name,address,zone_name,odb_name,latitude,longitude,contact';
 const MAX_ONUS = 10;
+const SMARTOLT_TIMEOUT_MS = 20000;
+
+// SmartOLT a veces tarda muchos segundos. Si la app corta la espera y reintenta, la
+// segunda consulta se une a la que sigue en curso (o usa su resultado, guardado un
+// momento) en vez de empezar de cero. Solo se guardan resultados exitosos.
+const ONUS_CACHE_MS = 2 * 60 * 1000;
+const onusPorCedula = new Map(); // dígitos -> { promesa, hasta }
+
+function buscarOnusCompartido(env, digitos, ctx) {
+  const ahora = Date.now();
+  const previo = onusPorCedula.get(digitos);
+  if (previo && previo.hasta > ahora) return previo.promesa;
+  const entrada = { promesa: null, hasta: ahora + SMARTOLT_TIMEOUT_MS * 3 };
+  entrada.promesa = buscarOnus(env, digitos).then(
+    (resultados) => { entrada.hasta = Date.now() + ONUS_CACHE_MS; return resultados; },
+    (err) => { if (onusPorCedula.get(digitos) === entrada) onusPorCedula.delete(digitos); throw err; },
+  );
+  onusPorCedula.set(digitos, entrada);
+  if (onusPorCedula.size > 200) {
+    for (const [clave, e] of onusPorCedula) if (e.hasta <= ahora) onusPorCedula.delete(clave);
+  }
+  ctx?.waitUntil?.(entrada.promesa.catch(() => {}));
+  return entrada.promesa;
+}
 
 const soloDigitos = (texto) => String(texto || '').replace(/\D/g, '');
 
@@ -201,7 +225,10 @@ export function mapearOnu(o) {
 
 async function consultarOnus(env, filtro, valor) {
   const params = new URLSearchParams({ page: '1', page_size: '25', fields: CAMPOS_ONU, [filtro]: valor });
-  const res = await fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, { headers: { 'X-Token': env.SMARTOLT_API_KEY } });
+  const res = await fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, {
+    headers: { 'X-Token': env.SMARTOLT_API_KEY },
+    signal: AbortSignal.timeout(SMARTOLT_TIMEOUT_MS),
+  });
   if (res.status === 429) throw new Error(`SmartOLT limitó las consultas; reintenta en ${res.headers.get('Retry-After') || 'unos'} s`);
   if (!res.ok) throw new Error(`SmartOLT respondió ${res.status}`);
   const data = await res.json();
@@ -230,7 +257,7 @@ export async function buscarOnus(env, cedula) {
   return [];
 }
 
-async function handleOnu(request, env, headers) {
+async function handleOnu(request, env, headers, ctx) {
   if (!env.SMARTOLT_API_KEY || !env.SMARTOLT_BASE_URL) {
     return new Response('SmartOLT no está configurado en el Worker.', { status: 503, headers });
   }
@@ -245,10 +272,11 @@ async function handleOnu(request, env, headers) {
     return new Response('cedula debe tener entre 6 y 12 dígitos.', { status: 400, headers });
   }
   try {
-    return json({ resultados: await buscarOnus(env, digitos) }, 200, headers);
+    return json({ resultados: await buscarOnusCompartido(env, digitos, ctx) }, 200, headers);
   } catch (err) {
     console.error(err);
-    return new Response(`No se pudo consultar SmartOLT: ${err.message}`, { status: 502, headers });
+    const mensaje = err.name === 'TimeoutError' ? 'SmartOLT tardó demasiado en responder' : err.message;
+    return new Response(`No se pudo consultar SmartOLT: ${mensaje}`, { status: 502, headers });
   }
 }
 
@@ -283,7 +311,7 @@ export default {
     // Los datos del cliente (SmartOLT) solo los usa quien crea órdenes.
     if (pathname === '/onu') {
       if (rol !== 'ADMIN' && rol !== 'USUARIO') return new Response('Sin permiso para consultar clientes.', { status: 403, headers });
-      return handleOnu(request, env, headers);
+      return handleOnu(request, env, headers, ctx);
     }
     if (pathname !== '/nap') return new Response('Not Found', { status: 404, headers });
 

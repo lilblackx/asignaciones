@@ -4,9 +4,20 @@ import { auth, TOMODAT_WORKER_URL } from './firebase';
 // (/cf-worker-tomodat: Tomodat y SmartOLT). Devuelve el JSON o lanza Error.
 // Sin tope, una petición colgada (servicio lento, red caída) deja el "Buscando..."
 // girando para siempre: pasado este tiempo se corta y se pide llenar a mano.
-const TIMEOUT_MS = 15000;
+// Si vence, se reintenta una vez: el Worker une el reintento a la consulta que sigue
+// en curso, así que suele responder enseguida.
+const TIMEOUT_MS = 20000;
 
 export async function consultarWorker(ruta, cuerpo, signal, servicio) {
+  try {
+    return await consultarUnaVez(ruta, cuerpo, signal, servicio);
+  } catch (err) {
+    if (err.cause?.name !== 'AbortError' || signal?.aborted) throw err;
+    return consultarUnaVez(ruta, cuerpo, signal, servicio);
+  }
+}
+
+async function consultarUnaVez(ruta, cuerpo, signal, servicio) {
   const user = auth.currentUser;
   if (!user) throw new Error('Sin sesión.');
 
