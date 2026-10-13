@@ -11,6 +11,7 @@ PWA para el control y seguimiento de asignaciones (instalaciones, reconexiones, 
 - Consulta de coordenadas de NAP en Tomodat por código de NAP.
 - Ubicación del cliente y enlace "cómo llegar" a la NAP.
 - Tasa BCV del día y monto en Bs para el aviso de cobro.
+- Formas de pago (pago móvil y cuentas bancarias): el ADMIN las carga en la pestaña "Formas de pago" del modal de Tasa y el técnico las copia, dato por dato, desde el botón "Pagos".
 - Reportes y exportación, carga de trabajo por técnico, detección de reincidencias.
 - Notificaciones push (FCM) con la app cerrada.
 - Instalable como PWA. Se actualiza sola: revisa versión nueva cada 15 min y la aplica al volver a la app o si está en segundo plano.

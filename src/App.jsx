@@ -18,6 +18,7 @@ import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
+import { useFormasPago } from './hooks/useFormasPago';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
 import { esProgramadaFutura } from './utils/programada';
 import { esVentaDelTecnico } from './utils/tecnicoVenta';
@@ -45,6 +46,7 @@ const ReportsModal = lazy(() => import('./components/modals/ReportsModal'));
 const OrdersHistoryModal = lazy(() => import('./components/modals/OrdersHistoryModal'));
 const WhatsAppMessageModal = lazy(() => import('./components/modals/WhatsAppMessageModal'));
 const TasaBcvModal = lazy(() => import('./components/modals/TasaBcvModal'));
+const FormasPagoModal = lazy(() => import('./components/modals/FormasPagoModal'));
 const PreFinalizarModal = lazy(() => import('./components/modals/PreFinalizarModal'));
 const AprobarFinalizarModal = lazy(() => import('./components/modals/AprobarFinalizarModal'));
 const UbicacionModal = lazy(() => import('./components/modals/UbicacionModal'));
@@ -75,6 +77,7 @@ export default function App() {
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
+  const { formasPago, guardarFormasPago } = useFormasPago(firebaseUser);
   const { orden: ordenTurno, tecnicoSugerido, guardarOrden, avanzarTurno } = useTurnoInstalaciones(firebaseUser, technicians, setToastMsg);
 
   const copyToClipboard = async (mensaje, textoExito = 'Plantilla copiada, lista para WhatsApp.', tipoExito = 'success') => {
@@ -150,6 +153,11 @@ export default function App() {
     setToastMsg({ type: 'success', text: 'Tasa actualizada manualmente.' });
   }, 'No se pudo guardar la tasa.');
 
+  const handleGuardarFormasPago = conAviso(async (formas) => {
+    await guardarFormasPago(formas, currentUserName || currentUser);
+    setToastMsg({ type: 'success', text: 'Formas de pago guardadas.' });
+  }, 'No se pudieron guardar las formas de pago.');
+
   // La tasa se actualiza sola una vez al día por la mañana (cron del Worker de
   // notificaciones); el botón de Tasa permite actualizarla a mano en cualquier momento.
 
@@ -189,6 +197,7 @@ export default function App() {
   const [isAddTechModalOpen, setIsAddTechModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isTasaModalOpen, setIsTasaModalOpen] = useState(false);
+  const [isFormasPagoOpen, setIsFormasPagoOpen] = useState(false);
   const [newTech, setNewTech] = useState({ name: '', color: null });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
@@ -386,6 +395,7 @@ export default function App() {
           onOpenTechnicians={() => setIsAddTechModalOpen(true)}
           onOpenUsers={() => setIsUsersModalOpen(true)}
           onOpenTasa={() => setIsTasaModalOpen(true)}
+          onOpenFormasPago={() => setIsFormasPagoOpen(true)}
           onOpenCreate={handleOpenCreateModal}
           handleLogout={() => setIsLogoutConfirmOpen(true)}
           preFinalizadoCount={preFinalizadoCount}
@@ -671,7 +681,17 @@ export default function App() {
             tasaConfig={tasaConfig}
             onActualizarAutomatica={handleActualizarTasaAutomatica}
             onActualizarManual={handleActualizarTasaManual}
+            formasPago={formasPago}
+            onGuardarFormasPago={handleGuardarFormasPago}
             onClose={() => setIsTasaModalOpen(false)}
+          />
+        )}
+
+        {isFormasPagoOpen && (
+          <FormasPagoModal
+            formasPago={formasPago}
+            onCopy={copyToClipboard}
+            onClose={() => setIsFormasPagoOpen(false)}
           />
         )}
         </Suspense>

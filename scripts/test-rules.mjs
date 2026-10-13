@@ -59,6 +59,7 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('technicians').doc('REINEL-BRAVO').set({ name: 'REINEL BRAVO', color: 'bg-green-500 text-white', activo: true });
 
   await base.collection('config').doc('turnoInstalaciones').set({ orden: ['GERARDO MOLERO', 'REINEL BRAVO'], turnoActualIndex: 0 });
+  await base.collection('config').doc('formasPago').set({ formas: [{ tipo: 'PAGO_MOVIL', banco: 'BNC', telefono: '0412-0000000', rif: 'J-000000000' }] });
 });
 
 const asAdmin = () => testEnv.authenticatedContext('admin-uid').firestore();
@@ -181,6 +182,26 @@ await check('TECNICO NO puede tocar el turno de instalaciones', async () => {
 
 await check('ADMIN puede reordenar el turno de instalaciones', async () => {
   await assertSucceeds(turnoPath(asAdmin()).set({ orden: ['REINEL BRAVO', 'GERARDO MOLERO'], turnoActualIndex: 0, actualizadoPor: 'admin', actualizadoEn: Date.now() }));
+});
+
+// --- Formas de pago: todos las leen (el técnico las copia), solo ADMIN las cambia ---
+const formasPagoPath = (db) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('config').doc('formasPago');
+const formasNuevas = { formas: [{ tipo: 'CUENTA', banco: 'Banesco', numero: '0134-0000-00-0000000000', titular: 'Empresa', rif: 'J-000000000' }], actualizadoEn: 1, actualizadoPor: 'admin' };
+
+await check('TECNICO puede leer las formas de pago', async () => {
+  await assertSucceeds(formasPagoPath(asTecnico()).get());
+});
+
+await check('TECNICO NO puede modificar las formas de pago', async () => {
+  await assertFails(formasPagoPath(asTecnico()).set(formasNuevas));
+});
+
+await check('USUARIO NO puede modificar las formas de pago', async () => {
+  await assertFails(formasPagoPath(asUsuario()).set(formasNuevas));
+});
+
+await check('ADMIN puede guardar las formas de pago', async () => {
+  await assertSucceeds(formasPagoPath(asAdmin()).set(formasNuevas));
 });
 
 // --- Campos que el TECNICO puede tocar en su propia orden ---

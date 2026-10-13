@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, Coins, History, LogOut, MoreVertical, Moon, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
+import { BarChart, Coins, History, Landmark, LogOut, MoreVertical, Moon, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
 
@@ -15,6 +15,7 @@ export default function Header({
   onOpenTechnicians,
   onOpenUsers,
   onOpenTasa,
+  onOpenFormasPago,
   onOpenCreate,
   canCerrar,
   handleLogout,
@@ -86,6 +87,19 @@ export default function Header({
               preFinalizadoCount={canEditTickets ? preFinalizadoCount : 0}
               onOpenPreFinalizados={canEditTickets ? onOpenPreFinalizados : undefined}
             />
+          )}
+
+          {/* El técnico no ve el menú de ADMIN: las formas de pago para pasarle al
+              cliente (con botones para copiar cada dato) van en su propio botón. */}
+          {isTecnico && onOpenFormasPago && (
+            <button
+              onClick={onOpenFormasPago}
+              aria-label="Formas de pago"
+              title="Formas de pago"
+              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 flex items-center gap-1.5 text-sm font-bold"
+            >
+              <Landmark className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Pagos</span>
+            </button>
           )}
 
           {/* Un solo menú desplegable (mismo en mobile y desktop) para no saturar
