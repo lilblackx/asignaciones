@@ -1,7 +1,8 @@
-import { TIPOS_POR_TRABAJO } from '../constants';
-import { extraerUbicacionDeTexto, getUbicacionUrl, normalizarCoordenadasNap } from './ubicacion';
-import { normalizarNegritas } from './negritas';
-import { CODIGO_NAP, extraerCodigoNap } from './codigoNap';
+import { TIPOS_POR_TRABAJO } from '../constants.js';
+import { extraerUbicacionDeTexto, getUbicacionUrl, normalizarCoordenadasNap } from './ubicacion.js';
+import { normalizarNegritas } from './negritas.js';
+import { CODIGO_NAP, extraerCodigoNap } from './codigoNap.js';
+import { MAX_TELEFONOS, telefonoInternacional, unirTelefonos } from './telefono.js';
 
 // La línea "Observaciones:" de la plantilla siempre lleva el aviso de cobro
 // (monto en Bs calculado según la tasa BCV del día). El campo "observacion" del
@@ -109,11 +110,14 @@ function limpiarLinea(linea) {
 }
 
 // Una línea es "etiqueta" (no un valor) si es "Algo:" con prefijo corto y sin
-// dígitos, o si venía entera en negrita sin dos puntos ("*Condición*").
+// dígitos, si venía entera en negrita sin dos puntos ("*Condición*"), o si es una
+// etiqueta conocida en negrita sin dos puntos pero con su valor ("*C.I* 34.250.195").
 function esLineaEtiqueta(original, limpia) {
   const idx = limpia.indexOf(':');
-  if (idx !== -1 && idx <= 40 && !/\d/.test(limpia.slice(0, idx))) return true;
-  return idx === -1 && /^\s*\*[^*]+\*\s*$/.test(original);
+  if (idx !== -1) return idx <= 40 && !/\d/.test(limpia.slice(0, idx));
+  if (/^\s*\*[^*]+\*\s*$/.test(original)) return true;
+  const enNegrita = original.match(/^\s*\*([^*]+)\*\s+\S/);
+  return Boolean(enNegrita) && Boolean(ALIAS_CAMPOS[claveEtiqueta(limpiarLinea(enNegrita[1]))]);
 }
 
 // Mismo formato que el campo CÉDULA / RIF del formulario: solo dígitos con punto
@@ -122,15 +126,101 @@ function formatearDigitos(texto) {
   return texto.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-function interpretarCedula(valor, campos) {
-  const match = valor.match(/^([VEJGvejg])[.\s-]*([\d.]+)/);
-  if (match) {
-    campos.tipoDocumento = match[1].toUpperCase();
-    campos.cedula = formatearDigitos(match[2]);
-  } else {
-    const cedula = formatearDigitos(valor);
-    if (cedula) campos.cedula = cedula;
+// Cédula/RIF venezolano: letra opcional (V/E/J/G) y de 6 a 9 dígitos, seguidos o
+// con separador de miles (punto, coma o espacio; el mismo en todo el número).
+// Ante cualquier duda devuelve null y el campo queda vacío para llenarlo a mano:
+// una cédula inventada se guardaría sin que nadie lo note, y además alimenta la
+// detección de órdenes duplicadas y reincidencias. Se descartan: otros números en
+// el valor (un teléfono pegado al lado), ceros a la izquierda (teléfonos), grupos
+// de miles incompletos ("34 250 19"), separadores mezclados y letras raras.
+function extraerCedula(valor) {
+  let resto = valor.trim();
+  let tipoDocumento;
+  const prefijo = resto.match(/^([VEJGvejg])[\s.-]*(?=\d)/);
+  if (prefijo) {
+    tipoDocumento = prefijo[1].toUpperCase();
+    resto = resto.slice(prefijo[0].length);
   }
+  const numero = resto.match(/^\d+(?:([.,\s])\d+(?:\1\d+)*)?/);
+  if (!numero) return null;
+
+  const grupos = numero[1] ? numero[0].split(numero[1]) : [numero[0]];
+  if (grupos.length > 1 && (grupos[0].length > 3 || grupos.slice(1).some(g => g.length !== 3))) return null;
+  const digitos = grupos.join('');
+  if (!/^[1-9]\d{5,8}$/.test(digitos)) return null;
+
+  // Lo que sigue (una nota como "(titular)", el dígito verificador del RIF) no
+  // puede traer más números.
+  const cola = resto.slice(numero[0].length).replace(/^\s*-\s*\d(?!\d)/, '');
+  if (/\d/.test(cola)) return null;
+
+  return { tipoDocumento, cedula: formatearDigitos(digitos) };
+}
+
+function interpretarCedula(valor, campos) {
+  const cedula = extraerCedula(valor);
+  if (!cedula) return;
+  if (cedula.tipoDocumento) campos.tipoDocumento = cedula.tipoDocumento;
+  campos.cedula = cedula.cedula;
+}
+
+// Mismos límites que los campos del formulario (maxLength de nombre y dirección).
+const MAX_NOMBRE = 100;
+const MAX_DIRECCION = 200;
+
+// Lo que ponen las promotoras cuando no tienen el dato. No es un nombre ni una
+// dirección, y como pasaría el "obligatorio" del formulario nadie lo notaría.
+const SIN_DATO = new Set(['NA', 'N A', 'NO APLICA', 'NINGUNO', 'NINGUNA', 'PENDIENTE', 'POR ASIGNAR', 'POR DEFINIR', 'SIN DATOS', 'NO TIENE', 'XX', 'XXX']);
+
+// Texto libre (nombre, dirección): no hay un formato fijo que validar, así que se
+// descarta lo que claramente no es el dato: vacío, más largo que el campo, sin
+// letras, un "no aplica", el nombre de otra etiqueta, un correo o enlace, o con
+// un número largo pegado (una cédula o un teléfono que se coló en la línea).
+function extraerTextoLibre(valor, maximo) {
+  const texto = valor.replace(/\s+/g, ' ').trim();
+  if (!texto || texto.length > maximo) return null;
+  if ((texto.match(/\p{L}/gu) || []).length < 2) return null;
+  const clave = claveEtiqueta(texto);
+  if (SIN_DATO.has(clave) || ALIAS_CAMPOS[clave]) return null;
+  if (/@|https?:|www\./i.test(texto)) return null;
+  if (/\d{7,}/.test(texto.replace(/(?<=\d)[\s.-](?=\d)/g, ''))) return null;
+  return texto;
+}
+
+// Teléfonos de la plantilla: uno o varios (separados por "/", coma, punto y coma o
+// una palabra como "y"), con el mismo criterio que valida el formulario
+// (utils/telefono) y, además, un número venezolano debe empezar por 02 o 04. O se
+// leen todos o queda vacío: un número a medias o inventado se llamaría sin que
+// nadie lo note. Los repetidos se juntan y el máximo es el del formulario.
+function extraerTelefonos(valor) {
+  const segmentos = valor
+    .split(/[/,;|]|[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/)
+    .map(s => s.replace(/^[^\d+(]+/, '').replace(/[^\d)]+$/, ''))
+    .filter(s => /\d/.test(s));
+  if (segmentos.length === 0) return null;
+
+  const vistos = new Set();
+  const lista = [];
+  for (const crudo of segmentos) {
+    const segmento = crudo.replace(/\s+/g, ' ');
+    // 20 es el maxLength del campo de teléfono del formulario.
+    if (!/^\+?[\d\s().-]+$/.test(segmento) || segmento.length > 20) return null;
+    if ((segmento.match(/\(/g) || []).length !== (segmento.match(/\)/g) || []).length) return null;
+    const numero = telefonoInternacional(segmento);
+    if (!numero || (numero.startsWith('58') && !/^58[24]/.test(numero))) return null;
+    if (!vistos.has(numero)) {
+      vistos.add(numero);
+      lista.push(segmento);
+    }
+  }
+  return lista.length <= MAX_TELEFONOS ? unirTelefonos(lista) : null;
+}
+
+// Códigos de NAP distintos que aparecen en un texto (en mayúsculas).
+const CODIGO_NAP_EN_TEXTO = new RegExp(`(?<![A-Z0-9])${CODIGO_NAP}(?![A-Z0-9])`, 'gi');
+function codigosNap(texto) {
+  const encontrados = String(texto || '').match(CODIGO_NAP_EN_TEXTO) || [];
+  return [...new Set(encontrados.map(c => c.toUpperCase()))];
 }
 
 export { extraerCodigoNap };
@@ -145,17 +235,33 @@ const ETIQUETAS_NOTA = new Set(['NOTA', 'NOTAS', 'OBSERVACION', 'OBSERVACIONES']
 // puso en la línea de abajo en vez de junto a la etiqueta.
 export function parseInstalacionTemplate(texto) {
   const campos = {};
+  let napAmbiguo = false;
   const originales = (texto || '').split(/\r?\n|\r/);
   const lineas = originales.map(limpiarLinea);
 
   for (let i = 0; i < lineas.length; i++) {
     const limpia = lineas[i];
     const idx = limpia.indexOf(':');
-    if (idx === -1) continue;
-    const campo = ALIAS_CAMPOS[claveEtiqueta(limpia.slice(0, idx))];
+    let etiqueta;
+    let valor;
+    if (idx !== -1) {
+      etiqueta = limpia.slice(0, idx);
+      valor = limpia.slice(idx + 1).trim();
+    } else {
+      // Etiqueta en negrita sin dos puntos, con el valor en la misma línea:
+      // "*C.I* 34.250.195". Solo se acepta para la cédula (que además se valida
+      // de forma estricta): así una frase que empiece con una palabra en negrita
+      // ("*Cliente* conecta en el puerto 3") no se toma por un campo ni bloquea
+      // la etiqueta real. Ante la duda se deja vacío.
+      const enNegrita = originales[i].match(/^\s*\*([^*]+)\*\s+(\S.*)$/);
+      if (!enNegrita) continue;
+      etiqueta = limpiarLinea(enNegrita[1]);
+      valor = limpiarLinea(enNegrita[2]);
+      if (ALIAS_CAMPOS[claveEtiqueta(etiqueta)] !== 'cedula') continue;
+    }
+    const campo = ALIAS_CAMPOS[claveEtiqueta(etiqueta)];
     if (!campo || campos[campo] !== undefined) continue;
 
-    let valor = limpia.slice(idx + 1).trim();
     if (!valor) {
       // Valor en la línea siguiente: se toma la próxima línea no vacía, salvo
       // que ya sea otra etiqueta (campo que la promotora dejó en blanco).
@@ -177,24 +283,41 @@ export function parseInstalacionTemplate(texto) {
     } else if (campo === 'ubicacion') {
       const url = extraerUbicacionDeTexto(valor);
       if (url) campos.ubicacion = url;
+    } else if (campo === 'nombre') {
+      const nombre = extraerTextoLibre(valor, MAX_NOMBRE);
+      if (nombre) campos.nombre = nombre;
+    } else if (campo === 'direccion') {
+      const direccion = extraerTextoLibre(valor, MAX_DIRECCION);
+      if (direccion) campos.direccion = direccion;
+    } else if (campo === 'telefono') {
+      const telefono = extraerTelefonos(valor);
+      if (telefono) campos.telefono = telefono;
+    } else if (campo === 'nap') {
+      // Solo se acepta si hay un único código; con varios no se elige uno.
+      const codigos = codigosNap(valor);
+      if (codigos.length === 1) campos.nap = codigos[0];
+      else if (codigos.length > 1) napAmbiguo = true;
     } else {
       campos[campo] = valor;
     }
   }
   // A veces la línea "Nap:" va vacía y el código aparece en otra parte, por
-  // ejemplo en la nota: "se puede hacer del NAP O10H37 a 240m".
-  if (campos.nap === undefined) {
-    const enTexto = String(texto || '').match(new RegExp(`\\bNAP\\W{0,4}(${CODIGO_NAP})`, 'i'));
-    if (enTexto) campos.nap = enTexto[1].toUpperCase();
+  // ejemplo en la nota: "se puede hacer del NAP O10H37 a 240m". Si hay más de un
+  // código distinto no se elige ninguno: queda para llenarlo a mano.
+  if (campos.nap === undefined && !napAmbiguo) {
+    const conPalabra = [...String(texto || '').matchAll(new RegExp(`\\bNAP\\W{0,4}(${CODIGO_NAP})`, 'gi'))].map(m => m[1].toUpperCase());
+    const distintos = [...new Set(conPalabra)];
+    if (distintos.length === 1) campos.nap = distintos[0];
+    else if (distintos.length > 1) napAmbiguo = true;
   }
   // O la nota solo dice "se puede hacer del O02E13", sin la palabra NAP: se
   // busca el código suelto, pero solo desde la línea NOTA / Observación en
   // adelante (así no se confunde con otros códigos de la plantilla, como la MAC).
-  if (campos.nap === undefined) {
+  if (campos.nap === undefined && !napAmbiguo) {
     const idxNota = lineas.findIndex(l => ETIQUETAS_NOTA.has(claveEtiqueta(l.split(':')[0] || '')));
     if (idxNota !== -1) {
-      const codigo = extraerCodigoNap(lineas.slice(idxNota).join(' '));
-      if (codigo) campos.nap = codigo;
+      const codigos = codigosNap(lineas.slice(idxNota).join(' '));
+      if (codigos.length === 1) campos.nap = codigos[0];
     }
   }
   // Muchas promotoras pegan el enlace de Maps suelto, sin etiqueta.
