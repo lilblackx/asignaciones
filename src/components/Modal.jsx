@@ -45,7 +45,7 @@ export default function Modal({ onClose, zIndexClass = 'z-50', children }) {
 
   return (
     <div className={`fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center ${zIndexClass} p-4`} role="presentation">
-      <div ref={panelRef} role="dialog" aria-modal="true">
+      <div ref={panelRef} role="dialog" aria-modal="true" className="flex w-full min-w-0 justify-center">
         {children}
       </div>
     </div>

@@ -46,7 +46,7 @@ export default function FiltersBar({
   ];
 
   return (
-    <div className="mb-3 flex flex-col sm:flex-row gap-3">
+    <div className="mb-3 flex flex-col lg:flex-row gap-3">
       <div className="relative flex-1 min-w-[180px]">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5" aria-hidden="true" />
         <label htmlFor="ticket-search" className="sr-only">Buscar órdenes</label>
@@ -65,7 +65,7 @@ export default function FiltersBar({
         )}
       </button>
 
-      <div className={`${filtersOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row gap-3`}>
+      <div className={`${filtersOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row sm:flex-wrap gap-3`}>
         <div className="sm:w-48">
           <SelectMenu id="status-filter" ariaLabel="Filtrar por estado" icon={Filter} value={statusFilter} onChange={setStatusFilter} items={statusItems} />
         </div>
