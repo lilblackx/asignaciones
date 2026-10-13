@@ -1,5 +1,5 @@
 import { esProgramadaFutura } from '../utils/programada';
-import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, MapPin, MapPinOff, Navigation, Network, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
+import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
@@ -123,8 +123,9 @@ export default function TicketsMobileList({
               </div>
             </div>
             {ticket.observacion && (
-              <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/30 text-xs text-zinc-800 dark:text-zinc-300 mt-1">
-                <span className="font-bold text-red-700 dark:text-red-400">Obs:</span> {ticket.observacion}
+              <div className="flex items-start gap-2 text-sm">
+                <MessageSquareText className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" aria-label="Observación" role="img" />
+                <span className="text-zinc-700 dark:text-zinc-300 leading-tight">{ticket.observacion}</span>
               </div>
             )}
             {!isTecnico && (

@@ -1,4 +1,4 @@
-import { ArrowDownAZ, CheckCheck, CheckCircle2, Clock, Edit, ExternalLink, History, MapPin, MapPinOff, MessageCircle, Navigation, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
+import { ArrowDownAZ, CheckCheck, CheckCircle2, Clock, Edit, ExternalLink, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEnvioInfo, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -76,7 +76,10 @@ export default function TicketsTable({
                     {!agrupado && <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     {ticket.observacion && (
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 line-clamp-2" title={ticket.observacion}>{ticket.observacion}</span>
+                      <span className="flex items-start gap-1 text-[10px] text-zinc-500 dark:text-zinc-400" title={ticket.observacion}>
+                        <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />
+                        <span className="line-clamp-2">{ticket.observacion}</span>
+                      </span>
                     )}
                   </div>
                 </td>

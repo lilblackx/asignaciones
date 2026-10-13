@@ -1,4 +1,4 @@
-import { Download, X } from 'lucide-react';
+import { Download, MessageSquareText, X } from 'lucide-react';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import { formatCedula } from '../../../utils/ticketDisplay';
 
@@ -117,7 +117,12 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
               <div className="border-t border-zinc-100 dark:border-zinc-800/80 pt-2 flex flex-col gap-1 text-xs">
                 <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
                 <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'SIN TÉCNICO'}</p>
-                {ticket.observacion && <p className="text-zinc-500 italic"><span className="font-semibold">Obs:</span> {ticket.observacion}</p>}
+                {ticket.observacion && (
+                  <p className="flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
+                    <MessageSquareText className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-px" aria-label="Observación" role="img" />
+                    <span>{ticket.observacion}</span>
+                  </p>
+                )}
               </div>
             </div>
           ))}
