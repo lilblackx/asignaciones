@@ -132,7 +132,7 @@ export default function Header({
                         <ShieldCheck className="w-4 h-4" aria-hidden="true" /> Usuarios
                       </button>
                       <button onClick={runAndClose(onOpenTasa)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
-                        <Coins className="w-4 h-4"aria-hidden="true" /> Tasa
+                        <Coins className="w-4 h-4"aria-hidden="true" /> Tasa y pagos
                       </button>
                     </>
                   )}

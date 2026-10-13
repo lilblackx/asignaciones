@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { ROLES, siguienteColorTecnico } from './constants';
 import { getEnvioInfo } from './utils/ticketDisplay';
 import { normalizarUbicacion } from './utils/ubicacion';
-import { avisoTasaDesactualizada } from './utils/tasa';
+import { avisoTasaDesactualizada, montoBsDe } from './utils/tasa';
 import TasaIndicador from './components/TasaIndicador';
 import { crearConAviso } from './utils/errores';
 import { useAuth } from './hooks/useAuth';
@@ -73,7 +73,7 @@ export default function App() {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg);
-  const { tickets, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, finalizarTicket } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
@@ -277,12 +277,17 @@ export default function App() {
   }, 'No se pudo pre-finalizar la orden.');
 
   const handleConfirmAprobarFinalizar = conAviso(async (ticket) => {
-    await aprobarFinalizarTicket(ticket);
+    await aprobarFinalizarTicket(ticket, { montoBs: montoBsDe(tasaConfig) });
     setAprobarTarget(null);
   }, 'No se pudo aprobar la orden.');
 
+  const handleDevolver = conAviso(async (ticket, motivo) => {
+    const ok = await devolverTicket(ticket, motivo);
+    if (ok) setAprobarTarget(null);
+  }, 'No se pudo devolver la orden.');
+
   const confirmFinalizar = conAviso(async () => {
-    await finalizarTicket(finalizarTarget);
+    await finalizarTicket(finalizarTarget, { montoBs: montoBsDe(tasaConfig) });
     setFinalizarTarget(null);
   }, 'No se pudo finalizar la orden.');
 
@@ -671,7 +676,9 @@ export default function App() {
         {aprobarTarget && (
           <AprobarFinalizarModal
             ticket={aprobarTarget}
+            montoBs={montoBsDe(tasaConfig)}
             onConfirm={handleConfirmAprobarFinalizar}
+            onDevolver={handleDevolver}
             onClose={() => setAprobarTarget(null)}
           />
         )}

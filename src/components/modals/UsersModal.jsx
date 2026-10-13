@@ -8,7 +8,7 @@ import SelectMenu from '../SelectMenu';
 
 const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ADMIN].map(r => ({ value: r, label: r }));
 const ROL_NUEVO_ITEMS = [
-  { value: ROLES.USUARIO, label: 'USUARIO (sin Técnicos/Usuarios/Tasa)' },
+  { value: ROLES.USUARIO, label: 'USUARIO (sin Técnicos/Usuarios/Tasa y pagos)' },
   { value: ROLES.TECNICO, label: 'TÉCNICO (asignaciones propias y pre-finalizar)' },
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];

@@ -4,6 +4,8 @@ import { formatCedula, getEnvioInfo, getEstadoColor, getEtiquetaDia, getTipoTrab
 import { buildSmartOltUrl } from '../utils/smartolt';
 import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
+import DevolucionAviso from './DevolucionAviso';
+import CobroAviso from './CobroAviso';
 
 const COLUMNAS = 9;
 
@@ -75,6 +77,8 @@ export default function TicketsTable({
                     <span className="font-medium">{ticket.nombre}</span>
                     {!agrupado && <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
+                    <DevolucionAviso ticket={ticket} compact />
+                    <CobroAviso ticket={ticket} compact />
                     {ticket.observacion && (
                       <span className="flex items-start gap-1 text-[10px] text-zinc-500 dark:text-zinc-400" title={ticket.observacion}>
                         <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />

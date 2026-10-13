@@ -2,6 +2,8 @@ import { esProgramadaFutura } from '../utils/programada';
 import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
+import DevolucionAviso from './DevolucionAviso';
+import CobroAviso from './CobroAviso';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getCreadoColor, getEnvioInfo, getEstadoColor, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -122,6 +124,8 @@ export default function TicketsMobileList({
                 )}
               </div>
             </div>
+            <DevolucionAviso ticket={ticket} />
+            <CobroAviso ticket={ticket} />
             {ticket.observacion && (
               <div className="flex items-start gap-2 text-sm">
                 <MessageSquareText className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" aria-label="Observación" role="img" />

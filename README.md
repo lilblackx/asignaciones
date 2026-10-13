@@ -7,11 +7,14 @@ PWA para el control y seguimiento de asignaciones (instalaciones, reconexiones, 
 - Órdenes con correlativo automático por tipo de trabajo, estados (pendiente, pre-finalizada, finalizada) e historial de cambios.
 - Roles `ADMIN`, `USUARIO` y `TECNICO`, con permisos aplicados en `firestore.rules`.
 - Autocompletado de instalaciones a partir de la plantilla que pega la promotora (`parseInstalacionTemplate` en `src/utils/whatsapp.js`).
+- El ADMIN o USUARIO puede devolver una orden pre-finalizada al técnico con un motivo obligatorio (botón "Devolver" al revisar). La orden vuelve a PENDIENTE y el técnico recibe un push al instante y un aviso con el motivo, que se deduce del historial y desaparece al volver a pre-finalizar.
+- Al pre-finalizar, el técnico puede elegir un "Tipo de visita" opcional: "Conector externo" (pide la nomenclatura de la NAP y el puerto en dos campos separados, que se guardan juntos en `nap` como "NAP 08 - Puerto 3") o "Conector interno". El cobro resultante en Bs solo se muestra después de que alguien finaliza la orden (al aprobar o al finalizar directo): push, aviso y recuadro en la orden. Se calcula con la tasa del momento de la finalización y se guarda en `cobroBs`.
+- Al pre-finalizar, el botón "Ver valores" consulta la potencia de la ONU del cliente en SmartOLT (solo al presionarlo) y deja el valor de 1310 nm capturado en el campo de potencia, que el técnico aún puede corregir. Va por `POST /onu/senal` del Worker `asignaciones-tomodat`, que lee la cédula de la propia orden con el token del técnico (solo órdenes suyas).
 - Mensaje de WhatsApp por orden. Si la orden tiene coordenadas de la NAP, el mensaje termina con `*Ubicación NAP:* <enlace de Maps>`. Esto aplica a todos los tipos de orden.
 - Consulta de coordenadas de NAP en Tomodat por código de NAP.
 - Ubicación del cliente y enlace "cómo llegar" a la NAP.
 - Tasa BCV del día y monto en Bs para el aviso de cobro.
-- Formas de pago (pago móvil y cuentas bancarias): el ADMIN las carga en la pestaña "Formas de pago" del modal de Tasa y el técnico las copia, dato por dato, desde el botón "Pagos".
+- Formas de pago (pago móvil y cuentas bancarias): el ADMIN las carga en la pestaña "Formas de pago" del modal "Tasa y pagos" y el técnico las copia, dato por dato, desde el botón "Pagos".
 - Reportes y exportación, carga de trabajo por técnico, detección de reincidencias.
 - Notificaciones push (FCM) con la app cerrada.
 - Instalable como PWA. Se actualiza sola: revisa versión nueva cada 15 min y la aplica al volver a la app o si está en segundo plano.

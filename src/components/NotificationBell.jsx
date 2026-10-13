@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { contarPendientes } from '../hooks/useInsigniaApp';
-import { Bell, CalendarCheck, CheckCheck, ChevronRight, Clock, Trash2, UserCog, Wrench, X } from 'lucide-react';
+import { Bell, CalendarCheck, CheckCheck, ChevronRight, Clock, Trash2, Undo2, UserCog, Wrench, X } from 'lucide-react';
 
 function tiempoRelativo(timestamp) {
   const diffMs = Date.now() - timestamp;
@@ -16,6 +16,7 @@ function iconoPara(type) {
   if (type === 'prefinalizado') return <Clock className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
   if (type === 'tecnicoStatus') return <UserCog className="w-4 h-4 text-purple-500 shrink-0" aria-hidden="true" />;
   if (type === 'aprobado') return <CheckCheck className="w-4 h-4 text-blue-500 shrink-0" aria-hidden="true" />;
+  if (type === 'devuelto') return <Undo2 className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
   if (type === 'cierreAutomatico') return <CalendarCheck className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'nuevaAsignacion') return <Wrench className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
   return <Bell className="w-4 h-4 text-zinc-400 shrink-0" aria-hidden="true" />;

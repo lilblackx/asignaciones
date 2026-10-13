@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { CheckCheck, ExternalLink, Eye, MapPin, Phone, Tag, User, Wrench, X } from 'lucide-react';
+import { CheckCheck, ExternalLink, Eye, MapPin, Phone, Plug, Tag, Undo2, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
+import { stripEmojis } from '../../utils/sanitizeInput';
 import { buildSmartOltUrl } from '../../utils/smartolt';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { evaluarPotencia } from '../../utils/potencia';
@@ -16,14 +17,27 @@ function Campo({ label, value, className = '' }) {
   );
 }
 
-export default function AprobarFinalizarModal({ ticket, onConfirm, onClose }) {
+export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDevolver, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [devolviendo, setDevolviendo] = useState(false);
+  const [motivo, setMotivo] = useState('');
+  const [motivoError, setMotivoError] = useState('');
 
   if (!ticket) return null;
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
     await onConfirm(ticket);
+    setIsSubmitting(false);
+  };
+
+  const handleDevolver = async () => {
+    if (!motivo.trim()) {
+      setMotivoError('Escribe el motivo para que el técnico sepa qué corregir.');
+      return;
+    }
+    setIsSubmitting(true);
+    await onDevolver(ticket, motivo);
     setIsSubmitting(false);
   };
 
@@ -96,6 +110,16 @@ export default function AprobarFinalizarModal({ ticket, onConfirm, onClose }) {
             <ContactoCliente telefono={ticket.telefono} ubicacion={ticket.ubicacion} napCoordenadas={ticket.napCoordenadas} nombre={ticket.nombre} className="col-span-2" />
           </div>
 
+          {ticket.tipoVisita && (
+            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-center gap-2.5 text-xs font-bold text-sky-900 dark:text-sky-200">
+              <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+              {ticket.tipoVisita === 'CONECTOR_EXTERNO' ? 'Conector externo' : 'Conector interno'}:{' '}
+              {montoBs
+                ? <>al aprobar, el técnico verá el cobro de {montoBs} Bs.</>
+                : <>la tasa no está configurada, el técnico no verá el monto en Bs.</>}
+            </div>
+          )}
+
           {ticket.nap && (
             <div className="space-y-1">
               <span className="text-xs font-bold text-amber-600 dark:text-amber-400 ml-1 flex items-center gap-1"><Tag className="w-3.5 h-3.5" /> NAP / CAJA / PUERTO</span>
@@ -137,26 +161,75 @@ export default function AprobarFinalizarModal({ ticket, onConfirm, onClose }) {
             </div>
           )}
 
+          {devolviendo && (
+            <div className="space-y-1">
+              <label htmlFor="motivo-devolucion" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
+                <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA DEVOLUCIÓN <span className="font-normal">(obligatorio)</span>
+              </label>
+              <textarea
+                id="motivo-devolucion"
+                value={motivo}
+                onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setMotivoError(''); }}
+                rows={3}
+                maxLength={500}
+                autoFocus
+                placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
+                className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              />
+              {motivoError && <p className="text-[11px] text-red-500 font-bold ml-1">{motivoError}</p>}
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">
+                La orden vuelve a PENDIENTE y el técnico recibe una notificación con este motivo.
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-2.5 pt-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={devolviendo ? () => { setDevolviendo(false); setMotivoError(''); } : onClose}
               disabled={isSubmitting}
               className="flex-1 py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
             >
-              Cancelar
+              {devolviendo ? 'Volver' : 'Cancelar'}
             </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={isSubmitting}
-              className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <CheckCheck className="w-4 h-4" />
-              {isSubmitting ? 'Aprobando...' : 'Aprobar y Finalizar'}
-            </button>
+            {devolviendo ? (
+              <button
+                type="button"
+                onClick={handleDevolver}
+                disabled={isSubmitting}
+                className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Undo2 className="w-4 h-4 shrink-0" />
+                <span className="whitespace-nowrap">{isSubmitting ? 'Devolviendo...' : 'Devolver'}</span>
+              </button>
+            ) : (
+              <>
+                {onDevolver && (
+                  <button
+                    type="button"
+                    onClick={() => setDevolviendo(true)}
+                    disabled={isSubmitting}
+                    className="flex-1 py-3 text-xs sm:text-sm text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Undo2 className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap">Devolver</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={isSubmitting}
+                  className={`flex-[1.4] py-3 text-xs sm:text-sm text-white font-black bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <CheckCheck className="w-4 h-4 shrink-0" />
+                  <span className="whitespace-nowrap">{isSubmitting ? 'Aprobando...' : 'Aprobar'}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

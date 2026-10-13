@@ -1,0 +1,16 @@
+// Potencia óptica que reporta SmartOLT ("-19.45", a veces con unidad: "-19.45 dBm").
+// Devuelve el texto numérico para el campo de potencia, o null si no es un número.
+export function valorSenal(texto) {
+  const m = String(texto ?? '').match(/-?\d+(?:[.,]\d+)?/);
+  if (!m) return null;
+  const n = Number(m[0].replace(',', '.'));
+  return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : null;
+}
+
+// Clasificación de SmartOLT ("Very good", "Warning", "Critical") en español.
+const CALIDAD = {
+  'very good': 'Muy buena',
+  warning: 'Advertencia',
+  critical: 'Crítica',
+};
+export const calidadSenal = (texto) => CALIDAD[String(texto || '').trim().toLowerCase()] || String(texto || '').trim();

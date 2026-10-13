@@ -5,6 +5,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 // Solo hace lecturas. Consultas:
 //   POST /nap { codigo }     coordenadas de una caja NAP en Tomodat
 //   POST /onu { cedula }     datos del cliente en SmartOLT (ver buscarOnus)
+//   POST /onu/senal { ticketId }  potencia óptica de la ONU del cliente de esa orden
 // El token de SmartOLT vive aquí también (secreto SMARTOLT_API_KEY).
 //
 // Descargar el catálogo completo de Tomodat es lento, así que las consultas
@@ -164,6 +165,8 @@ function buscar(puntos, codigo) {
 
 // Solo lo que necesita una orden nueva (nada de estado, señal ni datos de red).
 const CAMPOS_ONU = 'unique_external_id,name,address,zone_name,odb_name,latitude,longitude,contact';
+// Para consultar la potencia: el mismo cliente más los valores de señal (dBm) y su calidad.
+const CAMPOS_SENAL = 'unique_external_id,name,address,zone_name,signal,signal_1310,signal_1490';
 const MAX_ONUS = 10;
 const SMARTOLT_TIMEOUT_MS = 20000;
 
@@ -223,8 +226,24 @@ export function mapearOnu(o) {
   };
 }
 
-async function consultarOnus(env, filtro, valor) {
-  const params = new URLSearchParams({ page: '1', page_size: '25', fields: CAMPOS_ONU, [filtro]: valor });
+// Respuesta de SmartOLT -> potencia de la ONU. `senal1310` y `senal1490` son los dBm
+// tal como los guarda SmartOLT (texto, ej. "-19.45"); `calidad` es su clasificación
+// ("Very good", "Warning", "Critical"...). La señal de SmartOLT es la última que midió
+// la OLT, no una medición en este instante.
+export function mapearSenal(o) {
+  return {
+    idExterno: textoONulo(o.unique_external_id),
+    nombre: textoONulo(o.name),
+    direccion: textoONulo(o.address),
+    zona: textoONulo(o.zone_name),
+    senal1310: textoONulo(o.signal_1310),
+    senal1490: textoONulo(o.signal_1490),
+    calidad: textoONulo(o.signal),
+  };
+}
+
+async function consultarOnus(env, filtro, valor, campos = CAMPOS_ONU) {
+  const params = new URLSearchParams({ page: '1', page_size: '25', fields: campos, [filtro]: valor });
   const res = await fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, {
     headers: { 'X-Token': env.SMARTOLT_API_KEY },
     signal: AbortSignal.timeout(SMARTOLT_TIMEOUT_MS),
@@ -243,7 +262,7 @@ export const conPuntosDeMiles = (digitos) => String(digitos).replace(/\B(?=(\d{3
 // hay coincidencia, por ID externo. Solo se devuelven las ONU que de verdad traen
 // esa cédula (la búsqueda de SmartOLT es parcial y "1234567" también aparece dentro
 // de "91234567"). Normalmente es una sola llamada.
-export async function buscarOnus(env, cedula) {
+export async function buscarOnus(env, cedula, campos = CAMPOS_ONU, mapear = mapearOnu) {
   const digitos = soloDigitos(cedula);
   const intentos = [
     ['name', conPuntosDeMiles(digitos), 'name'],
@@ -251,8 +270,8 @@ export async function buscarOnus(env, cedula) {
     ['external_id', digitos, 'unique_external_id'],
   ];
   for (const [filtro, valor, campo] of intentos) {
-    const exactas = (await consultarOnus(env, filtro, valor)).filter((o) => contieneDocumento(o[campo], digitos));
-    if (exactas.length > 0) return exactas.slice(0, MAX_ONUS).map(mapearOnu);
+    const exactas = (await consultarOnus(env, filtro, valor, campos)).filter((o) => contieneDocumento(o[campo], digitos));
+    if (exactas.length > 0) return exactas.slice(0, MAX_ONUS).map(mapear);
   }
   return [];
 }
@@ -273,6 +292,43 @@ async function handleOnu(request, env, headers, ctx) {
   }
   try {
     return json({ resultados: await buscarOnusCompartido(env, digitos, ctx) }, 200, headers);
+  } catch (err) {
+    console.error(err);
+    const mensaje = err.name === 'TimeoutError' ? 'SmartOLT tardó demasiado en responder' : err.message;
+    return new Response(`No se pudo consultar SmartOLT: ${mensaje}`, { status: 502, headers });
+  }
+}
+
+// Cédula de la orden, leída con el propio token del usuario: las reglas de Firestore
+// dejan a cada técnico leer solo sus órdenes, así que no puede consultar la señal de
+// clientes ajenos. Devuelve null si no puede leerla.
+async function cedulaDeOrden(env, ticketId, idToken) {
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(ticketId || ''))) return null;
+  const url = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/artifacts/${env.APP_ID}/public/data/tickets/${ticketId}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${idToken}` } });
+  if (res.status === 403 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`Firestore respondió ${res.status}`);
+  const doc = await res.json();
+  return soloDigitos(doc.fields?.cedula?.stringValue);
+}
+
+async function handleSenal(request, env, headers, idToken) {
+  if (!env.SMARTOLT_API_KEY || !env.SMARTOLT_BASE_URL) {
+    return new Response('SmartOLT no está configurado en el Worker.', { status: 503, headers });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response('JSON inválido', { status: 400, headers });
+  }
+  try {
+    const digitos = await cedulaDeOrden(env, body?.ticketId, idToken);
+    if (digitos === null) return new Response('No tienes acceso a esa orden.', { status: 403, headers });
+    if (digitos.length < 6 || digitos.length > 12) {
+      return new Response('La orden no tiene una cédula válida para consultar.', { status: 400, headers });
+    }
+    return json({ resultados: await buscarOnus(env, digitos, CAMPOS_SENAL, mapearSenal) }, 200, headers);
   } catch (err) {
     console.error(err);
     const mensaje = err.name === 'TimeoutError' ? 'SmartOLT tardó demasiado en responder' : err.message;
@@ -313,6 +369,8 @@ export default {
       if (rol !== 'ADMIN' && rol !== 'USUARIO') return new Response('Sin permiso para consultar clientes.', { status: 403, headers });
       return handleOnu(request, env, headers, ctx);
     }
+    // La potencia la consulta el técnico de su propia orden (ver cedulaDeOrden).
+    if (pathname === '/onu/senal') return handleSenal(request, env, headers, idToken);
     if (pathname !== '/nap') return new Response('Not Found', { status: 404, headers });
 
     let body;

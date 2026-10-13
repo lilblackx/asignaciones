@@ -1,13 +1,28 @@
 import { useState } from 'react';
-import { AlertCircle, CheckCircle2, MapPin, Tag, Wrench, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, MapPin, Plug, Tag, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
+import SelectMenu from '../SelectMenu';
+import SenalSmartOlt from './SenalSmartOlt';
+import { separarNapPuerto, unirNapPuerto } from '../../utils/napPuerto';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { formatCedula } from '../../utils/ticketDisplay';
 import ContactoCliente from '../ContactoCliente';
+import DevolucionAviso from '../DevolucionAviso';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 
+const TIPOS_VISITA = [
+  { value: '', label: 'Ninguno' },
+  { value: 'CONECTOR_EXTERNO', label: 'Conector externo' },
+  { value: 'CONECTOR_INTERNO', label: 'Conector interno' },
+];
+
 export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
-  const [nap, setNap] = useState(ticket?.nap || '');
+  const separado = ticket?.tipoVisita === 'CONECTOR_EXTERNO' ? separarNapPuerto(ticket?.nap) : null;
+  const [nap, setNap] = useState(separado ? separado.nap : (ticket?.nap || ''));
+  const [puerto, setPuerto] = useState(separado ? separado.puerto : '');
+  const [tipoVisita, setTipoVisita] = useState(ticket?.tipoVisita || '');
+  const [napError, setNapError] = useState('');
+  const [puertoError, setPuertoError] = useState('');
   const [observacion, setObservacion] = useState(ticket?.observacion || '');
   const [potencia, setPotencia] = useState(ticket?.potenciaDbm != null ? String(ticket.potenciaDbm) : '');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,6 +30,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
 
   if (!ticket) return null;
 
+  const conectorExterno = tipoVisita === 'CONECTOR_EXTERNO';
   const potenciaParseada = parsePotencia(potencia);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
 
@@ -24,10 +40,19 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
       setObsError('Debes describir el trabajo realizado antes de pre-finalizar.');
       return;
     }
+    if (conectorExterno) {
+      const faltaNap = !nap.trim();
+      const faltaPuerto = !puerto.trim();
+      setNapError(faltaNap ? 'Indica la nomenclatura de la NAP.' : '');
+      setPuertoError(faltaPuerto ? 'Indica el puerto.' : '');
+      if (faltaNap || faltaPuerto) return;
+    }
     if (potenciaParseada.error) return;
     setObsError('');
+    setNapError('');
+    setPuertoError('');
     setIsSubmitting(true);
-    await onConfirm(ticket, { nap, observacion, potenciaDbm: potenciaParseada.valor ?? null });
+    await onConfirm(ticket, { nap: conectorExterno ? unirNapPuerto(nap, puerto) : nap, observacion, potenciaDbm: potenciaParseada.valor ?? null, tipoVisita });
     setIsSubmitting(false);
   };
 
@@ -58,6 +83,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
+          <DevolucionAviso ticket={ticket} />
           {/* Resumen compacto de la orden */}
           <div className="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
             <div className="flex items-center gap-2">
@@ -80,19 +106,92 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="pf-nap" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-              NAP / CAJA / PUERTO <span className="font-normal text-zinc-400">(opcional)</span>
+            <label htmlFor="pf-tipo-visita" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+              TIPO DE VISITA <span className="font-normal text-zinc-400">(opcional)</span>
             </label>
-            <input
-              id="pf-nap"
-              type="text"
-              maxLength="50"
-              placeholder="Ej. NAP 08 - Puerto 3"
-              value={nap}
-              onChange={(e) => setNap(stripEmojis(e.target.value))}
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+            <SelectMenu
+              id="pf-tipo-visita"
+              ariaLabel="Tipo de visita"
+              icon={Plug}
+              value={tipoVisita}
+              onChange={(v) => {
+                setTipoVisita(v);
+                setNapError('');
+                setPuertoError('');
+                // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
+                if (v === 'CONECTOR_EXTERNO' && !puerto) {
+                  const sep = separarNapPuerto(nap);
+                  setNap(sep.nap);
+                  setPuerto(sep.puerto);
+                }
+              }}
+              items={TIPOS_VISITA}
             />
           </div>
+
+          {conectorExterno ? (
+            <div className="space-y-2">
+              <div className="flex gap-2.5 items-start">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <label htmlFor="pf-nap" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+                    NOMENCLATURA DE LA NAP <span className="font-normal text-red-500">(obligatorio)</span>
+                  </label>
+                  <input
+                    id="pf-nap"
+                    type="text"
+                    maxLength="40"
+                    placeholder="Ej. NAP 08"
+                    value={nap}
+                    onChange={(e) => { setNap(stripEmojis(e.target.value)); if (napError) setNapError(''); }}
+                    aria-invalid={!!napError}
+                    className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${napError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+                  />
+                  {napError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{napError}</p>}
+                </div>
+                <div className="space-y-1 w-24 shrink-0">
+                  <label htmlFor="pf-puerto" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+                    PUERTO <span className="font-normal text-red-500">(obligatorio)</span>
+                  </label>
+                  <input
+                    id="pf-puerto"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength="3"
+                    placeholder="Ej. 3"
+                    value={puerto}
+                    onChange={(e) => { setPuerto(e.target.value.replace(/\D/g, '')); if (puertoError) setPuertoError(''); }}
+                    aria-invalid={!!puertoError}
+                    className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${puertoError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+                  />
+                  {puertoError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{puertoError}</p>}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <label htmlFor="pf-nap" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+                NAP / CAJA / PUERTO <span className="font-normal text-zinc-400">(opcional)</span>
+              </label>
+              <input
+                id="pf-nap"
+                type="text"
+                maxLength="50"
+                placeholder="Ej. NAP 08 - Puerto 3"
+                value={nap}
+                onChange={(e) => setNap(stripEmojis(e.target.value))}
+                className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+              />
+            </div>
+          )}
+
+          {tipoVisita && (
+            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
+              <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="leading-tight">
+                {conectorExterno ? 'Conector externo' : 'Conector interno'}: cuando se finalice la orden, verás el cobro resultante para el cliente.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1">
             <label htmlFor="pf-potencia" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
@@ -113,6 +212,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
             <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
             </p>
+            {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={setPotencia} />}
           </div>
 
           <div className="space-y-1">
@@ -156,8 +256,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              <CheckCircle2 className="w-4 h-4" />
-              {isSubmitting ? 'Guardando...' : 'Confirmar Pre-finalizada'}
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span className="whitespace-nowrap">{isSubmitting ? 'Guardando...' : 'Confirmar'}</span>
             </button>
           </div>
         </form>

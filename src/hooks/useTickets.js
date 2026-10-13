@@ -2,11 +2,20 @@ import { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, doc, setDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
-import { playAprobadoSound, playNuevaAsignacionSound, playPreFinalizadoSound } from '../utils/notificationSound';
+import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound } from '../utils/notificationSound';
 import { sendPush } from '../lib/notify';
 import { parsePotencia } from '../utils/potencia';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
+import { devolucionPendiente } from '../utils/devolucion';
+
+const ETIQUETA_TIPO_VISITA = { CONECTOR_EXTERNO: 'Conector externo', CONECTOR_INTERNO: 'Conector interno' };
+
+// Texto del cobro que se le muestra al técnico cuando finalizan una orden con tipo
+// de visita (conector externo o interno). El monto lo calcula quien finaliza (con la
+// tasa de ese momento) y queda guardado en la orden como `cobroBs`. Antes de
+// finalizar no se muestra ningún cobro.
+const avisoCobro = (t) => (t.tipoVisita && t.cobroBs ? ` Cobro resultante al cliente: ${t.cobroBs} Bs.` : '');
 
 // Envoltorios con la base de datos de la app; la lógica vive en utils/correlativo.js.
 const generarCorrelativoConCatchUp = (...args) => generarCorrelativoConCatchUpBase(db, appId, ...args);
@@ -50,11 +59,28 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         body: `${updated.codigo || 'Orden'} (${updated.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA — revisar.`,
       });
     }
+    if (updated.estado === 'PENDIENTE' && original?.estado === 'PRE-FINALIZADO') {
+      const { motivo } = devolucionPendiente(updated) || {};
+      sendPush(firebaseUser, {
+        target: { type: 'tecnico', name: updated.tecnico },
+        title: 'Orden devuelta',
+        body: `${updated.codigo || 'Orden'} fue devuelta${motivo ? `: ${motivo}` : '. Revisa los detalles.'}`,
+      });
+    }
+    // Cierre directo de una orden con tipo de visita (vino de una devolución): solo
+    // avisa si hay cobro; el aviso normal de cierre es el de aprobación de abajo.
+    if (updated.estado === 'FINALIZADO' && original?.estado === 'PENDIENTE' && avisoCobro(updated)) {
+      sendPush(firebaseUser, {
+        target: { type: 'tecnico', name: updated.tecnico },
+        title: 'Orden finalizada',
+        body: `${updated.codigo || 'Orden'} fue finalizada.${avisoCobro(updated)}`,
+      });
+    }
     if (updated.estado === 'FINALIZADO' && original?.estado === 'PRE-FINALIZADO') {
       sendPush(firebaseUser, {
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Orden aprobada',
-        body: `${updated.codigo || 'Orden'} fue aprobada y finalizada. Ya puedes continuar.`,
+        body: `${updated.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(updated) || ' Ya puedes continuar.'}`,
       });
     }
   };
@@ -136,19 +162,38 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             playNuevaAsignacionSound();
           }
 
+          // Avisa al técnico cuando le devuelven una orden (PRE-FINALIZADO -> PENDIENTE).
+          const devueltas = loadedTickets.filter(t =>
+            t.estado === 'PENDIENTE' && estadoAnteriorRef.current.get(t.id) === 'PRE-FINALIZADO'
+          );
+          if (devueltas.length > 0) {
+            const t = devueltas[0];
+            const { motivo } = devolucionPendiente(t) || {};
+            const texto = devueltas.length === 1
+              ? `${t.codigo || 'Orden'} fue devuelta${motivo ? `: ${motivo}` : '. Revisa los detalles.'}`
+              : `${devueltas.length} órdenes fueron devueltas. Revisa los detalles.`;
+            setToastMsg({ type: 'devuelto', text: texto, duration: 9000 });
+            onNotify?.({ type: 'devuelto', text: texto });
+            playDevueltaSound();
+          }
+
           // Avisa al técnico cuando le aprueban una orden (PRE-FINALIZADO ->
           // FINALIZADO), para que sepa que ya puede seguir adelante.
           const aprobadas = loadedTickets.filter(t =>
-            t.estado === 'FINALIZADO' && estadoAnteriorRef.current.get(t.id) === 'PRE-FINALIZADO'
+            t.estado === 'FINALIZADO' && (
+              estadoAnteriorRef.current.get(t.id) === 'PRE-FINALIZADO'
+              || (estadoAnteriorRef.current.get(t.id) === 'PENDIENTE' && avisoCobro(t))
+            )
           );
           if (aprobadas.length === 1) {
             const t = aprobadas[0];
-            const texto = `${t.codigo || 'Orden'} fue aprobada y finalizada. Ya puedes continuar.`;
+            const texto = `${t.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(t) || ' Ya puedes continuar.'}`;
             setToastMsg({ type: 'aprobado', text: texto, duration: 6000 });
             onNotify?.({ type: 'aprobado', text: texto });
             playAprobadoSound();
           } else if (aprobadas.length > 1) {
-            const texto = `${aprobadas.length} órdenes fueron aprobadas y finalizadas.`;
+            const cobros = aprobadas.filter(t => avisoCobro(t)).map(t => `${t.codigo || 'Orden'}: ${t.cobroBs} Bs`);
+            const texto = `${aprobadas.length} órdenes fueron aprobadas y finalizadas.${cobros.length ? ` Cobro resultante al cliente: ${cobros.join(', ')}.` : ''}`;
             setToastMsg({ type: 'aprobado', text: texto, duration: 6000 });
             onNotify?.({ type: 'aprobado', text: texto });
             playAprobadoSound();
@@ -360,7 +405,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     return true;
   };
 
-  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, tipoVisita } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacion || '').trim()) {
@@ -372,6 +417,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     if (observacion && observacion.trim()) detalle += ` | Obs: ${observacion.trim()}`;
     if (nap && nap.trim()) detalle += ` | NAP: ${nap.trim()}`;
     if (potenciaDbm != null) detalle += ` | Potencia: ${potenciaDbm} dBm`;
+    if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
 
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
@@ -386,6 +432,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       nap: nap !== undefined ? nap : (ticket.nap || ''),
       potenciaDbm: potenciaDbm !== undefined ? potenciaDbm : (ticket.potenciaDbm ?? null),
       observacion: observacion !== undefined ? observacion : (ticket.observacion || ''),
+      tipoVisita: tipoVisita !== undefined ? tipoVisita : (ticket.tipoVisita || ''),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -394,19 +441,23 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     notifyTicketChange(ticket, updatedTicket);
   };
 
-  const aprobarFinalizarTicket = async (ticket) => {
+  // `montoBs`: cobro de la visita ya formateado (ej. "5.696"); solo se guarda en
+  // órdenes con tipo de visita, para que el técnico lo vea al aprobarse.
+  const aprobarFinalizarTicket = async (ticket, { montoBs } = {}) => {
     if (!firebaseUser || !ticket) return;
 
+    const cobroBs = ticket.tipoVisita && montoBs ? montoBs : null;
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'ADMIN',
       tipo: 'aprobado',
-      detalle: 'Aprobado y marcado como FINALIZADO'
+      detalle: `Aprobado y marcado como FINALIZADO${cobroBs ? ` | Cobro resultante: ${cobroBs} Bs` : ''}`
     };
 
     const updatedTicket = {
       ...ticket,
       estado: 'FINALIZADO',
+      ...(cobroBs ? { cobroBs } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -415,21 +466,53 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     notifyTicketChange(ticket, updatedTicket);
   };
 
+  // El admin regresa una orden PRE-FINALIZADA al técnico con un motivo: vuelve a
+  // PENDIENTE y el técnico recibe el aviso (push + in-app).
+  const devolverTicket = async (ticket, motivo) => {
+    if (!firebaseUser || !ticket) return;
+    const motivoLimpio = (motivo || '').trim();
+    if (!motivoLimpio) {
+      setToastMsg({ type: 'error', text: 'Escribe el motivo de la devolución.' });
+      return false;
+    }
+
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'ADMIN',
+      tipo: 'devuelto',
+      detalle: `Devuelta al técnico | Motivo: ${motivoLimpio}`,
+      motivo: motivoLimpio
+    };
+
+    const updatedTicket = {
+      ...ticket,
+      estado: 'PENDIENTE',
+      historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
+    };
+
+    await actualizarTicket(ticket, updatedTicket);
+    setToastMsg({ type: 'success', text: 'Orden devuelta al técnico.' });
+    notifyTicketChange(ticket, updatedTicket);
+    return true;
+  };
+
   // Cierre directo de una orden PENDIENTE desde la tabla, sin pasar por el
   // formulario de edición ni por la pre-finalización del técnico.
-  const finalizarTicket = async (ticket) => {
+  const finalizarTicket = async (ticket, { montoBs } = {}) => {
     if (!firebaseUser || !ticket) return;
 
+    const cobroBs = ticket.tipoVisita && montoBs ? montoBs : null;
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'OPERADOR',
       tipo: 'finalizado',
-      detalle: 'Marcado como FINALIZADO'
+      detalle: `Marcado como FINALIZADO${cobroBs ? ` | Cobro resultante: ${cobroBs} Bs` : ''}`
     };
 
     const updatedTicket = {
       ...ticket,
       estado: 'FINALIZADO',
+      ...(cobroBs ? { cobroBs } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -501,6 +584,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     guardarUbicacion,
     preFinalizarTicket,
     aprobarFinalizarTicket,
+    devolverTicket,
     finalizarTicket
   };
 }

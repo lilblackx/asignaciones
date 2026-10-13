@@ -92,6 +92,21 @@ export function playAprobadoSound() {
   }
 }
 
+// Tres tonos descendentes ("atención"): para el técnico cuando le devuelven una
+// orden con observaciones. Distinto de los demás patrones.
+export function playDevueltaSound() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    tone(ctx, 1046.5, now, 0.14, 0.65);
+    tone(ctx, 783.99, now + 0.13, 0.14, 0.65);
+    tone(ctx, 587.33, now + 0.26, 0.26, 0.7);
+  } catch {
+    // Sin Web Audio o autoplay bloqueado: se pierde el sonido, no la app.
+  }
+}
+
 // Dos tonos agudos cortos ("ping-ping"): para el técnico cuando le llega una
 // orden nueva asignada. Distinto de los otros tres patrones ya usados.
 export function playNuevaAsignacionSound() {
