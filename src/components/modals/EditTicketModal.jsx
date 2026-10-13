@@ -98,7 +98,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
         </div>
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-nombre" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">NOMBRE</label>
+            <label htmlFor="ed-nombre" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">NOMBRE<span className="text-red-600"> *</span></label>
             <input id="ed-nombre" disabled={isTecnico} required type="text" maxLength="100" name="nombre" value={editingTicket.nombre || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <CedulaField
@@ -111,7 +111,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             disabled={isTecnico}
           />
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-direccion" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">DIRECCIÓN</label>
+            <label htmlFor="ed-direccion" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">DIRECCIÓN<span className="text-red-600"> *</span></label>
             <input id="ed-direccion" disabled={isTecnico} required type="text" maxLength="200" name="direccion" value={editingTicket.direccion || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <div className="col-span-1 space-y-1">
@@ -119,7 +119,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             <input id="ed-fechaprog" disabled={isTecnico} type="date" name="fechaProgramada" value={editingTicket.fechaProgramada || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <div className="col-span-1 space-y-1">
-            <label htmlFor="ed-codigo" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">CÓDIGO</label>
+            <label htmlFor="ed-codigo" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">CÓDIGO<span className="text-red-600"> *</span></label>
             <input id="ed-codigo" disabled={isTecnico} required type="text" maxLength="7" name="codigo" value={editingTicket.codigo} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none uppercase text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <TipoTrabajoField

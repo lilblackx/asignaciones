@@ -21,6 +21,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   const [verificandoCodigo, setVerificandoCodigo] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
   const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
   // Instalación con plantilla de la promotora pegada: ya trae todos los datos y el
   // cliente es nuevo (aún no existe en la OLT), así que SmartOLT no se consulta solo.
@@ -120,8 +121,17 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   // Con NAP escrita pero sin coordenadas, avisa y deja que el usuario decida.
   const faltanNapCoordenadas = Boolean(formData.nap?.trim()) && !napCoordenadasParseadas.valor;
 
+  // El tipo es obligatorio cuando el trabajo tiene opciones (instalación o avería).
+  const faltaTipo = opcionesTipo.length > 0 && !formData.falla;
+  const mostrarFaltaTipo = faltaTipo && intentoGuardar;
+
   const onSubmit = (e) => {
     e.preventDefault();
+    if (faltaTipo) {
+      setIntentoGuardar(true);
+      document.getElementById('tk-falla')?.focus();
+      return;
+    }
     if (ubicacionParseada.error || napCoordenadasParseadas.error || verificandoCodigo) return;
     if (faltanNapCoordenadas) {
       setShowSinCoordenadas(true);
@@ -156,7 +166,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-fecha" className="text-[10px] font-bold text-zinc-500 ml-1">FECHA</label>
-            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className="w-full bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs text-zinc-500 dark:text-zinc-400 cursor-default" />
+            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className="w-full bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded text-[11px] tracking-tight text-zinc-500 dark:text-zinc-400 cursor-default" />
           </div>
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-codigo" className="text-[10px] font-bold text-zinc-500 ml-1">CÓDIGO</label>
@@ -208,7 +218,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           )}
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-nombre" className="text-[10px] font-bold text-zinc-500 ml-1">NOMBRE</label>
+            <label htmlFor="tk-nombre" className="text-[10px] font-bold text-zinc-500 ml-1">NOMBRE<span className="text-red-600"> *</span></label>
             <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
@@ -254,7 +264,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           )}
 
           <div className="col-span-1 sm:col-span-2 space-y-0.5">
-            <label htmlFor="tk-falla" className="text-[10px] font-bold text-zinc-500 ml-1">TIPO</label>
+            <label htmlFor="tk-falla" className="text-[10px] font-bold text-zinc-500 ml-1">TIPO{opcionesTipo.length > 0 && <span className="text-red-600"> *</span>}</label>
             <SelectMenu
               id="tk-falla"
               ariaLabel="Tipo"
@@ -262,12 +272,13 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               value={formData.falla}
               onChange={(v) => handleCreateChange({ target: { name: 'falla', value: v, type: 'text' } })}
               items={tipoItems}
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 pl-2 pr-7 py-1.5 rounded text-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              className={`w-full bg-white dark:bg-zinc-950 border ${mostrarFaltaTipo ? 'border-red-600' : 'border-zinc-200 dark:border-zinc-700'} pl-2 pr-7 py-1.5 rounded text-xs disabled:opacity-60 disabled:cursor-not-allowed`}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
+            {mostrarFaltaTipo && <p role="alert" className="text-[10px] font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
           </div>
           <div className="col-span-1 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-direccion" className="text-[10px] font-bold text-zinc-500 ml-1">DIRECCIÓN</label>
+            <label htmlFor="tk-direccion" className="text-[10px] font-bold text-zinc-500 ml-1">DIRECCIÓN<span className="text-red-600"> *</span></label>
             <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
