@@ -172,39 +172,39 @@ export default function TicketsMobileList({
           {ticket.estado !== 'ELIMINADO' ? (
             isTecnico ? (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
-                <button onClick={() => onCopyWhatsApp(ticket)} aria-label="Copiar plantilla de WhatsApp" title="Copiar plantilla de WhatsApp" className="flex-1 py-3 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-sm transition-colors">
+                <button onClick={() => onCopyWhatsApp(ticket)} aria-label="Copiar plantilla de WhatsApp" title="Copiar plantilla de WhatsApp" className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors">
                   <ClipboardCopy className="w-4 h-4" /> Plantilla
                 </button>
                 {ticket.estado === 'PENDIENTE' ? (
-                  <button onClick={() => onPreFinalizar(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-sm transition-colors">
+                  <button onClick={() => onPreFinalizar(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-[13px] transition-colors">
                     <CheckCircle2 className="w-4 h-4" /> Pre-finalizar
                   </button>
                 ) : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? (
-                  <div className="flex-1 py-3 flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                  <div className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-sm">
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : null}
-                <button onClick={() => onEdit(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-sm transition-colors">
+                <button onClick={() => onEdit(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] transition-colors">
                   <Edit className="w-4 h-4" /> Detalles
                 </button>
               </div>
             ) : (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
-                <button onClick={() => onCopyWhatsApp(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-sm transition-colors"><ClipboardCopy className="w-4 h-4" /> Plantilla</button>
+                <button onClick={() => onCopyWhatsApp(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors"><ClipboardCopy className="w-4 h-4" /> Plantilla</button>
                 {canEditTickets ? (
                   <>
                     {ticket.estado === 'PENDIENTE' && (
-                      <button onClick={() => onFinalizar(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-sm transition-colors">
+                      <button onClick={() => onFinalizar(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-[13px] transition-colors">
                         <CheckCircle2 className="w-4 h-4" /> Finalizar
                       </button>
                     )}
                     {(ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA') && (
-                      <button onClick={() => onAprobarFinalizar(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm transition-colors">
+                      <button onClick={() => onAprobarFinalizar(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 text-[13px] transition-colors">
                         <CheckCheck className="w-4 h-4" /> Aprobar
                       </button>
                     )}
-                    <button onClick={() => onEdit(ticket)} className="flex-1 py-3 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-sm transition-colors"><Edit className="w-4 h-4" /> Editar</button>
-                    <button onClick={() => onDelete(ticket.id)} className="flex-1 py-3 flex items-center justify-center gap-1 text-red-600 dark:text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors"><Trash2 className="w-4 h-4" /> Eliminar</button>
+                    <button onClick={() => onEdit(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] transition-colors"><Edit className="w-4 h-4" /> Editar</button>
+                    <button onClick={() => onDelete(ticket.id)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-red-600 dark:text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-[13px] transition-colors"><Trash2 className="w-4 h-4" /> Eliminar</button>
                   </>
                 ) : (
                   <div className="flex-1 py-3 text-center text-xs text-zinc-500 font-medium">Solo visualización</div>

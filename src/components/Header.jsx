@@ -54,7 +54,7 @@ export default function Header({
     <header className="bg-black text-white shadow-md sticky top-0 z-10 border-b-2 border-red-600">
       <div className="px-4 py-3 flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
-          <h1 className="text-base sm:text-xl font-black tracking-wide">
+          <h1 className="text-sm min-[400px]:text-base sm:text-xl font-black tracking-wide">
             <button
               type="button"
               onClick={onGoHome}

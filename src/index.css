@@ -1,5 +1,15 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter/wght.css";
 @custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Números del mismo ancho: cédulas, teléfonos, códigos y montos quedan alineados. */
+body {
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
 
 /* Scrollbar a tono con la app (zinc/red), en vez del gris por defecto del navegador. */
 * {

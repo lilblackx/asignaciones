@@ -35,7 +35,7 @@ export default function TicketsTable({
         <thead className="text-[10px] text-white uppercase bg-black border-b-2 border-red-600">
           <tr>
             <th className="px-3 py-3 border-r border-zinc-800 w-[7%] align-middle text-center">CÓDIGO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[20%] align-middle text-center">NOMBRE</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[18%] align-middle text-center">NOMBRE</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">CÉDULA</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[14%] align-middle text-center">DIRECCIÓN</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[16%] align-middle group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
@@ -44,7 +44,7 @@ export default function TicketsTable({
                 <ArrowDownAZ className={`w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
               </div>
             </th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[9%] align-middle text-center">TÉCNICO</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
             <th className="px-2 py-3 border-r border-zinc-800 w-[6%] align-middle text-center">ENVIADO</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[8%] align-middle text-center">ESTADO</th>
             <th className="px-2 py-3 align-middle text-center text-red-500 w-[9%]">ACC</th>
