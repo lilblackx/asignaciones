@@ -7,6 +7,10 @@ export function valorSenal(texto) {
   return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : null;
 }
 
+// Con la ONU fuera de línea (Offline, Power fail, LOS...) SmartOLT devuelve la última señal
+// guardada, no la actual: no sirve como medición. Sin dato de estado se asume en línea.
+export const onuEnLinea = (estado) => !String(estado ?? '').trim() || /^online$/i.test(String(estado).trim());
+
 // Clasificación de SmartOLT ("Very good", "Warning", "Critical") en español.
 const CALIDAD = {
   'very good': 'Muy buena',

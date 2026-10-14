@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, Coins, History, Landmark, LogOut, MoreVertical, Moon, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
+import { BarChart, Cable, Coins, History, Landmark, LogOut, MoreVertical, Moon, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
 
@@ -15,12 +15,14 @@ export default function Header({
   onOpenTechnicians,
   onOpenUsers,
   onOpenTasa,
+  onOpenMateriales,
   onOpenFormasPago,
   onOpenCreate,
   canCerrar,
   handleLogout,
   preFinalizadoCount = 0,
   onOpenPreFinalizados,
+  onOpenNotification,
   onGoHome,
   notifications
 }) {
@@ -86,6 +88,7 @@ export default function Header({
               clearAll={notifications.clearAll}
               preFinalizadoCount={canEditTickets ? preFinalizadoCount : 0}
               onOpenPreFinalizados={canEditTickets ? onOpenPreFinalizados : undefined}
+              onOpenNotification={onOpenNotification}
             />
           )}
 
@@ -133,6 +136,9 @@ export default function Header({
                       </button>
                       <button onClick={runAndClose(onOpenTasa)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
                         <Coins className="w-4 h-4"aria-hidden="true" /> Tasa y pagos
+                      </button>
+                      <button onClick={runAndClose(onOpenMateriales)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
+                        <Cable className="w-4 h-4" aria-hidden="true" /> Materiales
                       </button>
                     </>
                   )}

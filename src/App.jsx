@@ -1,9 +1,12 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ROLES, siguienteColorTecnico } from './constants';
 import { getEnvioInfo } from './utils/ticketDisplay';
 import { normalizarUbicacion } from './utils/ubicacion';
 import { avisoTasaDesactualizada, montoBsDe } from './utils/tasa';
+import { avisaCobroAlPreFinalizar } from './utils/tipoVisita';
+import { tieneCobroFinal } from './utils/cobro';
 import TasaIndicador from './components/TasaIndicador';
+import AvisoNotificaciones from './components/AvisoNotificaciones';
 import { crearConAviso } from './utils/errores';
 import { useAuth } from './hooks/useAuth';
 import { usePushToken } from './hooks/usePushToken';
@@ -47,7 +50,10 @@ const OrdersHistoryModal = lazy(() => import('./components/modals/OrdersHistoryM
 const WhatsAppMessageModal = lazy(() => import('./components/modals/WhatsAppMessageModal'));
 const TasaBcvModal = lazy(() => import('./components/modals/TasaBcvModal'));
 const FormasPagoModal = lazy(() => import('./components/modals/FormasPagoModal'));
+const MaterialesModal = lazy(() => import('./components/modals/MaterialesModal'));
 const PreFinalizarModal = lazy(() => import('./components/modals/PreFinalizarModal'));
+const FinalizarOrdenModal = lazy(() => import('./components/modals/FinalizarOrdenModal'));
+const CobroResultanteModal = lazy(() => import('./components/modals/CobroResultanteModal'));
 const AprobarFinalizarModal = lazy(() => import('./components/modals/AprobarFinalizarModal'));
 const UbicacionModal = lazy(() => import('./components/modals/UbicacionModal'));
 const HistorialOrdenModal = lazy(() => import('./components/modals/HistorialOrdenModal'));
@@ -62,7 +68,7 @@ const EMPTY_FORM = () => ({
 
 export default function App() {
   const { firebaseUser, uid, currentUser, currentUserName, role, tecnicoAsociado, isTecnico, canCerrar, authReady, connectionError, loginData, setLoginData, loginError, handleLogin, handleLogout } = useAuth();
-  usePushToken(uid);
+  const push = usePushToken(uid);
   const { toastMsg, setToastMsg } = useToast();
   const conAviso = crearConAviso(setToastMsg);
   const notifications = useNotifications(currentUser);
@@ -72,8 +78,8 @@ export default function App() {
   const canEditTickets = role === ROLES.ADMIN || role === ROLES.USUARIO;
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
-  const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg);
-  const { tickets, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
@@ -190,6 +196,18 @@ export default function App() {
     setSortBy('DEFECTO');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  // Deja en la lista solo la orden indicada (búsqueda por código) para llegar a ella.
+  const mostrarOrden = (ticket) => {
+    setSearchTerm(ticket.codigo || ticket.cedula || ticket.nombre || '');
+    setTipoFilter('TODOS');
+    const activa = ticket.estado === 'PENDIENTE' || ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA';
+    setStatusFilter(
+      ticket.estado === 'ELIMINADO' ? 'ELIMINADOS'
+        : activa ? (isTecnico && esProgramadaFutura(ticket) ? 'PROG_FUTURAS' : 'TODOS')
+        : (ticket.estado || 'TODOS').toUpperCase()
+    );
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const { reportSearchTerm, setReportSearchTerm, archivedSearchResults } = useArchivedSearch(reports);
   // Coordenadas de NAP ya usadas en órdenes anteriores: evitan esperar a Tomodat.
   const napsConocidas = useMemo(() => construirNapsConocidas(tickets, aplanarArchivados(reports)), [tickets, reports]);
@@ -198,6 +216,7 @@ export default function App() {
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isTasaModalOpen, setIsTasaModalOpen] = useState(false);
   const [isFormasPagoOpen, setIsFormasPagoOpen] = useState(false);
+  const [isMaterialesOpen, setIsMaterialesOpen] = useState(false);
   const [newTech, setNewTech] = useState({ name: '', color: null });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
@@ -225,6 +244,75 @@ export default function App() {
   const [finalizarTarget, setFinalizarTarget] = useState(null);
   const [ubicacionTarget, setUbicacionTarget] = useState(null);
   const [historialTarget, setHistorialTarget] = useState(null);
+
+  // Click en una notificación: lleva a la orden o a la acción que avisa. Si la orden ya no
+  // está (o cambió de estado), cae a la vista de la lista más cercana.
+  // Antes de salir se quita este dispositivo del perfil, para que el siguiente usuario del
+  // teléfono no reciba los avisos de este. No espera más de 3 s: cerrar sesión no puede trabarse.
+  const cerrarSesion = async () => {
+    await Promise.race([push.desvincular(), new Promise((resolve) => setTimeout(resolve, 3000))]);
+    await handleLogout();
+    // Sin esto el aviso de "¿Cerrar sesión?" reaparecía al iniciar sesión de nuevo sin recargar.
+    setIsLogoutConfirmOpen(false);
+  };
+
+  const handleOpenNotification = (n) => {
+    const ticket = n.ticketId ? tickets.find(t => t.id === n.ticketId) : null;
+    switch (n.type) {
+      case 'prefinalizado':
+        if (canEditTickets && ticket?.estado === 'PRE-FINALIZADO') setAprobarTarget(ticket);
+        else handleOpenPreFinalizados();
+        break;
+      case 'devuelto':
+        if (isTecnico && ticket?.estado === 'PENDIENTE') setPreFinalizarTarget(ticket);
+        else if (ticket) mostrarOrden(ticket);
+        else handleGoHome();
+        break;
+      case 'nuevaAsignacion':
+        if (ticket) mostrarOrden(ticket);
+        else handleGoHome();
+        break;
+      case 'aprobado':
+        if (ticket && isTecnico && tieneCobroFinal(ticket)) mostrarCobro(ticket);
+        else if (ticket) mostrarOrden(ticket);
+        else setStatusFilter('FINALIZADO');
+        break;
+      case 'tecnicoStatus':
+        if (isAdmin) setIsAddTechModalOpen(true);
+        break;
+      case 'cierreAutomatico':
+        if (canCerrar) setIsReportModalOpen(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Tocar un push abre la orden: con la app abierta el Service Worker manda un mensaje; con la
+  // app cerrada la abre con ?orden=...&tipo=... en la URL, que se atiende al llegar las órdenes.
+  const abrirNotificacionRef = useRef(handleOpenNotification);
+  useEffect(() => { abrirNotificacionRef.current = handleOpenNotification; });
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const alRecibir = (e) => {
+      if (e.data?.type === 'ABRIR_NOTIFICACION') abrirNotificacionRef.current({ type: e.data.tipo, ticketId: e.data.ticketId });
+    };
+    navigator.serviceWorker.addEventListener('message', alRecibir);
+    return () => navigator.serviceWorker.removeEventListener('message', alRecibir);
+  }, []);
+  const notificacionDeUrlRef = useRef(null);
+  if (notificacionDeUrlRef.current === null) {
+    const params = new URLSearchParams(window.location.search);
+    notificacionDeUrlRef.current = params.get('orden') ? { type: params.get('tipo') || '', ticketId: params.get('orden') } : false;
+  }
+  useEffect(() => {
+    if (!ticketsCargados || !notificacionDeUrlRef.current) return;
+    const n = notificacionDeUrlRef.current;
+    notificacionDeUrlRef.current = false;
+    window.history.replaceState(null, '', window.location.pathname);
+    const id = setTimeout(() => abrirNotificacionRef.current(n), 0);
+    return () => clearTimeout(id);
+  }, [ticketsCargados]);
 
   const [formData, setFormData] = useState(EMPTY_FORM());
 
@@ -272,12 +360,18 @@ export default function App() {
   }, 'No se pudieron guardar los cambios.');
 
   const handleConfirmPreFinalizar = conAviso(async (ticket, extra) => {
-    await preFinalizarTicket(ticket, extra);
+    const ok = await preFinalizarTicket(ticket, extra);
     setPreFinalizarTarget(null);
+    // Conector interno: el técnico ve el cobro ya, para informárselo al cliente en el momento.
+    if (ok && isTecnico && avisaCobroAlPreFinalizar(extra.tipoVisita)) {
+      const monto = montoBsDe(tasaConfig);
+      if (monto) mostrarCobroInmediato({ ...ticket, ...extra }, monto);
+      else setToastMsg({ type: 'error', duration: 9000, text: 'Conector interno: la tasa no está configurada y no se pudo calcular el cobro. Avisa al administrador.' });
+    }
   }, 'No se pudo pre-finalizar la orden.');
 
-  const handleConfirmAprobarFinalizar = conAviso(async (ticket) => {
-    await aprobarFinalizarTicket(ticket, { montoBs: montoBsDe(tasaConfig) });
+  const handleConfirmAprobarFinalizar = conAviso(async (ticket, cobro) => {
+    await aprobarFinalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
     setAprobarTarget(null);
   }, 'No se pudo aprobar la orden.');
 
@@ -286,8 +380,8 @@ export default function App() {
     if (ok) setAprobarTarget(null);
   }, 'No se pudo devolver la orden.');
 
-  const confirmFinalizar = conAviso(async () => {
-    await finalizarTicket(finalizarTarget, { montoBs: montoBsDe(tasaConfig) });
+  const confirmFinalizar = conAviso(async (cobro) => {
+    await finalizarTicket(finalizarTarget, cobro || { montoBs: montoBsDe(tasaConfig) });
     setFinalizarTarget(null);
   }, 'No se pudo finalizar la orden.');
 
@@ -400,15 +494,18 @@ export default function App() {
           onOpenTechnicians={() => setIsAddTechModalOpen(true)}
           onOpenUsers={() => setIsUsersModalOpen(true)}
           onOpenTasa={() => setIsTasaModalOpen(true)}
+          onOpenMateriales={() => setIsMaterialesOpen(true)}
           onOpenFormasPago={() => setIsFormasPagoOpen(true)}
           onOpenCreate={handleOpenCreateModal}
           handleLogout={() => setIsLogoutConfirmOpen(true)}
           preFinalizadoCount={preFinalizadoCount}
           onOpenPreFinalizados={handleOpenPreFinalizados}
+          onOpenNotification={handleOpenNotification}
           onGoHome={handleGoHome}          notifications={notifications}
         />
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
+          {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} onActivar={push.activar} avisarFallo={isTecnico} />}
           <FiltersBar
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -545,13 +642,9 @@ export default function App() {
         )}
 
         {finalizarTarget && (
-          <ConfirmModal
-            color="blue"
-            title="¿Finalizar Orden?"
-            description={`La orden ${finalizarTarget.codigo || ''} (${finalizarTarget.nombre || 'sin nombre'}) pasará a FINALIZADO y quedará registrado en el historial.`}
-            confirmLabel="Sí, Finalizar"
-            processingLabel="Finalizando..."
-            zIndexClass="z-[70]"
+          <FinalizarOrdenModal
+            ticket={finalizarTarget}
+            montoBs={montoBsDe(tasaConfig)}
             onCancel={() => setFinalizarTarget(null)}
             onConfirm={confirmFinalizar}
           />
@@ -625,7 +718,7 @@ export default function App() {
             confirmLabel="Sí, Salir"
             zIndexClass="z-[70]"
             onCancel={() => setIsLogoutConfirmOpen(false)}
-            onConfirm={handleLogout}
+            onConfirm={cerrarSesion}
           />
         )}
 
@@ -673,6 +766,10 @@ export default function App() {
           />
         )}
 
+        {isTecnico && cobrosPendientes.length > 0 && (
+          <CobroResultanteModal ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} onClose={cerrarCobro} />
+        )}
+
         {aprobarTarget && (
           <AprobarFinalizarModal
             ticket={aprobarTarget}
@@ -691,6 +788,17 @@ export default function App() {
             formasPago={formasPago}
             onGuardarFormasPago={handleGuardarFormasPago}
             onClose={() => setIsTasaModalOpen(false)}
+          />
+        )}
+
+        {isAdmin && isMaterialesOpen && (
+          <MaterialesModal
+            tickets={tickets}
+            reports={reports}
+            hasMoreReports={hasMoreReports}
+            isLoadingReports={isLoadingReports}
+            onLoadMore={loadMoreReports}
+            onClose={() => setIsMaterialesOpen(false)}
           />
         )}
 

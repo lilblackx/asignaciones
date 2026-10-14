@@ -1,4 +1,5 @@
 import { POTENCIA_MIN_DBM } from './potencia';
+import { ETIQUETA_COLOR, etiquetaTipoVisita } from './tipoVisita';
 
 // CSV con ";" como separador (no ","): es el que Excel en español espera por
 // defecto, y evita choques con las comas que aparecen en nombres/direcciones.
@@ -33,6 +34,11 @@ const COLUMNAS = [
   ['NAP', t => t.nap],
   ['Coordenadas NAP', t => t.napCoordenadas],
   ['Potencia (dBm)', t => decimalEs(t.potenciaDbm)],
+  ['ONU Rx 1490 nm (dBm)', t => decimalEs(t.potencia1490Dbm)],
+  ['Tipo de visita', t => etiquetaTipoVisita(t.tipoVisita)],
+  ['Metros de cable', t => t.metrosCable ?? ''],
+  ['Conector externo (recableado)', t => ETIQUETA_COLOR[t.conectorExterno] || ''],
+  ['Conector interno (recableado)', t => ETIQUETA_COLOR[t.conectorInterno] || ''],
   ['Ubicación', t => t.ubicacion],
   ['Enviado', t => (t.isAsignado ? 'Sí' : 'No')],
   ['Observación', t => t.observacion],

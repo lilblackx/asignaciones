@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { CheckCheck, ExternalLink, Eye, MapPin, Phone, Plug, Tag, Undo2, User, Wrench, X } from 'lucide-react';
+import { Cable, CheckCheck, ExternalLink, Eye, MapPin, Phone, Plug, Tag, Undo2, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { buildSmartOltUrl } from '../../utils/smartolt';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { evaluarPotencia } from '../../utils/potencia';
+import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, etiquetaTipoVisita, generaCobro, partesRecableado } from '../../utils/tipoVisita';
+import { COBRO_INICIAL, resolverCobro } from '../../utils/cobro';
 import ContactoCliente from '../ContactoCliente';
+import CobroSelector from './CobroSelector';
 
 function Campo({ label, value, className = '' }) {
   if (!value) return null;
@@ -22,12 +25,24 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
   const [devolviendo, setDevolviendo] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [motivoError, setMotivoError] = useState('');
+  // Cobro que verá el técnico (solo en visitas de conector): "Visita técnica" u "Otro monto".
+  const [cobro, setCobro] = useState(COBRO_INICIAL);
+  const [cobroError, setCobroError] = useState('');
 
   if (!ticket) return null;
 
   const handleConfirm = async () => {
+    let extra;
+    if (generaCobro(ticket.tipoVisita)) {
+      const resuelto = resolverCobro(cobro, montoBs);
+      if (resuelto.error) {
+        setCobroError(resuelto.error);
+        return;
+      }
+      extra = { montoBs: resuelto.cobroBs, cobroTipo: resuelto.tipo };
+    }
     setIsSubmitting(true);
-    await onConfirm(ticket);
+    await onConfirm(ticket, extra);
     setIsSubmitting(false);
   };
 
@@ -110,13 +125,30 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
             <ContactoCliente telefono={ticket.telefono} ubicacion={ticket.ubicacion} napCoordenadas={ticket.napCoordenadas} nombre={ticket.nombre} className="col-span-2" />
           </div>
 
-          {ticket.tipoVisita && (
-            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-center gap-2.5 text-xs font-bold text-sky-900 dark:text-sky-200">
-              <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-              {ticket.tipoVisita === 'CONECTOR_EXTERNO' ? 'Conector externo' : 'Conector interno'}:{' '}
-              {montoBs
-                ? <>al aprobar, el técnico verá el cobro de {montoBs} Bs.</>
-                : <>la tasa no está configurada, el técnico no verá el monto en Bs.</>}
+          {ticket.tipoVisita === TIPO_RECABLEADO && (
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
+              <p className="flex items-center gap-2 font-black"><Cable className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> RECABLEADO</p>
+              {partesRecableado(ticket).length > 0
+                ? partesRecableado(ticket).map((parte) => <p key={parte} className="font-bold ml-6">{parte}</p>)
+                : <p className="ml-6 italic">Sin datos del recableado.</p>}
+              {ticket.metrosCable != null && !ticket.conectorExterno && !ticket.conectorInterno && <p className="ml-6 text-[11px] opacity-80">Sin conectores registrados.</p>}
+            </div>
+          )}
+
+          {generaCobro(ticket.tipoVisita) && (
+            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 space-y-3 text-xs text-sky-900 dark:text-sky-200">
+              <p className="flex items-center gap-2.5 font-bold">
+                <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+                {etiquetaTipoVisita(ticket.tipoVisita)}
+                {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <span className="font-normal">: el técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</span>}
+              </p>
+              <CobroSelector
+                idBase="cobro-aprobar"
+                montoVisita={montoBs}
+                seleccion={cobro}
+                onChange={(siguiente) => { setCobro(siguiente); setCobroError(''); }}
+                error={cobroError}
+              />
             </div>
           )}
 
@@ -138,6 +170,9 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                   <span className={`font-bold ${evaluarPotencia(ticket.potenciaDbm).clase}`}>{evaluarPotencia(ticket.potenciaDbm).texto}</span>
                 )}
               </div>
+              {ticket.potencia1490Dbm != null && (
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
+              )}
             </div>
           )}
 
@@ -147,19 +182,6 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
               {ticket.observacion || <span className="text-zinc-400 italic">Sin observación registrada.</span>}
             </div>
           </div>
-
-          {(ticket.historialEdiciones && ticket.historialEdiciones.length > 0) && (
-            <div>
-              <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 block mb-1">REGISTRO DE EDICIONES</span>
-              <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-lg p-2 max-h-28 overflow-y-auto space-y-1">
-                {ticket.historialEdiciones.slice().reverse().map((edicion, i) => (
-                  <div key={i} className="text-[9px] leading-snug text-zinc-600 dark:text-zinc-400">
-                    <span className="font-bold text-red-600 dark:text-red-400">[{edicion.fecha}]</span> <span className="font-black text-zinc-800 dark:text-zinc-200">{edicion.operador}:</span> {edicion.detalle}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {devolviendo && (
             <div className="space-y-1">
@@ -188,7 +210,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
               type="button"
               onClick={devolviendo ? () => { setDevolviendo(false); setMotivoError(''); } : onClose}
               disabled={isSubmitting}
-              className="flex-1 py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
             >
               {devolviendo ? 'Volver' : 'Cancelar'}
             </button>
@@ -197,7 +219,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                 type="button"
                 onClick={handleDevolver}
                 disabled={isSubmitting}
-                className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-red-600 hover:bg-red-700 border border-red-600 hover:border-red-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
@@ -221,7 +243,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                   type="button"
                   onClick={handleConfirm}
                   disabled={isSubmitting}
-                  className={`flex-[1.4] py-3 text-xs sm:text-sm text-white font-black bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-blue-600 hover:bg-blue-700 border border-blue-600 hover:border-blue-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
                     isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >

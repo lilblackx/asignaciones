@@ -1,0 +1,53 @@
+// Prueba el cobro que se informa al técnico al finalizar (src/utils/cobro.js): "Visita técnica"
+// (el monto de siempre) u "Otro monto" (escrito a mano). No necesita el emulador.
+// Uso: `npm run test:cobro`.
+import { COBRO_EXONERADO, COBRO_INICIAL, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, estaExonerado, formatoMontoBs, parseMontoBs, resolverCobro, tieneCobroFinal, valorCobro } from '../src/utils/cobro.js';
+import { avisaCobroAlPreFinalizar, generaCobro } from '../src/utils/tipoVisita.js';
+
+let failures = 0;
+function check(name, actual, esperado) {
+  const a = JSON.stringify(actual);
+  const e = JSON.stringify(esperado);
+  if (a === e) console.log(`PASS  ${name}`);
+  else { failures++; console.log(`FAIL  ${name}\n      esperado ${e}, llegó ${a}`); }
+}
+
+// --- Monto escrito a mano ---
+check('montos válidos', ['5000', '5000,5', '5000,50', '0,5', '123456789'].map(m => parseMontoBs(m).valor), [5000, 5000.5, 5000.5, 0.5, 123456789]);
+check('vacío: hay que escribir el monto', parseMontoBs('  ').error, 'Escribe el monto a cobrar.');
+check('cero no es válido', [parseMontoBs('0').error, parseMontoBs('0,00').error], ['El monto debe ser mayor a 0.', 'El monto debe ser mayor a 0.']);
+check('puntos, letras, negativos, tres decimales o demasiadas cifras: no válidos',
+  ['5.000', 'abc', '-5', '5,123', '1234567890', '5,'].map(m => Boolean(parseMontoBs(m).error)), [true, true, true, true, true, true]);
+
+// --- Formato ---
+check('formato con separador de miles y coma decimal', [formatoMontoBs(12345), formatoMontoBs(12345.5)], ['12.345', '12.345,5']);
+
+// --- Qué cobro se guarda ---
+check('"Visita técnica" usa el monto de siempre', resolverCobro({ modo: COBRO_VISITA, otro: '999' }, '5.696'), { cobroBs: '5.696', tipo: COBRO_VISITA });
+check('por defecto es la visita técnica', resolverCobro(COBRO_INICIAL, '5.696'), { cobroBs: '5.696', tipo: COBRO_VISITA });
+check('"Visita técnica" sin tasa configurada no lleva monto', resolverCobro(COBRO_INICIAL, null), { cobroBs: null, tipo: COBRO_VISITA });
+check('"Otro monto" usa el monto escrito', resolverCobro({ modo: COBRO_OTRO, otro: '12345' }, '5.696'), { cobroBs: '12.345', tipo: COBRO_OTRO });
+check('"Otro monto" con decimales', resolverCobro({ modo: COBRO_OTRO, otro: '12345,5' }, '5.696'), { cobroBs: '12.345,5', tipo: COBRO_OTRO });
+check('"Otro monto" sin escribir el monto es un error', resolverCobro({ modo: COBRO_OTRO, otro: '' }, '5.696'), { error: 'Escribe el monto a cobrar.' });
+check('"Otro monto" inválido es un error y no cae al monto de siempre', Boolean(resolverCobro({ modo: COBRO_OTRO, otro: '5.000' }, '5.696').error), true);
+check('"Exonerar" no lleva monto, aunque haya uno escrito', resolverCobro({ modo: COBRO_EXONERADO, otro: '12345' }, '5.696'), { cobroBs: null, tipo: COBRO_EXONERADO });
+check('"Exonerar" no exige escribir nada', Boolean(resolverCobro({ modo: COBRO_EXONERADO, otro: '' }, null).error), false);
+check('etiquetas', [ETIQUETA_COBRO[COBRO_VISITA], ETIQUETA_COBRO[COBRO_OTRO], ETIQUETA_COBRO[COBRO_EXONERADO]], ['Visita técnica', 'Otro monto', 'Exonerar']);
+
+// --- Cobro ya registrado en la orden ---
+const conMonto = { tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' };
+const exonerada = { tipoVisita: 'CONECTOR_INTERNO', cobroTipo: 'EXONERADO' };
+check('una orden exonerada se reconoce', [estaExonerado(exonerada), estaExonerado(conMonto), estaExonerado(null)], [true, false, false]);
+check('hay aviso de cobro con monto o con exoneración, no sin ninguno de los dos',
+  [conMonto, exonerada, { tipoVisita: 'CONECTOR_EXTERNO' }, { cobroBs: '5.696' }, { tipoVisita: 'RECABLEADO' }].map(tieneCobroFinal), [true, true, false, false, false]);
+check('lo avisado es el monto o "EXONERADO"', [valorCobro(conMonto), valorCobro(exonerada), valorCobro({})], ['5.696', 'EXONERADO', '']);
+check('pasar de monto a exonerado cambia lo avisado (se vuelve a avisar)', valorCobro(conMonto) !== valorCobro({ ...conMonto, cobroTipo: 'EXONERADO', cobroBs: null }), true);
+
+// --- Cuándo ve el técnico el aviso ---
+check('solo el conector interno avisa el cobro al pre-finalizar',
+  ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(avisaCobroAlPreFinalizar), [false, false, true, false]);
+check('lo que no genera cobro no lo avisa en ningún momento',
+  ['', 'RECABLEADO'].map(t => generaCobro(t) || avisaCobroAlPreFinalizar(t)), [false, false]);
+
+console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
+process.exit(failures ? 1 : 0);

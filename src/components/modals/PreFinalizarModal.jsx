@@ -3,47 +3,59 @@ import { AlertCircle, CheckCircle2, MapPin, Plug, Tag, Wrench, X } from 'lucide-
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import SenalSmartOlt from './SenalSmartOlt';
-import { separarNapPuerto, unirNapPuerto } from '../../utils/napPuerto';
+import { napSinDato, separarNapPuerto, unirNapPuerto } from '../../utils/napPuerto';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { formatCedula } from '../../utils/ticketDisplay';
 import ContactoCliente from '../ContactoCliente';
 import DevolucionAviso from '../DevolucionAviso';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
-
-const TIPOS_VISITA = [
-  { value: '', label: 'Ninguno' },
-  { value: 'CONECTOR_EXTERNO', label: 'Conector externo' },
-  { value: 'CONECTOR_INTERNO', label: 'Conector interno' },
-];
+import { TIPOS_VISITA, TIPO_CONECTOR_EXTERNO, TIPO_RECABLEADO, colorConectorExterno, colorConectorInterno, datosRecableado, etiquetaTipoVisita, generaCobro, parseMetros } from '../../utils/tipoVisita';
+import ConectoresRecableado from './ConectoresRecableado';
 
 export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const separado = ticket?.tipoVisita === 'CONECTOR_EXTERNO' ? separarNapPuerto(ticket?.nap) : null;
-  const [nap, setNap] = useState(separado ? separado.nap : (ticket?.nap || ''));
+  const napInicial = separado ? separado.nap : (ticket?.nap || '');
+  // Con conector externo una NAP "SN" no sirve: el técnico debe escribir la real.
+  const [nap, setNap] = useState(ticket?.tipoVisita === 'CONECTOR_EXTERNO' && napSinDato(napInicial) ? '' : napInicial);
   const [puerto, setPuerto] = useState(separado ? separado.puerto : '');
   const [tipoVisita, setTipoVisita] = useState(ticket?.tipoVisita || '');
   const [napError, setNapError] = useState('');
   const [puertoError, setPuertoError] = useState('');
   const [observacion, setObservacion] = useState(ticket?.observacion || '');
   const [potencia, setPotencia] = useState(ticket?.potenciaDbm != null ? String(ticket.potenciaDbm) : '');
+  const [potencia1490, setPotencia1490] = useState(ticket?.potencia1490Dbm != null ? String(ticket.potencia1490Dbm) : '');
+  // Recableado: metros de cable (obligatorios) y conectores colocados (opcionales).
+  const [metros, setMetros] = useState(ticket?.metrosCable != null ? String(ticket.metrosCable) : '');
+  const [colorExterno, setColorExterno] = useState(colorConectorExterno(ticket?.conectorExterno));
+  const [colorInterno, setColorInterno] = useState(colorConectorInterno(ticket?.conectorInterno));
+  const [metrosError, setMetrosError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [obsError, setObsError] = useState('');
 
   if (!ticket) return null;
 
-  const conectorExterno = tipoVisita === 'CONECTOR_EXTERNO';
+  const conectorExterno = tipoVisita === TIPO_CONECTOR_EXTERNO;
+  const recableado = tipoVisita === TIPO_RECABLEADO;
   const potenciaParseada = parsePotencia(potencia);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const metrosParseados = recableado ? parseMetros(metros) : null;
+    setMetrosError(metrosParseados?.error || '');
+    if (metrosParseados?.error) {
+      // El campo queda arriba y el botón abajo: se lleva al técnico hasta el error.
+      document.getElementById('pf-metros')?.focus();
+    }
     if (!observacion.trim()) {
       setObsError('Debes describir el trabajo realizado antes de pre-finalizar.');
       return;
     }
+    if (metrosParseados?.error) return;
     if (conectorExterno) {
-      const faltaNap = !nap.trim();
+      const faltaNap = napSinDato(nap);
       const faltaPuerto = !puerto.trim();
-      setNapError(faltaNap ? 'Indica la nomenclatura de la NAP.' : '');
+      setNapError(faltaNap ? 'Indica la nomenclatura real de la NAP (no vale "SN").' : '');
       setPuertoError(faltaPuerto ? 'Indica el puerto.' : '');
       if (faltaNap || faltaPuerto) return;
     }
@@ -52,7 +64,14 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     setNapError('');
     setPuertoError('');
     setIsSubmitting(true);
-    await onConfirm(ticket, { nap: conectorExterno ? unirNapPuerto(nap, puerto) : nap, observacion, potenciaDbm: potenciaParseada.valor ?? null, tipoVisita });
+    await onConfirm(ticket, {
+      nap: conectorExterno ? unirNapPuerto(nap, puerto) : nap,
+      observacion,
+      potenciaDbm: potenciaParseada.valor ?? null,
+      potencia1490Dbm: parsePotencia(potencia1490).valor ?? null,
+      tipoVisita,
+      ...datosRecableado(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno }),
+    });
     setIsSubmitting(false);
   };
 
@@ -118,16 +137,43 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
                 setTipoVisita(v);
                 setNapError('');
                 setPuertoError('');
+                setMetrosError('');
                 // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
-                if (v === 'CONECTOR_EXTERNO' && !puerto) {
+                if (v === TIPO_CONECTOR_EXTERNO && !puerto) {
                   const sep = separarNapPuerto(nap);
-                  setNap(sep.nap);
+                  setNap(napSinDato(sep.nap) ? '' : sep.nap);
                   setPuerto(sep.puerto);
                 }
               }}
               items={TIPOS_VISITA}
             />
           </div>
+
+          {recableado && (
+            <div className="space-y-4 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+              <div className="space-y-1">
+                <label htmlFor="pf-metros" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+                  METROS DE CABLE <span className="font-normal text-red-500">(obligatorio)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="pf-metros"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej. 35"
+                    value={metros}
+                    onChange={(e) => { setMetros(e.target.value.replace(/\D/g, '').slice(0, 4)); if (metrosError) setMetrosError(''); }}
+                    aria-invalid={!!metrosError}
+                    aria-describedby={metrosError ? 'pf-metros-error' : undefined}
+                    className={`flex-1 min-w-0 bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+                  />
+                  <span className="text-sm font-black text-zinc-500 dark:text-zinc-400 shrink-0">m</span>
+                </div>
+                {metrosError && <p id="pf-metros-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
+              </div>
+              <ConectoresRecableado colorExterno={colorExterno} colorInterno={colorInterno} onExterno={setColorExterno} onInterno={setColorInterno} />
+            </div>
+          )}
 
           {conectorExterno ? (
             <div className="space-y-2">
@@ -184,11 +230,11 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
             </div>
           )}
 
-          {tipoVisita && (
+          {generaCobro(tipoVisita) && (
             <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
               <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
               <p className="leading-tight">
-                {conectorExterno ? 'Conector externo' : 'Conector interno'}: cuando se finalice la orden, verás el cobro resultante para el cliente.
+                {etiquetaTipoVisita(tipoVisita)}: cuando se finalice la orden, verás el cobro resultante para el cliente.
               </p>
             </div>
           )}
@@ -212,7 +258,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
             <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
             </p>
-            {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={setPotencia} />}
+            {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={(v1310, v1490) => { setPotencia(v1310); setPotencia1490(v1490 ?? ''); }} />}
           </div>
 
           <div className="space-y-1">

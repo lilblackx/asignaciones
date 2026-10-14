@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, Radio } from 'lucide-react';
 import { consultarSenalOnu } from '../../lib/smartolt';
-import { calidadSenal, valorSenal } from '../../utils/senalOnu';
+import { calidadSenal, onuEnLinea, valorSenal } from '../../utils/senalOnu';
 
 // "Ver valores": el técnico pide la potencia de la ONU del cliente a SmartOLT (solo al
 // presionar el botón, nunca sola). El valor de 1310 nm se muestra y queda capturado en el
-// campo de potencia por medio de `onCapturar(valor)`; el técnico aún puede corregirlo.
+// campo de potencia por medio de `onCapturar(valor1310, valor1490)` (el de 1490 nm puede
+// ser null); el técnico aún puede corregir el de 1310.
 // Si el cliente tiene varios servicios, elige cuál es.
 export default function SenalSmartOlt({ ticketId, onCapturar }) {
   const [estado, setEstado] = useState(null); // buscando | listo | opciones | vacio | error
@@ -14,12 +15,16 @@ export default function SenalSmartOlt({ ticketId, onCapturar }) {
   useEffect(() => () => controllerRef.current?.abort(), []);
 
   const mostrar = (onu) => {
+    if (!onuEnLinea(onu.estado)) {
+      setEstado({ tipo: 'fueraDeLinea', onu });
+      return;
+    }
     const valor = valorSenal(onu.senal1310);
     if (valor === null) {
       setEstado({ tipo: 'sinSenal', onu });
       return;
     }
-    onCapturar(valor);
+    onCapturar(valor, valorSenal(onu.senal1490));
     setEstado({ tipo: 'listo', onu, valor });
   };
 
@@ -55,9 +60,15 @@ export default function SenalSmartOlt({ ticketId, onCapturar }) {
       <div role="status" aria-live="polite">
         {estado?.tipo === 'listo' && (
           <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs text-emerald-900 dark:text-emerald-200 space-y-0.5">
-            <p><span className="font-bold">Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span>{estado.onu.calidad && <> · {calidadSenal(estado.onu.calidad)}</>}</p>
-            {valorSenal(estado.onu.senal1490) !== null && <p><span className="font-bold">Señal 1490 nm:</span> {valorSenal(estado.onu.senal1490)} dBm</p>}
-            <p className="text-[10px] opacity-80">Capturada en el campo de potencia. Es la última medición de SmartOLT; puedes corregirla.</p>
+            <p><span className="font-bold">OLT Rx · Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span>{estado.onu.calidad && <> · {calidadSenal(estado.onu.calidad)}</>}</p>
+            {valorSenal(estado.onu.senal1490) !== null && <p><span className="font-bold">ONU Rx · Señal (1490 nm):</span> {valorSenal(estado.onu.senal1490)} dBm</p>}
+            <p className="text-[10px] opacity-80">Ambas señales quedan capturadas con la orden (la de 1310 nm en el campo de potencia). Es la última medición de SmartOLT; puedes corregirla.</p>
+          </div>
+        )}
+        {estado?.tipo === 'fueraDeLinea' && (
+          <div role="alert" className="rounded-xl border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-[11px] text-amber-900 dark:text-amber-200 space-y-0.5">
+            <p className="font-bold">La ONU está fuera de línea en SmartOLT ({estado.onu.estado}). No se capturó la potencia.</p>
+            <p>SmartOLT solo guarda la última señal de cuando estuvo en línea{valorSenal(estado.onu.senal1310) !== null ? ` (${valorSenal(estado.onu.senal1310)} dBm)` : ''}, que no es la actual. Escribe la potencia a mano o vuelve a consultar cuando la ONU esté en línea.</p>
           </div>
         )}
         {estado?.tipo === 'sinSenal' && (

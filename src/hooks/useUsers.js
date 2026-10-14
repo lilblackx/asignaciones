@@ -25,17 +25,18 @@ async function createAuthAccount(email, password) {
   }
 }
 
-export function useUsers(firebaseUser, setToastMsg) {
+export function useUsers(firebaseUser, setToastMsg, role) {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    if (!firebaseUser) return;
+    // Las reglas solo dejan listar usuarios al ADMIN; a los demás roles les daría permission-denied.
+    if (!firebaseUser || role !== 'ADMIN') return;
     const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
     const unsub = onSnapshot(usersRef, (snapshot) => {
       setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    }, (err) => console.error('No se pudieron cargar los usuarios:', err));
     return () => unsub();
-  }, [firebaseUser]);
+  }, [firebaseUser, role]);
 
   const createUser = async ({ usuario, clave, role, nombre, puedeCerrar, tecnicoAsociado }, createdBy) => {
     const username = normalizeUsername(usuario);

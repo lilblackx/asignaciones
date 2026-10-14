@@ -22,7 +22,7 @@ function iconoPara(type) {
   return <Bell className="w-4 h-4 text-zinc-400 shrink-0" aria-hidden="true" />;
 }
 
-export default function NotificationBell({ notifications, unreadCount, isOpen, setIsOpen, dismissNotification, clearAll, preFinalizadoCount = 0, onOpenPreFinalizados }) {
+export default function NotificationBell({ notifications, unreadCount, isOpen, setIsOpen, dismissNotification, clearAll, preFinalizadoCount = 0, onOpenPreFinalizados, onOpenNotification }) {
   const ref = useRef(null);
   const hayPendientes = preFinalizadoCount > 0;
   // El icono no cambia de color: solo muestra un contador (el mismo que lleva la
@@ -99,8 +99,8 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
                 <button
                   key={n.id}
                   type="button"
-                  onClick={() => dismissNotification(n.id)}
-                  title="Click para marcar como leída y quitar"
+                  onClick={() => { dismissNotification(n.id); setIsOpen(false); onOpenNotification?.(n); }}
+                  title="Click para ir a la orden y quitar la notificación"
                   className={`w-full text-left px-4 py-3 border-t border-zinc-800 first:border-t-0 flex items-start gap-2.5 group hover:bg-zinc-800 transition-colors ${n.read ? '' : 'bg-zinc-800/60'}`}
                 >
                   {iconoPara(n.type)}

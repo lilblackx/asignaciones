@@ -37,6 +37,7 @@ export default function ConfirmModal({
   setDateInput,
   isProcessing: externalProcessing,
   zIndexClass = 'z-[70]',
+  children,
   onCancel,
   onConfirm
 }) {
@@ -66,6 +67,7 @@ export default function ConfirmModal({
           </div>
           <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">{title}</h2>
           <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-4">{description}</p>
+          {children && <div className="w-full mb-2">{children}</div>}
           {dateInput !== undefined && setDateInput && (
             <div className="w-full space-y-1 text-left">
               <label htmlFor="confirm-fecha" className="text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA DEL REPORTE</label>

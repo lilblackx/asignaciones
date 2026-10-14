@@ -2,6 +2,10 @@
 // que es el que usan la plantilla y el resto de la app. El formulario de conector
 // externo los pide en dos campos para evitar errores y los junta/separa con estas funciones.
 
+// La orden puede traer la NAP vacía o con "SN" (sin NAP). Solo cuenta como "sin NAP" el texto
+// que es exactamente eso: "DM-SN-01" es una caja real.
+export const napSinDato = (nap) => /^(s\/?n|sin nap)?$/i.test(String(nap || '').trim());
+
 export function unirNapPuerto(nap, puerto) {
   return `${String(nap || '').trim()} - Puerto ${String(puerto || '').trim()}`;
 }

@@ -214,6 +214,17 @@ await check('TECNICO puede pre-finalizar con NAP, potencia, observación e histo
   }));
 });
 
+await check('TECNICO puede registrar un recableado (metros, conectores, señal 1490 y tipo de visita)', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({
+    tipoVisita: 'RECABLEADO', metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL', potencia1490Dbm: -23.19
+  }));
+});
+
+await check('TECNICO NO puede escribir el cobro ni la fecha de finalización', async () => {
+  await assertFails(camposGerardo(asTecnico()).update({ cobroBs: '5.696' }));
+  await assertFails(camposGerardo(asTecnico()).update({ finalizadoEn: 1 }));
+});
+
 await check('TECNICO NO puede cambiar nombre/dirección del cliente', async () => {
   await assertFails(camposGerardo(asTecnico()).update({ nombre: 'OTRO' }));
   await assertFails(camposGerardo(asTecnico()).update({ direccion: 'OTRA' }));

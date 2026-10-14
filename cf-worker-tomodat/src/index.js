@@ -166,7 +166,7 @@ function buscar(puntos, codigo) {
 // Solo lo que necesita una orden nueva (nada de estado, señal ni datos de red).
 const CAMPOS_ONU = 'unique_external_id,name,address,zone_name,odb_name,latitude,longitude,contact';
 // Para consultar la potencia: el mismo cliente más los valores de señal (dBm) y su calidad.
-const CAMPOS_SENAL = 'unique_external_id,name,address,zone_name,signal,signal_1310,signal_1490';
+const CAMPOS_SENAL = 'unique_external_id,name,address,zone_name,status,signal,signal_1310,signal_1490';
 const MAX_ONUS = 10;
 const SMARTOLT_TIMEOUT_MS = 20000;
 
@@ -229,13 +229,16 @@ export function mapearOnu(o) {
 // Respuesta de SmartOLT -> potencia de la ONU. `senal1310` y `senal1490` son los dBm
 // tal como los guarda SmartOLT (texto, ej. "-19.45"); `calidad` es su clasificación
 // ("Very good", "Warning", "Critical"...). La señal de SmartOLT es la última que midió
-// la OLT, no una medición en este instante.
+// la OLT, no una medición en este instante: con la ONU fuera de línea SmartOLT sigue
+// devolviendo el último valor guardado, aunque su pantalla muestre "-". Por eso se envía
+// también `estado` ("Online", "Offline", "Power fail", "LOS"...).
 export function mapearSenal(o) {
   return {
     idExterno: textoONulo(o.unique_external_id),
     nombre: textoONulo(o.name),
     direccion: textoONulo(o.address),
     zona: textoONulo(o.zone_name),
+    estado: textoONulo(o.status),
     senal1310: textoONulo(o.signal_1310),
     senal1490: textoONulo(o.signal_1490),
     calidad: textoONulo(o.signal),

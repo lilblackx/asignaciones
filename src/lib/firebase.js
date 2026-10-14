@@ -34,7 +34,8 @@ export const TOMODAT_WORKER_URL = 'https://asignaciones-tomodat.soportenetworksp
 // Usa el hostname con el que se abrió la página (no un 127.0.0.1 fijo) para que
 // funcione igual accediendo por localhost o por la IP LAN desde otro equipo.
 if (import.meta.env.VITE_USE_EMULATORS === 'true') {
-  const emulatorHost = window.location.hostname;
+  // El Service Worker también importa este archivo y no tiene `window`.
+  const emulatorHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
   connectAuthEmulator(auth, `http://${emulatorHost}:9099`, { disableWarnings: true });
   connectFirestoreEmulator(db, emulatorHost, 8080);
 }

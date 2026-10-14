@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, doc, setDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
@@ -8,14 +8,78 @@ import { parsePotencia } from '../utils/potencia';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { devolucionPendiente } from '../utils/devolucion';
-
-const ETIQUETA_TIPO_VISITA = { CONECTOR_EXTERNO: 'Conector externo', CONECTOR_INTERNO: 'Conector interno' };
+import { COBRO_EXONERADO, COBRO_VISITA, ETIQUETA_COBRO, estaExonerado, tieneCobroFinal, valorCobro } from '../utils/cobro';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, datosRecableado, generaCobro, partesRecableado, tieneDatosRecableado } from '../utils/tipoVisita';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden con tipo
-// de visita (conector externo o interno). El monto lo calcula quien finaliza (con la
+// de visita de conector (externo o interno; el recableado no genera cobro). El monto lo calcula quien finaliza (con la
 // tasa de ese momento) y queda guardado en la orden como `cobroBs`. Antes de
 // finalizar no se muestra ningún cobro.
-const avisoCobro = (t) => (t.tipoVisita && t.cobroBs ? ` Cobro resultante al cliente: ${t.cobroBs} Bs.` : '');
+const avisoCobro = (t) => {
+  if (!t.tipoVisita) return '';
+  if (estaExonerado(t)) return ' Visita exonerada: no se cobra al cliente.';
+  return t.cobroBs ? ` Cobro resultante al cliente: ${t.cobroBs} Bs.` : '';
+};
+
+// " (Otro monto)" / " (Visita técnica)" para el historial; vacío si no se indicó.
+const etiquetaCobro = (tipo) => (ETIQUETA_COBRO[tipo] ? ` (${ETIQUETA_COBRO[tipo]})` : '');
+
+// Parte del historial sobre el cobro: el monto con su tipo, o la exoneración.
+const detalleCobro = (cobroBs, cobroTipo, exonerado) => {
+  if (exonerado) return ' | Visita exonerada: sin cobro al cliente';
+  return cobroBs ? ` | Cobro resultante: ${cobroBs} Bs${etiquetaCobro(cobroTipo)}` : '';
+};
+
+const esCobroFinalizado = (t) => t.estado === 'FINALIZADO' && tieneCobroFinal(t);
+
+// Un cobro cuenta como visto si el técnico confirmó ese monto exacto ("id|monto") o, como lo
+// guardaban versiones anteriores, el id suelto. Así, si el monto final cambia respecto al que
+// ya vio al pre-finalizar, se le muestra de nuevo.
+const claveCobro = (t) => `${t.id}|${valorCobro(t)}`;
+const cobroVisto = (vistos, t) => vistos.has(t.id) || vistos.has(claveCobro(t));
+
+// Lo último que vio este dispositivo de las órdenes (id -> estado, id -> si tenía ubicación).
+// Sirve de punto de partida al abrir la app: lo que cambió mientras estuvo cerrada
+// (órdenes nuevas, devueltas, aprobadas) se avisa en la app igual que si hubiera estado abierta,
+// aunque el push del sistema no haya llegado. Pasados 3 días se descarta: ya no es "reciente".
+const BASELINE_PREFIX = 'asignaciones:baseline:';
+const BASELINE_VIGENCIA_MS = 3 * 24 * 60 * 60 * 1000;
+function cargarBaseline(usuario) {
+  if (!usuario) return null;
+  try {
+    const raw = JSON.parse(localStorage.getItem(BASELINE_PREFIX + usuario));
+    if (!raw || Date.now() - raw.t > BASELINE_VIGENCIA_MS) return null;
+    return { estados: new Map(raw.e), ubicaciones: new Map(raw.u) };
+  } catch {
+    return null;
+  }
+}
+function guardarBaseline(usuario, estados, ubicaciones) {
+  if (!usuario) return;
+  try {
+    localStorage.setItem(BASELINE_PREFIX + usuario, JSON.stringify({ t: Date.now(), e: [...estados], u: [...ubicaciones] }));
+  } catch {
+    // Sin almacenamiento: solo se pierde el aviso de lo ocurrido con la app cerrada.
+  }
+}
+
+const COBROS_VISTOS_PREFIX = 'asignaciones:cobrosVistos:';
+// null = este dispositivo nunca los guardó (primera vez).
+function cargarCobrosVistos(usuario) {
+  try {
+    const raw = localStorage.getItem(COBROS_VISTOS_PREFIX + usuario);
+    return raw === null ? null : new Set(JSON.parse(raw));
+  } catch {
+    return new Set();
+  }
+}
+function guardarCobrosVistos(usuario, ids) {
+  try {
+    localStorage.setItem(COBROS_VISTOS_PREFIX + usuario, JSON.stringify([...ids].slice(-300)));
+  } catch {
+    // Sin almacenamiento: el aviso puede repetirse al recargar, pero nunca se pierde.
+  }
+}
 
 // Envoltorios con la base de datos de la app; la lógica vive en utils/correlativo.js.
 const generarCorrelativoConCatchUp = (...args) => generarCorrelativoConCatchUpBase(db, appId, ...args);
@@ -31,56 +95,129 @@ async function actualizarTicket(original, actualizada) {
 
 export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify) {
   const [tickets, setTickets] = useState([]);
+  // false hasta que llega el primer snapshot de órdenes (antes, `tickets` está vacío).
+  const [ticketsCargados, setTicketsCargados] = useState(false);
+  // Cobros que el técnico ya confirmó ("Entendido"), guardados en el dispositivo (la fuente
+  // es localStorage; el estado solo lo refleja). Una orden finalizada con cobro que no esté
+  // ahí se le muestra a pantalla completa, también si se finalizó con la app cerrada o si
+  // recargó antes de confirmar (ver CobroResultanteModal).
+  const [cobrosVistos, setCobrosVistos] = useState(null);
+  // Aviso de cobro que sale apenas el técnico pre-finaliza con conector interno: la orden
+  // (con el monto calculado en ese momento) hasta que confirma con "Entendido".
+  const [cobroInmediato, setCobroInmediato] = useState(null);
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => { currentUserRef.current = currentUser; });
+
+  const cobrosPendientes = useMemo(() => {
+    if (role !== 'TECNICO' || !cobrosVistos) return [];
+    const finalizados = tickets.filter(t => esCobroFinalizado(t) && !cobroVisto(cobrosVistos, t) && t.id !== cobroInmediato?.id);
+    return cobroInmediato ? [cobroInmediato, ...finalizados] : finalizados;
+  }, [role, tickets, cobrosVistos, cobroInmediato]);
+  const actualizarCobrosVistos = (fn) => {
+    const siguiente = fn(new Set(cobrosVistos || []));
+    guardarCobrosVistos(currentUser, siguiente);
+    setCobrosVistos(siguiente);
+  };
+  // "Entendido": el cobro mostrado deja de estar pendiente.
+  const cerrarCobro = () => {
+    const actual = cobrosPendientes[0];
+    if (!actual) return;
+    actualizarCobrosVistos(set => set.add(claveCobro(actual)));
+    if (actual === cobroInmediato) setCobroInmediato(null);
+  };
+  // Desde la campana: vuelve a mostrar un cobro ya confirmado.
+  const mostrarCobro = (ticket) => actualizarCobrosVistos(set => { set.delete(ticket.id); set.delete(claveCobro(ticket)); return set; });
+  // Pre-finalizar con conector interno: el cobro se informa en ese momento, sin esperar la aprobación.
+  const mostrarCobroInmediato = (ticket, montoBs) => setCobroInmediato({ ...ticket, estado: 'PRE-FINALIZADO', cobroBs: montoBs, cobroTipo: null });
 
   // Mismo criterio que el listener de abajo (nueva asignación / pre-finalizado /
   // aprobado), pero disparado por quien escribe el cambio, no por quien lo lee —
   // así el push llega aunque el destinatario tenga la app cerrada.
+  const avisosFalloRef = useRef(new Map()); // nombre -> última vez que se avisó el fallo
+  // Envía el push y, si el técnico no se va a enterar (sin dispositivos con notificaciones
+  // o envío fallido), se lo dice a quien hizo el cambio para que le avise por otro medio.
+  // Un mismo técnico se avisa como máximo una vez por minuto, para no apilar mensajes al
+  // asignar varias órdenes seguidas.
+  const avisarPush = async (params) => {
+    const { ok, sent } = await sendPush(firebaseUser, params);
+    const nombre = params.target.type === 'tecnico' ? params.target.name : null;
+    const sinDispositivos = ok && sent === 0;
+    if (!nombre || (ok && !sinDispositivos)) return;
+    const ahora = Date.now();
+    if (ahora - (avisosFalloRef.current.get(nombre) || 0) < 60000) return;
+    avisosFalloRef.current.set(nombre, ahora);
+    setToastMsg({
+      type: 'error',
+      duration: 9000,
+      text: sinDispositivos
+        ? `${nombre} no tiene notificaciones activas en ningún dispositivo: no se enteró por aviso. Avísale por WhatsApp.`
+        : `No se pudo enviar la notificación a ${nombre}. La orden quedó guardada; avísale por WhatsApp.`,
+    });
+  };
+
+  // Mismo criterio que el listener de abajo (nueva asignación / pre-finalizado /
+  // aprobado), pero disparado por quien escribe el cambio, no por quien lee —
+  // así el push llega aunque el destinatario tenga la app cerrada. `tipo` y `ticketId`
+  // viajan con el push para que al tocarlo la app abra esa orden.
   const notifyTicketChange = (original, updated) => {
+    const ticketId = updated.id;
     if (updated.tecnico && (!original || original.tecnico !== updated.tecnico)) {
-      sendPush(firebaseUser, {
+      avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Nueva asignación',
         body: `Te asignaron la orden ${updated.codigo || 'S/C'}${updated.nombre ? ` — ${updated.nombre}` : ''}.`,
+        tipo: 'nuevaAsignacion',
+        ticketId,
       });
     }
     // Ubicación que llega después de asignar (las promotoras la mandan aparte de
     // la plantilla). Si el técnico es nuevo en la orden, "Nueva asignación" ya cubre el aviso.
     if (updated.tecnico && updated.ubicacion && original && original.tecnico === updated.tecnico && (original.ubicacion || '') !== updated.ubicacion) {
-      sendPush(firebaseUser, {
+      avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Ubicación disponible',
         body: `La orden ${updated.codigo || 'S/C'}${updated.nombre ? ` — ${updated.nombre}` : ''} ya tiene ubicación.`,
+        tipo: 'nuevaAsignacion',
+        ticketId,
       });
     }
     if (updated.estado === 'PRE-FINALIZADO' && (!original || original.estado !== 'PRE-FINALIZADO')) {
-      sendPush(firebaseUser, {
+      avisarPush({
         target: { type: 'aprobadores' },
         title: 'Orden pre-finalizada',
         body: `${updated.codigo || 'Orden'} (${updated.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA — revisar.`,
+        tipo: 'prefinalizado',
+        ticketId,
       });
     }
     if (updated.estado === 'PENDIENTE' && original?.estado === 'PRE-FINALIZADO') {
       const { motivo } = devolucionPendiente(updated) || {};
-      sendPush(firebaseUser, {
+      avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Orden devuelta',
         body: `${updated.codigo || 'Orden'} fue devuelta${motivo ? `: ${motivo}` : '. Revisa los detalles.'}`,
+        tipo: 'devuelto',
+        ticketId,
       });
     }
     // Cierre directo de una orden con tipo de visita (vino de una devolución): solo
     // avisa si hay cobro; el aviso normal de cierre es el de aprobación de abajo.
     if (updated.estado === 'FINALIZADO' && original?.estado === 'PENDIENTE' && avisoCobro(updated)) {
-      sendPush(firebaseUser, {
+      avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Orden finalizada',
         body: `${updated.codigo || 'Orden'} fue finalizada.${avisoCobro(updated)}`,
+        tipo: 'aprobado',
+        ticketId,
       });
     }
     if (updated.estado === 'FINALIZADO' && original?.estado === 'PRE-FINALIZADO') {
-      sendPush(firebaseUser, {
+      avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Orden aprobada',
         body: `${updated.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(updated) || ' Ya puedes continuar.'}`,
+        tipo: 'aprobado',
+        ticketId,
       });
     }
   };
@@ -103,6 +240,26 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       const loadedTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       loadedTickets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setTickets(loadedTickets);
+      setTicketsCargados(true);
+      if (role === 'TECNICO' && currentUserRef.current) {
+        let vistos = cargarCobrosVistos(currentUserRef.current);
+        if (vistos === null) {
+          // Primera vez en este dispositivo: lo que ya estaba finalizado se da por visto, para
+          // no mostrar de golpe cobros viejos; desde ahí, todo cobro nuevo queda pendiente.
+          vistos = new Set(loadedTickets.filter(esCobroFinalizado).map(t => t.id));
+          guardarCobrosVistos(currentUserRef.current, vistos);
+        }
+        setCobrosVistos(vistos);
+      }
+
+      // Primera lectura de esta sesión: se parte de lo último que vio este dispositivo, si hay.
+      if (!estadoAnteriorRef.current) {
+        const guardada = cargarBaseline(currentUserRef.current);
+        if (guardada) {
+          estadoAnteriorRef.current = guardada.estados;
+          ubicacionAnteriorRef.current = guardada.ubicaciones;
+        }
+      }
 
       if (estadoAnteriorRef.current) {
         if (role === 'ADMIN' || role === 'USUARIO') {
@@ -115,7 +272,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             const t = nuevas[0];
             const texto = `${t.codigo || 'Orden'} (${t.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA — revisar.`;
             setToastMsg({ type: 'prefinalizado', text: texto, duration: 7000 });
-            onNotify?.({ type: 'prefinalizado', text: texto });
+            onNotify?.({ type: 'prefinalizado', text: texto, ticketId: t.id });
             playPreFinalizadoSound();
           } else if (nuevas.length > 1) {
             const texto = `${nuevas.length} órdenes marcadas PRE-FINALIZADO — revisar.`;
@@ -136,7 +293,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             const t = nuevasAsignaciones[0];
             const texto = `Te asignaron una nueva orden: ${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}.`;
             setToastMsg({ type: 'nuevaAsignacion', text: texto, duration: 6000 });
-            onNotify?.({ type: 'nuevaAsignacion', text: texto });
+            onNotify?.({ type: 'nuevaAsignacion', text: texto, ticketId: t.id });
             playNuevaAsignacionSound();
           } else if (nuevasAsignaciones.length > 1) {
             const texto = `Te asignaron ${nuevasAsignaciones.length} órdenes nuevas.`;
@@ -153,7 +310,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             const t = conUbicacionNueva[0];
             const texto = `La orden ${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''} ya tiene ubicación.`;
             setToastMsg({ type: 'nuevaAsignacion', text: texto, duration: 6000 });
-            onNotify?.({ type: 'nuevaAsignacion', text: texto });
+            onNotify?.({ type: 'nuevaAsignacion', text: texto, ticketId: t.id });
             playNuevaAsignacionSound();
           } else if (conUbicacionNueva.length > 1) {
             const texto = `${conUbicacionNueva.length} órdenes recibieron ubicación.`;
@@ -173,7 +330,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
               ? `${t.codigo || 'Orden'} fue devuelta${motivo ? `: ${motivo}` : '. Revisa los detalles.'}`
               : `${devueltas.length} órdenes fueron devueltas. Revisa los detalles.`;
             setToastMsg({ type: 'devuelto', text: texto, duration: 9000 });
-            onNotify?.({ type: 'devuelto', text: texto });
+            onNotify?.({ type: 'devuelto', text: texto, ...(devueltas.length === 1 && { ticketId: t.id }) });
             playDevueltaSound();
           }
 
@@ -189,10 +346,10 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             const t = aprobadas[0];
             const texto = `${t.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(t) || ' Ya puedes continuar.'}`;
             setToastMsg({ type: 'aprobado', text: texto, duration: 6000 });
-            onNotify?.({ type: 'aprobado', text: texto });
+            onNotify?.({ type: 'aprobado', text: texto, ticketId: t.id });
             playAprobadoSound();
           } else if (aprobadas.length > 1) {
-            const cobros = aprobadas.filter(t => avisoCobro(t)).map(t => `${t.codigo || 'Orden'}: ${t.cobroBs} Bs`);
+            const cobros = aprobadas.filter(t => avisoCobro(t)).map(t => `${t.codigo || 'Orden'}: ${estaExonerado(t) ? 'exonerada' : `${t.cobroBs} Bs`}`);
             const texto = `${aprobadas.length} órdenes fueron aprobadas y finalizadas.${cobros.length ? ` Cobro resultante al cliente: ${cobros.join(', ')}.` : ''}`;
             setToastMsg({ type: 'aprobado', text: texto, duration: 6000 });
             onNotify?.({ type: 'aprobado', text: texto });
@@ -201,12 +358,19 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         }
       }
       estadoAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.estado]));
-      ubicacionAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.ubicacion || '']));
+      ubicacionAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.ubicacion ? 1 : '']));
+      guardarBaseline(currentUserRef.current, estadoAnteriorRef.current, ubicacionAnteriorRef.current);
     }, (error) => {
       console.error('No se pudo cargar tickets:', error);
       setToastMsg({ type: 'error', text: 'No se pudieron cargar las órdenes.' });
     });
-    return () => unsubTickets();
+    return () => {
+      unsubTickets();
+      // Otra sesión (otro usuario en el mismo teléfono) no debe heredar este punto de partida:
+      // la siguiente lectura lo vuelve a cargar del almacenamiento del usuario que corresponda.
+      estadoAnteriorRef.current = null;
+      ubicacionAnteriorRef.current = null;
+    };
   }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
 
   // Para los formularios: si el código escrito a mano se salta números (ej. "AO150"
@@ -288,8 +452,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     }
 
     setToastMsg({ type: 'success', text: 'Orden creada exitosamente.' });
-    notifyTicketChange(null, newTicket);
-    return { id: newId, ...newTicket };
+    const creada = { id: newId, ...newTicket };
+    notifyTicketChange(null, creada);
+    return creada;
   };
 
   // Devuelve false si la validación rechazó el guardado (el llamador debe dejar
@@ -332,6 +497,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     const armarTicket = (codigo) => {
       const ticketToSave = { ...editingTicket, codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
+      // Fecha en que se finalizó (la usa el módulo de materiales para filtrar por período).
+      if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') ticketToSave.finalizadoEn = Date.now();
       if (originalTicket) {
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
@@ -405,19 +572,27 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     return true;
   };
 
-  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, tipoVisita } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacion || '').trim()) {
       setToastMsg({ type: 'error', text: 'Debes describir el trabajo realizado antes de pre-finalizar.' });
-      return;
+      return false;
+    }
+
+    // Recableado: los metros de cable son obligatorios (los conectores no).
+    if (tipoVisita === TIPO_RECABLEADO && !(Number.isInteger(metrosCable) && metrosCable >= 1)) {
+      setToastMsg({ type: 'error', text: 'Indica los metros de cable usados en el recableado.' });
+      return false;
     }
 
     let detalle = 'Marcado como PRE-FINALIZADO';
     if (observacion && observacion.trim()) detalle += ` | Obs: ${observacion.trim()}`;
     if (nap && nap.trim()) detalle += ` | NAP: ${nap.trim()}`;
     if (potenciaDbm != null) detalle += ` | Potencia: ${potenciaDbm} dBm`;
-    if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
+    if (potencia1490Dbm != null) detalle += ` | ONU Rx 1490 nm: ${potencia1490Dbm} dBm`;
+    if (tipoVisita === TIPO_RECABLEADO) detalle += ` | Recableado: ${partesRecableado({ metrosCable, conectorExterno, conectorInterno }).join(', ')}`;
+    else if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
 
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
@@ -426,38 +601,50 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       detalle
     };
 
+    // Los datos del recableado solo se escriben si hay recableado o si hay que borrar los de
+    // un recableado anterior; así las demás visitas no suman campos vacíos a la orden.
+    const camposRecableado = tipoVisita !== undefined && (tipoVisita === TIPO_RECABLEADO || tieneDatosRecableado(ticket))
+      ? datosRecableado(tipoVisita, { metros: metrosCable, conectorExterno, conectorInterno })
+      : {};
+
     const updatedTicket = {
       ...ticket,
       estado: 'PRE-FINALIZADO',
       nap: nap !== undefined ? nap : (ticket.nap || ''),
       potenciaDbm: potenciaDbm !== undefined ? potenciaDbm : (ticket.potenciaDbm ?? null),
+      potencia1490Dbm: potencia1490Dbm !== undefined ? potencia1490Dbm : (ticket.potencia1490Dbm ?? null),
       observacion: observacion !== undefined ? observacion : (ticket.observacion || ''),
       tipoVisita: tipoVisita !== undefined ? tipoVisita : (ticket.tipoVisita || ''),
+      ...camposRecableado,
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden marcada como Pre-finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
+    return true;
   };
 
   // `montoBs`: cobro de la visita ya formateado (ej. "5.696"); solo se guarda en
   // órdenes con tipo de visita, para que el técnico lo vea al aprobarse.
-  const aprobarFinalizarTicket = async (ticket, { montoBs } = {}) => {
+  const aprobarFinalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
     if (!firebaseUser || !ticket) return;
 
-    const cobroBs = ticket.tipoVisita && montoBs ? montoBs : null;
+    const exonerado = generaCobro(ticket.tipoVisita) && cobroTipo === COBRO_EXONERADO;
+    const cobroBs = generaCobro(ticket.tipoVisita) && !exonerado && montoBs ? montoBs : null;
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'ADMIN',
       tipo: 'aprobado',
-      detalle: `Aprobado y marcado como FINALIZADO${cobroBs ? ` | Cobro resultante: ${cobroBs} Bs` : ''}`
+      detalle: `Aprobado y marcado como FINALIZADO${detalleCobro(cobroBs, cobroTipo, exonerado)}`
     };
 
     const updatedTicket = {
       ...ticket,
       estado: 'FINALIZADO',
-      ...(cobroBs ? { cobroBs } : {}),
+      finalizadoEn: Date.now(),
+      // `cobroTipo` se escribe siempre que hay decisión de cobro, para no arrastrar una exoneración vieja.
+      ...(exonerado ? { cobroTipo: COBRO_EXONERADO, cobroBs: null } : cobroBs ? { cobroBs, cobroTipo: cobroTipo || COBRO_VISITA } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -498,21 +685,23 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // Cierre directo de una orden PENDIENTE desde la tabla, sin pasar por el
   // formulario de edición ni por la pre-finalización del técnico.
-  const finalizarTicket = async (ticket, { montoBs } = {}) => {
+  const finalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
     if (!firebaseUser || !ticket) return;
 
-    const cobroBs = ticket.tipoVisita && montoBs ? montoBs : null;
+    const exonerado = generaCobro(ticket.tipoVisita) && cobroTipo === COBRO_EXONERADO;
+    const cobroBs = generaCobro(ticket.tipoVisita) && !exonerado && montoBs ? montoBs : null;
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'OPERADOR',
       tipo: 'finalizado',
-      detalle: `Marcado como FINALIZADO${cobroBs ? ` | Cobro resultante: ${cobroBs} Bs` : ''}`
+      detalle: `Marcado como FINALIZADO${detalleCobro(cobroBs, cobroTipo, exonerado)}`
     };
 
     const updatedTicket = {
       ...ticket,
       estado: 'FINALIZADO',
-      ...(cobroBs ? { cobroBs } : {}),
+      finalizadoEn: Date.now(),
+      ...(exonerado ? { cobroTipo: COBRO_EXONERADO, cobroBs: null } : cobroBs ? { cobroBs, cobroTipo: cobroTipo || COBRO_VISITA } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -576,6 +765,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   return {
     tickets,
+    ticketsCargados,
+    cobrosPendientes,
+    mostrarCobro,
+    mostrarCobroInmediato,
+    cerrarCobro,
     createTicket,
     verificarCodigoManual,
     updateTicket,

@@ -92,6 +92,12 @@ function tokensFromDoc(doc) {
   return values.map((v) => v.stringValue).filter(Boolean);
 }
 
+// Cada destino lleva el documento del usuario para poder quitarle el token si FCM
+// lo rechaza por muerto (app desinstalada, permiso revocado).
+function destinosDeDocs(docs) {
+  return docs.flatMap((d) => [...new Set(tokensFromDoc(d))].map((token) => ({ token, docName: d.name })));
+}
+
 async function resolveTokens(env, accessToken, target) {
   let docs = [];
   if (target?.type === 'tecnico' && target.name) {
@@ -104,7 +110,7 @@ async function resolveTokens(env, accessToken, target) {
   } else {
     return [];
   }
-  return docs.flatMap(tokensFromDoc);
+  return destinosDeDocs(docs);
 }
 
 async function getUserDoc(env, accessToken, uid) {
@@ -270,24 +276,71 @@ function json(data, status, headers) {
   return new Response(JSON.stringify(data), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
 }
 
-async function sendToToken(accessToken, projectId, token, title, body) {
-  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
+// Respuestas de FCM que significan "este token ya no sirve": se borra del usuario.
+// Solo UNREGISTERED: INVALID_ARGUMENT también sale por un mensaje mal armado y borraría tokens buenos.
+const FCM_TOKEN_MUERTO = ['UNREGISTERED'];
+
+// Devuelve { ok, muerto }. Mensaje solo de datos (sin "notification"): el Service Worker
+// decide cómo mostrarlo (onBackgroundMessage en src/sw.js) y no hay duplicados con el
+// aviso automático de FCM. Urgency "high" y TTL corto: sin eso Android puede retrasar
+// el aviso minutos con el teléfono quieto (Doze), y una orden asignada no puede esperar.
+async function sendToToken(accessToken, projectId, token, title, body, extra = {}) {
+  const data = { title: String(title || ''), body: String(body || '') };
+  if (extra.tag) data.tag = String(extra.tag).slice(0, 100);
+  if (extra.ticketId) data.ticketId = String(extra.ticketId).slice(0, 100);
+  if (extra.tipo) data.tipo = String(extra.tipo).slice(0, 40);
+
+  const enviar = (message) => fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({
-      message: {
-        token,
-        // data-only (no "notification"): el Service Worker decide cómo mostrarla
-        // (onBackgroundMessage en src/sw.js) — evita duplicados con el display
-        // automático que hace FCM cuando el mensaje trae "notification".
-        data: { title: String(title || ''), body: String(body || '') },
-      },
-    }),
+    body: JSON.stringify({ message }),
   });
+
+  let res = await enviar({
+    token,
+    data,
+    webpush: { headers: { Urgency: 'high', TTL: '3600' } },
+    android: { priority: 'high', ttl: '3600s' },
+  });
+  let errText = '';
   if (!res.ok) {
-    const errText = await res.text();
-    console.error(`FCM send falló para un token: ${errText}`);
+    errText = await res.text();
+    // Red de seguridad: si FCM rechazara las opciones de prioridad (INVALID_ARGUMENT), se
+    // reintenta el mensaje simple de siempre para que el aviso salga igual.
+    if (res.status === 400 && errText.includes('INVALID_ARGUMENT') && !errText.includes('UNREGISTERED')) {
+      console.error(`FCM rechazó las opciones de prioridad, se reintenta simple: ${errText}`);
+      res = await enviar({ token, data });
+      errText = res.ok ? '' : await res.text();
+    }
   }
+  if (res.ok) return { ok: true, muerto: false };
+  console.error(`FCM send falló para un token: ${errText}`);
+  return { ok: false, muerto: FCM_TOKEN_MUERTO.some((c) => errText.includes(c)) };
+}
+
+// Quita de fcmTokens los tokens que FCM dio por muertos, para no seguir mandándoles
+// ni acumularlos en el perfil.
+async function limpiarTokensMuertos(env, accessToken, muertos) {
+  if (muertos.length === 0) return;
+  const writes = muertos.map(({ token, docName }) => ({
+    transform: {
+      document: docName,
+      fieldTransforms: [{ fieldPath: 'fcmTokens', removeAllFromArray: { values: [{ stringValue: token }] } }],
+    },
+    // Si el perfil ya no existe, no se vuelve a crear solo por limpiar un token.
+    currentDocument: { exists: true },
+  }));
+  await commitFirestore(env, accessToken, writes);
+}
+
+// Envía a todos los destinos y limpia los muertos. Devuelve cuántos salieron bien.
+async function enviarADestinos(env, accessToken, destinos, title, body, extra) {
+  const resultados = await Promise.all(
+    destinos.map(async (d) => ({ d, r: await sendToToken(accessToken, env.FIREBASE_PROJECT_ID, d.token, title, body, extra).catch(() => ({ ok: false, muerto: false })) }))
+  );
+  await limpiarTokensMuertos(env, accessToken, resultados.filter(({ r }) => r.muerto).map(({ d }) => d))
+    .catch((err) => console.error('No se pudieron limpiar tokens muertos:', err));
+  return resultados.filter(({ r }) => r.ok).length;
 }
 
 // ---------------------------------------------------------------------------
@@ -424,8 +477,8 @@ async function archivarPorEstado(env, accessToken, estado, tipoReporte, ahoraMs,
 }
 
 async function avisarAprobadores(env, accessToken, title, body) {
-  const tokens = await resolveTokens(env, accessToken, { type: 'aprobadores' });
-  await Promise.all([...new Set(tokens)].map((t) => sendToToken(accessToken, env.FIREBASE_PROJECT_ID, t, title, body)));
+  const destinos = await resolveTokens(env, accessToken, { type: 'aprobadores' });
+  await enviarADestinos(env, accessToken, destinos, title, body, { tipo: 'cierreAutomatico', tag: 'cierreAutomatico' });
 }
 
 export async function cierreAutomatico(env, ahoraMs = Date.now()) {
@@ -541,7 +594,7 @@ export default {
       return new Response('JSON inválido', { status: 400, headers });
     }
 
-    const { target, title, body: messageBody } = body || {};
+    const { target, title, body: messageBody, tipo, ticketId } = body || {};
     if (!target || !title) {
       return new Response('Faltan campos: target, title', { status: 400, headers });
     }
@@ -554,9 +607,12 @@ export default {
       const permitido = target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
       if (!permitido) return new Response('Sin permiso para enviar esta notificación.', { status: 403, headers });
 
-      const tokens = await resolveTokens(env, accessToken, target);
-      await Promise.all(tokens.map((t) => sendToToken(accessToken, env.FIREBASE_PROJECT_ID, t, String(title).slice(0, 100), String(messageBody || '').slice(0, 300))));
-      return new Response(JSON.stringify({ sent: tokens.length }), {
+      const destinos = await resolveTokens(env, accessToken, target);
+      // `tag` evita avisos repetidos del mismo evento (un teléfono con dos tokens).
+      const sent = await enviarADestinos(env, accessToken, destinos, String(title).slice(0, 100), String(messageBody || '').slice(0, 300), {
+        tipo, ticketId, tag: `${tipo || 'aviso'}:${ticketId || String(title).slice(0, 40)}`,
+      });
+      return new Response(JSON.stringify({ sent, dispositivos: destinos.length }), {
         status: 200,
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
