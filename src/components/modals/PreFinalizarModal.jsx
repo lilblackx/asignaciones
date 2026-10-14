@@ -29,6 +29,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   // Instalación: lo que la plantilla de la promotora trae vacío (ver utils/instalacion).
   const [serial, setSerial] = useState(ticket?.instalacion?.serial || '');
   const [vlan, setVlan] = useState(ticket?.instalacion?.vlan || '');
+  const [metraje, setMetraje] = useState(ticket?.instalacion?.metraje ? String(ticket.instalacion.metraje) : '');
   const [puertosDisponibles, setPuertosDisponibles] = useState(ticket?.instalacion?.puertosDisponibles || '');
   const [postes, setPostes] = useState(ticket?.instalacion?.posteadura?.length ? ticket.instalacion.posteadura : ['']);
   const [instalacionErrores, setInstalacionErrores] = useState({});
@@ -84,7 +85,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     const metrosParseados = recableado ? parseMetros(metros) : null;
     const errorColor = errorColorConector(tipoVisita, colorInterno);
     const serialEquipoParseado = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
-    const instalacion = esInstalacion ? validarInstalacion({ serial, vlan, postes, nap, puerto, puertosDisponibles }) : null;
+    const instalacion = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
     // Con conector externo y en las instalaciones la NAP real y el puerto son obligatorios.
     const pideNapPuerto = conectorExterno || esInstalacion;
     const faltaNap = pideNapPuerto && napSinDato(nap);
@@ -103,9 +104,10 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     else if (serialEquipoParseado?.error) document.getElementById('pf-serial-equipo')?.focus();
     else if (instalacion?.errores.serial) document.getElementById('pf-serial')?.focus();
     else if (instalacion?.errores.vlan) document.getElementById('pf-vlan')?.focus();
-    else if (instalacion?.errores.posteadura) document.getElementById('pf-poste-1')?.focus();
     else if (faltaNap) document.getElementById('pf-nap')?.focus();
     else if (faltaPuerto) document.getElementById('pf-puerto')?.focus();
+    else if (instalacion?.errores.metraje) document.getElementById('pf-metraje')?.focus();
+    else if (instalacion?.errores.posteadura) document.getElementById('pf-poste-1')?.focus();
     else if (instalacion?.errores.puertosDisponibles) document.getElementById('pf-puertos-disponibles')?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
@@ -254,6 +256,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
               onVlan={(v) => { setVlan(v); if (instalacionErrores.vlan) setInstalacionErrores((e) => ({ ...e, vlan: undefined })); }}
               postes={postes}
               onPostes={(v) => { setPostes(v); if (instalacionErrores.posteadura) setInstalacionErrores((e) => ({ ...e, posteadura: undefined })); }}
+              metraje={metraje}
+              onMetraje={(v) => { setMetraje(v); if (instalacionErrores.metraje) setInstalacionErrores((e) => ({ ...e, metraje: undefined })); }}
               nap={nap}
               onNap={(v) => { setNap(v); if (napError) setNapError(''); }}
               puerto={puerto}

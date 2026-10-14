@@ -1,9 +1,10 @@
 // Datos que el técnico llena al instalar, los que la plantilla de la promotora trae vacíos:
-// serial de la ONU, VLAN, posteadura (uno o varios postes), NAP, el puerto donde conecta el
-// cliente y los puertos que quedan disponibles en la NAP. Se guardan juntos en
+// serial de la ONU, VLAN, posteadura (uno o varios postes), el metraje de cable, NAP, el puerto donde
+// conecta el cliente y los puertos que quedan disponibles en la NAP. Se guardan juntos en
 // `ticket.instalacion` y se escriben en las líneas de la plantilla (ver utils/whatsapp).
-// Todo es obligatorio: el serial, la VLAN, al menos un poste, la NAP, el puerto y los puertos
-// disponibles (si no queda ninguno, "0"). Lo que se escribe también se valida.
+// Todo es obligatorio: el serial, la VLAN, al menos un poste, el metraje (metros enteros, de 1 a 9999),
+// la NAP, el puerto y los puertos disponibles (si no queda ninguno, "0"). Lo que se escribe también se valida.
+// El metraje cuenta como cable gastado en el módulo Materiales (ver utils/consumoMateriales).
 
 import { napSinDato } from './napPuerto.js';
 
@@ -13,6 +14,24 @@ export const MAX_POSTES = 10;
 export const MAX_LARGO_POSTE = 40;
 export const MAX_LARGO_SERIAL = 24;
 export const MAX_LARGO_PUERTOS_DISPONIBLES = 30;
+export const MAX_LARGO_METRAJE = 4; // dígitos: hasta 9999 m
+
+// Metraje de cable de la instalación: metros enteros, de 1 a 9999. Vacío no da error aquí: que sea
+// obligatorio lo exige validarInstalacion.
+export function parseMetraje(raw) {
+  const txt = String(raw ?? '').trim();
+  if (txt === '') return { valor: null };
+  if (!/^\d{1,4}$/.test(txt)) return { error: 'Escribe el metraje como un número entero de metros. Ejemplo: 120' };
+  const valor = parseInt(txt, 10);
+  if (valor < 1) return { error: 'El metraje debe ser mayor a 0.' };
+  return { valor };
+}
+
+// Metros de cable de una instalación (número) o null si no se registraron.
+export const metrajeInstalacion = (ticket) => {
+  const metros = Number(ticket?.instalacion?.metraje);
+  return Number.isFinite(metros) && metros > 0 ? metros : null;
+};
 
 // Serial de la ONU ("HWTC1A2B3C4D"): letras y números (y guiones), sin espacios y en mayúsculas.
 // Vacío no da error aquí: que sea obligatorio lo exige validarInstalacion.
@@ -49,14 +68,15 @@ export function napConPuerto(nap, puerto) {
 }
 
 export const tieneDatosInstalacion = (datos) =>
-  Boolean(datos) && Boolean(datos.serial || datos.vlan || datos.nap || datos.puerto || datos.puertosDisponibles || datos.posteadura?.length);
+  Boolean(datos) && Boolean(datos.serial || datos.vlan || datos.nap || datos.puerto || datos.puertosDisponibles || datos.posteadura?.length || datos.metraje);
 
 // Lo que escribió el técnico -> { datos, errores, error }: `datos` listo para guardar en
 // `ticket.instalacion` (serial y VLAN normalizados, postes limpios) y `errores` por campo
-// (serial, vlan, posteadura, puertosDisponibles): falta o no es válido. La NAP y el puerto los exige el formulario.
-export function validarInstalacion({ serial, vlan, postes, posteadura, nap, puerto, puertosDisponibles } = {}) {
+// (serial, vlan, posteadura, metraje, puertosDisponibles): falta o no es válido. La NAP y el puerto los exige el formulario.
+export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, nap, puerto, puertosDisponibles } = {}) {
   const serialParseado = parseSerial(serial);
   const vlanParseada = parseVlan(vlan);
+  const metrajeParseado = parseMetraje(metraje);
   const lista = limpiarPostes(postes ?? posteadura);
   const errores = {};
   if (serialParseado.error) errores.serial = serialParseado.error;
@@ -64,6 +84,8 @@ export function validarInstalacion({ serial, vlan, postes, posteadura, nap, puer
   if (vlanParseada.error) errores.vlan = vlanParseada.error;
   else if (!vlanParseada.valor) errores.vlan = 'Escribe la VLAN.';
   if (lista.length === 0) errores.posteadura = 'Agrega al menos un poste.';
+  if (metrajeParseado.error) errores.metraje = metrajeParseado.error;
+  else if (!metrajeParseado.valor) errores.metraje = 'Indica el metraje de cable usado en la instalación.';
   const disponibles = String(puertosDisponibles ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_LARGO_PUERTOS_DISPONIBLES);
   if (!disponibles) errores.puertosDisponibles = 'Indica los puertos disponibles de la NAP. Si no queda ninguno, escribe 0.';
   return {
@@ -71,6 +93,7 @@ export function validarInstalacion({ serial, vlan, postes, posteadura, nap, puer
       serial: serialParseado.valor ?? '',
       vlan: vlanParseada.valor ?? '',
       posteadura: lista,
+      metraje: metrajeParseado.valor ?? null,
       nap: String(nap || '').trim(),
       puerto: String(puerto || '').replace(/\D/g, ''),
       // Texto libre: normalmente cuántos quedan ("6", o "0" si ninguno), pero pueden ser cuáles ("3, 5, 8").
@@ -81,7 +104,7 @@ export function validarInstalacion({ serial, vlan, postes, posteadura, nap, puer
   };
 }
 
-// ¿La orden ya trae todo lo obligatorio de una instalación (serial, VLAN, postes, NAP real y puerto)?
+// ¿La orden ya trae todo lo obligatorio de una instalación (serial, VLAN, postes, metraje, NAP real y puerto)?
 // Lo usa el guardado para que un técnico no pre-finalice una instalación por otro camino sin llenarlo.
 export function instalacionCompleta(ticket) {
   const datos = ticket?.instalacion;
@@ -89,7 +112,22 @@ export function instalacionCompleta(ticket) {
   return !napSinDato(datos.nap) && Boolean(String(datos.puerto || '').trim());
 }
 
-// Líneas del historial con lo que registró el técnico ("Serial: ...", "VLAN: ...", "Posteadura: ...").
+// Nombres con los que se muestra lo que falta de una instalación (los mismos del modal de revisión).
+const NOMBRE_FALTANTE = { serial: 'Serial / MAC', vlan: 'VLAN', posteadura: 'Posteadura', metraje: 'Drop', nap: 'NAP', puerto: 'Puerto', puertosDisponibles: 'Puertos disponibles' };
+
+// Lo que le falta (o no es válido) a una instalación para estar completa, con esos nombres y en el orden de
+// la revisión. Lista vacía si está completa o si la orden no es una instalación.
+export function faltantesInstalacion(ticket) {
+  if (!esInstalacion(ticket?.tipoTrabajo)) return [];
+  const datos = ticket.instalacion || {};
+  const errores = validarInstalacion(datos).errores;
+  const faltan = new Set(Object.keys(errores));
+  if (napSinDato(datos.nap)) faltan.add('nap');
+  if (!String(datos.puerto || '').trim()) faltan.add('puerto');
+  return ['serial', 'vlan', 'nap', 'puerto', 'metraje', 'posteadura', 'puertosDisponibles'].filter((k) => faltan.has(k)).map((k) => NOMBRE_FALTANTE[k]);
+}
+
+// Líneas del historial con lo que registró el técnico ("Serial: ...", "VLAN: ...", "Posteadura: ...", "Metraje: ...").
 // La NAP ya sale aparte en el historial (campo `nap`); aquí el puerto y los puertos disponibles.
 export function detalleInstalacion(datos) {
   if (!tieneDatosInstalacion(datos)) return '';
@@ -97,6 +135,7 @@ export function detalleInstalacion(datos) {
   if (datos.serial) detalle += ` | Serial: ${datos.serial}`;
   if (datos.vlan) detalle += ` | VLAN: ${datos.vlan}`;
   if (datos.posteadura?.length) detalle += ` | Posteadura: ${datos.posteadura.join(', ')}`;
+  if (datos.metraje) detalle += ` | Metraje: ${datos.metraje} m`;
   if (datos.puerto) detalle += ` | Puerto: ${datos.puerto}`;
   if (datos.puertosDisponibles) detalle += ` | Puertos disponibles: ${datos.puertosDisponibles}`;
   return detalle;

@@ -7,6 +7,8 @@ import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
+import ViajeControl, { EtiquetaViaje } from './ViajeControl';
+import { estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 
@@ -29,7 +31,11 @@ export default function TicketsTable({
   onPreFinalizar,
   onAprobarFinalizar,
   onFinalizar,
-  onTogglePrioridad
+  onTogglePrioridad,
+  ahora,
+  onIniciarViaje,
+  onLlegue,
+  onCancelarViaje
 }) {
   // Con orden "más recientes" o por fecha las órdenes de un mismo día quedan
   // juntas: se agrupan bajo un encabezado. Con otros órdenes la fecha va en la fila.
@@ -64,6 +70,7 @@ export default function TicketsTable({
             const eliminado = ticket.estado === 'ELIMINADO';
             const prioritaria = esPrioritaria(ticket);
             const sinPlantilla = ordenSinPlantilla(ticket);
+            const enViaje = Boolean(estadoViaje(ticket, ahora));
             // Las órdenes con prioridad alta forman su propio grupo arriba; el resto, un grupo por día.
             const grupoDe = (t) => (esPrioritaria(t) ? 'PRIORIDAD' : t.fecha);
             const nuevoDia = agrupado && (index === 0 || grupoDe(filteredTickets[index - 1]) !== grupoDe(ticket));
@@ -76,7 +83,7 @@ export default function TicketsTable({
                   </td>
                 </tr>
               ),
-              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
+              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
                 <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${eliminado ? 'border-l-zinc-500' : tipoEstilo.borde} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
@@ -95,6 +102,9 @@ export default function TicketsTable({
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     <DevolucionAviso ticket={ticket} compact />
                     <CobroAviso ticket={ticket} compact />
+                    {isTecnico && ticket.estado === 'PENDIENTE' && (
+                      <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
+                    )}
                     {ticket.observacion && (
                       <span className="flex items-start gap-1 text-[10px] text-zinc-500 dark:text-zinc-400" title={ticket.observacion}>
                         <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />
@@ -142,10 +152,11 @@ export default function TicketsTable({
                   </div>
                 </td>
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
-                  <div className="flex items-center justify-center h-full min-h-[2rem]">
+                  <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-1">
                     {ticket.tecnico && (
                       <span className={`inline-flex items-center justify-center px-2 py-1.5 text-[11px] font-bold rounded leading-none ${getTecnicoColor(ticket.tecnico)}`}>{ticket.tecnico}</span>
                     )}
+                    {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
                 </td>
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle bg-zinc-50/50 dark:bg-zinc-900/20">

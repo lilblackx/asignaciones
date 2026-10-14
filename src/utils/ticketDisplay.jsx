@@ -109,12 +109,7 @@ export const getCreadoColor = (creado) => {
 // (persona natural, "V"), para que un RIF jurídico se distinga a simple vista
 // de una cédula. No cambia nada para los tickets ya existentes (sin este
 // campo, o con "V") — mismo texto que siempre se mostró.
-export const formatCedula = (cedula, tipoDocumento) => {
-  if (!cedula) return cedula;
-  if (!tipoDocumento || tipoDocumento === 'V') return cedula;
-  // RIF (jurídico/extranjero/gubernamental): sin puntos, solo el prefijo y los números.
-  return `${tipoDocumento}-${String(cedula).replace(/\D/g, '')}`;
-};
+export { formatCedula } from './cedula';
 
 // Evita que "break-all"/wrap corte una cédula en medio de un grupo de dígitos
 // (ej. "18.395.7" / "53"): solo se permite el salto justo después de cada punto

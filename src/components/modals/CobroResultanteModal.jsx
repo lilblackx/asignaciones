@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Check, CheckCheck, ChevronDown, Clock, Copy, Landmark, MapPin, Plug, Tag, User, Wrench } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCheck, ChevronDown, Clock, Landmark, MapPin, Plug, Tag, User, Wrench } from 'lucide-react';
 import Modal from '../Modal';
+import BotonCopiar from '../BotonCopiar';
+import { useCopiado } from '../../hooks/useCopiado';
 import FormasPagoLista from './FormasPagoLista';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { conceptoCobro, estaExonerado } from '../../utils/cobro';
@@ -27,21 +29,11 @@ function Dato({ icon: Icon, etiqueta, valor }) {
 // `onCopy(texto, mensaje)` hace la copia (devuelve si pudo) y avisa con el toast.
 export default function CobroResultanteModal({ ticket, restantes = 0, formasPago, onCopy, onClose }) {
   // Qué se acaba de copiar ('monto' o 'mensaje'): el botón muestra un visto un instante.
-  const [copiado, setCopiado] = useState(null);
+  const { copiado, copiar } = useCopiado(onCopy);
   // Las formas de pago vienen plegadas: el técnico las despliega cuando las necesita.
   const [pagosAbierto, setPagosAbierto] = useState(false);
-  useEffect(() => {
-    if (!copiado) return;
-    const t = setTimeout(() => setCopiado(null), 1500);
-    return () => clearTimeout(t);
-  }, [copiado]);
-
   if (!ticket) return null;
   const formas = normalizarFormasPago(formasPago);
-  const copiar = async (id, texto, mensaje) => {
-    const ok = await onCopy(texto, mensaje);
-    if (ok) setCopiado(id);
-  };
   const visita = conceptoCobro(ticket);
   const preFinalizada = ticket.estado === 'PRE-FINALIZADO';
   const exonerado = estaExonerado(ticket);
@@ -77,13 +69,16 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           {preFinalizada && <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Informa este monto al cliente ahora. La orden queda pendiente de aprobación.</p>}
           {visita && <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-900/50 rounded-full px-3 py-1"><Plug className="w-3.5 h-3.5" aria-hidden="true" /> {visita}</p>}
           {!exonerado && onCopy && ticket.cobroBs && (
-            <button
-              type="button"
+            <BotonCopiar
+              copiado={copiado === 'monto'}
               onClick={() => copiar('monto', `${ticket.cobroBs} Bs`, 'Monto copiado.')}
-              className={`mt-3 ml-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1 border transition-colors ${copiado === 'monto' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-zinc-900 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/50'}`}
+              className="mt-3 ml-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1 border"
+              tono="bg-white dark:bg-zinc-900 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
+              tonoCopiado="bg-emerald-600 border-emerald-600 text-white"
+              iconoClase="w-3.5 h-3.5"
             >
-              {copiado === 'monto' ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />} Copiar monto
-            </button>
+              Copiar monto
+            </BotonCopiar>
           )}
         </div>
 
@@ -104,13 +99,15 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
               ) : (
                 <div className="space-y-3">
                   {ticket.cobroBs && (
-                    <button
-                      type="button"
+                    <BotonCopiar
+                      copiado={copiado === 'mensaje'}
                       onClick={() => copiar('mensaje', textoCobroParaCliente(ticket.cobroBs, formas), 'Monto y formas de pago copiados.')}
-                      className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-md text-white ${copiado === 'mensaje' ? 'bg-emerald-600' : 'bg-emerald-700 hover:bg-emerald-800'}`}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-md"
+                      tono="bg-emerald-700 hover:bg-emerald-800 text-white"
+                      tonoCopiado="bg-emerald-600 text-white"
                     >
-                      {copiado === 'mensaje' ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />} Copiar monto y formas de pago
-                    </button>
+                      Copiar monto y formas de pago
+                    </BotonCopiar>
                   )}
                   <FormasPagoLista formas={formas} onCopy={onCopy} />
                 </div>

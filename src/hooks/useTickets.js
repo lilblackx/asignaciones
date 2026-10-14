@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, doc, setDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
-import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound } from '../utils/notificationSound';
+import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound, playTecnicoStatusSound } from '../utils/notificationSound';
 import { esPrioritaria, mapaPrioridad, prioridadNueva, textoAvisoPrioridad } from '../utils/prioridad';
 import { sendPush } from '../lib/notify';
+import { ESTADO_EN_SITIO, deshacerLlegada, estaEnCamino, estadoViaje, iniciarViaje, mapaViaje, puedeIniciarViaje, registrarLlegada, textoAvisoEnCamino, textoAvisoLlegada, viajeEnCursoDe, viajesNuevos } from '../utils/enCamino';
 import { parsePotencia } from '../utils/potencia';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
@@ -21,6 +22,10 @@ const avisoCobro = (t) => {
   if (estaExonerado(t)) return ' Visita exonerada: no se cobra al cliente.';
   return t.cobroBs ? ` Cobro resultante al cliente: ${t.cobroBs} Bs.` : '';
 };
+
+// Órdenes que el técnico todavía tiene por atender: solo de esas le avisa que se las quitaron o cancelaron.
+const esActiva = (t) => t?.estado === 'PENDIENTE' || t?.estado === 'PRE-FINALIZADO';
+const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}`;
 
 const esCobroFinalizado = (t) => t.estado === 'FINALIZADO' && tieneCobroFinal(t);
 
@@ -154,6 +159,29 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // viajan con el push para que al tocarlo la app abra esa orden.
   const notifyTicketChange = (original, updated) => {
     const ticketId = updated.id;
+    // Al técnico que tenía la orden se le avisa si se la quitan (reasignada o sin técnico), la
+    // cancelan o la envían a la papelera. Si ya estaba cerrada (finalizada, cancelada) no hay nada que avisar.
+    if (original?.tecnico && esActiva(original)) {
+      const cerrada = updated.estado === 'CANCELADO' || updated.estado === 'ELIMINADO';
+      if (cerrada) {
+        const eliminada = updated.estado === 'ELIMINADO';
+        avisarPush({
+          target: { type: 'tecnico', name: original.tecnico },
+          title: eliminada ? 'Orden eliminada' : 'Orden cancelada',
+          body: `La orden ${etiquetaOrden(updated)} fue ${eliminada ? 'eliminada' : 'cancelada'}. Ya no tienes que atenderla.`,
+          tipo: 'cancelada',
+          ticketId,
+        });
+      } else if (updated.tecnico !== original.tecnico) {
+        avisarPush({
+          target: { type: 'tecnico', name: original.tecnico },
+          title: 'Orden desasignada',
+          body: `Te quitaron la orden ${etiquetaOrden(updated)}. Ya no tienes que atenderla.`,
+          tipo: 'desasignada',
+          ticketId,
+        });
+      }
+    }
     if (updated.tecnico && (!original || original.tecnico !== updated.tecnico)) {
       const conPrioridad = esPrioritaria(updated);
       avisarPush({
@@ -233,6 +261,15 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const ubicacionAnteriorRef = useRef(null);
   // id -> si la orden tenía prioridad alta en el snapshot anterior, para avisar al técnico cuando se la marcan.
   const prioridadAnteriorRef = useRef(null);
+  // Órdenes activas vistas en esta sesión (id -> orden). Una que desaparece del snapshot del técnico
+  // es que se la quitaron; solo cuenta lo visto en vivo, no lo guardado de una sesión anterior
+  // (esas pudieron finalizarse y archivarse con la app cerrada).
+  const activasVistasRef = useRef(new Map());
+  // id -> viaje ("en camino" / "en sitio") del snapshot anterior, para avisar a la oficina cuando un técnico
+  // sale o llega. Solo de esta sesión: no se avisa de lo que ya estaba en curso al abrir la app.
+  const viajeAnteriorRef = useRef(null);
+  // Técnicos cuyo "en camino" se está guardando ahora mismo (ver iniciarEnCamino).
+  const iniciandoViajeRef = useRef(new Set());
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -344,6 +381,34 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             playNuevaAsignacionSound();
           }
 
+          // Avisa al técnico cuando le cancelan o eliminan una orden que tenía por atender.
+          const canceladas = loadedTickets.filter(t =>
+            (t.estado === 'CANCELADO' || t.estado === 'ELIMINADO')
+            && ['PENDIENTE', 'PRE-FINALIZADO'].includes(estadoAnteriorRef.current.get(t.id))
+          );
+          if (canceladas.length > 0) {
+            const t = canceladas[0];
+            const texto = canceladas.length === 1
+              ? `La orden ${etiquetaOrden(t)} fue ${t.estado === 'ELIMINADO' ? 'eliminada' : 'cancelada'}. Ya no tienes que atenderla.`
+              : `${canceladas.length} órdenes fueron canceladas. Ya no tienes que atenderlas.`;
+            setToastMsg({ type: 'cancelada', text: texto, duration: 9000 });
+            onNotify?.({ type: 'cancelada', text: texto, ...(canceladas.length === 1 && { ticketId: t.id }) });
+            playDevueltaSound();
+          }
+
+          // Avisa al técnico cuando le quitan una orden (la reasignaron a otro técnico o la dejaron sin técnico):
+          // deja de llegarle en el listado, así que se detecta porque desaparece.
+          const idsActuales = new Set(loadedTickets.map(t => t.id));
+          const quitadas = [...activasVistasRef.current.values()].filter(t => !idsActuales.has(t.id));
+          if (quitadas.length > 0) {
+            const texto = quitadas.length === 1
+              ? `Te quitaron la orden ${etiquetaOrden(quitadas[0])}. Ya no tienes que atenderla.`
+              : `Te quitaron ${quitadas.length} órdenes. Ya no tienes que atenderlas.`;
+            setToastMsg({ type: 'desasignada', text: texto, duration: 9000 });
+            onNotify?.({ type: 'desasignada', text: texto });
+            playDevueltaSound();
+          }
+
           // Avisa al técnico cuando le devuelven una orden (PRE-FINALIZADO -> PENDIENTE).
           const devueltas = loadedTickets.filter(t =>
             t.estado === 'PENDIENTE' && estadoAnteriorRef.current.get(t.id) === 'PRE-FINALIZADO'
@@ -382,7 +447,22 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           }
         }
       }
+      if (role === 'ADMIN' || role === 'USUARIO') {
+        // Avisa a la oficina cuando un técnico marca que va en camino o que llegó.
+        const { enCamino, llegadas } = viajesNuevos(loadedTickets, viajeAnteriorRef.current, Date.now());
+        const avisarViajes = (lista, type, textoUno, textoVarios, sonido) => {
+          if (lista.length === 0) return;
+          const texto = lista.length === 1 ? textoUno(lista[0]) : textoVarios(lista.length);
+          setToastMsg({ type, text: texto, duration: 6000 });
+          onNotify?.({ type, text: texto, ...(lista.length === 1 && { ticketId: lista[0].id }) });
+          sonido();
+        };
+        avisarViajes(enCamino, 'encamino', textoAvisoEnCamino, (n) => `${n} técnicos van en camino a sus órdenes.`, playTecnicoStatusSound);
+        avisarViajes(llegadas, 'llegada', textoAvisoLlegada, (n) => `${n} técnicos llegaron al sitio de sus órdenes.`, playAprobadoSound);
+      }
+      viajeAnteriorRef.current = mapaViaje(loadedTickets);
       estadoAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.estado]));
+      activasVistasRef.current = new Map(loadedTickets.filter(esActiva).map(t => [t.id, { id: t.id, codigo: t.codigo, nombre: t.nombre }]));
       ubicacionAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.ubicacion ? 1 : '']));
       prioridadAnteriorRef.current = mapaPrioridad(loadedTickets);
       guardarBaseline(currentUserRef.current, estadoAnteriorRef.current, ubicacionAnteriorRef.current, prioridadAnteriorRef.current);
@@ -397,6 +477,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       estadoAnteriorRef.current = null;
       ubicacionAnteriorRef.current = null;
       prioridadAnteriorRef.current = null;
+      activasVistasRef.current = new Map();
+      viajeAnteriorRef.current = null;
     };
   }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
 
@@ -531,7 +613,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     // el botón "Pre-finalizar" (que los pide).
     if (role === 'TECNICO' && editingTicket.estado === 'PRE-FINALIZADO' && originalTicket?.estado !== 'PRE-FINALIZADO'
       && esInstalacion(editingTicket.tipoTrabajo) && !instalacionCompleta(editingTicket)) {
-      setToastMsg({ type: 'error', text: 'En una instalación llena el serial, la VLAN, la posteadura, la NAP, el puerto y los puertos disponibles con el botón "Pre-finalizar".' });
+      setToastMsg({ type: 'error', text: 'En una instalación llena el serial, la VLAN, la NAP, el puerto, el metraje del drop, la posteadura y los puertos disponibles con el botón "Pre-finalizar".' });
       return false;
     }
 
@@ -541,6 +623,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       const ticketToSave = { ...editingTicket, codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
       // Fecha en que se finalizó (la usa el módulo de materiales para filtrar por período).
       if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') ticketToSave.finalizadoEn = Date.now();
+      // Si la orden deja de estar pendiente, el viaje "en camino" / "en sitio" termina.
+      if (originalTicket?.enCamino && editingTicket.estado !== 'PENDIENTE') ticketToSave.enCamino = null;
       if (originalTicket) {
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
@@ -702,6 +786,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ...camposSerialEquipo,
       // `null` borra lo registrado antes si el técnico lo vació; solo se toca en una instalación.
       ...(reporteInstalacion ? { instalacion: datosInstalacion } : {}),
+      // Al pre-finalizar termina el viaje: si la devuelven, el técnico vuelve a avisar que sale.
+      ...(ticket.enCamino ? { enCamino: null } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -829,6 +915,74 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     notifyTicketChange(ticket, updatedTicket);
   };
 
+  // --- "En camino" / "En sitio" (el técnico avisa a la oficina; ver utils/enCamino) ---
+  // Guarda el cambio del viaje con su entrada en el historial. La oficina se entera por el listener de arriba
+  // (sin push: los avisos a un técnico o a los aprobadores no llegan a un USUARIO normal).
+  const guardarViaje = async (ticket, enCamino, detalle, tipo) => {
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'TÉCNICO',
+      tipo,
+      detalle
+    };
+    await actualizarTicket(ticket, {
+      ...ticket,
+      enCamino,
+      historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
+    });
+  };
+
+  // "Estoy en camino": un viaje a la vez; si ya va hacia otra orden, primero debe llegar o cancelar.
+  const iniciarEnCamino = async (ticket) => {
+    if (!firebaseUser || !ticket) return false;
+    const ahora = Date.now();
+    if (!puedeIniciarViaje(ticket, ahora)) return false;
+    // Seguro mientras se guarda el primer viaje: dos toques seguidos en órdenes distintas, antes de que la
+    // lista se actualice, pasarían ambos por la revisión de abajo.
+    if (iniciandoViajeRef.current.has(ticket.tecnico)) {
+      setToastMsg({ type: 'error', duration: 7000, text: 'Ya estás avisando que vas en camino a otra orden. Espera un momento.' });
+      return false;
+    }
+    const otra = viajeEnCursoDe(tickets, ticket.tecnico, ticket.id, ahora);
+    if (otra) {
+      setToastMsg({ type: 'error', duration: 7000, text: `Ya vas en camino a la orden ${otra.codigo || 'S/C'}. Marca "Llegué" o cancela ese viaje primero.` });
+      return false;
+    }
+    iniciandoViajeRef.current.add(ticket.tecnico);
+    try {
+      await guardarViaje(ticket, iniciarViaje(ticket, ahora), 'Va en camino', 'encamino');
+    } finally {
+      iniciandoViajeRef.current.delete(ticket.tecnico);
+    }
+    setToastMsg({ type: 'success', duration: 2500, text: 'Listo, la oficina sabe que vas en camino.' });
+    return true;
+  };
+
+  const marcarLlegada = async (ticket) => {
+    if (!firebaseUser || !ticket) return false;
+    const ahora = Date.now();
+    if (!estaEnCamino(ticket, ahora)) return false;
+    await guardarViaje(ticket, registrarLlegada(ticket, ahora), 'Llegó al sitio', 'llegada');
+    setToastMsg({ type: 'success', duration: 2500, text: 'Listo, la oficina sabe que llegaste.' });
+    return true;
+  };
+
+  // "Cancelar" (estando en camino) o "Deshacer" (estando en sitio, vuelve a en camino).
+  const cancelarViaje = async (ticket) => {
+    if (!firebaseUser || !ticket) return false;
+    const ahora = Date.now();
+    const estado = estadoViaje(ticket, ahora);
+    if (!estado) return false;
+    if (estado === ESTADO_EN_SITIO) {
+      await guardarViaje(ticket, deshacerLlegada(ticket, ahora), 'Deshizo «Llegué»: sigue en camino', 'encamino');
+      setToastMsg({ type: 'success', duration: 2500, text: 'Volviste a «en camino».' });
+    } else {
+      await guardarViaje(ticket, null, 'Canceló «En camino»', 'encamino');
+      setToastMsg({ type: 'success', duration: 2500, text: 'Viaje cancelado.' });
+    }
+    return true;
+  };
+
   const softDeleteTicket = async (deletingTicketId) => {
     if (!firebaseUser || !deletingTicketId) return;
     const ticketToUpdate = tickets.find(t => t.id === deletingTicketId);
@@ -840,6 +994,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         fechaEliminacion: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })
       };
       await actualizarTicket(ticketToUpdate, updatedTicket);
+      notifyTicketChange(ticketToUpdate, updatedTicket);
     }
     setToastMsg({ type: 'success', text: 'Orden enviada a la papelera.' });
   };
@@ -899,6 +1054,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     aprobarFinalizarTicket,
     devolverTicket,
     finalizarTicket,
-    togglePrioridad
+    togglePrioridad,
+    iniciarEnCamino,
+    marcarLlegada,
+    cancelarViaje
   };
 }

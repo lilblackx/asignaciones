@@ -15,6 +15,7 @@ import { useNotifications } from './hooks/useNotifications';
 import { useTechnicians } from './hooks/useTechnicians';
 import { useUsers } from './hooks/useUsers';
 import { useTickets } from './hooks/useTickets';
+import { useAhora } from './hooks/useAhora';
 import { useReports } from './hooks/useReports';
 import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
@@ -52,7 +53,6 @@ const TasaBcvModal = lazy(() => import('./components/modals/TasaBcvModal'));
 const FormasPagoModal = lazy(() => import('./components/modals/FormasPagoModal'));
 const MaterialesModal = lazy(() => import('./components/modals/MaterialesModal'));
 const PreFinalizarModal = lazy(() => import('./components/modals/PreFinalizarModal'));
-const FinalizarOrdenModal = lazy(() => import('./components/modals/FinalizarOrdenModal'));
 const CobroResultanteModal = lazy(() => import('./components/modals/CobroResultanteModal'));
 const AprobarFinalizarModal = lazy(() => import('./components/modals/AprobarFinalizarModal'));
 const UbicacionModal = lazy(() => import('./components/modals/UbicacionModal'));
@@ -71,6 +71,8 @@ export default function App() {
   const push = usePushToken(uid);
   const { toastMsg, setToastMsg } = useToast();
   const conAviso = crearConAviso(setToastMsg);
+  // Reloj que se refresca solo cada minuto: "hace 5 min" y los "en camino" que caducan.
+  const ahora = useAhora();
   const notifications = useNotifications(currentUser);
 
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -79,7 +81,7 @@ export default function App() {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket, togglePrioridad } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
@@ -185,7 +187,7 @@ export default function App() {
     ? ticketsParaVer.some(t => (t.estado === 'PENDIENTE' && !esProgramadaFutura(t)) || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
     : tickets.length > 0;
 
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico });
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, ahora });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.
@@ -277,6 +279,19 @@ export default function App() {
       case 'prioridad':
         if (ticket) mostrarOrden(ticket);
         else handleGoHome();
+        break;
+      case 'encamino':
+      case 'llegada':
+        if (ticket) mostrarOrden(ticket);
+        else handleGoHome();
+        break;
+      case 'cancelada':
+        // Cancelada: sigue en su lista (con estado CANCELADO); eliminada o quitada ya no está.
+        if (ticket) mostrarOrden(ticket);
+        else handleGoHome();
+        break;
+      case 'desasignada':
+        handleGoHome();
         break;
       case 'aprobado':
         if (ticket && isTecnico && tieneCobroFinal(ticket)) mostrarCobro(ticket);
@@ -386,6 +401,11 @@ export default function App() {
     await togglePrioridad(ticket);
   }, 'No se pudo cambiar la prioridad de la orden.');
 
+  // TECNICO: avisa a la oficina que va en camino, que llegó, o cancela / deshace el aviso.
+  const handleIniciarViaje = conAviso(iniciarEnCamino, 'No se pudo avisar que vas en camino.');
+  const handleLlegue = conAviso(marcarLlegada, 'No se pudo avisar que llegaste.');
+  const handleCancelarViaje = conAviso(cancelarViaje, 'No se pudo cancelar el viaje.');
+
   const handleConfirmAprobarFinalizar = conAviso(async (ticket, cobro) => {
     await aprobarFinalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
     setAprobarTarget(null);
@@ -396,8 +416,8 @@ export default function App() {
     if (ok) setAprobarTarget(null);
   }, 'No se pudo devolver la orden.');
 
-  const confirmFinalizar = conAviso(async (cobro) => {
-    await finalizarTicket(finalizarTarget, cobro || { montoBs: montoBsDe(tasaConfig) });
+  const confirmFinalizar = conAviso(async (ticket, cobro) => {
+    await finalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
     setFinalizarTarget(null);
   }, 'No se pudo finalizar la orden.');
 
@@ -535,7 +555,7 @@ export default function App() {
             isTecnico={isTecnico}
           />
 
-          <TechnicianWorkload tickets={tickets} technicians={technicians} getTecnicoColor={getTecnicoColor} canEditTickets={canEditTickets} isTecnico={isTecnico} onToggleActivo={toggleTechnicoActivoSeguro} onOpenSinTecnico={() => setStatusFilter('PENDIENTE_SIN_TECNICO')} />
+          <TechnicianWorkload tickets={tickets} technicians={technicians} getTecnicoColor={getTecnicoColor} canEditTickets={canEditTickets} isTecnico={isTecnico} onToggleActivo={toggleTechnicoActivoSeguro} onOpenSinTecnico={() => setStatusFilter('PENDIENTE_SIN_TECNICO')} ahora={ahora} onOpenViaje={setStatusFilter} />
 
           {/* lg:pr-2: en escritorio el texto termina alineado con el contenido de la
               última columna de la tabla (ACC), no en el borde exterior. */}
@@ -564,6 +584,10 @@ export default function App() {
             onAprobarFinalizar={setAprobarTarget}
             onFinalizar={setFinalizarTarget}
             onTogglePrioridad={handleTogglePrioridad}
+            ahora={ahora}
+            onIniciarViaje={handleIniciarViaje}
+            onLlegue={handleLlegue}
+            onCancelarViaje={handleCancelarViaje}
           />
 
           <TicketsTable
@@ -584,6 +608,10 @@ export default function App() {
             onAprobarFinalizar={setAprobarTarget}
             onFinalizar={setFinalizarTarget}
             onTogglePrioridad={handleTogglePrioridad}
+            ahora={ahora}
+            onIniciarViaje={handleIniciarViaje}
+            onLlegue={handleLlegue}
+            onCancelarViaje={handleCancelarViaje}
           />
 
           {hasMore && (
@@ -660,11 +688,12 @@ export default function App() {
         )}
 
         {finalizarTarget && (
-          <FinalizarOrdenModal
+          <AprobarFinalizarModal
             ticket={finalizarTarget}
             montoBs={montoBsDe(tasaConfig)}
-            onCancel={() => setFinalizarTarget(null)}
             onConfirm={confirmFinalizar}
+            onCopy={copyToClipboard}
+            onClose={() => setFinalizarTarget(null)}
           />
         )}
 

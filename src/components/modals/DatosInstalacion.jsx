@@ -1,17 +1,18 @@
 import { Plus, X } from 'lucide-react';
 import NapPuertoCampos from './NapPuertoCampos';
-import { MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
+import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 
 const claseInput = (error) =>
   `w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`;
 const claseEtiqueta = 'text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1';
 
-// Lo que el técnico llena al instalar y la plantilla de la promotora trae vacío: serial, VLAN,
-// posteadura (uno o varios postes), NAP, el puerto donde conecta el cliente y los puertos que quedan
-// disponibles en la NAP. Todo es obligatorio; la NAP y el puerto se ven igual que en la visita de
-// conector externo.
-export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
+// Lo que el técnico llena al instalar y la plantilla de la promotora trae vacío. Los campos van en el mismo orden
+// que en el modal de revisión de la oficina (ver DatosParaAutorizar): serial / MAC, VLAN, NAP y puerto donde
+// conecta el cliente (iguales que en la visita de conector externo), metraje del drop, posteadura (uno o varios
+// postes) y puertos disponibles en la NAP. Todo es obligatorio. Si se cambia el orden aquí, también el del
+// modal de revisión y el del foco al validar (PreFinalizarModal): lo vigila la prueba de utils/instalacion.
+export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, metraje, onMetraje, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
   const cambiarPoste = (i, valor) => onPostes(postes.map((p, j) => (j === i ? valor : p)));
 
   return (
@@ -20,7 +21,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
 
       <div className="space-y-1">
         <label htmlFor="pf-serial" className={claseEtiqueta}>
-          SERIAL <span className="font-normal text-red-500">(obligatorio)</span>
+          SERIAL / MAC <span className="font-normal text-red-500">(obligatorio)</span>
         </label>
         <input
           id="pf-serial"
@@ -57,6 +58,31 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           className={claseInput(errores.vlan)}
         />
         {errores.vlan && <p id="pf-vlan-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
+      </div>
+
+      <NapPuertoCampos nap={nap} onNap={onNap} napError={errores.nap} puerto={puerto} onPuerto={onPuerto} puertoError={errores.puerto} />
+
+      <div className="space-y-1">
+        <label htmlFor="pf-metraje" className={claseEtiqueta}>
+          METRAJE DEL DROP <span className="font-normal text-red-500">(obligatorio)</span> <span className="font-normal text-zinc-400">metros de cable</span>
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            id="pf-metraje"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={MAX_LARGO_METRAJE}
+            placeholder="Ej. 120"
+            value={metraje}
+            onChange={(e) => onMetraje(e.target.value.replace(/\D/g, ''))}
+            aria-invalid={!!errores.metraje}
+            aria-describedby={errores.metraje ? 'pf-metraje-error' : undefined}
+            className={`flex-1 min-w-0 ${claseInput(errores.metraje)}`}
+          />
+          <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400" aria-hidden="true">m</span>
+        </div>
+        {errores.metraje && <p id="pf-metraje-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
       </div>
 
       <div className="space-y-1.5" role="group" aria-labelledby="pf-postes-etiqueta" aria-describedby={errores.posteadura ? 'pf-postes-error' : undefined}>
@@ -100,29 +126,25 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
         {errores.posteadura && <p id="pf-postes-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
       </div>
 
-      <div className="space-y-4">
-        <NapPuertoCampos nap={nap} onNap={onNap} napError={errores.nap} puerto={puerto} onPuerto={onPuerto} puertoError={errores.puerto} />
-
-        <div className="space-y-1">
-          <label htmlFor="pf-puertos-disponibles" className={claseEtiqueta}>
-            PUERTOS DISPONIBLES <span className="font-normal text-red-500">(obligatorio)</span>
-          </label>
-          <input
-            id="pf-puertos-disponibles"
-            type="text"
-            autoComplete="off"
-            maxLength={MAX_LARGO_PUERTOS_DISPONIBLES}
-            placeholder="Ej. 6"
-            value={puertosDisponibles}
-            onChange={(e) => onPuertosDisponibles(stripEmojis(e.target.value))}
-            aria-invalid={!!errores.puertosDisponibles}
-            aria-describedby={errores.puertosDisponibles ? 'pf-puertos-disponibles-error' : undefined}
-            className={claseInput(errores.puertosDisponibles)}
-          />
-          {errores.puertosDisponibles
-            ? <p id="pf-puertos-disponibles-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.puertosDisponibles}</p>
-            : <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">Los que quedan libres en la NAP (si no queda ninguno, escribe 0).</p>}
-        </div>
+      <div className="space-y-1">
+        <label htmlFor="pf-puertos-disponibles" className={claseEtiqueta}>
+          PUERTOS DISPONIBLES <span className="font-normal text-red-500">(obligatorio)</span>
+        </label>
+        <input
+          id="pf-puertos-disponibles"
+          type="text"
+          autoComplete="off"
+          maxLength={MAX_LARGO_PUERTOS_DISPONIBLES}
+          placeholder="Ej. 6"
+          value={puertosDisponibles}
+          onChange={(e) => onPuertosDisponibles(stripEmojis(e.target.value))}
+          aria-invalid={!!errores.puertosDisponibles}
+          aria-describedby={errores.puertosDisponibles ? 'pf-puertos-disponibles-error' : undefined}
+          className={claseInput(errores.puertosDisponibles)}
+        />
+        {errores.puertosDisponibles
+          ? <p id="pf-puertos-disponibles-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.puertosDisponibles}</p>
+          : <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">Los que quedan libres en la NAP (si no queda ninguno, escribe 0).</p>}
       </div>
     </div>
   );

@@ -328,6 +328,39 @@ export function parseInstalacionTemplate(texto) {
   return campos;
 }
 
+// Datos del cliente que la plantilla de la promotora trae y la orden no guarda como campos (hoy, el plan a
+// contratar): se leen de la plantilla al mostrarlos (por ejemplo al revisar una instalación antes de aprobarla),
+// así que sirven también con las órdenes ya creadas. Etiqueta ya normalizada (ver claveEtiqueta) -> campo.
+const ETIQUETAS_DATOS_CLIENTE = {
+  'PLAN A CONTRATAR': 'plan',
+  'PLAN': 'plan',
+};
+const MAX_DATO_CLIENTE = 120;
+
+// { plan }: solo los que la plantilla trae con valor (en la
+// misma línea o, como lo hacen algunas promotoras, en la de abajo). Lo que no se entiende queda fuera.
+export function parseDatosClienteTemplate(texto) {
+  const datos = {};
+  const originales = String(texto || '').split(/\r?\n|\r/);
+  const lineas = originales.map(limpiarLinea);
+  for (let i = 0; i < lineas.length; i++) {
+    const idx = lineas[i].indexOf(':');
+    if (idx === -1) continue;
+    const campo = ETIQUETAS_DATOS_CLIENTE[claveEtiqueta(lineas[i].slice(0, idx))];
+    if (!campo || datos[campo] !== undefined) continue;
+    let valor = lineas[i].slice(idx + 1).trim();
+    if (!valor) {
+      let j = i + 1;
+      while (j < lineas.length && !lineas[j]) j++;
+      if (j < lineas.length && !esLineaEtiqueta(originales[j], lineas[j])) valor = lineas[j];
+    }
+    valor = valor.replace(/\s+/g, ' ').trim();
+    if (!valor || valor.length > MAX_DATO_CLIENTE || SIN_DATO.has(claveEtiqueta(valor))) continue;
+    datos[campo] = valor;
+  }
+  return datos;
+}
+
 // Lo que el técnico llena al instalar (ticket.instalacion, ver utils/instalacion) y la plantilla de la
 // promotora trae vacío: la etiqueta (ya normalizada) de su línea en la plantilla.
 const CAMPOS_INSTALACION = [
@@ -335,6 +368,8 @@ const CAMPOS_INSTALACION = [
   { campo: 'serial', claves: ['MAC', 'SERIAL'] },
   { campo: 'vlan', claves: ['VLAN'] },
   { campo: 'posteadura', claves: ['POSTEADURA'] },
+  // El metraje va solo en la línea "Drop" de la plantilla, con "m" (ej. "*Drop:* 150 m").
+  { campo: 'metraje', claves: ['DROP'] },
   { campo: 'nap', claves: ['NAP'] },
   { campo: 'puerto', claves: ['CLIENTE CONECTA EN EL PUERTO N'] },
   { campo: 'puertosDisponibles', claves: ['PUERTOS DISPONIBLES'] },
@@ -347,6 +382,7 @@ function camposLlenosDeInstalacion(instalacion) {
     serial: instalacion.serial,
     vlan: instalacion.vlan,
     posteadura: (instalacion.posteadura || []).join(', '),
+    metraje: instalacion.metraje ? `${instalacion.metraje} m` : '',
     nap: instalacion.nap,
     puerto: instalacion.puerto,
     puertosDisponibles: instalacion.puertosDisponibles,
@@ -373,7 +409,7 @@ function etiquetaTieneValor(lineas, idx) {
 
 // Toca estas líneas de la plantilla cruda: el correlativo (primera línea), el técnico
 // instalador y, si el técnico ya los llenó al pre-finalizar, el serial, VLAN, posteadura,
-// NAP, puerto y puertos disponibles. Estos últimos SOLO se completan donde la plantilla
+// metraje, NAP, puerto y puertos disponibles. Estos últimos SOLO se completan donde la plantilla
 // los trae vacíos: lo que la promotora ya escribió se respeta y nunca se agregan líneas
 // (la plantilla sigue siendo la de la promotora, con sus huecos llenos). Si la orden ya
 // tiene ubicación, agrega el enlace de Maps al final (o lo completa en una etiqueta

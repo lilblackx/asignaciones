@@ -41,7 +41,8 @@ const COLUMNAS = [
   ['ONU Rx 1490 nm (dBm)', t => decimalEs(t.potencia1490Dbm)],
   ['Tipo de visita', t => etiquetaTipoVisita(t.tipoVisita)],
   ['Serial equipo nuevo', t => t.serialEquipo],
-  ['Metros de cable', t => t.metrosCable ?? ''],
+  // Recableado: los metros de la visita; instalación: el metraje registrado al instalar.
+  ['Metros de cable', t => t.metrosCable ?? t.instalacion?.metraje ?? ''],
   ['Conector externo', t => ETIQUETA_COLOR[t.conectorExterno] || ''],
   ['Conector interno', t => ETIQUETA_COLOR[t.conectorInterno] || ''],
   ['Ubicación', t => t.ubicacion],

@@ -1,35 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Cable, Check, CheckCheck, ClipboardList, Copy, ExternalLink, Eye, MapPin, Phone, Plug, Router, Tag, Undo2, User, Wrench, X } from 'lucide-react';
+import { useState } from 'react';
+import { Banknote, Cable, CheckCheck, CircleAlert, Eye, Undo2, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import { stripEmojis } from '../../utils/sanitizeInput';
-import { buildSmartOltUrl } from '../../utils/smartolt';
-import { formatCedula } from '../../utils/ticketDisplay';
+import { faltantesInstalacion } from '../../utils/instalacion';
 import { evaluarPotencia } from '../../utils/potencia';
-import { tieneDatosInstalacion } from '../../utils/instalacion';
-import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, esCambioEquipo, partesRecableado, textoConectorVisita } from '../../utils/tipoVisita';
+import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, partesRecableado } from '../../utils/tipoVisita';
 import { COBRO_INICIAL, conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
 import ContactoCliente from '../ContactoCliente';
+import DatosParaAutorizar from './DatosParaAutorizar';
 import CobroSelector from './CobroSelector';
+import ConectorColocado from './ConectorColocado';
 
-function Campo({ label, value, className = '' }) {
-  if (!value) return null;
-  return (
-    <div className={className}>
-      <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 block">{label}</span>
-      <span className="text-xs text-zinc-900 dark:text-white font-medium">{value}</span>
-    </div>
-  );
-}
-
+// Revisión de una orden antes de cerrarla. Sirve para los dos cierres de la oficina: aprobar una orden que el
+// técnico pre-finalizó (con "Devolver" si algo no está bien) y finalizar directo una orden pendiente, sin que
+// el técnico la haya pre-finalizado. Los datos y el cobro se ven igual en los dos.
 export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDevolver, onCopy, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // El serial recién copiado: el icono pasa a un visto un momento.
-  const [serialCopiado, setSerialCopiado] = useState(false);
-  useEffect(() => {
-    if (!serialCopiado) return;
-    const t = setTimeout(() => setSerialCopiado(false), 1500);
-    return () => clearTimeout(t);
-  }, [serialCopiado]);
   const [devolviendo, setDevolviendo] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [motivoError, setMotivoError] = useState('');
@@ -38,11 +24,9 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
   const [cobroError, setCobroError] = useState('');
 
   if (!ticket) return null;
-
-  const copiarSerial = async (serial) => {
-    const ok = await onCopy?.(serial, 'Serial copiado.', 'success', 'No se pudo copiar el serial.');
-    if (ok) setSerialCopiado(true);
-  };
+  // Pendiente = finalizar directo; pre-finalizada = aprobar. Devolver solo existe al aprobar.
+  const finalizando = ticket.estado === 'PENDIENTE';
+  const faltantes = faltantesInstalacion(ticket);
 
   const handleConfirm = async () => {
     let extra;
@@ -72,12 +56,12 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-3xl max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-blue-500 flex justify-between items-center sticky top-0 z-10">
           <div>
             <div className="flex items-center gap-2">
               <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded tracking-wide">
-                REVISAR ANTES DE APROBAR
+                {finalizando ? 'REVISAR ANTES DE FINALIZAR' : 'REVISAR ANTES DE APROBAR'}
               </span>
               <span className="text-xs font-bold text-blue-400">{ticket.codigo || 'S/C'}</span>
             </div>
@@ -89,55 +73,27 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
         </div>
 
         <div className="p-4 sm:p-5 space-y-4">
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-blue-900 dark:text-blue-200">
-            <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <p className="leading-tight">
-              Solo lectura. Verifica que los datos que cargó el técnico estén correctos antes de aprobar.
-            </p>
+          <p className="flex items-center gap-2 text-[11px] text-blue-800 dark:text-blue-300 font-medium">
+            <Eye className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            {finalizando ? 'Solo lectura. El técnico aún no pre-finalizó esta orden: verifica los datos antes de finalizarla.' : 'Solo lectura. Verifica los datos que cargó el técnico antes de aprobar.'}
+          </p>
+
+          {faltantes.length > 0 && (
+            <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-800 dark:text-red-300">
+              <CircleAlert className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="leading-snug"><span className="font-black">Faltan datos de la instalación:</span> {faltantes.join(', ')}.{finalizando ? ' Si la finalizas así, no quedarán registrados.' : ''}</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-700 dark:text-zinc-300">
+            <span className="inline-flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" aria-hidden="true" /><span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-zinc-500 dark:text-zinc-400">— {ticket.falla}</span>}</span>
+            {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></span>}
+            {ticket.creado && <span className="text-zinc-500 dark:text-zinc-400">Creado por: {ticket.creado}</span>}
           </div>
 
-          <div className="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 grid grid-cols-2 gap-3">
-            <Campo label="TÉCNICO" value={ticket.tecnico} className="col-span-1" />
-            {ticket.cedula && (
-              <div className="col-span-1">
-                <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 block">CÉDULA</span>
-                <a
-                  href={buildSmartOltUrl(ticket.cedula, ticket.tipoDocumento)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Buscar cliente en SmartOLT"
-                  className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400 font-medium hover:underline"
-                >
-                  {formatCedula(ticket.cedula, ticket.tipoDocumento)}
-                  <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
-                </a>
-              </div>
-            )}
-            <div className="col-span-2 flex items-start gap-2">
-              <Wrench className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-red-600 dark:text-red-400 text-xs">{ticket.tipoTrabajo}</span>
-                {ticket.falla && <span className="text-zinc-500 dark:text-zinc-400 text-xs"> — {ticket.falla}</span>}
-              </div>
-            </div>
-            <div className="col-span-2 flex items-start gap-2">
-              <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
-              <span className="text-xs text-zinc-700 dark:text-zinc-300">{ticket.direccion}</span>
-            </div>
-            {ticket.telefono && (
-              <div className="col-span-2 flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                <span className="text-xs text-zinc-700 dark:text-zinc-300">{ticket.telefono}</span>
-              </div>
-            )}
-            {ticket.creado && (
-              <div className="col-span-2 flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                <span className="text-xs text-zinc-700 dark:text-zinc-300">Creado por: {ticket.creado}</span>
-              </div>
-            )}
-            <ContactoCliente telefono={ticket.telefono} ubicacion={ticket.ubicacion} napCoordenadas={ticket.napCoordenadas} nombre={ticket.nombre} className="col-span-2" />
-          </div>
+          <DatosParaAutorizar ticket={ticket} onCopy={onCopy} />
+
+          <ContactoCliente telefono={ticket.telefono} ubicacion={ticket.ubicacion} napCoordenadas={ticket.napCoordenadas} nombre={ticket.nombre} />
 
           {ticket.tipoVisita === TIPO_RECABLEADO && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
@@ -149,63 +105,18 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
             </div>
           )}
 
-          {esCambioEquipo(ticket.tipoVisita) && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
-              <p className="flex items-center gap-2 font-black"><Router className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> CAMBIO DE EQUIPO</p>
-              {ticket.serialEquipo ? (
-                <p className="ml-6 flex items-center gap-1.5">
-                  <span className="font-bold">Serial del equipo nuevo:</span> {ticket.serialEquipo}
-                  {onCopy && (
-                    <button
-                      type="button"
-                      onClick={() => copiarSerial(ticket.serialEquipo)}
-                      aria-label={serialCopiado ? 'Serial copiado' : 'Copiar el serial del equipo nuevo'}
-                      title="Copiar el serial"
-                      className={`p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${serialCopiado ? 'bg-emerald-600 text-white' : 'bg-amber-200/70 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-800/60'}`}
-                    >
-                      {serialCopiado ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
-                    </button>
-                  )}
-                </p>
-              ) : <p className="ml-6 italic">Sin serial registrado.</p>}
-            </div>
-          )}
-
-          {tieneDatosInstalacion(ticket.instalacion) && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
-              <p className="flex items-center gap-2 font-black"><ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> DATOS DE LA INSTALACIÓN</p>
-              {ticket.instalacion.serial && (
-                <p className="ml-6 flex items-center gap-1.5">
-                  <span className="font-bold">Serial:</span> {ticket.instalacion.serial}
-                  {onCopy && (
-                    <button
-                      type="button"
-                      onClick={() => copiarSerial(ticket.instalacion.serial)}
-                      aria-label={serialCopiado ? 'Serial copiado' : 'Copiar el serial'}
-                      title="Copiar el serial"
-                      className={`p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${serialCopiado ? 'bg-emerald-600 text-white' : 'bg-amber-200/70 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-800/60'}`}
-                    >
-                      {serialCopiado ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
-                    </button>
-                  )}
-                </p>
-              )}
-              {ticket.instalacion.vlan && <p className="ml-6"><span className="font-bold">VLAN:</span> {ticket.instalacion.vlan}</p>}
-              {ticket.instalacion.posteadura?.length > 0 && <p className="ml-6"><span className="font-bold">Posteadura:</span> {ticket.instalacion.posteadura.join(', ')}</p>}
-              {ticket.instalacion.nap && <p className="ml-6"><span className="font-bold">NAP:</span> {ticket.instalacion.nap}</p>}
-              {ticket.instalacion.puerto && <p className="ml-6"><span className="font-bold">Puerto del cliente:</span> {ticket.instalacion.puerto}</p>}
-              {ticket.instalacion.puertosDisponibles && <p className="ml-6"><span className="font-bold">Puertos disponibles:</span> {ticket.instalacion.puertosDisponibles}</p>}
-            </div>
-          )}
+          {/* El conector colocado va en su propio bloque: no se mezcla con el cobro de la visita. */}
+          <ConectorColocado ticket={ticket} />
 
           {llevaCobro(ticket) && (
-            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 space-y-3 text-xs text-sky-900 dark:text-sky-200">
-              <p className="flex items-center gap-2.5 font-bold">
-                <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-                {conceptoCobro(ticket)}
-                {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <span className="font-normal">: el técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</span>}
-              </p>
-              {textoConectorVisita(ticket) && <p className="font-bold ml-6">{textoConectorVisita(ticket)}</p>}
+            <section aria-label="Cobro de la visita" className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 space-y-3 text-xs text-sky-900 dark:text-sky-200">
+              <div>
+                <h3 className="flex items-center gap-2 font-black tracking-wide">
+                  <Banknote className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" /> COBRO
+                </h3>
+                <p className="ml-6 mt-1"><span className="opacity-70">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
+                {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <p className="ml-6 mt-1 text-[11px] opacity-80">El técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</p>}
+              </div>
               <CobroSelector
                 idBase="cobro-aprobar"
                 montoVisita={montoBs}
@@ -213,16 +124,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                 onChange={(siguiente) => { setCobro(siguiente); setCobroError(''); }}
                 error={cobroError}
               />
-            </div>
-          )}
-
-          {ticket.nap && (
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 ml-1 flex items-center gap-1"><Tag className="w-3.5 h-3.5" /> NAP / CAJA / PUERTO</span>
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200">
-                {ticket.nap}
-              </div>
-            </div>
+            </section>
           )}
 
           {ticket.potenciaDbm != null && (
@@ -270,7 +172,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
             </div>
           )}
 
-          <div className="flex gap-2.5 pt-1">
+          <div className="sticky bottom-0 z-10 flex gap-2.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 px-4 sm:px-5 py-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
             <button
               type="button"
               onClick={devolviendo ? () => { setDevolviendo(false); setMotivoError(''); } : onClose}
@@ -293,7 +195,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
               </button>
             ) : (
               <>
-                {onDevolver && (
+                {onDevolver && !finalizando && (
                   <button
                     type="button"
                     onClick={() => setDevolviendo(true)}
@@ -313,7 +215,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                   }`}
                 >
                   <CheckCheck className="w-4 h-4 shrink-0" />
-                  <span className="whitespace-nowrap">{isSubmitting ? 'Aprobando...' : 'Aprobar'}</span>
+                  <span className="whitespace-nowrap">{finalizando ? (isSubmitting ? 'Finalizando...' : 'Finalizar') : (isSubmitting ? 'Aprobando...' : 'Aprobar')}</span>
                 </button>
               </>
             )}

@@ -128,6 +128,15 @@ export function textoConectorVisita(t) {
   return ETIQUETA_COLOR[color] ? `Conector ${ETIQUETA_COLOR[color].toLowerCase()}` : '';
 }
 
+// El conector de una visita de conector, por separado del cobro de la visita: su tipo ('Externo' o 'Interno') y su
+// color (la etiqueta del color va vacía si no se registró). null si la orden no es una visita de conector.
+export function conectorDeVisita(t) {
+  const externo = t?.tipoVisita === TIPO_CONECTOR_EXTERNO;
+  if (!externo && t?.tipoVisita !== TIPO_CONECTOR_INTERNO) return null;
+  const color = externo ? colorConectorExterno(t.conectorExterno) : colorConectorInterno(t.conectorInterno);
+  return { tipo: externo ? 'Externo' : 'Interno', color, etiquetaColor: ETIQUETA_COLOR[color] || '' };
+}
+
 export const tieneDatosRecableado = (t) => Boolean(t) && (t.metrosCable != null || Boolean(t.conectorExterno) || Boolean(t.conectorInterno));
 
 // Partes legibles del recableado de una orden, en el orden en que se muestran:

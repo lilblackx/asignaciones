@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Ban, BadgeCheck, CheckCheck, Clock, Flag, MapPin, Pencil, Plus, Send, Undo2, UserCog } from 'lucide-react';
+import { ArrowRightLeft, Ban, BadgeCheck, Car, CheckCheck, Clock, Flag, MapPin, Pencil, Plus, Send, Undo2, UserCog } from 'lucide-react';
 import { construirLineaDeTiempo } from '../utils/historial';
 
 const TIPOS = {
@@ -9,6 +9,8 @@ const TIPOS = {
   tecnico: { icono: UserCog, titulo: 'Cambio de técnico', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
   prefinalizado: { icono: Clock, titulo: 'Pre-finalizada', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
   prioridad: { icono: Flag, titulo: 'Prioridad alta', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+  encamino: { icono: Car, titulo: 'En camino', color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
+  llegada: { icono: MapPin, titulo: 'Llegó al sitio', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
   devuelto: { icono: Undo2, titulo: 'Devuelta al técnico', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
   aprobado: { icono: BadgeCheck, titulo: 'Aprobada y finalizada', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
   finalizado: { icono: BadgeCheck, titulo: 'Finalizada', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },

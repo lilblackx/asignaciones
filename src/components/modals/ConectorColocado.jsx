@@ -1,0 +1,34 @@
+import { Plug } from 'lucide-react';
+import { conectorDeVisita } from '../../utils/tipoVisita';
+
+const ESTILO_COLOR = { VERDE: 'bg-emerald-600 text-white', AZUL: 'bg-blue-600 text-white' };
+
+// El conector que se colocó en una visita de conector: su tipo (externo o interno) y su color, en un bloque
+// propio, aparte del cobro de la visita (que sale en su recuadro, con el concepto y el selector de cobro).
+export default function ConectorColocado({ ticket }) {
+  const conector = conectorDeVisita(ticket);
+  if (!conector) return null;
+  return (
+    <section aria-label="Conector colocado" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200">
+      <h3 className="flex items-center gap-2 font-black tracking-wide">
+        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> CONECTOR COLOCADO
+      </h3>
+      <div className="mt-2 ml-6 flex flex-wrap items-center gap-x-8 gap-y-2">
+        <div>
+          <span className="block text-[10px] font-bold tracking-wide opacity-70">TIPO</span>
+          <span className="text-sm font-black">{conector.tipo}</span>
+        </div>
+        <div>
+          <span className="block text-[10px] font-bold tracking-wide opacity-70">COLOR</span>
+          {conector.color ? (
+            <span className={`mt-0.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${ESTILO_COLOR[conector.color]}`}>
+              <span className="w-2.5 h-2.5 rounded-full bg-white/90" aria-hidden="true" /> {conector.etiquetaColor}
+            </span>
+          ) : (
+            <span className="text-sm italic">Sin color registrado</span>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}

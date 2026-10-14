@@ -5,6 +5,8 @@ import TelefonoAccion from './TelefonoAccion';
 import DevolucionAviso from './DevolucionAviso';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
+import ViajeControl, { EtiquetaViaje } from './ViajeControl';
+import { ESTADO_EN_SITIO, estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
@@ -25,7 +27,11 @@ export default function TicketsMobileList({
   onPreFinalizar,
   onAprobarFinalizar,
   onFinalizar,
-  onTogglePrioridad
+  onTogglePrioridad,
+  ahora,
+  onIniciarViaje,
+  onLlegue,
+  onCancelarViaje
 }) {
   if (filteredTickets.length === 0) {
     return (
@@ -54,8 +60,9 @@ export default function TicketsMobileList({
         const envio = getEnvioInfo(ticket);
         const prioritaria = esPrioritaria(ticket);
         const sinPlantilla = ordenSinPlantilla(ticket);
+        const viaje = estadoViaje(ticket, ahora);
         return (
-        <div key={ticket.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : ticket.estado === 'ELIMINADO' ? 'border-red-500/50 dark:border-red-900/50' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
+        <div key={ticket.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'ELIMINADO' ? 'border-red-500/50 dark:border-red-900/50' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
           <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-start sm:items-center bg-zinc-50 dark:bg-zinc-950">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <div className="flex items-center gap-2">
@@ -175,8 +182,11 @@ export default function TicketsMobileList({
               que no le sirve) en cada tarjeta solo gasta alto de pantalla. */}
           {!isTecnico && (
             <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center text-xs">
-              <div className={`px-2.5 py-1.5 rounded font-bold ${getTecnicoColor(ticket.tecnico)}`}>
-                {ticket.tecnico || 'SIN TÉCNICO'}
+              <div className="flex flex-col items-start gap-1">
+                <div className={`px-2.5 py-1.5 rounded font-bold ${getTecnicoColor(ticket.tecnico)}`}>
+                  {ticket.tecnico || 'SIN TÉCNICO'}
+                </div>
+                <EtiquetaViaje ticket={ticket} ahora={ahora} />
               </div>
               {ticket.creado && (
                 <div className={`px-2 py-1 rounded text-[10px] font-bold ${getCreadoColor(ticket.creado)}`}>
@@ -186,22 +196,29 @@ export default function TicketsMobileList({
             </div>
           )}
 
+          {/* Arriba de la barra de acciones del técnico, al alcance del pulgar. */}
+          {isTecnico && ticket.estado === 'PENDIENTE' && (
+            <div className="px-4 pb-3">
+              <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} />
+            </div>
+          )}
+
           {ticket.estado !== 'ELIMINADO' ? (
             isTecnico ? (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
-                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                   <ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}
                 </button>
                 {ticket.estado === 'PENDIENTE' ? (
-                  <button onClick={() => onPreFinalizar(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-[13px] transition-colors">
+                  <button onClick={() => onPreFinalizar(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-[13px] transition-colors">
                     <CheckCircle2 className="w-4 h-4" /> Pre-finalizar
                   </button>
                 ) : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? (
-                  <div className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                  <div className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-sm">
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : null}
-                <button onClick={() => onEdit(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] transition-colors">
+                <button onClick={() => onEdit(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] transition-colors">
                   <Edit className="w-4 h-4" /> Detalles
                 </button>
               </div>

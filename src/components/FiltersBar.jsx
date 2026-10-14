@@ -22,7 +22,11 @@ export default function FiltersBar({
   const statusItems = [
     { value: 'TODOS', label: 'Activas' },
     { value: 'PRE-FINALIZADO', label: 'Pre-finalizados' },
-    ...(!isTecnico ? [{ value: 'PENDIENTE_SIN_TECNICO', label: 'Sin técnico' }] : []),
+    ...(!isTecnico ? [
+      { value: 'PENDIENTE_SIN_TECNICO', label: 'Sin técnico' },
+      { value: 'EN_CAMINO', label: 'En camino' },
+      { value: 'EN_SITIO', label: 'En sitio' }
+    ] : []),
     { value: 'INSTALACION_SIN_UBICACION', label: 'Instalaciones sin ubicación' },
     { group: 'Programadas', options: [
       { value: 'PROG_HOY', label: 'Hoy / vencidas' },

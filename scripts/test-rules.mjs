@@ -220,9 +220,9 @@ await check('TECNICO puede registrar un recableado (metros, conectores, señal 1
   }));
 });
 
-await check('TECNICO puede registrar los datos de la instalación (serial, VLAN, posteadura, NAP, puerto y puertos disponibles)', async () => {
+await check('TECNICO puede registrar los datos de la instalación (serial, VLAN, posteadura, metraje, NAP, puerto y puertos disponibles)', async () => {
   await assertSucceeds(camposGerardo(asTecnico()).update({
-    instalacion: { serial: 'HWTC1A2B3C4D', vlan: '100', posteadura: ['DM SN N01B01', 'DM SN N01B02'], nap: 'M05F11', puerto: '3', puertosDisponibles: '6' },
+    instalacion: { serial: 'HWTC1A2B3C4D', vlan: '100', posteadura: ['DM SN N01B01', 'DM SN N01B02'], metraje: 120, nap: 'M05F11', puerto: '3', puertosDisponibles: '6' },
     nap: 'M05F11 - Puerto 3',
   }));
 });
@@ -235,6 +235,20 @@ await check('TECNICO puede registrar el color del conector de una visita de cone
 await check('TECNICO puede registrar un cambio de equipo con el serial del equipo nuevo', async () => {
   await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'HWTC1A2B3C4D' }));
   await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', serialEquipo: '' }));
+});
+
+await check('TECNICO puede marcar "en camino", "llegué" y cancelarlo en su orden', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ enCamino: { tecnico: 'GERARDO MOLERO', desde: 1 } }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ enCamino: { tecnico: 'GERARDO MOLERO', desde: 1, llegoEn: 2 } }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ enCamino: null }));
+});
+
+await check('TECNICO NO puede marcar "en camino" a nombre de otro técnico', async () => {
+  await assertFails(camposGerardo(asTecnico()).update({ enCamino: { tecnico: 'REINEL', desde: 1 } }));
+});
+
+await check('TECNICO NO puede marcar "en camino" en la orden de otro técnico', async () => {
+  await assertFails(ticketPath(asTecnico(), 'ticket-de-reinel').update({ enCamino: { tecnico: 'GERARDO MOLERO', desde: 1 } }));
 });
 
 await check('TECNICO NO puede escribir el cobro ni la fecha de finalización', async () => {

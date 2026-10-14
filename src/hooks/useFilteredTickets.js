@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { instalacionSinUbicacion } from '../utils/ubicacion';
 import { categoriaProgramada, esProgramadaFutura, mananaISO } from '../utils/programada';
 import { prioritariasPrimero } from '../utils/prioridad';
+import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 
 const PAGE_SIZE = 50;
 
@@ -12,7 +13,7 @@ function parseFecha(fechaStr) {
 
 // ocultarProgramadasFuturas: el técnico no ve en "Activas" las órdenes cuya
 // fecha programada aún no llega (las encuentra en el filtro "Programadas").
-export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false } = {}) {
+export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false, ahora } = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('TODOS');
   const [tipoFilter, setTipoFilter] = useState('TODOS');
@@ -32,6 +33,8 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false 
         : statusFilter === 'PROG_MANANA' ? t.estado === 'PENDIENTE' && t.fechaProgramada === mananaISO()
         : statusFilter === 'PROG_FUTURAS' ? esProgramadaFutura(t)
         : statusFilter === 'PRE-FINALIZADO' ? (t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
+        : statusFilter === 'EN_CAMINO' ? estaEnCamino(t, ahora)
+        : statusFilter === 'EN_SITIO' ? estaEnSitio(t, ahora)
         : statusFilter === 'ELIMINADOS' ? t.estado === 'ELIMINADO'
         : statusFilter === 'INSTALACION_SIN_UBICACION' ? instalacionSinUbicacion(t)
         : statusFilter === 'PENDIENTE_SIN_TECNICO' ? t.estado === 'PENDIENTE' && (!t.tecnico || t.tecnico.trim() === '')
@@ -71,7 +74,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false 
     if (!['TECNICO', 'TIPO_TRABAJO', 'PROGRAMADA'].includes(sortBy)) result = prioritariasPrimero(result);
 
     return result;
-  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas]);
+  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas, ahora]);
 
   const visibleTickets = filteredTickets.slice(0, visibleCount);
   const hasMore = filteredTickets.length > visibleCount;

@@ -21,6 +21,8 @@
     "test:recableado": "node scripts/test-recableado.mjs",
     "test:instalacion": "node scripts/test-instalacion.mjs",
     "test:prioridad": "node scripts/test-prioridad.mjs",
+    "test:encamino": "node scripts/test-en-camino.mjs",
+    "test:autorizacion": "node scripts/test-autorizacion.mjs",
     "test:cobro": "node scripts/test-cobro.mjs",
     "test:equipo": "node scripts/test-cambio-equipo.mjs"
   },
