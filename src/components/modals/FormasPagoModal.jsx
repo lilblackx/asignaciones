@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Check, Copy, Landmark, Smartphone, X } from 'lucide-react';
+import { Check, Copy, Landmark, X } from 'lucide-react';
 import Modal from '../Modal';
-import { CAMPOS_POR_TIPO, TIPO_PAGO_MOVIL, TITULO_POR_TIPO, nombreForma, normalizarFormasPago, textoForma, textoTodasLasFormas } from '../../utils/formasPago';
+import { CAMPOS_POR_TIPO, TITULO_POR_TIPO, nombreForma, normalizarFormasPago, textoForma, textoTodasLasFormas } from '../../utils/formasPago';
+import { ICONO_POR_TIPO } from './formasPagoIconos';
 
 // Fila "etiqueta + valor + botón copiar". `id` identifica cuál se copió para
 // mostrar el check un instante; `contexto` distingue los botones de cada tarjeta
@@ -28,9 +29,9 @@ function FilaCopiable({ id, etiqueta, contexto, valor, copiado, onCopiar }) {
   );
 }
 
-// Una forma de pago (pago móvil, o una cuenta bancaria) en su propia tarjeta.
+// Una forma de pago (pago móvil, cuenta bancaria, Zelle o Binance) en su propia tarjeta.
 function TarjetaForma({ forma, indice, copiado, onCopiar }) {
-  const Icono = forma.tipo === TIPO_PAGO_MOVIL ? Smartphone : Landmark;
+  const Icono = ICONO_POR_TIPO[forma.tipo];
   const idTarjeta = `forma-${indice}`;
   const nombre = nombreForma(forma);
   const tarjetaCopiada = copiado === idTarjeta;

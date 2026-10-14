@@ -3,16 +3,29 @@
 // su propio apartado para pasárselas al cliente.
 //
 // Cada forma de pago es una tarjeta independiente con sus propios datos: un pago
-// móvil, o una cuenta bancaria (cada cuenta aparte, con su titular y RIF), de modo
-// que se pueda copiar un dato suelto o todos los de una misma forma de pago.
+// móvil, una cuenta bancaria (cada cuenta aparte, con su titular y RIF), una cuenta
+// Zelle o una cuenta Binance, de modo que se pueda copiar un dato suelto o todos los
+// de una misma forma de pago.
 
 export const TIPO_PAGO_MOVIL = 'PAGO_MOVIL';
 export const TIPO_CUENTA = 'CUENTA';
+export const TIPO_ZELLE = 'ZELLE';
+export const TIPO_BINANCE = 'BINANCE';
 
 export const TITULO_POR_TIPO = {
   [TIPO_PAGO_MOVIL]: 'Pago Móvil',
   [TIPO_CUENTA]: 'Transferencia bancaria',
+  [TIPO_ZELLE]: 'Zelle',
+  [TIPO_BINANCE]: 'Binance',
 };
+
+// Tipos que el ADMIN puede agregar, en el orden de los botones, con su texto.
+export const TIPOS_AGREGABLES = [
+  { tipo: TIPO_PAGO_MOVIL, etiqueta: 'Pago móvil' },
+  { tipo: TIPO_CUENTA, etiqueta: 'Cuenta bancaria' },
+  { tipo: TIPO_ZELLE, etiqueta: 'Cuenta Zelle' },
+  { tipo: TIPO_BINANCE, etiqueta: 'Cuenta Binance' },
+];
 
 // Campos de cada tipo, en el orden en que se muestran y se copian.
 export const CAMPOS_POR_TIPO = {
@@ -26,6 +39,15 @@ export const CAMPOS_POR_TIPO = {
     { clave: 'numero', etiqueta: 'Número de cuenta', maxLength: 30 },
     { clave: 'titular', etiqueta: 'Titular', maxLength: 60 },
     { clave: 'rif', etiqueta: 'RIF', maxLength: 20 },
+  ],
+  [TIPO_ZELLE]: [
+    { clave: 'correo', etiqueta: 'Correo o teléfono', maxLength: 60 },
+    { clave: 'titular', etiqueta: 'Titular', maxLength: 60 },
+  ],
+  [TIPO_BINANCE]: [
+    { clave: 'correo', etiqueta: 'Correo', maxLength: 60 },
+    { clave: 'payId', etiqueta: 'Binance Pay ID', maxLength: 30 },
+    { clave: 'titular', etiqueta: 'Titular', maxLength: 60 },
   ],
 };
 

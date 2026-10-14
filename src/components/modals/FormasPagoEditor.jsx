@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Landmark, Plus, Smartphone, Trash2 } from 'lucide-react';
-import { CAMPOS_POR_TIPO, FORMAS_PAGO_INICIALES, TIPO_CUENTA, TIPO_PAGO_MOVIL, TITULO_POR_TIPO, formaVacia, normalizarFormasPago } from '../../utils/formasPago';
+import { Plus, Trash2 } from 'lucide-react';
+import { CAMPOS_POR_TIPO, FORMAS_PAGO_INICIALES, TIPOS_AGREGABLES, TITULO_POR_TIPO, formaVacia, normalizarFormasPago } from '../../utils/formasPago';
+import { ICONO_POR_TIPO } from './formasPagoIconos';
 
 const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
 const LABEL_CLASS = 'text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 uppercase';
@@ -41,7 +42,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
       )}
 
       {formas.map((forma, i) => {
-        const Icono = forma.tipo === TIPO_PAGO_MOVIL ? Smartphone : Landmark;
+        const Icono = ICONO_POR_TIPO[forma.tipo];
         const titulo = TITULO_POR_TIPO[forma.tipo];
         return (
           <div key={i} role="group" aria-label={`${titulo} ${i + 1}`} className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-3 space-y-2">
@@ -77,14 +78,14 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
       })}
 
       <div className="grid grid-cols-2 gap-2">
-        {[TIPO_PAGO_MOVIL, TIPO_CUENTA].map(tipo => (
+        {TIPOS_AGREGABLES.map(({ tipo, etiqueta }) => (
           <button
             key={tipo}
             type="button"
             onClick={() => agregar(tipo)}
             className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl font-bold text-xs border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-600 transition-colors"
           >
-            <Plus className="w-4 h-4 shrink-0" aria-hidden="true" /> {tipo === TIPO_PAGO_MOVIL ? 'Pago móvil' : 'Cuenta bancaria'}
+            <Plus className="w-4 h-4 shrink-0" aria-hidden="true" /> {etiqueta}
           </button>
         ))}
       </div>
