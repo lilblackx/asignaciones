@@ -1,6 +1,6 @@
 // Prueba la normalización y el texto de copia de las formas de pago (src/utils/formasPago.js).
 // No necesita el emulador. Uso: `npm run test:formas`.
-import { FORMAS_PAGO_INICIALES, TIPOS_AGREGABLES, TIPO_BINANCE, TIPO_CUENTA, TIPO_PAGO_MOVIL, TIPO_ZELLE, formaVacia, nombreForma, normalizarFormasPago, textoForma, textoTodasLasFormas } from '../src/utils/formasPago.js';
+import { FORMAS_PAGO_INICIALES, TIPOS_AGREGABLES, TIPO_BINANCE, TIPO_CUENTA, TIPO_PAGO_MOVIL, TIPO_ZELLE, formaVacia, nombreForma, normalizarFormasPago, textoCobroParaCliente, textoForma, textoTodasLasFormas } from '../src/utils/formasPago.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -63,6 +63,11 @@ check('el texto de Binance omite el Pay ID si no lo hay', textoForma({ ...binanc
 check('nombre de Zelle y de Binance es su título', [nombreForma(zelle), nombreForma(binance)], ['Zelle', 'Binance']);
 check('el ADMIN puede agregar los cuatro tipos',
   TIPOS_AGREGABLES.map(t => t.tipo), [TIPO_PAGO_MOVIL, TIPO_CUENTA, TIPO_ZELLE, TIPO_BINANCE]);
+
+// --- Mensaje del cobro para el cliente ---
+check('con formas de pago: el monto y luego todas las formas',
+  textoCobroParaCliente('5.696', [pagoMovil, mercantil]), `Monto a cancelar: 5.696 Bs\n\n${textoTodasLasFormas([pagoMovil, mercantil])}`);
+check('sin formas de pago: solo el monto', textoCobroParaCliente('12.345,5', []), 'Monto a cancelar: 12.345,5 Bs');
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

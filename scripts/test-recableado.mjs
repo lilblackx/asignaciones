@@ -1,9 +1,9 @@
 // Prueba el tipo de visita "Recableado" (src/utils/tipoVisita.js) y el consumo de materiales por
 // técnico (src/utils/consumoMateriales.js). No necesita el emulador. Uso: `npm run test:recableado`.
 import {
-  TIPOS_VISITA, colorConectorExterno, colorConectorInterno, datosRecableado, etiquetaTipoVisita, generaCobro, parseMetros, partesRecableado, tieneDatosRecableado,
+  TIPOS_VISITA, colorConectorExterno, colorConectorInterno, coloresConectorVisita, datosConectores, errorColorConector, esVisitaConector, etiquetaTipoVisita, generaCobro, llevaConectores, parseMetros, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from '../src/utils/tipoVisita.js';
-import { conectoresPorColor, consumoPorTecnico, esRecableadoFinalizado, esRecableadoPorAprobar, fechaDeUso, inicioPeriodo, totalConectores } from '../src/utils/consumoMateriales.js';
+import { conectoresPorColor, consumoPorTecnico, esRecableadoFinalizado, esRecableadoPorAprobar, esVisitaConectorFinalizada, esVisitaConectorPorAprobar, fechaDeUso, inicioPeriodo, totalConectores } from '../src/utils/consumoMateriales.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -33,13 +33,34 @@ check('conector interno: verde o azul', ['VERDE', 'AZUL', '', 'ROJO'].map(colorC
 
 // --- Datos que se guardan ---
 check('recableado con ambos conectores',
-  datosRecableado('RECABLEADO', { metros: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' }),
+  datosConectores('RECABLEADO', { metros: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' }),
   { metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' });
 check('recableado sin conectores (son opcionales)',
-  datosRecableado('RECABLEADO', { metros: 20 }), { metrosCable: 20, conectorExterno: '', conectorInterno: '' });
-check('un azul externo se descarta', datosRecableado('RECABLEADO', { metros: 20, conectorExterno: 'AZUL' }).conectorExterno, '');
-check('fuera de un recableado todo se borra',
-  datosRecableado('CONECTOR_EXTERNO', { metros: 35, conectorExterno: 'VERDE' }), { metrosCable: null, conectorExterno: '', conectorInterno: '' });
+  datosConectores('RECABLEADO', { metros: 20 }), { metrosCable: 20, conectorExterno: '', conectorInterno: '' });
+check('un azul externo se descarta', datosConectores('RECABLEADO', { metros: 20, conectorExterno: 'AZUL' }).conectorExterno, '');
+check('sin tipo de visita (o con otro) todo se borra',
+  ['', undefined, 'OTRO'].map(t => datosConectores(t, { metros: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' })),
+  [1, 2, 3].map(() => ({ metrosCable: null, conectorExterno: '', conectorInterno: '' })));
+
+// --- Visita de conector: el técnico indica el color del conector colocado ---
+check('visitas de conector', ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(esVisitaConector), [false, true, true, false]);
+check('llevan conectores el recableado y las visitas de conector', ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(llevaConectores), [false, true, true, true]);
+check('colores que se pueden elegir: el externo solo verde, el interno verde o azul',
+  ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', ''].map(coloresConectorVisita), [['VERDE'], ['VERDE', 'AZUL'], [], []]);
+check('conector externo: siempre verde, aunque llegue otro color o ninguno',
+  ['AZUL', '', 'VERDE'].map(c => datosConectores('CONECTOR_EXTERNO', { metros: 35, conectorExterno: c, conectorInterno: 'AZUL' })),
+  [1, 2, 3].map(() => ({ metrosCable: null, conectorExterno: 'VERDE', conectorInterno: '' })));
+check('conector interno: guarda el color elegido (verde o azul) y descarta lo inválido',
+  ['VERDE', 'AZUL', '', 'ROJO'].map(c => datosConectores('CONECTOR_INTERNO', { metros: 35, conectorExterno: 'VERDE', conectorInterno: c })),
+  [{ metrosCable: null, conectorExterno: '', conectorInterno: 'VERDE' }, { metrosCable: null, conectorExterno: '', conectorInterno: 'AZUL' },
+   { metrosCable: null, conectorExterno: '', conectorInterno: '' }, { metrosCable: null, conectorExterno: '', conectorInterno: '' }]);
+check('el conector interno exige elegir el color; los demás tipos no',
+  [['CONECTOR_INTERNO', ''], ['CONECTOR_INTERNO', 'AZUL'], ['CONECTOR_INTERNO', 'ROJO'], ['CONECTOR_EXTERNO', ''], ['RECABLEADO', ''], ['', '']].map(([t, c]) => errorColorConector(t, c)),
+  ['Elige el tipo de conector: verde o azul.', '', 'Elige el tipo de conector: verde o azul.', '', '', '']);
+check('nombre del conector de la visita: solo "Conector verde" o "Conector azul"',
+  [{ tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'AZUL' }, { tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'VERDE' }, { tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE' },
+   { tipoVisita: 'CONECTOR_INTERNO' }, { tipoVisita: 'RECABLEADO', conectorInterno: 'AZUL' }, null].map(textoConectorVisita),
+  ['Conector azul', 'Conector verde', 'Conector verde', '', '', '']);
 check('hay datos de recableado', [{ metrosCable: 5 }, { conectorInterno: 'AZUL' }, {}, null].map(tieneDatosRecableado), [true, true, false, false]);
 check('partes legibles', partesRecableado({ metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' }),
   ['35 m de cable', 'Conector externo: Verde', 'Conector interno: Azul']);
@@ -63,8 +84,9 @@ const todo = consumoPorTecnico(ordenes);
 check('un renglón por técnico (sin distinguir mayúsculas), de más a menos metros',
   todo.filas.map(f => [f.tecnico, f.ordenes, f.metros]), [['MARIA GOMEZ', 2, 60], ['LUIS PEREZ', 2, 45], ['SIN TÉCNICO', 1, 5]]);
 check('los conectores se cuentan solo por color, sin distinguir externo de interno',
-  [{}, { conectorExterno: 'VERDE' }, { conectorInterno: 'VERDE' }, { conectorInterno: 'AZUL' }, { conectorExterno: 'VERDE', conectorInterno: 'VERDE' }, { conectorExterno: 'VERDE', conectorInterno: 'AZUL' }].map(conectoresPorColor),
-  [{ verde: 0, azul: 0 }, { verde: 1, azul: 0 }, { verde: 1, azul: 0 }, { verde: 0, azul: 1 }, { verde: 2, azul: 0 }, { verde: 1, azul: 1 }]);
+  [{}, { conectorExterno: 'VERDE' }, { conectorInterno: 'VERDE' }, { conectorInterno: 'AZUL' }, { conectorExterno: 'VERDE', conectorInterno: 'VERDE' }, { conectorExterno: 'VERDE', conectorInterno: 'AZUL' },
+   { tipoVisita: 'CONECTOR_INTERNO', conectorExterno: 'VERDE', conectorInterno: 'AZUL' }, { tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE', conectorInterno: 'AZUL' }].map(conectoresPorColor),
+  [{ verde: 0, azul: 0 }, { verde: 1, azul: 0 }, { verde: 1, azul: 0 }, { verde: 0, azul: 1 }, { verde: 2, azul: 0 }, { verde: 1, azul: 1 }, { verde: 0, azul: 1 }, { verde: 1, azul: 0 }]);
 check('conectores por técnico', todo.filas.find(f => f.tecnico === 'LUIS PEREZ'),
   { ...todo.filas.find(f => f.tecnico === 'LUIS PEREZ'), verde: 2, azul: 1 });
 check('cada orden del detalle trae sus conectores por color', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.map(d => [d.id, d.verde, d.azul]), [['a', 1, 1], ['b', 1, 0]]);
@@ -72,8 +94,8 @@ check('totales de todos los técnicos', [todo.totales.ordenes, todo.totales.metr
   [5, 110, 3, 1]);
 check('total de conectores', totalConectores(todo.totales), 4);
 check('una orden repetida (activa y archivada) cuenta una sola vez', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.filter(d => d.id === 'a').length, 1);
-check('los pre-finalizados se informan aparte y no suman', todo.porAprobar, { ordenes: 1, metros: 8 });
-check('las órdenes pendientes y las visitas de conector no cuentan', todo.filas.flatMap(f => f.detalle.map(d => d.id)).sort(), ['a', 'b', 'c', 'd', 'h']);
+check('los pre-finalizados se informan aparte y no suman', todo.porAprobar, { ordenes: 1, metros: 8, visitas: 0 });
+check('las órdenes pendientes y las visitas de conector sin color no cuentan', todo.filas.flatMap(f => f.detalle.map(d => d.id)).sort(), ['a', 'b', 'c', 'd', 'h']);
 check('el detalle va de más reciente a más antiguo', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.map(d => d.id), ['a', 'b']);
 
 const ahora = new Date(2026, 9, 13, 15);
@@ -93,10 +115,39 @@ const conRegistrados = consumoPorTecnico(ordenes, { desde: inicioPeriodo('HOY', 
 check('los registrados sin consumo salen al final, por nombre; sin técnico solo si tiene consumo',
   conRegistrados.filas.map(f => [f.tecnico, f.metros]), [['Maria Gomez', 50], ['LUIS PEREZ', 30], ['SIN TÉCNICO', 5], ['ANA SOTO', 0], ['PEDRO RUIZ', 0]]);
 check('un técnico sin consumo sale en cero y sin detalle', conRegistrados.filas.find(f => f.tecnico === 'PEDRO RUIZ'),
-  { tecnico: 'PEDRO RUIZ', ordenes: 0, metros: 0, verde: 0, azul: 0, detalle: [] });
+  { tecnico: 'PEDRO RUIZ', ordenes: 0, visitas: 0, metros: 0, verde: 0, azul: 0, detalle: [] });
 check('los registrados no cambian los totales', conRegistrados.totales, hoy.totales);
 check('con técnicos registrados y sin recableados salen todos en cero',
   consumoPorTecnico([], { tecnicos: ['B', 'A'] }).filas.map(f => [f.tecnico, f.metros]), [['A', 0], ['B', 0]]);
+// --- Visitas de conector: también gastan un conector (solo cuenta el color) ---
+const visita = { tipoVisita: 'CONECTOR_INTERNO', estado: 'FINALIZADO' };
+const visitas = [
+  { ...visita, id: 'v1', codigo: 'V1', nombre: 'Val', tecnico: 'LUIS PEREZ', conectorInterno: 'AZUL', finalizadoEn: dia(13) },
+  { ...visita, id: 'v2', codigo: 'V2', nombre: 'Vera', tecnico: 'LUIS PEREZ', tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE', finalizadoEn: dia(12) },
+  { ...visita, id: 'v3', codigo: 'V3', nombre: 'Vito', tecnico: 'MARIA GOMEZ', conectorInterno: 'VERDE', finalizadoEn: dia(13) },
+  { ...visita, id: 'v4', codigo: 'V4', nombre: 'Vana', tecnico: 'MARIA GOMEZ', finalizadoEn: dia(13) }, // anterior a pedir el color: no suma
+  { ...visita, id: 'v5', codigo: 'V5', nombre: 'Vera', tecnico: 'LUIS PEREZ', estado: 'PRE-FINALIZADO', conectorInterno: 'VERDE', createdAt: dia(13) },
+  { ...visita, id: 'v6', codigo: 'V6', nombre: 'Vico', tecnico: 'LUIS PEREZ', estado: 'PENDIENTE', conectorInterno: 'VERDE', createdAt: dia(13) },
+  { ...visita, id: 'v7', codigo: 'V7', nombre: 'Vera', tecnico: 'LUIS PEREZ', conectorExterno: 'VERDE', conectorInterno: 'AZUL', finalizadoEn: dia(13) }, // interno: solo cuenta el interno
+];
+const soloVisitas = consumoPorTecnico(visitas);
+check('visitas de conector: un renglón por técnico con sus conectores por color',
+  soloVisitas.filas.map(f => [f.tecnico, f.ordenes, f.visitas, f.metros, f.verde, f.azul]), [['LUIS PEREZ', 0, 3, 0, 1, 2], ['MARIA GOMEZ', 0, 1, 0, 1, 0]]);
+check('visitas de conector: totales', [soloVisitas.totales.ordenes, soloVisitas.totales.visitas, soloVisitas.totales.metros, soloVisitas.totales.verde, soloVisitas.totales.azul], [0, 4, 0, 2, 2]);
+check('visitas de conector: el detalle trae el tipo y no trae metros',
+  soloVisitas.filas[0].detalle.map(d => [d.id, d.tipo, d.metros, d.verde, d.azul]),
+  [['v1', 'CONECTOR_INTERNO', null, 0, 1], ['v7', 'CONECTOR_INTERNO', null, 0, 1], ['v2', 'CONECTOR_EXTERNO', null, 1, 0]]);
+check('visitas de conector: las pre-finalizadas se informan aparte, las pendientes y sin color no', soloVisitas.porAprobar, { ordenes: 0, metros: 0, visitas: 1 });
+const conTodo = consumoPorTecnico([...ordenes, ...visitas]);
+check('recableados y visitas de conector juntos: los conectores se suman, los metros son solo de recableados',
+  [conTodo.totales.ordenes, conTodo.totales.visitas, conTodo.totales.metros, conTodo.totales.verde, conTodo.totales.azul, totalConectores(conTodo.totales)], [5, 4, 110, 5, 3, 8]);
+check('recableados y visitas juntos: renglones por técnico', conTodo.filas.map(f => [f.tecnico, f.ordenes, f.visitas, f.metros, totalConectores(f)]),
+  [['MARIA GOMEZ', 2, 1, 60, 2], ['LUIS PEREZ', 2, 3, 45, 6], ['SIN TÉCNICO', 1, 0, 5, 0]]);
+check('recableados y visitas juntos: lo que espera aprobación', conTodo.porAprobar, { ordenes: 1, metros: 8, visitas: 1 });
+check('quien solo hizo visitas de conector va antes que quien no gastó nada',
+  consumoPorTecnico(visitas, { tecnicos: ['ZETA', 'MARIA GOMEZ'] }).filas.map(f => f.tecnico), ['LUIS PEREZ', 'MARIA GOMEZ', 'ZETA']);
+check('clasificación de visitas de conector', [esVisitaConectorFinalizada(visitas[0]), esVisitaConectorFinalizada(visitas[3]), esVisitaConectorPorAprobar(visitas[4]), esVisitaConectorFinalizada(visitas[5]), esVisitaConectorFinalizada(ordenes[0])],
+  [true, false, true, false, false]);
 check('la fecha de uso cae a la de creación si no hay finalizadoEn', fechaDeUso({ createdAt: 5 }), 5);
 check('clasificación de recableados', [esRecableadoFinalizado(ordenes[0]), esRecableadoPorAprobar(ordenes[4]), esRecableadoFinalizado(ordenes[5])], [true, true, false]);
 

@@ -99,11 +99,13 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     e.preventDefault();
     if (newUser.role === ROLES.TECNICO && !newUser.tecnicoAsociado) {
       setUserError('Debes seleccionar el técnico asociado.');
+      document.getElementById('user-tecnico')?.focus();
       return;
     }
     const policyError = getPasswordPolicyError(newUser.clave);
     if (policyError) {
       setPasswordError(policyError);
+      document.getElementById('user-clave')?.focus();
       return;
     }
     setPasswordError('');

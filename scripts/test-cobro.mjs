@@ -1,7 +1,7 @@
 // Prueba el cobro que se informa al técnico al finalizar (src/utils/cobro.js): "Visita técnica"
 // (el monto de siempre) u "Otro monto" (escrito a mano). No necesita el emulador.
 // Uso: `npm run test:cobro`.
-import { COBRO_EXONERADO, COBRO_INICIAL, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, estaExonerado, formatoMontoBs, parseMontoBs, resolverCobro, tieneCobroFinal, valorCobro } from '../src/utils/cobro.js';
+import { COBRO_EXONERADO, COBRO_INICIAL, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, conceptoCobro, detalleCobro, estaExonerado, formatoMontoBs, llevaCobro, parseMontoBs, resolverCobro, tieneCobroFinal, valorCobro } from '../src/utils/cobro.js';
 import { avisaCobroAlPreFinalizar, generaCobro } from '../src/utils/tipoVisita.js';
 
 let failures = 0;
@@ -39,7 +39,7 @@ const conMonto = { tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 
 const exonerada = { tipoVisita: 'CONECTOR_INTERNO', cobroTipo: 'EXONERADO' };
 check('una orden exonerada se reconoce', [estaExonerado(exonerada), estaExonerado(conMonto), estaExonerado(null)], [true, false, false]);
 check('hay aviso de cobro con monto o con exoneración, no sin ninguno de los dos',
-  [conMonto, exonerada, { tipoVisita: 'CONECTOR_EXTERNO' }, { cobroBs: '5.696' }, { tipoVisita: 'RECABLEADO' }].map(tieneCobroFinal), [true, true, false, false, false]);
+  [conMonto, exonerada, { tipoVisita: 'CONECTOR_EXTERNO' }, { cobroBs: '5.696' }, { tipoVisita: 'RECABLEADO' }].map(tieneCobroFinal), [true, true, false, true, false]);
 check('lo avisado es el monto o "EXONERADO"', [valorCobro(conMonto), valorCobro(exonerada), valorCobro({})], ['5.696', 'EXONERADO', '']);
 check('pasar de monto a exonerado cambia lo avisado (se vuelve a avisar)', valorCobro(conMonto) !== valorCobro({ ...conMonto, cobroTipo: 'EXONERADO', cobroBs: null }), true);
 
@@ -48,6 +48,28 @@ check('solo el conector interno avisa el cobro al pre-finalizar',
   ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(avisaCobroAlPreFinalizar), [false, false, true, false]);
 check('lo que no genera cobro no lo avisa en ningún momento',
   ['', 'RECABLEADO'].map(t => generaCobro(t) || avisaCobroAlPreFinalizar(t)), [false, false]);
+
+// --- Toda orden lleva cobro: se elige al aprobar o finalizar, sin importar el tipo de trabajo ni de visita ---
+const instalacion = { tipoTrabajo: 'INSTALACIÓN', estado: 'FINALIZADO', cobroBs: '5.696' };
+check('toda orden lleva cobro (instalaciones, visitas de conector, recableado, averías...)',
+  [{ tipoTrabajo: 'INSTALACIÓN' }, { tipoTrabajo: 'instalacion' }, { tipoTrabajo: 'AVERÍA', tipoVisita: 'CONECTOR_INTERNO' }, { tipoTrabajo: 'AVERÍA', tipoVisita: 'CONECTOR_EXTERNO' }, { tipoTrabajo: 'AVERÍA', tipoVisita: 'RECABLEADO' }, { tipoTrabajo: 'AVERÍA' }, null].map(llevaCobro),
+  [true, true, true, true, true, true, false]);
+check('una instalación con monto o exonerada tiene cobro que avisar; sin ninguno de los dos, no',
+  [instalacion, { ...instalacion, cobroBs: null, cobroTipo: 'EXONERADO' }, { ...instalacion, cobroBs: undefined }].map(tieneCobroFinal), [true, true, false]);
+check('lo avisado de una instalación es el monto o "EXONERADO"', [valorCobro(instalacion), valorCobro({ ...instalacion, cobroTipo: 'EXONERADO', cobroBs: null })], ['5.696', 'EXONERADO']);
+check('cualquier orden finalizada con monto o exonerada tiene cobro que avisar',
+  [{ tipoTrabajo: 'AVERÍA', cobroBs: '5.696' }, { tipoTrabajo: 'RECONEXIÓN', cobroBs: null, cobroTipo: 'EXONERADO' }, { tipoTrabajo: 'MUDANZA', tipoVisita: 'RECABLEADO', cobroBs: '12.345' }, { tipoTrabajo: 'AVERÍA' }].map(tieneCobroFinal),
+  [true, true, true, false]);
+check('nombre de lo que se cobra: el tipo de visita o, sin visita, el tipo de trabajo',
+  [{ tipoTrabajo: 'INSTALACIÓN' }, { tipoVisita: 'CONECTOR_INTERNO' }, { tipoTrabajo: 'INSTALACIÓN', tipoVisita: 'CONECTOR_EXTERNO' }, { tipoTrabajo: 'AVERÍA', tipoVisita: 'RECABLEADO' }, { tipoTrabajo: 'AVERÍA' }, { tipoTrabajo: 'VALIDACION NAP' }, {}, null].map(conceptoCobro),
+  ['Instalación', 'Conector interno', 'Conector externo', 'Recableado', 'Avería', 'Validacion nap', 'Orden', 'Orden']);
+
+// --- Historial de la orden ---
+check('el historial lleva el monto con su tipo', [detalleCobro('5.696', COBRO_VISITA, false), detalleCobro('12.345', COBRO_OTRO, false)],
+  [' | Cobro resultante: 5.696 Bs (Visita técnica)', ' | Cobro resultante: 12.345 Bs (Otro monto)']);
+check('el historial lleva la exoneración', detalleCobro(null, COBRO_EXONERADO, true), ' | Visita exonerada: sin cobro al cliente');
+check('sin monto ni exoneración no se agrega nada (sin tasa, sin cobro)', [detalleCobro(null, COBRO_VISITA, false), detalleCobro('', undefined, false)], ['', '']);
+check('un monto sin tipo conocido se registra sin etiqueta', detalleCobro('5.696', undefined, false), ' | Cobro resultante: 5.696 Bs');
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

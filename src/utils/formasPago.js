@@ -94,3 +94,9 @@ export function textoForma(forma) {
 export function textoTodasLasFormas(formas) {
   return formas.map(textoForma).join('\n\n');
 }
+
+// Mensaje para pegarle al cliente: lo que debe cancelar y, si hay, las formas de pago.
+export function textoCobroParaCliente(montoBs, formas) {
+  const monto = `Monto a cancelar: ${montoBs} Bs`;
+  return formas.length > 0 ? `${monto}\n\n${textoTodasLasFormas(formas)}` : monto;
+}

@@ -12,6 +12,7 @@ import TelefonosField from './TelefonosField';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
+import { tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,6 +20,9 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
 
   const esInstalacion = editingTicket.tipoTrabajo?.toUpperCase().includes('INSTAL');
+  // Instalación o reconexión que se creó sin la plantilla de la promotora: aquí se puede pegar. Si ya la tiene, no se
+  // edita (la original no se toca). Se decide al abrir, para que el campo no desaparezca mientras se pega.
+  const [faltabaPlantilla] = useState(() => tipoUsaPlantillaPromotora(editingTicket.tipoTrabajo) && !isTecnico && !String(editingTicket.plantillaOriginal || '').trim());
   const mostrarSugerencia = !isTecnico && esInstalacion && !editingTicket.tecnico && turnoSugerido;
   const opcionesTipo = TIPOS_POR_TRABAJO[editingTicket.tipoTrabajo] || [];
   const ubicacionParseada = normalizarUbicacion(editingTicket.ubicacion);
@@ -30,7 +34,9 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
     { value: '', label: opcionesTipo.length === 0 ? 'N/A' : 'Seleccione...' },
     ...opcionesTipo.map(t => ({ value: t, label: t }))
   ];
-  const estadoItems = ['PENDIENTE', 'PRE-FINALIZADO', ...(isTecnico ? [] : ['FINALIZADO', 'CANCELADO'])].map(v => ({ value: v, label: v }));
+  // FINALIZADO no se elige aquí (la orden no tendría cobro resultante): se finaliza con "Finalizar" o "Aprobar" de la lista.
+  // Solo aparece si la orden ya está finalizada, para que se vea su estado.
+  const estadoItems = ['PENDIENTE', 'PRE-FINALIZADO', ...(isTecnico ? [] : [...(editingTicket.estado === 'FINALIZADO' ? ['FINALIZADO'] : []), 'CANCELADO'])].map(v => ({ value: v, label: v }));
 
   const handleTipoTrabajoChange = (e) => {
     handleEditChange(e);
@@ -68,7 +74,13 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
 
   const onSubmit = (e) => {
     e.preventDefault();
-    if (potenciaParseada.error || ubicacionParseada.error || napCoordenadasParseadas.error || isSubmitting) return;
+    if (isSubmitting) return;
+    // Un dato con error: el cursor va al primero, en el orden del formulario.
+    const campoConError = napCoordenadasParseadas.error ? 'ed-nap-coords' : ubicacionParseada.error ? 'ed-ubicacion' : potenciaParseada.error ? 'ed-potencia' : null;
+    if (campoConError) {
+      document.getElementById(campoConError)?.focus();
+      return;
+    }
     if (faltanNapCoordenadas) {
       setShowSinCoordenadas(true);
       return;
@@ -156,6 +168,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               chevronClassName="w-3.5 h-3.5 right-2"
             />
             {isTecnico && <p className="text-[9px] text-zinc-400 ml-1">Usa el botón "Pre-finalizar" de la lista para cambiar el estado.</p>}
+            {!isTecnico && editingTicket.estado !== 'FINALIZADO' && <p className="text-[9px] text-zinc-400 ml-1">Para finalizar usa "Finalizar" o "Aprobar" en la lista: ahí se elige el cobro resultante.</p>}
           </div>
           <TecnicoField
             variant="edit"
@@ -215,6 +228,12 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               <p id="ed-potencia-hint" className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
             )}
           </div>
+          {faltabaPlantilla && (
+            <div className="col-span-2 space-y-1">
+              <label htmlFor="ed-plantilla" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)</span></label>
+              <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs font-mono text-zinc-900 dark:text-white shadow-sm transition-colors" placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
+            </div>
+          )}
           <ObservacionField
             variant="edit"
             wrapperClassName="col-span-2 space-y-1"

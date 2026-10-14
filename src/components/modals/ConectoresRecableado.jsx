@@ -54,3 +54,44 @@ export default function ConectoresRecableado({ colorExterno, colorInterno, onExt
     </div>
   );
 }
+
+// Color del conector de una visita de conector (externo o interno): el técnico elige uno, con el
+// nombre "Conector verde" / "Conector azul". Si solo hay un color posible (el externo es siempre
+// verde) ya viene marcado y no hay nada que elegir.
+export function ColorConectorVisita({ colores, valor, onChange, error }) {
+  const unico = colores.length === 1;
+  const seleccionado = unico ? colores[0] : valor;
+  return (
+    <div className="space-y-1.5">
+      <p id="pf-color-conector-etiqueta" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+        TIPO DE CONECTOR{' '}
+        {unico
+          ? <span className="font-normal text-zinc-400">(el externo es solo verde)</span>
+          : <span className="font-normal text-red-500">(obligatorio)</span>}
+      </p>
+      <div id="pf-color-conector" role="radiogroup" aria-labelledby="pf-color-conector-etiqueta" aria-invalid={!!error} tabIndex={-1} className="flex flex-wrap gap-2 focus:outline-none">
+        {colores.map((color) => {
+          const activo = seleccionado === color;
+          return (
+            <button
+              key={color}
+              type="button"
+              role="radio"
+              aria-checked={activo}
+              disabled={unico}
+              onClick={() => onChange(color)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-xs font-bold transition-colors disabled:cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                activo ? ESTILO_COLOR[color].activo : `bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 hover:border-amber-500 ${error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'}`
+              }`}
+            >
+              <span className={`w-3.5 h-3.5 rounded-full ${ESTILO_COLOR[color].punto} ${activo ? 'ring-2 ring-white' : ''}`} aria-hidden="true" />
+              Conector {ETIQUETA_COLOR[color].toLowerCase()}
+              {activo && <Check className="w-3.5 h-3.5" aria-hidden="true" />}
+            </button>
+          );
+        })}
+      </div>
+      {error && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
+    </div>
+  );
+}

@@ -10,10 +10,13 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
   const inputRef = useRef(null);
   const esOtro = seleccion.modo === COBRO_OTRO;
 
-  // Al elegir "Otro monto" el cursor pasa al campo del monto.
+  // Al elegir "Otro monto" el cursor pasa al campo del monto; si el monto escrito no es válido, vuelve ahí.
   useEffect(() => {
     if (esOtro) inputRef.current?.focus();
   }, [esOtro]);
+  useEffect(() => {
+    if (error) inputRef.current?.focus();
+  }, [error]);
 
   const opcion = (modo, titulo, detalle) => {
     const activa = seleccion.modo === modo;

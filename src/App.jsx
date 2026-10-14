@@ -25,7 +25,7 @@ import { useFormasPago } from './hooks/useFormasPago';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
 import { esProgramadaFutura } from './utils/programada';
 import { esVentaDelTecnico } from './utils/tecnicoVenta';
-import { generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, tipoUsaPlantillaPromotora } from './utils/whatsapp';
+import { TEXTO_SIN_PLANTILLA, generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, ordenSinPlantilla, tipoUsaPlantillaPromotora } from './utils/whatsapp';
 import { stripEmojis } from './utils/sanitizeInput';
 
 import LoadingScreen from './components/LoadingScreen';
@@ -79,20 +79,20 @@ export default function App() {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket, togglePrioridad } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
   const { formasPago, guardarFormasPago } = useFormasPago(firebaseUser);
   const { orden: ordenTurno, tecnicoSugerido, guardarOrden, avanzarTurno } = useTurnoInstalaciones(firebaseUser, technicians, setToastMsg);
 
-  const copyToClipboard = async (mensaje, textoExito = 'Plantilla copiada, lista para WhatsApp.', tipoExito = 'success') => {
+  const copyToClipboard = async (mensaje, textoExito = 'Plantilla copiada, lista para WhatsApp.', tipoExito = 'success', textoError = 'No se pudo copiar la plantilla.') => {
     try {
       await navigator.clipboard.writeText(mensaje);
       setToastMsg({ type: tipoExito, text: textoExito, ...(tipoExito === 'aviso' ? { duration: 8000 } : {}) });
       return true;
     } catch {
-      setToastMsg({ type: 'error', text: 'No se pudo copiar la plantilla.' });
+      setToastMsg({ type: 'error', text: textoError });
       return false;
     }
   };
@@ -132,6 +132,11 @@ export default function App() {
   };
 
   const handleCopyWhatsApp = conAviso(async (ticket) => {
+    // Una instalación o reconexión sin la plantilla de la promotora pegada no tiene plantilla que copiar.
+    if (ordenSinPlantilla(ticket)) {
+      setToastMsg({ type: 'error', text: TEXTO_SIN_PLANTILLA, duration: 8000 });
+      return false;
+    }
     const reenvio = ticket.isAsignado && getEnvioInfo(ticket).cambioTrasEnvio;
     if (!canEditTickets || !ticket.tecnico || (ticket.isAsignado && !reenvio)) {
       // Sin técnico copia igual pero NO marca como enviada: se dice para que no
@@ -269,6 +274,7 @@ export default function App() {
         else handleGoHome();
         break;
       case 'nuevaAsignacion':
+      case 'prioridad':
         if (ticket) mostrarOrden(ticket);
         else handleGoHome();
         break;
@@ -336,7 +342,11 @@ export default function App() {
         // Una venta del técnico (venía en la plantilla) no consume el turno.
         if (formData.tecnico && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico)) avanzarTurno(formData.tecnico);
       }
-      setWhatsappMessage(buildWhatsAppMessage(nuevoTicket));
+      if (ordenSinPlantilla(nuevoTicket)) {
+        setToastMsg({ type: 'aviso', duration: 9000, text: 'Orden creada sin la plantilla de la promotora: no se podrá copiar la plantilla hasta que la pegues desde Editar.' });
+      } else {
+        setWhatsappMessage(buildWhatsAppMessage(nuevoTicket));
+      }
     }
   }, 'No se pudo crear la orden.');
 
@@ -360,15 +370,21 @@ export default function App() {
   }, 'No se pudieron guardar los cambios.');
 
   const handleConfirmPreFinalizar = conAviso(async (ticket, extra) => {
-    const ok = await preFinalizarTicket(ticket, extra);
+    // Conector interno: el cobro se informa ya (y queda en el historial de la orden).
+    const monto = avisaCobroAlPreFinalizar(extra.tipoVisita) ? montoBsDe(tasaConfig) : null;
+    const ok = await preFinalizarTicket(ticket, { ...extra, montoBs: monto });
     setPreFinalizarTarget(null);
     // Conector interno: el técnico ve el cobro ya, para informárselo al cliente en el momento.
     if (ok && isTecnico && avisaCobroAlPreFinalizar(extra.tipoVisita)) {
-      const monto = montoBsDe(tasaConfig);
       if (monto) mostrarCobroInmediato({ ...ticket, ...extra }, monto);
       else setToastMsg({ type: 'error', duration: 9000, text: 'Conector interno: la tasa no está configurada y no se pudo calcular el cobro. Avisa al administrador.' });
     }
   }, 'No se pudo pre-finalizar la orden.');
+
+  // ADMIN/USUARIO: marca o quita la prioridad alta de una orden (al marcarla, el técnico recibe un aviso).
+  const handleTogglePrioridad = conAviso(async (ticket) => {
+    await togglePrioridad(ticket);
+  }, 'No se pudo cambiar la prioridad de la orden.');
 
   const handleConfirmAprobarFinalizar = conAviso(async (ticket, cobro) => {
     await aprobarFinalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
@@ -547,6 +563,7 @@ export default function App() {
             onPreFinalizar={setPreFinalizarTarget}
             onAprobarFinalizar={setAprobarTarget}
             onFinalizar={setFinalizarTarget}
+            onTogglePrioridad={handleTogglePrioridad}
           />
 
           <TicketsTable
@@ -566,6 +583,7 @@ export default function App() {
             onPreFinalizar={setPreFinalizarTarget}
             onAprobarFinalizar={setAprobarTarget}
             onFinalizar={setFinalizarTarget}
+            onTogglePrioridad={handleTogglePrioridad}
           />
 
           {hasMore && (
@@ -767,7 +785,7 @@ export default function App() {
         )}
 
         {isTecnico && cobrosPendientes.length > 0 && (
-          <CobroResultanteModal ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} onClose={cerrarCobro} />
+          <CobroResultanteModal ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} formasPago={formasPago} onCopy={copyToClipboard} onClose={cerrarCobro} />
         )}
 
         {aprobarTarget && (
@@ -776,6 +794,7 @@ export default function App() {
             montoBs={montoBsDe(tasaConfig)}
             onConfirm={handleConfirmAprobarFinalizar}
             onDevolver={handleDevolver}
+            onCopy={copyToClipboard}
             onClose={() => setAprobarTarget(null)}
           />
         )}

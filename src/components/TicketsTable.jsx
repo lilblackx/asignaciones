@@ -1,4 +1,4 @@
-import { ArrowDownAZ, CheckCheck, CheckCircle2, Clock, Edit, ExternalLink, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
+import { ArrowDownAZ, CheckCheck, CheckCircle2, Clock, Edit, ExternalLink, Flag, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEnvioInfo, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -6,6 +6,9 @@ import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
 import CobroAviso from './CobroAviso';
+import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
+import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
+import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 
 const COLUMNAS = 9;
 
@@ -25,7 +28,8 @@ export default function TicketsTable({
   onVerHistorial,
   onPreFinalizar,
   onAprobarFinalizar,
-  onFinalizar
+  onFinalizar,
+  onTogglePrioridad
 }) {
   // Con orden "más recientes" o por fecha las órdenes de un mismo día quedan
   // juntas: se agrupan bajo un encabezado. Con otros órdenes la fecha va en la fila.
@@ -36,8 +40,8 @@ export default function TicketsTable({
       <table className="w-full text-xs text-left table-fixed">
         <thead className="text-[10px] text-white uppercase bg-black border-b-2 border-red-600">
           <tr>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[7%] align-middle text-center">CÓDIGO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[18%] align-middle text-center">NOMBRE</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[9%] align-middle text-center">CÓDIGO</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[16%] align-middle text-center">NOMBRE</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">CÉDULA</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[14%] align-middle text-center">DIRECCIÓN</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[16%] align-middle group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
@@ -58,19 +62,31 @@ export default function TicketsTable({
             const envio = getEnvioInfo(ticket);
             const enlaceNavegacion = getEnlaceNavegacion(ticket.ubicacion);
             const eliminado = ticket.estado === 'ELIMINADO';
-            const nuevoDia = agrupado && (index === 0 || filteredTickets[index - 1].fecha !== ticket.fecha);
-            const dia = nuevoDia ? getEtiquetaDia(ticket.fecha, ticket.estado) : null;
+            const prioritaria = esPrioritaria(ticket);
+            const sinPlantilla = ordenSinPlantilla(ticket);
+            // Las órdenes con prioridad alta forman su propio grupo arriba; el resto, un grupo por día.
+            const grupoDe = (t) => (esPrioritaria(t) ? 'PRIORIDAD' : t.fecha);
+            const nuevoDia = agrupado && (index === 0 || grupoDe(filteredTickets[index - 1]) !== grupoDe(ticket));
+            const dia = nuevoDia ? (prioritaria ? { texto: 'PRIORIDAD ALTA', prioridad: true } : getEtiquetaDia(ticket.fecha, ticket.estado)) : null;
             return [
               nuevoDia && (
-                <tr key={`dia-${ticket.id}`} className="bg-zinc-200/70 dark:bg-zinc-950 border-b border-zinc-300 dark:border-zinc-800">
-                  <td colSpan={COLUMNAS} className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wide ${dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
-                    {dia.texto}
+                <tr key={`dia-${ticket.id}`} className={`${dia.prioridad ? 'bg-red-600' : 'bg-zinc-200/70 dark:bg-zinc-950'} border-b border-zinc-300 dark:border-zinc-800`}>
+                  <td colSpan={COLUMNAS} className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wide ${dia.prioridad ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                    {dia.prioridad && <Flag className="inline w-3 h-3 mr-1 -mt-0.5 fill-current" aria-hidden="true" />}{dia.texto}
                   </td>
                 </tr>
               ),
-              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
+              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
                 <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${eliminado ? 'border-l-zinc-500' : tipoEstilo.borde} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
-                  <div className="min-h-[2rem] flex items-center">{ticket.codigo}</div>
+                  <div className="min-h-[2rem] flex flex-col justify-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span>{ticket.codigo}</span>
+                      {canEditTickets && puedeCambiarPrioridad(ticket) && (
+                        <BotonPrioridad activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
+                      )}
+                    </div>
+                    {prioritaria && <InsigniaPrioridad />}
+                  </div>
                 </td>
                 <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight align-middle">
                   <div className="flex flex-col justify-center h-full min-h-[2rem] gap-0.5">
@@ -164,7 +180,7 @@ export default function TicketsTable({
                       <span className="text-[10px] text-red-500 font-bold">Por: {ticket.eliminadoPor}</span>
                     ) : isTecnico ? (
                       <>
-                        <button onClick={() => onCopyWhatsApp(ticket)} aria-label={`Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors" title="Copiar plantilla WhatsApp"><MessageCircle className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {enlaceNavegacion && (
                           <a href={enlaceNavegacion} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar" className="p-1 text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 hover:bg-sky-200 dark:hover:bg-sky-900/50 rounded transition-colors"><Navigation className="w-3.5 h-3.5" /></a>
                         )}
@@ -177,7 +193,7 @@ export default function TicketsTable({
                       </>
                     ) : (
                       <>
-                        <button onClick={() => onCopyWhatsApp(ticket)} aria-label={`Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors" title="Copiar plantilla WhatsApp (marca como enviada)"><MessageCircle className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp (marca como enviada)'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {canEditTickets ? (
                           <>
                             {ticket.estado === 'PENDIENTE' && (

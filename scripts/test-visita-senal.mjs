@@ -2,7 +2,7 @@
 // con SmartOLT simulado). No necesita el emulador ni la llave. Uso: `npm run test:visita`.
 import { devolucionPendiente } from '../src/utils/devolucion.js';
 import { separarNapPuerto, unirNapPuerto } from '../src/utils/napPuerto.js';
-import { calidadSenal, valorSenal } from '../src/utils/senalOnu.js';
+import { calidadSenal, puedeCapturarPotencia, valorSenal } from '../src/utils/senalOnu.js';
 import { buscarOnus, mapearSenal } from '../cf-worker-tomodat/src/index.js';
 
 let failures = 0;
@@ -29,6 +29,12 @@ check('texto libre queda entero en la NAP', separarNapPuerto('caja de la esquina
 check('valor de señal con unidad y 3 decimales', valorSenal('-24.134 dBm'), '-24.13');
 check('valor de señal con coma', valorSenal('-19,5'), '-19.5');
 check('señal vacía o sin número', [valorSenal(null), valorSenal('N/A')], [null, null]);
+
+// La consulta a SmartOLT nunca pisa lo que alguien escribió en la potencia.
+check('campo vacío (o solo espacios): SmartOLT puede escribir', [puedeCapturarPotencia('', ''), puedeCapturarPotencia('  ', ''), puedeCapturarPotencia(null, '')], [true, true, true]);
+check('algo escrito a mano: SmartOLT no lo pisa', [puedeCapturarPotencia('-20.1', ''), puedeCapturarPotencia('-20.1', '-19.4')], [false, false]);
+check('lo que dejó la consulta anterior sin tocar se puede actualizar', puedeCapturarPotencia('-19.4', '-19.4'), true);
+check('si el técnico corrigió lo capturado, ya no se pisa', puedeCapturarPotencia('-19.5', '-19.4'), false);
 check('calidad en español', [calidadSenal('Very good'), calidadSenal('Warning'), calidadSenal('Critical')], ['Muy buena', 'Advertencia', 'Crítica']);
 
 // Worker con SmartOLT simulado: pide los campos de señal y filtra por cédula exacta.

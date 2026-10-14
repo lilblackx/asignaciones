@@ -120,3 +120,19 @@ export function playNuevaAsignacionSound() {
     // Sin Web Audio o autoplay bloqueado: se pierde el sonido, no la app.
   }
 }
+
+// Cuatro tonos alternados, rápidos y fuertes ("alarma"): para el técnico cuando le marcan una
+// orden con prioridad alta. Más urgente que el resto de los patrones.
+export function playPrioridadSound() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    tone(ctx, 1318.51, now, 0.12, 0.8);
+    tone(ctx, 987.77, now + 0.14, 0.12, 0.8);
+    tone(ctx, 1318.51, now + 0.28, 0.12, 0.8);
+    tone(ctx, 987.77, now + 0.42, 0.22, 0.8);
+  } catch {
+    // Sin Web Audio o autoplay bloqueado: se pierde el sonido, no la app.
+  }
+}

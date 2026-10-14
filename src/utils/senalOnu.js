@@ -18,3 +18,11 @@ const CALIDAD = {
   critical: 'Crítica',
 };
 export const calidadSenal = (texto) => CALIDAD[String(texto || '').trim().toLowerCase()] || String(texto || '').trim();
+
+// ¿Puede la consulta a SmartOLT escribir su valor en el campo de potencia? Solo si está vacío o
+// si lo que tiene lo puso la propia consulta anterior (`ultimaCaptura`) y nadie lo tocó: así se
+// puede volver a consultar, pero nunca se pisa lo que alguien escribió.
+export const puedeCapturarPotencia = (actual, ultimaCaptura) => {
+  const texto = String(actual ?? '').trim();
+  return texto === '' || (Boolean(ultimaCaptura) && texto === ultimaCaptura);
+};

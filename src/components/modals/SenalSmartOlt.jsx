@@ -6,7 +6,8 @@ import { calidadSenal, onuEnLinea, valorSenal } from '../../utils/senalOnu';
 // "Ver valores": el técnico pide la potencia de la ONU del cliente a SmartOLT (solo al
 // presionar el botón, nunca sola). El valor de 1310 nm se muestra y queda capturado en el
 // campo de potencia por medio de `onCapturar(valor1310, valor1490)` (el de 1490 nm puede
-// ser null); el técnico aún puede corregir el de 1310.
+// ser null); el técnico aún puede corregir el de 1310. `onCapturar` devuelve false si no
+// escribió el de 1310 porque el campo ya tenía algo escrito: ese valor no se pisa.
 // Si el cliente tiene varios servicios, elige cuál es.
 export default function SenalSmartOlt({ ticketId, onCapturar }) {
   const [estado, setEstado] = useState(null); // buscando | listo | opciones | vacio | error
@@ -24,8 +25,8 @@ export default function SenalSmartOlt({ ticketId, onCapturar }) {
       setEstado({ tipo: 'sinSenal', onu });
       return;
     }
-    onCapturar(valor, valorSenal(onu.senal1490));
-    setEstado({ tipo: 'listo', onu, valor });
+    const escrita = onCapturar(valor, valorSenal(onu.senal1490));
+    setEstado({ tipo: 'listo', onu, valor, conservada: escrita === false });
   };
 
   const verValores = async () => {
@@ -62,7 +63,9 @@ export default function SenalSmartOlt({ ticketId, onCapturar }) {
           <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs text-emerald-900 dark:text-emerald-200 space-y-0.5">
             <p><span className="font-bold">OLT Rx · Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span>{estado.onu.calidad && <> · {calidadSenal(estado.onu.calidad)}</>}</p>
             {valorSenal(estado.onu.senal1490) !== null && <p><span className="font-bold">ONU Rx · Señal (1490 nm):</span> {valorSenal(estado.onu.senal1490)} dBm</p>}
-            <p className="text-[10px] opacity-80">Ambas señales quedan capturadas con la orden (la de 1310 nm en el campo de potencia). Es la última medición de SmartOLT; puedes corregirla.</p>
+            {estado.conservada
+              ? <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">No se cambió la potencia del campo porque ya tiene un valor escrito. La señal de 1490 nm sí queda capturada con la orden. Para usar la de SmartOLT, borra el campo y consulta de nuevo.</p>
+              : <p className="text-[10px] opacity-80">Ambas señales quedan capturadas con la orden (la de 1310 nm en el campo de potencia). Es la última medición de SmartOLT; puedes corregirla.</p>}
           </div>
         )}
         {estado?.tipo === 'fueraDeLinea' && (

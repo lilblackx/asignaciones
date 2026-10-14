@@ -86,7 +86,7 @@ service cloud.firestore {
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'historialEdiciones'])
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'instalacion', 'historialEdiciones'])
           && (
             request.resource.data.estado == resource.data.estado
             || (resource.data.estado == 'PENDIENTE' && request.resource.data.estado == 'PRE-FINALIZADO')

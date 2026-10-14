@@ -2,32 +2,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, doc, setDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
-import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound } from '../utils/notificationSound';
+import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound } from '../utils/notificationSound';
+import { esPrioritaria, mapaPrioridad, prioridadNueva, textoAvisoPrioridad } from '../utils/prioridad';
 import { sendPush } from '../lib/notify';
 import { parsePotencia } from '../utils/potencia';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { devolucionPendiente } from '../utils/devolucion';
-import { COBRO_EXONERADO, COBRO_VISITA, ETIQUETA_COBRO, estaExonerado, tieneCobroFinal, valorCobro } from '../utils/cobro';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, datosRecableado, generaCobro, partesRecableado, tieneDatosRecableado } from '../utils/tipoVisita';
+import { COBRO_EXONERADO, COBRO_VISITA, detalleCobro, estaExonerado, llevaCobro, tieneCobroFinal, valorCobro } from '../utils/cobro';
+import { detalleInstalacion, esInstalacion, instalacionCompleta, tieneDatosInstalacion, validarInstalacion } from '../utils/instalacion';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, errorColorConector, llevaConectores, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 
-// Texto del cobro que se le muestra al técnico cuando finalizan una orden con tipo
-// de visita de conector (externo o interno; el recableado no genera cobro). El monto lo calcula quien finaliza (con la
-// tasa de ese momento) y queda guardado en la orden como `cobroBs`. Antes de
-// finalizar no se muestra ningún cobro.
+// Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
+// finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
+// orden como `cobroBs` / `cobroTipo`. Antes de finalizar no se muestra ningún cobro.
 const avisoCobro = (t) => {
-  if (!t.tipoVisita) return '';
+  if (!llevaCobro(t)) return '';
   if (estaExonerado(t)) return ' Visita exonerada: no se cobra al cliente.';
   return t.cobroBs ? ` Cobro resultante al cliente: ${t.cobroBs} Bs.` : '';
-};
-
-// " (Otro monto)" / " (Visita técnica)" para el historial; vacío si no se indicó.
-const etiquetaCobro = (tipo) => (ETIQUETA_COBRO[tipo] ? ` (${ETIQUETA_COBRO[tipo]})` : '');
-
-// Parte del historial sobre el cobro: el monto con su tipo, o la exoneración.
-const detalleCobro = (cobroBs, cobroTipo, exonerado) => {
-  if (exonerado) return ' | Visita exonerada: sin cobro al cliente';
-  return cobroBs ? ` | Cobro resultante: ${cobroBs} Bs${etiquetaCobro(cobroTipo)}` : '';
 };
 
 const esCobroFinalizado = (t) => t.estado === 'FINALIZADO' && tieneCobroFinal(t);
@@ -49,15 +41,16 @@ function cargarBaseline(usuario) {
   try {
     const raw = JSON.parse(localStorage.getItem(BASELINE_PREFIX + usuario));
     if (!raw || Date.now() - raw.t > BASELINE_VIGENCIA_MS) return null;
-    return { estados: new Map(raw.e), ubicaciones: new Map(raw.u) };
+    // `p` (prioridades) no existía en los guardados viejos: sin él no se sabe qué cambió y no se avisa.
+    return { estados: new Map(raw.e), ubicaciones: new Map(raw.u), prioridades: raw.p ? new Map(raw.p) : null };
   } catch {
     return null;
   }
 }
-function guardarBaseline(usuario, estados, ubicaciones) {
+function guardarBaseline(usuario, estados, ubicaciones, prioridades) {
   if (!usuario) return;
   try {
-    localStorage.setItem(BASELINE_PREFIX + usuario, JSON.stringify({ t: Date.now(), e: [...estados], u: [...ubicaciones] }));
+    localStorage.setItem(BASELINE_PREFIX + usuario, JSON.stringify({ t: Date.now(), e: [...estados], u: [...ubicaciones], p: [...prioridades] }));
   } catch {
     // Sin almacenamiento: solo se pierde el aviso de lo ocurrido con la app cerrada.
   }
@@ -162,11 +155,22 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const notifyTicketChange = (original, updated) => {
     const ticketId = updated.id;
     if (updated.tecnico && (!original || original.tecnico !== updated.tecnico)) {
+      const conPrioridad = esPrioritaria(updated);
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
-        title: 'Nueva asignación',
-        body: `Te asignaron la orden ${updated.codigo || 'S/C'}${updated.nombre ? ` — ${updated.nombre}` : ''}.`,
-        tipo: 'nuevaAsignacion',
+        title: conPrioridad ? 'Nueva asignación — PRIORIDAD ALTA' : 'Nueva asignación',
+        body: `Te asignaron la orden ${updated.codigo || 'S/C'}${updated.nombre ? ` — ${updated.nombre}` : ''}.${conPrioridad ? ' Es PRIORIDAD ALTA: atiéndela primero.' : ''}`,
+        tipo: conPrioridad ? 'prioridad' : 'nuevaAsignacion',
+        ticketId,
+      });
+    }
+    // Prioridad alta marcada después (por ADMIN/USUARIO) en una orden que el técnico ya tenía.
+    if (updated.tecnico && original && original.tecnico === updated.tecnico && esPrioritaria(updated) && !esPrioritaria(original)) {
+      avisarPush({
+        target: { type: 'tecnico', name: updated.tecnico },
+        title: 'Prioridad alta',
+        body: textoAvisoPrioridad(updated),
+        tipo: 'prioridad',
         ticketId,
       });
     }
@@ -202,7 +206,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     }
     // Cierre directo de una orden con tipo de visita (vino de una devolución): solo
     // avisa si hay cobro; el aviso normal de cierre es el de aprobación de abajo.
-    if (updated.estado === 'FINALIZADO' && original?.estado === 'PENDIENTE' && avisoCobro(updated)) {
+    if (updated.tecnico && updated.estado === 'FINALIZADO' && original?.estado === 'PENDIENTE' && avisoCobro(updated)) {
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Orden finalizada',
@@ -227,6 +231,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // id -> ubicación del snapshot anterior, para avisar al técnico cuando una
   // orden que ya tenía pasa a tener ubicación.
   const ubicacionAnteriorRef = useRef(null);
+  // id -> si la orden tenía prioridad alta en el snapshot anterior, para avisar al técnico cuando se la marcan.
+  const prioridadAnteriorRef = useRef(null);
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -258,6 +264,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (guardada) {
           estadoAnteriorRef.current = guardada.estados;
           ubicacionAnteriorRef.current = guardada.ubicaciones;
+          prioridadAnteriorRef.current = guardada.prioridades;
         }
       }
 
@@ -289,17 +296,35 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           const nuevasAsignaciones = loadedTickets.filter(t =>
             !estadoAnteriorRef.current.has(t.id) && t.estado !== 'ELIMINADO'
           );
+          const conPrioridadN = nuevasAsignaciones.filter(esPrioritaria).length;
           if (nuevasAsignaciones.length === 1) {
             const t = nuevasAsignaciones[0];
-            const texto = `Te asignaron una nueva orden: ${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}.`;
-            setToastMsg({ type: 'nuevaAsignacion', text: texto, duration: 6000 });
-            onNotify?.({ type: 'nuevaAsignacion', text: texto, ticketId: t.id });
-            playNuevaAsignacionSound();
+            const prio = conPrioridadN > 0;
+            const texto = `Te asignaron una nueva orden${prio ? ' con PRIORIDAD ALTA' : ''}: ${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}.${prio ? ' Atiéndela primero.' : ''}`;
+            setToastMsg({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, duration: prio ? 9000 : 6000 });
+            onNotify?.({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, ticketId: t.id });
+            (prio ? playPrioridadSound : playNuevaAsignacionSound)();
           } else if (nuevasAsignaciones.length > 1) {
-            const texto = `Te asignaron ${nuevasAsignaciones.length} órdenes nuevas.`;
-            setToastMsg({ type: 'nuevaAsignacion', text: texto, duration: 6000 });
-            onNotify?.({ type: 'nuevaAsignacion', text: texto });
-            playNuevaAsignacionSound();
+            const prio = conPrioridadN > 0;
+            const texto = `Te asignaron ${nuevasAsignaciones.length} órdenes nuevas${prio ? `, ${conPrioridadN} con PRIORIDAD ALTA` : ''}.`;
+            setToastMsg({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, duration: prio ? 9000 : 6000 });
+            onNotify?.({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto });
+            (prio ? playPrioridadSound : playNuevaAsignacionSound)();
+          }
+
+          // Avisa al técnico cuando le marcan prioridad alta en una orden que ya tenía.
+          const conPrioridadNueva = prioridadNueva(loadedTickets, prioridadAnteriorRef.current);
+          if (conPrioridadNueva.length === 1) {
+            const t = conPrioridadNueva[0];
+            const texto = textoAvisoPrioridad(t);
+            setToastMsg({ type: 'prioridad', text: texto, duration: 9000 });
+            onNotify?.({ type: 'prioridad', text: texto, ticketId: t.id });
+            playPrioridadSound();
+          } else if (conPrioridadNueva.length > 1) {
+            const texto = `${conPrioridadNueva.length} órdenes tienen PRIORIDAD ALTA. Atiéndelas primero.`;
+            setToastMsg({ type: 'prioridad', text: texto, duration: 9000 });
+            onNotify?.({ type: 'prioridad', text: texto });
+            playPrioridadSound();
           }
 
           const conUbicacionNueva = loadedTickets.filter(t =>
@@ -359,7 +384,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       }
       estadoAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.estado]));
       ubicacionAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.ubicacion ? 1 : '']));
-      guardarBaseline(currentUserRef.current, estadoAnteriorRef.current, ubicacionAnteriorRef.current);
+      prioridadAnteriorRef.current = mapaPrioridad(loadedTickets);
+      guardarBaseline(currentUserRef.current, estadoAnteriorRef.current, ubicacionAnteriorRef.current, prioridadAnteriorRef.current);
     }, (error) => {
       console.error('No se pudo cargar tickets:', error);
       setToastMsg({ type: 'error', text: 'No se pudieron cargar las órdenes.' });
@@ -370,6 +396,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       // la siguiente lectura lo vuelve a cargar del almacenamiento del usuario que corresponda.
       estadoAnteriorRef.current = null;
       ubicacionAnteriorRef.current = null;
+      prioridadAnteriorRef.current = null;
     };
   }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
 
@@ -493,6 +520,21 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     }
 
     const originalTicket = base || tickets.find(t => t.id === editingTicket.id);
+
+    // Finalizar siempre pasa por "Finalizar" o "Aprobar" de la lista: ahí se elige el cobro resultante.
+    if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') {
+      setToastMsg({ type: 'error', text: 'Para finalizar una orden usa "Finalizar" o "Aprobar" en la lista: ahí se elige el cobro resultante.' });
+      return false;
+    }
+
+    // Un técnico no pre-finaliza una instalación por aquí sin los datos obligatorios: se llenan con
+    // el botón "Pre-finalizar" (que los pide).
+    if (role === 'TECNICO' && editingTicket.estado === 'PRE-FINALIZADO' && originalTicket?.estado !== 'PRE-FINALIZADO'
+      && esInstalacion(editingTicket.tipoTrabajo) && !instalacionCompleta(editingTicket)) {
+      setToastMsg({ type: 'error', text: 'En una instalación llena el serial, la VLAN, la posteadura, la NAP, el puerto y los puertos disponibles con el botón "Pre-finalizar".' });
+      return false;
+    }
+
     const ticketFecha = originalTicket?.createdAt ? new Date(originalTicket.createdAt) : new Date();
 
     const armarTicket = (codigo) => {
@@ -507,6 +549,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
         if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);
         if (originalTicket.observacion !== editingTicket.observacion) cambios.push(`Obs. modificada`);
+        if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');
         if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
         if ((originalTicket.ubicacion || '') !== ticketToSave.ubicacion) cambios.push('Ubicación modificada');
         if ((originalTicket.napCoordenadas || '') !== ticketToSave.napCoordenadas) cambios.push(`Coord. NAP: ${ticketToSave.napCoordenadas || 'Vacías'}`);
@@ -572,7 +615,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     return true;
   };
 
-  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno } = {}) => {
+  // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
+  // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
+  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacion || '').trim()) {
@@ -586,13 +631,44 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
+    // Visita de conector interno: el color del conector (verde o azul) es obligatorio.
+    const errorColor = errorColorConector(tipoVisita, conectorInterno);
+    if (errorColor) {
+      setToastMsg({ type: 'error', text: errorColor });
+      return false;
+    }
+
+    // Instalación: el serial, la VLAN, al menos un poste, la NAP y el puerto son obligatorios.
+    const reporteInstalacion = esInstalacion(ticket.tipoTrabajo) ? validarInstalacion(instalacion || {}) : null;
+    if (reporteInstalacion?.error) {
+      setToastMsg({ type: 'error', text: Object.values(reporteInstalacion.errores)[0] });
+      return false;
+    }
+    if (reporteInstalacion && !instalacionCompleta({ instalacion })) {
+      setToastMsg({ type: 'error', text: 'En una instalación indica la NAP y el puerto.' });
+      return false;
+    }
+    const datosInstalacion = reporteInstalacion && tieneDatosInstalacion(reporteInstalacion.datos) ? reporteInstalacion.datos : null;
+
+    // Los datos de metros y conectores solo se escriben si el tipo de visita los lleva o si hay que
+    // borrar los de una visita anterior; así las demás visitas no suman campos vacíos a la orden.
+    const camposConectores = tipoVisita !== undefined && (llevaConectores(tipoVisita) || tieneDatosRecableado(ticket))
+      ? datosConectores(tipoVisita, { metros: metrosCable, conectorExterno, conectorInterno })
+      : {};
+
     let detalle = 'Marcado como PRE-FINALIZADO';
     if (observacion && observacion.trim()) detalle += ` | Obs: ${observacion.trim()}`;
     if (nap && nap.trim()) detalle += ` | NAP: ${nap.trim()}`;
+    detalle += detalleInstalacion(datosInstalacion);
     if (potenciaDbm != null) detalle += ` | Potencia: ${potenciaDbm} dBm`;
     if (potencia1490Dbm != null) detalle += ` | ONU Rx 1490 nm: ${potencia1490Dbm} dBm`;
     if (tipoVisita === TIPO_RECABLEADO) detalle += ` | Recableado: ${partesRecableado({ metrosCable, conectorExterno, conectorInterno }).join(', ')}`;
-    else if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
+    else if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) {
+      detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
+      const conector = textoConectorVisita({ tipoVisita, ...camposConectores });
+      if (conector) detalle += ` | ${conector}`;
+    }
+    if (avisaCobroAlPreFinalizar(tipoVisita)) detalle += detalleCobro(montoBs, COBRO_VISITA, false);
 
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
@@ -600,12 +676,6 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       tipo: 'prefinalizado',
       detalle
     };
-
-    // Los datos del recableado solo se escriben si hay recableado o si hay que borrar los de
-    // un recableado anterior; así las demás visitas no suman campos vacíos a la orden.
-    const camposRecableado = tipoVisita !== undefined && (tipoVisita === TIPO_RECABLEADO || tieneDatosRecableado(ticket))
-      ? datosRecableado(tipoVisita, { metros: metrosCable, conectorExterno, conectorInterno })
-      : {};
 
     const updatedTicket = {
       ...ticket,
@@ -615,12 +685,14 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       potencia1490Dbm: potencia1490Dbm !== undefined ? potencia1490Dbm : (ticket.potencia1490Dbm ?? null),
       observacion: observacion !== undefined ? observacion : (ticket.observacion || ''),
       tipoVisita: tipoVisita !== undefined ? tipoVisita : (ticket.tipoVisita || ''),
-      ...camposRecableado,
+      ...camposConectores,
+      // `null` borra lo registrado antes si el técnico lo vació; solo se toca en una instalación.
+      ...(reporteInstalacion ? { instalacion: datosInstalacion } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
     await actualizarTicket(ticket, updatedTicket);
-    setToastMsg({ type: 'success', text: 'Orden marcada como Pre-finalizada.' });
+    setToastMsg({ type: 'success', text: datosInstalacion ? 'Orden marcada como Pre-finalizada. La plantilla ya lleva los datos de la instalación.' : 'Orden marcada como Pre-finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
     return true;
   };
@@ -630,8 +702,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const aprobarFinalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
     if (!firebaseUser || !ticket) return;
 
-    const exonerado = generaCobro(ticket.tipoVisita) && cobroTipo === COBRO_EXONERADO;
-    const cobroBs = generaCobro(ticket.tipoVisita) && !exonerado && montoBs ? montoBs : null;
+    const exonerado = llevaCobro(ticket) && cobroTipo === COBRO_EXONERADO;
+    const cobroBs = llevaCobro(ticket) && !exonerado && montoBs ? montoBs : null;
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'ADMIN',
@@ -688,8 +760,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const finalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
     if (!firebaseUser || !ticket) return;
 
-    const exonerado = generaCobro(ticket.tipoVisita) && cobroTipo === COBRO_EXONERADO;
-    const cobroBs = generaCobro(ticket.tipoVisita) && !exonerado && montoBs ? montoBs : null;
+    const exonerado = llevaCobro(ticket) && cobroTipo === COBRO_EXONERADO;
+    const cobroBs = llevaCobro(ticket) && !exonerado && montoBs ? montoBs : null;
     const nuevaEdicion = {
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'OPERADOR',
@@ -707,6 +779,39 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden finalizada.' });
+    notifyTicketChange(ticket, updatedTicket);
+  };
+
+  // ADMIN/USUARIO marcan (o quitan) la prioridad alta de una orden pendiente. Al marcarla, el técnico
+  // asignado recibe un aviso (push y en la app); si aún no tiene técnico, le llega marcada al asignarla.
+  const togglePrioridad = async (ticket) => {
+    if (!firebaseUser || !ticket) return;
+    if (ticket.estado !== 'PENDIENTE') {
+      setToastMsg({ type: 'error', text: 'Solo se puede dar prioridad a una orden pendiente.' });
+      return;
+    }
+
+    const activar = !ticket.prioridadAlta;
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'OPERADOR',
+      tipo: 'prioridad',
+      detalle: activar ? 'Prioridad alta marcada' : 'Prioridad alta retirada'
+    };
+
+    const updatedTicket = {
+      ...ticket,
+      prioridadAlta: activar,
+      historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
+    };
+
+    await actualizarTicket(ticket, updatedTicket);
+    setToastMsg({
+      type: 'success',
+      text: !activar ? 'Prioridad alta retirada.'
+        : ticket.tecnico ? `Prioridad alta marcada. Se le avisó a ${ticket.tecnico}.`
+          : 'Prioridad alta marcada. Aún no tiene técnico: le llegará marcada cuando la asignes.'
+    });
     notifyTicketChange(ticket, updatedTicket);
   };
 
@@ -779,6 +884,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     preFinalizarTicket,
     aprobarFinalizarTicket,
     devolverTicket,
-    finalizarTicket
+    finalizarTicket,
+    togglePrioridad
   };
 }

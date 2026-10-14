@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { instalacionSinUbicacion } from '../utils/ubicacion';
 import { categoriaProgramada, esProgramadaFutura, mananaISO } from '../utils/programada';
+import { prioritariasPrimero } from '../utils/prioridad';
 
 const PAGE_SIZE = 50;
 
@@ -65,6 +66,9 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false 
     } else if (sortBy === 'FECHA') {
       result.sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha));
     }
+
+    // Las órdenes con prioridad alta van primero, salvo que se haya pedido otro orden (técnico, tipo o programadas).
+    if (!['TECNICO', 'TIPO_TRABAJO', 'PROGRAMADA'].includes(sortBy)) result = prioritariasPrimero(result);
 
     return result;
   }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas]);

@@ -328,17 +328,69 @@ export function parseInstalacionTemplate(texto) {
   return campos;
 }
 
-// Toca 2 líneas de la plantilla cruda: el correlativo (primera línea) y el
-// técnico instalador. Si la orden ya tiene ubicación, agrega el enlace de Maps
-// al final (o lo completa en una etiqueta "Ubicación:" vacía); si la plantilla
-// ya trae un enlace de Maps propio no se duplica. El resto queda exactamente
-// como lo pegó la promotora.
-function aplicarCorrelativoYTecnico(plantilla, codigo, tecnico, ubicacion, napCoordenadas) {
+// Lo que el técnico llena al instalar (ticket.instalacion, ver utils/instalacion) y la plantilla de la
+// promotora trae vacío: la etiqueta (ya normalizada) de su línea en la plantilla.
+const CAMPOS_INSTALACION = [
+  // El serial va en la línea "Mac" de la plantilla (o "Serial", si la promotora la nombra así).
+  { campo: 'serial', claves: ['MAC', 'SERIAL'] },
+  { campo: 'vlan', claves: ['VLAN'] },
+  { campo: 'posteadura', claves: ['POSTEADURA'] },
+  { campo: 'nap', claves: ['NAP'] },
+  { campo: 'puerto', claves: ['CLIENTE CONECTA EN EL PUERTO N'] },
+  { campo: 'puertosDisponibles', claves: ['PUERTOS DISPONIBLES'] },
+];
+
+// Solo los campos que el técnico llenó, ya como texto (los postes van separados por coma).
+function camposLlenosDeInstalacion(instalacion) {
+  if (!instalacion) return [];
+  const texto = {
+    serial: instalacion.serial,
+    vlan: instalacion.vlan,
+    posteadura: (instalacion.posteadura || []).join(', '),
+    nap: instalacion.nap,
+    puerto: instalacion.puerto,
+    puertosDisponibles: instalacion.puertosDisponibles,
+  };
+  return CAMPOS_INSTALACION.map(c => ({ ...c, valor: String(texto[c.campo] ?? '').trim() })).filter(c => c.valor);
+}
+
+// Los datos de la instalación entran en la plantilla solo desde que el técnico pre-finaliza la orden
+// (o ya está finalizada). Antes, y también si la devuelven al técnico (vuelve a PENDIENTE), sale la
+// plantilla original con sus campos vacíos.
+const ESTADOS_CON_DATOS_DE_INSTALACION = ['PRE-FINALIZADO', 'PRE-FINALIZADA', 'FINALIZADO'];
+const instalacionParaLaPlantilla = (ticket) => (ESTADOS_CON_DATOS_DE_INSTALACION.includes(ticket.estado) ? ticket.instalacion : null);
+
+// ¿La línea de esta etiqueta ya trae un valor? Escrito junto a la etiqueta o, como lo hacen
+// algunas promotoras, en la línea de abajo (si lo que sigue es otra etiqueta, el campo está vacío).
+function etiquetaTieneValor(lineas, idx) {
+  const limpia = limpiarLinea(lineas[idx]);
+  const dosPuntos = limpia.indexOf(':');
+  if (dosPuntos !== -1 && limpia.slice(dosPuntos + 1).trim()) return true;
+  let j = idx + 1;
+  while (j < lineas.length && !limpiarLinea(lineas[j])) j++;
+  return j < lineas.length && !esLineaEtiqueta(lineas[j], limpiarLinea(lineas[j]));
+}
+
+// Toca estas líneas de la plantilla cruda: el correlativo (primera línea), el técnico
+// instalador y, si el técnico ya los llenó al pre-finalizar, el serial, VLAN, posteadura,
+// NAP, puerto y puertos disponibles. Estos últimos SOLO se completan donde la plantilla
+// los trae vacíos: lo que la promotora ya escribió se respeta y nunca se agregan líneas
+// (la plantilla sigue siendo la de la promotora, con sus huecos llenos). Si la orden ya
+// tiene ubicación, agrega el enlace de Maps al final (o lo completa en una etiqueta
+// "Ubicación:" vacía); si la plantilla ya trae un enlace de Maps propio no se duplica.
+// El resto queda exactamente como lo pegó la promotora.
+function aplicarCorrelativoYTecnico(plantilla, codigo, tecnico, ubicacion, napCoordenadas, instalacion) {
   const lineas = normalizarNegritas(plantilla).split('\n');
   if (lineas.length > 0) lineas[0] = codigo || lineas[0];
   const idxInstalador = lineas.findIndex(l => claveEtiqueta(limpiarLinea(l).split(':')[0] || '') === 'INSTALADOR');
   if (idxInstalador !== -1) {
     lineas[idxInstalador] = `*Instalador:* ${tecnico || ''}`;
+  }
+  for (const { claves, valor } of camposLlenosDeInstalacion(instalacion)) {
+    const idx = lineas.findIndex(l => limpiarLinea(l).includes(':') && claves.includes(claveEtiqueta(limpiarLinea(l).split(':')[0])));
+    // Sin la línea en la plantilla no se agrega; con un valor ya escrito, no se toca.
+    if (idx === -1 || etiquetaTieneValor(lineas, idx)) continue;
+    lineas[idx] = `${lineas[idx].replace(/\s+$/, '')} ${valor}`;
   }
   const enlace = getUbicacionUrl(ubicacion);
   let agregoAlFinal = false;
@@ -367,28 +419,6 @@ function aplicarCorrelativoYTecnico(plantilla, codigo, tecnico, ubicacion, napCo
   return lineas.join('\n');
 }
 
-// Fallback para instalaciones creadas sin pegar la plantilla de la promotora
-// (ej. carga manual): arma un mensaje con el mismo estilo, solo con los campos
-// que registramos.
-function generarMensajeInstalacionBasico(ticket) {
-  const enlace = getUbicacionUrl(ticket.ubicacion);
-  const enlaceNap = normalizarCoordenadasNap(ticket.napCoordenadas).enlace;
-  return [
-    ticket.codigo || '',
-    `*Nap:* ${ticket.nap || ''}`,
-    '',
-    `*Nombres  Completos:* ${ticket.nombre || ''}`,
-    `*C.I:* ${ticket.cedula || ''}`,
-    `*NRO de teléfono:* ${ticket.telefono || ''}`,
-    `*Dirección completa:* ${ticket.direccion || ''}`,
-    `*Instalador:* ${ticket.tecnico || ''}`,
-    `*Observación:* ${ticket.observacion || ''}`,
-    ...(enlace || enlaceNap ? [''] : []),
-    ...(enlace ? [`*Ubicación:* ${enlace}`] : []),
-    ...(enlaceNap ? [`*Ubicación NAP:* ${enlaceNap}`] : []),
-  ].join('\n');
-}
-
 // Tipos de trabajo cuya orden nace de una plantilla que manda la promotora
 // (se pega al crear y el mensaje sale de esa misma plantilla).
 export const tipoUsaPlantillaPromotora = (tipoTrabajo) => {
@@ -399,12 +429,20 @@ export const tipoUsaPlantillaPromotora = (tipoTrabajo) => {
 // Igual que generarMensajeWhatsAppInstalacion pero para cualquier orden que
 // traiga plantillaOriginal (instalaciones y reconexiones).
 export function generarMensajeDesdePlantilla(ticket) {
-  return aplicarCorrelativoYTecnico(ticket.plantillaOriginal, ticket.codigo, ticket.tecnico, ticket.ubicacion, ticket.napCoordenadas);
+  return aplicarCorrelativoYTecnico(ticket.plantillaOriginal, ticket.codigo, ticket.tecnico, ticket.ubicacion, ticket.napCoordenadas, instalacionParaLaPlantilla(ticket));
 }
 
+// Las órdenes que nacen de una plantilla de la promotora (instalaciones y reconexiones) solo tienen plantilla que
+// copiar si se pegó la de la promotora al crear la orden (o después, al editarla): la app nunca arma una por su
+// cuenta, para no mandar una plantilla distinta a la de la promotora. Sin ella, el botón de copiar está deshabilitado.
+export const ordenSinPlantilla = (ticket) =>
+  tipoUsaPlantillaPromotora(ticket?.tipoTrabajo) && !String(ticket?.plantillaOriginal || '').trim();
+
+export const TEXTO_SIN_PLANTILLA = 'Esta orden no tiene la plantilla de la promotora: pégala desde Editar para poder copiarla.';
+
+// La plantilla de la promotora de la instalación, tal cual se pegó, con el correlativo, el instalador y los
+// datos que llenó el técnico en sus campos vacíos. Sin plantilla pegada devuelve vacío (ver ordenSinPlantilla).
 export function generarMensajeWhatsAppInstalacion(ticket) {
-  if (ticket.plantillaOriginal && ticket.plantillaOriginal.trim()) {
-    return aplicarCorrelativoYTecnico(ticket.plantillaOriginal, ticket.codigo, ticket.tecnico, ticket.ubicacion, ticket.napCoordenadas);
-  }
-  return generarMensajeInstalacionBasico(ticket);
+  if (!ticket.plantillaOriginal || !ticket.plantillaOriginal.trim()) return '';
+  return aplicarCorrelativoYTecnico(ticket.plantillaOriginal, ticket.codigo, ticket.tecnico, ticket.ubicacion, ticket.napCoordenadas, instalacionParaLaPlantilla(ticket));
 }

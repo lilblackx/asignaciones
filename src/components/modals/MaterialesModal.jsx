@@ -3,7 +3,7 @@ import { Cable, ChevronDown, X } from 'lucide-react';
 import Modal from '../Modal';
 import { PERIODOS, consumoPorTecnico, inicioPeriodo, totalConectores } from '../../utils/consumoMateriales';
 import { aplanarArchivados } from '../../utils/reincidencia';
-import { ETIQUETA_COLOR } from '../../utils/tipoVisita';
+import { ETIQUETA_COLOR, TIPO_RECABLEADO, etiquetaTipoVisita } from '../../utils/tipoVisita';
 
 const numero = (n) => Number(n).toLocaleString('es-VE');
 const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—');
@@ -37,7 +37,7 @@ function Conectores({ fila }) {
 
 function Dato({ etiqueta, valor, detalle }) {
   return (
-    <div className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3">
+    <div className="min-w-0 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3">
       <p className="text-[10px] font-bold tracking-wide text-zinc-500 dark:text-zinc-400 uppercase">{etiqueta}</p>
       <p className="text-2xl font-black text-zinc-900 dark:text-white leading-tight">{valor}</p>
       {detalle && <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug mt-0.5">{detalle}</p>}
@@ -55,7 +55,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
         <span className={`shrink-0 text-lg font-black ${conDatos ? 'text-red-600 dark:text-red-400' : 'text-zinc-400 dark:text-zinc-600'}`}>{numero(fila.metros)} <span className="text-xs">m</span></span>
       </div>
       <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-        {fila.ordenes} recableado{fila.ordenes === 1 ? '' : 's'} · {totalConectores(fila)} conector{totalConectores(fila) === 1 ? '' : 'es'}
+        {fila.ordenes} recableado{fila.ordenes === 1 ? '' : 's'} · {fila.visitas} visita{fila.visitas === 1 ? '' : 's'} de conector · {totalConectores(fila)} conector{totalConectores(fila) === 1 ? '' : 'es'}
       </p>
       {conDatos && <Conectores fila={fila} />}
     </div>
@@ -78,12 +78,13 @@ function FilaTecnico({ fila, abierto, onToggle }) {
                 <p className="font-bold text-zinc-800 dark:text-zinc-100 truncate">{o.codigo || 'S/C'}{o.nombre ? ` — ${o.nombre}` : ''}</p>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   {fechaCorta(o.fecha)}
+                  {o.tipo !== TIPO_RECABLEADO && ` · Visita de ${etiquetaTipoVisita(o.tipo).toLowerCase()}`}
                   {o.verde > 0 && ` · ${textoConectores(o.verde, 'VERDE')}`}
                   {o.azul > 0 && ` · ${textoConectores(o.azul, 'AZUL')}`}
                   {totalConectores(o) === 0 && ' · sin conectores'}
                 </p>
               </div>
-              <span className="shrink-0 font-black text-zinc-900 dark:text-white">{numero(o.metros)} m</span>
+              {o.metros != null && <span className="shrink-0 font-black text-zinc-900 dark:text-white">{numero(o.metros)} m</span>}
             </li>
           ))}
         </ul>
@@ -92,9 +93,9 @@ function FilaTecnico({ fila, abierto, onToggle }) {
   );
 }
 
-// Módulo solo para ADMIN: metros de cable y conectores usados en los recableados, en total y
-// por técnico (todos los registrados, aunque no hayan usado material en el período).
-// Suma las órdenes activas y las ya archivadas en los reportes de cierre que estén cargados.
+// Módulo solo para ADMIN: metros de cable (recableados) y conectores (recableados y visitas de
+// conector) usados, en total y por técnico (todos los registrados, aunque no hayan usado material
+// en el período). Suma las órdenes activas y las ya archivadas en los reportes de cierre cargados.
 export default function MaterialesModal({ tickets, reports, technicians, hasMoreReports, isLoadingReports, onLoadMore, onClose }) {
   const [periodo, setPeriodo] = useState('MES');
   const [abierto, setAbierto] = useState(null);
@@ -105,6 +106,11 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
     () => consumoPorTecnico(ordenes, { desde: inicioPeriodo(periodo), tecnicos: nombresTecnicos }),
     [ordenes, periodo, nombresTecnicos]
   );
+  const porAprobarTotal = porAprobar.ordenes + porAprobar.visitas;
+  const textoPorAprobar = [
+    porAprobar.ordenes > 0 && `${porAprobar.ordenes} recableado${porAprobar.ordenes === 1 ? '' : 's'} (${numero(porAprobar.metros)} m)`,
+    porAprobar.visitas > 0 && `${porAprobar.visitas} visita${porAprobar.visitas === 1 ? '' : 's'} de conector`,
+  ].filter(Boolean).join(' y ');
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
@@ -115,7 +121,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
         </div>
 
         <div className="p-4 sm:p-6 space-y-4">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Metros de cable y conectores usados en los recableados ya aprobados, en total y por técnico.</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Metros de cable y conectores usados en los recableados y las visitas de conector ya aprobados, en total y por técnico.</p>
 
           <div role="group" aria-label="Período" className="flex flex-wrap gap-2">
             {PERIODOS.map((p) => (
@@ -131,20 +137,21 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Dato etiqueta="Metros de cable" valor={`${numero(totales.metros)} m`} />
             <Dato etiqueta="Recableados" valor={numero(totales.ordenes)} />
+            <Dato etiqueta="Visitas de conector" valor={numero(totales.visitas)} />
             <Dato etiqueta="Conectores" valor={numero(totalConectores(totales))} detalle={`Verde ${totales.verde} · Azul ${totales.azul}`} />
           </div>
 
-          {porAprobar.ordenes > 0 && (
+          {porAprobarTotal > 0 && (
             <p role="status" className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-2">
-              {porAprobar.ordenes} recableado{porAprobar.ordenes === 1 ? '' : 's'} ({numero(porAprobar.metros)} m) espera{porAprobar.ordenes === 1 ? '' : 'n'} aprobación y todavía no se suma{porAprobar.ordenes === 1 ? '' : 'n'}.
+              {textoPorAprobar} espera{porAprobarTotal === 1 ? '' : 'n'} aprobación y todavía no se suma{porAprobarTotal === 1 ? '' : 'n'}.
             </p>
           )}
 
           {filas.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No hay recableados aprobados en este período.</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No hay recableados ni visitas de conector aprobados en este período.</p>
           ) : (
             <section aria-labelledby="materiales-por-tecnico" className="space-y-2">
               <h3 id="materiales-por-tecnico" className="text-[10px] font-bold tracking-wide text-zinc-500 dark:text-zinc-400 uppercase">Por técnico</h3>

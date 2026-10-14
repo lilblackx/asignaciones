@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import ConfirmModal from './ConfirmModal';
 import CobroSelector from './CobroSelector';
-import { COBRO_INICIAL, resolverCobro } from '../../utils/cobro';
-import { generaCobro } from '../../utils/tipoVisita';
+import { COBRO_INICIAL, llevaCobro, resolverCobro } from '../../utils/cobro';
 
-// Finalizar una orden directo desde la tabla. Si la orden tiene una visita de conector, antes
-// de finalizar se elige el cobro que verá el técnico: "Visita técnica" (el de siempre) u "Otro monto".
+// Finalizar una orden directo desde la tabla. Si la orden lleva cobro (visita de conector o instalación),
+// antes de finalizar se elige el cobro que verá el técnico: "Visita técnica" (el de siempre), "Otro monto" o "Exonerar".
 export default function FinalizarOrdenModal({ ticket, montoBs, onCancel, onConfirm }) {
-  const conCobro = generaCobro(ticket.tipoVisita);
+  const conCobro = llevaCobro(ticket);
   const [cobro, setCobro] = useState(COBRO_INICIAL);
   const [error, setError] = useState('');
 

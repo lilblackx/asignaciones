@@ -1,9 +1,11 @@
-// Cobro que se le informa al técnico al finalizar una orden con visita de conector.
+// Cobro resultante que se le informa al técnico al finalizar cualquier orden.
 //
 // Quien finaliza elige entre:
 //   - "Visita técnica": el monto de siempre (monto base en EUR x tasa BCV del momento).
 //   - "Otro monto": un monto escrito a mano, que es el que verá el técnico en su aviso.
 //   - "Exonerar": la visita no se cobra; el técnico ve en su aviso que no debe cobrar nada.
+
+import { etiquetaTipoVisita } from './tipoVisita.js';
 
 export const COBRO_VISITA = 'VISITA_TECNICA';
 export const COBRO_OTRO = 'OTRO_MONTO';
@@ -44,8 +46,32 @@ export const COBRO_INICIAL = { modo: COBRO_VISITA, otro: '' };
 
 export const estaExonerado = (t) => t?.cobroTipo === COBRO_EXONERADO;
 
+// Toda orden lleva cobro resultante: quien la aprueba o la finaliza siempre elige "Visita técnica", "Otro monto" o
+// "Exonerar", y el técnico lo ve cuando se finaliza (sin importar el tipo de trabajo ni de visita).
+export const llevaCobro = (t) => Boolean(t);
+
+// Nombre de lo que se cobra: el tipo de visita ("Conector interno", "Recableado") o, sin visita, el tipo de
+// trabajo ("Instalación", "Avería").
+export const conceptoCobro = (t) => {
+  if (t?.tipoVisita) return etiquetaTipoVisita(t.tipoVisita);
+  const trabajo = String(t?.tipoTrabajo || '').trim().toLowerCase();
+  return trabajo ? trabajo.charAt(0).toUpperCase() + trabajo.slice(1) : 'Orden';
+};
+
 // ¿Hay algo que avisarle al técnico del cobro de esta orden: un monto o que se exoneró?
-export const tieneCobroFinal = (t) => Boolean(t?.tipoVisita) && (estaExonerado(t) || Boolean(t.cobroBs));
+export const tieneCobroFinal = (t) => llevaCobro(t) && (estaExonerado(t) || Boolean(t.cobroBs));
 
 // Lo que se le avisó al técnico: el monto o "EXONERADO". Si cambia, se le avisa de nuevo.
 export const valorCobro = (t) => (estaExonerado(t) ? COBRO_EXONERADO : String(t?.cobroBs ?? ''));
+
+// --- Historial de la orden ---
+
+// " (Otro monto)" / " (Visita técnica)"; vacío si no se indicó el tipo.
+const etiquetaCobro = (tipo) => (ETIQUETA_COBRO[tipo] ? ` (${ETIQUETA_COBRO[tipo]})` : '');
+
+// Parte del historial sobre el cobro, lista para pegar a un detalle: el monto con su tipo,
+// o la exoneración. Vacía si no hay nada que registrar.
+export const detalleCobro = (cobroBs, cobroTipo, exonerado) => {
+  if (exonerado) return ' | Visita exonerada: sin cobro al cliente';
+  return cobroBs ? ` | Cobro resultante: ${cobroBs} Bs${etiquetaCobro(cobroTipo)}` : '';
+};

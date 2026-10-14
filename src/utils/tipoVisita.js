@@ -1,7 +1,9 @@
 // Tipos de visita que el técnico puede registrar al pre-finalizar una orden.
 //
 // - Conector externo / interno: visita para cambiar un conector. Generan un cobro al cliente
-//   (se calcula al finalizar con la tasa del momento) y el externo pide NAP y puerto.
+//   (se calcula al finalizar con la tasa del momento) y el externo pide NAP y puerto. El técnico
+//   indica el color del conector colocado: el externo es siempre verde; el interno, verde o azul
+//   (obligatorio). Se guarda en `conectorExterno` / `conectorInterno`, igual que en el recableado.
 // - Recableado: se registran los metros de cable usados (obligatorio) y, opcionalmente, los
 //   conectores colocados: un conector externo (solo verde) y/o uno interno (verde o azul).
 //   No genera cobro.
@@ -23,8 +25,13 @@ export const TIPOS_VISITA = [
   { value: TIPO_RECABLEADO, label: ETIQUETA_TIPO_VISITA[TIPO_RECABLEADO] },
 ];
 
+export const esVisitaConector = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_CONECTOR_INTERNO;
+
 // Solo las visitas de conector generan cobro; el recableado no.
-export const generaCobro = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_CONECTOR_INTERNO;
+export const generaCobro = (tipoVisita) => esVisitaConector(tipoVisita);
+
+// Tipos de visita en los que el técnico registra conectores (recableado o visita de conector).
+export const llevaConectores = (tipoVisita) => tipoVisita === TIPO_RECABLEADO || esVisitaConector(tipoVisita);
 
 // ¿Cuándo ve el técnico el aviso de cobro? Con conector interno, apenas pre-finaliza (el cobro se
 // le informa al cliente en el momento); en las demás visitas con cobro, hasta que se finaliza la orden.
@@ -58,15 +65,37 @@ export function parseMetros(raw) {
 export const colorConectorExterno = (color) => (COLORES_CONECTOR_EXTERNO.includes(color) ? color : '');
 export const colorConectorInterno = (color) => (COLORES_CONECTOR_INTERNO.includes(color) ? color : '');
 
-// Campos del recableado tal como se guardan en la orden. Fuera de un recableado todo queda
-// vacío; `null`/'' (y no omitir el campo) es lo que permite borrar un valor anterior.
-export function datosRecableado(tipoVisita, { metros, conectorExterno, conectorInterno } = {}) {
-  if (tipoVisita !== TIPO_RECABLEADO) return { metrosCable: null, conectorExterno: '', conectorInterno: '' };
-  return {
-    metrosCable: metros ?? null,
-    conectorExterno: colorConectorExterno(conectorExterno),
-    conectorInterno: colorConectorInterno(conectorInterno),
-  };
+// Colores que puede elegir el técnico en una visita de conector (en las demás no hay elección).
+export const coloresConectorVisita = (tipoVisita) => {
+  if (tipoVisita === TIPO_CONECTOR_EXTERNO) return COLORES_CONECTOR_EXTERNO;
+  if (tipoVisita === TIPO_CONECTOR_INTERNO) return COLORES_CONECTOR_INTERNO;
+  return [];
+};
+
+// En la visita de conector interno el color es obligatorio (el externo siempre es verde).
+// Devuelve el mensaje de error, o '' si está bien.
+export const errorColorConector = (tipoVisita, colorInterno) =>
+  tipoVisita === TIPO_CONECTOR_INTERNO && !colorConectorInterno(colorInterno) ? 'Elige el tipo de conector: verde o azul.' : '';
+
+// Datos de metros y conectores tal como se guardan en la orden:
+//   - Recableado: metros y los conectores que se hayan marcado (opcionales).
+//   - Visita de conector: solo el conector de esa visita (el externo siempre es verde).
+//   - Cualquier otro tipo: todo queda vacío.
+// `null`/'' (y no omitir el campo) es lo que permite borrar un valor anterior.
+export function datosConectores(tipoVisita, { metros, conectorExterno, conectorInterno } = {}) {
+  const vacios = { metrosCable: null, conectorExterno: '', conectorInterno: '' };
+  if (tipoVisita === TIPO_RECABLEADO) {
+    return { metrosCable: metros ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
+  }
+  if (tipoVisita === TIPO_CONECTOR_EXTERNO) return { ...vacios, conectorExterno: COLOR_VERDE };
+  if (tipoVisita === TIPO_CONECTOR_INTERNO) return { ...vacios, conectorInterno: colorConectorInterno(conectorInterno) };
+  return vacios;
+}
+
+// Color del conector de una visita de conector, con su nombre ("Conector azul"); '' si no hay.
+export function textoConectorVisita(t) {
+  const color = t?.tipoVisita === TIPO_CONECTOR_EXTERNO ? t.conectorExterno : t?.tipoVisita === TIPO_CONECTOR_INTERNO ? t.conectorInterno : '';
+  return ETIQUETA_COLOR[color] ? `Conector ${ETIQUETA_COLOR[color].toLowerCase()}` : '';
 }
 
 export const tieneDatosRecableado = (t) => Boolean(t) && (t.metrosCable != null || Boolean(t.conectorExterno) || Boolean(t.conectorInterno));

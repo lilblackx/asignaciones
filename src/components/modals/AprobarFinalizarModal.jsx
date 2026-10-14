@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Cable, CheckCheck, ExternalLink, Eye, MapPin, Phone, Plug, Tag, Undo2, User, Wrench, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Cable, Check, CheckCheck, ClipboardList, Copy, ExternalLink, Eye, MapPin, Phone, Plug, Tag, Undo2, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { buildSmartOltUrl } from '../../utils/smartolt';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { evaluarPotencia } from '../../utils/potencia';
-import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, etiquetaTipoVisita, generaCobro, partesRecableado } from '../../utils/tipoVisita';
-import { COBRO_INICIAL, resolverCobro } from '../../utils/cobro';
+import { tieneDatosInstalacion } from '../../utils/instalacion';
+import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, partesRecableado, textoConectorVisita } from '../../utils/tipoVisita';
+import { COBRO_INICIAL, conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
 import ContactoCliente from '../ContactoCliente';
 import CobroSelector from './CobroSelector';
 
@@ -20,8 +21,15 @@ function Campo({ label, value, className = '' }) {
   );
 }
 
-export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDevolver, onClose }) {
+export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDevolver, onCopy, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // El serial recién copiado: el icono pasa a un visto un momento.
+  const [serialCopiado, setSerialCopiado] = useState(false);
+  useEffect(() => {
+    if (!serialCopiado) return;
+    const t = setTimeout(() => setSerialCopiado(false), 1500);
+    return () => clearTimeout(t);
+  }, [serialCopiado]);
   const [devolviendo, setDevolviendo] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [motivoError, setMotivoError] = useState('');
@@ -31,9 +39,14 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
 
   if (!ticket) return null;
 
+  const copiarSerial = async () => {
+    const ok = await onCopy?.(ticket.instalacion.serial, 'Serial copiado.', 'success', 'No se pudo copiar el serial.');
+    if (ok) setSerialCopiado(true);
+  };
+
   const handleConfirm = async () => {
     let extra;
-    if (generaCobro(ticket.tipoVisita)) {
+    if (llevaCobro(ticket)) {
       const resuelto = resolverCobro(cobro, montoBs);
       if (resuelto.error) {
         setCobroError(resuelto.error);
@@ -49,6 +62,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
   const handleDevolver = async () => {
     if (!motivo.trim()) {
       setMotivoError('Escribe el motivo para que el técnico sepa qué corregir.');
+      document.getElementById('aprobar-motivo')?.focus();
       return;
     }
     setIsSubmitting(true);
@@ -135,13 +149,41 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
             </div>
           )}
 
-          {generaCobro(ticket.tipoVisita) && (
+          {tieneDatosInstalacion(ticket.instalacion) && (
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
+              <p className="flex items-center gap-2 font-black"><ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> DATOS DE LA INSTALACIÓN</p>
+              {ticket.instalacion.serial && (
+                <p className="ml-6 flex items-center gap-1.5">
+                  <span className="font-bold">Serial:</span> {ticket.instalacion.serial}
+                  {onCopy && (
+                    <button
+                      type="button"
+                      onClick={copiarSerial}
+                      aria-label={serialCopiado ? 'Serial copiado' : 'Copiar el serial'}
+                      title="Copiar el serial"
+                      className={`p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${serialCopiado ? 'bg-emerald-600 text-white' : 'bg-amber-200/70 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-800/60'}`}
+                    >
+                      {serialCopiado ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+                    </button>
+                  )}
+                </p>
+              )}
+              {ticket.instalacion.vlan && <p className="ml-6"><span className="font-bold">VLAN:</span> {ticket.instalacion.vlan}</p>}
+              {ticket.instalacion.posteadura?.length > 0 && <p className="ml-6"><span className="font-bold">Posteadura:</span> {ticket.instalacion.posteadura.join(', ')}</p>}
+              {ticket.instalacion.nap && <p className="ml-6"><span className="font-bold">NAP:</span> {ticket.instalacion.nap}</p>}
+              {ticket.instalacion.puerto && <p className="ml-6"><span className="font-bold">Puerto del cliente:</span> {ticket.instalacion.puerto}</p>}
+              {ticket.instalacion.puertosDisponibles && <p className="ml-6"><span className="font-bold">Puertos disponibles:</span> {ticket.instalacion.puertosDisponibles}</p>}
+            </div>
+          )}
+
+          {llevaCobro(ticket) && (
             <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 space-y-3 text-xs text-sky-900 dark:text-sky-200">
               <p className="flex items-center gap-2.5 font-bold">
                 <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-                {etiquetaTipoVisita(ticket.tipoVisita)}
+                {conceptoCobro(ticket)}
                 {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <span className="font-normal">: el técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</span>}
               </p>
+              {textoConectorVisita(ticket) && <p className="font-bold ml-6">{textoConectorVisita(ticket)}</p>}
               <CobroSelector
                 idBase="cobro-aprobar"
                 montoVisita={montoBs}
@@ -193,6 +235,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                 value={motivo}
                 onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setMotivoError(''); }}
                 rows={3}
+                id="aprobar-motivo"
                 maxLength={500}
                 autoFocus
                 placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."

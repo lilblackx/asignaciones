@@ -220,9 +220,27 @@ await check('TECNICO puede registrar un recableado (metros, conectores, señal 1
   }));
 });
 
+await check('TECNICO puede registrar los datos de la instalación (serial, VLAN, posteadura, NAP, puerto y puertos disponibles)', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({
+    instalacion: { serial: 'HWTC1A2B3C4D', vlan: '100', posteadura: ['DM SN N01B01', 'DM SN N01B02'], nap: 'M05F11', puerto: '3', puertosDisponibles: '6' },
+    nap: 'M05F11 - Puerto 3',
+  }));
+});
+
+await check('TECNICO puede registrar el color del conector de una visita de conector', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CONECTOR_INTERNO', metrosCable: null, conectorExterno: '', conectorInterno: 'AZUL' }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CONECTOR_EXTERNO', metrosCable: null, conectorExterno: 'VERDE', conectorInterno: '' }));
+});
+
 await check('TECNICO NO puede escribir el cobro ni la fecha de finalización', async () => {
   await assertFails(camposGerardo(asTecnico()).update({ cobroBs: '5.696' }));
   await assertFails(camposGerardo(asTecnico()).update({ finalizadoEn: 1 }));
+});
+
+await check('ADMIN y USUARIO pueden marcar la prioridad alta de una orden; el TECNICO no', async () => {
+  await assertSucceeds(camposGerardo(asAdmin()).update({ prioridadAlta: true }));
+  await assertSucceeds(camposGerardo(asUsuario()).update({ prioridadAlta: false }));
+  await assertFails(camposGerardo(asTecnico()).update({ prioridadAlta: true }));
 });
 
 await check('TECNICO NO puede cambiar nombre/dirección del cliente', async () => {
