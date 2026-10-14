@@ -10,10 +10,11 @@ import ContactoCliente from '../ContactoCliente';
 import DevolucionAviso from '../DevolucionAviso';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, colorConectorExterno, colorConectorInterno, coloresConectorVisita, datosConectores, errorColorConector, esVisitaConector, parseMetros } from '../../utils/tipoVisita';
-import { conceptoCobro } from '../../utils/cobro';
+import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, colorConectorExterno, colorConectorInterno, coloresConectorVisita, datosConectores, errorColorConector, esVisitaConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
+import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { esInstalacion as trabajoEsInstalacion, napConPuerto, validarInstalacion } from '../../utils/instalacion';
 import ConectoresRecableado, { ColorConectorVisita } from './ConectoresRecableado';
+import SerialEquipoCampo from './SerialEquipoCampo';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
 
@@ -48,6 +49,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const [metros, setMetros] = useState(ticket?.metrosCable != null ? String(ticket.metrosCable) : '');
   const [colorExterno, setColorExterno] = useState(colorConectorExterno(ticket?.conectorExterno));
   const [colorInterno, setColorInterno] = useState(colorConectorInterno(ticket?.conectorInterno));
+  // Cambio de equipo: serial del equipo nuevo (obligatorio).
+  const [serialEquipo, setSerialEquipo] = useState(ticket?.serialEquipo || '');
+  const [serialEquipoError, setSerialEquipoError] = useState('');
   const [metrosError, setMetrosError] = useState('');
   const [colorError, setColorError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +64,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const tipoVisita = esInstalacion ? '' : tipoVisitaElegido;
   const conectorExterno = tipoVisita === TIPO_CONECTOR_EXTERNO;
   const recableado = tipoVisita === TIPO_RECABLEADO;
+  const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
   const potenciaParseada = parsePotencia(potencia);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
 
@@ -78,6 +83,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     e.preventDefault();
     const metrosParseados = recableado ? parseMetros(metros) : null;
     const errorColor = errorColorConector(tipoVisita, colorInterno);
+    const serialEquipoParseado = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
     const instalacion = esInstalacion ? validarInstalacion({ serial, vlan, postes, nap, puerto, puertosDisponibles }) : null;
     // Con conector externo y en las instalaciones la NAP real y el puerto son obligatorios.
     const pideNapPuerto = conectorExterno || esInstalacion;
@@ -85,6 +91,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     const faltaPuerto = pideNapPuerto && !puerto.trim();
     setMetrosError(metrosParseados?.error || '');
     setColorError(errorColor);
+    setSerialEquipoError(serialEquipoParseado?.error || '');
     setInstalacionErrores(instalacion?.errores || {});
     setNapError(faltaNap ? 'Indica la nomenclatura real de la NAP (no vale "SN").' : '');
     setPuertoError(faltaPuerto ? 'Indica el puerto.' : '');
@@ -93,6 +100,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     // El campo queda arriba y el botón abajo: el cursor va al primer campo con problema, en el orden del formulario.
     if (metrosParseados?.error) document.getElementById('pf-metros')?.focus();
     else if (errorColor) document.getElementById('pf-color-conector')?.focus();
+    else if (serialEquipoParseado?.error) document.getElementById('pf-serial-equipo')?.focus();
     else if (instalacion?.errores.serial) document.getElementById('pf-serial')?.focus();
     else if (instalacion?.errores.vlan) document.getElementById('pf-vlan')?.focus();
     else if (instalacion?.errores.posteadura) document.getElementById('pf-poste-1')?.focus();
@@ -101,7 +109,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     else if (instalacion?.errores.puertosDisponibles) document.getElementById('pf-puertos-disponibles')?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || metrosParseados?.error || errorColor || instalacion?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
+    if (faltaObs || metrosParseados?.error || errorColor || serialEquipoParseado?.error || instalacion?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
     setIsSubmitting(true);
     await onConfirm(ticket, {
       nap: conectorExterno ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : nap,
@@ -110,6 +118,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
       potenciaDbm: potenciaParseada.valor ?? null,
       potencia1490Dbm: parsePotencia(potencia1490).valor ?? null,
       tipoVisita,
+      serialEquipo: serialEquipoParseado?.valor ?? '',
       ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno }),
     });
     setIsSubmitting(false);
@@ -181,6 +190,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
                 setPuertoError('');
                 setMetrosError('');
                 setColorError('');
+                setSerialEquipoError('');
                 // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
                 if (v === TIPO_CONECTOR_EXTERNO && !puerto) {
                   const sep = separarNapPuerto(nap);
@@ -217,6 +227,14 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
               </div>
               <ConectoresRecableado colorExterno={colorExterno} colorInterno={colorInterno} onExterno={setColorExterno} onInterno={setColorInterno} />
             </div>
+          )}
+
+          {cambioEquipo && (
+            <SerialEquipoCampo
+              serial={serialEquipo}
+              onSerial={(v) => { setSerialEquipo(v); if (serialEquipoError) setSerialEquipoError(''); }}
+              error={serialEquipoError}
+            />
           )}
 
           {esVisitaConector(tipoVisita) && (
@@ -270,12 +288,14 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
             </div>
           )}
 
-          <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
-            <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
-            <p className="leading-tight">
-              {conceptoCobro({ tipoTrabajo: ticket.tipoTrabajo, tipoVisita })}: cuando se finalice la orden, verás el cobro resultante para el cliente.
-            </p>
-          </div>
+          {llevaCobro({ tipoTrabajo: ticket.tipoTrabajo }) && (
+            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
+              <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="leading-tight">
+                {conceptoCobro({ tipoTrabajo: ticket.tipoTrabajo, tipoVisita })}: cuando se finalice la orden, verás el cobro resultante para el cliente.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1">
             <label htmlFor="pf-potencia" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">

@@ -7,15 +7,24 @@
 // - Recableado: se registran los metros de cable usados (obligatorio) y, opcionalmente, los
 //   conectores colocados: un conector externo (solo verde) y/o uno interno (verde o azul).
 //   No genera cobro.
+// - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
+//   `serialEquipo`.
+// - Drop atenuado: solo se registra el tipo de visita, sin datos extra.
+
+import { parseSerial } from './instalacion.js';
 
 export const TIPO_CONECTOR_EXTERNO = 'CONECTOR_EXTERNO';
 export const TIPO_CONECTOR_INTERNO = 'CONECTOR_INTERNO';
 export const TIPO_RECABLEADO = 'RECABLEADO';
+export const TIPO_CAMBIO_EQUIPO = 'CAMBIO_EQUIPO';
+export const TIPO_DROP_ATENUADO = 'DROP_ATENUADO';
 
 export const ETIQUETA_TIPO_VISITA = {
   [TIPO_CONECTOR_EXTERNO]: 'Conector externo',
   [TIPO_CONECTOR_INTERNO]: 'Conector interno',
   [TIPO_RECABLEADO]: 'Recableado',
+  [TIPO_CAMBIO_EQUIPO]: 'Cambio de equipo',
+  [TIPO_DROP_ATENUADO]: 'Drop atenuado',
 };
 
 export const TIPOS_VISITA = [
@@ -23,7 +32,28 @@ export const TIPOS_VISITA = [
   { value: TIPO_CONECTOR_EXTERNO, label: ETIQUETA_TIPO_VISITA[TIPO_CONECTOR_EXTERNO] },
   { value: TIPO_CONECTOR_INTERNO, label: ETIQUETA_TIPO_VISITA[TIPO_CONECTOR_INTERNO] },
   { value: TIPO_RECABLEADO, label: ETIQUETA_TIPO_VISITA[TIPO_RECABLEADO] },
+  { value: TIPO_CAMBIO_EQUIPO, label: ETIQUETA_TIPO_VISITA[TIPO_CAMBIO_EQUIPO] },
+  { value: TIPO_DROP_ATENUADO, label: ETIQUETA_TIPO_VISITA[TIPO_DROP_ATENUADO] },
 ];
+
+// --- Cambio de equipo ---------------------------------------------------------------------
+
+export const esCambioEquipo = (tipoVisita) => tipoVisita === TIPO_CAMBIO_EQUIPO;
+
+// Serial del equipo nuevo: mismo formato que el de la ONU de una instalación, y obligatorio.
+// { valor } | { error }
+export function parseSerialEquipo(raw) {
+  const serial = parseSerial(raw);
+  if (serial.error) return serial;
+  if (!serial.valor) return { error: 'Escribe el serial del equipo nuevo.' };
+  return serial;
+}
+
+// Serial tal como se guarda en la orden: solo en un cambio de equipo; en cualquier otro tipo queda
+// vacío ('' y no omitir el campo es lo que permite borrar un serial anterior).
+export const datosSerialEquipo = (tipoVisita, serial) => ({
+  serialEquipo: esCambioEquipo(tipoVisita) ? (parseSerial(serial).valor ?? '') : '',
+});
 
 export const esVisitaConector = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_CONECTOR_INTERNO;
 

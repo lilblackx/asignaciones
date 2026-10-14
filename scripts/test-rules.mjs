@@ -232,6 +232,11 @@ await check('TECNICO puede registrar el color del conector de una visita de cone
   await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CONECTOR_EXTERNO', metrosCable: null, conectorExterno: 'VERDE', conectorInterno: '' }));
 });
 
+await check('TECNICO puede registrar un cambio de equipo con el serial del equipo nuevo', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'HWTC1A2B3C4D' }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', serialEquipo: '' }));
+});
+
 await check('TECNICO NO puede escribir el cobro ni la fecha de finalización', async () => {
   await assertFails(camposGerardo(asTecnico()).update({ cobroBs: '5.696' }));
   await assertFails(camposGerardo(asTecnico()).update({ finalizadoEn: 1 }));

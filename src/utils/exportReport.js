@@ -40,6 +40,7 @@ const COLUMNAS = [
   ['Potencia (dBm)', t => decimalEs(t.potenciaDbm)],
   ['ONU Rx 1490 nm (dBm)', t => decimalEs(t.potencia1490Dbm)],
   ['Tipo de visita', t => etiquetaTipoVisita(t.tipoVisita)],
+  ['Serial equipo nuevo', t => t.serialEquipo],
   ['Metros de cable', t => t.metrosCable ?? ''],
   ['Conector externo', t => ETIQUETA_COLOR[t.conectorExterno] || ''],
   ['Conector interno', t => ETIQUETA_COLOR[t.conectorInterno] || ''],

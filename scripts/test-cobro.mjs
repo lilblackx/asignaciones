@@ -49,13 +49,13 @@ check('solo el conector interno avisa el cobro al pre-finalizar',
 check('lo que no genera cobro no lo avisa en ningún momento',
   ['', 'RECABLEADO'].map(t => generaCobro(t) || avisaCobroAlPreFinalizar(t)), [false, false]);
 
-// --- Toda orden lleva cobro: se elige al aprobar o finalizar, sin importar el tipo de trabajo ni de visita ---
+// --- Toda orden lleva cobro, menos las instalaciones: se elige al aprobar o finalizar, sin importar el tipo de visita ---
 const instalacion = { tipoTrabajo: 'INSTALACIÓN', estado: 'FINALIZADO', cobroBs: '5.696' };
-check('toda orden lleva cobro (instalaciones, visitas de conector, recableado, averías...)',
+check('toda orden lleva cobro, menos las instalaciones (visitas de conector, recableado, averías...)',
   [{ tipoTrabajo: 'INSTALACIÓN' }, { tipoTrabajo: 'instalacion' }, { tipoTrabajo: 'AVERÍA', tipoVisita: 'CONECTOR_INTERNO' }, { tipoTrabajo: 'AVERÍA', tipoVisita: 'CONECTOR_EXTERNO' }, { tipoTrabajo: 'AVERÍA', tipoVisita: 'RECABLEADO' }, { tipoTrabajo: 'AVERÍA' }, null].map(llevaCobro),
-  [true, true, true, true, true, true, false]);
-check('una instalación con monto o exonerada tiene cobro que avisar; sin ninguno de los dos, no',
-  [instalacion, { ...instalacion, cobroBs: null, cobroTipo: 'EXONERADO' }, { ...instalacion, cobroBs: undefined }].map(tieneCobroFinal), [true, true, false]);
+  [false, false, true, true, true, true, false]);
+check('una instalación nunca tiene cobro que avisar, ni con monto ni exonerada',
+  [instalacion, { ...instalacion, cobroBs: null, cobroTipo: 'EXONERADO' }, { ...instalacion, cobroBs: undefined }].map(tieneCobroFinal), [false, false, false]);
 check('lo avisado de una instalación es el monto o "EXONERADO"', [valorCobro(instalacion), valorCobro({ ...instalacion, cobroTipo: 'EXONERADO', cobroBs: null })], ['5.696', 'EXONERADO']);
 check('cualquier orden finalizada con monto o exonerada tiene cobro que avisar',
   [{ tipoTrabajo: 'AVERÍA', cobroBs: '5.696' }, { tipoTrabajo: 'RECONEXIÓN', cobroBs: null, cobroTipo: 'EXONERADO' }, { tipoTrabajo: 'MUDANZA', tipoVisita: 'RECABLEADO', cobroBs: '12.345' }, { tipoTrabajo: 'AVERÍA' }].map(tieneCobroFinal),

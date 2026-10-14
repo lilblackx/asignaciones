@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Cable, Check, CheckCheck, ClipboardList, Copy, ExternalLink, Eye, MapPin, Phone, Plug, Tag, Undo2, User, Wrench, X } from 'lucide-react';
+import { Cable, Check, CheckCheck, ClipboardList, Copy, ExternalLink, Eye, MapPin, Phone, Plug, Router, Tag, Undo2, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { buildSmartOltUrl } from '../../utils/smartolt';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { evaluarPotencia } from '../../utils/potencia';
 import { tieneDatosInstalacion } from '../../utils/instalacion';
-import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, partesRecableado, textoConectorVisita } from '../../utils/tipoVisita';
+import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, esCambioEquipo, partesRecableado, textoConectorVisita } from '../../utils/tipoVisita';
 import { COBRO_INICIAL, conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
 import ContactoCliente from '../ContactoCliente';
 import CobroSelector from './CobroSelector';
@@ -39,8 +39,8 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
 
   if (!ticket) return null;
 
-  const copiarSerial = async () => {
-    const ok = await onCopy?.(ticket.instalacion.serial, 'Serial copiado.', 'success', 'No se pudo copiar el serial.');
+  const copiarSerial = async (serial) => {
+    const ok = await onCopy?.(serial, 'Serial copiado.', 'success', 'No se pudo copiar el serial.');
     if (ok) setSerialCopiado(true);
   };
 
@@ -149,6 +149,28 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
             </div>
           )}
 
+          {esCambioEquipo(ticket.tipoVisita) && (
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
+              <p className="flex items-center gap-2 font-black"><Router className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> CAMBIO DE EQUIPO</p>
+              {ticket.serialEquipo ? (
+                <p className="ml-6 flex items-center gap-1.5">
+                  <span className="font-bold">Serial del equipo nuevo:</span> {ticket.serialEquipo}
+                  {onCopy && (
+                    <button
+                      type="button"
+                      onClick={() => copiarSerial(ticket.serialEquipo)}
+                      aria-label={serialCopiado ? 'Serial copiado' : 'Copiar el serial del equipo nuevo'}
+                      title="Copiar el serial"
+                      className={`p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${serialCopiado ? 'bg-emerald-600 text-white' : 'bg-amber-200/70 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-800/60'}`}
+                    >
+                      {serialCopiado ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+                    </button>
+                  )}
+                </p>
+              ) : <p className="ml-6 italic">Sin serial registrado.</p>}
+            </div>
+          )}
+
           {tieneDatosInstalacion(ticket.instalacion) && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
               <p className="flex items-center gap-2 font-black"><ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> DATOS DE LA INSTALACIÓN</p>
@@ -158,7 +180,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                   {onCopy && (
                     <button
                       type="button"
-                      onClick={copiarSerial}
+                      onClick={() => copiarSerial(ticket.instalacion.serial)}
                       aria-label={serialCopiado ? 'Serial copiado' : 'Copiar el serial'}
                       title="Copiar el serial"
                       className={`p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${serialCopiado ? 'bg-emerald-600 text-white' : 'bg-amber-200/70 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-800/60'}`}

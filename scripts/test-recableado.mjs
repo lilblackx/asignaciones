@@ -14,8 +14,8 @@ function check(name, actual, esperado) {
 }
 
 // --- Tipo de visita ---
-check('el selector ofrece Ninguno, conector externo, conector interno y recableado',
-  TIPOS_VISITA.map(t => t.value), ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO']);
+check('el selector ofrece Ninguno, conector externo, conector interno, recableado, cambio de equipo y drop atenuado',
+  TIPOS_VISITA.map(t => t.value), ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO']);
 check('solo las visitas de conector generan cobro',
   ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(generaCobro), [false, true, true, false]);
 check('etiqueta del recableado', etiquetaTipoVisita('RECABLEADO'), 'Recableado');

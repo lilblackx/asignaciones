@@ -11,7 +11,7 @@ import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { devolucionPendiente } from '../utils/devolucion';
 import { COBRO_EXONERADO, COBRO_VISITA, detalleCobro, estaExonerado, llevaCobro, tieneCobroFinal, valorCobro } from '../utils/cobro';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, tieneDatosInstalacion, validarInstalacion } from '../utils/instalacion';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, errorColorConector, llevaConectores, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorColorConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -617,7 +617,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
   // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
-  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, montoBs, instalacion } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, serialEquipo, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacion || '').trim()) {
@@ -635,6 +635,13 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const errorColor = errorColorConector(tipoVisita, conectorInterno);
     if (errorColor) {
       setToastMsg({ type: 'error', text: errorColor });
+      return false;
+    }
+
+    // Cambio de equipo: el serial del equipo nuevo es obligatorio.
+    const serialEquipoParseado = esCambioEquipo(tipoVisita) ? parseSerialEquipo(serialEquipo) : null;
+    if (serialEquipoParseado?.error) {
+      setToastMsg({ type: 'error', text: serialEquipoParseado.error });
       return false;
     }
 
@@ -656,6 +663,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ? datosConectores(tipoVisita, { metros: metrosCable, conectorExterno, conectorInterno })
       : {};
 
+    // El serial del equipo nuevo solo se escribe en un cambio de equipo, o para borrar uno anterior.
+    const camposSerialEquipo = tipoVisita !== undefined && (esCambioEquipo(tipoVisita) || ticket.serialEquipo)
+      ? datosSerialEquipo(tipoVisita, serialEquipo)
+      : {};
+
     let detalle = 'Marcado como PRE-FINALIZADO';
     if (observacion && observacion.trim()) detalle += ` | Obs: ${observacion.trim()}`;
     if (nap && nap.trim()) detalle += ` | NAP: ${nap.trim()}`;
@@ -667,6 +679,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
       const conector = textoConectorVisita({ tipoVisita, ...camposConectores });
       if (conector) detalle += ` | ${conector}`;
+      if (serialEquipoParseado) detalle += ` | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
     }
     if (avisaCobroAlPreFinalizar(tipoVisita)) detalle += detalleCobro(montoBs, COBRO_VISITA, false);
 
@@ -686,6 +699,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       observacion: observacion !== undefined ? observacion : (ticket.observacion || ''),
       tipoVisita: tipoVisita !== undefined ? tipoVisita : (ticket.tipoVisita || ''),
       ...camposConectores,
+      ...camposSerialEquipo,
       // `null` borra lo registrado antes si el técnico lo vació; solo se toca en una instalación.
       ...(reporteInstalacion ? { instalacion: datosInstalacion } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
