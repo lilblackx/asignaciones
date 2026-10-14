@@ -795,6 +795,7 @@ export default function App() {
           <MaterialesModal
             tickets={tickets}
             reports={reports}
+            technicians={technicians}
             hasMoreReports={hasMoreReports}
             isLoadingReports={isLoadingReports}
             onLoadMore={loadMoreReports}

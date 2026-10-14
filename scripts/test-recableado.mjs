@@ -3,7 +3,7 @@
 import {
   TIPOS_VISITA, colorConectorExterno, colorConectorInterno, datosRecableado, etiquetaTipoVisita, generaCobro, parseMetros, partesRecableado, tieneDatosRecableado,
 } from '../src/utils/tipoVisita.js';
-import { consumoPorTecnico, esRecableadoFinalizado, esRecableadoPorAprobar, fechaDeUso, inicioPeriodo, totalConectores } from '../src/utils/consumoMateriales.js';
+import { conectoresPorColor, consumoPorTecnico, esRecableadoFinalizado, esRecableadoPorAprobar, fechaDeUso, inicioPeriodo, totalConectores } from '../src/utils/consumoMateriales.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -62,10 +62,14 @@ const ordenes = [
 const todo = consumoPorTecnico(ordenes);
 check('un renglón por técnico (sin distinguir mayúsculas), de más a menos metros',
   todo.filas.map(f => [f.tecnico, f.ordenes, f.metros]), [['MARIA GOMEZ', 2, 60], ['LUIS PEREZ', 2, 45], ['SIN TÉCNICO', 1, 5]]);
-check('cuenta los conectores por tipo y color', todo.filas.find(f => f.tecnico === 'LUIS PEREZ'),
-  { ...todo.filas.find(f => f.tecnico === 'LUIS PEREZ'), externoVerde: 1, internoVerde: 1, internoAzul: 1 });
-check('totales de todos los técnicos', [todo.totales.ordenes, todo.totales.metros, todo.totales.externoVerde, todo.totales.internoVerde, todo.totales.internoAzul],
-  [5, 110, 2, 1, 1]);
+check('los conectores se cuentan solo por color, sin distinguir externo de interno',
+  [{}, { conectorExterno: 'VERDE' }, { conectorInterno: 'VERDE' }, { conectorInterno: 'AZUL' }, { conectorExterno: 'VERDE', conectorInterno: 'VERDE' }, { conectorExterno: 'VERDE', conectorInterno: 'AZUL' }].map(conectoresPorColor),
+  [{ verde: 0, azul: 0 }, { verde: 1, azul: 0 }, { verde: 1, azul: 0 }, { verde: 0, azul: 1 }, { verde: 2, azul: 0 }, { verde: 1, azul: 1 }]);
+check('conectores por técnico', todo.filas.find(f => f.tecnico === 'LUIS PEREZ'),
+  { ...todo.filas.find(f => f.tecnico === 'LUIS PEREZ'), verde: 2, azul: 1 });
+check('cada orden del detalle trae sus conectores por color', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.map(d => [d.id, d.verde, d.azul]), [['a', 1, 1], ['b', 1, 0]]);
+check('totales de todos los técnicos', [todo.totales.ordenes, todo.totales.metros, todo.totales.verde, todo.totales.azul],
+  [5, 110, 3, 1]);
 check('total de conectores', totalConectores(todo.totales), 4);
 check('una orden repetida (activa y archivada) cuenta una sola vez', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.filter(d => d.id === 'a').length, 1);
 check('los pre-finalizados se informan aparte y no suman', todo.porAprobar, { ordenes: 1, metros: 8 });
@@ -82,6 +86,17 @@ check('filtrado por hoy', hoy.filas.map(f => [f.tecnico, f.metros]), [['MARIA GO
 const semana = consumoPorTecnico(ordenes, { desde: inicioPeriodo('SEMANA', ahora) });
 check('filtrado por 7 días deja fuera lo del día 2', semana.filas.map(f => [f.tecnico, f.metros]), [['MARIA GOMEZ', 50], ['LUIS PEREZ', 45], ['SIN TÉCNICO', 5]]);
 check('sin recableados no hay renglones', consumoPorTecnico([{ id: 'x', estado: 'FINALIZADO' }]).filas, []);
+
+// Los técnicos registrados salen siempre, aunque no hayan usado material en el período.
+const registrados = ['LUIS PEREZ', 'Maria Gomez', 'PEDRO RUIZ', 'ANA SOTO', '  ', ''];
+const conRegistrados = consumoPorTecnico(ordenes, { desde: inicioPeriodo('HOY', ahora), tecnicos: registrados });
+check('los registrados sin consumo salen al final, por nombre; sin técnico solo si tiene consumo',
+  conRegistrados.filas.map(f => [f.tecnico, f.metros]), [['Maria Gomez', 50], ['LUIS PEREZ', 30], ['SIN TÉCNICO', 5], ['ANA SOTO', 0], ['PEDRO RUIZ', 0]]);
+check('un técnico sin consumo sale en cero y sin detalle', conRegistrados.filas.find(f => f.tecnico === 'PEDRO RUIZ'),
+  { tecnico: 'PEDRO RUIZ', ordenes: 0, metros: 0, verde: 0, azul: 0, detalle: [] });
+check('los registrados no cambian los totales', conRegistrados.totales, hoy.totales);
+check('con técnicos registrados y sin recableados salen todos en cero',
+  consumoPorTecnico([], { tecnicos: ['B', 'A'] }).filas.map(f => [f.tecnico, f.metros]), [['A', 0], ['B', 0]]);
 check('la fecha de uso cae a la de creación si no hay finalizadoEn', fechaDeUso({ createdAt: 5 }), 5);
 check('clasificación de recableados', [esRecableadoFinalizado(ordenes[0]), esRecableadoPorAprobar(ordenes[4]), esRecableadoFinalizado(ordenes[5])], [true, true, false]);
 

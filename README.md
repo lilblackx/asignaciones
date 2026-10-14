@@ -15,7 +15,7 @@ PWA para el control y seguimiento de asignaciones (instalaciones, reconexiones, 
 - Ubicación del cliente y enlace "cómo llegar" a la NAP.
 - Tasa BCV del día y monto en Bs para el aviso de cobro.
 - Tipo de visita "Recableado": el técnico registra los metros de cable usados (obligatorio) y, opcionalmente, un conector externo (solo verde) y/o uno interno (verde o azul). No genera cobro. Se guarda en `metrosCable`, `conectorExterno` y `conectorInterno` (el técnico puede escribir esos campos; ver `firestore.rules`).
-- Módulo "Materiales" (menú de ADMIN): metros de cable y conectores usados en los recableados aprobados, por técnico y por período (hoy, 7 días, este mes, todo). Suma las órdenes activas y los reportes de cierre cargados, y avisa de los recableados que aún esperan aprobación. Filtra por `finalizadoEn`, la fecha en que se finaliza la orden.
+- Módulo "Materiales" (menú de ADMIN): metros de cable y conectores (contados solo por color: verde o azul) usados en los recableados aprobados, en total y por técnico (salen todos los registrados, aunque estén en 0) y por período (hoy, 7 días, este mes, todo). Suma las órdenes activas y los reportes de cierre cargados, y avisa de los recableados que aún esperan aprobación. Filtra por `finalizadoEn`, la fecha en que se finaliza la orden.
 - Formas de pago (pago móvil, cuentas bancarias, Zelle y Binance): el ADMIN las carga en la pestaña "Formas de pago" del modal "Tasa y pagos" y el técnico las copia, dato por dato, desde el botón "Pagos".
 - Reportes y exportación, carga de trabajo por técnico, detección de reincidencias.
 - Notificaciones: en vivo dentro de la app (Firestore) y push (FCM) con la app cerrada.

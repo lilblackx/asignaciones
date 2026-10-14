@@ -28,25 +28,42 @@ export function inicioPeriodo(periodo, ahora = new Date()) {
   return 0;
 }
 
-const vacio = () => ({ ordenes: 0, metros: 0, externoVerde: 0, internoVerde: 0, internoAzul: 0 });
+const vacio = () => ({ ordenes: 0, metros: 0, verde: 0, azul: 0 });
 
-function sumar(acum, t) {
-  acum.ordenes += 1;
-  acum.metros += Number(t.metrosCable);
-  if (t.conectorExterno === COLOR_VERDE) acum.externoVerde += 1;
-  if (t.conectorInterno === COLOR_VERDE) acum.internoVerde += 1;
-  if (t.conectorInterno === COLOR_AZUL) acum.internoAzul += 1;
+// Conectores que gastó la orden, por color. Como material solo importa el color: que el
+// conector sea externo o interno no cambia cuál se gasta, y con los dos puestos son dos.
+export function conectoresPorColor(t) {
+  const colores = [t.conectorExterno, t.conectorInterno];
+  return {
+    verde: colores.filter((c) => c === COLOR_VERDE).length,
+    azul: colores.filter((c) => c === COLOR_AZUL).length,
+  };
 }
 
-export const totalConectores = (r) => r.externoVerde + r.internoVerde + r.internoAzul;
+function sumar(acum, t) {
+  const { verde, azul } = conectoresPorColor(t);
+  acum.ordenes += 1;
+  acum.metros += Number(t.metrosCable);
+  acum.verde += verde;
+  acum.azul += azul;
+}
+
+export const totalConectores = (r) => r.verde + r.azul;
+
+const nuevaFila = (nombre) => ({ tecnico: nombre, ...vacio(), detalle: [] });
 
 // `ordenes`: las órdenes activas más las archivadas en reportes (pueden repetirse: se
-// cuentan una vez por id). Devuelve { filas, totales, porAprobar }:
+// cuentan una vez por id). `tecnicos`: nombres de los técnicos registrados; salen siempre,
+// aunque no hayan usado material en el período. Devuelve { filas, totales, porAprobar }:
 //   filas: una por técnico, de más a menos metros; cada una con su `detalle` (las órdenes).
 //   totales: suma de todos los técnicos.
 //   porAprobar: recableados pre-finalizados del período que aún no se aprueban.
-export function consumoPorTecnico(ordenes, { desde = 0, hasta = Infinity } = {}) {
+export function consumoPorTecnico(ordenes, { desde = 0, hasta = Infinity, tecnicos = [] } = {}) {
   const porTecnico = new Map();
+  for (const registrado of tecnicos) {
+    const nombre = String(registrado || '').trim();
+    if (nombre && !porTecnico.has(nombre.toUpperCase())) porTecnico.set(nombre.toUpperCase(), nuevaFila(nombre));
+  }
   const totales = vacio();
   const porAprobar = { ordenes: 0, metros: 0 };
   const vistas = new Set();
@@ -69,7 +86,7 @@ export function consumoPorTecnico(ordenes, { desde = 0, hasta = Infinity } = {})
 
     const nombre = String(t.tecnico || '').trim() || SIN_TECNICO;
     const clave = nombre.toUpperCase();
-    if (!porTecnico.has(clave)) porTecnico.set(clave, { tecnico: nombre, ...vacio(), detalle: [] });
+    if (!porTecnico.has(clave)) porTecnico.set(clave, nuevaFila(nombre));
     const fila = porTecnico.get(clave);
     sumar(fila, t);
     sumar(totales, t);
@@ -79,8 +96,7 @@ export function consumoPorTecnico(ordenes, { desde = 0, hasta = Infinity } = {})
       nombre: t.nombre || '',
       fecha,
       metros: Number(t.metrosCable),
-      conectorExterno: t.conectorExterno || '',
-      conectorInterno: t.conectorInterno || '',
+      ...conectoresPorColor(t),
     });
   }
 
