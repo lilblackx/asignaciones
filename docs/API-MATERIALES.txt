@@ -72,9 +72,11 @@ Ejemplos:
   - Tipos de orden que gastan material:
       Recableado:        metros de cable y los conectores que se hayan puesto
                          (uno por cada conector).
-      Instalacion:       el metraje de cable que registro el tecnico. Las
+      Instalacion:       el metraje de cable y los conectores que registro el
+                         tecnico (externos e internos, sumados por color). Las
                          instalaciones anteriores a que se pidiera el metraje
-                         no lo tienen y no suman.
+                         no lo tienen y no suman; las anteriores a que se
+                         pidieran los conectores cuentan 0 conectores.
       Visita de conector (externo o interno): las cantidades de conectores por
                          color que escribio el tecnico. Las visitas antiguas
                          que solo guardaron el color cuentan como 1 conector de
@@ -86,7 +88,13 @@ Ejemplos:
   - Las instalaciones tambien traen su "serial" (el de la ONU instalada); las
     anteriores a que se guardara salen con null.
   - Los conectores se cuentan solo por color (verde o azul), sin distinguir
-    externo de interno.
+    externo de interno. El verde es el conector APC y el azul es el UPC.
+  - El material se descuenta cuando la orden esta FINALIZADA, no cuando el
+    tecnico la pre-finaliza. Hasta entonces aparece en "porAprobar" y no debe
+    descontarse.
+  - Para registrar el gasto en otro sistema, "recableado" (clase RECABLEADO)
+    y "visita de conector" (clase VISITA) se asientan como Averia, con el
+    motivo "Recableado" o "Visita de conector".
   - Una orden que aparezca dos veces (activa y archivada) se cuenta una sola
     vez.
   - La lista "tecnicos" trae todos los tecnicos registrados, aunque no hayan

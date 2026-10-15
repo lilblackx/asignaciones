@@ -47,11 +47,13 @@ GET /api/materiales?desde=2026-10-01&hasta=2026-10-15
 - Las **PRE-FINALIZADAS** (esperan aprobación) no se suman: se informan aparte en `porAprobar`.
 - Tipos de orden que gastan material:
   - **Recableado:** metros de cable y los conectores que se hayan marcado (uno por cada conector puesto).
-  - **Instalación:** el metraje de cable que registró el técnico. Las instalaciones anteriores a que se pidiera el metraje no lo tienen y no suman.
+  - **Instalación:** el metraje de cable y los conectores que registró el técnico (externos e internos, sumados por color). Las instalaciones anteriores a que se pidiera el metraje no lo tienen y no suman; las anteriores a que se pidieran los conectores cuentan 0 conectores.
   - **Visita de conector** (externo o interno): las cantidades de conectores por color que escribió el técnico. Las visitas antiguas que solo guardaron el color cuentan como 1 conector de ese color. Una visita de conector no gasta cable.
   - **Cambio de equipo:** no gasta cable ni conectores; se cuenta y se lista con el serial del equipo nuevo (`serial`). Los cambios de equipo anteriores a que se pidiera el serial salen con `serial` en `null`.
 - Las instalaciones también traen su `serial` (el de la ONU instalada); las anteriores a que se guardara salen con `null`.
-- Los conectores se cuentan solo por color (`verde` o `azul`), sin distinguir externo de interno.
+- Los conectores se cuentan solo por color (`verde` o `azul`), sin distinguir externo de interno. El verde es el conector **APC** y el azul es el **UPC**.
+- El material se descuenta cuando la orden está **FINALIZADA**, no cuando el técnico la pre-finaliza. Hasta entonces aparece en `porAprobar` y no debe descontarse.
+- Para registrar el gasto en otro sistema, `recableado` (`clase: RECABLEADO`) y `visita de conector` (`clase: VISITA`) se asientan como **Avería**, con el motivo "Recableado" o "Visita de conector".
 - Una orden que aparezca dos veces (activa y archivada) se cuenta una sola vez.
 - La lista `tecnicos` trae **todos los técnicos registrados**, aunque no hayan usado material (con ceros), de más a menos metros y luego por conectores. Si hay órdenes sin técnico, aparece una fila `SIN TÉCNICO`.
 

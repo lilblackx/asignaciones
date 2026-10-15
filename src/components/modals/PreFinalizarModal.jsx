@@ -13,7 +13,8 @@ import { puedeCapturarPotencia } from '../../utils/senalOnu';
 import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, esVisitaConector, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { esInstalacion as trabajoEsInstalacion, napConPuerto, validarInstalacion } from '../../utils/instalacion';
-import ConectoresRecableado, { CantidadesConectorVisita } from './ConectoresRecableado';
+import ConectoresRecableado, { CantidadesConectorInstalacion, CantidadesConectorVisita } from './ConectoresRecableado';
+import { normalizarConectoresInstalacion, parseConectoresInstalacion } from '../../utils/conectoresInstalacion';
 import SerialEquipoCampo from './SerialEquipoCampo';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
@@ -33,6 +34,12 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const [puertosDisponibles, setPuertosDisponibles] = useState(ticket?.instalacion?.puertosDisponibles || '');
   const [postes, setPostes] = useState(ticket?.instalacion?.posteadura?.length ? ticket.instalacion.posteadura : ['']);
   const [instalacionErrores, setInstalacionErrores] = useState({});
+  // Instalación: cuántos conectores usó de cada tipo y color (texto, como se escribe; obligatorio al menos 1).
+  const conectoresPrevios = normalizarConectoresInstalacion(ticket?.instalacion?.conectores);
+  const [instExternoVerde, setInstExternoVerde] = useState(conectoresPrevios.externo.verde ? String(conectoresPrevios.externo.verde) : '');
+  const [instInternoVerde, setInstInternoVerde] = useState(conectoresPrevios.interno.verde ? String(conectoresPrevios.interno.verde) : '');
+  const [instInternoAzul, setInstInternoAzul] = useState(conectoresPrevios.interno.azul ? String(conectoresPrevios.interno.azul) : '');
+  const [conectoresInstError, setConectoresInstError] = useState({ campo: '', mensaje: '' });
   const [tipoVisitaElegido, setTipoVisita] = useState(ticket?.tipoVisita || '');
   const [napError, setNapError] = useState('');
   const [puertoError, setPuertoError] = useState('');
@@ -92,6 +99,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     const errorCantidad = cantidades.error || '';
     const serialEquipoParseado = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
     const instalacion = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
+    const conectoresInst = esInstalacion ? parseConectoresInstalacion({ externoVerde: instExternoVerde, internoVerde: instInternoVerde, internoAzul: instInternoAzul }) : null;
     // Con conector externo y en las instalaciones la NAP real y el puerto son obligatorios.
     const pideNapPuerto = conectorExterno || esInstalacion;
     const faltaNap = pideNapPuerto && napSinDato(nap);
@@ -100,6 +108,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     setCantidadError({ campo: cantidades.campo || '', mensaje: errorCantidad });
     setSerialEquipoError(serialEquipoParseado?.error || '');
     setInstalacionErrores(instalacion?.errores || {});
+    setConectoresInstError({ campo: conectoresInst?.campo || '', mensaje: conectoresInst?.error || '' });
     setNapError(faltaNap ? 'Indica la nomenclatura real de la NAP (no vale "SN").' : '');
     setPuertoError(faltaPuerto ? 'Indica el puerto.' : '');
     const faltaObs = !observacion.trim();
@@ -115,13 +124,14 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     else if (instalacion?.errores.metraje) document.getElementById('pf-metraje')?.focus();
     else if (instalacion?.errores.posteadura) document.getElementById('pf-poste-1')?.focus();
     else if (instalacion?.errores.puertosDisponibles) document.getElementById('pf-puertos-disponibles')?.focus();
+    else if (conectoresInst?.error) document.getElementById({ externoVerde: 'pf-cant-ext-verde', internoVerde: 'pf-cant-int-verde', internoAzul: 'pf-cant-int-azul' }[conectoresInst.campo])?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || metrosParseados?.error || errorCantidad || serialEquipoParseado?.error || instalacion?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
+    if (faltaObs || metrosParseados?.error || errorCantidad || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
     setIsSubmitting(true);
     await onConfirm(ticket, {
       nap: conectorExterno ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : nap,
-      ...(instalacion ? { instalacion: instalacion.datos } : {}),
+      ...(instalacion ? { instalacion: { ...instalacion.datos, conectores: conectoresInst.valor } } : {}),
       observacion,
       potenciaDbm: potenciaParseada.valor ?? null,
       potencia1490Dbm: parsePotencia(potencia1490).valor ?? null,
@@ -257,6 +267,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
           )}
 
           {esInstalacion ? (
+            <>
             <DatosInstalacion
               serial={serial}
               onSerial={(v) => { setSerial(v); if (instalacionErrores.serial) setInstalacionErrores((e) => ({ ...e, serial: undefined })); }}
@@ -274,6 +285,16 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
               onPuertosDisponibles={(v) => { setPuertosDisponibles(v); if (instalacionErrores.puertosDisponibles) setInstalacionErrores((e) => ({ ...e, puertosDisponibles: undefined })); }}
               errores={{ ...instalacionErrores, nap: napError, puerto: puertoError }}
             />
+            <CantidadesConectorInstalacion
+              externoVerde={instExternoVerde}
+              internoVerde={instInternoVerde}
+              internoAzul={instInternoAzul}
+              onExternoVerde={(v) => { setInstExternoVerde(v); setConectoresInstError({ campo: '', mensaje: '' }); }}
+              onInternoVerde={(v) => { setInstInternoVerde(v); setConectoresInstError({ campo: '', mensaje: '' }); }}
+              onInternoAzul={(v) => { setInstInternoAzul(v); setConectoresInstError({ campo: '', mensaje: '' }); }}
+              error={conectoresInstError}
+            />
+            </>
           ) : conectorExterno ? (
             <NapPuertoCampos
               nap={nap}

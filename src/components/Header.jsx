@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, Cable, Coins, History, Landmark, LogOut, MoreVertical, Moon, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
+import { BarChart, Cable, Coins, History, Landmark, LogOut, MoreVertical, Moon, PackageCheck, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
 
@@ -16,6 +16,9 @@ export default function Header({
   onOpenUsers,
   onOpenTasa,
   onOpenMateriales,
+  veInventario = false,
+  alertasInventario = 0,
+  onOpenInventario,
   onOpenFormasPago,
   onOpenCreate,
   canCerrar,
@@ -28,7 +31,7 @@ export default function Header({
 }) {
   const isAdmin = role === ROLES.ADMIN;
   const isTecnico = role === ROLES.TECNICO;
-  const showMenu = isAdmin || canCerrar;
+  const showMenu = isAdmin || canCerrar || veInventario;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -114,18 +117,23 @@ export default function Header({
                 aria-label="Más acciones"
                 aria-expanded={menuOpen}
                 title="Más acciones"
-                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700"
+                className="relative p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700"
               >
                 <MoreVertical className="w-4 h-4" />
+                {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black" aria-hidden="true" />}
               </button>
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-20">
-                  <button onClick={runAndClose(onOpenReports)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors">
-                    <BarChart className="w-4 h-4"aria-hidden="true" /> Reportes
-                  </button>
-                  <button onClick={runAndClose(onOpenHistory)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
-                    <History className="w-4 h-4"aria-hidden="true" /> Historial
-                  </button>
+                <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-20">
+                  {(isAdmin || canCerrar) && (
+                    <>
+                      <button onClick={runAndClose(onOpenReports)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors">
+                        <BarChart className="w-4 h-4"aria-hidden="true" /> Reportes
+                      </button>
+                      <button onClick={runAndClose(onOpenHistory)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
+                        <History className="w-4 h-4"aria-hidden="true" /> Historial
+                      </button>
+                    </>
+                  )}
                   {isAdmin && (
                     <>
                       <button onClick={runAndClose(onOpenTechnicians)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
@@ -141,6 +149,12 @@ export default function Header({
                         <Cable className="w-4 h-4" aria-hidden="true" /> Materiales
                       </button>
                     </>
+                  )}
+                  {veInventario && (
+                    <button onClick={runAndClose(onOpenInventario)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
+                      <PackageCheck className="w-4 h-4" aria-hidden="true" /> Envíos al inventario
+                      {alertasInventario > 0 && <span className="ml-auto min-w-[1.25rem] text-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black">{alertasInventario}</span>}
+                    </button>
                   )}
                 </div>
               )}

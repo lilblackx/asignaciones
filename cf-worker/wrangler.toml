@@ -13,7 +13,15 @@ APP_ID = "default-app-id"
 # Orígenes que pueden llamar este Worker. Ajustar si cambia el dominio.
 ALLOWED_ORIGINS = "https://seguimientons-f2026.web.app,https://seguimientons-f2026.firebaseapp.com,http://localhost:5173"
 
+# Envío al inventario del otro sistema (Telecom): src/inventario.js. El proyecto, la ruta y la clave web de ese Firebase no
+# son secretas (van igual en el navegador); el usuario y la clave con que entra el Worker sí (ver abajo). Sin ellos, el envío está apagado.
+TELECOM_PROJECT_ID = "almaceninventario"
+TELECOM_APP_ID = "app-telecom"
+TELECOM_API_KEY = "AIzaSyBRp5R1ifn27umc6Usvxjovi5XPDZYTT0A"
+
 # Secretos reales, NO van acá: se cargan con
 #   wrangler secret put MATERIALES_API_KEY   (llave de GET /api/materiales; sin ella esa API responde 503)
+#   wrangler secret put TELECOM_EMAIL        (usuario con que el Worker entra al inventario del otro sistema)
+#   wrangler secret put TELECOM_PASSWORD
 #   wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON
 # (pegar el JSON completo del service account descargado en Firebase Console).

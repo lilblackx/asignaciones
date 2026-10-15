@@ -7,6 +7,7 @@ import { avisaCobroAlPreFinalizar } from './utils/tipoVisita';
 import { monedaDe, tieneCobroFinal } from './utils/cobro';
 import TasaIndicador from './components/TasaIndicador';
 import AvisoNotificaciones from './components/AvisoNotificaciones';
+import EnviosInventarioModal, { AvisoInventario } from './components/AlertaInventario';
 import { crearConAviso } from './utils/errores';
 import { usePushToken } from './hooks/usePushToken';
 import { useToast } from './hooks/useToast';
@@ -18,6 +19,8 @@ import { useAhora } from './hooks/useAhora';
 import { useReports } from './hooks/useReports';
 import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
+import { useEnviosInventario } from './hooks/useEnviosInventario';
+import { veEnviosInventario } from './utils/accesoInventario';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
@@ -84,6 +87,9 @@ export default function App({ auth }) {
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
   const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
+  // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
+  const verInventario = veEnviosInventario(currentUser);
+  const { envios: enviosInventario, recientes: enviosRecientes, cargandoRecientes, cargarRecientes, actualizarRecientes, reintentar: reintentarEnvio, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
   useCompletarPromotoras(firebaseUser, role, tickets);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports, refreshReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
@@ -237,6 +243,7 @@ export default function App({ auth }) {
   const [isTasaModalOpen, setIsTasaModalOpen] = useState(false);
   const [isFormasPagoOpen, setIsFormasPagoOpen] = useState(false);
   const [isMaterialesOpen, setIsMaterialesOpen] = useState(false);
+  const [isInventarioOpen, setIsInventarioOpen] = useState(false);
   const [newTech, setNewTech] = useState({ name: '', color: null });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
@@ -320,6 +327,9 @@ export default function App({ auth }) {
         break;
       case 'cierreAutomatico':
         if (canCerrar) setIsReportModalOpen(true);
+        break;
+      case 'inventario':
+        if (verInventario) setIsInventarioOpen(true);
         break;
       default:
         break;
@@ -549,6 +559,9 @@ export default function App({ auth }) {
           onOpenUsers={() => setIsUsersModalOpen(true)}
           onOpenTasa={() => setIsTasaModalOpen(true)}
           onOpenMateriales={() => setIsMaterialesOpen(true)}
+          veInventario={verInventario}
+          alertasInventario={enviosInventario.length}
+          onOpenInventario={() => setIsInventarioOpen(true)}
           onOpenFormasPago={() => setIsFormasPagoOpen(true)}
           onOpenCreate={handleOpenCreateModal}
           handleLogout={() => setIsLogoutConfirmOpen(true)}
@@ -559,6 +572,7 @@ export default function App({ auth }) {
         />
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
+          {verInventario && <AvisoInventario cantidad={enviosInventario.length} onAbrir={() => setIsInventarioOpen(true)} />}
           {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} onActivar={push.activar} avisarFallo={isTecnico} />}
           <FiltersBar
             searchTerm={searchTerm}
@@ -859,6 +873,19 @@ export default function App({ auth }) {
             formasPago={formasPago}
             onGuardarFormasPago={handleGuardarFormasPago}
             onClose={() => setIsTasaModalOpen(false)}
+          />
+        )}
+
+        {verInventario && isInventarioOpen && (
+          <EnviosInventarioModal
+            envios={enviosInventario}
+            recientes={enviosRecientes}
+            cargando={cargandoRecientes}
+            onCargar={cargarRecientes}
+            onActualizar={actualizarRecientes}
+            onReintentar={reintentarEnvio}
+            onDescartar={descartarEnvio}
+            onClose={() => setIsInventarioOpen(false)}
           />
         )}
 

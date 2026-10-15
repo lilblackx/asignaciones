@@ -1,0 +1,68 @@
+// Qué se envía al inventario del otro sistema (Telecom) cuando se aprueba una orden, y cómo. Lo usan la app (para saber si
+// hay algo que enviar) y el Worker que hace el envío (cf-worker/src/inventario.js): es una sola lógica, la de aquí.
+//
+// Cada orden aprobada genera, según su tipo, una "acción" del otro sistema:
+//   - Instalación            -> instalacion_nueva: material (drop en metros, conectores APC = verde y UPC = azul) y el serial
+//                               de la ONU pasa a "Instalado" en su inventario.
+//   - Cambio de equipo       -> cambio_equipo: el serial del equipo nuevo pasa a "Instalado" (no gasta material).
+//   - Recableado             -> averia: solo el material (drop y conectores), con el motivo "Recableado - Orden #1234".
+//   - Visita de conector     -> averia: solo el material, con el motivo "Visita de conector externo - Orden #1234".
+// Cualquier otra orden (drop atenuado, averías sin material...) no envía nada.
+import { conectoresPorColor, esCambioEquipoFinalizado, esInstalacionFinalizada, esRecableadoFinalizado, esVisitaConectorFinalizada } from './consumoMateriales.js';
+import { etiquetaTipoVisita } from './tipoVisita.js';
+
+export const ACCION_INSTALACION = 'instalacion_nueva';
+export const ACCION_CAMBIO_EQUIPO = 'cambio_equipo';
+export const ACCION_AVERIA = 'averia';
+
+// Estados de un envío (colección telecomEnvios, un documento por orden):
+//   ENVIADO              ya está en el inventario (no se vuelve a enviar).
+//   PENDIENTE            no se pudo llegar al otro sistema (red, clave...); se reintenta solo.
+// Los siguientes necesitan que alguien los mire (alerta en la app y aviso push):
+//   SERIAL_NO_ENCONTRADO el serial no existe en su inventario: no se envió nada de la orden.
+//   SERIAL_YA_INSTALADO  ese equipo ya figura instalado a otro cliente: no se tocó.
+//   SIN_SERIAL           la orden no trae serial (órdenes anteriores a que se pidiera): no hay equipo que descontar.
+//   ERROR                se agotaron los reintentos.
+//   DESCARTADO           una alerta que se dio por resuelta sin enviar (queda guardada, no se borra).
+export const ESTADO_ENVIADO = 'ENVIADO';
+export const ESTADO_PENDIENTE = 'PENDIENTE';
+export const ESTADO_DESCARTADO = 'DESCARTADO';
+export const ESTADOS_CON_ALERTA = ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'SIN_SERIAL', 'ERROR'];
+
+export const TEXTO_ESTADO_ENVIO = {
+  SERIAL_NO_ENCONTRADO: 'El serial no existe en el inventario del almacén: no se envió nada de esta orden.',
+  SERIAL_YA_INSTALADO: 'Ese equipo ya figura instalado a otro cliente en el inventario: no se modificó.',
+  SIN_SERIAL: 'La orden no tiene serial del equipo: no hay equipo que descontar.',
+  ERROR: 'No se pudo enviar después de varios intentos.',
+};
+
+const soloLetrasYNumeros = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
+
+// Lo que hay que enviar de una orden aprobada, o null si no corresponde enviar nada.
+//   { accion, codigo, tecnico, cliente, serial, apc, upc, dropMetros, motivo, finalizadoEn }
+export function payloadEnvioInventario(t) {
+  if (!t) return null;
+  const base = {
+    codigo: soloLetrasYNumeros(t.codigo),
+    tecnico: soloLetrasYNumeros(t.tecnico),
+    cliente: soloLetrasYNumeros(t.nombre),
+    finalizadoEn: Number(t.finalizadoEn) || Number(t.createdAt) || 0,
+  };
+  const orden = `Orden #${base.codigo || 'S/C'}`;
+  const { verde, azul } = conectoresPorColor(t);
+  const material = { apc: verde, upc: azul };
+
+  if (esCambioEquipoFinalizado(t)) {
+    return { ...base, accion: ACCION_CAMBIO_EQUIPO, serial: soloLetrasYNumeros(t.serialEquipo).toUpperCase(), apc: 0, upc: 0, dropMetros: 0, motivo: '' };
+  }
+  if (esInstalacionFinalizada(t)) {
+    return { ...base, accion: ACCION_INSTALACION, serial: soloLetrasYNumeros(t.instalacion?.serial).toUpperCase(), ...material, dropMetros: Number(t.instalacion?.metraje) || 0, motivo: '' };
+  }
+  if (esRecableadoFinalizado(t)) {
+    return { ...base, accion: ACCION_AVERIA, serial: '', ...material, dropMetros: Number(t.metrosCable) || 0, motivo: `Recableado - ${orden}` };
+  }
+  if (esVisitaConectorFinalizada(t)) {
+    return { ...base, accion: ACCION_AVERIA, serial: '', ...material, dropMetros: 0, motivo: `Visita de ${etiquetaTipoVisita(t.tipoVisita).toLowerCase()} - ${orden}` };
+  }
+  return null;
+}

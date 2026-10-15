@@ -59,6 +59,9 @@ Roles de la app: ADMIN, USUARIO, TECNICO, ALMACEN y PROMOTORA (se muestra como
     - Actualiza la tasa BCV del euro una vez al dia.
     - Crea usuarios y cambia claves (solo para administradores).
     - Sirve la API de Materiales para otras aplicaciones.
+    - Envia al inventario del almacen (otro sistema, Firebase propio) lo que
+      se instala y el material que se usa en cada orden aprobada, con
+      reintentos automaticos.
     - Lee y escribe Firestore con una cuenta de servicio.
 
   Worker "asignaciones-tomodat"
@@ -73,6 +76,9 @@ Roles de la app: ADMIN, USUARIO, TECNICO, ALMACEN y PROMOTORA (se muestra como
 
   Tomodat        Catalogo y coordenadas de las cajas NAP.
   SmartOLT       Potencia y datos de la ONU del cliente.
+  Inventario     Sistema de inventario del almacen (otro Firebase): recibe el
+                 material usado y los equipos instalados de cada orden
+                 aprobada.
   DolarAPI       Tasa oficial del euro (BCV).
   WhatsApp       Mensajes por enlace (wa.me) hacia los clientes; no hay
                  integracion por API.

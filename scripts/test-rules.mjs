@@ -39,6 +39,11 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('users').doc('tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO', disabled: false });
   await base.collection('users').doc('otro-tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO', disabled: false });
   await base.collection('users').doc('almacen-uid').set({ role: 'ALMACEN', disabled: false });
+  await base.collection('users').doc('cierra-uid').set({ role: 'USUARIO', disabled: false, puedeCerrar: true });
+  await base.collection('users').doc('lfernandez-uid').set({ role: 'ADMIN', disabled: false, username: 'lfernandez' });
+  await base.collection('telecomEnvios').doc('alerta-1').set({ ticketId: 'alerta-1', estado: 'SERIAL_NO_ENCONTRADO', codigo: 'IS10', serial: 'HWTC1A2B3C4D', intentos: 1 });
+  await base.collection('telecomEnvios').doc('alerta-2').set({ ticketId: 'alerta-2', estado: 'ERROR', codigo: 'IS11', intentos: 4 });
+  await base.collection('telecomEnvios').doc('enviado-1').set({ ticketId: 'enviado-1', estado: 'ENVIADO', codigo: 'IS12', intentos: 1 });
   await base.collection('users').doc('promotora-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
   await base.collection('users').doc('promotora2-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: ['Alexis Añez', 'Alexis'], promotoraClaves: ['alexis anez', 'alexis'] });
   await base.collection('users').doc('promotora-sin-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: [], promotoraClaves: [] });
@@ -462,6 +467,66 @@ await check('Los roles de siempre siguen leyendo igual (TECNICO solo lo suyo)', 
   await assertSucceeds(datos(asUsuario()).collection('tickets').get());
   await assertFails(datos(asTecnico()).collection('tickets').get());
   await assertFails(datos(asTecnico()).collection('reports').get());
+});
+
+// --- Envío al inventario del otro sistema: telecomEnvios (el módulo es solo de lfernandez) ---
+const envios = (db) => datos(db).collection('telecomEnvios');
+const asCierra = () => testEnv.authenticatedContext('cierra-uid').firestore();
+const asLf = () => testEnv.authenticatedContext('lfernandez-uid').firestore();
+const asAlmacenInv = () => testEnv.authenticatedContext('almacen-uid').firestore();
+const marcaOk = (id) => ({ ticketId: id, estado: 'PENDIENTE', intentos: 0 });
+await check('ADMIN y USUARIO pueden dejar la marca mínima "pendiente" al aprobar una orden', async () => {
+  await assertSucceeds(envios(asAdmin()).doc('orden-a').set(marcaOk('orden-a')));
+  await assertSucceeds(envios(asUsuario()).doc('orden-b').set(marcaOk('orden-b')));
+  await assertSucceeds(envios(asLf()).doc('orden-k').set(marcaOk('orden-k')));
+});
+await check('La marca no puede llevar datos de la orden, otro estado, otro id ni intentos distintos de cero', async () => {
+  await assertFails(envios(asAdmin()).doc('orden-c').set({ ...marcaOk('orden-c'), accion: 'instalacion_nueva', serial: 'HWTC1A2B3C4D', apc: 9 }));
+  await assertFails(envios(asAdmin()).doc('orden-d').set({ ...marcaOk('orden-d'), estado: 'ENVIADO' }));
+  await assertFails(envios(asAdmin()).doc('orden-e').set({ ...marcaOk('orden-e'), intentos: 3 }));
+  await assertFails(envios(asAdmin()).doc('orden-f').set(marcaOk('otra-orden')));
+  await assertFails(envios(asAdmin()).doc('orden-g').set({ ticketId: 'orden-g', estado: 'PENDIENTE' }));
+});
+await check('Una marca ya creada no se puede reescribir para marcarla como enviada', async () => {
+  await assertFails(envios(asAdmin()).doc('orden-a').update({ estado: 'ENVIADO' }));
+  await assertFails(envios(asLf()).doc('alerta-1').update({ estado: 'ENVIADO' }));
+  await assertFails(envios(asUsuario()).doc('orden-b').set(marcaOk('orden-b')));
+});
+await check('TECNICO, ALMACEN y PROMOTORA no crean marcas', async () => {
+  await assertFails(envios(asTecnico()).doc('orden-h').set(marcaOk('orden-h')));
+  await assertFails(envios(asAlmacenInv()).doc('orden-i').set(marcaOk('orden-i')));
+  await assertFails(envios(asPromotora()).doc('orden-j').set(marcaOk('orden-j')));
+});
+await check('Solo lfernandez ve el módulo: ni otro ADMIN, ni quien cierra, ni nadie más', async () => {
+  await assertSucceeds(envios(asLf()).where('estado', 'in', ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'SIN_SERIAL', 'ERROR']).get());
+  await assertSucceeds(envios(asLf()).orderBy('actualizadoEn', 'desc').limit(30).get());
+  await assertSucceeds(envios(asLf()).doc('alerta-1').get());
+  await assertFails(envios(asAdmin()).doc('alerta-1').get());
+  await assertFails(envios(asAdmin()).where('estado', 'in', ['ERROR']).get());
+  await assertFails(envios(asAdmin()).orderBy('actualizadoEn', 'desc').limit(30).get());
+  await assertFails(envios(asCierra()).doc('alerta-1').get());
+  await assertFails(envios(asUsuario()).doc('alerta-1').get());
+  await assertFails(envios(asUsuario()).get());
+  await assertFails(envios(asTecnico()).doc('alerta-1').get());
+  await assertFails(envios(asAlmacenInv()).doc('alerta-1').get());
+  await assertFails(envios(asPromotora()).doc('alerta-1').get());
+});
+await check('lfernandez descarta una alerta (queda como DESCARTADO, con quién y cuándo); nadie más puede', async () => {
+  const descartar = { estado: 'DESCARTADO', actualizadoEn: 1700000000000, descartadoPor: 'lfernandez' };
+  await assertFails(envios(asAdmin()).doc('alerta-2').update(descartar));
+  await assertFails(envios(asCierra()).doc('alerta-2').update(descartar));
+  await assertFails(envios(asTecnico()).doc('alerta-2').update(descartar));
+  await assertSucceeds(envios(asLf()).doc('alerta-2').update(descartar));
+});
+await check('Descartar solo cambia el estado: no se puede tocar otro dato, poner otro estado ni descartar lo enviado', async () => {
+  await assertFails(envios(asLf()).doc('alerta-1').update({ estado: 'DESCARTADO', serial: 'OTRO' }));
+  await assertFails(envios(asLf()).doc('alerta-1').update({ estado: 'ENVIADO' }));
+  await assertFails(envios(asLf()).doc('alerta-1').update({ estado: 'PENDIENTE' }));
+  await assertFails(envios(asLf()).doc('enviado-1').update({ estado: 'DESCARTADO', actualizadoEn: 1 }));
+});
+await check('Nadie borra un registro de envío (tampoco lfernandez): queda el historial', async () => {
+  await assertFails(envios(asLf()).doc('alerta-1').delete());
+  await assertFails(envios(asAdmin()).doc('alerta-1').delete());
 });
 
 await testEnv.cleanup();

@@ -2,12 +2,14 @@
 // instalaciones y las visitas de conector. Módulo solo para ADMIN. Cuenta las órdenes ya aprobadas (FINALIZADO): es lo
 // que realmente se usó. Las que siguen pre-finalizadas esperando aprobación se informan aparte.
 //   - Recableado: gasta los metros de cable y los conectores que se hayan marcado.
-//   - Instalación: gasta el metraje de cable que el técnico registró al instalar (es obligatorio).
+//   - Instalación: gasta el metraje de cable que el técnico registró al instalar (es obligatorio) y los conectores que
+//     indicó (externos e internos; aquí solo por color). Las anteriores a que se pidieran no los tienen y cuentan 0.
 //   - Visita de conector (externo o interno): gasta el conector colocado. Las visitas anteriores a
 //     que se pidiera el color del conector no lo tienen y no suman.
 //   - Cambio de equipo: no gasta cable ni conectores, pero se lista con el serial del equipo nuevo.
 // Las instalaciones y los cambios de equipo llevan en su detalle el serial (`serial`): el de la ONU instalada y el
 // del equipo nuevo.
+import { conectoresDeInstalacion } from './conectoresInstalacion.js';
 import { esInstalacion, metrajeInstalacion } from './instalacion.js';
 import { TIPO_RECABLEADO, COLOR_AZUL, COLOR_VERDE, cantidadesConector, esCambioEquipo, esVisitaConector } from './tipoVisita.js';
 
@@ -26,6 +28,7 @@ const SIN_TECNICO = 'SIN TÉCNICO';
 // un conector por cada uno marcado (con los dos puestos son dos).
 export function conectoresPorColor(t) {
   if (esVisitaConector(t.tipoVisita)) return cantidadesConector(t);
+  if (esInstalacion(t.tipoTrabajo) && !esRecableado(t) && !esCambio(t)) return conectoresDeInstalacion(t);
   const colores = [t.conectorExterno, t.conectorInterno];
   return {
     verde: colores.filter((c) => c === COLOR_VERDE).length,

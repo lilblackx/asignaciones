@@ -1,5 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from 'jose';
 import { manejarApiMateriales } from './materiales-api.js';
+import { manejarInventario, reintentarPendientes } from './inventario.js';
+import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
@@ -103,6 +105,9 @@ async function resolveTokens(env, accessToken, target) {
   let docs = [];
   if (target?.type === 'tecnico' && target.name) {
     docs = await runQuery(env, accessToken, 'tecnicoAsociado', 'EQUAL', { stringValue: target.name });
+  } else if (target?.type === 'usuarios') {
+    // Por nombre de usuario de la app (campo `username` del perfil).
+    docs = (await Promise.all((target.usernames || []).map((u) => runQuery(env, accessToken, 'username', 'EQUAL', { stringValue: String(u) })))).flat();
   } else if (target?.type === 'aprobadores') {
     const admins = await runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: 'ADMIN' });
     const puedeCerrar = await runQuery(env, accessToken, 'puedeCerrar', 'EQUAL', { booleanValue: true });
@@ -596,6 +601,15 @@ async function avisarAprobadores(env, accessToken, title, body) {
   await enviarADestinos(env, accessToken, destinos, title, body, { tipo: 'cierreAutomatico', tag: 'cierreAutomatico' });
 }
 
+// Las alertas del envío al inventario solo les llegan a los usuarios de USUARIOS_INVENTARIO.
+async function avisarInventario(env, accessToken, title, body, extra) {
+  const destinos = await resolveTokens(env, accessToken, { type: 'usuarios', usernames: USUARIOS_INVENTARIO });
+  await enviarADestinos(env, accessToken, destinos, title, body, extra);
+}
+
+// Lo que el envío al inventario (inventario.js) toma de este archivo; va aparte para no importarse en círculo.
+export const depsInventario = { getGoogleAccessToken, commitFirestore, docsBase, rutaDatos, runQuery, getUserDoc, avisarInventario };
+
 export async function cierreAutomatico(env, ahoraMs = Date.now()) {
   const accessToken = await getGoogleAccessToken(env);
   const config = await leerConfigCierre(env, accessToken);
@@ -707,6 +721,9 @@ export default {
     if (pathname === '/admin/create-user') {
       return handleCreateUser(request, env, headers, payload.sub);
     }
+    if (pathname === '/inventario/enviar' || pathname === '/inventario/reintentar') {
+      return manejarInventario(request, env, headers, payload.sub, depsInventario);
+    }
 
     let body;
     try {
@@ -744,8 +761,9 @@ export default {
   },
 
   // Cron (ver wrangler.toml): revisa si toca el cierre automático y la tasa del día.
-  async scheduled(_event, env, ctx) {
+  async scheduled(event, env, ctx) {
     ctx.waitUntil(cierreAutomatico(env).catch((err) => console.error('Cron de cierre automático:', err)));
+    ctx.waitUntil(reintentarPendientes(env, depsInventario, event.scheduledTime).catch((err) => console.error('Cron de envíos al inventario:', err)));
     ctx.waitUntil(actualizarTasaBcv(env).catch((err) => console.error('Cron de tasa BCV:', err)));
   },
 };

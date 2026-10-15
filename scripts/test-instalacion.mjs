@@ -4,6 +4,7 @@ import {
   detalleInstalacion, esInstalacion, faltantesInstalacion, instalacionCompleta, limpiarPostes, metrajeInstalacion, napConPuerto, parseMetraje, parseSerial, parseVlan, tieneDatosInstalacion, validarInstalacion,
 } from '../src/utils/instalacion.js';
 import { readFileSync } from 'node:fs';
+import { conectoresDeInstalacion, errorConectoresInstalacion, normalizarConectoresInstalacion, parseConectoresInstalacion, textoConectoresInstalacion } from '../src/utils/conectoresInstalacion.js';
 import { datosAutorizacion } from '../src/utils/datosAutorizacion.js';
 import { TEXTO_SIN_PLANTILLA, generarMensajeDesdePlantilla, generarMensajeWhatsAppInstalacion, ordenSinPlantilla } from '../src/utils/whatsapp.js';
 
@@ -63,6 +64,30 @@ check('revalidar lo ya guardado da lo mismo (la clave guardada es "posteadura")'
 check('hay datos si se llenó algo', [{}, { posteadura: [] }, { posteadura: ['P1'] }, { puerto: '3' }, { puertosDisponibles: '6' }, { metraje: 120 }, { metraje: null }, null].map(tieneDatosInstalacion), [false, false, true, true, true, true, false, false]);
 check('historial', detalleInstalacion(datos.datos), ' | Serial: HWTC1A2B3C4D | VLAN: 100 | Posteadura: DM SN N01B01, DM SN N01B02 | Metraje: 120 m | Puerto: 3 | Puertos disponibles: 6');
 check('historial sin datos', detalleInstalacion(null), '');
+
+// --- Conectores usados en la instalación (externos e internos, por color; obligatorio al pre-finalizar) ---
+const conectoresOk = { externo: { verde: 1 }, interno: { verde: 1, azul: 2 } };
+check('conectores: lo que escribe el técnico se guarda como externo (verde) e interno (verde y azul)', parseConectoresInstalacion({ externoVerde: '1', internoVerde: '1', internoAzul: '2' }).valor, conectoresOk);
+check('conectores: un campo vacío cuenta como 0 y basta con uno', [parseConectoresInstalacion({ externoVerde: '', internoVerde: '', internoAzul: '1' }).valor, parseConectoresInstalacion({ externoVerde: '2' }).valor],
+  [{ externo: { verde: 0 }, interno: { verde: 0, azul: 1 } }, { externo: { verde: 2 }, interno: { verde: 0, azul: 0 } }]);
+check('conectores: sin ninguno (todo en 0 o vacío) no es válido, es obligatorio al menos 1', [{}, { externoVerde: '0', internoVerde: '0', internoAzul: '0' }, { externoVerde: ' ' }].map(c => Boolean(parseConectoresInstalacion(c).error)), [true, true, true]);
+check('conectores: con letras, decimales, negativos o más de 10 por color no es válido y dice qué campo',
+  [{ externoVerde: 'a' }, { internoVerde: '1.5' }, { internoAzul: '-1' }, { externoVerde: '11' }, { internoAzul: '123' }].map(c => parseConectoresInstalacion(c).campo), ['externoVerde', 'internoVerde', 'internoAzul', 'externoVerde', 'internoAzul']);
+check('conectores: 10 por color es el tope', parseConectoresInstalacion({ externoVerde: '10', internoVerde: '10', internoAzul: '10' }).valor, { externo: { verde: 10 }, interno: { verde: 10, azul: 10 } });
+check('conectores: la comprobación de lo ya guardado exige al menos 1 y rechaza lo que falta o está mal',
+  [conectoresOk, { externo: { verde: 0 }, interno: { verde: 0, azul: 0 } }, undefined, null, 'x', { externo: { verde: 11 }, interno: {} }].map((c) => Boolean(errorConectoresInstalacion(c))), [false, true, true, true, true, true]);
+check('conectores: normalizar deja siempre la misma forma y descarta lo que no sea un entero de 0 a 10',
+  [normalizarConectoresInstalacion(undefined), normalizarConectoresInstalacion({ externo: { verde: 3 }, interno: { azul: '2', verde: -1 } }), normalizarConectoresInstalacion({ externo: { verde: 99 } })],
+  [{ externo: { verde: 0 }, interno: { verde: 0, azul: 0 } }, { externo: { verde: 3 }, interno: { verde: 0, azul: 0 } }, { externo: { verde: 10 }, interno: { verde: 0, azul: 0 } }]);
+check('conectores: por color suman externo e interno; una instalación anterior (sin el dato) cuenta 0',
+  [conectoresDeInstalacion({ instalacion: { conectores: conectoresOk } }), conectoresDeInstalacion({ instalacion: { serial: 'X' } }), conectoresDeInstalacion({}), conectoresDeInstalacion(null)],
+  [{ verde: 2, azul: 2 }, { verde: 0, azul: 0 }, { verde: 0, azul: 0 }, { verde: 0, azul: 0 }]);
+check('conectores: el texto dice el tipo y el color, solo de lo usado', [textoConectoresInstalacion(conectoresOk), textoConectoresInstalacion({ externo: { verde: 2 }, interno: { verde: 0, azul: 0 } }), textoConectoresInstalacion({ externo: { verde: 0 }, interno: { verde: 0, azul: 1 } }), textoConectoresInstalacion(undefined)],
+  ['Externo: 1 verde · Interno: 1 verde, 2 azules', 'Externo: 2 verdes', 'Interno: 1 azul', '']);
+check('conectores: validarInstalacion no los exige (las instalaciones anteriores no los tienen y no quedan bloqueadas)', [validarInstalacion(datos.datos).error, instalacionCompleta({ instalacion: datos.datos })], [false, true]);
+check('conectores: no alteran los datos obligatorios ya guardados', instalacionCompleta({ instalacion: { ...datos.datos, conectores: conectoresOk } }), true);
+check('conectores: cuentan como "hay datos" y salen en el historial', [tieneDatosInstalacion({ conectores: conectoresOk }), tieneDatosInstalacion({ conectores: { externo: { verde: 0 }, interno: { verde: 0, azul: 0 } } }), detalleInstalacion({ ...datos.datos, conectores: conectoresOk })],
+  [true, false, ' | Serial: HWTC1A2B3C4D | VLAN: 100 | Posteadura: DM SN N01B01, DM SN N01B02 | Metraje: 120 m | Puerto: 3 | Puertos disponibles: 6 | Conectores: Externo: 1 verde · Interno: 1 verde, 2 azules']);
 
 // --- Qué le falta a una instalación (el aviso al finalizar o aprobar) ---
 const instalacionOk = { tipoTrabajo: 'INSTALACIÓN', instalacion: datos.datos };

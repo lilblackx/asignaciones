@@ -141,6 +141,30 @@ service cloud.firestore {
       allow write: if canCerrar(appId);
     }
 
+    // Quien ve y gestiona los envíos al inventario del otro sistema: solo estos usuarios (por nombre de usuario de la app).
+    // Mantener sincronizado con USUARIOS_INVENTARIO de src/utils/accesoInventario.js (lo comprueba `npm run test:inventario`).
+    function veInventario(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.get('username', '') in ['lfernandez'];
+    }
+
+    // Estado de cada envío al inventario del otro sistema (un documento por orden aprobada; lo escribe el Worker con su
+    // cuenta de servicio). Solo lo ven y gestionan los usuarios de veInventario. Quien aprueba una orden deja, nada más,
+    // la marca mínima "pendiente" sin datos de la orden: el Worker lee la orden él mismo, así que una marca no puede
+    // inventar lo que se envía.
+    match /artifacts/{appId}/public/data/telecomEnvios/{docId} {
+      allow read: if veInventario(appId);
+      allow create: if (isAdminUser(appId) || isUsuarioRole(appId))
+        && request.resource.data.keys().hasOnly(['ticketId', 'estado', 'intentos'])
+        && request.resource.data.ticketId == docId
+        && request.resource.data.estado == 'PENDIENTE'
+        && request.resource.data.intentos == 0;
+      // Descartar una alerta: pasa a DESCARTADO (queda el registro de lo que no se envió); no se borra nada.
+      allow update: if veInventario(appId)
+        && resource.data.estado in ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'SIN_SERIAL', 'ERROR']
+        && request.resource.data.estado == 'DESCARTADO'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'actualizadoEn', 'descartadoPor']);
+    }
+
     match /artifacts/{appId}/public/data/counters/{counterId} {
       allow read: if isActiveUser(appId);
       // Solo numera quien crea/asigna órdenes (ADMIN/USUARIO). Solo los dos campos

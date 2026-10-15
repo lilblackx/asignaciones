@@ -50,7 +50,7 @@ const recableado = (id, tecnico, estado, metros, finalizadoEn) => doc('tickets',
 });
 const instalacion = (id, tecnico, estado, metraje, finalizadoEn) => doc('tickets', id, {
   codigo: s(id), nombre: s(`Cliente ${id}`), tecnico: s(tecnico), estado: s(estado), tipoTrabajo: s('INSTALACIÓN'),
-  instalacion: { mapValue: { fields: { metraje: s(String(metraje)), serial: s(`ONU-${id}`) } } }, finalizadoEn: n(finalizadoEn), createdAt: n(finalizadoEn - 1000),
+  instalacion: { mapValue: { fields: { metraje: s(String(metraje)), serial: s(`ONU-${id}`), conectores: { mapValue: { fields: { externo: { mapValue: { fields: { verde: n(1) } } }, interno: { mapValue: { fields: { verde: n(0), azul: n(1) } } } } } } } } }, finalizadoEn: n(finalizadoEn), createdAt: n(finalizadoEn - 1000),
 });
 
 const activas = {
@@ -131,14 +131,15 @@ const j = r.json;
 check('período MES en hora de Venezuela', [j.periodo.id, j.periodo.desde, j.periodo.zonaHoraria], ['MES', '2026-10-01T04:00:00.000Z', 'America/Caracas']);
 check('totales: 40 + 120 + 15 m de cable (R1 repetida cuenta una vez; el viejo y los cancelados no)', j.totales.metros, 175);
 check('totales: 2 recableados (R1, R9), 1 instalación y 1 visita de conector', [j.totales.recableados, j.totales.instalaciones, j.totales.visitasConector], [2, 1, 1]);
-check('conectores: R1 (1 verde) + R9 (ninguno) + visita (2 verdes y 1 azul)', j.totales.conectores, { verde: 3, azul: 1, total: 4 });
+check('conectores: R1 (1 verde) + R9 (ninguno) + visita (2 verdes y 1 azul) + instalación I1 (1 externo verde y 1 interno azul)', j.totales.conectores, { verde: 4, azul: 2, total: 6 });
 check('lo pre-finalizado se informa aparte y no se suma', j.porAprobar, { recableados: 1, instalaciones: 0, visitasConector: 0, cambiosEquipo: 1, metros: 30 });
 check('los cambios de equipo se cuentan en los totales y por técnico (no gastan cable)', [j.totales.cambiosEquipo, j.tecnicos.find((t) => t.tecnico === 'ANA').cambiosEquipo, j.totales.metros], [1, 1, 175]);
 const ordenesAna = j.tecnicos.find((t) => t.tecnico === 'ANA').ordenes;
 check('el cambio de equipo trae el serial del equipo nuevo, sin metros', ordenesAna.filter((o) => o.clase === 'CAMBIO_EQUIPO').map((o) => [o.codigo, o.tipoVisita, o.serial, o.metros]), [['E1', 'CAMBIO_EQUIPO', 'HWTC1A2B3C4D', null]]);
 check('técnicos de más a menos metros, con los registrados sin uso', j.tecnicos.map((t) => [t.tecnico, t.metros]), [['GERARDO MOLERO', 160], ['ANA', 15], ['SIN USO', 0]]);
 const gerardo = j.tecnicos[0];
-check('resumen del técnico', [gerardo.recableados, gerardo.instalaciones, gerardo.visitasConector, gerardo.conectores], [1, 1, 0, { verde: 1, azul: 0, total: 1 }]);
+check('resumen del técnico', [gerardo.recableados, gerardo.instalaciones, gerardo.visitasConector, gerardo.conectores], [1, 1, 0, { verde: 2, azul: 1, total: 3 }]);
+check('la instalación trae sus conectores en el detalle y el recableado los suyos', gerardo.ordenes.map((o) => [o.codigo, o.conectores]), [['R1', { verde: 1, azul: 0, total: 1 }], ['I1', { verde: 1, azul: 1, total: 2 }]]);
 check('detalle de órdenes del técnico', gerardo.ordenes.map((o) => [o.codigo, o.clase, o.metros, o.cliente]), [['R1', 'RECABLEADO', 40, 'Cliente R1'], ['I1', 'INSTALACION', 120, 'Cliente I1']]);
 check('la instalación trae el serial de la ONU y el recableado no tiene serial', gerardo.ordenes.map((o) => [o.codigo, o.serial]), [['R1', null], ['I1', 'ONU-I1']]);
 check('el período MES pide a Firestore solo los reportes desde el 1', consultas.find((q) => q.from[0].collectionId === 'reports').where.fieldFilter.value.integerValue, String(Date.parse('2026-10-01T04:00:00Z')));
@@ -162,7 +163,7 @@ r = await pedir('/api/materiales?periodo=MES');
 check('primera consulta: MISS, con una sola consulta de órdenes (FINALIZADO y PRE-FINALIZADO juntos)', [r.xCache, del('tickets').length, del('reports').length, del('technicians').length], ['MISS', 1, 1, 1]);
 const primera = r.json;
 const camposOrden = del('tickets')[0].select.fields.map((f) => f.fieldPath);
-check('las órdenes se piden solo con los campos que usa el cálculo (incluye los seriales)', ['instalacion.metraje', 'instalacion.serial', 'serialEquipo'].every((c) => camposOrden.includes(c)) && !camposOrden.some((f) => /plantilla|telefono|direccion|cedula/i.test(f)), true);
+check('las órdenes se piden solo con los campos que usa el cálculo (incluye los seriales)', ['instalacion.metraje', 'instalacion.serial', 'instalacion.conectores', 'serialEquipo'].every((c) => camposOrden.includes(c)) && !camposOrden.some((f) => /plantilla|telefono|direccion|cedula/i.test(f)), true);
 check('los reportes, solo con tipo, fecha y órdenes; los técnicos, solo el nombre', [del('reports')[0].select.fields.map((f) => f.fieldPath), del('technicians')[0].select.fields.map((f) => f.fieldPath)], [['tipoReporte', 'createdAt', 'ticketsDetalle'], ['name']]);
 consultas = [];
 r = await pedir('/api/materiales?periodo=MES', { conCopia: true });

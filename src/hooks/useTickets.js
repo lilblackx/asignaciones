@@ -15,7 +15,10 @@ import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { devolucionPendiente } from '../utils/devolucion';
 import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado, llevaCobro, monedaDe, textoMonto, tieneCobroFinal, valorCobro } from '../utils/cobro';
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
-import { detalleInstalacion, esInstalacion, instalacionCompleta, tieneDatosInstalacion, validarInstalacion } from '../utils/instalacion';
+import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalacion } from '../utils/instalacion';
+import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
+import { payloadEnvioInventario } from '../utils/envioInventario';
+import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
@@ -138,6 +141,17 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const mostrarCobro = (ticket) => actualizarCobrosVistos(set => { set.delete(ticket.id); set.delete(claveCobro(ticket)); return set; });
   // Pre-finalizar con conector interno: el cobro se informa en ese momento, sin esperar la aprobación.
   const mostrarCobroInmediato = (ticket, montoBs) => setCobroInmediato({ ...ticket, estado: 'PRE-FINALIZADO', cobroBs: montoBs, cobroTipo: null });
+
+  // Al aprobar o finalizar una orden que gasta material o instala un equipo (instalación, cambio de equipo, recableado,
+  // visita de conector), se envía al inventario del otro sistema. La marca "pendiente" se deja antes de avisar al Worker:
+  // si el aviso no llega, el Worker lo envía solo en unos minutos. Nunca frena ni ensucia la aprobación: un problema se
+  // ve en la alerta de quien cierra (ver useEnviosInventario).
+  const enviarAlInventario = (ticket) => {
+    if (!firebaseUser || !payloadEnvioInventario(ticket)) return;
+    marcarEnvioInventario(ticket.id)
+      .then(() => llamarInventario('/inventario/enviar', ticket.id))
+      .catch((error) => console.warn('No se pudo iniciar el envío al inventario:', error));
+  };
 
   // Mismo criterio que el listener de abajo (nueva asignación / pre-finalizado /
   // aprobado), pero disparado por quien escribe el cambio, no por quien lo lee —
@@ -649,8 +663,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     // Un técnico no pre-finaliza una instalación por aquí sin los datos obligatorios: se llenan con
     // el botón "Pre-finalizar" (que los pide).
     if (role === 'TECNICO' && editingTicket.estado === 'PRE-FINALIZADO' && originalTicket?.estado !== 'PRE-FINALIZADO'
-      && esInstalacion(editingTicket.tipoTrabajo) && !instalacionCompleta(editingTicket)) {
-      setToastMsg({ type: 'error', text: 'En una instalación llena el serial, la VLAN, la NAP, el puerto, el metraje del drop, la posteadura y los puertos disponibles con el botón "Pre-finalizar".' });
+      && esInstalacion(editingTicket.tipoTrabajo) && (!instalacionCompleta(editingTicket) || errorConectoresInstalacion(editingTicket.instalacion?.conectores))) {
+      setToastMsg({ type: 'error', text: 'En una instalación llena el serial, la VLAN, la NAP, el puerto, el metraje del drop, la posteadura, los puertos disponibles y los conectores usados con el botón "Pre-finalizar".' });
       return false;
     }
 
@@ -782,7 +796,15 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       setToastMsg({ type: 'error', text: 'En una instalación indica la NAP y el puerto.' });
       return false;
     }
-    const datosInstalacion = reporteInstalacion && tieneDatosInstalacion(reporteInstalacion.datos) ? reporteInstalacion.datos : null;
+    // Los conectores usados (externos e internos, por color) son obligatorios en una instalación nueva.
+    const errorConectoresInst = reporteInstalacion ? errorConectoresInstalacion(instalacion?.conectores) : '';
+    if (errorConectoresInst) {
+      setToastMsg({ type: 'error', text: errorConectoresInst });
+      return false;
+    }
+    const datosInstalacion = reporteInstalacion
+      ? { ...reporteInstalacion.datos, conectores: normalizarConectoresInstalacion(instalacion?.conectores) }
+      : null;
 
     // Los datos de metros y conectores solo se escriben si el tipo de visita los lleva o si hay que
     // borrar los de una visita anterior; así las demás visitas no suman campos vacíos a la orden.
@@ -876,6 +898,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden aprobada y finalizada con éxito.' });
     notifyTicketChange(ticket, updatedTicket);
+    enviarAlInventario(updatedTicket);
     return true;
   };
 
@@ -944,6 +967,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
+    enviarAlInventario(updatedTicket);
     return true;
   };
 

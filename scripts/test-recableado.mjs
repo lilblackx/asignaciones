@@ -212,6 +212,24 @@ check('clasificación de instalaciones', [esInstalacionFinalizada(instalaciones[
   [true, false, true, false, false, false]);
 check('una instalación se filtra por el período como lo demás', consumoPorTecnico(instalaciones, { desde: inicioPeriodo('HOY', ahora) }).totales.metros, 200);
 
+// --- Conectores de las instalaciones (externos e internos, solo por color en Materiales) ---
+const conConectores = [
+  { ...instalacion, id: 'k1', codigo: 'IK1', nombre: 'Karla', tecnico: 'LUIS PEREZ', instalacion: { metraje: 100, conectores: { externo: { verde: 1 }, interno: { verde: 1, azul: 1 } } }, finalizadoEn: dia(13) },
+  { ...instalacion, id: 'k2', codigo: 'IK2', nombre: 'Kevin', tecnico: 'MARIA GOMEZ', instalacion: { metraje: 80, conectores: { externo: { verde: 0 }, interno: { verde: 0, azul: 2 } } }, finalizadoEn: dia(13) },
+  { ...instalacion, id: 'k3', codigo: 'IK3', nombre: 'Kira', tecnico: 'LUIS PEREZ', instalacion: { metraje: 60 }, finalizadoEn: dia(13) }, // anterior a pedir los conectores: cuenta 0
+  { ...instalacion, id: 'k4', codigo: 'IK4', nombre: 'Kurt', tecnico: 'LUIS PEREZ', instalacion: { metraje: 50, conectores: { externo: { verde: 1 }, interno: { verde: 0, azul: 0 } } }, estado: 'PRE-FINALIZADO', createdAt: dia(13) },
+];
+const conectoresInstalaciones = consumoPorTecnico(conConectores);
+check('instalaciones con conectores: se suman por color (externo + interno), sin distinguir el tipo',
+  [conectoresInstalaciones.totales.verde, conectoresInstalaciones.totales.azul, totalConectores(conectoresInstalaciones.totales)], [2, 3, 5]);
+check('instalaciones con conectores: por técnico', conectoresInstalaciones.filas.map(f => [f.tecnico, f.verde, f.azul, f.instalaciones, f.metros]), [['LUIS PEREZ', 2, 1, 2, 160], ['MARIA GOMEZ', 0, 2, 1, 80]]);
+check('instalaciones con conectores: el detalle trae los conectores de cada una y una anterior sale en 0',
+  conectoresInstalaciones.filas[0].detalle.map(d => [d.id, d.clase, d.verde, d.azul]).sort(), [['k1', 'INSTALACION', 2, 1], ['k3', 'INSTALACION', 0, 0]]);
+check('instalaciones con conectores: la pre-finalizada no suma conectores y se informa aparte', [conectoresInstalaciones.porAprobar.instalaciones, conectoresInstalaciones.totales.verde], [1, 2]);
+check('conectoresPorColor: una instalación, una instalación sin el dato y un recableado cada uno con lo suyo',
+  [conectoresPorColor(conConectores[0]), conectoresPorColor(instalaciones[0]), conectoresPorColor({ tipoTrabajo: 'INSTALACIÓN', tipoVisita: 'RECABLEADO', conectorExterno: 'VERDE', metrosCable: 5 })],
+  [{ verde: 2, azul: 1 }, { verde: 0, azul: 0 }, { verde: 1, azul: 0 }]);
+
 // --- Cambios de equipo e instalaciones con el serial del equipo ---
 const cambio = { tipoTrabajo: 'VISITA', tipoVisita: 'CAMBIO_EQUIPO', estado: 'FINALIZADO' };
 const conSerial = [

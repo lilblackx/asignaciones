@@ -4,9 +4,13 @@
 // `ticket.instalacion` y se escriben en las líneas de la plantilla (ver utils/whatsapp).
 // Todo es obligatorio: el serial, la VLAN, al menos un poste, el metraje (metros enteros, de 1 a 9999),
 // la NAP, el puerto y los puertos disponibles (si no queda ninguno, "0"). Lo que se escribe también se valida.
+// Los conectores usados (externos e internos, por color) también son obligatorios al pre-finalizar, pero se validan
+// aparte (utils/conectoresInstalacion) y no entran en instalacionCompleta: las instalaciones anteriores no los
+// tienen y no deben quedar bloqueadas al aprobarlas.
 // El metraje cuenta como cable gastado en el módulo Materiales (ver utils/consumoMateriales).
 
 import { napSinDato } from './napPuerto.js';
+import { textoConectoresInstalacion } from './conectoresInstalacion.js';
 
 export const esInstalacion = (tipoTrabajo) => String(tipoTrabajo || '').toUpperCase().includes('INSTAL');
 
@@ -68,7 +72,7 @@ export function napConPuerto(nap, puerto) {
 }
 
 export const tieneDatosInstalacion = (datos) =>
-  Boolean(datos) && Boolean(datos.serial || datos.vlan || datos.nap || datos.puerto || datos.puertosDisponibles || datos.posteadura?.length || datos.metraje);
+  Boolean(datos) && Boolean(datos.serial || datos.vlan || datos.nap || datos.puerto || datos.puertosDisponibles || datos.posteadura?.length || datos.metraje || textoConectoresInstalacion(datos.conectores));
 
 // Lo que escribió el técnico -> { datos, errores, error }: `datos` listo para guardar en
 // `ticket.instalacion` (serial y VLAN normalizados, postes limpios) y `errores` por campo
@@ -127,7 +131,8 @@ export function faltantesInstalacion(ticket) {
   return ['serial', 'vlan', 'nap', 'puerto', 'metraje', 'posteadura', 'puertosDisponibles'].filter((k) => faltan.has(k)).map((k) => NOMBRE_FALTANTE[k]);
 }
 
-// Líneas del historial con lo que registró el técnico ("Serial: ...", "VLAN: ...", "Posteadura: ...", "Metraje: ...").
+// Líneas del historial con lo que registró el técnico ("Serial: ...", "VLAN: ...", "Posteadura: ...", "Metraje: ...",
+// "Conectores: Externo: 1 verde · Interno: 1 azul").
 // La NAP ya sale aparte en el historial (campo `nap`); aquí el puerto y los puertos disponibles.
 export function detalleInstalacion(datos) {
   if (!tieneDatosInstalacion(datos)) return '';
@@ -138,5 +143,7 @@ export function detalleInstalacion(datos) {
   if (datos.metraje) detalle += ` | Metraje: ${datos.metraje} m`;
   if (datos.puerto) detalle += ` | Puerto: ${datos.puerto}`;
   if (datos.puertosDisponibles) detalle += ` | Puertos disponibles: ${datos.puertosDisponibles}`;
+  const conectores = textoConectoresInstalacion(datos.conectores);
+  if (conectores) detalle += ` | Conectores: ${conectores}`;
   return detalle;
 }

@@ -86,6 +86,38 @@ function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
   );
 }
 
+// Cantidad de conectores usados en una instalación (obligatorio: al menos 1 en total). Igual que en las visitas, pero
+// con los dos tipos a la vez: el externo es solo verde (un campo) y el interno, verde o azul (dos campos).
+export function CantidadesConectorInstalacion({ externoVerde, internoVerde, internoAzul, onExternoVerde, onInternoVerde, onInternoAzul, error }) {
+  const mensaje = error?.mensaje || '';
+  return (
+    <div className="space-y-3">
+      <div>
+        <p id="pf-cantidad-conectores-inst-etiqueta" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+          CONECTORES USADOS <span className="font-normal text-red-500">(obligatorio: al menos 1 en total)</span>
+        </p>
+        <p className="text-[10px] text-zinc-400 ml-1">Escribe cuántos usaste de cada tipo y color; deja en 0 el que no usaste.</p>
+      </div>
+      <div role="group" aria-labelledby="pf-cantidad-conectores-inst-etiqueta" className="space-y-3">
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ml-1">Conector externo <span className="font-normal text-zinc-400">(solo verde)</span></p>
+          <div className="flex flex-wrap gap-3">
+            <CampoCantidad id="pf-cant-ext-verde" etiqueta="Verdes" color="VERDE" valor={externoVerde} onChange={onExternoVerde} error={error?.campo === 'externoVerde' ? mensaje : ''} />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ml-1">Conector interno <span className="font-normal text-zinc-400">(verde o azul)</span></p>
+          <div className="flex flex-wrap gap-3">
+            <CampoCantidad id="pf-cant-int-verde" etiqueta="Verdes" color="VERDE" valor={internoVerde} onChange={onInternoVerde} error={error?.campo === 'internoVerde' ? mensaje : ''} />
+            <CampoCantidad id="pf-cant-int-azul" etiqueta="Azules" color="AZUL" valor={internoAzul} onChange={onInternoAzul} error={error?.campo === 'internoAzul' ? mensaje : ''} />
+          </div>
+        </div>
+      </div>
+      {mensaje && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{mensaje}</p>}
+    </div>
+  );
+}
+
 export function CantidadesConectorVisita({ interno, verde, azul, onVerde, onAzul, error }) {
   const mensaje = error?.mensaje || '';
   return (

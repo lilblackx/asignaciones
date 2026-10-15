@@ -225,7 +225,7 @@ async function recordar(clave, ttl, ahoraMs, calcular) {
 
 // Campos de una orden que usa el cálculo de Materiales (consumoPorTecnico): nada más se descarga.
 const CAMPOS_ORDEN = ['estado', 'tecnico', 'codigo', 'nombre', 'tipoTrabajo', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno',
-  'conectoresUsados', 'instalacion.metraje', 'instalacion.serial', 'serialEquipo', 'finalizadoEn', 'createdAt'];
+  'conectoresUsados', 'instalacion.metraje', 'instalacion.serial', 'instalacion.conectores', 'serialEquipo', 'finalizadoEn', 'createdAt'];
 
 // Lee de Firestore lo que usa Materiales: las órdenes FINALIZADO y PRE-FINALIZADO (una sola consulta), los reportes
 // de cierre del rango y los técnicos registrados (salen siempre, aunque no hayan usado material).
