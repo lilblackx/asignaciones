@@ -14,6 +14,15 @@ export const parseTelefonos = (valor) => String(valor || '').split('/').map(t =>
 
 export const unirTelefonos = (lista) => lista.map(t => t.trim()).filter(Boolean).join(' / ');
 
+// El teléfono del cliente es obligatorio en toda orden (al crearla y al editarla).
+export const tieneTelefono = (valor) => parseTelefonos(valor).length > 0;
+export const MENSAJE_TELEFONO_OBLIGATORIO = 'Teléfono: es obligatorio, escribe el número del cliente.';
+
+// WhatsApp escribe los números con un guion "no separable" (U+2011) y otros
+// programas con rayas o el signo menos (U+2010 a U+2015, U+2212): se ven como "-"
+// pero no lo son, y el número se rechazaba. Aquí se vuelven un guion normal.
+export const normalizarGuiones = (texto) => String(texto || '').replace(/[\u2010-\u2015\u2212]/g, '-');
+
 // Internacional sin "+": 584141234567. Sirve para wa.me.
 export function telefonoInternacional(telefono) {
   const texto = String(telefono || '').trim();
@@ -33,7 +42,7 @@ export function telefonoInternacional(telefono) {
 
 // Quita lo que no puede ir en un teléfono (letras, "/", etc.); deja dígitos y
 // los signos con que se escriben: "+58 (414) 123-4567".
-export const limpiarTelefono = (texto) => String(texto || '').replace(/[^\d+\-().\s]/g, '');
+export const limpiarTelefono = (texto) => normalizarGuiones(texto).replace(/[^\d+\-().\s]/g, '');
 
 // Mensaje de error de un número del formulario ('' si está bien). `anteriores`
 // son los números de las filas de arriba, para detectar repetidos.

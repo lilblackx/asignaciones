@@ -130,6 +130,18 @@ check('teléfono: más largo que el campo (20)', tel('+58 ( 412 ) 066 - 5119'), 
 check('teléfono: paréntesis sin cerrar', tel('(0412 066-5119'), sinTelefono);
 check('teléfono vacío seguido de otra etiqueta con valor', '*NRO de teléfono:*\n*C.I* 34.250.195', { telefono: undefined, cedula: '34.250.195' });
 
+// WhatsApp escribe los números con un guion "no separable" (U+2011) que no es el "-" normal, y otros programas con
+// rayas o el signo menos: se leen igual y el número se guarda con un guion normal. Lo demás sigue igual de estricto.
+check('teléfono con el guion no separable de WhatsApp (U+2011)', tel('+58 414\u20113505086'), { telefono: '+58 414-3505086' });
+check('teléfono con guion (U+2010)', tel('0412\u20100665119'), { telefono: '0412-0665119' });
+check('teléfono con guion de figura (U+2012)', tel('0412\u20120665119'), { telefono: '0412-0665119' });
+check('teléfono con raya corta (U+2013)', tel('0412\u20130665119'), { telefono: '0412-0665119' });
+check('teléfono con raya larga (U+2014)', tel('0412\u20140665119'), { telefono: '0412-0665119' });
+check('teléfono con signo menos (U+2212)', tel('0412\u22120665119'), { telefono: '0412-0665119' });
+check('dos teléfonos con el guion no separable', tel('0412\u20110665119 / 0414\u20111234567'), { telefono: '0412-0665119 / 0414-1234567' });
+check('teléfono: el guion raro no vuelve válido un número incompleto', tel('0412\u2011066511'), sinTelefono);
+check('teléfono: una raya entre dos números no los lee a medias', tel('0412-0665119 \u2014 0414-1234567'), sinTelefono);
+
 // ============================== NAP ==============================
 const sinNap = { nap: undefined };
 
@@ -180,6 +192,37 @@ check('dirección: "No aplica"', dir('No aplica'), sinDireccion);
 check('dirección vacía seguida de un correo', '*Dirección completa:*\ndarguinurdaneta692@gmail.com', sinDireccion);
 check('dirección vacía seguida de otra etiqueta sin dos puntos', '*Dirección completa:*\nTeléfono', sinDireccion);
 check('dirección vacía seguida de una etiqueta en negrita con valor', '*Dirección completa:*\n*Nombre* Ricardo Gonzalez', { direccion: undefined, nombre: undefined });
+
+// ====== Plantilla real cuyo teléfono no se completaba (traía el guion de WhatsApp) ======
+check('plantilla real con el teléfono de WhatsApp (guion no separable)', `I000000
+*Mac:*
+*Vlan:*
+*Posteadura:*
+*Nap:*
+
+
+*Cliente conecta en el puerto N°:*
+
+*PUERTOS DISPONIBLES:*
+
+*Nombres  Completos:*  Marielvis Chiquinquirá jayares Vargas
+*C.I:*  30.419.134
+*NRO de teléfono:* +58 414\u20113505086
+*Correo electrónico:*  Karenvalentinamarquezjayares@gmail.com
+*Dirección completa:*  barrio el despertar av 73 calle 98 casa 98-1-22
+*Servicio a Contratar:* SM
+*Condición*
+*Plan a contratar:* 200mg x 17$
+*Drop:*
+*Forma de pago:* 25$
+*Promotora:* sariana
+*Fuente:*  Sariana
+*Instalador:* Abraham
+*Observación:* La clienta cancela 25$ Por la Instalación, le toca Cancelar Nuevamente Entre los Primeros 5 días del mes de Noviembre  17$
+*NOTA:* Se puede hacer del M04F07 a 280m con 4 puertos libres`, {
+  nombre: 'Marielvis Chiquinquirá jayares Vargas', cedula: '30.419.134', telefono: '+58 414-3505086',
+  direccion: 'barrio el despertar av 73 calle 98 casa 98-1-22', falla: 'SM', instalador: 'Abraham', nap: 'M04F07',
+});
 
 // ============ La plantilla real completa (con la observación) ============
 check('plantilla real completa', `${PLANTILLA_REAL}

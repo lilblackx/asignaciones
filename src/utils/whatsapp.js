@@ -2,7 +2,7 @@ import { TIPOS_POR_TRABAJO } from '../constants.js';
 import { extraerUbicacionDeTexto, getUbicacionUrl, normalizarCoordenadasNap } from './ubicacion.js';
 import { normalizarNegritas } from './negritas.js';
 import { CODIGO_NAP, extraerCodigoNap } from './codigoNap.js';
-import { MAX_TELEFONOS, telefonoInternacional, unirTelefonos } from './telefono.js';
+import { MAX_TELEFONOS, normalizarGuiones, telefonoInternacional, unirTelefonos } from './telefono.js';
 
 // La línea "Observaciones:" de la plantilla siempre lleva el aviso de cobro
 // (monto en Bs calculado según la tasa BCV del día). El campo "observacion" del
@@ -193,7 +193,7 @@ function extraerTextoLibre(valor, maximo) {
 // leen todos o queda vacío: un número a medias o inventado se llamaría sin que
 // nadie lo note. Los repetidos se juntan y el máximo es el del formulario.
 function extraerTelefonos(valor) {
-  const segmentos = valor
+  const segmentos = normalizarGuiones(valor)
     .split(/[/,;|]|[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/)
     .map(s => s.replace(/^[^\d+(]+/, '').replace(/[^\d)]+$/, ''))
     .filter(s => /\d/.test(s));

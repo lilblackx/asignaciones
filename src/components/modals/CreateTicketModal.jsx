@@ -290,9 +290,10 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           </div>
 
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-telefono" className="text-[10px] font-bold text-zinc-500 ml-1">TELÉFONO</label>
+            <label htmlFor="tk-telefono" className="text-[10px] font-bold text-zinc-500 ml-1">TELÉFONO<span className="text-red-600"> *</span></label>
             <TelefonosField
               id="tk-telefono"
+              required
               value={formData.telefono}
               onChange={(value) => handleCreateChange({ target: { name: 'telefono', value, type: 'text' } })}
               inputClassName="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs"

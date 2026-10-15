@@ -14,8 +14,9 @@ const aFilas = (valor) => {
 
 // Teléfonos de la orden: un input por número y un "+" para sumar otro. Hacia
 // afuera sigue siendo un solo string ("a / b"), ver utils/telefono. El primer
-// input lleva `id` para enlazarlo con el <label> del formulario.
-export default function TelefonosField({ id, value, onChange, disabled = false, inputClassName }) {
+// input lleva `id` para enlazarlo con el <label> del formulario. Con `required`,
+// el primer número es obligatorio (un campo deshabilitado no se exige).
+export default function TelefonosField({ id, value, onChange, disabled = false, required = false, inputClassName }) {
   const [filas, setFilas] = useState(() => aFilas(value));
   const [tocado, setTocado] = useState(false);
   const [enfocada, setEnfocada] = useState(-1);
@@ -57,8 +58,13 @@ export default function TelefonosField({ id, value, onChange, disabled = false, 
   // orden vieja con un teléfono en otro formato siga guardándose si no lo edita.
   // El bloqueo al guardar lo hace la validación nativa del formulario.
   const errores = filas.map((fila, i) => (tocado ? errorTelefono(fila, filas.slice(0, i)) : ''));
+  // Obligatorio = que haya al menos un número en alguna fila; el aviso va en la primera.
+  // `required` solo no basta: deja pasar un campo con solo espacios y la orden se guardaría sin teléfono.
+  const falta = required && !disabled && !filas.some(f => f.trim());
   useEffect(() => {
-    inputs.current.forEach((el, i) => el?.setCustomValidity(errores[i] || ''));
+    inputs.current.forEach((el, i) => {
+      el?.setCustomValidity(falta && i === 0 ? 'Escribe el teléfono del cliente.' : (errores[i] || ''));
+    });
   });
 
   return (
@@ -75,6 +81,7 @@ export default function TelefonosField({ id, value, onChange, disabled = false, 
                 type="tel"
                 inputMode="tel"
                 maxLength="20"
+                required={falta && i === 0}
                 disabled={disabled}
                 aria-label={filas.length > 1 ? `Teléfono ${i + 1}` : undefined}
                 aria-invalid={error ? 'true' : undefined}

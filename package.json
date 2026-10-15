@@ -23,6 +23,7 @@
     "test:prioridad": "node scripts/test-prioridad.mjs",
     "test:encamino": "node scripts/test-en-camino.mjs",
     "test:autorizacion": "node scripts/test-autorizacion.mjs",
+    "test:telefono": "node scripts/test-telefono.mjs",
     "test:cobro": "node scripts/test-cobro.mjs",
     "test:equipo": "node scripts/test-cambio-equipo.mjs"
   },

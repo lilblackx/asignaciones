@@ -347,6 +347,7 @@ export default function App() {
   const handleCreateSubmit = conAviso(async (e) => {
     e.preventDefault();
     const nuevoTicket = await createTicket(formData);
+    if (nuevoTicket === false) return; // validación rechazó: el modal sigue abierto con lo escrito
     setIsCreateModalOpen(false);
     setFormData(EMPTY_FORM());
     if (nuevoTicket) {

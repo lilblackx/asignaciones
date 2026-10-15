@@ -191,9 +191,10 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             />
           )}
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-telefono" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">TELÉFONO</label>
+            <label htmlFor="ed-telefono" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">TELÉFONO<span className="text-red-600"> *</span></label>
             <TelefonosField
               id="ed-telefono"
+              required
               disabled={isTecnico}
               value={editingTicket.telefono || ''}
               onChange={(value) => handleEditChange({ target: { name: 'telefono', value, type: 'text' } })}

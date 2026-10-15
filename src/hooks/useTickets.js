@@ -7,6 +7,7 @@ import { esPrioritaria, mapaPrioridad, prioridadNueva, textoAvisoPrioridad } fro
 import { sendPush } from '../lib/notify';
 import { ESTADO_EN_SITIO, deshacerLlegada, estaEnCamino, estadoViaje, iniciarViaje, mapaViaje, puedeIniciarViaje, registrarLlegada, textoAvisoEnCamino, textoAvisoLlegada, viajeEnCursoDe, viajesNuevos } from '../utils/enCamino';
 import { parsePotencia } from '../utils/potencia';
+import { MENSAJE_TELEFONO_OBLIGATORIO, tieneTelefono } from '../utils/telefono';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { devolucionPendiente } from '../utils/devolucion';
@@ -502,8 +503,14 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // Evita que un doble clic en "Crear" genere dos órdenes (y gaste dos números).
   const creandoRef = useRef(false);
 
+  // Devuelve false si falta el teléfono (el llamador deja el formulario abierto para no perder lo escrito).
   const createTicket = async (formData) => {
     if (!firebaseUser || creandoRef.current) return;
+    // Toda orden lleva el teléfono del cliente: el formulario lo exige y aquí se vuelve a comprobar.
+    if (!tieneTelefono(formData.telefono)) {
+      setToastMsg({ type: 'error', text: MENSAJE_TELEFONO_OBLIGATORIO });
+      return false;
+    }
     creandoRef.current = true;
     try {
       return await crearTicketSinGuardia(formData);
@@ -580,6 +587,13 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     if (role === 'TECNICO' && editingTicket.estado === 'PRE-FINALIZADO' && !(editingTicket.observacion || '').trim()) {
       setToastMsg({ type: 'error', text: 'Debes describir el trabajo realizado antes de pre-finalizar.' });
+      return false;
+    }
+
+    // Toda orden lleva el teléfono del cliente. Los técnicos no pueden editarlo, así que no se les exige:
+    // una orden vieja sin teléfono sigue pudiéndose pre-finalizar desde Detalles.
+    if (role !== 'TECNICO' && !tieneTelefono(editingTicket.telefono)) {
+      setToastMsg({ type: 'error', text: MENSAJE_TELEFONO_OBLIGATORIO });
       return false;
     }
 
