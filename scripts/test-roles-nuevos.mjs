@@ -22,7 +22,7 @@ const base = { id: 'a', codigo: 'IO1', nombre: 'Ana', tipoTrabajo: 'INSTALACIÓN
 const vista = (t) => { const v = estadoParaPromotora({ ...base, ...t }, AHORA); return v && [v.clave, v.etiqueta, v.detalle]; };
 
 check('roles nuevos (el valor guardado no cambia)', [ROLES.ALMACEN, ROLES.PROMOTORA], ['ALMACEN', 'PROMOTORA']);
-check('el rol se muestra como PROMOTOR', [etiquetaRol('PROMOTORA'), etiquetaRol('ALMACEN'), etiquetaRol('ADMIN')], ['PROMOTOR', 'ALMACEN', 'ADMIN']);
+check('el rol se muestra como VENTAS (el valor guardado sigue siendo PROMOTORA)', [etiquetaRol('PROMOTORA'), etiquetaRol('ALMACEN'), etiquetaRol('ADMIN')], ['VENTAS', 'ALMACEN', 'ADMIN']);
 
 // --- Estado en palabras claras ---
 check('pendiente sin técnico', vista({}), ['SIN_TECNICO', 'Sin técnico asignado', '']);

@@ -12,7 +12,7 @@ const ROL_NUEVO_ITEMS = [
   { value: ROLES.USUARIO, label: 'USUARIO (sin Técnicos/Usuarios/Tasa y pagos)' },
   { value: ROLES.TECNICO, label: 'TÉCNICO (asignaciones propias y pre-finalizar)' },
   { value: ROLES.ALMACEN, label: 'ALMACÉN (solo ve Materiales)' },
-  { value: ROLES.PROMOTORA, label: 'PROMOTOR (ve sus instalaciones, o todas si es ventas)' },
+  { value: ROLES.PROMOTORA, label: 'VENTAS (ve sus instalaciones, o todas con "Ver todas")' },
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];
 const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
@@ -48,7 +48,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     setPromError('');
   };
 
-  // PROMOTOR: con qué nombre(s) aparece en las plantillas (con eso ve sus instalaciones). Sirve al cambiar el rol y para corregirlos.
+  // VENTAS (PROMOTORA): con qué nombre(s) aparece en las plantillas (con eso ve sus instalaciones). Sirve al cambiar el rol y para corregirlos.
   const startPromEdit = (u) => {
     setRoleEditId(u.id);
     setRoleDraft(ROLES.PROMOTORA);
@@ -482,7 +482,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
               {userError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{userError}</p>}
 
-              {/* En PC, con el formulario largo (rol Promotor o Técnico), el botón se queda a la vista al desplazar. */}
+              {/* En PC, con el formulario largo (rol Ventas o Técnico), el botón se queda a la vista al desplazar. */}
               <div className="lg:sticky lg:-bottom-6 lg:-mx-6 lg:-mb-6 lg:px-6 lg:py-4 lg:bg-zinc-50 lg:dark:bg-zinc-950">
                 <button type="submit" disabled={isSubmitting} className={`px-6 py-3.5 w-full text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Creando...' : 'Crear Usuario'}</button>
               </div>

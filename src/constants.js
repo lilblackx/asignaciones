@@ -89,8 +89,8 @@ export const TIPOS_POR_TRABAJO = {
 };
 
 // ALMACEN: solo ve el módulo de Materiales. PROMOTORA: solo ve el estado de las instalaciones. Ninguno de los dos edita nada.
-// Cómo se muestra cada rol. El valor guardado en el perfil (y que usan las reglas) no cambia: PROMOTORA se ve "PROMOTOR".
-export const etiquetaRol = (rol) => (rol === 'PROMOTORA' ? 'PROMOTOR' : rol);
+// Cómo se muestra cada rol. El valor guardado en el perfil (y que usan las reglas) no cambia: PROMOTORA se ve "VENTAS".
+export const etiquetaRol = (rol) => (rol === 'PROMOTORA' ? 'VENTAS' : rol);
 
 export const ROLES = { ADMIN: 'ADMIN', USUARIO: 'USUARIO', TECNICO: 'TECNICO', ALMACEN: 'ALMACEN', PROMOTORA: 'PROMOTORA' };
 
