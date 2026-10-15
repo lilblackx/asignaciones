@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { collection, doc, getDocs, limit, orderBy, query, startAfter, writeBatch } from 'firebase/firestore';
+import { useCallback, useEffect, useState } from 'react';
+import { collection, doc, getDocs, limit, orderBy, query, startAfter, where, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
+import { RETENCION_MS_HISTORIAL, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
 
 const REPORTS_PAGE_SIZE = 30;
 const MAX_ESCRITURAS_LOTE = 450; // Firestore admite 500 por lote
@@ -11,6 +12,37 @@ function buildDesglose(items) {
     acc[tipo] = (acc[tipo] || 0) + 1;
     return acc;
   }, {});
+}
+
+// Las instalaciones que el cierre saca de la lista dejan un resumen liviano en historialInstalaciones, para que las
+// promotoras vean cómo terminaron durante unos días. Si falla, el cierre ya está hecho: solo se avisa en consola.
+async function guardarHistorialInstalaciones(ordenes, ahoraMs) {
+  const instalaciones = ordenes.filter(esDeVentas);
+  try {
+    for (let i = 0; i < instalaciones.length; i += MAX_ESCRITURAS_LOTE) {
+      const lote = writeBatch(db);
+      instalaciones.slice(i, i + MAX_ESCRITURAS_LOTE).forEach((t) => {
+        lote.set(doc(db, 'artifacts', appId, 'public', 'data', 'historialInstalaciones', String(t.id)), resumenInstalacion(t, ahoraMs));
+      });
+      await lote.commit();
+    }
+  } catch (error) {
+    console.error('No se pudo guardar el historial de instalaciones:', error);
+  }
+}
+
+async function limpiarHistorialInstalaciones(ahoraMs) {
+  try {
+    const ref = collection(db, 'artifacts', appId, 'public', 'data', 'historialInstalaciones');
+    const vencidas = await getDocs(query(ref, where('archivadoEn', '<', ahoraMs - RETENCION_MS_HISTORIAL)));
+    for (let i = 0; i < vencidas.docs.length; i += MAX_ESCRITURAS_LOTE) {
+      const lote = writeBatch(db);
+      vencidas.docs.slice(i, i + MAX_ESCRITURAS_LOTE).forEach((d) => lote.delete(d.ref));
+      await lote.commit();
+    }
+  } catch (error) {
+    console.error('No se pudo limpiar el historial de instalaciones:', error);
+  }
 }
 
 function formatFecha(dateInput) {
@@ -37,27 +69,25 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
 
   const reportsRef = () => collection(db, 'artifacts', appId, 'public', 'data', 'reports');
 
-  useEffect(() => {
+  // Recarga la primera página. También se llama al abrir Reportes/Historial: el
+  // cierre automático crea reportes desde el Worker y esta lista no tiene listener,
+  // así que una sesión abierta desde ayer no los vería.
+  const refreshReports = useCallback(async () => {
     if (!firebaseUser || !canCerrar) return;
-    let cancelled = false;
-
-    (async () => {
-      setIsLoadingReports(true);
-      try {
-        const snap = await getDocs(query(reportsRef(), orderBy('createdAt', 'desc'), limit(REPORTS_PAGE_SIZE)));
-        if (cancelled) return;
-        setReports(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        setLastDoc(snap.docs[snap.docs.length - 1] || null);
-        setHasMoreReports(snap.docs.length === REPORTS_PAGE_SIZE);
-      } catch (error) {
-        console.error('Error al cargar el historial de reportes:', error);
-      } finally {
-        if (!cancelled) setIsLoadingReports(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
+    setIsLoadingReports(true);
+    try {
+      const snap = await getDocs(query(reportsRef(), orderBy('createdAt', 'desc'), limit(REPORTS_PAGE_SIZE)));
+      setReports(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLastDoc(snap.docs[snap.docs.length - 1] || null);
+      setHasMoreReports(snap.docs.length === REPORTS_PAGE_SIZE);
+    } catch (error) {
+      console.error('Error al cargar el historial de reportes:', error);
+    } finally {
+      setIsLoadingReports(false);
+    }
   }, [firebaseUser, canCerrar]);
+
+  useEffect(() => { refreshReports(); }, [refreshReports]);
 
   const loadMoreReports = async () => {
     if (!lastDoc || isLoadingReports) return;
@@ -106,6 +136,7 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
       ids.slice(i, i + MAX_ESCRITURAS_LOTE).forEach(id => lote.delete(ticketRef(id)));
       await lote.commit();
     }
+    await guardarHistorialInstalaciones(seleccionados, newReport.createdAt);
     return newReport;
   };
 
@@ -122,6 +153,8 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
         return null;
       }
 
+      await limpiarHistorialInstalaciones(Date.now());
+
       // El nuevo reporte se agrega directo al estado local (en vez de re-consultar
       // Firestore) porque ya no hay listener en tiempo real que lo traiga solo.
       setReports(prev => [...[reporteCierre, reporteCancelados].filter(Boolean), ...prev]);
@@ -137,5 +170,5 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
     }
   };
 
-  return { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports };
+  return { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports, refreshReports };
 }

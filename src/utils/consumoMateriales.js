@@ -6,7 +6,7 @@
 //   - Visita de conector (externo o interno): gasta el conector colocado. Las visitas anteriores a
 //     que se pidiera el color del conector no lo tienen y no suman.
 import { esInstalacion, metrajeInstalacion } from './instalacion.js';
-import { TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, COLOR_AZUL, COLOR_VERDE, esVisitaConector } from './tipoVisita.js';
+import { TIPO_RECABLEADO, COLOR_AZUL, COLOR_VERDE, cantidadesConector, esVisitaConector } from './tipoVisita.js';
 
 export const PERIODOS = [
   { id: 'HOY', etiqueta: 'Hoy' },
@@ -18,12 +18,12 @@ export const PERIODOS = [
 const SIN_TECNICO = 'SIN TÉCNICO';
 
 // Conectores que gastó la orden, por color. Como material solo importa el color: que el conector
-// sea externo o interno no cambia cuál se gasta, y con los dos puestos son dos. En una visita de
-// conector solo cuenta el conector de esa visita.
+// sea externo o interno no cambia cuál se gasta. En una visita de conector cuentan las cantidades que
+// el técnico escribió (las visitas anteriores, que solo tienen el color, cuentan como 1); en un recableado,
+// un conector por cada uno marcado (con los dos puestos son dos).
 export function conectoresPorColor(t) {
-  const colores = t.tipoVisita === TIPO_CONECTOR_EXTERNO ? [t.conectorExterno]
-    : t.tipoVisita === TIPO_CONECTOR_INTERNO ? [t.conectorInterno]
-    : [t.conectorExterno, t.conectorInterno];
+  if (esVisitaConector(t.tipoVisita)) return cantidadesConector(t);
+  const colores = [t.conectorExterno, t.conectorInterno];
   return {
     verde: colores.filter((c) => c === COLOR_VERDE).length,
     azul: colores.filter((c) => c === COLOR_AZUL).length,

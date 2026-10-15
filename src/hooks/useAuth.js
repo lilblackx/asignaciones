@@ -98,6 +98,11 @@ export function useAuth() {
     currentUserName: profile?.nombre || profile?.username || null,
     role: profile?.role || null,
     tecnicoAsociado: profile?.tecnicoAsociado || null,
+    // PROMOTORA: con qué nombres aparece en las plantillas (claves normalizadas, ver utils/promotora).
+    promotoraNombres: profile?.promotoraNombres || [],
+    promotoraClaves: profile?.promotoraClaves || [],
+    // PROMOTORA de ventas: ve las instalaciones de todas las promotoras (lo marca el ADMIN en Usuarios).
+    verTodasInstalaciones: profile?.role === 'PROMOTORA' && profile?.verTodasInstalaciones === true,
     isTecnico: profile?.role === 'TECNICO',
     canCerrar: profile?.role === 'ADMIN' || profile?.puedeCerrar === true,
     authReady,

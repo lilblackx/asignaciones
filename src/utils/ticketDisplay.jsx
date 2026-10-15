@@ -24,6 +24,7 @@ const TIPO_TRABAJO_ESTILOS = {
   'GARANTIA': { badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400', borde: 'border-l-teal-500' },
   'LOW SIGNAL': { badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', borde: 'border-l-orange-500' },
   'RETIRO EQUIPO': { badge: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300', borde: 'border-l-zinc-500' },
+  'CAMBIO DE EQUIPO': { badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400', borde: 'border-l-indigo-500' },
 };
 const TIPO_TRABAJO_DEFAULT = { badge: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300', borde: 'border-l-zinc-400' };
 

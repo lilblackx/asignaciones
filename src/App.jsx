@@ -8,7 +8,6 @@ import { tieneCobroFinal } from './utils/cobro';
 import TasaIndicador from './components/TasaIndicador';
 import AvisoNotificaciones from './components/AvisoNotificaciones';
 import { crearConAviso } from './utils/errores';
-import { useAuth } from './hooks/useAuth';
 import { usePushToken } from './hooks/usePushToken';
 import { useToast } from './hooks/useToast';
 import { useNotifications } from './hooks/useNotifications';
@@ -24,6 +23,7 @@ import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
 import { useFormasPago } from './hooks/useFormasPago';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
+import { useCompletarPromotoras } from './hooks/useCompletarPromotoras';
 import { esProgramadaFutura } from './utils/programada';
 import { esVentaDelTecnico } from './utils/tecnicoVenta';
 import { TEXTO_SIN_PLANTILLA, generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, ordenSinPlantilla, tipoUsaPlantillaPromotora } from './utils/whatsapp';
@@ -63,11 +63,12 @@ const EMPTY_FORM = () => ({
   fechaProgramada: '',
   codigo: '', nombre: '', cedula: '', tipoDocumento: 'V', direccion: '', telefono: '', nap: '', napCoordenadas: '', ubicacion: '',
   tipoTrabajo: 'AVERÍA', falla: '', tecnico: '', observacion: '', observacionInterna: false, estado: 'PENDIENTE',
-  plantillaOriginal: '', ventaTecnico: ''
+  plantillaOriginal: '', ventaTecnico: '', promotora: ''
 });
 
-export default function App() {
-  const { firebaseUser, uid, currentUser, currentUserName, role, tecnicoAsociado, isTecnico, canCerrar, authReady, connectionError, loginData, setLoginData, loginError, handleLogin, handleLogout } = useAuth();
+// `auth`: la sesión (useAuth) la resuelve Root, que decide qué pantalla corresponde al rol.
+export default function App({ auth }) {
+  const { firebaseUser, uid, currentUser, currentUserName, role, tecnicoAsociado, isTecnico, canCerrar, authReady, connectionError, loginData, setLoginData, loginError, handleLogin, handleLogout } = auth;
   const push = usePushToken(uid);
   const { toastMsg, setToastMsg } = useToast();
   const conAviso = crearConAviso(setToastMsg);
@@ -81,9 +82,10 @@ export default function App() {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
-  const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
+  useCompletarPromotoras(firebaseUser, role, tickets);
+  const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports, refreshReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
   const { formasPago, guardarFormasPago } = useFormasPago(firebaseUser);
   const { orden: ordenTurno, tecnicoSugerido, guardarOrden, avanzarTurno } = useTurnoInstalaciones(firebaseUser, technicians, setToastMsg);
@@ -239,6 +241,10 @@ export default function App() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedReportForDetails, setSelectedReportForDetails] = useState(null);
+
+  useEffect(() => {
+    if (isReportModalOpen || isHistoryModalOpen) refreshReports();
+  }, [isReportModalOpen, isHistoryModalOpen, refreshReports]);
 
   const [isCierreConfirmOpen, setIsCierreConfirmOpen] = useState(false);
   const [cierreDateInput, setCierreDateInput] = useState('');
@@ -408,8 +414,8 @@ export default function App() {
   const handleCancelarViaje = conAviso(cancelarViaje, 'No se pudo cancelar el viaje.');
 
   const handleConfirmAprobarFinalizar = conAviso(async (ticket, cobro) => {
-    await aprobarFinalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
-    setAprobarTarget(null);
+    const ok = await aprobarFinalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
+    if (ok) setAprobarTarget(null);
   }, 'No se pudo aprobar la orden.');
 
   const handleDevolver = conAviso(async (ticket, motivo) => {
@@ -418,8 +424,8 @@ export default function App() {
   }, 'No se pudo devolver la orden.');
 
   const confirmFinalizar = conAviso(async (ticket, cobro) => {
-    await finalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
-    setFinalizarTarget(null);
+    const ok = await finalizarTicket(ticket, cobro || { montoBs: montoBsDe(tasaConfig) });
+    if (ok) setFinalizarTarget(null);
   }, 'No se pudo finalizar la orden.');
 
   const confirmDelete = conAviso(async () => {
@@ -693,6 +699,7 @@ export default function App() {
             ticket={finalizarTarget}
             montoBs={montoBsDe(tasaConfig)}
             onConfirm={confirmFinalizar}
+            onGuardarValores={guardarValoresCliente}
             onCopy={copyToClipboard}
             onClose={() => setFinalizarTarget(null)}
           />
@@ -823,6 +830,7 @@ export default function App() {
             ticket={aprobarTarget}
             montoBs={montoBsDe(tasaConfig)}
             onConfirm={handleConfirmAprobarFinalizar}
+            onGuardarValores={guardarValoresCliente}
             onDevolver={handleDevolver}
             onCopy={copyToClipboard}
             onClose={() => setAprobarTarget(null)}

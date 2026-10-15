@@ -38,6 +38,22 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('users').doc('usuario-uid').set({ role: 'USUARIO', disabled: false });
   await base.collection('users').doc('tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO', disabled: false });
   await base.collection('users').doc('otro-tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO', disabled: false });
+  await base.collection('users').doc('almacen-uid').set({ role: 'ALMACEN', disabled: false });
+  await base.collection('users').doc('promotora-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
+  await base.collection('users').doc('promotora2-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: ['Alexis Añez', 'Alexis'], promotoraClaves: ['alexis anez', 'alexis'] });
+  await base.collection('users').doc('promotora-sin-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: [], promotoraClaves: [] });
+  await base.collection('users').doc('ventas-uid').set({ role: 'PROMOTORA', disabled: false, verTodasInstalaciones: true, promotoraNombres: [], promotoraClaves: [] });
+  await base.collection('users').doc('promotora-off-uid').set({ role: 'PROMOTORA', disabled: true, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
+  await base.collection('tickets').doc('instalacion-1').set({ codigo: 'IO1', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Cliente', cedula: '1', tecnico: '', promotora: 'Sariana', promotoraClave: 'sariana' });
+  await base.collection('tickets').doc('instalacion-2').set({ codigo: 'IO2', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Otro cliente', cedula: '2', tecnico: '', promotora: 'Alexis Añez', promotoraClave: 'alexis anez' });
+  await base.collection('tickets').doc('instalacion-3').set({ codigo: 'IO3', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Cliente del alias', cedula: '3', tecnico: '', promotora: 'Alexis', promotoraClave: 'alexis' });
+  await base.collection('tickets').doc('averia-los').set({ codigo: 'AS7', tipoTrabajo: 'AVERÍA', falla: 'LOS', estado: 'PENDIENTE', nombre: 'Cliente LOS', cedula: '7', tecnico: 'GERARDO MOLERO' });
+  await base.collection('tickets').doc('averia-otra').set({ codigo: 'AS8', tipoTrabajo: 'AVERÍA', falla: 'Tensado de drop', estado: 'PENDIENTE', nombre: 'Cliente otra falla', cedula: '8', tecnico: 'GERARDO MOLERO' });
+  await base.collection('tickets').doc('instalacion-4').set({ codigo: 'IO4', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Orden vieja sin promotora', cedula: '4', tecnico: '' });
+  await base.collection('tickets').doc('instalacion-5').set({ codigo: 'IO5', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Otra promotora', cedula: '5', tecnico: '', promotora: 'Maria', promotoraClave: 'maria' });
+  await base.collection('reports').doc('reporte-1').set({ total: 1, tipoReporte: 'CIERRE', createdAt: 1 });
+  await base.collection('historialInstalaciones').doc('hist-1').set({ codigo: 'IO0', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Sariana', promotoraClave: 'sariana' });
+  await base.collection('historialInstalaciones').doc('hist-otra').set({ codigo: 'IO9', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Maria', promotoraClave: 'maria' });
 
   await base.collection('tickets').doc('ticket-de-gerardo').set({
     tecnico: 'GERARDO MOLERO', codigo: 'AS1', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'PENDIENTE'
@@ -220,6 +236,16 @@ await check('TECNICO puede registrar un recableado (metros, conectores, señal 1
   }));
 });
 
+await check('TECNICO puede registrar las cantidades de conectores de una visita de conector', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({
+    tipoVisita: 'CONECTOR_INTERNO', conectorInterno: '', conectoresUsados: { verde: 2, azul: 1 }
+  }));
+});
+
+await check('TECNICO NO puede escribir otros campos junto con las cantidades', async () => {
+  await assertFails(camposGerardo(asTecnico()).update({ conectoresUsados: { verde: 1, azul: 0 }, tecnico: 'REINEL BRAVO' }));
+});
+
 await check('TECNICO puede registrar los datos de la instalación (serial, VLAN, posteadura, metraje, NAP, puerto y puertos disponibles)', async () => {
   await assertSucceeds(camposGerardo(asTecnico()).update({
     instalacion: { serial: 'HWTC1A2B3C4D', vlan: '100', posteadura: ['DM SN N01B01', 'DM SN N01B02'], metraje: 120, nap: 'M05F11', puerto: '3', puertosDisponibles: '6' },
@@ -296,6 +322,146 @@ await check('TECNICO NO puede tocar los contadores', async () => {
 
 await check('Nadie puede hacer retroceder un contador', async () => {
   await assertFails(counterPath(asAdmin()).update({ ultimo: 1, actualizadoEn: 1 }));
+});
+
+// --- ALMACEN y PROMOTORA: solo leen, y solo lo que necesitan ---
+const asAlmacen = () => testEnv.authenticatedContext('almacen-uid').firestore();
+const asPromotora = () => testEnv.authenticatedContext('promotora-uid').firestore();
+const asPromotoraOff = () => testEnv.authenticatedContext('promotora-off-uid').firestore();
+const datos = (db) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data');
+const ticketsInst = (db) => datos(db).collection('tickets').where('tipoTrabajo', '==', 'INSTALACIÓN');
+
+await check('ALMACEN lee todas las órdenes (para contar el material)', async () => {
+  await assertSucceeds(datos(asAlmacen()).collection('tickets').get());
+});
+await check('ALMACEN lee los reportes de cierre y los técnicos', async () => {
+  await assertSucceeds(datos(asAlmacen()).collection('reports').get());
+  await assertSucceeds(datos(asAlmacen()).collection('technicians').get());
+});
+await check('ALMACEN NO puede escribir órdenes, reportes ni técnicos', async () => {
+  await assertFails(ticketPath(asAlmacen(), 'instalacion-1').update({ observacion: 'x' }));
+  await assertFails(datos(asAlmacen()).collection('tickets').doc('nueva').set({ codigo: 'X', tipoTrabajo: 'AVERÍA' }));
+  await assertFails(datos(asAlmacen()).collection('reports').doc('reporte-1').update({ total: 9 }));
+  await assertFails(datos(asAlmacen()).collection('technicians').doc('GERARDO-MOLERO').update({ activo: false }));
+  await assertFails(ticketPath(asAlmacen(), 'instalacion-1').delete());
+});
+await check('ALMACEN NO lee usuarios ni el historial de instalaciones', async () => {
+  await assertFails(datos(asAlmacen()).collection('users').get());
+  await assertFails(datos(asAlmacen()).collection('historialInstalaciones').get());
+});
+
+const asPromotora2 = () => testEnv.authenticatedContext('promotora2-uid').firestore();
+const asPromotoraSin = () => testEnv.authenticatedContext('promotora-sin-uid').firestore();
+const susInstalaciones = (db, clave) => ticketsInst(db).where('promotoraClave', '==', clave);
+const suHistorial = (db, clave) => datos(db).collection('historialInstalaciones').where('promotoraClave', '==', clave);
+
+await check('PROMOTORA lee sus instalaciones (las de su promotora)', async () => {
+  await assertSucceeds(susInstalaciones(asPromotora(), 'sariana').get());
+  await assertSucceeds(ticketPath(asPromotora(), 'instalacion-1').get());
+});
+await check('PROMOTORA solo recibe las suyas en la consulta', async () => {
+  const snap = await susInstalaciones(asPromotora(), 'sariana').get();
+  if (snap.docs.map((d) => d.id).join() !== 'instalacion-1') throw new Error(`recibió ${snap.docs.map((d) => d.id)}`);
+});
+await check('PROMOTORA NO lee las instalaciones de otra promotora', async () => {
+  await assertFails(ticketPath(asPromotora(), 'instalacion-2').get());
+  await assertFails(ticketPath(asPromotora(), 'instalacion-5').get());
+  await assertFails(susInstalaciones(asPromotora(), 'alexis anez').get());
+  await assertFails(susInstalaciones(asPromotora(), 'maria').get());
+});
+await check('PROMOTORA NO lee las instalaciones sin promotora (órdenes viejas sin completar)', async () => {
+  await assertFails(ticketPath(asPromotora(), 'instalacion-4').get());
+  await assertFails(susInstalaciones(asPromotora(), '').get());
+});
+await check('PROMOTORA NO lee todas las instalaciones ni todas las órdenes', async () => {
+  await assertFails(ticketsInst(asPromotora()).get());
+  await assertFails(datos(asPromotora()).collection('tickets').get());
+});
+await check('PROMOTORA NO lee averías', async () => {
+  await assertFails(ticketPath(asPromotora(), 'ticket-de-gerardo').get());
+});
+await check('PROMOTORA con varios nombres lee las de cada uno', async () => {
+  await assertSucceeds(susInstalaciones(asPromotora2(), 'alexis anez').get());
+  await assertSucceeds(susInstalaciones(asPromotora2(), 'alexis').get());
+  await assertSucceeds(ticketPath(asPromotora2(), 'instalacion-3').get());
+  await assertFails(susInstalaciones(asPromotora2(), 'sariana').get());
+});
+await check('PROMOTORA sin nombre asignado no lee nada', async () => {
+  await assertFails(susInstalaciones(asPromotoraSin(), 'sariana').get());
+  await assertFails(susInstalaciones(asPromotoraSin(), '').get());
+  await assertFails(ticketPath(asPromotoraSin(), 'instalacion-1').get());
+  await assertFails(suHistorial(asPromotoraSin(), 'sariana').get());
+});
+await check('PROMOTORA lee el historial de su promotora y no el de otra', async () => {
+  await assertSucceeds(suHistorial(asPromotora(), 'sariana').get());
+  await assertFails(suHistorial(asPromotora(), 'maria').get());
+  await assertFails(datos(asPromotora()).collection('historialInstalaciones').get());
+  await assertFails(datos(asPromotora()).collection('historialInstalaciones').doc('hist-otra').get());
+});
+const asVentas = () => testEnv.authenticatedContext('ventas-uid').firestore();
+await check('PROMOTORA de ventas (ve todas) lee las instalaciones de todas las promotoras, sin nombre asignado', async () => {
+  const snap = await ticketsInst(asVentas()).get();
+  const ids = snap.docs.map((d) => d.id);
+  for (const id of ['instalacion-1', 'instalacion-2', 'instalacion-3', 'instalacion-4']) if (!ids.includes(id)) throw new Error(`falta ${id}: recibió ${ids}`);
+  await assertSucceeds(ticketPath(asVentas(), 'instalacion-2').get());
+  await assertSucceeds(susInstalaciones(asVentas(), 'alexis anez').get());
+});
+const losDeVentas = (db) => datos(db).collection('tickets').where('tipoTrabajo', '==', 'AVERÍA').where('falla', '==', 'LOS');
+await check('PROMOTORA de ventas lee también las averías LOS (y solo esas)', async () => {
+  const snap = await losDeVentas(asVentas()).get();
+  if (snap.docs.map((d) => d.id).join() !== 'averia-los') throw new Error(`recibió ${snap.docs.map((d) => d.id)}`);
+  await assertSucceeds(ticketPath(asVentas(), 'averia-los').get());
+  await assertFails(ticketPath(asVentas(), 'averia-otra').get());
+  await assertFails(datos(asVentas()).collection('tickets').where('tipoTrabajo', '==', 'AVERÍA').get());
+});
+await check('Una PROMOTORA normal NO lee averías LOS', async () => {
+  await assertFails(losDeVentas(asPromotora()).get());
+  await assertFails(ticketPath(asPromotora(), 'averia-los').get());
+});
+await check('PROMOTORA de ventas lee todo el historial de instalaciones', async () => {
+  await assertSucceeds(datos(asVentas()).collection('historialInstalaciones').get());
+  await assertSucceeds(datos(asVentas()).collection('historialInstalaciones').doc('hist-otra').get());
+});
+await check('PROMOTORA de ventas SOLO ve instalaciones y LOS: ni otras averías ni todas las órdenes, reportes, técnicos ni usuarios', async () => {
+  await assertFails(ticketPath(asVentas(), 'ticket-de-gerardo').get());
+  await assertFails(datos(asVentas()).collection('tickets').get());
+  await assertFails(datos(asVentas()).collection('reports').get());
+  await assertFails(datos(asVentas()).collection('technicians').get());
+  await assertFails(datos(asVentas()).collection('users').get());
+});
+await check('PROMOTORA de ventas NO puede escribir nada (solo lectura)', async () => {
+  await assertFails(ticketPath(asVentas(), 'instalacion-1').update({ observacion: 'x' }));
+  await assertFails(datos(asVentas()).collection('tickets').doc('nueva').set({ codigo: 'X', tipoTrabajo: 'INSTALACIÓN' }));
+  await assertFails(datos(asVentas()).collection('historialInstalaciones').doc('hist-1').update({ estado: 'CANCELADO' }));
+});
+await check('El "ve todas" no se lo puede dar nadie a sí mismo ni cambiarse el rol', async () => {
+  await assertFails(datos(asPromotora()).collection('users').doc('promotora-uid').update({ verTodasInstalaciones: true }));
+  await assertFails(datos(asVentas()).collection('users').doc('ventas-uid').update({ role: 'ADMIN' }));
+});
+await check('PROMOTORA NO lee reportes, técnicos ni usuarios', async () => {
+  await assertFails(datos(asPromotora()).collection('reports').get());
+  await assertFails(datos(asPromotora()).collection('technicians').get());
+  await assertFails(datos(asPromotora()).collection('users').get());
+});
+await check('PROMOTORA NO puede escribir nada', async () => {
+  await assertFails(ticketPath(asPromotora(), 'instalacion-1').update({ observacion: 'x' }));
+  await assertFails(datos(asPromotora()).collection('tickets').doc('nueva').set({ codigo: 'X', tipoTrabajo: 'INSTALACIÓN' }));
+  await assertFails(datos(asPromotora()).collection('historialInstalaciones').doc('hist-1').update({ estado: 'CANCELADO' }));
+  await assertFails(datos(asPromotora()).collection('historialInstalaciones').doc('nuevo').set({ codigo: 'X' }));
+  await assertFails(datos(asPromotora()).collection('counters').doc('A_O_2026').update({ ultimo: 7, actualizadoEn: 1 }));
+});
+await check('Una PROMOTORA deshabilitada no lee nada', async () => {
+  await assertFails(susInstalaciones(asPromotoraOff(), 'sariana').get());
+  await assertFails(suHistorial(asPromotoraOff(), 'sariana').get());
+});
+await check('ADMIN y USUARIO con permiso de cierre escriben el historial; USUARIO sin permiso no', async () => {
+  await assertSucceeds(datos(asAdmin()).collection('historialInstalaciones').doc('hist-2').set({ codigo: 'IO2', estado: 'CANCELADO', archivadoEn: Date.now() }));
+  await assertFails(datos(asUsuario()).collection('historialInstalaciones').doc('hist-3').set({ codigo: 'IO3' }));
+});
+await check('Los roles de siempre siguen leyendo igual (TECNICO solo lo suyo)', async () => {
+  await assertSucceeds(datos(asUsuario()).collection('tickets').get());
+  await assertFails(datos(asTecnico()).collection('tickets').get());
+  await assertFails(datos(asTecnico()).collection('reports').get());
 });
 
 await testEnv.cleanup();

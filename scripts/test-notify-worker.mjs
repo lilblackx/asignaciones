@@ -151,5 +151,59 @@ r = await enviar('tecnico-uid', aviso);
 check('un TECNICO no puede avisar a un técnico', r.status, 403);
 check('y no se envió nada', enviosFcm.length, 0);
 
+
+// --- Cierre automático: las instalaciones dejan un resumen liviano para la promotora ---
+const fetchBase = globalThis.fetch;
+const HOY = 'Tue Oct 13 2026';
+const AHORA = Date.parse('2026-10-13T22:05:00-04:00'); // martes 10:05 pm en Caracas
+const ticketDoc = (id, campos) => ({ name: `${DOCS}/artifacts/${APP}/public/data/tickets/${id}`, fields: Object.fromEntries(Object.entries(campos).map(([k, v]) => [k, typeof v === 'number' ? { integerValue: String(v) } : { stringValue: v }])) });
+const FINALIZADAS = [
+  ticketDoc('t-inst', { codigo: 'IO5', nombre: 'Ana Pérez', cedula: '12.345.678', tipoDocumento: 'V', direccion: 'Calle 1', tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1000, finalizadoEn: 2000, serial: 'SECRETO123', cobroBs: '400', plantillaOriginal: '*Nap:*\n*Promotora:* alexis añez \n*Fuente:* x' }),
+  ticketDoc('t-averia', { codigo: 'AS7', nombre: 'Luis', estado: 'FINALIZADO', tipoTrabajo: 'AVERÍA', createdAt: 1500 }),
+];
+const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'Rosa', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana' })];
+const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 9 * 86400000) } } };
+const consultas = [];
+globalThis.fetch = async (url, init = {}) => {
+  const u = String(url);
+  if (u.includes('/config/cierreAutomatico') && (init.method || 'GET') === 'GET') {
+    return respuesta({ fields: { activo: { booleanValue: true }, hora: { stringValue: '22:00' }, dias: { arrayValue: { values: [0, 1, 2, 3, 4, 5, 6].map((d) => ({ integerValue: String(d) })) } }, actualizadoEn: { integerValue: '1' } } });
+  }
+  if (u.includes('/config/cierreAutomatico')) return respuesta({});
+  if (u.includes(':runQuery')) {
+    const q = JSON.parse(init.body).structuredQuery;
+    consultas.push(q);
+    const col = q.from[0].collectionId;
+    if (col === 'tickets') return respuesta((q.where.fieldFilter.value.stringValue === 'FINALIZADO' ? FINALIZADAS : CANCELADAS).map((document) => ({ document })));
+    if (col === 'historialInstalaciones') return respuesta([{ document: VENCIDA }]);
+    return respuesta([{}]); // aprobadores: nadie a quien avisar
+  }
+  return fetchBase(url, init);
+};
+reiniciar();
+const { cierreAutomatico } = await import('../cf-worker/src/index.js');
+const resultado = await cierreAutomatico(env, AHORA);
+check('el cierre automático corre', [resultado.ejecutado, resultado.finalizadas, resultado.canceladas], [true, 2, 1]);
+const escrituras = commits.flatMap((c) => c.writes || []);
+const historial = escrituras.filter((w) => w.update?.name.includes('/historialInstalaciones/'));
+check('guarda el historial solo de las instalaciones (finalizada y cancelada), no de las averías',
+  historial.map((w) => w.update.name.split('/').pop()).sort(), ['t-cancel', 't-inst']);
+const dePrueba = historial.find((w) => w.update.name.endsWith('/t-inst'))?.update.fields;
+check('el resumen lleva lo que ve la promotora', [dePrueba?.codigo, dePrueba?.nombre, dePrueba?.cedula, dePrueba?.direccion, dePrueba?.tecnico, dePrueba?.estado],
+  [{ stringValue: 'IO5' }, { stringValue: 'Ana Pérez' }, { stringValue: '12.345.678' }, { stringValue: 'Calle 1' }, { stringValue: 'GERARDO MOLERO' }, { stringValue: 'FINALIZADO' }]);
+check('y las fechas: creada, finalizada y archivada', [dePrueba?.creadaEn, dePrueba?.finalizadoEn, dePrueba?.archivadoEn],
+  [{ integerValue: '1000' }, { integerValue: '2000' }, { integerValue: String(AHORA) }]);
+check('el resumen NO lleva datos técnicos ni de cobro', Object.keys(dePrueba || {}).sort(),
+  ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'finalizadoEn', 'nombre', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento']);
+check('la promotora sale de la plantilla si la orden no la guardó', [dePrueba?.promotora, dePrueba?.promotoraClave], [{ stringValue: 'Alexis Añez' }, { stringValue: 'alexis anez' }]);
+const canceladaDoc = historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields;
+check('y se usa la que la orden ya trae', [canceladaDoc?.promotora, canceladaDoc?.promotoraClave], [{ stringValue: 'Sariana' }, { stringValue: 'sariana' }]);
+check('una instalación sin fecha de finalizado guarda null', historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields.finalizadoEn, { nullValue: null });
+check('borra del historial lo de más de 3 días', escrituras.filter((w) => w.delete?.includes('/historialInstalaciones/')).map((w) => w.delete.split('/').pop()), ['vieja']);
+const corte = consultas.find((q) => q.from[0].collectionId === 'historialInstalaciones')?.where.fieldFilter;
+check('la limpieza pide lo anterior a hoy menos 3 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 3 * 86400000)]);
+check('el reporte del cierre sigue guardando todo (también la avería)', escrituras.filter((w) => w.update?.name.includes('/reports/')).length, 2);
+globalThis.fetch = fetchBase;
+
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

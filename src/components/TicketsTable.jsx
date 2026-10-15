@@ -200,7 +200,6 @@ export default function TicketsTable({
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
                         ) : null}
-                        <button onClick={() => onEdit(ticket)} aria-label={`Ver detalles de orden ${ticket.codigo || ticket.id}`} className="p-1 text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded transition-colors" title="Ver detalles / notas"><Edit className="w-3.5 h-3.5" /></button>
                       </>
                     ) : (
                       <>

@@ -97,7 +97,8 @@ function FilaTecnico({ fila, abierto, onToggle }) {
 // Módulo solo para ADMIN: metros de cable (recableados e instalaciones) y conectores (recableados y
 // visitas de conector) usados, en total y por técnico (todos los registrados, aunque no hayan usado material
 // en el período). Suma las órdenes activas y las ya archivadas en los reportes de cierre cargados.
-export default function MaterialesModal({ tickets, reports, technicians, hasMoreReports, isLoadingReports, onLoadMore, onClose }) {
+// `enPagina` (almacén): el mismo contenido como pantalla completa, sin ventana ni botón de cerrar.
+export default function MaterialesModal({ tickets, reports, technicians, hasMoreReports, isLoadingReports, onLoadMore, onClose, enPagina = false }) {
   const [periodo, setPeriodo] = useState('MES');
   const [abierto, setAbierto] = useState(null);
 
@@ -114,12 +115,11 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
     porAprobar.visitas > 0 && `${porAprobar.visitas} visita${porAprobar.visitas === 1 ? '' : 's'} de conector`,
   ].filter(Boolean).join(', ') + (porAprobar.metros > 0 ? ` (${numero(porAprobar.metros)} m de cable)` : '');
 
-  return (
-    <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center sticky top-0 z-10">
+  const tarjeta = (
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full border border-zinc-300 dark:border-zinc-800 ${enPagina ? 'max-w-4xl mx-auto overflow-hidden' : 'max-w-2xl max-h-[92vh] overflow-y-auto'}`}>
+        <div className={`bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center ${enPagina ? '' : 'sticky top-0 z-10'}`}>
           <h2 className="text-lg font-black text-white flex items-center gap-2"><Cable className="w-5 h-5 text-red-500" aria-hidden="true" /> MATERIALES</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
+          {!enPagina && <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>}
         </div>
 
         <div className="p-4 sm:p-6 space-y-4">
@@ -176,6 +176,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
           </div>
         </div>
       </div>
-    </Modal>
   );
+
+  return enPagina ? tarjeta : <Modal onClose={onClose} zIndexClass="z-50">{tarjeta}</Modal>;
 }

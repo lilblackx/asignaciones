@@ -2,8 +2,9 @@
 //
 // - Conector externo / interno: visita para cambiar un conector. Generan un cobro al cliente
 //   (se calcula al finalizar con la tasa del momento) y el externo pide NAP y puerto. El técnico
-//   indica el color del conector colocado: el externo es siempre verde; el interno, verde o azul
-//   (obligatorio). Se guarda en `conectorExterno` / `conectorInterno`, igual que en el recableado.
+//   indica CUÁNTOS conectores usó de cada color: el externo es siempre verde (al menos 1); el interno,
+//   verdes y/o azules (al menos 1 en total). Se guarda en `conectoresUsados: { verde, azul }`; las
+//   visitas anteriores solo tienen el color (`conectorExterno` / `conectorInterno`) y cuentan como 1.
 // - Recableado: se registran los metros de cable usados (obligatorio) y, opcionalmente, los
 //   conectores colocados: un conector externo (solo verde) y/o uno interno (verde o azul).
 //   No genera cobro.
@@ -95,46 +96,104 @@ export function parseMetros(raw) {
 export const colorConectorExterno = (color) => (COLORES_CONECTOR_EXTERNO.includes(color) ? color : '');
 export const colorConectorInterno = (color) => (COLORES_CONECTOR_INTERNO.includes(color) ? color : '');
 
-// Colores que puede elegir el técnico en una visita de conector (en las demás no hay elección).
-export const coloresConectorVisita = (tipoVisita) => {
-  if (tipoVisita === TIPO_CONECTOR_EXTERNO) return COLORES_CONECTOR_EXTERNO;
-  if (tipoVisita === TIPO_CONECTOR_INTERNO) return COLORES_CONECTOR_INTERNO;
-  return [];
-};
+// --- Cantidad de conectores de una visita de conector ---------------------------------------
 
-// En la visita de conector interno el color es obligatorio (el externo siempre es verde).
-// Devuelve el mensaje de error, o '' si está bien.
-export const errorColorConector = (tipoVisita, colorInterno) =>
-  tipoVisita === TIPO_CONECTOR_INTERNO && !colorConectorInterno(colorInterno) ? 'Elige el tipo de conector: verde o azul.' : '';
+// Tope por color: evita un error de dedo (un "20" por un "2").
+export const MAX_CONECTORES_POR_COLOR = 10;
+
+const entero = (v) => (Number.isInteger(v) && v >= 0 ? v : 0);
+
+// Conectores de una visita de conector por color: { verde, azul }. Si la visita guardó las cantidades se usan
+// esas; las visitas anteriores solo tienen el color y cuentan como 1 conector de ese color. En cualquier otro
+// tipo de visita no aplica ({ verde: 0, azul: 0 }); el externo nunca tiene azules.
+export function cantidadesConector(t) {
+  const externo = t?.tipoVisita === TIPO_CONECTOR_EXTERNO;
+  if (!externo && t?.tipoVisita !== TIPO_CONECTOR_INTERNO) return { verde: 0, azul: 0 };
+  const c = t.conectoresUsados;
+  if (c && typeof c === 'object') return { verde: entero(c.verde), azul: externo ? 0 : entero(c.azul) };
+  const color = externo ? colorConectorExterno(t.conectorExterno) : colorConectorInterno(t.conectorInterno);
+  return { verde: color === COLOR_VERDE ? 1 : 0, azul: color === COLOR_AZUL ? 1 : 0 };
+}
+
+// "2 verdes, 1 azul" ('' si no hay ninguno).
+export function textoCantidades({ verde = 0, azul = 0 } = {}) {
+  return [
+    verde > 0 && `${verde} verde${verde === 1 ? '' : 's'}`,
+    azul > 0 && `${azul} azul${azul === 1 ? '' : 'es'}`,
+  ].filter(Boolean).join(', ');
+}
+
+// Cantidades escritas por el técnico (texto) -> { valor: { verde, azul } } o { error, campo }.
+// Un campo vacío cuenta como 0. Externo: verdes, al menos 1. Interno: verdes y/o azules, al menos 1 en total.
+export function parseCantidadesConector(tipoVisita, { verde, azul } = {}) {
+  const leer = (raw, nombre) => {
+    const txt = String(raw ?? '').trim();
+    if (txt === '') return { valor: 0 };
+    if (!/^\d{1,2}$/.test(txt)) return { error: `Escribe la cantidad de conectores ${nombre} como un número entero. Ejemplo: 2` };
+    const n = parseInt(txt, 10);
+    if (n > MAX_CONECTORES_POR_COLOR) return { error: `Máximo ${MAX_CONECTORES_POR_COLOR} conectores ${nombre}.` };
+    return { valor: n };
+  };
+  if (!esVisitaConector(tipoVisita)) return { valor: null };
+  const v = leer(verde, 'verdes');
+  if (v.error) return { error: v.error, campo: 'verde' };
+  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
+    if (v.valor < 1) return { error: 'Indica cuántos conectores verdes usaste.', campo: 'verde' };
+    return { valor: { verde: v.valor, azul: 0 } };
+  }
+  const a = leer(azul, 'azules');
+  if (a.error) return { error: a.error, campo: 'azul' };
+  if (v.valor + a.valor < 1) return { error: 'Indica cuántos conectores usaste: verdes, azules o ambos.', campo: 'verde' };
+  return { valor: { verde: v.valor, azul: a.valor } };
+}
+
+// Mensaje de error de las cantidades ya numéricas (la segunda comprobación al guardar), o '' si están bien.
+export const errorCantidadesConector = (tipoVisita, conectores) =>
+  parseCantidadesConector(tipoVisita, { verde: String(conectores?.verde ?? ''), azul: String(conectores?.azul ?? '') }).error || '';
 
 // Datos de metros y conectores tal como se guardan en la orden:
 //   - Recableado: metros y los conectores que se hayan marcado (opcionales).
-//   - Visita de conector: solo el conector de esa visita (el externo siempre es verde).
+//   - Visita de conector: las cantidades por color (`conectoresUsados`) y, por compatibilidad, el color si solo se
+//     usó uno (el externo siempre es verde).
 //   - Cualquier otro tipo: todo queda vacío.
 // `null`/'' (y no omitir el campo) es lo que permite borrar un valor anterior.
-export function datosConectores(tipoVisita, { metros, conectorExterno, conectorInterno } = {}) {
-  const vacios = { metrosCable: null, conectorExterno: '', conectorInterno: '' };
+export function datosConectores(tipoVisita, { metros, conectorExterno, conectorInterno, conectores } = {}) {
+  const vacios = { metrosCable: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null };
   if (tipoVisita === TIPO_RECABLEADO) {
-    return { metrosCable: metros ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
+    return { ...vacios, metrosCable: metros ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
   }
-  if (tipoVisita === TIPO_CONECTOR_EXTERNO) return { ...vacios, conectorExterno: COLOR_VERDE };
-  if (tipoVisita === TIPO_CONECTOR_INTERNO) return { ...vacios, conectorInterno: colorConectorInterno(conectorInterno) };
+  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
+    return { ...vacios, conectorExterno: COLOR_VERDE, conectoresUsados: { verde: entero(conectores?.verde), azul: 0 } };
+  }
+  if (tipoVisita === TIPO_CONECTOR_INTERNO) {
+    const verde = entero(conectores?.verde);
+    const azul = entero(conectores?.azul);
+    const unSoloColor = verde > 0 && azul === 0 ? COLOR_VERDE : azul > 0 && verde === 0 ? COLOR_AZUL : '';
+    return { ...vacios, conectorInterno: unSoloColor, conectoresUsados: { verde, azul } };
+  }
   return vacios;
 }
 
-// Color del conector de una visita de conector, con su nombre ("Conector azul"); '' si no hay.
+// Conectores de una visita de conector, para el historial: "Conectores: 2 verdes, 1 azul". Una visita anterior,
+// que solo guardó el color, dice "Conector azul". '' si no hay.
 export function textoConectorVisita(t) {
-  const color = t?.tipoVisita === TIPO_CONECTOR_EXTERNO ? t.conectorExterno : t?.tipoVisita === TIPO_CONECTOR_INTERNO ? t.conectorInterno : '';
+  if (!esVisitaConector(t?.tipoVisita)) return '';
+  if (t.conectoresUsados && typeof t.conectoresUsados === 'object') {
+    const texto = textoCantidades(cantidadesConector(t));
+    return texto ? `Conectores: ${texto}` : '';
+  }
+  const color = t.tipoVisita === TIPO_CONECTOR_EXTERNO ? t.conectorExterno : t.conectorInterno;
   return ETIQUETA_COLOR[color] ? `Conector ${ETIQUETA_COLOR[color].toLowerCase()}` : '';
 }
 
-// El conector de una visita de conector, por separado del cobro de la visita: su tipo ('Externo' o 'Interno') y su
-// color (la etiqueta del color va vacía si no se registró). null si la orden no es una visita de conector.
+// El conector de una visita de conector, por separado del cobro de la visita: su tipo ('Externo' o 'Interno'), su
+// color si fue uno solo (la etiqueta del color va vacía si no se registró) y las cantidades por color.
+// null si la orden no es una visita de conector.
 export function conectorDeVisita(t) {
   const externo = t?.tipoVisita === TIPO_CONECTOR_EXTERNO;
   if (!externo && t?.tipoVisita !== TIPO_CONECTOR_INTERNO) return null;
   const color = externo ? colorConectorExterno(t.conectorExterno) : colorConectorInterno(t.conectorInterno);
-  return { tipo: externo ? 'Externo' : 'Interno', color, etiquetaColor: ETIQUETA_COLOR[color] || '' };
+  return { tipo: externo ? 'Externo' : 'Interno', color, etiquetaColor: ETIQUETA_COLOR[color] || '', cantidades: cantidadesConector(t) };
 }
 
 export const tieneDatosRecableado = (t) => Boolean(t) && (t.metrosCable != null || Boolean(t.conectorExterno) || Boolean(t.conectorInterno));

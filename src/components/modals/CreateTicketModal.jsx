@@ -13,6 +13,7 @@ import { ClienteSmartOltIcono, ClienteSmartOltMensaje } from './ClienteSmartOltF
 import { useClienteSmartOlt } from '../../hooks/useClienteSmartOlt';
 import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
+import PromotorField from './PromotorField';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 
 export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, onClose }) {
@@ -268,6 +269,18 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs font-mono" placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
               {!formData.plantillaOriginal?.trim() && <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>}
             </div>
+          )}
+
+          {esInstalacion && (
+            <PromotorField
+              id="tk-promotora"
+              value={formData.promotora || ''}
+              onChange={handleCreateChange}
+              wrapperClassName="col-span-2 sm:col-span-5 space-y-0.5"
+              labelClassName="text-[10px] font-bold text-zinc-500 ml-1"
+              inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs"
+              ayuda="(se llena con la plantilla)"
+            />
           )}
 
           <div className="col-span-1 sm:col-span-2 space-y-0.5">

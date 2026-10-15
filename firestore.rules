@@ -29,6 +29,25 @@ service cloud.firestore {
       return isActiveUser(appId) && get(profilePath(appId)).data.role == 'TECNICO';
     }
 
+    // ALMACEN y PROMOTORA solo leen: ninguna regla de escritura los incluye.
+    function isAlmacenRole(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'ALMACEN';
+    }
+
+    function isPromotoraRole(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'PROMOTORA';
+    }
+
+    // Los nombres (normalizados) con que una PROMOTORA aparece en las plantillas; ve las instalaciones con alguno.
+    function promotoraClaves(appId) {
+      return get(profilePath(appId)).data.get('promotoraClaves', []);
+    }
+
+    // Un perfil PROMOTORA con "ve todas" (ventas) lee las instalaciones de todas las promotoras. Solo lo escribe el ADMIN.
+    function promotoraVeTodas(appId) {
+      return get(profilePath(appId)).data.get('verTodasInstalaciones', false) == true;
+    }
+
     function tecnicoAsociado(appId) {
       return get(profilePath(appId)).data.tecnicoAsociado;
     }
@@ -53,7 +72,7 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/technicians/{docId} {
       // TECNICO solo puede ver su propio técnico vinculado (el cliente debe
       // hacer where('name','==', tecnicoAsociado); sin eso el list se rechaza).
-      allow read: if isAdminUser(appId) || isUsuarioRole(appId)
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId)
         || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId));
 
       // Alta/baja/color son de ADMIN. El toggle de activo/inactivo (pantalla
@@ -71,7 +90,13 @@ service cloud.firestore {
       // TECNICO solo ve/edita sus propios tickets (los que tienen su nombre en
       // "tecnico"); el cliente debe hacer el query con where('tecnico','==', ...)
       // igualado a este valor, si no el list completo es rechazado.
-      allow read: if isAdminUser(appId) || isUsuarioRole(appId)
+      // ALMACEN cuenta el material de todas las órdenes; PROMOTORA solo ve las instalaciones que vendió ella (su
+      // promotoraClave está entre las suyas). El cliente debe consultar con where('tipoTrabajo','==','INSTALACIÓN') y
+      // where('promotoraClave','==', una de sus claves), si no la lectura es rechazada.
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId)
+        || (isPromotoraRole(appId) && resource.data.tipoTrabajo == 'INSTALACIÓN' && (promotoraVeTodas(appId) || resource.data.get('promotoraClave', '') in promotoraClaves(appId)))
+        // Ventas (el PROMOTOR con "ve todas") también sigue las averías de tipo LOS: solo esas, y solo ellas.
+        || (isPromotoraRole(appId) && promotoraVeTodas(appId) && resource.data.tipoTrabajo == 'AVERÍA' && resource.data.get('falla', '') == 'LOS')
         || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
 
       // Crear órdenes es acción de ADMIN/USUARIO; TECNICO no tiene esa UI.
@@ -86,7 +111,7 @@ service cloud.firestore {
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'serialEquipo', 'instalacion', 'enCamino', 'historialEdiciones'])
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'instalacion', 'enCamino', 'historialEdiciones'])
           // "En camino" / "En sitio": solo a su nombre (o null para cancelarlo), nunca en nombre de otro técnico.
           && (request.resource.data.get('enCamino', null) == null
                || request.resource.data.enCamino.tecnico == tecnicoAsociado(appId))
@@ -103,7 +128,17 @@ service cloud.firestore {
     }
 
     match /artifacts/{appId}/public/data/reports/{docId} {
-      allow read, write: if canCerrar(appId);
+      // ALMACEN lee los reportes para sumar el material de las órdenes ya archivadas.
+      allow read: if canCerrar(appId) || isAlmacenRole(appId);
+      allow write: if canCerrar(appId);
+    }
+
+    // Resumen liviano de las instalaciones cerradas de los últimos días (lo escribe el cierre del día, manual o
+    // automático): lo único que la PROMOTORA ve de una instalación después de que sale de la lista de órdenes.
+    match /artifacts/{appId}/public/data/historialInstalaciones/{docId} {
+      // PROMOTORA: solo las de su promotora (resumenInstalacion guarda su promotoraClave).
+      allow read: if canCerrar(appId) || (isPromotoraRole(appId) && (promotoraVeTodas(appId) || resource.data.get('promotoraClave', '') in promotoraClaves(appId)));
+      allow write: if canCerrar(appId);
     }
 
     match /artifacts/{appId}/public/data/counters/{counterId} {

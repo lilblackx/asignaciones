@@ -19,7 +19,7 @@ const base = db.collection('artifacts').doc(APP_ID).collection('public').doc('da
 
 const usernameToEmail = (u) => `${u}@${AUTH_EMAIL_DOMAIN}`;
 
-async function upsertUser({ username, password, nombre, role, tecnicoAsociado, puedeCerrar }) {
+async function upsertUser({ username, password, nombre, role, tecnicoAsociado, puedeCerrar, promotoraNombres = [] }) {
   const email = usernameToEmail(username);
   let uid;
   try {
@@ -33,6 +33,8 @@ async function upsertUser({ username, password, nombre, role, tecnicoAsociado, p
   await base.collection('users').doc(uid).set({
     username, nombre, role,
     tecnicoAsociado: role === 'TECNICO' ? (tecnicoAsociado || '').trim() : null,
+    promotoraNombres: role === 'PROMOTORA' ? promotoraNombres : [],
+    promotoraClaves: role === 'PROMOTORA' ? promotoraNombres.map((n) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()) : [],
     puedeCerrar: !!puedeCerrar,
     disabled: false,
     createdAt: Date.now(),
@@ -56,6 +58,9 @@ await upsertUser({ username: 'admin', password: 'Admin1234', nombre: 'Admin Demo
 await upsertUser({ username: 'usuario', password: 'Usuario1234', nombre: 'Usuario Demo', role: 'USUARIO', puedeCerrar: true });
 await upsertUser({ username: 'tecnico1', password: 'Tecnico1234', nombre: 'Gerardo Molero', role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO' });
 await upsertUser({ username: 'tecnico2', password: 'Tecnico1234', nombre: 'Reinel Bravo', role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO' });
+await upsertUser({ username: 'almacen', password: 'Almacen1234', nombre: 'Almacén Demo', role: 'ALMACEN' });
+await upsertUser({ username: 'promotora', password: 'Promotora1234', nombre: 'Promotora Demo', role: 'PROMOTORA', promotoraNombres: ['Sariana'] });
+await upsertUser({ username: 'promotora2', password: 'Promotora1234', nombre: 'Promotor Demo', role: 'PROMOTORA', promotoraNombres: ['Alexis Añez'] });
 
 await base.collection('tickets').doc('seed-ticket-gerardo').set({
   fecha: new Date().toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -81,4 +86,7 @@ console.log('  admin / Admin1234        -> ve y edita todo');
 console.log('  usuario / Usuario1234    -> ve y edita todo, puede cerrar día y aprobar');
 console.log('  tecnico1 / Tecnico1234   -> solo ve el ticket AS1 (GERARDO MOLERO)');
 console.log('  tecnico2 / Tecnico1234   -> solo ve el ticket AS2 (REINEL BRAVO)');
+console.log('  almacen / Almacen1234    -> solo ve Materiales (solo lectura)');
+console.log('  promotora / Promotora1234 -> solo ve las instalaciones de "Sariana" (solo lectura)');
+console.log('  promotora2 / Promotora1234 -> solo ve las instalaciones de "Alexis Añez" (solo lectura)');
 process.exit(0);

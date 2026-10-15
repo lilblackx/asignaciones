@@ -4,9 +4,11 @@ import Modal from '../Modal';
 import BotonCopiar from '../BotonCopiar';
 import { useCopiado } from '../../hooks/useCopiado';
 import FormasPagoLista from './FormasPagoLista';
+import ValoresClienteTarjeta from './ValoresClienteTarjeta';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { conceptoCobro, estaExonerado } from '../../utils/cobro';
 import { normalizarFormasPago, textoCobroParaCliente } from '../../utils/formasPago';
+import { valoresGuardados } from '../../utils/valoresCliente';
 
 function Dato({ icon: Icon, etiqueta, valor }) {
   if (!valor) return null;
@@ -26,6 +28,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
 // apenas se pre-finaliza. Se queda hasta que el técnico lo confirma; si hay varias, las muestra
 // una tras otra. Con cobro, debajo del monto van las formas de pago (cada dato se copia con un toque), un botón
 // para copiar el monto y otro para copiar el mensaje completo para el cliente (monto + formas de pago).
+// Si la oficina guardó los valores de señal del cliente al aprobar la orden, van en su propia tarjeta debajo de las formas de pago.
 // `onCopy(texto, mensaje)` hace la copia (devuelve si pudo) y avisa con el toast.
 export default function CobroResultanteModal({ ticket, restantes = 0, formasPago, onCopy, onClose }) {
   // Qué se acaba de copiar ('monto' o 'mensaje'): el botón muestra un visto un instante.
@@ -113,6 +116,12 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
                 </div>
               )
             )}
+          </section>
+        )}
+
+        {onCopy && valoresGuardados(ticket) && (
+          <section aria-label="Valores del cliente" className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
+            <ValoresClienteTarjeta valores={ticket.valoresCliente} onCopy={onCopy} />
           </section>
         )}
 

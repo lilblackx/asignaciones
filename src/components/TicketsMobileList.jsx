@@ -218,9 +218,6 @@ export default function TicketsMobileList({
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : null}
-                <button onClick={() => onEdit(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] transition-colors">
-                  <Edit className="w-4 h-4" /> Detalles
-                </button>
               </div>
             ) : (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">

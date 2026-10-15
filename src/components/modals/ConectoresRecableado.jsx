@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { COLORES_CONECTOR_EXTERNO, COLORES_CONECTOR_INTERNO, ETIQUETA_COLOR } from '../../utils/tipoVisita';
+import { COLORES_CONECTOR_EXTERNO, COLORES_CONECTOR_INTERNO, ETIQUETA_COLOR, MAX_CONECTORES_POR_COLOR } from '../../utils/tipoVisita';
 
 const ESTILO_COLOR = {
   VERDE: { punto: 'bg-emerald-500', activo: 'bg-emerald-600 border-emerald-600 text-white' },
@@ -55,43 +55,51 @@ export default function ConectoresRecableado({ colorExterno, colorInterno, onExt
   );
 }
 
-// Color del conector de una visita de conector (externo o interno): el técnico elige uno, con el
-// nombre "Conector verde" / "Conector azul". Si solo hay un color posible (el externo es siempre
-// verde) ya viene marcado y no hay nada que elegir.
-export function ColorConectorVisita({ colores, valor, onChange, error }) {
-  const unico = colores.length === 1;
-  const seleccionado = unico ? colores[0] : valor;
+// Cantidad de conectores usados en una visita de conector. El externo es siempre verde (un solo campo, de
+// verdes); el interno, verdes y azules (dos campos; pueden quedar en 0 pero al menos 1 en total). Cada campo tiene
+// botones - y + grandes para el celular y también se puede escribir.
+function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
+  const n = /^\d{1,2}$/.test(String(valor).trim()) ? parseInt(valor, 10) : 0;
+  const poner = (x) => onChange(String(Math.min(MAX_CONECTORES_POR_COLOR, Math.max(0, x))));
+  const boton = 'w-11 h-11 shrink-0 rounded-xl border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 text-lg font-black hover:border-amber-500 disabled:opacity-40 disabled:hover:border-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500';
+  return (
+    <div className="flex-1 min-w-[9.5rem] space-y-1.5">
+      <label htmlFor={id} className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+        <span className={`w-3.5 h-3.5 rounded-full ${ESTILO_COLOR[color].punto}`} aria-hidden="true" /> {etiqueta}
+      </label>
+      <div className="flex items-center gap-1.5">
+        <button type="button" aria-label={`Quitar un conector ${etiqueta.toLowerCase()}`} disabled={n <= 0} onClick={() => poner(n - 1)} className={boton}>−</button>
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          maxLength="2"
+          placeholder="0"
+          value={valor}
+          aria-invalid={!!error}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
+          className={`w-full min-w-0 text-center bg-white dark:bg-zinc-950 border-2 ${error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'} px-2 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-base font-black text-zinc-900 dark:text-white`}
+        />
+        <button type="button" aria-label={`Agregar un conector ${etiqueta.toLowerCase()}`} disabled={n >= MAX_CONECTORES_POR_COLOR} onClick={() => poner(n + 1)} className={boton}>+</button>
+      </div>
+    </div>
+  );
+}
+
+export function CantidadesConectorVisita({ interno, verde, azul, onVerde, onAzul, error }) {
+  const mensaje = error?.mensaje || '';
   return (
     <div className="space-y-1.5">
-      <p id="pf-color-conector-etiqueta" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-        TIPO DE CONECTOR{' '}
-        {unico
-          ? <span className="font-normal text-zinc-400">(el externo es solo verde)</span>
-          : <span className="font-normal text-red-500">(obligatorio)</span>}
+      <p id="pf-cantidad-conectores-etiqueta" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+        CONECTORES USADOS{' '}
+        <span className="font-normal text-red-500">{interno ? '(obligatorio: al menos 1 en total)' : '(obligatorio)'}</span>
       </p>
-      <div id="pf-color-conector" role="radiogroup" aria-labelledby="pf-color-conector-etiqueta" aria-invalid={!!error} tabIndex={-1} className="flex flex-wrap gap-2 focus:outline-none">
-        {colores.map((color) => {
-          const activo = seleccionado === color;
-          return (
-            <button
-              key={color}
-              type="button"
-              role="radio"
-              aria-checked={activo}
-              disabled={unico}
-              onClick={() => onChange(color)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-xs font-bold transition-colors disabled:cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
-                activo ? ESTILO_COLOR[color].activo : `bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 hover:border-amber-500 ${error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'}`
-              }`}
-            >
-              <span className={`w-3.5 h-3.5 rounded-full ${ESTILO_COLOR[color].punto} ${activo ? 'ring-2 ring-white' : ''}`} aria-hidden="true" />
-              Conector {ETIQUETA_COLOR[color].toLowerCase()}
-              {activo && <Check className="w-3.5 h-3.5" aria-hidden="true" />}
-            </button>
-          );
-        })}
+      <p className="text-[10px] text-zinc-400 ml-1">{interno ? 'Escribe cuántos usaste de cada color; deja en 0 el que no usaste.' : 'El conector externo es solo verde: escribe cuántos usaste.'}</p>
+      <div role="group" aria-labelledby="pf-cantidad-conectores-etiqueta" className="flex flex-wrap gap-3">
+        <CampoCantidad id="pf-cant-verde" etiqueta={interno ? 'Verdes' : 'Conectores verdes'} color="VERDE" valor={verde} onChange={onVerde} error={error?.campo === 'verde' ? mensaje : ''} />
+        {interno && <CampoCantidad id="pf-cant-azul" etiqueta="Azules" color="AZUL" valor={azul} onChange={onAzul} error={error?.campo === 'azul' ? mensaje : ''} />}
       </div>
-      {error && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
+      {mensaje && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{mensaje}</p>}
     </div>
   );
 }

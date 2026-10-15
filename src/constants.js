@@ -75,16 +75,24 @@ export function siguienteColorTecnico(technicians) {
   return mejor;
 }
 
-export const TIPOS_TRABAJO = ['INSTALACIÓN', 'AVERÍA', 'RECONEXIÓN', 'VALIDACION NAP', 'MUDANZA', 'GARANTIA', 'LOW SIGNAL', 'RETIRO EQUIPO'];
+export const TIPOS_TRABAJO = ['INSTALACIÓN', 'AVERÍA', 'RECONEXIÓN', 'VALIDACION NAP', 'MUDANZA', 'GARANTIA', 'LOW SIGNAL', 'RETIRO EQUIPO', 'CAMBIO DE EQUIPO'];
 
 // Opciones del campo TIPO, dependientes del TRABAJO seleccionado. Los tipos de
 // trabajo que no aparecen aquí no tienen sub-tipo definido todavía.
+// Los equipos que manejamos: los de las instalaciones y los del cambio de equipo son los mismos.
+const TIPOS_DE_EQUIPO = ['MRTV', 'MTV', 'MR', 'SM'];
+
 export const TIPOS_POR_TRABAJO = {
-  'INSTALACIÓN': ['MRTV', 'MTV', 'MR', 'SM'],
+  'INSTALACIÓN': TIPOS_DE_EQUIPO,
+  'CAMBIO DE EQUIPO': TIPOS_DE_EQUIPO,
   'AVERÍA': ['LOS', 'Verificación de servicio', 'Verificación de equipos', 'Configuración de router', 'Tensado de drop'],
 };
 
-export const ROLES = { ADMIN: 'ADMIN', USUARIO: 'USUARIO', TECNICO: 'TECNICO' };
+// ALMACEN: solo ve el módulo de Materiales. PROMOTORA: solo ve el estado de las instalaciones. Ninguno de los dos edita nada.
+// Cómo se muestra cada rol. El valor guardado en el perfil (y que usan las reglas) no cambia: PROMOTORA se ve "PROMOTOR".
+export const etiquetaRol = (rol) => (rol === 'PROMOTORA' ? 'PROMOTOR' : rol);
+
+export const ROLES = { ADMIN: 'ADMIN', USUARIO: 'USUARIO', TECNICO: 'TECNICO', ALMACEN: 'ALMACEN', PROMOTORA: 'PROMOTORA' };
 
 // Firebase Auth requires an email-shaped identifier. Usuarios inician sesión solo
 // con su nombre de usuario; este dominio ficticio nunca recibe correos reales.

@@ -9,7 +9,7 @@ import { calidadSenal, onuEnLinea, valorSenal } from '../../utils/senalOnu';
 // ser null); el técnico aún puede corregir el de 1310. `onCapturar` devuelve false si no
 // escribió el de 1310 porque el campo ya tenía algo escrito: ese valor no se pisa.
 // Si el cliente tiene varios servicios, elige cuál es.
-export default function SenalSmartOlt({ ticketId, onCapturar }) {
+export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
   const [estado, setEstado] = useState(null); // buscando | listo | opciones | vacio | error
   const controllerRef = useRef(null);
 
@@ -21,11 +21,12 @@ export default function SenalSmartOlt({ ticketId, onCapturar }) {
       return;
     }
     const valor = valorSenal(onu.senal1310);
-    if (valor === null) {
+    const valor1490 = valorSenal(onu.senal1490);
+    if (valor === null && valor1490 === null) {
       setEstado({ tipo: 'sinSenal', onu });
       return;
     }
-    const escrita = onCapturar(valor, valorSenal(onu.senal1490));
+    const escrita = onCapturar(valor, valor1490);
     setEstado({ tipo: 'listo', onu, valor, conservada: escrita === false });
   };
 
@@ -61,11 +62,15 @@ export default function SenalSmartOlt({ ticketId, onCapturar }) {
       <div role="status" aria-live="polite">
         {estado?.tipo === 'listo' && (
           <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs text-emerald-900 dark:text-emerald-200 space-y-0.5">
-            <p><span className="font-bold">OLT Rx · Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span>{estado.onu.calidad && <> · {calidadSenal(estado.onu.calidad)}</>}</p>
-            {valorSenal(estado.onu.senal1490) !== null && <p><span className="font-bold">ONU Rx · Señal (1490 nm):</span> {valorSenal(estado.onu.senal1490)} dBm</p>}
+            {estado.valor !== null
+              ? <p><span className="font-bold">OLT Rx · Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span>{estado.onu.calidad && <> · {calidadSenal(estado.onu.calidad)}</>}</p>
+              : <p role="alert" className="font-bold text-amber-800 dark:text-amber-300">OLT Rx 1310 nm: SmartOLT no la reportó</p>}
+            {valorSenal(estado.onu.senal1490) !== null
+              ? <p><span className="font-bold">ONU Rx · Señal (1490 nm):</span> {valorSenal(estado.onu.senal1490)} dBm</p>
+              : <p role="alert" className="font-bold text-amber-800 dark:text-amber-300">ONU Rx 1490 nm: SmartOLT no la reportó</p>}
             {estado.conservada
-              ? <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">No se cambió la potencia del campo porque ya tiene un valor escrito. La señal de 1490 nm sí queda capturada con la orden. Para usar la de SmartOLT, borra el campo y consulta de nuevo.</p>
-              : <p className="text-[10px] opacity-80">Ambas señales quedan capturadas con la orden (la de 1310 nm en el campo de potencia). Es la última medición de SmartOLT; puedes corregirla.</p>}
+              ? <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">No se cambió la potencia del campo porque ya tiene un valor escrito.{valorSenal(estado.onu.senal1490) !== null && ' La señal de 1490 nm sí queda capturada con la orden.'} Para usar la de SmartOLT, borra el campo y consulta de nuevo.</p>
+              : <p className="text-[10px] opacity-80">{nota ?? (estado.valor === null ? 'La señal de 1490 nm queda capturada con la orden. Escribe la potencia de 1310 nm a mano.' : valorSenal(estado.onu.senal1490) !== null ? 'Ambas señales quedan capturadas con la orden (la de 1310 nm en el campo de potencia).' : 'La señal de 1310 nm queda capturada en el campo de potencia.') + ' Es la última medición de SmartOLT; puedes corregirla.'}</p>}
           </div>
         )}
         {estado?.tipo === 'fueraDeLinea' && (

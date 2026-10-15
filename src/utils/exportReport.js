@@ -1,5 +1,6 @@
 import { POTENCIA_MIN_DBM } from './potencia';
 import { ETIQUETA_COLOR, etiquetaTipoVisita } from './tipoVisita';
+import { conectoresPorColor } from './consumoMateriales';
 
 // CSV con ";" como separador (no ","): es el que Excel en español espera por
 // defecto, y evita choques con las comas que aparecen en nombres/direcciones.
@@ -45,6 +46,9 @@ const COLUMNAS = [
   ['Metros de cable', t => t.metrosCable ?? t.instalacion?.metraje ?? ''],
   ['Conector externo', t => ETIQUETA_COLOR[t.conectorExterno] || ''],
   ['Conector interno', t => ETIQUETA_COLOR[t.conectorInterno] || ''],
+  // Cantidad de conectores usados por color (visitas de conector y recableados); vacío si no hubo.
+  ['Conectores verdes', t => conectoresPorColor(t).verde || ''],
+  ['Conectores azules', t => conectoresPorColor(t).azul || ''],
   ['Ubicación', t => t.ubicacion],
   ['Enviado', t => (t.isAsignado ? 'Sí' : 'No')],
   ['Observación', t => t.observacion],

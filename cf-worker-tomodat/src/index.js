@@ -245,6 +245,47 @@ export function mapearSenal(o) {
   };
 }
 
+// El listado de SmartOLT guarda cada señal por separado y a veces falta una (en ~1 % de las ONU en línea falta
+// la de 1490 nm). Su consulta de señal en vivo (la que usa su pantalla de detalle) sí trae las dos, aunque de vez
+// en cuando responde "-" en ambas. Solo se usa cuando al listado le falta algo y la ONU está en línea.
+const tieneNumero = (v) => /\d/.test(String(v ?? ''));
+const estaEnLinea = (estado) => !String(estado ?? '').trim() || /^online$/i.test(String(estado).trim());
+const numeroDeSenal = (v) => String(v ?? '').match(/-?\d+(?:[.,]\d+)?/)?.[0] ?? null; // "-33.01 dBm" -> "-33.01"; "-" -> null
+const REINTENTOS_SENAL_EN_VIVO = 3;
+const PAUSA_REINTENTO_MS = 700;
+
+async function senalEnVivo(env, idExterno) {
+  const res = await fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_onu_signal/${encodeURIComponent(idExterno)}`, {
+    headers: { 'X-Token': env.SMARTOLT_API_KEY },
+    signal: AbortSignal.timeout(SMARTOLT_TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`SmartOLT respondió ${res.status}`);
+  const d = await res.json();
+  if (d?.status === false) throw new Error(`SmartOLT: ${d?.error || 'respuesta inesperada'}`);
+  return { senal1310: numeroDeSenal(d.onu_signal_1310), senal1490: numeroDeSenal(d.onu_signal_1490) };
+}
+
+// Completa la señal que le falte a una ONU en línea. Lo que trajo el listado no se cambia; si la consulta en vivo
+// falla o no trae el dato, se devuelve la ONU como estaba (la app avisa de lo que falte).
+export async function completarSenal(env, onu, { pausa = PAUSA_REINTENTO_MS } = {}) {
+  if (!onu.idExterno || !estaEnLinea(onu.estado)) return onu;
+  let actual = onu;
+  for (let intento = 0; intento < REINTENTOS_SENAL_EN_VIVO && !(tieneNumero(actual.senal1310) && tieneNumero(actual.senal1490)); intento++) {
+    if (intento > 0 && pausa) await new Promise((r) => setTimeout(r, pausa));
+    try {
+      const vivo = await senalEnVivo(env, onu.idExterno);
+      actual = {
+        ...actual,
+        senal1310: tieneNumero(actual.senal1310) ? actual.senal1310 : (vivo.senal1310 ?? actual.senal1310),
+        senal1490: tieneNumero(actual.senal1490) ? actual.senal1490 : (vivo.senal1490 ?? actual.senal1490),
+      };
+    } catch (err) {
+      console.error('No se pudo leer la señal en vivo de SmartOLT:', err.message);
+    }
+  }
+  return actual;
+}
+
 async function consultarOnus(env, filtro, valor, campos = CAMPOS_ONU) {
   const params = new URLSearchParams({ page: '1', page_size: '25', fields: campos, [filtro]: valor });
   const res = await fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, {
@@ -331,7 +372,8 @@ async function handleSenal(request, env, headers, idToken) {
     if (digitos.length < 6 || digitos.length > 12) {
       return new Response('La orden no tiene una cédula válida para consultar.', { status: 400, headers });
     }
-    return json({ resultados: await buscarOnus(env, digitos, CAMPOS_SENAL, mapearSenal) }, 200, headers);
+    const onus = await buscarOnus(env, digitos, CAMPOS_SENAL, mapearSenal);
+    return json({ resultados: await Promise.all(onus.map((o) => completarSenal(env, o))) }, 200, headers);
   } catch (err) {
     console.error(err);
     const mensaje = err.name === 'TimeoutError' ? 'SmartOLT tardó demasiado en responder' : err.message;

@@ -3,7 +3,7 @@
 import { devolucionPendiente } from '../src/utils/devolucion.js';
 import { separarNapPuerto, unirNapPuerto } from '../src/utils/napPuerto.js';
 import { calidadSenal, puedeCapturarPotencia, valorSenal } from '../src/utils/senalOnu.js';
-import { buscarOnus, mapearSenal } from '../cf-worker-tomodat/src/index.js';
+import { buscarOnus, completarSenal, mapearSenal } from '../cf-worker-tomodat/src/index.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -53,6 +53,51 @@ const res = await buscarOnus(env, '12345678', CAMPOS, mapearSenal);
 check('solo la ONU con esa cédula, con su señal',
   res, [{ idExterno: 'A', nombre: 'JUAN PEREZ CI 12.345.678', direccion: 'Calle 1', zona: 'Z1', estado: 'Power fail', senal1310: '-19.456', senal1490: null, calidad: 'Very good' }]);
 check('pide los campos de señal a SmartOLT', pedidos[0].searchParams.get('fields'), CAMPOS);
+
+// --- Señal en vivo: si al listado le falta un valor, se completa con la consulta en vivo de SmartOLT ---
+let vivo; let llamadasVivo; // vivo: lista de respuestas (o 'error') que se van entregando
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  if (!u.includes('/get_onu_signal/')) throw new Error(`Llamada inesperada: ${u}`);
+  llamadasVivo.push(decodeURIComponent(u.split('/get_onu_signal/')[1]));
+  const r = vivo.length > 1 ? vivo.shift() : vivo[0];
+  if (r === 'error') return new Response('boom', { status: 500 });
+  return new Response(JSON.stringify({ status: true, response_code: 'success', ...r }), { status: 200 });
+};
+const base = { idExterno: 'ONU1', estado: 'Online', senal1310: '-27.8', senal1490: null, calidad: 'Very good' };
+const completar = (onu, respuestas) => { vivo = respuestas; llamadasVivo = []; return completarSenal(env, onu, { pausa: 0 }); };
+const OK = { onu_signal_1310: '-27.8 dBm', onu_signal_1490: '-22.84 dBm' };
+const NADA = { onu_signal_1310: '-', onu_signal_1490: '-' };
+
+let o = await completar(base, [OK]);
+check('al listado le falta el 1490: se completa con la consulta en vivo', [o.senal1310, o.senal1490, llamadasVivo], ['-27.8', '-22.84', ['ONU1']]);
+check('lo demás de la ONU no cambia', [o.calidad, o.estado, o.idExterno], ['Very good', 'Online', 'ONU1']);
+o = await completar({ ...base, senal1490: '-23.1' }, [OK]);
+check('con los dos valores no se hace ninguna consulta extra', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', '-23.1', 0]);
+o = await completar(base, [{ onu_signal_1310: '-30.00 dBm', onu_signal_1490: '-22.84 dBm' }]);
+check('lo que trajo el listado no se pisa con el valor en vivo', [o.senal1310, o.senal1490], ['-27.8', '-22.84']);
+o = await completar({ ...base, senal1310: null, senal1490: '-22.1' }, [OK]);
+check('también completa el 1310 si es el que falta', [o.senal1310, o.senal1490], ['-27.8', '-22.1']);
+o = await completar(base, [NADA, OK]);
+check('si responde "-" reintenta una vez y lo completa', [o.senal1490, llamadasVivo.length], ['-22.84', 2]);
+o = await completar(base, [NADA]);
+check('si sigue en "-" se queda como estaba (3 intentos)', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', null, 3]);
+o = await completar(base, ['error']);
+check('si SmartOLT falla no se rompe: devuelve lo del listado', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', null, 3]);
+o = await completar(base, ['error', OK]);
+check('un fallo y luego respuesta buena: se completa', o.senal1490, '-22.84');
+o = await completar({ ...base, estado: 'Power fail', senal1310: null }, [OK]);
+check('ONU fuera de línea: no se consulta (la app ya lo avisa)', [o.senal1490, llamadasVivo.length], [null, 0]);
+o = await completar({ ...base, idExterno: null }, [OK]);
+check('sin id de ONU no se puede consultar', llamadasVivo.length, 0);
+o = await completar({ ...base, estado: null }, [OK]);
+check('sin dato de estado se asume en línea (igual que la app)', o.senal1490, '-22.84');
+o = await completar(base, [{ onu_signal_1310: '-27.8 dBm', onu_signal_1490: '-' }, OK]);
+check('si en vivo falta el 1490 reintenta hasta tenerlo', [o.senal1490, llamadasVivo.length], ['-22.84', 2]);
+o = await completar(base, [NADA, NADA, OK]);
+check('puede necesitar hasta el tercer intento', [o.senal1490, llamadasVivo.length], ['-22.84', 3]);
+o = await completar({ ...base, senal1310: null, senal1490: null }, [OK]);
+check('si faltan los dos se completan los dos', [o.senal1310, o.senal1490], ['-27.8', '-22.84']);
 
 if (failures > 0) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

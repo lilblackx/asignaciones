@@ -1,7 +1,7 @@
 // Prueba el tipo de visita "Recableado" (src/utils/tipoVisita.js) y el consumo de materiales por
 // técnico (src/utils/consumoMateriales.js). No necesita el emulador. Uso: `npm run test:recableado`.
 import {
-  TIPOS_VISITA, colorConectorExterno, conectorDeVisita, colorConectorInterno, coloresConectorVisita, datosConectores, errorColorConector, esVisitaConector, etiquetaTipoVisita, generaCobro, llevaConectores, parseMetros, partesRecableado, textoConectorVisita, tieneDatosRecableado,
+  MAX_CONECTORES_POR_COLOR, TIPOS_VISITA, cantidadesConector, colorConectorExterno, conectorDeVisita, colorConectorInterno, datosConectores, errorCantidadesConector, esVisitaConector, parseCantidadesConector, textoCantidades, etiquetaTipoVisita, generaCobro, llevaConectores, parseMetros, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from '../src/utils/tipoVisita.js';
 import { conectoresPorColor, consumoPorTecnico, esRecableadoFinalizado, esRecableadoPorAprobar, esInstalacionFinalizada, esInstalacionPorAprobar, esVisitaConectorFinalizada, esVisitaConectorPorAprobar, fechaDeUso, inicioPeriodo, totalConectores } from '../src/utils/consumoMateriales.js';
 
@@ -34,33 +34,60 @@ check('conector interno: verde o azul', ['VERDE', 'AZUL', '', 'ROJO'].map(colorC
 // --- Datos que se guardan ---
 check('recableado con ambos conectores',
   datosConectores('RECABLEADO', { metros: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' }),
-  { metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' });
+  { metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL', conectoresUsados: null });
 check('recableado sin conectores (son opcionales)',
-  datosConectores('RECABLEADO', { metros: 20 }), { metrosCable: 20, conectorExterno: '', conectorInterno: '' });
+  datosConectores('RECABLEADO', { metros: 20 }), { metrosCable: 20, conectorExterno: '', conectorInterno: '', conectoresUsados: null });
 check('un azul externo se descarta', datosConectores('RECABLEADO', { metros: 20, conectorExterno: 'AZUL' }).conectorExterno, '');
 check('sin tipo de visita (o con otro) todo se borra',
   ['', undefined, 'OTRO'].map(t => datosConectores(t, { metros: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' })),
-  [1, 2, 3].map(() => ({ metrosCable: null, conectorExterno: '', conectorInterno: '' })));
+  [1, 2, 3].map(() => ({ metrosCable: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null })));
 
-// --- Visita de conector: el técnico indica el color del conector colocado ---
+// --- Visita de conector: el técnico indica cuántos conectores usó de cada color ---
 check('visitas de conector', ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(esVisitaConector), [false, true, true, false]);
 check('llevan conectores el recableado y las visitas de conector', ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(llevaConectores), [false, true, true, true]);
-check('colores que se pueden elegir: el externo solo verde, el interno verde o azul',
-  ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', ''].map(coloresConectorVisita), [['VERDE'], ['VERDE', 'AZUL'], [], []]);
-check('conector externo: siempre verde, aunque llegue otro color o ninguno',
-  ['AZUL', '', 'VERDE'].map(c => datosConectores('CONECTOR_EXTERNO', { metros: 35, conectorExterno: c, conectorInterno: 'AZUL' })),
-  [1, 2, 3].map(() => ({ metrosCable: null, conectorExterno: 'VERDE', conectorInterno: '' })));
-check('conector interno: guarda el color elegido (verde o azul) y descarta lo inválido',
-  ['VERDE', 'AZUL', '', 'ROJO'].map(c => datosConectores('CONECTOR_INTERNO', { metros: 35, conectorExterno: 'VERDE', conectorInterno: c })),
-  [{ metrosCable: null, conectorExterno: '', conectorInterno: 'VERDE' }, { metrosCable: null, conectorExterno: '', conectorInterno: 'AZUL' },
-   { metrosCable: null, conectorExterno: '', conectorInterno: '' }, { metrosCable: null, conectorExterno: '', conectorInterno: '' }]);
-check('el conector interno exige elegir el color; los demás tipos no',
-  [['CONECTOR_INTERNO', ''], ['CONECTOR_INTERNO', 'AZUL'], ['CONECTOR_INTERNO', 'ROJO'], ['CONECTOR_EXTERNO', ''], ['RECABLEADO', ''], ['', '']].map(([t, c]) => errorColorConector(t, c)),
-  ['Elige el tipo de conector: verde o azul.', '', 'Elige el tipo de conector: verde o azul.', '', '', '']);
+check('conector externo: siempre verde, con la cantidad escrita (azules descartados)',
+  [{ verde: 3 }, { verde: 1, azul: 4 }].map(c => datosConectores('CONECTOR_EXTERNO', { metros: 35, conectorInterno: 'AZUL', conectores: c })),
+  [3, 1].map(n => ({ metrosCable: null, conectorExterno: 'VERDE', conectorInterno: '', conectoresUsados: { verde: n, azul: 0 } })));
+check('conector interno: guarda las cantidades; el color solo si se usó uno',
+  [{ verde: 2, azul: 0 }, { verde: 0, azul: 3 }, { verde: 1, azul: 1 }].map(c => datosConectores('CONECTOR_INTERNO', { metros: 35, conectorExterno: 'VERDE', conectores: c })),
+  [{ metrosCable: null, conectorExterno: '', conectorInterno: 'VERDE', conectoresUsados: { verde: 2, azul: 0 } },
+   { metrosCable: null, conectorExterno: '', conectorInterno: 'AZUL', conectoresUsados: { verde: 0, azul: 3 } },
+   { metrosCable: null, conectorExterno: '', conectorInterno: '', conectoresUsados: { verde: 1, azul: 1 } }]);
+check('cantidades inválidas se guardan como 0 (la validación las frena antes)',
+  datosConectores('CONECTOR_INTERNO', { conectores: { verde: -1, azul: 'x' } }).conectoresUsados, { verde: 0, azul: 0 });
+
+// Lo que escribe el técnico (texto) y sus errores
+const cant = (tipo, verde, azul) => { const r = parseCantidadesConector(tipo, { verde, azul }); return r.error ? [r.error, r.campo] : r.valor; };
+check('externo: solo verdes, al menos 1', [cant('CONECTOR_EXTERNO', '3', ''), cant('CONECTOR_EXTERNO', '1', '5'), cant('CONECTOR_EXTERNO', ' 2 ', '')], [{ verde: 3, azul: 0 }, { verde: 1, azul: 0 }, { verde: 2, azul: 0 }]);
+check('externo sin verdes: error', [cant('CONECTOR_EXTERNO', '', ''), cant('CONECTOR_EXTERNO', '0', '')], [['Indica cuántos conectores verdes usaste.', 'verde'], ['Indica cuántos conectores verdes usaste.', 'verde']]);
+check('interno: verdes y/o azules, vacío cuenta como 0',
+  [cant('CONECTOR_INTERNO', '2', ''), cant('CONECTOR_INTERNO', '', '3'), cant('CONECTOR_INTERNO', '1', '1'), cant('CONECTOR_INTERNO', '10', '10')],
+  [{ verde: 2, azul: 0 }, { verde: 0, azul: 3 }, { verde: 1, azul: 1 }, { verde: 10, azul: 10 }]);
+check('interno sin ninguno: error', [cant('CONECTOR_INTERNO', '', ''), cant('CONECTOR_INTERNO', '0', '0')], [['Indica cuántos conectores usaste: verdes, azules o ambos.', 'verde'], ['Indica cuántos conectores usaste: verdes, azules o ambos.', 'verde']]);
+check('el tope es de 10 por color', [MAX_CONECTORES_POR_COLOR, cant('CONECTOR_INTERNO', '11', '1'), cant('CONECTOR_INTERNO', '1', '11'), cant('CONECTOR_EXTERNO', '11', '')],
+  [10, ['Máximo 10 conectores verdes.', 'verde'], ['Máximo 10 conectores azules.', 'azul'], ['Máximo 10 conectores verdes.', 'verde']]);
+check('solo números enteros', [cant('CONECTOR_INTERNO', '1.5', ''), cant('CONECTOR_INTERNO', '-1', ''), cant('CONECTOR_INTERNO', 'a', ''), cant('CONECTOR_INTERNO', '1', '2,5')].map(r => r[1]), ['verde', 'verde', 'verde', 'azul']);
+check('los demás tipos de visita no piden cantidades', ['', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO'].map(t => parseCantidadesConector(t, { verde: '', azul: '' })), [1, 2, 3, 4].map(() => ({ valor: null })));
+check('segunda comprobación al guardar (cantidades ya numéricas)',
+  [['CONECTOR_EXTERNO', { verde: 2 }], ['CONECTOR_EXTERNO', undefined], ['CONECTOR_INTERNO', { verde: 0, azul: 0 }], ['CONECTOR_INTERNO', { verde: 1, azul: 1 }], ['CONECTOR_INTERNO', { verde: 11, azul: 0 }], ['CONECTOR_INTERNO', { verde: 1.5, azul: 0 }], ['RECABLEADO', undefined]].map(([t, c]) => errorCantidadesConector(t, c)),
+  ['', 'Indica cuántos conectores verdes usaste.', 'Indica cuántos conectores usaste: verdes, azules o ambos.', '', 'Máximo 10 conectores verdes.', 'Escribe la cantidad de conectores verdes como un número entero. Ejemplo: 2', '']);
+
+// Cantidades de una visita: las escritas, o 1 del color en las visitas anteriores
+check('cantidades de una visita con cantidades guardadas',
+  [{ tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 2, azul: 1 } }, { tipoVisita: 'CONECTOR_EXTERNO', conectoresUsados: { verde: 3, azul: 2 } }].map(cantidadesConector),
+  [{ verde: 2, azul: 1 }, { verde: 3, azul: 0 }]);
+check('una visita anterior (solo el color) cuenta como 1 de ese color',
+  [{ tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE' }, { tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'AZUL' }, { tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'VERDE' }, { tipoVisita: 'CONECTOR_INTERNO' }].map(cantidadesConector),
+  [{ verde: 1, azul: 0 }, { verde: 0, azul: 1 }, { verde: 1, azul: 0 }, { verde: 0, azul: 0 }]);
+check('fuera de una visita de conector no aplica', [{ tipoVisita: 'RECABLEADO', conectorInterno: 'AZUL' }, null, undefined].map(cantidadesConector), [1, 2, 3].map(() => ({ verde: 0, azul: 0 })));
+check('texto de cantidades', [{ verde: 1, azul: 0 }, { verde: 2, azul: 1 }, { verde: 0, azul: 3 }, { verde: 0, azul: 0 }].map(textoCantidades), ['1 verde', '2 verdes, 1 azul', '3 azules', '']);
 check('nombre del conector de la visita: solo "Conector verde" o "Conector azul"',
   [{ tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'AZUL' }, { tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'VERDE' }, { tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE' },
    { tipoVisita: 'CONECTOR_INTERNO' }, { tipoVisita: 'RECABLEADO', conectorInterno: 'AZUL' }, null].map(textoConectorVisita),
   ['Conector azul', 'Conector verde', 'Conector verde', '', '', '']);
+check('texto del historial con cantidades',
+  [{ tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 2, azul: 1 } }, { tipoVisita: 'CONECTOR_EXTERNO', conectoresUsados: { verde: 1, azul: 0 } }, { tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 0, azul: 0 } }].map(textoConectorVisita),
+  ['Conectores: 2 verdes, 1 azul', 'Conectores: 1 verde', '']);
 check('hay datos de recableado', [{ metrosCable: 5 }, { conectorInterno: 'AZUL' }, {}, null].map(tieneDatosRecableado), [true, true, false, false]);
 check('partes legibles', partesRecableado({ metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' }),
   ['35 m de cable', 'Conector externo: Verde', 'Conector interno: Azul']);
@@ -87,6 +114,9 @@ check('los conectores se cuentan solo por color, sin distinguir externo de inter
   [{}, { conectorExterno: 'VERDE' }, { conectorInterno: 'VERDE' }, { conectorInterno: 'AZUL' }, { conectorExterno: 'VERDE', conectorInterno: 'VERDE' }, { conectorExterno: 'VERDE', conectorInterno: 'AZUL' },
    { tipoVisita: 'CONECTOR_INTERNO', conectorExterno: 'VERDE', conectorInterno: 'AZUL' }, { tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE', conectorInterno: 'AZUL' }].map(conectoresPorColor),
   [{ verde: 0, azul: 0 }, { verde: 1, azul: 0 }, { verde: 1, azul: 0 }, { verde: 0, azul: 1 }, { verde: 2, azul: 0 }, { verde: 1, azul: 1 }, { verde: 0, azul: 1 }, { verde: 1, azul: 0 }]);
+check('en una visita de conector cuentan las cantidades escritas',
+  [{ tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 3, azul: 2 } }, { tipoVisita: 'CONECTOR_EXTERNO', conectoresUsados: { verde: 4, azul: 0 } }, { tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 0, azul: 5 }, conectorInterno: 'VERDE' }].map(conectoresPorColor),
+  [{ verde: 3, azul: 2 }, { verde: 4, azul: 0 }, { verde: 0, azul: 5 }]);
 check('conectores por técnico', todo.filas.find(f => f.tecnico === 'LUIS PEREZ'),
   { ...todo.filas.find(f => f.tecnico === 'LUIS PEREZ'), verde: 2, azul: 1 });
 check('cada orden del detalle trae sus conectores por color', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.map(d => [d.id, d.verde, d.azul]), [['a', 1, 1], ['b', 1, 0]]);
@@ -184,15 +214,18 @@ check('una instalación se filtra por el período como lo demás', consumoPorTec
 
 // --- El conector de una visita, aparte del cobro ---
 check('conector de una visita externa: tipo y color',
-  conectorDeVisita({ tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE' }), { tipo: 'Externo', color: 'VERDE', etiquetaColor: 'Verde' });
+  conectorDeVisita({ tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE' }), { tipo: 'Externo', color: 'VERDE', etiquetaColor: 'Verde', cantidades: { verde: 1, azul: 0 } });
 check('conector de una visita interna: tipo y color',
   [conectorDeVisita({ tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'AZUL' }), conectorDeVisita({ tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'VERDE' })],
-  [{ tipo: 'Interno', color: 'AZUL', etiquetaColor: 'Azul' }, { tipo: 'Interno', color: 'VERDE', etiquetaColor: 'Verde' }]);
+  [{ tipo: 'Interno', color: 'AZUL', etiquetaColor: 'Azul', cantidades: { verde: 0, azul: 1 } }, { tipo: 'Interno', color: 'VERDE', etiquetaColor: 'Verde', cantidades: { verde: 1, azul: 0 } }]);
 check('en una visita solo cuenta el conector de esa visita (el externo no toma el color del interno)',
   conectorDeVisita({ tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'VERDE', conectorInterno: 'AZUL' }).color, 'VERDE');
 check('una visita anterior a pedir el color queda sin color, sin romperse',
   [conectorDeVisita({ tipoVisita: 'CONECTOR_EXTERNO' }), conectorDeVisita({ tipoVisita: 'CONECTOR_INTERNO', conectorInterno: 'ROJO' })],
-  [{ tipo: 'Externo', color: '', etiquetaColor: '' }, { tipo: 'Interno', color: '', etiquetaColor: '' }]);
+  [{ tipo: 'Externo', color: '', etiquetaColor: '', cantidades: { verde: 0, azul: 0 } }, { tipo: 'Interno', color: '', etiquetaColor: '', cantidades: { verde: 0, azul: 0 } }]);
+check('el conector de una visita trae las cantidades escritas',
+  conectorDeVisita({ tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 2, azul: 1 } }),
+  { tipo: 'Interno', color: '', etiquetaColor: '', cantidades: { verde: 2, azul: 1 } });
 check('el externo no admite el azul', conectorDeVisita({ tipoVisita: 'CONECTOR_EXTERNO', conectorExterno: 'AZUL' }).color, '');
 check('lo que no es una visita de conector no tiene conector aparte',
   [conectorDeVisita({ tipoVisita: 'RECABLEADO', conectorExterno: 'VERDE' }), conectorDeVisita({ tipoVisita: '' }), conectorDeVisita({ tipoVisita: 'CAMBIO_EQUIPO' }), conectorDeVisita(null), conectorDeVisita(undefined)],

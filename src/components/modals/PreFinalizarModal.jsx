@@ -10,10 +10,10 @@ import ContactoCliente from '../ContactoCliente';
 import DevolucionAviso from '../DevolucionAviso';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, colorConectorExterno, colorConectorInterno, coloresConectorVisita, datosConectores, errorColorConector, esVisitaConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
+import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, esVisitaConector, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { esInstalacion as trabajoEsInstalacion, napConPuerto, validarInstalacion } from '../../utils/instalacion';
-import ConectoresRecableado, { ColorConectorVisita } from './ConectoresRecableado';
+import ConectoresRecableado, { CantidadesConectorVisita } from './ConectoresRecableado';
 import SerialEquipoCampo from './SerialEquipoCampo';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
@@ -50,11 +50,15 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const [metros, setMetros] = useState(ticket?.metrosCable != null ? String(ticket.metrosCable) : '');
   const [colorExterno, setColorExterno] = useState(colorConectorExterno(ticket?.conectorExterno));
   const [colorInterno, setColorInterno] = useState(colorConectorInterno(ticket?.conectorInterno));
+  // Visita de conector: cuántos conectores verdes y azules usó (texto, como se escribe).
+  const cantidadesPrevias = cantidadesConector(ticket);
+  const [cantVerde, setCantVerde] = useState(cantidadesPrevias.verde ? String(cantidadesPrevias.verde) : '');
+  const [cantAzul, setCantAzul] = useState(cantidadesPrevias.azul ? String(cantidadesPrevias.azul) : '');
   // Cambio de equipo: serial del equipo nuevo (obligatorio).
   const [serialEquipo, setSerialEquipo] = useState(ticket?.serialEquipo || '');
   const [serialEquipoError, setSerialEquipoError] = useState('');
   const [metrosError, setMetrosError] = useState('');
-  const [colorError, setColorError] = useState('');
+  const [cantidadError, setCantidadError] = useState({ campo: '', mensaje: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [obsError, setObsError] = useState('');
 
@@ -69,21 +73,23 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const potenciaParseada = parsePotencia(potencia);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
 
-  // SmartOLT solo rellena la potencia si nadie escribió nada: nunca pisa lo escrito. Devuelve si la escribió.
+  // SmartOLT solo rellena la potencia si nadie escribió nada: nunca pisa lo escrito. Devuelve si la escribió
+  // (o true si no había señal de 1310 nm que escribir: el campo queda como estaba).
   const capturarSenal = (v1310, v1490) => {
-    const escribir = puedeCapturarPotencia(potenciaEscrita.current, potenciaDeSmartOlt.current);
+    const escribir = v1310 !== null && puedeCapturarPotencia(potenciaEscrita.current, potenciaDeSmartOlt.current);
     if (escribir) {
       setPotencia(v1310);
       potenciaDeSmartOlt.current = v1310;
     }
     setPotencia1490(v1490 ?? '');
-    return escribir;
+    return v1310 === null ? true : escribir;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const metrosParseados = recableado ? parseMetros(metros) : null;
-    const errorColor = errorColorConector(tipoVisita, colorInterno);
+    const cantidades = parseCantidadesConector(tipoVisita, { verde: cantVerde, azul: cantAzul });
+    const errorCantidad = cantidades.error || '';
     const serialEquipoParseado = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
     const instalacion = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
     // Con conector externo y en las instalaciones la NAP real y el puerto son obligatorios.
@@ -91,7 +97,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     const faltaNap = pideNapPuerto && napSinDato(nap);
     const faltaPuerto = pideNapPuerto && !puerto.trim();
     setMetrosError(metrosParseados?.error || '');
-    setColorError(errorColor);
+    setCantidadError({ campo: cantidades.campo || '', mensaje: errorCantidad });
     setSerialEquipoError(serialEquipoParseado?.error || '');
     setInstalacionErrores(instalacion?.errores || {});
     setNapError(faltaNap ? 'Indica la nomenclatura real de la NAP (no vale "SN").' : '');
@@ -100,7 +106,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     setObsError(faltaObs ? 'Debes describir el trabajo realizado antes de pre-finalizar.' : '');
     // El campo queda arriba y el botón abajo: el cursor va al primer campo con problema, en el orden del formulario.
     if (metrosParseados?.error) document.getElementById('pf-metros')?.focus();
-    else if (errorColor) document.getElementById('pf-color-conector')?.focus();
+    else if (errorCantidad) document.getElementById(cantidades.campo === 'azul' ? 'pf-cant-azul' : 'pf-cant-verde')?.focus();
     else if (serialEquipoParseado?.error) document.getElementById('pf-serial-equipo')?.focus();
     else if (instalacion?.errores.serial) document.getElementById('pf-serial')?.focus();
     else if (instalacion?.errores.vlan) document.getElementById('pf-vlan')?.focus();
@@ -111,7 +117,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     else if (instalacion?.errores.puertosDisponibles) document.getElementById('pf-puertos-disponibles')?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || metrosParseados?.error || errorColor || serialEquipoParseado?.error || instalacion?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
+    if (faltaObs || metrosParseados?.error || errorCantidad || serialEquipoParseado?.error || instalacion?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
     setIsSubmitting(true);
     await onConfirm(ticket, {
       nap: conectorExterno ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : nap,
@@ -121,7 +127,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
       potencia1490Dbm: parsePotencia(potencia1490).valor ?? null,
       tipoVisita,
       serialEquipo: serialEquipoParseado?.valor ?? '',
-      ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno }),
+      ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno, conectores: cantidades.valor }),
     });
     setIsSubmitting(false);
   };
@@ -191,7 +197,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
                 setNapError('');
                 setPuertoError('');
                 setMetrosError('');
-                setColorError('');
+                setCantidadError({ campo: '', mensaje: '' });
                 setSerialEquipoError('');
                 // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
                 if (v === TIPO_CONECTOR_EXTERNO && !puerto) {
@@ -240,11 +246,13 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
           )}
 
           {esVisitaConector(tipoVisita) && (
-            <ColorConectorVisita
-              colores={coloresConectorVisita(tipoVisita)}
-              valor={tipoVisita === TIPO_CONECTOR_INTERNO ? colorInterno : colorExterno}
-              onChange={(color) => { setColorInterno(color); setColorError(''); }}
-              error={colorError}
+            <CantidadesConectorVisita
+              interno={tipoVisita === TIPO_CONECTOR_INTERNO}
+              verde={cantVerde}
+              azul={cantAzul}
+              onVerde={(v) => { setCantVerde(v); setCantidadError({ campo: '', mensaje: '' }); }}
+              onAzul={(v) => { setCantAzul(v); setCantidadError({ campo: '', mensaje: '' }); }}
+              error={cantidadError}
             />
           )}
 

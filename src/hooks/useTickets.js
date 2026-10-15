@@ -8,12 +8,15 @@ import { sendPush } from '../lib/notify';
 import { ESTADO_EN_SITIO, deshacerLlegada, estaEnCamino, estadoViaje, iniciarViaje, mapaViaje, puedeIniciarViaje, registrarLlegada, textoAvisoEnCamino, textoAvisoLlegada, viajeEnCursoDe, viajesNuevos } from '../utils/enCamino';
 import { parsePotencia } from '../utils/potencia';
 import { MENSAJE_TELEFONO_OBLIGATORIO, tieneTelefono } from '../utils/telefono';
+import { MENSAJE_PROMOTOR_OBLIGATORIO, claveNombre, nombrePromotora } from '../utils/promotora';
+import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { devolucionPendiente } from '../utils/devolucion';
 import { COBRO_EXONERADO, COBRO_VISITA, detalleCobro, estaExonerado, llevaCobro, tieneCobroFinal, valorCobro } from '../utils/cobro';
+import { detalleValoresCliente, exigeValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, tieneDatosInstalacion, validarInstalacion } from '../utils/instalacion';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorColorConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -27,6 +30,13 @@ const avisoCobro = (t) => {
 // Órdenes que el técnico todavía tiene por atender: solo de esas le avisa que se las quitaron o cancelaron.
 const esActiva = (t) => t?.estado === 'PENDIENTE' || t?.estado === 'PRE-FINALIZADO';
 const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}`;
+
+// Al finalizar una instalación se guarda su plantilla ya llena por el técnico (vacía si nunca tuvo plantilla).
+const plantillaFinalDe = (t) => {
+  if (!esInstalacion(t.tipoTrabajo)) return {};
+  const texto = generarMensajeWhatsAppInstalacion({ ...t, estado: 'FINALIZADO' });
+  return texto ? { plantillaFinal: texto } : {};
+};
 
 const esCobroFinalizado = (t) => t.estado === 'FINALIZADO' && tieneCobroFinal(t);
 
@@ -511,6 +521,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       setToastMsg({ type: 'error', text: MENSAJE_TELEFONO_OBLIGATORIO });
       return false;
     }
+    // Toda instalación lleva su promotor (si no, ninguna promotora la vería): el formulario lo exige y aquí se vuelve a comprobar.
+    if (formData.tipoTrabajo?.toUpperCase().includes('INSTAL') && !claveNombre(formData.promotora)) {
+      setToastMsg({ type: 'error', text: MENSAJE_PROMOTOR_OBLIGATORIO });
+      return false;
+    }
     creandoRef.current = true;
     try {
       return await crearTicketSinGuardia(formData);
@@ -530,8 +545,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
     const tieneTecnico = Boolean(formData.tecnico && formData.tecnico.trim());
     const { ventaTecnico, ...datosOrden } = formData;
+    // La promotora de una instalación (sale de la plantilla): se guarda con una clave para que cada promotora vea las suyas.
+    const datosPromotora = esInstalacion ? { promotora: nombrePromotora(formData.promotora), promotoraClave: claveNombre(formData.promotora) } : {};
     const armarTicket = (codigo) => ({
       ...datosOrden,
+      ...datosPromotora,
       ...(ventaTecnico ? { ventaTecnico } : {}),
       ubicacion: normalizarUbicacion(formData.ubicacion).valor || '',
       napCoordenadas: normalizarCoordenadasNap(formData.napCoordenadas).valor || '',
@@ -590,10 +608,15 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
-    // Toda orden lleva el teléfono del cliente. Los técnicos no pueden editarlo, así que no se les exige:
-    // una orden vieja sin teléfono sigue pudiéndose pre-finalizar desde Detalles.
+    // Toda orden lleva el teléfono del cliente. Los técnicos no lo editan, así que no se les exige.
     if (role !== 'TECNICO' && !tieneTelefono(editingTicket.telefono)) {
       setToastMsg({ type: 'error', text: MENSAJE_TELEFONO_OBLIGATORIO });
+      return false;
+    }
+
+    // Lo mismo al editar una instalación (la oficina): también las viejas sin promotor deben completarse.
+    if (role !== 'TECNICO' && esInstalacion(editingTicket.tipoTrabajo) && !promotoraDeOrden(editingTicket)) {
+      setToastMsg({ type: 'error', text: MENSAJE_PROMOTOR_OBLIGATORIO });
       return false;
     }
 
@@ -639,6 +662,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') ticketToSave.finalizadoEn = Date.now();
       // Si la orden deja de estar pendiente, el viaje "en camino" / "en sitio" termina.
       if (originalTicket?.enCamino && editingTicket.estado !== 'PENDIENTE') ticketToSave.enCamino = null;
+      // Promotora de la instalación: la escrita o, si se vacía, la que dice la plantilla.
+      if (role !== 'TECNICO' && esInstalacion(editingTicket.tipoTrabajo)) {
+        ticketToSave.promotora = promotoraDeOrden(editingTicket);
+        ticketToSave.promotoraClave = claveNombre(ticketToSave.promotora);
+      }
       if (originalTicket) {
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
@@ -648,6 +676,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);
         if (originalTicket.observacion !== editingTicket.observacion) cambios.push(`Obs. modificada`);
         if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');
+        if (esInstalacion(editingTicket.tipoTrabajo) && promotoraDeOrden(originalTicket) !== ticketToSave.promotora) cambios.push(`Promotor: ${ticketToSave.promotora || 'Vacío'}`);
         if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
         if ((originalTicket.ubicacion || '') !== ticketToSave.ubicacion) cambios.push('Ubicación modificada');
         if ((originalTicket.napCoordenadas || '') !== ticketToSave.napCoordenadas) cambios.push(`Coord. NAP: ${ticketToSave.napCoordenadas || 'Vacías'}`);
@@ -715,7 +744,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
   // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
-  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, serialEquipo, montoBs, instalacion } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacion || '').trim()) {
@@ -729,10 +758,10 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
-    // Visita de conector interno: el color del conector (verde o azul) es obligatorio.
-    const errorColor = errorColorConector(tipoVisita, conectorInterno);
-    if (errorColor) {
-      setToastMsg({ type: 'error', text: errorColor });
+    // Visita de conector: la cantidad de conectores usados (verdes y/o azules) es obligatoria.
+    const errorCantidades = errorCantidadesConector(tipoVisita, conectoresUsados);
+    if (errorCantidades) {
+      setToastMsg({ type: 'error', text: errorCantidades });
       return false;
     }
 
@@ -757,8 +786,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     // Los datos de metros y conectores solo se escriben si el tipo de visita los lleva o si hay que
     // borrar los de una visita anterior; así las demás visitas no suman campos vacíos a la orden.
-    const camposConectores = tipoVisita !== undefined && (llevaConectores(tipoVisita) || tieneDatosRecableado(ticket))
-      ? datosConectores(tipoVisita, { metros: metrosCable, conectorExterno, conectorInterno })
+    const camposConectores = tipoVisita !== undefined && (llevaConectores(tipoVisita) || tieneDatosRecableado(ticket) || ticket.conectoresUsados)
+      ? datosConectores(tipoVisita, { metros: metrosCable, conectorExterno, conectorInterno, conectores: conectoresUsados })
       : {};
 
     // El serial del equipo nuevo solo se escribe en un cambio de equipo, o para borrar uno anterior.
@@ -816,6 +845,14 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const aprobarFinalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
     if (!firebaseUser || !ticket) return;
 
+    // Los valores del cliente son obligatorios; se leen de la orden más reciente, no de la copia que abrió el modal
+    // (que no incluye lo que acaba de guardar).
+    ticket = tickets.find(t => t.id === ticket.id) || ticket;
+    if (exigeValoresCliente(ticket) && !valoresGuardados(ticket)) {
+      setToastMsg({ type: 'error', text: 'Guarda los valores del cliente antes de cerrar la orden.' });
+      return false;
+    }
+
     const exonerado = llevaCobro(ticket) && cobroTipo === COBRO_EXONERADO;
     const cobroBs = llevaCobro(ticket) && !exonerado && montoBs ? montoBs : null;
     const nuevaEdicion = {
@@ -829,6 +866,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ...ticket,
       estado: 'FINALIZADO',
       finalizadoEn: Date.now(),
+      // La plantilla final de una instalación queda guardada para que el cierre del día la pase al historial de las promotoras.
+      ...plantillaFinalDe(ticket),
       // `cobroTipo` se escribe siempre que hay decisión de cobro, para no arrastrar una exoneración vieja.
       ...(exonerado ? { cobroTipo: COBRO_EXONERADO, cobroBs: null } : cobroBs ? { cobroBs, cobroTipo: cobroTipo || COBRO_VISITA } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
@@ -837,6 +876,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden aprobada y finalizada con éxito.' });
     notifyTicketChange(ticket, updatedTicket);
+    return true;
   };
 
   // El admin regresa una orden PRE-FINALIZADA al técnico con un motivo: vuelve a
@@ -874,6 +914,14 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const finalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
     if (!firebaseUser || !ticket) return;
 
+    // Los valores del cliente son obligatorios; se leen de la orden más reciente, no de la copia que abrió el modal
+    // (que no incluye lo que acaba de guardar).
+    ticket = tickets.find(t => t.id === ticket.id) || ticket;
+    if (exigeValoresCliente(ticket) && !valoresGuardados(ticket)) {
+      setToastMsg({ type: 'error', text: 'Guarda los valores del cliente antes de cerrar la orden.' });
+      return false;
+    }
+
     const exonerado = llevaCobro(ticket) && cobroTipo === COBRO_EXONERADO;
     const cobroBs = llevaCobro(ticket) && !exonerado && montoBs ? montoBs : null;
     const nuevaEdicion = {
@@ -887,6 +935,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ...ticket,
       estado: 'FINALIZADO',
       finalizadoEn: Date.now(),
+      // La plantilla final de una instalación queda guardada para que el cierre del día la pase al historial de las promotoras.
+      ...plantillaFinalDe(ticket),
       ...(exonerado ? { cobroTipo: COBRO_EXONERADO, cobroBs: null } : cobroBs ? { cobroBs, cobroTipo: cobroTipo || COBRO_VISITA } : {}),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
@@ -894,7 +944,33 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
+    return true;
   };
+
+  // La oficina guarda los valores de señal del cliente (OLT Rx 1310 nm y ONU Rx 1490 nm) antes de aprobar o
+  // finalizar; el técnico los ve con el cobro. `valores` ya viene validado por parseValoresCliente: aquí se
+  // vuelve a validar. Devuelve lo guardado (con quién y cuándo) o null si no se pudo.
+  const guardarValoresCliente = async (ticket, valores) => {
+    if (!firebaseUser || !ticket) return null;
+    const revisado = parseValoresCliente({ olt: String(valores?.olt1310Dbm ?? ''), onu: String(valores?.onu1490Dbm ?? '') });
+    if (!revisado.valor) {
+      setToastMsg({ type: 'error', text: 'Revisa los valores del cliente: ' + Object.values(revisado.errores).join(' ') });
+      return null;
+    }
+    // Sobre la orden más reciente: así el historial no pisa entradas que se hayan agregado después de abrir el modal.
+    const actual = tickets.find(t => t.id === ticket.id) || ticket;
+    const valoresCliente = { ...revisado.valor, guardadoPor: currentUser || 'ADMIN', guardadoEn: Date.now() };
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'ADMIN',
+      tipo: 'valores',
+      detalle: `Valores del cliente guardados | ${detalleValoresCliente(valoresCliente)}`
+    };
+    await actualizarTicket(actual, { ...actual, valoresCliente, historialEdiciones: [...(actual.historialEdiciones || []), nuevaEdicion] });
+    setToastMsg({ type: 'success', text: 'Valores del cliente guardados. El técnico los verá con el cobro.' });
+    return valoresCliente;
+  };
+
 
   // ADMIN/USUARIO marcan (o quitan) la prioridad alta de una orden pendiente. Al marcarla, el técnico
   // asignado recibe un aviso (push y en la app); si aún no tiene técnico, le llega marcada al asignarla.
@@ -1066,6 +1142,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     guardarUbicacion,
     preFinalizarTicket,
     aprobarFinalizarTicket,
+    guardarValoresCliente,
     devolverTicket,
     finalizarTicket,
     togglePrioridad,

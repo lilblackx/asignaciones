@@ -142,6 +142,24 @@ check('dos teléfonos con el guion no separable', tel('0412\u20110665119 / 0414\
 check('teléfono: el guion raro no vuelve válido un número incompleto', tel('0412\u2011066511'), sinTelefono);
 check('teléfono: una raya entre dos números no los lee a medias', tel('0412-0665119 \u2014 0414-1234567'), sinTelefono);
 
+// ========================== PROMOTORA ==========================
+// La que vendió la instalación (línea "Promotora:" / "Promotor:"): con su mayúscula, sin espacios de más; "N/A" no cuenta.
+const sinPromotora = { promotora: undefined };
+check('promotora en minúscula', '*Promotora:* sariana', { promotora: 'Sariana' });
+check('promotor con tilde y eñe', 'Promotor: Alexis Añez', { promotora: 'Alexis Añez' });
+check('promotor/a', '*Promotor/a:* maria de los angeles', { promotora: 'Maria de los Angeles' });
+check('todo en mayúsculas y con espacios de más', '*PROMOTORA:*   ALEXIS   AÑEZ ', { promotora: 'Alexis Añez' });
+check('el nombre en la línea de abajo', '*Promotora:*\nLuisa Pérez\n*Fuente:* Instagram', { promotora: 'Luisa Pérez' });
+check('promotora vacía seguida de otra etiqueta', '*Promotora:*\n*Fuente:* Sariana', sinPromotora);
+check('promotora "N/A" no cuenta', '*Promotora:* N/A', sinPromotora);
+check('promotora "no aplica" no cuenta', '*Promotora:* no aplica', sinPromotora);
+check('promotora "pendiente" no cuenta', '*Promotora:* pendiente', sinPromotora);
+check('un correo no es una promotora', '*Promotora:* sariana@gmail.com', sinPromotora);
+check('un teléfono no es una promotora', '*Promotora:* 04141234567', sinPromotora);
+check('sin línea de promotora', '*Nap:* N02H05', sinPromotora);
+check('la promotora no se confunde con la fuente', '*Promotora:* sariana\n*Fuente:* Instagram', { promotora: 'Sariana' });
+check('la plantilla real trae su promotora', PLANTILLA_REAL + '\n*Promotora:* sariana', { promotora: 'Sariana', telefono: '0412-0665119' });
+
 // ============================== NAP ==============================
 const sinNap = { nap: undefined };
 

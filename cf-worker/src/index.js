@@ -188,7 +188,7 @@ async function handleResetPassword(request, env, headers, callerUid) {
 // Alta de usuario hecha por un ADMIN: crea la cuenta de Auth y su perfil. Va por
 // el Worker para poder cerrar el registro público de Firebase Auth (con el registro
 // abierto, cualquiera con la apiKey pública podía crearse una cuenta).
-const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO'];
+const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA'];
 const USERNAME_VALIDO = /^[a-z0-9._-]{1,40}$/;
 
 async function crearCuentaAuth(env, accessToken, email, password) {
@@ -222,13 +222,20 @@ async function handleCreateUser(request, env, headers, callerUid) {
     return new Response('JSON inválido', { status: 400, headers });
   }
 
-  const { email, password, username, nombre, role, tecnicoAsociado, puedeCerrar, createdBy } = body || {};
+  const { email, password, username, nombre, role, tecnicoAsociado, puedeCerrar, promotoraNombres, verTodasInstalaciones, createdBy } = body || {};
   const nombreLimpio = String(nombre || '').trim();
   if (!USERNAME_VALIDO.test(username || '') || !email || !nombreLimpio || !ROLES_VALIDOS.includes(role)) {
     return new Response('Datos de usuario inválidos.', { status: 400, headers });
   }
   if (!email.startsWith(`${username}@`)) {
     return new Response('El email no corresponde al usuario.', { status: 400, headers });
+  }
+  // Una PROMOTORA solo ve las instalaciones de su promotora: sin al menos un nombre no vería nada, salvo el
+  // perfil de ventas (verTodasInstalaciones), que ve las de todas y no necesita nombre.
+  const veTodas = role === 'PROMOTORA' && verTodasInstalaciones === true;
+  const nombresPromotora = role === 'PROMOTORA' ? parseNombresPromotora(promotoraNombres) : { nombres: [], claves: [] };
+  if (role === 'PROMOTORA' && !veTodas && nombresPromotora.claves.length === 0) {
+    return new Response('Escribe el nombre con que aparece el promotor en las plantillas.', { status: 400, headers });
   }
   const policyError = passwordPolicyError(password);
   if (policyError) return new Response(policyError, { status: 400, headers });
@@ -253,6 +260,9 @@ async function handleCreateUser(request, env, headers, callerUid) {
       role: { stringValue: role },
       tecnicoAsociado: role === 'TECNICO' ? { stringValue: String(tecnicoAsociado || '').trim() } : { nullValue: null },
       puedeCerrar: { booleanValue: puedeCerrar === true },
+      promotoraNombres: { arrayValue: { values: nombresPromotora.nombres.map((n) => ({ stringValue: n })) } },
+      promotoraClaves: { arrayValue: { values: nombresPromotora.claves.map((c) => ({ stringValue: c })) } },
+      verTodasInstalaciones: { booleanValue: veTodas },
       disabled: { booleanValue: false },
       createdAt: { integerValue: String(Date.now()) },
       createdBy: { stringValue: String(createdBy || '') },
@@ -435,6 +445,107 @@ async function commitFirestore(env, accessToken, writes) {
   if (!res.ok) throw new Error(`Firestore commit falló: ${await res.text()}`);
 }
 
+// Historial liviano de instalaciones cerradas (colección historialInstalaciones), igual que el de useReports del
+// cliente: lo único que la promotora ve de una instalación cuando el cierre la saca de la lista. Mantener sincronizados
+// los campos y los días con resumenInstalacion y RETENCION_DIAS_HISTORIAL de src/utils/estadoInstalacion.js.
+const RETENCION_MS_HISTORIAL = 7 * 24 * 60 * 60 * 1000;
+const TIPO_INSTALACION = 'INSTALACIÓN';
+// Las averías LOS también pasan al historial: ventas las sigue junto con las instalaciones (esDeVentas en estadoInstalacion.js).
+const esAveriaLosFirestore = (f) => f?.tipoTrabajo?.stringValue === 'AVERÍA' && f?.falla?.stringValue === 'LOS';
+
+// --- La promotora de una instalación (misma lógica que src/utils/promotora.js y la lectura de la plantilla en
+// src/utils/whatsapp.js; mantener sincronizadas: lo comprueba `npm run test:roles`) ---
+const SIN_DATO_PROMOTORA = new Set(['', 'na', 'n a', 'no aplica', 'ninguno', 'ninguna', 'pendiente', 'por asignar', 'por definir', 'sin datos', 'sin dato', 'sin promotora', 'no tiene', 'xx', 'xxx']);
+const sinTildes = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+export function claveNombre(texto) {
+  const clave = sinTildes(texto).toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  return SIN_DATO_PROMOTORA.has(clave) ? '' : clave;
+}
+
+const PARTICULAS_NOMBRE = new Set(['de', 'del', 'la', 'las', 'los', 'y']);
+export function nombrePromotora(texto) {
+  if (!claveNombre(texto)) return '';
+  return String(texto).replace(/\s+/g, ' ').trim().slice(0, 100).toLowerCase().split(' ')
+    .map((p, i) => (i > 0 && PARTICULAS_NOMBRE.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1))).join(' ');
+}
+
+export function parseNombresPromotora(texto) {
+  const nombres = [];
+  const claves = [];
+  for (const parte of (Array.isArray(texto) ? texto : String(texto ?? '').split(/[,;\n]/))) {
+    const clave = claveNombre(parte);
+    if (!clave || claves.includes(clave)) continue;
+    claves.push(clave);
+    nombres.push(nombrePromotora(parte));
+  }
+  return { nombres: nombres.slice(0, 5), claves: claves.slice(0, 5) };
+}
+
+const limpiarLineaPlantilla = (l) => String(l).replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00A0/g, ' ').replace(/[*~]|```/g, '').replace(/[：﹕]/g, ':').trim();
+const ETIQUETAS_PROMOTORA = new Set(['PROMOTORA', 'PROMOTOR', 'PROMOTOR A']);
+const claveEtiquetaPlantilla = (t) => sinTildes(t).toUpperCase().replace(/\./g, '').replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+// El nombre que dice la línea "Promotora:" / "Promotor:" de la plantilla ('' si no hay uno válido).
+export function promotoraDePlantilla(plantilla) {
+  const lineas = String(plantilla ?? '').split(/\r?\n|\r/).map(limpiarLineaPlantilla);
+  for (let i = 0; i < lineas.length; i++) {
+    const idx = lineas[i].indexOf(':');
+    if (idx === -1 || !ETIQUETAS_PROMOTORA.has(claveEtiquetaPlantilla(lineas[i].slice(0, idx)))) continue;
+    let valor = lineas[i].slice(idx + 1).trim();
+    if (!valor) {
+      let j = i + 1;
+      while (j < lineas.length && !lineas[j]) j++;
+      const sig = lineas[j] ?? '';
+      const k = sig.indexOf(':');
+      const esEtiqueta = k !== -1 && k <= 40 && !/\d/.test(sig.slice(0, k));
+      if (j < lineas.length && !esEtiqueta) valor = sig;
+    }
+    const texto = valor.replace(/\s+/g, ' ').trim();
+    if (!texto || texto.length > 100 || (texto.match(/\p{L}/gu) || []).length < 2 || /@|https?:|www\./i.test(texto) || /\d{7,}/.test(texto.replace(/(?<=\d)[\s.-](?=\d)/g, ''))) return '';
+    return nombrePromotora(texto);
+  }
+  return '';
+}
+
+function resumenInstalacionFirestore(t, ahoraMs) {
+  const f = t.fields || {};
+  const promotora = nombrePromotora(f.promotora?.stringValue) || promotoraDePlantilla(f.plantillaOriginal?.stringValue);
+  const texto = (k) => ({ stringValue: f[k]?.stringValue || '' });
+  const numero = (k) => (f[k]?.integerValue !== undefined ? { integerValue: String(f[k].integerValue) } : { nullValue: null });
+  return {
+    codigo: texto('codigo'), nombre: texto('nombre'), cedula: texto('cedula'), tipoDocumento: texto('tipoDocumento'),
+    direccion: texto('direccion'), tecnico: texto('tecnico'), estado: texto('estado'),
+    tipoTrabajo: { stringValue: f.tipoTrabajo?.stringValue || TIPO_INSTALACION }, falla: { stringValue: esAveriaLosFirestore(f) ? 'LOS' : '' },
+    promotora: { stringValue: promotora }, promotoraClave: { stringValue: claveNombre(promotora) },
+    // La plantilla final se guarda en la orden al finalizarla (la app la arma); aquí solo se copia, sin repetir esa lógica.
+    plantillaFinal: { stringValue: f.estado?.stringValue === 'FINALIZADO' && !esAveriaLosFirestore(f) ? (f.plantillaFinal?.stringValue || '') : '' },
+    creadaEn: numero('createdAt'), finalizadoEn: numero('finalizadoEn'), archivadoEn: { integerValue: String(ahoraMs) },
+  };
+}
+
+async function guardarHistorialInstalaciones(env, accessToken, tickets, ahoraMs) {
+  const escrituras = tickets
+    .filter((t) => t.fields?.tipoTrabajo?.stringValue === TIPO_INSTALACION || esAveriaLosFirestore(t.fields))
+    .map((t) => ({
+      update: {
+        name: `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${rutaDatos(env)}/historialInstalaciones/${t.name.split('/').pop()}`,
+        fields: resumenInstalacionFirestore(t, ahoraMs),
+      },
+    }));
+  for (let i = 0; i < escrituras.length; i += MAX_ESCRITURAS_COMMIT) {
+    await commitFirestore(env, accessToken, escrituras.slice(i, i + MAX_ESCRITURAS_COMMIT));
+  }
+}
+
+async function limpiarHistorialInstalaciones(env, accessToken, ahoraMs) {
+  const vencidas = await runQuery(env, accessToken, 'archivadoEn', 'LESS_THAN', { integerValue: String(ahoraMs - RETENCION_MS_HISTORIAL) }, 'historialInstalaciones');
+  const borrados = vencidas.map((d) => ({ delete: d.name }));
+  for (let i = 0; i < borrados.length; i += MAX_ESCRITURAS_COMMIT) {
+    await commitFirestore(env, accessToken, borrados.slice(i, i + MAX_ESCRITURAS_COMMIT));
+  }
+}
+
 // Equivalente a archiveByEstado de useReports: crea el reporte y borra las
 // órdenes. El reporte y los primeros borrados van en un solo commit (atómico).
 async function archivarPorEstado(env, accessToken, estado, tipoReporte, ahoraMs, fecha) {
@@ -473,6 +584,8 @@ async function archivarPorEstado(env, accessToken, estado, tipoReporte, ahoraMs,
   for (let i = MAX_ESCRITURAS_COMMIT; i < borrados.length; i += MAX_ESCRITURAS_COMMIT) {
     await commitFirestore(env, accessToken, borrados.slice(i, i + MAX_ESCRITURAS_COMMIT));
   }
+  // El cierre ya está hecho: si el historial falla no se reintenta el cierre (se archivaría dos veces), solo se avisa en el log.
+  await guardarHistorialInstalaciones(env, accessToken, tickets, ahoraMs).catch((err) => console.error('No se pudo guardar el historial de instalaciones:', err));
   return tickets.length;
 }
 
@@ -490,6 +603,7 @@ export async function cierreAutomatico(env, ahoraMs = Date.now()) {
   try {
     const finalizadas = await archivarPorEstado(env, accessToken, 'FINALIZADO', 'CIERRE', ahoraMs, toca.fecha);
     const canceladas = await archivarPorEstado(env, accessToken, 'CANCELADO', 'CANCELADOS', ahoraMs, toca.fecha);
+    await limpiarHistorialInstalaciones(env, accessToken, ahoraMs).catch((err) => console.error('No se pudo limpiar el historial de instalaciones:', err));
     const resumen = finalizadas + canceladas === 0
       ? 'No había órdenes FINALIZADO ni CANCELADO para cerrar.'
       : `${finalizadas} finalizadas y ${canceladas} canceladas archivadas.`;

@@ -9,10 +9,11 @@ import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
 import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
+import PromotorField from './PromotorField';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
-import { tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
+import { promotoraDeOrden, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -229,6 +230,17 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               <p id="ed-potencia-hint" className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
             )}
           </div>
+          {esInstalacion && !isTecnico && (
+            <PromotorField
+              id="ed-promotora"
+              value={editingTicket.promotora ?? promotoraDeOrden(editingTicket)}
+              onChange={handleEditChange}
+              wrapperClassName="col-span-2 space-y-1"
+              labelClassName="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1"
+              inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+              ayuda="(con él lo ve el promotor)"
+            />
+          )}
           {faltabaPlantilla && (
             <div className="col-span-2 space-y-1">
               <label htmlFor="ed-plantilla" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)</span></label>

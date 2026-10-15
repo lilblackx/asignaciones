@@ -4,6 +4,7 @@ import { connectAuthEmulator, getAuth, createUserWithEmailAndPassword, signOut a
 import { collection, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, appId, firebaseConfig, NOTIFY_WORKER_URL } from '../lib/firebase';
 import { usernameToAuthEmail, normalizeUsername } from '../utils/authEmail';
+import { parseNombresPromotora } from '../utils/promotora';
 
 const SECONDARY_APP_NAME = 'user-admin-secondary';
 const USA_EMULADORES = import.meta.env.VITE_USE_EMULATORS === 'true';
@@ -25,6 +26,13 @@ async function createAuthAccount(email, password) {
   }
 }
 
+// Una PROMOTORA ve las instalaciones cuya promotora (la de la plantilla) coincide con alguno de sus nombres: se
+// guardan tal cual y como claves normalizadas (las que comparan las reglas). Los demás roles no llevan nombres.
+const datosPromotora = (role, texto) => {
+  const { nombres, claves } = role === 'PROMOTORA' ? parseNombresPromotora(texto) : { nombres: [], claves: [] };
+  return { promotoraNombres: nombres, promotoraClaves: claves };
+};
+
 export function useUsers(firebaseUser, setToastMsg, role) {
   const [users, setUsers] = useState([]);
 
@@ -38,7 +46,7 @@ export function useUsers(firebaseUser, setToastMsg, role) {
     return () => unsub();
   }, [firebaseUser, role]);
 
-  const createUser = async ({ usuario, clave, role, nombre, puedeCerrar, tecnicoAsociado }, createdBy) => {
+  const createUser = async ({ usuario, clave, role, nombre, puedeCerrar, tecnicoAsociado, promotoraNombres, verTodasInstalaciones }, createdBy) => {
     const username = normalizeUsername(usuario);
     const nombreCompleto = (nombre || '').trim();
     if (!username || !clave || !nombreCompleto) return;
@@ -54,6 +62,8 @@ export function useUsers(firebaseUser, setToastMsg, role) {
       role,
       tecnicoAsociado: role === 'TECNICO' ? (tecnicoAsociado || '').trim() : null,
       puedeCerrar: !!puedeCerrar,
+      ...datosPromotora(role, promotoraNombres),
+      verTodasInstalaciones: role === 'PROMOTORA' && verTodasInstalaciones === true,
     };
 
     // Producción: el alta la hace el Worker (cuenta + perfil), porque el registro
@@ -113,11 +123,15 @@ export function useUsers(firebaseUser, setToastMsg, role) {
     setToastMsg({ type: 'success', text: puedeCerrar ? 'Permiso de cierres otorgado.' : 'Permiso de cierres retirado.' });
   };
 
-  const setUserRole = async (userId, role, tecnicoAsociado) => {
+  // `verTodas` (solo PROMOTORA): ventas, ve las instalaciones de todas las promotoras (solo lectura, solo instalaciones).
+  const setUserRole = async (userId, role, tecnicoAsociado, promotoraNombres, verTodas) => {
     try {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), {
         role,
-        tecnicoAsociado: role === 'TECNICO' ? (tecnicoAsociado || '').trim() : null
+        tecnicoAsociado: role === 'TECNICO' ? (tecnicoAsociado || '').trim() : null,
+        ...datosPromotora(role, promotoraNombres),
+        // Dejar de ser PROMOTORA quita el "ve todas"; siéndolo, se guarda lo que marcó el administrador.
+        verTodasInstalaciones: role === 'PROMOTORA' && verTodas === true
       });
       setToastMsg({ type: 'success', text: 'Rol actualizado.' });
     } catch {

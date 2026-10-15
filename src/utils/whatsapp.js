@@ -3,6 +3,7 @@ import { extraerUbicacionDeTexto, getUbicacionUrl, normalizarCoordenadasNap } fr
 import { normalizarNegritas } from './negritas.js';
 import { CODIGO_NAP, extraerCodigoNap } from './codigoNap.js';
 import { MAX_TELEFONOS, normalizarGuiones, telefonoInternacional, unirTelefonos } from './telefono.js';
+import { nombrePromotora } from './promotora.js';
 
 // La línea "Observaciones:" de la plantilla siempre lleva el aviso de cobro
 // (monto en Bs calculado según la tasa BCV del día). El campo "observacion" del
@@ -73,6 +74,9 @@ const ALIAS_CAMPOS = {
   'NAP': 'nap',
   'SERVICIO A CONTRATAR': 'falla',
   'SERVICIO': 'falla',
+  'PROMOTORA': 'promotora',
+  'PROMOTOR': 'promotora',
+  'PROMOTOR A': 'promotora',
   'INSTALADOR': 'instalador',
   'TECNICO INSTALADOR': 'instalador',
   'UBICACION': 'ubicacion',
@@ -289,6 +293,10 @@ export function parseInstalacionTemplate(texto) {
     } else if (campo === 'direccion') {
       const direccion = extraerTextoLibre(valor, MAX_DIRECCION);
       if (direccion) campos.direccion = direccion;
+    } else if (campo === 'promotora') {
+      // La que vendió la instalación: se guarda con su mayúscula y sin espacios de más; "N/A" y parecidos no cuentan.
+      const promotora = extraerTextoLibre(valor, MAX_NOMBRE);
+      if (promotora && nombrePromotora(promotora)) campos.promotora = nombrePromotora(promotora);
     } else if (campo === 'telefono') {
       const telefono = extraerTelefonos(valor);
       if (telefono) campos.telefono = telefono;
@@ -482,3 +490,7 @@ export function generarMensajeWhatsAppInstalacion(ticket) {
   if (!ticket.plantillaOriginal || !ticket.plantillaOriginal.trim()) return '';
   return aplicarCorrelativoYTecnico(ticket.plantillaOriginal, ticket.codigo, ticket.tecnico, ticket.ubicacion, ticket.napCoordenadas, instalacionParaLaPlantilla(ticket));
 }
+
+// La promotora de una orden: la que se guardó en ella o, en las órdenes anteriores a que se guardara, la que dice su
+// plantilla. '' si no hay.
+export const promotoraDeOrden = (t) => nombrePromotora(t?.promotora) || parseInstalacionTemplate(t?.plantillaOriginal).promotora || '';

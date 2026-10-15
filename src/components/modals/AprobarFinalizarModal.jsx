@@ -10,11 +10,13 @@ import ContactoCliente from '../ContactoCliente';
 import DatosParaAutorizar from './DatosParaAutorizar';
 import CobroSelector from './CobroSelector';
 import ConectorColocado from './ConectorColocado';
+import ValoresClienteAdmin from './ValoresClienteAdmin';
+import { exigeValoresCliente, parseValoresCliente, valoresGuardados } from '../../utils/valoresCliente';
 
 // Revisión de una orden antes de cerrarla. Sirve para los dos cierres de la oficina: aprobar una orden que el
 // técnico pre-finalizó (con "Devolver" si algo no está bien) y finalizar directo una orden pendiente, sin que
 // el técnico la haya pre-finalizado. Los datos y el cobro se ven igual en los dos.
-export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDevolver, onCopy, onClose }) {
+export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGuardarValores, onDevolver, onCopy, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [devolviendo, setDevolviendo] = useState(false);
   const [motivo, setMotivo] = useState('');
@@ -22,13 +24,49 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
   // Cobro que verá el técnico (solo en visitas de conector): "Visita técnica" u "Otro monto".
   const [cobro, setCobro] = useState(COBRO_INICIAL);
   const [cobroError, setCobroError] = useState('');
+  // Valores de señal del cliente (obligatorios): los campos, lo ya guardado en la orden y si se está guardando.
+  const [oltTexto, setOltTexto] = useState(ticket?.valoresCliente?.olt1310Dbm != null ? String(ticket.valoresCliente.olt1310Dbm) : '');
+  const [onuTexto, setOnuTexto] = useState(ticket?.valoresCliente?.onu1490Dbm != null ? String(ticket.valoresCliente.onu1490Dbm) : '');
+  const [valoresGuardadosEnOrden, setValoresGuardadosEnOrden] = useState(ticket && valoresGuardados(ticket) ? ticket.valoresCliente : null);
+  const [valoresErrores, setValoresErrores] = useState({});
+  const [valoresErrorGuardar, setValoresErrorGuardar] = useState('');
+  const [guardandoValores, setGuardandoValores] = useState(false);
 
   if (!ticket) return null;
   // Pendiente = finalizar directo; pre-finalizada = aprobar. Devolver solo existe al aprobar.
   const finalizando = ticket.estado === 'PENDIENTE';
   const faltantes = faltantesInstalacion(ticket);
+  const exigeValores = exigeValoresCliente(ticket);
+  const valoresLeidos = parseValoresCliente({ olt: oltTexto, onu: onuTexto });
+  // Hay valores guardados pero los campos ya no coinciden con ellos: falta volver a guardar.
+  const valoresSucios = Boolean(valoresGuardadosEnOrden) && (!valoresLeidos.valor
+    || valoresLeidos.valor.olt1310Dbm !== valoresGuardadosEnOrden.olt1310Dbm
+    || valoresLeidos.valor.onu1490Dbm !== valoresGuardadosEnOrden.onu1490Dbm);
+
+  const enfocarValores = (errores) => document.getElementById(errores?.olt ? 'vc-olt' : errores?.onu ? 'vc-onu' : 'vc-guardar')?.focus();
+
+  const handleGuardarValores = async () => {
+    setValoresErrorGuardar('');
+    if (!valoresLeidos.valor) {
+      setValoresErrores(valoresLeidos.errores);
+      enfocarValores(valoresLeidos.errores);
+      return;
+    }
+    setValoresErrores({});
+    setGuardandoValores(true);
+    const guardados = await onGuardarValores?.(ticket, valoresLeidos.valor);
+    setGuardandoValores(false);
+    if (guardados) setValoresGuardadosEnOrden(guardados);
+  };
 
   const handleConfirm = async () => {
+    // Sin los valores del cliente guardados (y al día con lo escrito en los campos) no se cierra la orden.
+    if (exigeValores && (!valoresGuardadosEnOrden || valoresSucios)) {
+      setValoresErrores(valoresLeidos.valor ? {} : valoresLeidos.errores);
+      setValoresErrorGuardar(valoresLeidos.valor ? 'Guarda los valores del cliente antes de cerrar la orden.' : '');
+      enfocarValores(valoresLeidos.valor ? null : valoresLeidos.errores);
+      return;
+    }
     let extra;
     if (llevaCobro(ticket)) {
       const resuelto = resolverCobro(cobro, montoBs);
@@ -127,6 +165,22 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
             </section>
           )}
 
+          {exigeValores && (
+            <ValoresClienteAdmin
+              ticket={ticket}
+              olt={oltTexto}
+              onu={onuTexto}
+              onOlt={(v) => { setOltTexto(v); setValoresErrores((e) => ({ ...e, olt: undefined })); setValoresErrorGuardar(''); }}
+              onOnu={(v) => { setOnuTexto(v); setValoresErrores((e) => ({ ...e, onu: undefined })); setValoresErrorGuardar(''); }}
+              errores={valoresErrores}
+              guardados={valoresGuardadosEnOrden}
+              sucio={valoresSucios}
+              guardando={guardandoValores}
+              errorGuardar={valoresErrorGuardar}
+              onGuardar={handleGuardarValores}
+            />
+          )}
+
           {ticket.potenciaDbm != null && (
             <div className="space-y-1">
               <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">POTENCIA ÓPTICA</span>
@@ -209,7 +263,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onDe
                 <button
                   type="button"
                   onClick={handleConfirm}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || guardandoValores}
                   className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-blue-600 hover:bg-blue-700 border border-blue-600 hover:border-blue-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
                     isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
