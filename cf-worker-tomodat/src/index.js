@@ -164,7 +164,7 @@ function buscar(puntos, codigo) {
 // ---------------------------------------------------------------------------
 
 // Solo lo que necesita una orden nueva (nada de estado, señal ni datos de red).
-const CAMPOS_ONU = 'unique_external_id,name,address,zone_name,odb_name,latitude,longitude,contact';
+const CAMPOS_ONU = 'unique_external_id,name,address,zone_name,odb_name,odb_port,latitude,longitude,contact';
 // Para consultar la potencia: el mismo cliente más los valores de señal (dBm) y su calidad.
 const CAMPOS_SENAL = 'unique_external_id,name,address,zone_name,status,signal,signal_1310,signal_1490';
 const MAX_ONUS = 10;
@@ -208,6 +208,13 @@ const textoONulo = (v) => {
   return t === '' ? null : t;
 };
 
+// Puerto de la caja NAP (splitter) donde está el cliente, como número ("3"); null si SmartOLT no lo tiene
+// o no trae un número mayor a 0.
+export function puertoDeOdb(valor) {
+  const m = String(valor ?? '').match(/\d{1,3}/);
+  return m && Number(m[0]) > 0 ? String(Number(m[0])) : null;
+}
+
 // Respuesta de SmartOLT -> los datos para crear la orden. `zona` e `idExterno` solo
 // sirven para distinguir entre varias ONU del mismo cliente.
 export function mapearOnu(o) {
@@ -220,6 +227,7 @@ export function mapearOnu(o) {
     direccion: textoONulo(o.address),
     telefono: textoONulo(o.contact),
     nap: textoONulo(o.odb_name),
+    puerto: puertoDeOdb(o.odb_port),
     zona: textoONulo(o.zone_name),
     latitud: coordenadasUtiles ? lat : null,
     longitud: coordenadasUtiles ? lng : null,

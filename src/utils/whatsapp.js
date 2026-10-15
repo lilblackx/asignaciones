@@ -11,8 +11,10 @@ import { nombrePromotora } from './promotora.js';
 // explícitamente false. Tickets viejos (sin este campo, de antes de que existiera
 // el check) se tratan como interna por defecto, para no exponer retroactivamente
 // observaciones que nunca se pensaron para salir en WhatsApp.
-export function generarMensajeWhatsApp(ticket, tasaConfig) {
-  const montoBs = calcularMontoBs(tasaConfig);
+// `montoBsFijo` (texto, ej. "5.696"): el monto de un cobro ya registrado en la orden; el historial lo usa para no calcular
+// con la tasa de hoy una orden vieja. Sin él, el monto sale de la tasa vigente.
+export function generarMensajeWhatsApp(ticket, tasaConfig, montoBsFijo = null) {
+  const montoBs = montoBsFijo || calcularMontoBs(tasaConfig);
   const avisoCobro = `Cliente debe cancelar ${montoBs || ''}Bs. Si la falla es interna.`;
   const observacionVisible = ticket.observacionInterna === false && ticket.observacion ? ticket.observacion.trim() : '';
   const observaciones = observacionVisible ? `${avisoCobro} ${observacionVisible}` : avisoCobro;

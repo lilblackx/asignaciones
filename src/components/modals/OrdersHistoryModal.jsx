@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, History, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, History, Search, X } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../../constants';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
+import PlantillaFinalModal from './PlantillaFinalModal';
 
 const PAGE_SIZE = 25;
 const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO', 'ELIMINADO'];
@@ -21,7 +22,10 @@ const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-
 const selectClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 pl-2 pr-7 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500';
 const inputClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-2 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500 [color-scheme:light] dark:[color-scheme:dark]';
 
-export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, onClose }) {
+// `puedeVerPlantilla` (solo ADMIN y usuarios con permiso de cierre, los que llegan a este historial) muestra en cada orden con
+// plantilla (de cualquier trabajo y estado) el botón "Ver plantilla"; `plantillaDe(orden)` arma el texto (vacío si no hay) y
+// `onCopy(texto, mensaje)` copia y avisa con el toast.
+export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose }) {
   const [search, setSearch] = useState('');
   const [estado, setEstado] = useState('');
   const [tipo, setTipo] = useState('');
@@ -30,6 +34,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   const [hasta, setHasta] = useState('');
   const [page, setPage] = useState(0);
   const [expandedKey, setExpandedKey] = useState(null);
+  const [plantillaAbierta, setPlantillaAbierta] = useState(null);
 
   const allOrders = useMemo(() => {
     const seen = new Set();
@@ -105,7 +110,9 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   const goToPage = (p) => { setPage(p); setExpandedKey(null); };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]">
+    <>
+    {/* Con la plantilla abierta, Escape cierra solo la plantilla y no el historial. */}
+    <Modal onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
         <div className="bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-black text-white flex items-center gap-2"><History className="w-5 h-5 text-red-500" /> HISTORIAL DE ÓRDENES</h2>
@@ -199,6 +206,17 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                     {o.fechaProgramada && <p><span className="font-semibold">Programada:</span> {o.fechaProgramada}</p>}
                     <p><span className="font-semibold">Observación:</span> {o.observacion || '-'}</p>
                     {o.creado && <p><span className="font-semibold">Creada por:</span> {o.creado}</p>}
+                    {puedeVerPlantilla && armarPlantilla?.(o) && (
+                      <div className="pt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setPlantillaAbierta(o)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
+                        </button>
+                      </div>
+                    )}
                     {o.estado === 'ELIMINADO' && <p><span className="font-semibold">Eliminada por:</span> {o.eliminadoPor} ({o.fechaEliminacion})</p>}
                     {(o.historialEdiciones || []).length > 0 && (
                       <div className="pt-1.5 mt-1.5 border-t border-zinc-100 dark:border-zinc-800">
@@ -237,5 +255,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         )}
       </div>
     </Modal>
+    {plantillaAbierta && <PlantillaFinalModal orden={plantillaAbierta} texto={armarPlantilla(plantillaAbierta)} titulo="PLANTILLA" onCopy={onCopy} onClose={() => setPlantillaAbierta(null)} zIndexClass="z-[70]" />}
+    </>
   );
 }

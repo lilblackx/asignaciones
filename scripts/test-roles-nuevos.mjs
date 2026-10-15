@@ -4,9 +4,9 @@
 import { readFileSync } from 'node:fs';
 import { ROLES, etiquetaRol } from '../src/constants.js';
 import { MENSAJE_PROMOTOR_OBLIGATORIO, claveNombre, errorNombresPromotora, nombrePromotora, parseNombresPromotora } from '../src/utils/promotora.js';
-import { parseInstalacionTemplate, promotoraDeOrden } from '../src/utils/whatsapp.js';
+import { generarMensajeWhatsApp, ordenSinPlantilla, parseInstalacionTemplate, promotoraDeOrden } from '../src/utils/whatsapp.js';
 import { claveNombre as claveW, nombrePromotora as nombreW, parseNombresPromotora as parseW, promotoraDePlantilla as plantillaW } from '../cf-worker/src/index.js';
-import { ESTADOS_PROMOTORA, ORDEN_ESTADOS_PROMOTORA, RETENCION_DIAS_HISTORIAL, categoriaOrden, esAveriaLos, estadoParaPromotora, etiquetaFiltroEstado, resumenInstalacion, textoPlantillaFinal, unirInstalaciones } from '../src/utils/estadoInstalacion.js';
+import { ESTADOS_PROMOTORA, ORDEN_ESTADOS_PROMOTORA, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, categoriaOrden, esAveriaLos, estadoParaPromotora, etiquetaFiltroEstado, resumenInstalacion, textoPlantillaFinal, unirInstalaciones } from '../src/utils/estadoInstalacion.js';
 
 let failures = 0;
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), 'utf8');
@@ -46,8 +46,9 @@ const resumen = resumenInstalacion(completa, 999);
 check('el resumen solo lleva lo que ve la promotora', Object.keys(resumen).sort(), ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
 check('con sus valores', [resumen.codigo, resumen.nombre, resumen.cedula, resumen.estado, resumen.creadaEn, resumen.finalizadoEn, resumen.archivadoEn], ['IO1', 'Ana', '12.345.678', 'FINALIZADO', 100, 200, 999]);
 check('sin datos técnicos sueltos, de cobro ni de contacto (solo la plantilla final)', JSON.stringify({ ...resumen, plantillaFinal: '' }).match(/SECRETO|1700|400|0414|interna|ABC123/), null);
-check('el historial se conserva 7 días', RETENCION_DIAS_HISTORIAL, 7);
-check('el Worker conserva el historial los mismos días', /const RETENCION_MS_HISTORIAL = (\d+) \* 24/.exec(leer('../cf-worker/src/index.js'))?.[1], String(RETENCION_DIAS_HISTORIAL));
+check('las promotoras ven 7 días de historial y ventas 15', [RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS], [7, 15]);
+check('el Worker conserva el historial lo que ve ventas (15), la app al cerrar también', /const RETENCION_MS_HISTORIAL = (\d+) \* 24/.exec(leer('../cf-worker/src/index.js'))?.[1] === String(RETENCION_DIAS_HISTORIAL_VENTAS) && /ahoraMs - RETENCION_MS_HISTORIAL_VENTAS/.test(leer('../src/hooks/useReports.js')), true);
+check('el historial descarta lo que sobra para cada pantalla (ventas 15 días, una promotora 7)', /claves === null \? RETENCION_MS_HISTORIAL_VENTAS : RETENCION_MS_HISTORIAL/.test(leer('../src/hooks/useHistorialInstalaciones.js')), true);
 
 // --- Plantilla final (la que el técnico dejó llena) ---
 check('la plantilla final de una finalizada sale llena con el código, el técnico y lo que llenó el técnico', textoPlantillaFinal(completa), 'IO1\n*Instalador:* GERARDO MOLERO\n*Serial:* ABC123');
@@ -57,6 +58,10 @@ check('una activa que aún no se finaliza no tiene plantilla final', [textoPlant
 check('sin plantilla de la promotora no hay nada que mostrar', textoPlantillaFinal({ ...completa, plantillaOriginal: '' }), '');
 check('el Worker copia la plantilla final de las finalizadas al historial', /plantillaFinal: \{ stringValue: f\.estado\?\.stringValue === 'FINALIZADO'/.test(leer('../cf-worker/src/index.js')), true);
 check('al finalizar una instalación se guarda la plantilla final (aprobar y finalizar directo)', (leer('../src/hooks/useTickets.js').match(/\.\.\.plantillaFinalDe\(ticket\)/g) || []).length, 2);
+check('el historial de órdenes ofrece "Ver plantilla" solo con permiso (ADMIN y usuarios con permiso de cierre) y en todas las órdenes con plantilla (no solo instalaciones)', /puedeVerPlantilla=\{canCerrar\}/.test(leer('../src/App.jsx')) && /puedeVerPlantilla && armarPlantilla\?\.\(o\)/.test(leer('../src/components/modals/OrdersHistoryModal.jsx')) && /plantillaDe=\{plantillaDeHistorial\}/.test(leer('../src/App.jsx')), true);
+const averiaH = { codigo: 'AO179', tipoTrabajo: 'AVERÍA', falla: 'LOS', nombre: 'Harold', cedula: '16458185', direccion: 'Barrio Chino', creado: 'Skeyver' };
+check('la plantilla de una avería del historial usa el monto del cobro registrado, no el de la tasa de hoy', [generarMensajeWhatsApp(averiaH, { montoBaseEUR: 10, tasa: 600 }, '4.200').match(/cancelar (\S+)Bs/)?.[1], generarMensajeWhatsApp(averiaH, { montoBaseEUR: 10, tasa: 600 }).match(/cancelar (\S+)Bs/)?.[1]], ['4.200', '6.000']);
+check('toda orden sin plantilla de la promotora tiene mensaje; instalación o reconexión sin plantilla pegada, no', [ordenSinPlantilla(averiaH), ordenSinPlantilla({ tipoTrabajo: 'MUDANZA' }), ordenSinPlantilla({ tipoTrabajo: 'INSTALACIÓN' }), ordenSinPlantilla({ tipoTrabajo: 'RECONEXIÓN' })], [false, false, true, true]);
 check('el botón Ver plantilla solo sale en las finalizadas', /vista\.clave === 'INSTALADA' && textoPlantillaFinal\(orden\)/.test(leer('../src/components/TarjetaInstalacion.jsx')), true);
 
 // --- Averías LOS (solo las ve ventas) ---

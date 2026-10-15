@@ -1,4 +1,5 @@
-import { MAX_TELEFONOS, telefonoInternacional, unirTelefonos } from './telefono';
+import { MAX_TELEFONOS, telefonoInternacional, unirTelefonos } from './telefono.js';
+import { unirNapPuerto } from './napPuerto.js';
 
 export const soloDigitos = (texto) => String(texto || '').replace(/\D/g, '');
 
@@ -56,9 +57,17 @@ const CAMPOS = [
   ['nombre', 'nombre'],
   ['direccion', 'dirección'],
   ['telefono', 'teléfono'],
-  ['nap', 'NAP'],
+  ['nap', 'NAP y puerto'],
   ['ubicacion', 'ubicación'],
 ];
+
+// La NAP de la orden lleva también el puerto cuando SmartOLT lo trae ("O10H37 - Puerto 5"): es el mismo formato que
+// usan la plantilla y los formularios de NAP y puerto (ver utils/napPuerto). Sin NAP no se escribe un puerto suelto.
+export function napDeOnu(onu) {
+  const nap = String(onu.nap || '').trim().toUpperCase();
+  const puerto = String(onu.puerto || '').trim();
+  return nap && puerto ? unirNapPuerto(nap, puerto) : nap;
+}
 
 // Datos de la ONU -> campos de la orden nueva (solo los que tengan valor).
 export function camposDeOnu(onu, cedula) {
@@ -67,7 +76,7 @@ export function camposDeOnu(onu, cedula) {
     nombre: limpiarNombre(onu.nombre, cedula),
     direccion: String(onu.direccion || '').trim(),
     telefono: tel,
-    nap: String(onu.nap || '').trim().toUpperCase(),
+    nap: napDeOnu(onu),
     ubicacion: onu.latitud != null && onu.longitud != null ? `${onu.latitud}, ${onu.longitud}` : '',
   };
   return Object.fromEntries(Object.entries(campos).filter(([, v]) => v));

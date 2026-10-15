@@ -115,6 +115,17 @@ export default function App({ auth }) {
     return generarMensajeWhatsApp(ticketConOperador, tasaConfig);
   };
 
+  // La plantilla de cualquier orden del historial (instalación, reconexión con plantilla, avería, mudanza...), tal como
+  // se copia desde la lista. En las que no salen de la plantilla de la promotora, el monto en Bs es el del cobro ya
+  // registrado en la orden, no el de la tasa de hoy. Vacía si la orden no tiene plantilla (ver ordenSinPlantilla).
+  const plantillaDeHistorial = (ticket) => {
+    if (ordenSinPlantilla(ticket)) return '';
+    const saleDePlantilla = ticket.tipoTrabajo?.toUpperCase().includes('INSTAL')
+      || (tipoUsaPlantillaPromotora(ticket.tipoTrabajo) && ticket.plantillaOriginal?.trim());
+    if (saleDePlantilla) return buildWhatsAppMessage(ticket);
+    return generarMensajeWhatsApp({ ...ticket, creado: resolveOperador(ticket.creado) }, tasaConfig, ticket.cobroBs || null);
+  };
+
   // Copiar la plantilla también marca el ticket como ENVIADO (campo isAsignado
   // en Firestore, se conserva el nombre por compatibilidad con datos viejos). Se marca primero porque asignar puede cambiar el código del
   // ticket (correlativo del técnico) y la plantilla debe salir con el final.
@@ -746,6 +757,9 @@ export default function App({ auth }) {
             isLoadingReports={isLoadingReports}
             onLoadMoreReports={loadMoreReports}
             getTecnicoColor={getTecnicoColor}
+            puedeVerPlantilla={canCerrar}
+            plantillaDe={plantillaDeHistorial}
+            onCopy={copyToClipboard}
             onClose={() => setIsHistoryModalOpen(false)}
           />
         )}

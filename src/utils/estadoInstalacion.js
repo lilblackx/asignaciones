@@ -10,11 +10,15 @@ export const TIPO_AVERIA = 'AVERÍA';
 // El perfil de ventas (el PROMOTOR con "Ver todas las instalaciones") también sigue las averías de tipo LOS.
 export const FALLA_LOS = 'LOS';
 
-// Cuántos días se conserva en el historial una instalación ya cerrada (finalizada o cancelada). Cada día de más son
-// documentos de más que se leen cada vez que una promotora abre la app (se guarda una copia en el equipo por 30
-// minutos para no leerlos de nuevo). Son 7 a pedido de las promotoras; en cf-worker hay otra constante que debe valer igual.
+// Cuántos días de historial ve cada quien de una instalación ya cerrada (finalizada o cancelada): las promotoras 7 y el
+// perfil de ventas (ve todas) 15. Cada día de más son documentos de más que se leen cada vez que se abre la app (se guarda una
+// copia en el equipo por 30 minutos para no leerlos de nuevo). En Firestore el historial se conserva lo que ve ventas, que
+// es lo más largo (15); cada pantalla descarta lo que sobra para ella. En cf-worker hay otra constante que debe valer igual.
 export const RETENCION_DIAS_HISTORIAL = 7;
-export const RETENCION_MS_HISTORIAL = RETENCION_DIAS_HISTORIAL * 24 * 60 * 60 * 1000;
+export const RETENCION_DIAS_HISTORIAL_VENTAS = 15;
+const DIA_MS = 24 * 60 * 60 * 1000;
+export const RETENCION_MS_HISTORIAL = RETENCION_DIAS_HISTORIAL * DIA_MS;
+export const RETENCION_MS_HISTORIAL_VENTAS = RETENCION_DIAS_HISTORIAL_VENTAS * DIA_MS;
 
 // Una avería de tipo LOS: lo único que, además de las instalaciones, llega al módulo de ventas.
 export const esAveriaLos = (t) => t?.tipoTrabajo === TIPO_AVERIA && t?.falla === FALLA_LOS;

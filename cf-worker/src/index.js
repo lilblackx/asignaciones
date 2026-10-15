@@ -447,8 +447,9 @@ async function commitFirestore(env, accessToken, writes) {
 
 // Historial liviano de instalaciones cerradas (colección historialInstalaciones), igual que el de useReports del
 // cliente: lo único que la promotora ve de una instalación cuando el cierre la saca de la lista. Mantener sincronizados
-// los campos y los días con resumenInstalacion y RETENCION_DIAS_HISTORIAL de src/utils/estadoInstalacion.js.
-const RETENCION_MS_HISTORIAL = 7 * 24 * 60 * 60 * 1000;
+// los campos y los días con resumenInstalacion y RETENCION_DIAS_HISTORIAL_VENTAS de src/utils/estadoInstalacion.js (se conserva
+// lo que ve ventas, que es lo más largo; cada pantalla descarta lo que le sobra).
+const RETENCION_MS_HISTORIAL = 15 * 24 * 60 * 60 * 1000;
 const TIPO_INSTALACION = 'INSTALACIÓN';
 // Las averías LOS también pasan al historial: ventas las sigue junto con las instalaciones (esDeVentas en estadoInstalacion.js).
 const esAveriaLosFirestore = (f) => f?.tipoTrabajo?.stringValue === 'AVERÍA' && f?.falla?.stringValue === 'LOS';

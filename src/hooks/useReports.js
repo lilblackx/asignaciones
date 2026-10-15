@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { collection, doc, getDocs, limit, orderBy, query, startAfter, where, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { RETENCION_MS_HISTORIAL, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
+import { RETENCION_MS_HISTORIAL_VENTAS, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
 
 const REPORTS_PAGE_SIZE = 30;
 const MAX_ESCRITURAS_LOTE = 450; // Firestore admite 500 por lote
@@ -34,7 +34,7 @@ async function guardarHistorialInstalaciones(ordenes, ahoraMs) {
 async function limpiarHistorialInstalaciones(ahoraMs) {
   try {
     const ref = collection(db, 'artifacts', appId, 'public', 'data', 'historialInstalaciones');
-    const vencidas = await getDocs(query(ref, where('archivadoEn', '<', ahoraMs - RETENCION_MS_HISTORIAL)));
+    const vencidas = await getDocs(query(ref, where('archivadoEn', '<', ahoraMs - RETENCION_MS_HISTORIAL_VENTAS)));
     for (let i = 0; i < vencidas.docs.length; i += MAX_ESCRITURAS_LOTE) {
       const lote = writeBatch(db);
       vencidas.docs.slice(i, i + MAX_ESCRITURAS_LOTE).forEach((d) => lote.delete(d.ref));

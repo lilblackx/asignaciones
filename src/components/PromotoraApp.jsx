@@ -5,7 +5,7 @@ import { useToast } from '../hooks/useToast';
 import { useAhora } from '../hooks/useAhora';
 import { useInstalacionesPromotora } from '../hooks/useInstalacionesPromotora';
 import { useHistorialInstalaciones } from '../hooks/useHistorialInstalaciones';
-import { ORDEN_ESTADOS_PROMOTORA, RETENCION_DIAS_HISTORIAL, categoriaOrden, etiquetaFiltroEstado, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
+import { ORDEN_ESTADOS_PROMOTORA, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, categoriaOrden, etiquetaFiltroEstado, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
 import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
 import TarjetaInstalacion from './TarjetaInstalacion';
@@ -130,7 +130,7 @@ export default function PromotoraApp({ auth }) {
 
           <p className="text-[10px] text-zinc-400 text-center pt-2">
             {verTodasInstalaciones ? <>Ves las instalaciones de todas las promotoras y las averías LOS. </> : promotoraNombres.length > 0 && <>Ves las instalaciones de: {promotoraNombres.join(', ')}. </>}
-            Las terminadas o canceladas se muestran durante {RETENCION_DIAS_HISTORIAL} días.
+            Las terminadas o canceladas se muestran durante {verTodasInstalaciones ? RETENCION_DIAS_HISTORIAL_VENTAS : RETENCION_DIAS_HISTORIAL} días.
           </p>
         </main>
 

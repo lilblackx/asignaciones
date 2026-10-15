@@ -5,15 +5,15 @@ import { useCopiado } from '../../hooks/useCopiado';
 
 // La plantilla final de una instalación finalizada, ya llena por el técnico, para que la promotora la lea y la copie
 // (por ejemplo para pegarla en WhatsApp). Solo lectura. `onCopy(texto, mensaje)` copia y avisa con el toast (devuelve si pudo).
-export default function PlantillaFinalModal({ orden, texto, onCopy, onClose }) {
+export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIndexClass = 'z-50', titulo = 'PLANTILLA FINAL' }) {
   const { copiado, copiar } = useCopiado(onCopy);
   if (!orden) return null;
   return (
-    <Modal onClose={onClose} zIndexClass="z-50">
+    <Modal onClose={onClose} zIndexClass={zIndexClass}>
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex justify-between items-center gap-3 shrink-0">
           <div className="min-w-0">
-            <p className="text-[11px] font-black tracking-wide text-red-500 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" aria-hidden="true" /> PLANTILLA FINAL</p>
+            <p className="text-[11px] font-black tracking-wide text-red-500 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" aria-hidden="true" /> {titulo}</p>
             <h2 className="text-sm font-black text-white truncate">{orden.codigo || 'S/C'}{orden.nombre ? ` — ${orden.nombre}` : ''}</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors shrink-0"><X className="w-4 h-4" /></button>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { RETENCION_MS_HISTORIAL } from '../utils/estadoInstalacion';
+import { RETENCION_MS_HISTORIAL, RETENCION_MS_HISTORIAL_VENTAS } from '../utils/estadoInstalacion';
 
 // Mientras la copia guardada en el equipo sea más nueva que esto no se vuelve a leer de Firestore: el historial solo
 // cambia cuando se cierra el día, y abrir la app varias veces seguidas no debe costar lecturas cada vez.
@@ -21,7 +21,8 @@ function copiaGuardada(llave) {
 // cierre del día lo borra, pero puede quedar hasta entonces.
 async function leerHistorial(claves, llave) {
   const ref = collection(db, 'artifacts', appId, 'public', 'data', 'historialInstalaciones');
-  const desde = Date.now() - RETENCION_MS_HISTORIAL;
+  // Ventas (claves null: todo el historial) ve 15 días; una promotora, 7. Lo anterior se guarda pero no se muestra.
+  const desde = Date.now() - (claves === null ? RETENCION_MS_HISTORIAL_VENTAS : RETENCION_MS_HISTORIAL);
   // `claves` null = perfil de ventas: todo el historial en una sola lectura.
   const grupos = await Promise.all((claves ?? [null]).map((c) => getDocs(c === null ? ref : query(ref, where('promotoraClave', '==', c)))));
   const lista = grupos.flatMap((snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }))).filter((h) => (h.archivadoEn || 0) >= desde);

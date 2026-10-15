@@ -3,7 +3,9 @@
 import { devolucionPendiente } from '../src/utils/devolucion.js';
 import { separarNapPuerto, unirNapPuerto } from '../src/utils/napPuerto.js';
 import { calidadSenal, puedeCapturarPotencia, valorSenal } from '../src/utils/senalOnu.js';
-import { buscarOnus, completarSenal, mapearSenal } from '../cf-worker-tomodat/src/index.js';
+import { buscarOnus, completarSenal, mapearOnu, mapearSenal, puertoDeOdb } from '../cf-worker-tomodat/src/index.js';
+import { camposDeOnu, napDeOnu } from '../src/utils/clienteSmartolt.js';
+import { extraerCodigoNap } from '../src/utils/codigoNap.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -22,6 +24,15 @@ check('solo cuenta en PENDIENTE', devolucionPendiente({ estado: 'PRE-FINALIZADO'
 check('sin historial no hay devolución', devolucionPendiente({ estado: 'PENDIENTE' }), null);
 
 check('une NAP y puerto', unirNapPuerto(' NAP 08 ', '3'), 'NAP 08 - Puerto 3');
+
+// --- Puerto de la NAP que trae SmartOLT (odb_port) junto con la NAP (odb_name) ---
+check('el puerto de SmartOLT es un número mayor a 0', ['3', 3, 'Port 12', ' 7 ', '0', '', null, undefined, '-', 'sin puerto'].map(puertoDeOdb), ['3', '3', '12', '7', null, null, null, null, null, null]);
+check('la ONU trae NAP y puerto', (({ nap, puerto }) => [nap, puerto])(mapearOnu({ odb_name: 'O10H37', odb_port: '5' })), ['O10H37', '5']);
+check('sin puerto en SmartOLT la ONU trae solo la NAP', (({ nap, puerto }) => [nap, puerto])(mapearOnu({ odb_name: 'O10H37', odb_port: '' })), ['O10H37', null]);
+check('la orden nueva lleva la NAP con su puerto, igual que el formulario de NAP y puerto', camposDeOnu({ nap: 'o10h37', puerto: '5' }, '123').nap, 'O10H37 - Puerto 5');
+check('el texto se separa de nuevo en NAP y puerto (el técnico lo recibe ya lleno)', separarNapPuerto(napDeOnu({ nap: 'o10h37', puerto: '5' })), { nap: 'O10H37', puerto: '5' });
+check('sin puerto queda solo la NAP, y sin NAP no se escribe un puerto suelto', [napDeOnu({ nap: 'O10H37' }), napDeOnu({ puerto: '5' })], ['O10H37', '']);
+check('el código de la NAP se sigue encontrando con el puerto al lado (coordenadas de Tomodat)', extraerCodigoNap(napDeOnu({ nap: 'O10H37', puerto: '5' })), 'O10H37');
 check('separa NAP y puerto', separarNapPuerto('NAP 08 - Puerto 3'), { nap: 'NAP 08', puerto: '3' });
 check('separa aunque la NAP lleve guion', separarNapPuerto('NAP O07D05-2 - puerto 12'), { nap: 'NAP O07D05-2', puerto: '12' });
 check('texto libre queda entero en la NAP', separarNapPuerto('caja de la esquina'), { nap: 'caja de la esquina', puerto: '' });
