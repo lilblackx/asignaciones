@@ -11,6 +11,9 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, mostrarTipo 
   const { vista } = orden;
   const cerrada = orden.origen === 'historial' || orden.estado === 'FINALIZADO' || orden.estado === 'CANCELADO';
   const cuando = cerrada ? (orden.finalizadoEn || orden.archivadoEn) : orden.createdAt;
+  // En la fila de tarjetas todas miden lo mismo: lo que sobra va arriba del botón (o del pie si no hay botón), así los
+  // botones de "Ver plantilla" quedan alineados aunque la dirección de una ocupe más líneas.
+  const conPlantilla = Boolean(onVerPlantilla && vista.clave === 'INSTALADA' && textoPlantillaFinal(orden));
   const cedula = orden.cedula ? `${orden.tipoDocumento || 'V'}-${orden.cedula}` : '';
 
   return (
@@ -39,17 +42,17 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, mostrarTipo 
         </p>
       )}
 
-      {onVerPlantilla && vista.clave === 'INSTALADA' && textoPlantillaFinal(orden) && (
+      {conPlantilla && (
         <button
           type="button"
           onClick={() => onVerPlantilla(orden)}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          className="mt-auto w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
           <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
         </button>
       )}
 
-      <div className="mt-auto pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+      <div className={`${conPlantilla ? '' : 'mt-auto'} pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-zinc-500 dark:text-zinc-400`}>
         <span className="flex items-center gap-1 min-w-0 break-words">
           <User className="w-3 h-3 shrink-0" aria-hidden="true" /> {vista.detalle || 'Sin técnico'}
         </span>
