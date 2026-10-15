@@ -11,7 +11,7 @@ import DatosParaAutorizar from './DatosParaAutorizar';
 import CobroSelector from './CobroSelector';
 import ConectorColocado from './ConectorColocado';
 import ValoresClienteAdmin from './ValoresClienteAdmin';
-import { exigeValoresCliente, parseValoresCliente, valoresGuardados } from '../../utils/valoresCliente';
+import { exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../../utils/valoresCliente';
 
 // Revisión de una orden antes de cerrarla. Sirve para los dos cierres de la oficina: aprobar una orden que el
 // técnico pre-finalizó (con "Devolver" si algo no está bien) y finalizar directo una orden pendiente, sin que
@@ -37,6 +37,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
   const finalizando = ticket.estado === 'PENDIENTE';
   const faltantes = faltantesInstalacion(ticket);
   const exigeValores = exigeValoresCliente(ticket);
+  const ofreceValores = ofreceValoresCliente(ticket);
   const valoresLeidos = parseValoresCliente({ olt: oltTexto, onu: onuTexto });
   // Hay valores guardados pero los campos ya no coinciden con ellos: falta volver a guardar.
   const valoresSucios = Boolean(valoresGuardadosEnOrden) && (!valoresLeidos.valor
@@ -60,8 +61,10 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
   };
 
   const handleConfirm = async () => {
-    // Sin los valores del cliente guardados (y al día con lo escrito en los campos) no se cierra la orden.
-    if (exigeValores && (!valoresGuardadosEnOrden || valoresSucios)) {
+    // Sin los valores del cliente guardados (y al día con lo escrito en los campos) no se cierra la orden. Donde son
+    // opcionales (instalaciones) solo se exige si escribió algo: así no se pierde lo que no guardó.
+    const escribioValores = oltTexto.trim() !== '' || onuTexto.trim() !== '';
+    if ((exigeValores || (ofreceValores && escribioValores)) && (!valoresGuardadosEnOrden || valoresSucios)) {
       setValoresErrores(valoresLeidos.valor ? {} : valoresLeidos.errores);
       setValoresErrorGuardar(valoresLeidos.valor ? 'Guarda los valores del cliente antes de cerrar la orden.' : '');
       enfocarValores(valoresLeidos.valor ? null : valoresLeidos.errores);
@@ -74,7 +77,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
         setCobroError(resuelto.error);
         return;
       }
-      extra = { montoBs: resuelto.cobroBs, cobroTipo: resuelto.tipo };
+      extra = { montoBs: resuelto.cobroBs, cobroTipo: resuelto.tipo, cobroMoneda: resuelto.moneda };
     }
     setIsSubmitting(true);
     await onConfirm(ticket, extra);
@@ -165,9 +168,10 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
             </section>
           )}
 
-          {exigeValores && (
+          {ofreceValores && (
             <ValoresClienteAdmin
               ticket={ticket}
+              obligatorio={exigeValores}
               olt={oltTexto}
               onu={onuTexto}
               onOlt={(v) => { setOltTexto(v); setValoresErrores((e) => ({ ...e, olt: undefined })); setValoresErrorGuardar(''); }}

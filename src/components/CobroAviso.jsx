@@ -1,5 +1,5 @@
 import { Plug } from 'lucide-react';
-import { conceptoCobro, estaExonerado, tieneCobroFinal } from '../utils/cobro';
+import { conceptoCobro, estaExonerado, monedaDe, textoMonto, tieneCobroFinal } from '../utils/cobro';
 
 // Cobro resultante de una orden con cobro (visita de conector o instalación) ya finalizada: el monto se
 // guarda al finalizar (aprobarFinalizarTicket / finalizarTicket). No renderiza
@@ -13,7 +13,7 @@ export default function CobroAviso({ ticket, compact = false, className = '' }) 
       <Plug className={`${compact ? 'w-3 h-3' : 'w-4 h-4'} shrink-0 mt-px text-sky-600 dark:text-sky-400`} aria-hidden="true" />
       {estaExonerado(ticket)
         ? <p className="font-bold leading-snug">{tipo}: visita exonerada, <span className="font-black">sin cobro al cliente</span>.</p>
-        : <p className="font-bold leading-snug">{tipo}: cobro resultante al cliente <span className="font-black">{ticket.cobroBs} Bs</span>.</p>}
+        : <p className="font-bold leading-snug">{tipo}: cobro resultante al cliente <span className="font-black">{textoMonto(ticket.cobroBs, monedaDe(ticket))}</span>.</p>}
     </div>
   );
 }

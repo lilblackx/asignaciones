@@ -4,7 +4,7 @@ import { getEnvioInfo } from './utils/ticketDisplay';
 import { normalizarUbicacion } from './utils/ubicacion';
 import { avisoTasaDesactualizada, montoBsDe } from './utils/tasa';
 import { avisaCobroAlPreFinalizar } from './utils/tipoVisita';
-import { tieneCobroFinal } from './utils/cobro';
+import { monedaDe, tieneCobroFinal } from './utils/cobro';
 import TasaIndicador from './components/TasaIndicador';
 import AvisoNotificaciones from './components/AvisoNotificaciones';
 import { crearConAviso } from './utils/errores';
@@ -123,7 +123,7 @@ export default function App({ auth }) {
     const saleDePlantilla = ticket.tipoTrabajo?.toUpperCase().includes('INSTAL')
       || (tipoUsaPlantillaPromotora(ticket.tipoTrabajo) && ticket.plantillaOriginal?.trim());
     if (saleDePlantilla) return buildWhatsAppMessage(ticket);
-    return generarMensajeWhatsApp({ ...ticket, creado: resolveOperador(ticket.creado) }, tasaConfig, ticket.cobroBs || null);
+    return generarMensajeWhatsApp({ ...ticket, creado: resolveOperador(ticket.creado) }, tasaConfig, ticket.cobroBs || null, monedaDe(ticket));
   };
 
   // Copiar la plantilla también marca el ticket como ENVIADO (campo isAsignado

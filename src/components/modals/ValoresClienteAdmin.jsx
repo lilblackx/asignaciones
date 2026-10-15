@@ -5,13 +5,13 @@ import { parsePotencia } from '../../utils/potencia';
 
 const NOTA_SMARTOLT = 'Los valores quedaron en los campos de abajo. Es la última medición de SmartOLT; puedes corregirlos y luego guardarlos.';
 
-function CampoValor({ id, etiqueta, valor, onChange, error, placeholder }) {
+function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligatorio }) {
   const parseado = parsePotencia(valor);
   const calidad = parseado.valor !== undefined ? calidadValor(parseado.valor) : null;
   return (
     <div className="space-y-1">
       <label htmlFor={id} className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-        {etiqueta} <span className="font-normal text-red-500">(obligatorio)</span>
+        {etiqueta} <span className={`font-normal ${obligatorio ? 'text-red-500' : 'text-zinc-400'}`}>{obligatorio ? '(obligatorio)' : '(opcional)'}</span>
       </label>
       <input
         id={id}
@@ -33,9 +33,10 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder }) {
 }
 
 // Valores de señal del cliente que guarda la oficina antes de aprobar o finalizar: OLT Rx (1310 nm) y ONU Rx
-// (1490 nm). El técnico los ve junto al cobro resultante. Son obligatorios: sin guardarlos no se cierra la orden.
+// (1490 nm). El técnico los ve junto al cobro resultante. Son obligatorios: sin guardarlos no se cierra la orden
+// (`obligatorio` false en instalaciones: se pueden guardar, pero no hacen falta y el técnico no los ve).
 // El estado vive en el modal (AprobarFinalizarModal) porque el botón de cerrar también lo necesita.
-export default function ValoresClienteAdmin({ ticket, olt, onu, onOlt, onOnu, errores, guardados, sucio, guardando, errorGuardar, onGuardar }) {
+export default function ValoresClienteAdmin({ ticket, obligatorio = true, olt, onu, onOlt, onOnu, errores, guardados, sucio, guardando, errorGuardar, onGuardar }) {
   const capturarSenal = (v1310, v1490) => {
     if (v1310 !== null) onOlt(v1310);
     if (v1490 !== null) onOnu(v1490);
@@ -49,25 +50,27 @@ export default function ValoresClienteAdmin({ ticket, olt, onu, onOlt, onOnu, er
           <Radio className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> VALORES DEL CLIENTE
         </h3>
         <p className="ml-6 mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-          Los guardas tú y el técnico los ve junto con el cobro. Los que él capturó al pre-finalizar son solo informativos.
+          {obligatorio
+            ? 'Los guardas tú y el técnico los ve junto con el cobro. Los que él capturó al pre-finalizar son solo informativos.'
+            : 'Los guardas tú y quedan registrados en la orden. En las instalaciones son opcionales y el técnico no los ve.'}
         </p>
       </div>
 
       {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={capturarSenal} nota={NOTA_SMARTOLT} />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <CampoValor id="vc-olt" etiqueta="OLT Rx · Potencia (1310 nm)" valor={olt} onChange={onOlt} error={errores.olt} placeholder="Ej. -19.85" />
-        <CampoValor id="vc-onu" etiqueta="ONU Rx · Señal (1490 nm)" valor={onu} onChange={onOnu} error={errores.onu} placeholder="Ej. -22.84" />
+        <CampoValor id="vc-olt" etiqueta="OLT Rx · Potencia (1310 nm)" valor={olt} onChange={onOlt} error={errores.olt} placeholder="Ej. -19.85" obligatorio={obligatorio} />
+        <CampoValor id="vc-onu" etiqueta="ONU Rx · Señal (1490 nm)" valor={onu} onChange={onOnu} error={errores.onu} placeholder="Ej. -22.84" obligatorio={obligatorio} />
       </div>
 
       {guardados && !sucio ? (
         <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-300 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-emerald-900 dark:text-emerald-200">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-          <p className="leading-snug"><span className="font-black">Valores guardados</span>{guardados.guardadoPor ? ` por ${guardados.guardadoPor}` : ''}. El técnico los verá con el cobro. Si los cambias, vuelve a guardar.</p>
+          <p className="leading-snug"><span className="font-black">Valores guardados</span>{guardados.guardadoPor ? ` por ${guardados.guardadoPor}` : ''}{obligatorio ? '. El técnico los verá con el cobro' : ''}. Si los cambias, vuelve a guardar.</p>
         </div>
       ) : (
         <p role={errorGuardar ? 'alert' : undefined} className="font-bold text-amber-800 dark:text-amber-300">
-          {errorGuardar || (sucio ? 'Cambiaste los valores: guárdalos de nuevo para que el técnico vea los nuevos.' : 'Aún no guardas los valores: sin ellos no se puede cerrar la orden.')}
+          {errorGuardar || (sucio ? `Cambiaste los valores: guárdalos de nuevo${obligatorio ? ' para que el técnico vea los nuevos' : ''}.` : obligatorio ? 'Aún no guardas los valores: sin ellos no se puede cerrar la orden.' : 'Aún no guardas los valores. Si no los vas a registrar, deja los campos vacíos.')}
         </p>
       )}
 

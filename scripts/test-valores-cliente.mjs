@@ -2,7 +2,7 @@
 // obligatorios, la escala Bueno / Regular / Crítico y cómo se leen los campos. No necesita el emulador.
 // Uso: `npm run test:valores`.
 import { TIPOS_POR_TRABAJO, TIPOS_TRABAJO } from '../src/constants.js';
-import { calidadValor, detalleValoresCliente, exigeValoresCliente, parseValoresCliente, textoValoresCliente, valoresGuardados } from '../src/utils/valoresCliente.js';
+import { calidadValor, detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, textoValoresCliente, valoresGuardados } from '../src/utils/valoresCliente.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -22,6 +22,8 @@ check('el cambio de equipo es un trabajo más, con los mismos tipos de equipo qu
 check('no se exigen en retiro de equipo ni en validación NAP', ['RETIRO EQUIPO', 'VALIDACION NAP'].map((tipoTrabajo) => exigeValoresCliente({ tipoTrabajo })), [false, false]);
 check('no se exigen en instalaciones (no pasan por el cobro)', exigeValoresCliente({ tipoTrabajo: 'INSTALACIÓN' }), false);
 check('sin orden no se exigen', exigeValoresCliente(null), false);
+check('la oficina puede guardarlos en instalaciones (opcional) y donde son obligatorios; no en retiro, validación NAP ni sin orden',
+  [{ tipoTrabajo: 'INSTALACIÓN' }, { tipoTrabajo: 'AVERÍA' }, { tipoTrabajo: 'RETIRO EQUIPO' }, { tipoTrabajo: 'VALIDACION NAP' }, null].map(ofreceValoresCliente), [true, true, false, false, false]);
 
 // --- Escala ---
 check('Bueno: de -15 a -28', [-15, -19.85, -22.84, -28].map(nivel), ['bueno', 'bueno', 'bueno', 'bueno']);

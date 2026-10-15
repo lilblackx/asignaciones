@@ -1,7 +1,7 @@
 // Prueba el cobro que se informa al técnico al finalizar (src/utils/cobro.js): "Visita técnica"
 // (el monto de siempre) u "Otro monto" (escrito a mano). No necesita el emulador.
 // Uso: `npm run test:cobro`.
-import { COBRO_EXONERADO, COBRO_INICIAL, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, conceptoCobro, detalleCobro, estaExonerado, formatoMontoBs, llevaCobro, parseMontoBs, resolverCobro, tieneCobroFinal, valorCobro } from '../src/utils/cobro.js';
+import { COBRO_EXONERADO, COBRO_INICIAL, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, MONEDA_BS, MONEDA_USD, camposCobro, conceptoCobro, detalleCobro, estaExonerado, formatoMontoBs, llevaCobro, monedaDe, parseMontoBs, resolverCobro, textoMonto, tieneCobroFinal, valorCobro } from '../src/utils/cobro.js';
 import { avisaCobroAlPreFinalizar, generaCobro } from '../src/utils/tipoVisita.js';
 
 let failures = 0;
@@ -23,14 +23,14 @@ check('puntos, letras, negativos, tres decimales o demasiadas cifras: no válido
 check('formato con separador de miles y coma decimal', [formatoMontoBs(12345), formatoMontoBs(12345.5)], ['12.345', '12.345,5']);
 
 // --- Qué cobro se guarda ---
-check('"Visita técnica" usa el monto de siempre', resolverCobro({ modo: COBRO_VISITA, otro: '999' }, '5.696'), { cobroBs: '5.696', tipo: COBRO_VISITA });
-check('por defecto es la visita técnica', resolverCobro(COBRO_INICIAL, '5.696'), { cobroBs: '5.696', tipo: COBRO_VISITA });
-check('"Visita técnica" sin tasa configurada no lleva monto', resolverCobro(COBRO_INICIAL, null), { cobroBs: null, tipo: COBRO_VISITA });
-check('"Otro monto" usa el monto escrito', resolverCobro({ modo: COBRO_OTRO, otro: '12345' }, '5.696'), { cobroBs: '12.345', tipo: COBRO_OTRO });
-check('"Otro monto" con decimales', resolverCobro({ modo: COBRO_OTRO, otro: '12345,5' }, '5.696'), { cobroBs: '12.345,5', tipo: COBRO_OTRO });
+check('"Visita técnica" usa el monto de siempre', resolverCobro({ modo: COBRO_VISITA, otro: '999' }, '5.696'), { cobroBs: '5.696', tipo: COBRO_VISITA, moneda: MONEDA_BS });
+check('por defecto es la visita técnica', resolverCobro(COBRO_INICIAL, '5.696'), { cobroBs: '5.696', tipo: COBRO_VISITA, moneda: MONEDA_BS });
+check('"Visita técnica" sin tasa configurada no lleva monto', resolverCobro(COBRO_INICIAL, null), { cobroBs: null, tipo: COBRO_VISITA, moneda: MONEDA_BS });
+check('"Otro monto" usa el monto escrito', resolverCobro({ modo: COBRO_OTRO, otro: '12345' }, '5.696'), { cobroBs: '12.345', tipo: COBRO_OTRO, moneda: MONEDA_BS });
+check('"Otro monto" con decimales', resolverCobro({ modo: COBRO_OTRO, otro: '12345,5' }, '5.696'), { cobroBs: '12.345,5', tipo: COBRO_OTRO, moneda: MONEDA_BS });
 check('"Otro monto" sin escribir el monto es un error', resolverCobro({ modo: COBRO_OTRO, otro: '' }, '5.696'), { error: 'Escribe el monto a cobrar.' });
 check('"Otro monto" inválido es un error y no cae al monto de siempre', Boolean(resolverCobro({ modo: COBRO_OTRO, otro: '5.000' }, '5.696').error), true);
-check('"Exonerar" no lleva monto, aunque haya uno escrito', resolverCobro({ modo: COBRO_EXONERADO, otro: '12345' }, '5.696'), { cobroBs: null, tipo: COBRO_EXONERADO });
+check('"Exonerar" no lleva monto, aunque haya uno escrito', resolverCobro({ modo: COBRO_EXONERADO, otro: '12345' }, '5.696'), { cobroBs: null, tipo: COBRO_EXONERADO, moneda: MONEDA_BS });
 check('"Exonerar" no exige escribir nada', Boolean(resolverCobro({ modo: COBRO_EXONERADO, otro: '' }, null).error), false);
 check('etiquetas', [ETIQUETA_COBRO[COBRO_VISITA], ETIQUETA_COBRO[COBRO_OTRO], ETIQUETA_COBRO[COBRO_EXONERADO]], ['Visita técnica', 'Otro monto', 'Exonerar']);
 
@@ -70,6 +70,19 @@ check('el historial lleva el monto con su tipo', [detalleCobro('5.696', COBRO_VI
 check('el historial lleva la exoneración', detalleCobro(null, COBRO_EXONERADO, true), ' | Visita exonerada: sin cobro al cliente');
 check('sin monto ni exoneración no se agrega nada (sin tasa, sin cobro)', [detalleCobro(null, COBRO_VISITA, false), detalleCobro('', undefined, false)], ['', '']);
 check('un monto sin tipo conocido se registra sin etiqueta', detalleCobro('5.696', undefined, false), ' | Cobro resultante: 5.696 Bs');
+
+// --- Moneda del cobro: solo "Otro monto" puede ir en dólares ---
+check('"Otro monto" en dólares', resolverCobro({ modo: COBRO_OTRO, otro: '30', moneda: MONEDA_USD }, '5.696'), { cobroBs: '30', tipo: COBRO_OTRO, moneda: MONEDA_USD });
+check('"Otro monto" sin moneda elegida es Bs', resolverCobro({ modo: COBRO_OTRO, otro: '30' }, '5.696').moneda, MONEDA_BS);
+check('"Visita técnica" siempre en Bs, aunque haya $ elegido', resolverCobro({ modo: COBRO_VISITA, otro: '30', moneda: MONEDA_USD }, '5.696'), { cobroBs: '5.696', tipo: COBRO_VISITA, moneda: MONEDA_BS });
+check('"Exonerar" no lleva moneda', resolverCobro({ modo: COBRO_EXONERADO, otro: '30', moneda: MONEDA_USD }, '5.696').moneda, MONEDA_BS);
+check('moneda de una orden: sin campo (órdenes anteriores) es Bs', [monedaDe({}), monedaDe({ cobroMoneda: 'USD' }), monedaDe(null)], [MONEDA_BS, MONEDA_USD, MONEDA_BS]);
+check('texto del monto', [textoMonto('5.696', MONEDA_BS), textoMonto('30', MONEDA_USD), textoMonto('5.696', undefined)], ['5.696 Bs', '30 $', '5.696 Bs']);
+check('lo avisado en dólares es distinto del mismo número en Bs (se vuelve a avisar)', [valorCobro({ cobroBs: '30' }), valorCobro({ cobroBs: '30', cobroMoneda: 'USD' })], ['30', '30 $']);
+check('el historial lleva la moneda', detalleCobro('30', COBRO_OTRO, false, MONEDA_USD), ' | Cobro resultante: 30 $ (Otro monto)');
+check('campos que se guardan: $ queda marcado; Bs borra la moneda vieja; exonerar también',
+  [camposCobro({ cobroBs: '30', cobroTipo: COBRO_OTRO, moneda: MONEDA_USD }), camposCobro({ cobroBs: '5.696', cobroTipo: COBRO_VISITA, moneda: MONEDA_BS }), camposCobro({ exonerado: true }), camposCobro({})],
+  [{ cobroBs: '30', cobroTipo: COBRO_OTRO, cobroMoneda: MONEDA_USD }, { cobroBs: '5.696', cobroTipo: COBRO_VISITA, cobroMoneda: null }, { cobroTipo: COBRO_EXONERADO, cobroBs: null, cobroMoneda: null }, {}]);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

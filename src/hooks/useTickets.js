@@ -13,8 +13,8 @@ import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/wh
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { devolucionPendiente } from '../utils/devolucion';
-import { COBRO_EXONERADO, COBRO_VISITA, detalleCobro, estaExonerado, llevaCobro, tieneCobroFinal, valorCobro } from '../utils/cobro';
-import { detalleValoresCliente, exigeValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
+import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado, llevaCobro, monedaDe, textoMonto, tieneCobroFinal, valorCobro } from '../utils/cobro';
+import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, tieneDatosInstalacion, validarInstalacion } from '../utils/instalacion';
 import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 
@@ -24,7 +24,7 @@ import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosC
 const avisoCobro = (t) => {
   if (!llevaCobro(t)) return '';
   if (estaExonerado(t)) return ' Visita exonerada: no se cobra al cliente.';
-  return t.cobroBs ? ` Cobro resultante al cliente: ${t.cobroBs} Bs.` : '';
+  return t.cobroBs ? ` Cobro resultante al cliente: ${textoMonto(t.cobroBs, monedaDe(t))}.` : '';
 };
 
 // Órdenes que el técnico todavía tiene por atender: solo de esas le avisa que se las quitaron o cancelaron.
@@ -450,7 +450,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             onNotify?.({ type: 'aprobado', text: texto, ticketId: t.id });
             playAprobadoSound();
           } else if (aprobadas.length > 1) {
-            const cobros = aprobadas.filter(t => avisoCobro(t)).map(t => `${t.codigo || 'Orden'}: ${estaExonerado(t) ? 'exonerada' : `${t.cobroBs} Bs`}`);
+            const cobros = aprobadas.filter(t => avisoCobro(t)).map(t => `${t.codigo || 'Orden'}: ${estaExonerado(t) ? 'exonerada' : textoMonto(t.cobroBs, monedaDe(t))}`);
             const texto = `${aprobadas.length} órdenes fueron aprobadas y finalizadas.${cobros.length ? ` Cobro resultante al cliente: ${cobros.join(', ')}.` : ''}`;
             setToastMsg({ type: 'aprobado', text: texto, duration: 6000 });
             onNotify?.({ type: 'aprobado', text: texto });
@@ -842,7 +842,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro de la visita ya formateado (ej. "5.696"); solo se guarda en
   // órdenes con tipo de visita, para que el técnico lo vea al aprobarse.
-  const aprobarFinalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
+  const aprobarFinalizarTicket = async (ticket, { montoBs, cobroTipo, cobroMoneda } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     // Los valores del cliente son obligatorios; se leen de la orden más reciente, no de la copia que abrió el modal
@@ -859,7 +859,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'ADMIN',
       tipo: 'aprobado',
-      detalle: `Aprobado y marcado como FINALIZADO${detalleCobro(cobroBs, cobroTipo, exonerado)}`
+      detalle: `Aprobado y marcado como FINALIZADO${detalleCobro(cobroBs, cobroTipo, exonerado, cobroMoneda)}`
     };
 
     const updatedTicket = {
@@ -869,7 +869,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       // La plantilla final de una instalación queda guardada para que el cierre del día la pase al historial de las promotoras.
       ...plantillaFinalDe(ticket),
       // `cobroTipo` se escribe siempre que hay decisión de cobro, para no arrastrar una exoneración vieja.
-      ...(exonerado ? { cobroTipo: COBRO_EXONERADO, cobroBs: null } : cobroBs ? { cobroBs, cobroTipo: cobroTipo || COBRO_VISITA } : {}),
+      ...camposCobro({ exonerado, cobroBs, cobroTipo, moneda: cobroMoneda }),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -911,7 +911,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // Cierre directo de una orden PENDIENTE desde la tabla, sin pasar por el
   // formulario de edición ni por la pre-finalización del técnico.
-  const finalizarTicket = async (ticket, { montoBs, cobroTipo } = {}) => {
+  const finalizarTicket = async (ticket, { montoBs, cobroTipo, cobroMoneda } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     // Los valores del cliente son obligatorios; se leen de la orden más reciente, no de la copia que abrió el modal
@@ -928,7 +928,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
       operador: currentUser || 'OPERADOR',
       tipo: 'finalizado',
-      detalle: `Marcado como FINALIZADO${detalleCobro(cobroBs, cobroTipo, exonerado)}`
+      detalle: `Marcado como FINALIZADO${detalleCobro(cobroBs, cobroTipo, exonerado, cobroMoneda)}`
     };
 
     const updatedTicket = {
@@ -937,7 +937,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       finalizadoEn: Date.now(),
       // La plantilla final de una instalación queda guardada para que el cierre del día la pase al historial de las promotoras.
       ...plantillaFinalDe(ticket),
-      ...(exonerado ? { cobroTipo: COBRO_EXONERADO, cobroBs: null } : cobroBs ? { cobroBs, cobroTipo: cobroTipo || COBRO_VISITA } : {}),
+      ...camposCobro({ exonerado, cobroBs, cobroTipo, moneda: cobroMoneda }),
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
@@ -951,7 +951,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // finalizar; el técnico los ve con el cobro. `valores` ya viene validado por parseValoresCliente: aquí se
   // vuelve a validar. Devuelve lo guardado (con quién y cuándo) o null si no se pudo.
   const guardarValoresCliente = async (ticket, valores) => {
-    if (!firebaseUser || !ticket) return null;
+    if (!firebaseUser || !ticket || !ofreceValoresCliente(ticket)) return null;
     const revisado = parseValoresCliente({ olt: String(valores?.olt1310Dbm ?? ''), onu: String(valores?.onu1490Dbm ?? '') });
     if (!revisado.valor) {
       setToastMsg({ type: 'error', text: 'Revisa los valores del cliente: ' + Object.values(revisado.errores).join(' ') });
@@ -967,7 +967,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       detalle: `Valores del cliente guardados | ${detalleValoresCliente(valoresCliente)}`
     };
     await actualizarTicket(actual, { ...actual, valoresCliente, historialEdiciones: [...(actual.historialEdiciones || []), nuevaEdicion] });
-    setToastMsg({ type: 'success', text: 'Valores del cliente guardados. El técnico los verá con el cobro.' });
+    setToastMsg({ type: 'success', text: exigeValoresCliente(actual) ? 'Valores del cliente guardados. El técnico los verá con el cobro.' : 'Valores del cliente guardados.' });
     return valoresCliente;
   };
 

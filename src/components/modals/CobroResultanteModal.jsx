@@ -6,7 +6,7 @@ import { useCopiado } from '../../hooks/useCopiado';
 import FormasPagoLista from './FormasPagoLista';
 import ValoresClienteTarjeta from './ValoresClienteTarjeta';
 import { formatCedula } from '../../utils/ticketDisplay';
-import { conceptoCobro, estaExonerado } from '../../utils/cobro';
+import { MONEDA_USD, conceptoCobro, estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
 import { normalizarFormasPago, textoCobroParaCliente } from '../../utils/formasPago';
 import { valoresGuardados } from '../../utils/valoresCliente';
 
@@ -40,6 +40,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   const visita = conceptoCobro(ticket);
   const preFinalizada = ticket.estado === 'PRE-FINALIZADO';
   const exonerado = estaExonerado(ticket);
+  const moneda = monedaDe(ticket);
   const IconoEstado = preFinalizada ? Clock : CheckCheck;
   return (
     // Escape no lo cierra: el técnico debe confirmar con el botón.
@@ -66,7 +67,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
             </>
           ) : (
             <p className="mt-1 text-5xl sm:text-6xl font-black text-emerald-700 dark:text-emerald-400 leading-none break-words">
-              {ticket.cobroBs} <span className="text-3xl sm:text-4xl">Bs</span>
+              {ticket.cobroBs} <span className="text-3xl sm:text-4xl">{moneda === MONEDA_USD ? '$' : 'Bs'}</span>
             </p>
           )}
           {preFinalizada && <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Informa este monto al cliente ahora. La orden queda pendiente de aprobación.</p>}
@@ -74,7 +75,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           {!exonerado && onCopy && ticket.cobroBs && (
             <BotonCopiar
               copiado={copiado === 'monto'}
-              onClick={() => copiar('monto', `${ticket.cobroBs} Bs`, 'Monto copiado.')}
+              onClick={() => copiar('monto', textoMonto(ticket.cobroBs, moneda), 'Monto copiado.')}
               className="mt-3 ml-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1 border"
               tono="bg-white dark:bg-zinc-900 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
               tonoCopiado="bg-emerald-600 border-emerald-600 text-white"
@@ -104,7 +105,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
                   {ticket.cobroBs && (
                     <BotonCopiar
                       copiado={copiado === 'mensaje'}
-                      onClick={() => copiar('mensaje', textoCobroParaCliente(ticket.cobroBs, formas), 'Monto y formas de pago copiados.')}
+                      onClick={() => copiar('mensaje', textoCobroParaCliente(ticket.cobroBs, formas, moneda), 'Monto y formas de pago copiados.')}
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-md"
                       tono="bg-emerald-700 hover:bg-emerald-800 text-white"
                       tonoCopiado="bg-emerald-600 text-white"

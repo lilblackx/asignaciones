@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
-import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO } from '../../utils/cobro';
+import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, MONEDA_BS, MONEDA_USD } from '../../utils/cobro';
 
 // Qué cobro se le informa al técnico al finalizar la orden: "Visita técnica" (el monto de
 // siempre), "Otro monto" (escrito a mano; es el que verá el técnico en su aviso final) o
@@ -9,6 +9,7 @@ import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO } from '../..
 export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion, onChange, error }) {
   const inputRef = useRef(null);
   const esOtro = seleccion.modo === COBRO_OTRO;
+  const moneda = seleccion.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS;
 
   // Al elegir "Otro monto" el cursor pasa al campo del monto; si el monto escrito no es válido, vuelve ahí.
   useEffect(() => {
@@ -45,20 +46,39 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
     <div className="space-y-2 text-left">
       <p id={`${idBase}-titulo`} className="text-xs font-black text-sky-900 dark:text-sky-200">COBRO QUE VERÁ EL TÉCNICO</p>
       <div role="radiogroup" aria-labelledby={`${idBase}-titulo`} className="space-y-2">
-        {opcion(COBRO_VISITA, ETIQUETA_COBRO[COBRO_VISITA], montoVisita ? `${montoVisita} Bs (monto de siempre, con la tasa de hoy)` : 'La tasa no está configurada: el técnico no verá monto.')}
-        {opcion(COBRO_OTRO, ETIQUETA_COBRO[COBRO_OTRO], 'Escribe el monto que se debe cobrar')}
+        {opcion(COBRO_VISITA, ETIQUETA_COBRO[COBRO_VISITA], montoVisita ? `${montoVisita} Bs (monto de siempre, con la tasa de hoy; siempre en Bs)` : 'La tasa no está configurada: el técnico no verá monto.')}
+        {opcion(COBRO_OTRO, ETIQUETA_COBRO[COBRO_OTRO], 'Escribe el monto que se debe cobrar, en Bs o en $')}
         {opcion(COBRO_EXONERADO, ETIQUETA_COBRO[COBRO_EXONERADO], 'No se cobra esta visita al cliente')}
       </div>
       {esOtro && (
         <div className="space-y-1">
-          <label htmlFor={`${idBase}-otro`} className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ml-1">MONTO A COBRAR (Bs)</label>
+          <div role="radiogroup" aria-label="Moneda del cobro" className="grid grid-cols-2 gap-2">
+            {[[MONEDA_BS, 'Bs (bolívares)'], [MONEDA_USD, '$ (dólares)']].map(([valor, texto]) => {
+              const activa = moneda === valor;
+              return (
+                <button
+                  key={valor}
+                  type="button"
+                  role="radio"
+                  aria-checked={activa}
+                  onClick={() => onChange({ ...seleccion, moneda: valor })}
+                  className={`px-3 py-2 rounded-xl border-2 text-xs font-black transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
+                    activa ? 'border-sky-500 bg-sky-600 text-white' : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
+                  }`}
+                >
+                  {texto}
+                </button>
+              );
+            })}
+          </div>
+          <label htmlFor={`${idBase}-otro`} className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ml-1">MONTO A COBRAR ({moneda === MONEDA_USD ? '$' : 'Bs'})</label>
           <input
             id={`${idBase}-otro`}
             ref={inputRef}
             type="text"
             inputMode="decimal"
             maxLength={12}
-            placeholder="Ej. 5000"
+            placeholder={moneda === MONEDA_USD ? 'Ej. 30' : 'Ej. 5000'}
             value={seleccion.otro}
             onChange={(e) => onChange({ ...seleccion, otro: e.target.value.replace(/[^\d,]/g, '') })}
             aria-invalid={!!error}

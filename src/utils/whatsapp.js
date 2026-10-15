@@ -13,9 +13,10 @@ import { nombrePromotora } from './promotora.js';
 // observaciones que nunca se pensaron para salir en WhatsApp.
 // `montoBsFijo` (texto, ej. "5.696"): el monto de un cobro ya registrado en la orden; el historial lo usa para no calcular
 // con la tasa de hoy una orden vieja. Sin él, el monto sale de la tasa vigente.
-export function generarMensajeWhatsApp(ticket, tasaConfig, montoBsFijo = null) {
+// `moneda` ('USD'): el cobro registrado es en dólares y la plantilla lo dice así ("30$").
+export function generarMensajeWhatsApp(ticket, tasaConfig, montoBsFijo = null, moneda = null) {
   const montoBs = montoBsFijo || calcularMontoBs(tasaConfig);
-  const avisoCobro = `Cliente debe cancelar ${montoBs || ''}Bs. Si la falla es interna.`;
+  const avisoCobro = `Cliente debe cancelar ${montoBs || ''}${montoBsFijo && moneda === 'USD' ? '$' : 'Bs'}. Si la falla es interna.`;
   const observacionVisible = ticket.observacionInterna === false && ticket.observacion ? ticket.observacion.trim() : '';
   const observaciones = observacionVisible ? `${avisoCobro} ${observacionVisible}` : avisoCobro;
   const enlaceNap = normalizarCoordenadasNap(ticket.napCoordenadas).enlace;

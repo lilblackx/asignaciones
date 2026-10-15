@@ -96,7 +96,7 @@ export function textoTodasLasFormas(formas) {
 }
 
 // Mensaje para pegarle al cliente: lo que debe cancelar y, si hay, las formas de pago.
-export function textoCobroParaCliente(montoBs, formas) {
-  const monto = `Monto a cancelar: ${montoBs} Bs`;
-  return formas.length > 0 ? `${monto}\n\n${textoTodasLasFormas(formas)}` : monto;
+export function textoCobroParaCliente(monto, formas, moneda) {
+  const texto = `Monto a cancelar: ${monto} ${moneda === 'USD' ? '$' : 'Bs'}`;
+  return formas.length > 0 ? `${texto}\n\n${textoTodasLasFormas(formas)}` : texto;
 }
