@@ -154,8 +154,8 @@ const reiniciar = () => {
   };
   envios = {};
   inventario = {
-    HWTC1A2B3C4D: { id: 'inv-1', campos: { serial: 'HWTC1A2B3C4D', estado: 'Disponible', modelo: 'HG8145' } },
-    ZTEG99887766: { id: 'inv-2', campos: { serial: 'ZTEG99887766', estado: 'Disponible' } },
+    HWTC1A2B3C4D: { id: 'inv-1', campos: { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico', modelo: 'HG8145' } },
+    ZTEG99887766: { id: 'inv-2', campos: { serial: 'ZTEG99887766', estado: 'Con Técnico' } },
   };
   comportamientoTelecom = 'ok';
   llamadasTelecom = []; commitsTelecom = []; loginsTelecom = []; pushes = []; consultasNuestras = [];
@@ -210,7 +210,7 @@ await enviar('inst1');
 check('repetir sin que cambie nada no vuelve a avisar', pushes.length, 1);
 
 // 3b) Reintentar cuando ya lo dieron de alta en el inventario
-inventario = { HWTC1A2B3C4D: { id: 'inv-1', campos: { serial: 'HWTC1A2B3C4D', estado: 'Disponible' } } };
+inventario = { HWTC1A2B3C4D: { id: 'inv-1', campos: { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico' } } };
 r = await reintentar('inst1');
 check('reintentar tras ingresar el serial al almacén lo envía', [r.json.estado, commitsTelecom.length, envio('inst1').estado], ['ENVIADO', 1, 'ENVIADO']);
 check('reintentar es solo del usuario del módulo: ni un USUARIO, ni quien cierra, ni otro ADMIN pueden', [(await reintentar('inst1', 'usuario-uid')).status, (await reintentar('inst1', 'cierra-uid')).status, (await reintentar('inst1', 'admin-uid')).status], [403, 403, 403]);
@@ -224,6 +224,25 @@ reiniciar();
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Ana Pérez' };
 r = await enviar('inst1');
 check('equipo instalado a este mismo cliente (un reenvío parcial anterior): se completa', [r.json.estado, commitsTelecom.length], ['ENVIADO', 1]);
+
+// 4b) Solo se descuenta el equipo que figura "Con Técnico"
+reiniciar();
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'En Almacén' };
+r = await enviar('inst1');
+check('equipo que sigue "En Almacén": no se toca nada de la orden y queda alerta con el motivo', [r.json.estado, commitsTelecom.length, envio('inst1').mensaje.includes('En Almacén')], ['EQUIPO_NO_ASIGNADO', 0, true]);
+check('y se avisa por push solo una vez', [pushes.length, pushes[0].token, (await enviar('inst1'), pushes.length)], [1, 'tok-lf', 1]);
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico' };
+r = await reintentar('inst1');
+check('cuando el almacén lo asigna al técnico, reintentar lo envía', [r.json.estado, commitsTelecom.length], ['ENVIADO', 1]);
+reiniciar();
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Dañado' };
+check('cualquier otro estado tampoco se toca', [(await enviar('inst1')).json.estado, commitsTelecom.length], ['EQUIPO_NO_ASIGNADO', 0]);
+reiniciar();
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'CON TECNICO' };
+check('"Con Técnico" se reconoce sin importar mayúsculas ni tildes', [(await enviar('inst1')).json.estado, commitsTelecom.length], ['ENVIADO', 1]);
+reiniciar();
+inventario.ZTEG99887766.campos = { serial: 'ZTEG99887766', estado: 'En Almacén' };
+check('un cambio de equipo con el equipo nuevo en almacén tampoco se envía', [(await enviar('cambio1')).json.estado, commitsTelecom.length], ['EQUIPO_NO_ASIGNADO', 0]);
 
 reiniciar();
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: '  ANA   PEREZ ' };

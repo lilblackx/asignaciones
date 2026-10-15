@@ -12,8 +12,9 @@
 // El Worker entra al Firebase del otro sistema con un usuario propio (secretos TELECOM_EMAIL y TELECOM_PASSWORD) y
 // escribe lo mismo que escribe su api-telecom.js: un registro en materialLogs y, si hay equipo, lo pasa a "Instalado" en
 // inventory. Las dos escrituras van en un solo commit (todo o nada) y los ids son fijos por orden, así que reenviar nunca
-// descuenta dos veces. Si el serial no existe en su inventario no se envía nada de la orden: queda una alerta en la app y
-// un aviso push a quien aprueba. El estado de cada envío vive en telecomEnvios/{id de la orden} (nuestro Firestore).
+// descuenta dos veces. Solo se descuenta (y pasa a "Instalado") el equipo que figura "Con Técnico" en su inventario. Si el
+// serial no existe, o el equipo no está "Con Técnico" (p. ej. sigue "En Almacén"), no se envía nada de la orden: queda una
+// alerta en la app y un aviso push. El estado de cada envío vive en telecomEnvios/{id de la orden} (nuestro Firestore).
 //
 // Las alertas y los avisos push son solo de los usuarios de USUARIOS_INVENTARIO (src/utils/accesoInventario.js).
 // Sin los secretos configurados el envío está apagado: no escribe nada ni genera alertas.
@@ -48,7 +49,11 @@ export function idRegistro(ticketId, finalizadoEn) {
   return Number(finalizadoEn) + (h % 1000) / 1000;
 }
 
-// Para comparar nombres de cliente: sin tildes, sin mayúsculas ni espacios de más (su inventario puede tenerlos escritos distinto).
+// Estado del equipo en su inventario cuando lo tiene asignado un técnico: el único del que se descuenta y pasa a "Instalado".
+const ESTADO_INSTALADO = 'INSTALADO';
+const ESTADO_CON_TECNICO = 'CON TECNICO';
+
+// Para comparar nombres de cliente y estados: sin tildes, sin mayúsculas ni espacios de más (su inventario puede tenerlos escritos distinto).
 const normalizarNombre = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
 
 // --- Valores de Firestore (REST) ---
@@ -110,10 +115,16 @@ export async function enviarAlInventario(env, ticketId, p, ahoraMs = Date.now())
     const equipo = await buscarEquipo(env, p.serial, ahoraMs);
     if (!equipo) return { estado: 'SERIAL_NO_ENCONTRADO', mensaje: TEXTO_ESTADO_ENVIO.SERIAL_NO_ENCONTRADO };
     const actual = camposAObjeto(equipo.fields);
-    // Un equipo ya instalado a otro cliente no se pisa (reenviar la misma orden, o que ya lo hayan marcado con este mismo
-    // cliente escrito distinto, sí es válido).
-    if (actual.estado === 'Instalado' && normalizarNombre(actual.cliente) !== normalizarNombre(p.cliente)) {
-      return { estado: 'SERIAL_YA_INSTALADO', mensaje: `${TEXTO_ESTADO_ENVIO.SERIAL_YA_INSTALADO} (figura con ${actual.cliente || 'otro cliente'}).` };
+    const estadoActual = normalizarNombre(actual.estado);
+    if (estadoActual === ESTADO_INSTALADO) {
+      // Un equipo ya instalado a otro cliente no se pisa (reenviar la misma orden, o que ya lo hayan marcado con este mismo
+      // cliente escrito distinto, sí es válido).
+      if (normalizarNombre(actual.cliente) !== normalizarNombre(p.cliente)) {
+        return { estado: 'SERIAL_YA_INSTALADO', mensaje: `${TEXTO_ESTADO_ENVIO.SERIAL_YA_INSTALADO} (figura con ${actual.cliente || 'otro cliente'}).` };
+      }
+    } else if (estadoActual !== ESTADO_CON_TECNICO) {
+      // Solo se descuenta el equipo que ya tiene asignado un técnico ("Con Técnico"); uno que sigue en almacén no se toca.
+      return { estado: 'EQUIPO_NO_ASIGNADO', mensaje: `El equipo figura "${actual.estado || 'sin estado'}" y no "Con Técnico" en el inventario: no se envió nada de esta orden.` };
     }
     escrituras.push({
       update: { name: equipo.name, fields: campos({ estado: 'Instalado', cliente: p.cliente, fechaInstalacion: fecha, fechaHoraInstalacion: fechaHora }) },

@@ -160,7 +160,7 @@ service cloud.firestore {
         && request.resource.data.intentos == 0;
       // Descartar una alerta: pasa a DESCARTADO (queda el registro de lo que no se envió); no se borra nada.
       allow update: if veInventario(appId)
-        && resource.data.estado in ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'SIN_SERIAL', 'ERROR']
+        && resource.data.estado in ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'EQUIPO_NO_ASIGNADO', 'SIN_SERIAL', 'ERROR']
         && request.resource.data.estado == 'DESCARTADO'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'actualizadoEn', 'descartadoPor']);
     }

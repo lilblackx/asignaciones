@@ -42,6 +42,7 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('users').doc('cierra-uid').set({ role: 'USUARIO', disabled: false, puedeCerrar: true });
   await base.collection('users').doc('lfernandez-uid').set({ role: 'ADMIN', disabled: false, username: 'lfernandez' });
   await base.collection('telecomEnvios').doc('alerta-1').set({ ticketId: 'alerta-1', estado: 'SERIAL_NO_ENCONTRADO', codigo: 'IS10', serial: 'HWTC1A2B3C4D', intentos: 1 });
+  await base.collection('telecomEnvios').doc('alerta-3').set({ ticketId: 'alerta-3', estado: 'EQUIPO_NO_ASIGNADO', codigo: 'IS13', serial: 'HWTC1A2B3C4D', intentos: 1 });
   await base.collection('telecomEnvios').doc('alerta-2').set({ ticketId: 'alerta-2', estado: 'ERROR', codigo: 'IS11', intentos: 4 });
   await base.collection('telecomEnvios').doc('enviado-1').set({ ticketId: 'enviado-1', estado: 'ENVIADO', codigo: 'IS12', intentos: 1 });
   await base.collection('users').doc('promotora-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
@@ -517,6 +518,7 @@ await check('lfernandez descarta una alerta (queda como DESCARTADO, con quién y
   await assertFails(envios(asCierra()).doc('alerta-2').update(descartar));
   await assertFails(envios(asTecnico()).doc('alerta-2').update(descartar));
   await assertSucceeds(envios(asLf()).doc('alerta-2').update(descartar));
+  await assertSucceeds(envios(asLf()).doc('alerta-3').update(descartar));
 });
 await check('Descartar solo cambia el estado: no se puede tocar otro dato, poner otro estado ni descartar lo enviado', async () => {
   await assertFails(envios(asLf()).doc('alerta-1').update({ estado: 'DESCARTADO', serial: 'OTRO' }));

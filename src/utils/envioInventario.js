@@ -21,17 +21,20 @@ export const ACCION_AVERIA = 'averia';
 // Los siguientes necesitan que alguien los mire (alerta en la app y aviso push):
 //   SERIAL_NO_ENCONTRADO el serial no existe en su inventario: no se envió nada de la orden.
 //   SERIAL_YA_INSTALADO  ese equipo ya figura instalado a otro cliente: no se tocó.
+//   EQUIPO_NO_ASIGNADO   el equipo no figura "Con Técnico" en su inventario (p. ej. sigue "En Almacén"): solo se descuenta y
+//                        pasa a "Instalado" el que ya está asignado a un técnico, así que no se tocó nada de la orden.
 //   SIN_SERIAL           la orden no trae serial (órdenes anteriores a que se pidiera): no hay equipo que descontar.
 //   ERROR                se agotaron los reintentos.
 //   DESCARTADO           una alerta que se dio por resuelta sin enviar (queda guardada, no se borra).
 export const ESTADO_ENVIADO = 'ENVIADO';
 export const ESTADO_PENDIENTE = 'PENDIENTE';
 export const ESTADO_DESCARTADO = 'DESCARTADO';
-export const ESTADOS_CON_ALERTA = ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'SIN_SERIAL', 'ERROR'];
+export const ESTADOS_CON_ALERTA = ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'EQUIPO_NO_ASIGNADO', 'SIN_SERIAL', 'ERROR'];
 
 export const TEXTO_ESTADO_ENVIO = {
   SERIAL_NO_ENCONTRADO: 'El serial no existe en el inventario del almacén: no se envió nada de esta orden.',
   SERIAL_YA_INSTALADO: 'Ese equipo ya figura instalado a otro cliente en el inventario: no se modificó.',
+  EQUIPO_NO_ASIGNADO: 'El equipo no figura "Con Técnico" en el inventario: no se envió nada de esta orden.',
   SIN_SERIAL: 'La orden no tiene serial del equipo: no hay equipo que descontar.',
   ERROR: 'No se pudo enviar después de varios intentos.',
 };

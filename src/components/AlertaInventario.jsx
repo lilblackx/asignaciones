@@ -6,6 +6,7 @@ import { TEXTO_ESTADO_ENVIO } from '../utils/envioInventario';
 const ETIQUETA_ESTADO = {
   SERIAL_NO_ENCONTRADO: 'Serial no existe',
   SERIAL_YA_INSTALADO: 'Ya instalado',
+  EQUIPO_NO_ASIGNADO: 'No está con técnico',
   SIN_SERIAL: 'Sin serial',
   ERROR: 'Error al enviar',
   ENVIADO: 'Enviado',
