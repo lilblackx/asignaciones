@@ -41,7 +41,7 @@ PWA para el control y seguimiento de asignaciones (instalaciones, reconexiones, 
 | --- | --- |
 | `src/` | App React (componentes, hooks, `lib/` para Firebase y Tomodat, `utils/` con la lógica de negocio) |
 | `src/sw.js` | Service Worker propio: precache (Workbox) y push de FCM en segundo plano |
-| `cf-worker/` | Cloudflare Worker `asignaciones-notify`: envía los pushes de FCM |
+| `cf-worker/` | Cloudflare Worker `asignaciones-notify`: envía los pushes de FCM, hace el cierre automático y expone la API de Materiales (`src/materiales-api.js`) |
 | `cf-worker-tomodat/` | Cloudflare Worker `asignaciones-tomodat`: consulta NAP en Tomodat |
 | `firestore.rules` | Reglas de seguridad de Firestore |
 | `scripts/` | Seed del emulador y pruebas de las reglas |
@@ -92,6 +92,7 @@ Por defecto la app apunta al proyecto real. Para usar los emuladores:
 | `npm run test:instalacion` | Pruebas de los datos de la instalación (serial, VLAN, posteadura, NAP, puerto, puertos disponibles) y de cómo se escriben en la plantilla |
 | `npm run test:equipo` | Pruebas del tipo de visita "Cambio de equipo" (serial del equipo nuevo) y "Drop atenuado" |
 | `npm run test:cobro` | Pruebas del cobro que se informa al técnico (Visita técnica / Otro monto / Exonerar) |
+| `npm run test:materiales` | Pruebas de la API de Materiales (llave, período en hora de Venezuela y que los números coincidan con la pantalla) |
 | `npm run test:roles` | Pruebas de los roles ALMACÉN y PROMOTORA (estados que ve la promotora, resumen del historial, aislamiento de la app actual y lecturas de Firestore) |
 | `npm run test:telefono` | Pruebas del teléfono obligatorio de la orden (crear, editar y guardar) y de los guiones de WhatsApp en los números |
 
@@ -124,10 +125,38 @@ Secretos. No van en el repo ni en `wrangler.toml`:
 | --- | --- | --- |
 | `cf-worker` | `FIREBASE_SERVICE_ACCOUNT_JSON` | `npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON` |
 | `cf-worker-tomodat` | `TOMODAT_TOKEN` | `npx wrangler secret put TOMODAT_TOKEN` |
+| `cf-worker` | `MATERIALES_API_KEY` (llave de la API de Materiales; sin ella la API responde 503) | `npx wrangler secret put MATERIALES_API_KEY` |
 
 Las variables no secretas (`ALLOWED_ORIGINS`, `FIREBASE_PROJECT_ID`, etc.) están en cada `wrangler.toml`. Si cambia el dominio de la app, actualiza `ALLOWED_ORIGINS` en ambos workers.
 
 Las URLs de los workers y la configuración web de Firebase están en `src/lib/firebase.js`. La configuración web de Firebase y la clave VAPID son públicas por diseño.
+
+### API de Materiales (para otra aplicación)
+
+Guía completa para quien la consume (conexión, parámetros, todos los campos, errores y ejemplos): [docs/API-MATERIALES.md](docs/API-MATERIALES.md).
+
+Solo lectura, en el Worker `asignaciones-notify`: `GET https://<worker>.workers.dev/api/materiales`. Devuelve lo mismo que la pantalla de Materiales (el cálculo es `consumoPorTecnico` de `src/utils/consumoMateriales.js`, importado por el Worker, así que nunca difieren): metros de cable y conectores por color de los recableados, instalaciones y visitas de conector ya aprobados, más los cambios de equipo (que no gastan material) con el serial del equipo nuevo y las instalaciones con el serial de la ONU, en total y por técnico (con todos los técnicos registrados, aunque no hayan usado material), más lo pre-finalizado que espera aprobación (`porAprobar`, no suma).
+
+- Autenticación: la llave del secreto `MATERIALES_API_KEY`, en `Authorization: Bearer <llave>` o `X-API-Key`. Va solo en el servidor de la otra aplicación (la API no abre CORS para navegadores). Para rotarla se vuelve a ejecutar `wrangler secret put`.
+- Período, en hora de Venezuela: `?periodo=HOY|SEMANA|MES` (por defecto `MES`) o `?desde=AAAA-MM-DD&hasta=AAAA-MM-DD` (ambos días incluidos; máximo 93 días por consulta porque cada reporte de cierre es un documento grande).
+- `?detalle=0` quita la lista de órdenes de cada técnico (código, cliente, fecha, clase, metros, conectores) y deja solo el resumen.
+- Respuesta (`version: 1`): `periodo`, `totales`, `porAprobar` y `tecnicos[]` (`tecnico`, `metros`, `recableados`, `instalaciones`, `visitasConector`, `cambiosEquipo`, `conectores {verde, azul, total}` y `ordenes[]`, cada una con su `serial`). Errores: 400 (parámetros), 401 (llave), 405 (no GET), 503 (API apagada), 500.
+- Lecturas de Firestore: la API lee con la cuenta de servicio del Worker, y cada documento leído se cobra. Para gastar lo mínimo: la respuesta de cada período se guarda 5 minutos en memoria del Worker (`CACHE_TTL_MS`; la cabecera `X-Cache` dice `HIT` o `MISS`), las llamadas simultáneas iguales comparten una lectura, los técnicos se guardan 30 minutos, las órdenes FINALIZADO y PRE-FINALIZADO van en una sola consulta, solo se piden los campos que usa el cálculo (`select`) y de los reportes de cierre solo los del período. Una llamada sin copia cuesta: las órdenes aprobadas y por aprobar que haya en la tabla, un reporte por cada cierre del período y los técnicos; con copia, 0. Los números pueden ir hasta 5 minutos atrasados. La copia es por instancia del Worker (no se comparte), así que la otra aplicación debería guardar también el resultado en vez de consultar en cada vista.
+- Prueba: `npm run test:materiales`.
+
+## Próximas actualizaciones
+
+### Resumen diario de materiales (menos lecturas de Firestore)
+
+Hoy la API de Materiales (y la pantalla de Materiales del almacén) leen los reportes de cierre completos: cada uno es un documento grande con todas las órdenes del día dentro, y es lo que más pesa en un período largo. Si el costo lo justifica, la mejora grande es precalcular el material:
+
+- Al cerrar el día (cierre manual en `useReports.cerrarDia` y cierre automático en `cierreAutomatico` del Worker `cf-worker`), guardar un documento liviano por cierre, p. ej. en `materialesDiarios/{fecha}`, con lo que ya calcula `consumoPorTecnico`: por técnico, metros, recableados, instalaciones, visitas de conector y conectores verde/azul, más la lista corta de órdenes (código, cliente, fecha, clase, metros, conectores) si se quiere el detalle. Sin plantillas, teléfonos ni direcciones.
+- La API leería un documento chico por día en vez de reportes enteros, y sumaría esos días con las órdenes activas de hoy (que siguen saliendo de `tickets`). Un mes pasaría de ~30 documentos grandes a ~30 chicos, y se podría quitar el tope de 93 días.
+- Hace falta llenar los días anteriores una sola vez a partir de los reportes que ya existen (un script con la cuenta de servicio, parecido a `scripts/revisar-promotores.mjs`).
+- Cuidado: la lógica de cálculo está en `src/utils/consumoMateriales.js`; el Worker ya la importa, así que ambos cierres deben usar esa misma función para que el resumen nunca difiera de la pantalla. Si un cierre se corrige o se rehace, el resumen de ese día se vuelve a escribir (mismo id de documento).
+- Reglas de Firestore: lectura solo para ADMIN y ALMACÉN, escritura solo desde el cliente que cierra (ADMIN) y el Worker; hay que agregarlas en `firestore.rules` y cubrirlas en `npm run test:rules`.
+
+Otros pasos más pequeños, si hicieran falta antes: compartir la copia de la API entre instancias con un KV de Cloudflare (como `CATALOGO` en `cf-worker-tomodat`), y aplicar la misma idea de copia a la pantalla de Materiales (`useDatosAlmacen`).
 
 ## Actualización en los dispositivos
 

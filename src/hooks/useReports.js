@@ -87,7 +87,12 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
     }
   }, [firebaseUser, canCerrar]);
 
-  useEffect(() => { refreshReports(); }, [refreshReports]);
+  // Primera carga. Va en un setTimeout para que refreshReports (que marca "cargando" al empezar) no cambie el
+  // estado dentro del propio efecto; al salir se cancela, así que un cambio de usuario no deja una carga colgada.
+  useEffect(() => {
+    const id = setTimeout(refreshReports, 0);
+    return () => clearTimeout(id);
+  }, [refreshReports]);
 
   const loadMoreReports = async () => {
     if (!lastDoc || isLoadingReports) return;

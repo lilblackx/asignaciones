@@ -1,0 +1,124 @@
+STACK TECNOLOGICO
+Asignaciones NS
+==============================================================================
+
+RESUMEN
+
+App web instalable (PWA) para asignar y dar seguimiento a ordenes de trabajo
+de tecnicos (instalaciones, averias y visitas). Corre en el navegador y se
+apoya en Firebase para los datos y en dos servidores intermedios (Cloudflare
+Workers) para las tareas que no pueden hacerse desde el navegador.
+
+
+1. FRONTEND (app web instalable)
+------------------------------------------------------------------------------
+
+  Libreria de interfaz     React 19 (JavaScript con JSX, sin TypeScript)
+  Empaquetado/desarrollo   Vite 8
+  Estilos                  Tailwind CSS 4, con PostCSS y Autoprefixer
+  Iconos                   Lucide React
+  Tipografia               Inter (paquete @fontsource-variable/inter)
+  PWA                      vite-plugin-pwa y Workbox
+                           Service Worker propio (src/sw.js, estrategia
+                           injectManifest): precache de la app y recepcion de
+                           notificaciones push en segundo plano
+  Estado y navegacion      Sin libreria de estado ni router: hooks propios de
+                           React
+
+Notas:
+  - No usa libreria de componentes visuales: los componentes son propios.
+  - Esta pensada para celular (los tecnicos la usan casi siempre desde el
+    telefono) y tambien se usa en escritorio.
+
+
+2. BACKEND Y DATOS (Firebase, proyecto seguimientons-f2026)
+------------------------------------------------------------------------------
+
+  Base de datos            Cloud Firestore
+                           Reglas de seguridad por rol (firestore.rules) e
+                           indices propios (firestore.indexes.json)
+  Autenticacion            Firebase Authentication (usuario y clave)
+  Alojamiento              Firebase Hosting, con cabeceras de seguridad (CSP,
+                           HSTS, X-Frame-Options y otras)
+  Notificaciones push      Firebase Cloud Messaging (FCM)
+
+Roles de la app: ADMIN, USUARIO, TECNICO, ALMACEN y PROMOTORA (se muestra como
+"Ventas"). Cada uno ve y puede hacer solo lo que sus reglas permiten.
+
+
+3. SERVIDORES INTERMEDIOS (Cloudflare Workers)
+------------------------------------------------------------------------------
+
+  Libreria comun           jose (valida los tokens de Firebase y firma las
+                           credenciales de la cuenta de servicio)
+  Despliegue               Wrangler 3
+
+  Worker "asignaciones-notify"
+    - Envia las notificaciones push (FCM).
+    - Hace el cierre automatico del dia (cron cada 5 minutos).
+    - Actualiza la tasa BCV del euro una vez al dia.
+    - Crea usuarios y cambia claves (solo para administradores).
+    - Sirve la API de Materiales para otras aplicaciones.
+    - Lee y escribe Firestore con una cuenta de servicio.
+
+  Worker "asignaciones-tomodat"
+    - Consulta las coordenadas de las cajas NAP en Tomodat.
+    - Consulta los datos y la senal de la ONU del cliente en SmartOLT.
+    - Guarda una copia del catalogo de Tomodat en Cloudflare KV, que renueva
+      con un cron cada 10 minutos.
+
+
+4. SERVICIOS EXTERNOS
+------------------------------------------------------------------------------
+
+  Tomodat        Catalogo y coordenadas de las cajas NAP.
+  SmartOLT       Potencia y datos de la ONU del cliente.
+  DolarAPI       Tasa oficial del euro (BCV).
+  WhatsApp       Mensajes por enlace (wa.me) hacia los clientes; no hay
+                 integracion por API.
+
+
+5. HERRAMIENTAS Y CALIDAD
+------------------------------------------------------------------------------
+
+  Lint                     ESLint 10, con reglas de React Hooks
+  Pruebas                  Scripts propios en Node (scripts/test-*.mjs), unas
+                           20, algunas con Firestore simulado. Se ejecutan con
+                           "npm run test:<nombre>". No usa Jest ni Vitest.
+  Reglas de Firestore      Probadas con @firebase/rules-unit-testing y los
+                           emuladores de Firebase (Auth y Firestore)
+  Herramientas Firebase    Firebase CLI y firebase-admin
+  Control de versiones     Git
+  Entorno de desarrollo    Node 22
+
+
+6. DESPLIEGUE
+------------------------------------------------------------------------------
+
+  App (Firebase Hosting):
+      npm run build
+      npx firebase deploy --only hosting
+
+  Reglas e indices de Firestore:
+      npx firebase deploy --only firestore:rules
+      npx firebase deploy --only firestore:indexes
+
+  Workers (desde la carpeta de cada uno):
+      npx wrangler deploy
+
+  Los secretos (llaves de Tomodat, SmartOLT, cuenta de servicio de Firebase y
+  llave de la API de Materiales) se guardan como secretos de Cloudflare; no
+  estan en el repositorio.
+
+
+7. ESTRUCTURA DEL PROYECTO
+------------------------------------------------------------------------------
+
+  src/                  App React (componentes, hooks, lib/ y utils/ con la
+                        logica de negocio)
+  src/sw.js             Service Worker (precache y push)
+  cf-worker/            Worker asignaciones-notify
+  cf-worker-tomodat/    Worker asignaciones-tomodat
+  firestore.rules       Reglas de seguridad de Firestore
+  scripts/              Pruebas y utilidades
+  docs/                 Documentacion (API de Materiales y este documento)

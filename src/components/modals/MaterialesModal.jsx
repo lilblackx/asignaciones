@@ -55,7 +55,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
         <span className={`shrink-0 text-lg font-black ${conDatos ? 'text-red-600 dark:text-red-400' : 'text-zinc-400 dark:text-zinc-600'}`}>{numero(fila.metros)} <span className="text-xs">m</span></span>
       </div>
       <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-        {fila.ordenes} recableado{fila.ordenes === 1 ? '' : 's'} · {fila.instalaciones} instalaci{fila.instalaciones === 1 ? 'ón' : 'ones'} · {fila.visitas} visita{fila.visitas === 1 ? '' : 's'} de conector · {totalConectores(fila)} conector{totalConectores(fila) === 1 ? '' : 'es'}
+        {fila.ordenes} recableado{fila.ordenes === 1 ? '' : 's'} · {fila.instalaciones} instalaci{fila.instalaciones === 1 ? 'ón' : 'ones'} · {fila.visitas} visita{fila.visitas === 1 ? '' : 's'} de conector · {fila.cambiosEquipo} cambio{fila.cambiosEquipo === 1 ? '' : 's'} de equipo · {totalConectores(fila)} conector{totalConectores(fila) === 1 ? '' : 'es'}
       </p>
       {conDatos && <Conectores fila={fila} />}
     </div>
@@ -79,11 +79,17 @@ function FilaTecnico({ fila, abierto, onToggle }) {
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   {fechaCorta(o.fecha)}
                   {o.clase === 'INSTALACION' && ' · Instalación'}
+                  {o.clase === 'CAMBIO_EQUIPO' && ' · Cambio de equipo'}
                   {o.clase === 'VISITA' && ` · Visita de ${etiquetaTipoVisita(o.tipo).toLowerCase()}`}
                   {o.verde > 0 && ` · ${textoConectores(o.verde, 'VERDE')}`}
                   {o.azul > 0 && ` · ${textoConectores(o.azul, 'AZUL')}`}
-                  {totalConectores(o) === 0 && o.clase !== 'INSTALACION' && ' · sin conectores'}
+                  {totalConectores(o) === 0 && o.clase !== 'INSTALACION' && o.clase !== 'CAMBIO_EQUIPO' && ' · sin conectores'}
                 </p>
+                {o.serial && (
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {o.clase === 'CAMBIO_EQUIPO' ? 'Serial del equipo nuevo' : 'Serial'}: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{o.serial}</span>
+                  </p>
+                )}
               </div>
               {o.metros != null && <span className="shrink-0 font-black text-zinc-900 dark:text-white">{numero(o.metros)} m</span>}
             </li>
@@ -95,7 +101,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
 }
 
 // Módulo solo para ADMIN: metros de cable (recableados e instalaciones) y conectores (recableados y
-// visitas de conector) usados, en total y por técnico (todos los registrados, aunque no hayan usado material
+// visitas de conector) usados, más los cambios de equipo, en total y por técnico (todos los registrados, aunque no hayan usado material
 // en el período). Suma las órdenes activas y las ya archivadas en los reportes de cierre cargados.
 // `enPagina` (almacén): el mismo contenido como pantalla completa, sin ventana ni botón de cerrar.
 export default function MaterialesModal({ tickets, reports, technicians, hasMoreReports, isLoadingReports, onLoadMore, onClose, enPagina = false }) {
@@ -108,11 +114,12 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
     () => consumoPorTecnico(ordenes, { desde: inicioPeriodo(periodo), tecnicos: nombresTecnicos }),
     [ordenes, periodo, nombresTecnicos]
   );
-  const porAprobarTotal = porAprobar.ordenes + porAprobar.instalaciones + porAprobar.visitas;
+  const porAprobarTotal = porAprobar.ordenes + porAprobar.instalaciones + porAprobar.visitas + porAprobar.cambiosEquipo;
   const textoPorAprobar = [
     porAprobar.ordenes > 0 && `${porAprobar.ordenes} recableado${porAprobar.ordenes === 1 ? '' : 's'}`,
     porAprobar.instalaciones > 0 && `${porAprobar.instalaciones} instalaci${porAprobar.instalaciones === 1 ? 'ón' : 'ones'}`,
     porAprobar.visitas > 0 && `${porAprobar.visitas} visita${porAprobar.visitas === 1 ? '' : 's'} de conector`,
+    porAprobar.cambiosEquipo > 0 && `${porAprobar.cambiosEquipo} cambio${porAprobar.cambiosEquipo === 1 ? '' : 's'} de equipo`,
   ].filter(Boolean).join(', ') + (porAprobar.metros > 0 ? ` (${numero(porAprobar.metros)} m de cable)` : '');
 
   const tarjeta = (
@@ -123,7 +130,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
         </div>
 
         <div className="p-4 sm:p-6 space-y-4">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Metros de cable y conectores usados en los recableados, las instalaciones y las visitas de conector ya aprobados, en total y por técnico.</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Metros de cable y conectores usados en los recableados, las instalaciones y las visitas de conector ya aprobados, en total y por técnico. Las instalaciones y los cambios de equipo se listan con su serial.</p>
 
           <div role="group" aria-label="Período" className="flex flex-wrap gap-2">
             {PERIODOS.map((p) => (
@@ -144,6 +151,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
             <Dato etiqueta="Recableados" valor={numero(totales.ordenes)} />
             <Dato etiqueta="Instalaciones" valor={numero(totales.instalaciones)} />
             <Dato etiqueta="Visitas de conector" valor={numero(totales.visitas)} />
+            <Dato etiqueta="Cambios de equipo" valor={numero(totales.cambiosEquipo)} />
             <Dato etiqueta="Conectores" valor={numero(totalConectores(totales))} detalle={`Verde ${totales.verde} · Azul ${totales.azul}`} />
           </div>
 
@@ -154,7 +162,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
           )}
 
           {filas.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No hay recableados, instalaciones ni visitas de conector aprobados en este período.</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">No hay recableados, instalaciones, visitas de conector ni cambios de equipo aprobados en este período.</p>
           ) : (
             <section aria-labelledby="materiales-por-tecnico" className="space-y-2">
               <h3 id="materiales-por-tecnico" className="text-[10px] font-bold tracking-wide text-zinc-500 dark:text-zinc-400 uppercase">Por técnico</h3>

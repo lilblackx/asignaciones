@@ -1,0 +1,316 @@
+API DE MATERIALES
+Asignaciones NS
+==============================================================================
+
+DESCRIPCION
+
+API de solo lectura con la informacion del modulo de Materiales de la app de
+asignaciones: metros de cable y conectores usados por los tecnicos, en total
+y por tecnico. Es la misma informacion y el mismo calculo de la pantalla de
+Materiales de la app, por lo que los numeros coinciden.
+
+
+1. DATOS DE CONEXION
+------------------------------------------------------------------------------
+
+URL base:        https://asignaciones-notify.soportenetworkspeed.workers.dev
+Endpoint:        GET /api/materiales
+Autenticacion:   llave de API, en uno de estos encabezados:
+                   Authorization: Bearer <llave>
+                   X-API-Key: <llave>
+Formato:         JSON, UTF-8
+Navegador:       no se puede llamar desde un navegador (no tiene CORS). La
+                 llamada debe salir del servidor de su aplicacion, para que la
+                 llave nunca quede expuesta.
+
+La llave se entrega aparte, por un canal seguro. Guardela como secreto o
+variable de entorno en su aplicacion; no la ponga en el codigo ni en el
+repositorio.
+
+
+2. PARAMETROS (todos opcionales)
+------------------------------------------------------------------------------
+
+periodo   Valores: HOY, SEMANA, MES. Por defecto: MES.
+          Periodo relativo a hoy. SEMANA son los ultimos 7 dias contando hoy.
+          MES empieza el dia 1 del mes en curso.
+
+desde     Formato AAAA-MM-DD.
+          Primer dia de un rango propio. Si se envia "desde" (o "hasta"), el
+          parametro "periodo" se ignora.
+
+hasta     Formato AAAA-MM-DD. Por defecto: hoy.
+          Ultimo dia del rango, incluido completo.
+
+detalle   Valor: 0.
+          Con detalle=0 se omite la lista "ordenes" de cada tecnico y queda
+          solo el resumen (respuesta mucho mas corta).
+
+Notas:
+  - Las fechas y los limites de los periodos son en hora de Venezuela
+    (UTC-4, America/Caracas).
+  - Un rango (desde/hasta) puede abarcar como maximo 93 dias. Para periodos
+    mas largos, pida por partes (por ejemplo mes por mes) y sume.
+  - Cualquier otro valor de "periodo" (por ejemplo TODO) devuelve error 400.
+
+Ejemplos:
+  GET /api/materiales
+  GET /api/materiales?periodo=HOY
+  GET /api/materiales?periodo=SEMANA&detalle=0
+  GET /api/materiales?desde=2026-10-01&hasta=2026-10-15
+
+
+3. QUE CUENTA Y QUE NO
+------------------------------------------------------------------------------
+
+  - Cuenta el material de las ordenes FINALIZADAS (ya aprobadas), tanto las
+    activas como las archivadas en los cierres del dia.
+  - Una orden entra en el periodo segun su fecha de finalizacion o, si no la
+    tiene, la de creacion.
+  - Las ordenes PRE-FINALIZADAS (esperan aprobacion) no se suman: se informan
+    aparte en "porAprobar".
+  - Tipos de orden que gastan material:
+      Recableado:        metros de cable y los conectores que se hayan puesto
+                         (uno por cada conector).
+      Instalacion:       el metraje de cable que registro el tecnico. Las
+                         instalaciones anteriores a que se pidiera el metraje
+                         no lo tienen y no suman.
+      Visita de conector (externo o interno): las cantidades de conectores por
+                         color que escribio el tecnico. Las visitas antiguas
+                         que solo guardaron el color cuentan como 1 conector de
+                         ese color. Una visita de conector no gasta cable.
+      Cambio de equipo:  no gasta cable ni conectores; se cuenta y se lista con
+                         el serial del equipo nuevo (campo "serial"). Los
+                         cambios de equipo anteriores a que se pidiera el
+                         serial salen con "serial" en null.
+  - Las instalaciones tambien traen su "serial" (el de la ONU instalada); las
+    anteriores a que se guardara salen con null.
+  - Los conectores se cuentan solo por color (verde o azul), sin distinguir
+    externo de interno.
+  - Una orden que aparezca dos veces (activa y archivada) se cuenta una sola
+    vez.
+  - La lista "tecnicos" trae todos los tecnicos registrados, aunque no hayan
+    usado material (con ceros), ordenados de mas a menos metros. Si hay
+    ordenes sin tecnico, aparece una fila "SIN TECNICO".
+
+
+4. EJEMPLO DE RESPUESTA (codigo 200)
+------------------------------------------------------------------------------
+
+{
+  "version": 1,
+  "generadoEn": "2026-10-15T16:00:00.000Z",
+  "periodo": {
+    "id": "MES",
+    "desde": "2026-10-01T04:00:00.000Z",
+    "hasta": "2026-10-15T16:00:00.000Z",
+    "zonaHoraria": "America/Caracas"
+  },
+  "totales": {
+    "metros": 175,
+    "recableados": 2,
+    "instalaciones": 1,
+    "visitasConector": 1,
+    "cambiosEquipo": 1,
+    "conectores": { "verde": 3, "azul": 1, "total": 4 }
+  },
+  "porAprobar": {
+    "recableados": 1,
+    "instalaciones": 0,
+    "visitasConector": 0,
+    "cambiosEquipo": 0,
+    "metros": 30
+  },
+  "tecnicos": [
+    {
+      "tecnico": "GERARDO MOLERO",
+      "metros": 160,
+      "recableados": 1,
+      "instalaciones": 1,
+      "visitasConector": 0,
+      "cambiosEquipo": 0,
+      "conectores": { "verde": 1, "azul": 0, "total": 1 },
+      "ordenes": [
+        {
+          "id": "R1",
+          "codigo": "R1",
+          "cliente": "Cliente R1",
+          "fecha": "2026-10-15T15:00:00.000Z",
+          "clase": "RECABLEADO",
+          "tipoVisita": "RECABLEADO",
+          "serial": null,
+          "metros": 40,
+          "conectores": { "verde": 1, "azul": 0, "total": 1 }
+        },
+        {
+          "id": "I1",
+          "codigo": "I1",
+          "cliente": "Cliente I1",
+          "fecha": "2026-10-13T15:00:00.000Z",
+          "clase": "INSTALACION",
+          "tipoVisita": null,
+          "serial": "HWTC1A2B3C4D",
+          "metros": 120,
+          "conectores": { "verde": 0, "azul": 0, "total": 0 }
+        }
+      ]
+    },
+    {
+      "tecnico": "SIN USO",
+      "metros": 0,
+      "recableados": 0,
+      "instalaciones": 0,
+      "visitasConector": 0,
+      "cambiosEquipo": 0,
+      "conectores": { "verde": 0, "azul": 0, "total": 0 },
+      "ordenes": []
+    }
+  ]
+}
+
+
+5. DESCRIPCION DE LOS CAMPOS
+------------------------------------------------------------------------------
+
+5.1 Raiz
+
+  version      numero        Version del formato (hoy 1). Cambia solo si se
+                             rompe la compatibilidad.
+  generadoEn   fecha ISO     Cuando se calculo la respuesta (UTC). Puede tener
+                             hasta 5 minutos de antiguedad.
+  periodo      objeto        Periodo que se calculo.
+  totales      objeto        Suma de todos los tecnicos.
+  porAprobar   objeto        Lo pre-finalizado del periodo que aun no se suma.
+  tecnicos     lista         Una fila por tecnico.
+
+5.2 periodo
+
+  id           texto         HOY, SEMANA, MES o PERSONALIZADO (cuando se uso
+                             desde/hasta).
+  desde        fecha ISO     Inicio del periodo (medianoche de Venezuela), UTC.
+  hasta        fecha ISO     Fin del periodo (ahora, o el final del dia
+                             "hasta"), UTC.
+  zonaHoraria  texto         Siempre America/Caracas.
+
+5.3 totales y cada elemento de tecnicos
+
+  tecnico          texto     Nombre del tecnico, en mayusculas como esta
+                             registrado (solo en "tecnicos").
+  metros           numero    Metros de cable usados (recableados +
+                             instalaciones).
+  recableados      numero    Cantidad de recableados aprobados.
+  instalaciones    numero    Cantidad de instalaciones aprobadas con metraje.
+  visitasConector  numero    Cantidad de visitas de conector aprobadas.
+  cambiosEquipo    numero    Cantidad de cambios de equipo aprobados.
+  conectores       objeto    { verde, azul, total }: conectores usados por
+                             color y en total (recableados + visitas de
+                             conector).
+  ordenes          lista     Detalle de las ordenes que suman, de la mas nueva
+                             a la mas vieja (solo en "tecnicos" y solo si no
+                             se uso detalle=0).
+
+5.4 porAprobar
+
+  recableados      numero    Recableados pre-finalizados del periodo.
+  instalaciones    numero    Instalaciones pre-finalizadas con metraje.
+  visitasConector  numero    Visitas de conector pre-finalizadas.
+  cambiosEquipo    numero    Cambios de equipo pre-finalizados.
+  metros           numero    Metros de cable de los recableados e
+                             instalaciones pre-finalizados.
+
+5.5 Cada elemento de ordenes
+
+  id           texto         Identificador interno de la orden.
+  codigo       texto         Codigo de la orden (puede venir vacio).
+  cliente      texto         Nombre del cliente de la orden (puede venir
+                             vacio).
+  fecha        fecha ISO     Cuando se uso el material (finalizacion de la
+                             orden), UTC.
+  clase        texto         RECABLEADO, INSTALACION, CAMBIO_EQUIPO o VISITA
+                             (visita de conector).
+  tipoVisita   texto o null  RECABLEADO, CONECTOR_EXTERNO, CONECTOR_INTERNO o
+                             CAMBIO_EQUIPO; null en las instalaciones.
+  serial       texto o null  Serial del equipo: el de la ONU en una instalacion
+                             y el del equipo nuevo en un cambio de equipo. null
+                             en recableados y visitas de conector, y si no se
+                             registro.
+  metros       numero o null Metros de cable de la orden; null en una visita de
+                             conector y en un cambio de equipo (no gastan
+                             cable).
+  conectores   objeto        { verde, azul, total } de esa orden.
+
+Todos los conteos son numeros enteros. Los metros son metros enteros.
+
+Datos que la API NO envia: telefonos, cedulas, direcciones, plantillas,
+cobros, potencias de la ONU ni ningun otro dato de la orden. De la orden solo
+salen el codigo, el nombre del cliente (campo "cliente") y el serial del equipo
+(campo "serial").
+
+
+6. ERRORES
+------------------------------------------------------------------------------
+
+Siempre en JSON, con este formato: { "error": "mensaje" }
+
+  400   Parametro invalido: fecha mal escrita o inexistente, "hasta" anterior
+        a "desde", rango de mas de 93 dias o "periodo" desconocido.
+  401   Falta la llave o es incorrecta.
+  405   Se uso un metodo distinto de GET.
+  500   No se pudo leer la informacion. Reintentar mas tarde.
+  503   La API no esta habilitada por el momento. Contactar al administrador.
+
+
+7. EJEMPLOS DE USO
+------------------------------------------------------------------------------
+
+curl:
+
+  curl -H "Authorization: Bearer $MATERIALES_API_KEY" \
+    "https://asignaciones-notify.soportenetworkspeed.workers.dev/api/materiales?periodo=MES"
+
+Node.js (servidor):
+
+  const res = await fetch(
+    'https://asignaciones-notify.soportenetworkspeed.workers.dev/api/materiales?desde=2026-10-01&hasta=2026-10-15',
+    { headers: { Authorization: `Bearer ${process.env.MATERIALES_API_KEY}` } },
+  );
+  if (!res.ok) throw new Error(`Materiales respondio ${res.status}: ${(await res.json()).error}`);
+  const { totales, tecnicos } = await res.json();
+
+Python:
+
+  import os, requests
+
+  r = requests.get(
+      "https://asignaciones-notify.soportenetworkspeed.workers.dev/api/materiales",
+      params={"periodo": "SEMANA", "detalle": "0"},
+      headers={"Authorization": f"Bearer {os.environ['MATERIALES_API_KEY']}"},
+      timeout=30,
+  )
+  r.raise_for_status()
+  datos = r.json()
+
+PowerShell:
+
+  $llave = $env:MATERIALES_API_KEY
+  $url = "https://asignaciones-notify.soportenetworkspeed.workers.dev/api/materiales?periodo=MES"
+  Invoke-RestMethod -Uri $url -Headers @{ Authorization = "Bearer $llave" }
+
+
+8. ACTUALIZACION DE LOS DATOS Y BUENAS PRACTICAS
+------------------------------------------------------------------------------
+
+  - Las respuestas se guardan 5 minutos en el servidor. La cabecera X-Cache
+    indica HIT (copia guardada) o MISS (recien calculada). Los numeros pueden
+    ir hasta 5 minutos atrasados; el campo "generadoEn" indica de cuando son.
+  - Cada consulta nueva le cuesta lecturas a la base de datos. Se recomienda
+    que su aplicacion guarde el resultado y lo refresque cada 5 a 15 minutos
+    (o una vez al dia para periodos ya cerrados), en lugar de llamar a la API
+    en cada pantalla o peticion de un usuario.
+  - Las ordenes del dia pasan al cierre cuando se cierra el dia, por lo que un
+    periodo ya terminado no cambia (salvo correcciones).
+  - Para historiales largos, pida por meses (desde/hasta) y guarde cada mes
+    cerrado.
+  - Mantenga la llave solo en el servidor. Si se filtra o sospecha que se
+    filtro, avise de inmediato al administrador de la app: se genera una nueva
+    y la anterior deja de funcionar al instante.

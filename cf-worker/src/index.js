@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from 'jose';
+import { manejarApiMateriales } from './materiales-api.js';
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
@@ -671,6 +672,11 @@ export async function actualizarTasaBcv(env, ahoraMs = Date.now()) {
 
 export default {
   async fetch(request, env) {
+    // API de Materiales para otra aplicación: se autentica con su propia llave, no con un usuario de Firebase.
+    if (new URL(request.url).pathname === '/api/materiales') {
+      return manejarApiMateriales(request, env, getGoogleAccessToken);
+    }
+
     const origin = request.headers.get('Origin') || '';
     const headers = corsHeaders(env, origin);
 

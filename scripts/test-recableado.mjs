@@ -3,7 +3,7 @@
 import {
   MAX_CONECTORES_POR_COLOR, TIPOS_VISITA, cantidadesConector, colorConectorExterno, conectorDeVisita, colorConectorInterno, datosConectores, errorCantidadesConector, esVisitaConector, parseCantidadesConector, textoCantidades, etiquetaTipoVisita, generaCobro, llevaConectores, parseMetros, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from '../src/utils/tipoVisita.js';
-import { conectoresPorColor, consumoPorTecnico, esRecableadoFinalizado, esRecableadoPorAprobar, esInstalacionFinalizada, esInstalacionPorAprobar, esVisitaConectorFinalizada, esVisitaConectorPorAprobar, fechaDeUso, inicioPeriodo, totalConectores } from '../src/utils/consumoMateriales.js';
+import { conectoresPorColor, consumoPorTecnico, esRecableadoFinalizado, esRecableadoPorAprobar, esCambioEquipoFinalizado, esCambioEquipoPorAprobar, esInstalacionFinalizada, esInstalacionPorAprobar, esVisitaConectorFinalizada, esVisitaConectorPorAprobar, fechaDeUso, inicioPeriodo, totalConectores } from '../src/utils/consumoMateriales.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -124,7 +124,7 @@ check('totales de todos los técnicos', [todo.totales.ordenes, todo.totales.metr
   [5, 110, 3, 1]);
 check('total de conectores', totalConectores(todo.totales), 4);
 check('una orden repetida (activa y archivada) cuenta una sola vez', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.filter(d => d.id === 'a').length, 1);
-check('los pre-finalizados se informan aparte y no suman', todo.porAprobar, { ordenes: 1, instalaciones: 0, metros: 8, visitas: 0 });
+check('los pre-finalizados se informan aparte y no suman', todo.porAprobar, { ordenes: 1, instalaciones: 0, metros: 8, visitas: 0, cambiosEquipo: 0 });
 check('las órdenes pendientes y las visitas de conector sin color no cuentan', todo.filas.flatMap(f => f.detalle.map(d => d.id)).sort(), ['a', 'b', 'c', 'd', 'h']);
 check('el detalle va de más reciente a más antiguo', todo.filas.find(f => f.tecnico === 'LUIS PEREZ').detalle.map(d => d.id), ['a', 'b']);
 
@@ -145,7 +145,7 @@ const conRegistrados = consumoPorTecnico(ordenes, { desde: inicioPeriodo('HOY', 
 check('los registrados sin consumo salen al final, por nombre; sin técnico solo si tiene consumo',
   conRegistrados.filas.map(f => [f.tecnico, f.metros]), [['Maria Gomez', 50], ['LUIS PEREZ', 30], ['SIN TÉCNICO', 5], ['ANA SOTO', 0], ['PEDRO RUIZ', 0]]);
 check('un técnico sin consumo sale en cero y sin detalle', conRegistrados.filas.find(f => f.tecnico === 'PEDRO RUIZ'),
-  { tecnico: 'PEDRO RUIZ', ordenes: 0, instalaciones: 0, visitas: 0, metros: 0, verde: 0, azul: 0, detalle: [] });
+  { tecnico: 'PEDRO RUIZ', ordenes: 0, instalaciones: 0, visitas: 0, cambiosEquipo: 0, metros: 0, verde: 0, azul: 0, detalle: [] });
 check('los registrados no cambian los totales', conRegistrados.totales, hoy.totales);
 check('con técnicos registrados y sin recableados salen todos en cero',
   consumoPorTecnico([], { tecnicos: ['B', 'A'] }).filas.map(f => [f.tecnico, f.metros]), [['A', 0], ['B', 0]]);
@@ -167,13 +167,13 @@ check('visitas de conector: totales', [soloVisitas.totales.ordenes, soloVisitas.
 check('visitas de conector: el detalle trae el tipo y no trae metros',
   soloVisitas.filas[0].detalle.map(d => [d.id, d.tipo, d.metros, d.verde, d.azul]),
   [['v1', 'CONECTOR_INTERNO', null, 0, 1], ['v7', 'CONECTOR_INTERNO', null, 0, 1], ['v2', 'CONECTOR_EXTERNO', null, 1, 0]]);
-check('visitas de conector: las pre-finalizadas se informan aparte, las pendientes y sin color no', soloVisitas.porAprobar, { ordenes: 0, instalaciones: 0, metros: 0, visitas: 1 });
+check('visitas de conector: las pre-finalizadas se informan aparte, las pendientes y sin color no', soloVisitas.porAprobar, { ordenes: 0, instalaciones: 0, metros: 0, visitas: 1, cambiosEquipo: 0 });
 const conTodo = consumoPorTecnico([...ordenes, ...visitas]);
 check('recableados y visitas de conector juntos: los conectores se suman, los metros son solo de recableados',
   [conTodo.totales.ordenes, conTodo.totales.visitas, conTodo.totales.metros, conTodo.totales.verde, conTodo.totales.azul, totalConectores(conTodo.totales)], [5, 4, 110, 5, 3, 8]);
 check('recableados y visitas juntos: renglones por técnico', conTodo.filas.map(f => [f.tecnico, f.ordenes, f.visitas, f.metros, totalConectores(f)]),
   [['MARIA GOMEZ', 2, 1, 60, 2], ['LUIS PEREZ', 2, 3, 45, 6], ['SIN TÉCNICO', 1, 0, 5, 0]]);
-check('recableados y visitas juntos: lo que espera aprobación', conTodo.porAprobar, { ordenes: 1, instalaciones: 0, metros: 8, visitas: 1 });
+check('recableados y visitas juntos: lo que espera aprobación', conTodo.porAprobar, { ordenes: 1, instalaciones: 0, metros: 8, visitas: 1, cambiosEquipo: 0 });
 check('quien solo hizo visitas de conector va antes que quien no gastó nada',
   consumoPorTecnico(visitas, { tecnicos: ['ZETA', 'MARIA GOMEZ'] }).filas.map(f => f.tecnico), ['LUIS PEREZ', 'MARIA GOMEZ', 'ZETA']);
 check('clasificación de visitas de conector', [esVisitaConectorFinalizada(visitas[0]), esVisitaConectorFinalizada(visitas[3]), esVisitaConectorPorAprobar(visitas[4]), esVisitaConectorFinalizada(visitas[5]), esVisitaConectorFinalizada(ordenes[0])],
@@ -198,7 +198,7 @@ check('instalaciones: un renglón por técnico con sus metros y su cuenta de ins
 check('instalaciones: totales', [soloInstalaciones.totales.instalaciones, soloInstalaciones.totales.ordenes, soloInstalaciones.totales.visitas, soloInstalaciones.totales.metros], [3, 0, 0, 245]);
 check('instalaciones: sin metraje (anteriores a pedirlo, en 0), pendientes y pre-finalizadas no suman',
   soloInstalaciones.filas.flatMap(f => f.detalle.map(d => d.id)).sort(), ['i1', 'i2', 'i7']);
-check('instalaciones: las pre-finalizadas con metraje se informan aparte', soloInstalaciones.porAprobar, { ordenes: 0, instalaciones: 1, metros: 60, visitas: 0 });
+check('instalaciones: las pre-finalizadas con metraje se informan aparte', soloInstalaciones.porAprobar, { ordenes: 0, instalaciones: 1, metros: 60, visitas: 0, cambiosEquipo: 0 });
 check('instalaciones: el detalle trae la clase y sus metros, sin conectores',
   soloInstalaciones.filas[0].detalle.map(d => [d.id, d.clase, d.metros, d.verde, d.azul]), [['i1', 'INSTALACION', 120, 0, 0], ['i7', 'INSTALACION', 45, 0, 0]]);
 check('el detalle distingue recableado, instalación y visita de conector',
@@ -206,11 +206,33 @@ check('el detalle distingue recableado, instalación y visita de conector',
 const todoJunto = consumoPorTecnico([...ordenes, ...visitas, ...instalaciones]);
 check('recableados, visitas e instalaciones juntos: los metros se suman y cada cosa se cuenta en su columna',
   [todoJunto.totales.ordenes, todoJunto.totales.instalaciones, todoJunto.totales.visitas, todoJunto.totales.metros], [5, 3, 4, 355]);
-check('recableados, visitas e instalaciones juntos: lo que espera aprobación', todoJunto.porAprobar, { ordenes: 1, instalaciones: 1, metros: 68, visitas: 1 });
+check('recableados, visitas e instalaciones juntos: lo que espera aprobación', todoJunto.porAprobar, { ordenes: 1, instalaciones: 1, metros: 68, visitas: 1, cambiosEquipo: 0 });
 check('una instalación no cuenta como visita de conector', [esVisitaConectorFinalizada(instalaciones[0]), esVisitaConectorPorAprobar(instalaciones[3])], [false, false]);
 check('clasificación de instalaciones', [esInstalacionFinalizada(instalaciones[0]), esInstalacionFinalizada(instalaciones[2]), esInstalacionPorAprobar(instalaciones[3]), esInstalacionFinalizada(instalaciones[4]), esInstalacionFinalizada(instalaciones[5]), esInstalacionFinalizada(ordenes[0])],
   [true, false, true, false, false, false]);
 check('una instalación se filtra por el período como lo demás', consumoPorTecnico(instalaciones, { desde: inicioPeriodo('HOY', ahora) }).totales.metros, 200);
+
+// --- Cambios de equipo e instalaciones con el serial del equipo ---
+const cambio = { tipoTrabajo: 'VISITA', tipoVisita: 'CAMBIO_EQUIPO', estado: 'FINALIZADO' };
+const conSerial = [
+  { ...cambio, id: 'c1', codigo: 'CE1', nombre: 'Carla', tecnico: 'LUIS PEREZ', serialEquipo: 'HWTC1A2B3C4D', finalizadoEn: dia(13) },
+  { ...cambio, id: 'c2', codigo: 'CE2', nombre: 'Cesar', tecnico: 'MARIA GOMEZ', serialEquipo: 'ZTEG99887766', finalizadoEn: dia(13) },
+  { ...cambio, id: 'c3', codigo: 'CE3', nombre: 'Celia', tecnico: 'LUIS PEREZ', serialEquipo: 'HWTC0000AAAA', estado: 'PRE-FINALIZADO', createdAt: dia(13) },
+  { ...cambio, id: 'c4', codigo: 'CE4', nombre: 'Cora', tecnico: 'LUIS PEREZ', serialEquipo: 'HWTC1111BBBB', estado: 'PENDIENTE', createdAt: dia(13) },
+  { ...cambio, id: 'c5', codigo: 'CE5', nombre: 'Cruz', tecnico: 'LUIS PEREZ', finalizadoEn: dia(13) }, // anterior a pedir el serial: se lista sin él
+  { ...instalacion, id: 'i8', codigo: 'IS8', nombre: 'Isabel', tecnico: 'LUIS PEREZ', instalacion: { metraje: 50, serial: 'FHTT55556666' }, finalizadoEn: dia(13) },
+];
+const conEquipos = consumoPorTecnico(conSerial);
+check('cambios de equipo: se cuentan por técnico y en los totales, sin metros ni conectores',
+  [conEquipos.filas.map(f => [f.tecnico, f.cambiosEquipo, f.instalaciones, f.metros, totalConectores(f)]), conEquipos.totales.cambiosEquipo], [[['LUIS PEREZ', 2, 1, 50, 0], ['MARIA GOMEZ', 1, 0, 0, 0]], 3]);
+check('cambios de equipo: el pre-finalizado se informa aparte y el pendiente no cuenta', conEquipos.porAprobar, { ordenes: 0, instalaciones: 0, metros: 0, visitas: 0, cambiosEquipo: 1 });
+check('el detalle de un cambio de equipo trae la clase, el serial del equipo nuevo y no gasta cable',
+  conEquipos.filas[0].detalle.filter(d => d.clase === 'CAMBIO_EQUIPO').map(d => [d.id, d.serial, d.metros, d.verde, d.azul]).sort(), [['c1', 'HWTC1A2B3C4D', null, 0, 0], ['c5', '', null, 0, 0]]);
+check('el detalle de una instalación trae el serial de la ONU',
+  conEquipos.filas[0].detalle.filter(d => d.clase === 'INSTALACION').map(d => [d.id, d.serial, d.metros]), [['i8', 'FHTT55556666', 50]]);
+check('una instalación anterior a guardar el serial sale con serial vacío', consumoPorTecnico([instalaciones[0]]).filas[0].detalle[0].serial, '');
+check('un recableado y una visita de conector no llevan serial', consumoPorTecnico([ordenes[0], visitas[0]]).filas.flatMap(f => f.detalle.map(d => d.serial)), ['', '']);
+check('un cambio de equipo no cuenta como instalación ni visita de conector', [esInstalacionFinalizada(conSerial[0]), esVisitaConectorFinalizada(conSerial[0]), esCambioEquipoFinalizado(conSerial[0]), esCambioEquipoPorAprobar(conSerial[2]), esCambioEquipoFinalizado(conSerial[3])], [false, false, true, true, false]);
 
 // --- El conector de una visita, aparte del cobro ---
 check('conector de una visita externa: tipo y color',

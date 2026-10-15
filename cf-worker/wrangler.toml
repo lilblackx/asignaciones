@@ -13,6 +13,7 @@ APP_ID = "default-app-id"
 # Orígenes que pueden llamar este Worker. Ajustar si cambia el dominio.
 ALLOWED_ORIGINS = "https://seguimientons-f2026.web.app,https://seguimientons-f2026.firebaseapp.com,http://localhost:5173"
 
-# Secreto real, NO va acá: se carga con
+# Secretos reales, NO van acá: se cargan con
+#   wrangler secret put MATERIALES_API_KEY   (llave de GET /api/materiales; sin ella esa API responde 503)
 #   wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON
 # (pegar el JSON completo del service account descargado en Firebase Console).

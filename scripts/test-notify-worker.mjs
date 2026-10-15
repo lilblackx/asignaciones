@@ -162,7 +162,7 @@ const FINALIZADAS = [
   ticketDoc('t-averia', { codigo: 'AS7', nombre: 'Luis', estado: 'FINALIZADO', tipoTrabajo: 'AVERÍA', createdAt: 1500 }),
 ];
 const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'Rosa', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana' })];
-const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 9 * 86400000) } } };
+const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 20 * 86400000) } } };
 const consultas = [];
 globalThis.fetch = async (url, init = {}) => {
   const u = String(url);
@@ -194,14 +194,14 @@ check('el resumen lleva lo que ve la promotora', [dePrueba?.codigo, dePrueba?.no
 check('y las fechas: creada, finalizada y archivada', [dePrueba?.creadaEn, dePrueba?.finalizadoEn, dePrueba?.archivadoEn],
   [{ integerValue: '1000' }, { integerValue: '2000' }, { integerValue: String(AHORA) }]);
 check('el resumen NO lleva datos técnicos ni de cobro', Object.keys(dePrueba || {}).sort(),
-  ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'finalizadoEn', 'nombre', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento']);
+  ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
 check('la promotora sale de la plantilla si la orden no la guardó', [dePrueba?.promotora, dePrueba?.promotoraClave], [{ stringValue: 'Alexis Añez' }, { stringValue: 'alexis anez' }]);
 const canceladaDoc = historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields;
 check('y se usa la que la orden ya trae', [canceladaDoc?.promotora, canceladaDoc?.promotoraClave], [{ stringValue: 'Sariana' }, { stringValue: 'sariana' }]);
 check('una instalación sin fecha de finalizado guarda null', historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields.finalizadoEn, { nullValue: null });
-check('borra del historial lo de más de 3 días', escrituras.filter((w) => w.delete?.includes('/historialInstalaciones/')).map((w) => w.delete.split('/').pop()), ['vieja']);
+check('borra del historial lo de más de 15 días', escrituras.filter((w) => w.delete?.includes('/historialInstalaciones/')).map((w) => w.delete.split('/').pop()), ['vieja']);
 const corte = consultas.find((q) => q.from[0].collectionId === 'historialInstalaciones')?.where.fieldFilter;
-check('la limpieza pide lo anterior a hoy menos 3 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 3 * 86400000)]);
+check('la limpieza pide lo anterior a hoy menos 15 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 15 * 86400000)]);
 check('el reporte del cierre sigue guardando todo (también la avería)', escrituras.filter((w) => w.update?.name.includes('/reports/')).length, 2);
 globalThis.fetch = fetchBase;
 

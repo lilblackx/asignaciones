@@ -18,6 +18,7 @@
     "test:formas": "node scripts/test-formas-pago.mjs",
     "test:visita": "node scripts/test-visita-senal.mjs",
     "test:notify": "node --conditions=workerd scripts/test-notify-worker.mjs",
+    "test:materiales": "node --conditions=workerd scripts/test-api-materiales.mjs",
     "test:recableado": "node scripts/test-recableado.mjs",
     "test:instalacion": "node scripts/test-instalacion.mjs",
     "test:prioridad": "node scripts/test-prioridad.mjs",
