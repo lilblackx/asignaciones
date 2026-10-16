@@ -1,6 +1,6 @@
 // Lo que se necesita para autorizar una instalación en SmartOLT, listo para mostrar y copiar dato por dato
 // o todo junto (ver components/modals/DatosParaAutorizar). Dos grupos:
-//   - equipo: serial o MAC, VLAN, NAP, puerto, drop (el metraje), posteadura y puertos disponibles (lo que
+//   - equipo: serial, VLAN, NAP, puerto, drop (el metraje), posteadura y puertos disponibles (lo que
 //     el técnico llenó al instalar o al cambiar el equipo).
 //   - cliente: nombre, cédula, teléfonos, dirección, ubicación, servicio y plan.
 //   El plan sale de la plantilla de la promotora (ver parseDatosClienteTemplate).
@@ -26,7 +26,7 @@ export function datosAutorizacion(ticket) {
   };
 
   if (esCambioEquipo(t.tipoVisita)) agregar(equipo, 'serialEquipo', 'Serial del equipo nuevo', t.serialEquipo);
-  agregar(equipo, 'serial', 'Serial / MAC', inst.serial);
+  agregar(equipo, 'serial', 'Serial', inst.serial);
   agregar(equipo, 'vlan', 'VLAN', inst.vlan);
   if (limpio(inst.nap)) {
     agregar(equipo, 'nap', 'NAP', inst.nap);

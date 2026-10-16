@@ -398,10 +398,11 @@ export default function App({ auth }) {
     setEditingTicket(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : stripEmojis(value) }));
   };
 
-  const handleEditSubmit = conAviso(async (e) => {
+  // `datosTecnico`: lo corregido de lo que cargó el técnico (ya validado por el modal); se guarda junto con el resto.
+  const handleEditSubmit = conAviso(async (e, datosTecnico = null) => {
     e.preventDefault();
     const originalTicket = tickets.find(t => t.id === editingTicket.id);
-    const guardado = await updateTicket(editingTicket, edicionBase);
+    const guardado = await updateTicket(datosTecnico ? { ...editingTicket, ...datosTecnico } : editingTicket, edicionBase);
     if (guardado === false) return; // validación rechazó: el modal sigue abierto con lo escrito
     // Si se le asignó (o cambió) técnico a una instalación desde Editar —no
     // solo al crearla—, también consume el turno, igual que en Nueva Asignación.
@@ -683,6 +684,7 @@ export default function App({ auth }) {
             verificarCodigoManual={verificarCodigoManual}
             technicians={technicians}
             isTecnico={isTecnico}
+            esAdmin={isAdmin}
             napsConocidas={napsConocidas}
             turnoSugerido={tecnicoSugerido}
             onClose={() => setEditingTicket(null)}

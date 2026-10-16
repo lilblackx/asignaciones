@@ -10,12 +10,15 @@ import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
 import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
 import PromotorField from './PromotorField';
+import DatosTecnicoEdicion from './DatosTecnicoEdicion';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
+import { esInstalacion as trabajoEsInstalacion, napConPuerto } from '../../utils/instalacion';
+import { formularioDatosTecnico, formularioModificado, tieneDatosDelTecnico, validarDatosTecnico } from '../../utils/edicionDatosTecnico';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import { promotoraDeOrden, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 
-export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false }) {
+export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
@@ -24,6 +27,24 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   // Instalación o reconexión que se creó sin la plantilla de la promotora: aquí se puede pegar. Si ya la tiene, no se
   // edita (la original no se toca). Se decide al abrir, para que el campo no desaparezca mientras se pega.
   const [faltabaPlantilla] = useState(() => tipoUsaPlantillaPromotora(editingTicket.tipoTrabajo) && !isTecnico && !String(editingTicket.plantillaOriginal || '').trim());
+  // Lo que el técnico cargó (serial, VLAN, conectores, tipo de visita...) se corrige aquí cuando la orden ya está
+  // pre-finalizada o finalizada. Se decide al abrir, con la orden como estaba: cambiar el estado o el trabajo en el formulario
+  // no hace desaparecer ni cambiar la sección.
+  const [ordenAlAbrir] = useState(editingTicket);
+  const [conDatosTecnico] = useState(() => !isTecnico && tieneDatosDelTecnico(editingTicket));
+  const instalacionAlAbrir = trabajoEsInstalacion(ordenAlAbrir.tipoTrabajo);
+  const [datosInicial] = useState(() => formularioDatosTecnico(editingTicket));
+  const [datos, setDatos] = useState(datosInicial);
+  const [datosErrores, setDatosErrores] = useState({});
+  const cambiarDatos = (parcial) => {
+    setDatos((prev) => ({ ...prev, ...parcial }));
+    setDatosErrores({});
+  };
+  const datosModificados = conDatosTecnico && formularioModificado(datosInicial, datos);
+  // En una instalación la NAP y el puerto se corrigen en esa sección (la orden los guarda juntos en `nap`).
+  const napEnSeccion = conDatosTecnico && instalacionAlAbrir;
+  const napCambiadaEnSeccion = napEnSeccion && (datos.nap !== datosInicial.nap || datos.puerto !== datosInicial.puerto);
+  const napActual = napCambiadaEnSeccion ? napConPuerto(datos.nap, datos.puerto) : (editingTicket.nap || '');
   const mostrarSugerencia = !isTecnico && esInstalacion && !editingTicket.tecnico && turnoSugerido;
   const opcionesTipo = TIPOS_POR_TRABAJO[editingTicket.tipoTrabajo] || [];
   const ubicacionParseada = normalizarUbicacion(editingTicket.ubicacion);
@@ -51,9 +72,12 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
     handleEditChange({ target: { name: 'napCoordenadas', value, type: 'text' } });
   };
 
+  // Lo corregido de los datos del técnico (ya validado en onSubmit; no cambia mientras se confirma un aviso), o null si no se tocó.
+  const datosAGuardar = () => (datosModificados ? validarDatosTecnico(ordenAlAbrir, datos).datos : null);
+
   const guardar = async () => {
     setIsSubmitting(true);
-    await handleEditSubmit({ preventDefault: () => {} });
+    await handleEditSubmit({ preventDefault: () => {} }, datosAGuardar());
     setIsSubmitting(false);
   };
 
@@ -71,7 +95,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
 
   // Con NAP escrita pero sin coordenadas, avisa y deja que el usuario decida.
   // No aplica a técnicos: ellos solo pre-finalizan y no deben frenarse por esto.
-  const faltanNapCoordenadas = !isTecnico && Boolean(editingTicket.nap?.trim()) && !napCoordenadasParseadas.valor;
+  const faltanNapCoordenadas = !isTecnico && Boolean(napActual.trim()) && !napCoordenadasParseadas.valor;
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -81,6 +105,15 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
     if (campoConError) {
       document.getElementById(campoConError)?.focus();
       return;
+    }
+    // Lo corregido de los datos del técnico debe ser válido; solo se revisa si se tocó algo.
+    if (datosModificados) {
+      const revision = validarDatosTecnico(ordenAlAbrir, datos);
+      if (revision.error) {
+        setDatosErrores(revision.errores);
+        document.getElementById(revision.primerCampo)?.focus();
+        return;
+      }
     }
     if (faltanNapCoordenadas) {
       setShowSinCoordenadas(true);
@@ -203,15 +236,17 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             />
           </div>
           <ContactoCliente telefono={editingTicket.telefono} nombre={editingTicket.nombre} className="col-span-2" />
-          <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-nap" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">NAP</label>
-            <input id="ed-nap" type="text" maxLength="50" name="nap" value={editingTicket.nap || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors" />
-          </div>
+          {!napEnSeccion && (
+            <div className="col-span-2 space-y-1">
+              <label htmlFor="ed-nap" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">NAP</label>
+              <input id="ed-nap" type="text" maxLength="50" name="nap" value={editingTicket.nap || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors" />
+            </div>
+          )}
           <NapCoordenadasField
             variant="edit"
             idPrefix="ed"
             wrapperClassName="col-span-2 space-y-1"
-            nap={editingTicket.nap}
+            nap={napActual}
             value={editingTicket.napCoordenadas}
             onChange={handleNapCoordenadasChange}
             autoBuscar
@@ -230,6 +265,16 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               <p id="ed-potencia-hint" className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
             )}
           </div>
+          {conDatosTecnico && (
+            <DatosTecnicoEdicion
+              instalacion={instalacionAlAbrir}
+              form={datos}
+              onChange={cambiarDatos}
+              errores={datosErrores}
+              finalizada={ordenAlAbrir.estado === 'FINALIZADO'}
+              avisoSerial={esAdmin && ordenAlAbrir.estado === 'FINALIZADO'}
+            />
+          )}
           {esInstalacion && !isTecnico && (
             <PromotorField
               id="ed-promotora"
@@ -272,7 +317,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
 
       {showSinCoordenadas && (
         <ConfirmSinCoordenadasModal
-          nap={editingTicket.nap.trim()}
+          nap={napActual.trim()}
           textoConfirmar="Guardar la orden"
           onCancel={() => setShowSinCoordenadas(false)}
           onConfirm={confirmSinCoordenadasAndContinue}

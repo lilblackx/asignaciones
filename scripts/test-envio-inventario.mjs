@@ -215,6 +215,25 @@ r = await reintentar('inst1');
 check('reintentar tras ingresar el serial al almacén lo envía', [r.json.estado, commitsTelecom.length, envio('inst1').estado], ['ENVIADO', 1, 'ENVIADO']);
 check('reintentar es solo del usuario del módulo: ni un USUARIO, ni quien cierra, ni otro ADMIN pueden', [(await reintentar('inst1', 'usuario-uid')).status, (await reintentar('inst1', 'cierra-uid')).status, (await reintentar('inst1', 'admin-uid')).status], [403, 403, 403]);
 
+// 3c) La oficina corrige el serial de la orden (Editar orden) después de una alerta: reintentar envía el serial corregido
+reiniciar();
+inventario = { HWTC9Z8Y7X6W: { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico' } } };
+r = await enviar('inst1');
+check('con el serial mal escrito queda la alerta con ese serial', [r.json.estado, envio('inst1').serial, commitsTelecom.length], ['SERIAL_NO_ENCONTRADO', 'HWTC1A2B3C4D', 0]);
+ordenes.inst1 = fieldsDe({ ...instalacion, estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', instalacion: { ...instalacion.instalacion, serial: 'HWTC9Z8Y7X6W', metraje: 95 } });
+r = await reintentar('inst1');
+check('reintentar envía lo que dice la orden ahora (serial y metraje corregidos), no lo que se guardó antes', [r.json.estado, envio('inst1').serial, envio('inst1').dropMetros, dec(escrituraDe(commitsTelecom[0], 'materialLogs').update.fields).equipoSerial, dec(escrituraDe(commitsTelecom[0], 'materialLogs').update.fields).drop], ['ENVIADO', 'HWTC9Z8Y7X6W', 95, 'HWTC9Z8Y7X6W', -0.095]);
+reiniciar();
+inventario = {};
+await enviar('inst1');
+ordenes = {};
+check('si la orden ya se archivó, reintentar usa lo que quedó guardado del envío', [(await reintentar('inst1')).json.estado, envio('inst1').serial], ['SERIAL_NO_ENCONTRADO', 'HWTC1A2B3C4D']);
+reiniciar();
+inventario = {};
+await enviar('inst1');
+ordenes.inst1 = fieldsDe({ ...instalacion, estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', instalacion: { serial: 'HWTC1A2B3C4D' } });
+check('si la corrección deja la orden sin nada que enviar (sin metraje), reintentar borra la alerta', [(await reintentar('inst1')).json.estado, envio('inst1'), commitsTelecom.length], ['OMITIDO', null, 0]);
+
 // 4) Equipo ya instalado a otro cliente
 reiniciar();
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Otro Cliente' };

@@ -7,9 +7,11 @@
 //   - Cambio de equipo       -> cambio_equipo: el serial del equipo nuevo pasa a "Instalado" (no gasta material).
 //   - Recableado             -> averia: solo el material (drop y conectores), con el motivo "Recableado - Orden #1234".
 //   - Visita de conector     -> averia: solo el material, con el motivo "Visita de conector externo - Orden #1234".
+// El serial se envía como lo ve la OLT (ver utils/serialOlt): el de la caja de TP-Link (GOPN...) se convierte; lo guardado en la orden no cambia.
 // Cualquier otra orden (drop atenuado, averías sin material...) no envía nada.
 import { conectoresPorColor, esCambioEquipoFinalizado, esInstalacionFinalizada, esRecableadoFinalizado, esVisitaConectorFinalizada } from './consumoMateriales.js';
 import { etiquetaTipoVisita } from './tipoVisita.js';
+import { serialParaOlt } from './serialOlt.js';
 
 export const ACCION_INSTALACION = 'instalacion_nueva';
 export const ACCION_CAMBIO_EQUIPO = 'cambio_equipo';
@@ -56,10 +58,10 @@ export function payloadEnvioInventario(t) {
   const material = { apc: verde, upc: azul };
 
   if (esCambioEquipoFinalizado(t)) {
-    return { ...base, accion: ACCION_CAMBIO_EQUIPO, serial: soloLetrasYNumeros(t.serialEquipo).toUpperCase(), apc: 0, upc: 0, dropMetros: 0, motivo: '' };
+    return { ...base, accion: ACCION_CAMBIO_EQUIPO, serial: serialParaOlt(soloLetrasYNumeros(t.serialEquipo)), apc: 0, upc: 0, dropMetros: 0, motivo: '' };
   }
   if (esInstalacionFinalizada(t)) {
-    return { ...base, accion: ACCION_INSTALACION, serial: soloLetrasYNumeros(t.instalacion?.serial).toUpperCase(), ...material, dropMetros: Number(t.instalacion?.metraje) || 0, motivo: '' };
+    return { ...base, accion: ACCION_INSTALACION, serial: serialParaOlt(soloLetrasYNumeros(t.instalacion?.serial)), ...material, dropMetros: Number(t.instalacion?.metraje) || 0, motivo: '' };
   }
   if (esRecableadoFinalizado(t)) {
     return { ...base, accion: ACCION_AVERIA, serial: '', ...material, dropMetros: Number(t.metrosCable) || 0, motivo: `Recableado - ${orden}` };

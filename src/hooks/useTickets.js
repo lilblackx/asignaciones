@@ -12,6 +12,8 @@ import { MENSAJE_PROMOTOR_OBLIGATORIO, claveNombre, nombrePromotora } from '../u
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
+import { cambiosDatosTecnico } from '../utils/edicionDatosTecnico';
+import { errorSerialCaja } from '../utils/serialOlt';
 import { devolucionPendiente } from '../utils/devolucion';
 import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado, llevaCobro, monedaDe, textoMonto, tieneCobroFinal, valorCobro } from '../utils/cobro';
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
@@ -663,7 +665,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     // Un técnico no pre-finaliza una instalación por aquí sin los datos obligatorios: se llenan con
     // el botón "Pre-finalizar" (que los pide).
     if (role === 'TECNICO' && editingTicket.estado === 'PRE-FINALIZADO' && originalTicket?.estado !== 'PRE-FINALIZADO'
-      && esInstalacion(editingTicket.tipoTrabajo) && (!instalacionCompleta(editingTicket) || errorConectoresInstalacion(editingTicket.instalacion?.conectores))) {
+      && esInstalacion(editingTicket.tipoTrabajo) && (!instalacionCompleta(editingTicket) || errorConectoresInstalacion(editingTicket.instalacion?.conectores) || errorSerialCaja(editingTicket.instalacion?.serial))) {
       setToastMsg({ type: 'error', text: 'En una instalación llena el serial, la VLAN, la NAP, el puerto, el metraje del drop, la posteadura, los puertos disponibles y los conectores usados con el botón "Pre-finalizar".' });
       return false;
     }
@@ -692,6 +694,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');
         if (esInstalacion(editingTicket.tipoTrabajo) && promotoraDeOrden(originalTicket) !== ticketToSave.promotora) cambios.push(`Promotor: ${ticketToSave.promotora || 'Vacío'}`);
         if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
+        // Lo que cargó el técnico y la oficina corrigió (serial, VLAN, metraje, conectores, tipo de visita...).
+        cambios.push(...cambiosDatosTecnico(originalTicket, ticketToSave));
         if ((originalTicket.ubicacion || '') !== ticketToSave.ubicacion) cambios.push('Ubicación modificada');
         if ((originalTicket.napCoordenadas || '') !== ticketToSave.napCoordenadas) cambios.push(`Coord. NAP: ${ticketToSave.napCoordenadas || 'Vacías'}`);
         if ((originalTicket.potenciaDbm ?? null) !== ticketToSave.potenciaDbm) cambios.push(`Potencia: ${ticketToSave.potenciaDbm ?? 'Vacía'}${ticketToSave.potenciaDbm != null ? ' dBm' : ''}`);
@@ -781,15 +785,22 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     // Cambio de equipo: el serial del equipo nuevo es obligatorio.
     const serialEquipoParseado = esCambioEquipo(tipoVisita) ? parseSerialEquipo(serialEquipo) : null;
-    if (serialEquipoParseado?.error) {
-      setToastMsg({ type: 'error', text: serialEquipoParseado.error });
+    const errorSerialEquipo = serialEquipoParseado?.error || (serialEquipoParseado ? errorSerialCaja(serialEquipo) : '');
+    if (errorSerialEquipo) {
+      setToastMsg({ type: 'error', text: errorSerialEquipo });
       return false;
     }
 
-    // Instalación: el serial, la VLAN, al menos un poste, la NAP y el puerto son obligatorios.
+    // Instalación: el serial, la VLAN, al menos un poste, la NAP y el puerto son obligatorios. El serial, además, debe ser el
+    // de la etiqueta (PON S/N o GPON...): el envío al inventario del almacén falla con una MAC o un "GOPN" mal escrito.
     const reporteInstalacion = esInstalacion(ticket.tipoTrabajo) ? validarInstalacion(instalacion || {}) : null;
     if (reporteInstalacion?.error) {
       setToastMsg({ type: 'error', text: Object.values(reporteInstalacion.errores)[0] });
+      return false;
+    }
+    const errorSerialInstalacion = reporteInstalacion ? errorSerialCaja(instalacion?.serial) : '';
+    if (errorSerialInstalacion) {
+      setToastMsg({ type: 'error', text: errorSerialInstalacion });
       return false;
     }
     if (reporteInstalacion && !instalacionCompleta({ instalacion })) {

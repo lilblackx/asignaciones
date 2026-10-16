@@ -16,6 +16,7 @@ import { esInstalacion as trabajoEsInstalacion, napConPuerto, validarInstalacion
 import ConectoresRecableado, { CantidadesConectorInstalacion, CantidadesConectorVisita } from './ConectoresRecableado';
 import { normalizarConectoresInstalacion, parseConectoresInstalacion } from '../../utils/conectoresInstalacion';
 import SerialEquipoCampo from './SerialEquipoCampo';
+import { errorSerialCaja } from '../../utils/serialOlt';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
 
@@ -97,8 +98,13 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     const metrosParseados = recableado ? parseMetros(metros) : null;
     const cantidades = parseCantidadesConector(tipoVisita, { verde: cantVerde, azul: cantAzul });
     const errorCantidad = cantidades.error || '';
-    const serialEquipoParseado = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
-    const instalacion = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
+    // Además del formato, el serial debe ser el de la etiqueta (PON S/N o GPON...), no la MAC ni un "GOPN" mal escrito.
+    const serialEquipoLeido = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
+    const errorFormatoEquipo = serialEquipoLeido && !serialEquipoLeido.error ? errorSerialCaja(serialEquipo) : '';
+    const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
+    const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
+    const errorFormatoSerial = instalacionLeida && !instalacionLeida.errores.serial ? errorSerialCaja(serial) : '';
+    const instalacion = errorFormatoSerial ? { ...instalacionLeida, errores: { ...instalacionLeida.errores, serial: errorFormatoSerial }, error: true } : instalacionLeida;
     const conectoresInst = esInstalacion ? parseConectoresInstalacion({ externoVerde: instExternoVerde, internoVerde: instInternoVerde, internoAzul: instInternoAzul }) : null;
     // Con conector externo y en las instalaciones la NAP real y el puerto son obligatorios.
     const pideNapPuerto = conectorExterno || esInstalacion;
@@ -252,6 +258,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
               serial={serialEquipo}
               onSerial={(v) => { setSerialEquipo(v); if (serialEquipoError) setSerialEquipoError(''); }}
               error={serialEquipoError}
+              verificar
             />
           )}
 

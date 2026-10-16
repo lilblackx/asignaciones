@@ -76,7 +76,7 @@ check('"Copiar todo": la orden, el cliente y, aparte, el equipo', d.texto, [
   'Servicio: SM',
   'Plan: 200mg x 17$',
   '',
-  'Serial / MAC: VSOLGVSAVSAVSAVA',
+  'Serial: VSOLGVSAVSAVSAVA',
   'VLAN: 1700',
   'NAP: O02B12',
   'Puerto del cliente: 3',

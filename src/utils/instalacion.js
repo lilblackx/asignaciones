@@ -117,7 +117,7 @@ export function instalacionCompleta(ticket) {
 }
 
 // Nombres con los que se muestra lo que falta de una instalación (los mismos del modal de revisión).
-const NOMBRE_FALTANTE = { serial: 'Serial / MAC', vlan: 'VLAN', posteadura: 'Posteadura', metraje: 'Drop', nap: 'NAP', puerto: 'Puerto', puertosDisponibles: 'Puertos disponibles' };
+const NOMBRE_FALTANTE = { serial: 'Serial', vlan: 'VLAN', posteadura: 'Posteadura', metraje: 'Drop', nap: 'NAP', puerto: 'Puerto', puertosDisponibles: 'Puertos disponibles' };
 
 // Lo que le falta (o no es válido) a una instalación para estar completa, con esos nombres y en el orden de
 // la revisión. Lista vacía si está completa o si la orden no es una instalación.

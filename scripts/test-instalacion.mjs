@@ -93,13 +93,13 @@ check('conectores: cuentan como "hay datos" y salen en el historial', [tieneDato
 const instalacionOk = { tipoTrabajo: 'INSTALACIÓN', instalacion: datos.datos };
 check('una instalación completa no tiene faltantes', faltantesInstalacion(instalacionOk), []);
 check('una instalación sin nada registrado lista todo, con los nombres y el orden de la revisión',
-  faltantesInstalacion({ tipoTrabajo: 'INSTALACIÓN' }), ['Serial / MAC', 'VLAN', 'NAP', 'Puerto', 'Drop', 'Posteadura', 'Puertos disponibles']);
+  faltantesInstalacion({ tipoTrabajo: 'INSTALACIÓN' }), ['Serial', 'VLAN', 'NAP', 'Puerto', 'Drop', 'Posteadura', 'Puertos disponibles']);
 check('solo lista lo que falta', [
   faltantesInstalacion({ ...instalacionOk, instalacion: { ...datos.datos, metraje: null } }),
   faltantesInstalacion({ ...instalacionOk, instalacion: { ...datos.datos, serial: '', vlan: '' } }),
   faltantesInstalacion({ ...instalacionOk, instalacion: { ...datos.datos, nap: 'SN', puerto: '' } }),
   faltantesInstalacion({ ...instalacionOk, instalacion: { ...datos.datos, posteadura: [], puertosDisponibles: '' } }),
-], [['Drop'], ['Serial / MAC', 'VLAN'], ['NAP', 'Puerto'], ['Posteadura', 'Puertos disponibles']]);
+], [['Drop'], ['Serial', 'VLAN'], ['NAP', 'Puerto'], ['Posteadura', 'Puertos disponibles']]);
 check('una instalación anterior al metraje (sin drop) lo marca', faltantesInstalacion({ ...instalacionOk, instalacion: (({ metraje, ...resto }) => resto)(datos.datos) }), ['Drop']);
 check('un dato inválido cuenta como faltante', faltantesInstalacion({ ...instalacionOk, instalacion: { ...datos.datos, vlan: '9999' } }), ['VLAN']);
 check('una orden que no es instalación nunca tiene faltantes', [faltantesInstalacion({ tipoTrabajo: 'AVERÍA' }), faltantesInstalacion({}), faltantesInstalacion(null)], [[], [], []]);
@@ -237,7 +237,7 @@ const enRevision = datosAutorizacion({ ...instalacionOk, nombre: 'Ana', codigo: 
   .filter(c => c !== 'puerto').map(c => (c === 'drop' ? 'metraje' : c));
 check('modal de revisión: mismo orden que el formulario', enRevision, ORDEN);
 
-const NOMBRE_A_CLAVE = { 'Serial / MAC': 'serial', VLAN: 'vlan', NAP: 'nap', Puerto: 'puerto', Drop: 'metraje', Posteadura: 'posteadura', 'Puertos disponibles': 'puertosDisponibles' };
+const NOMBRE_A_CLAVE = { 'Serial': 'serial', VLAN: 'vlan', NAP: 'nap', Puerto: 'puerto', Drop: 'metraje', Posteadura: 'posteadura', 'Puertos disponibles': 'puertosDisponibles' };
 check('aviso de lo que falta: mismo orden',
   faltantesInstalacion({ tipoTrabajo: 'INSTALACIÓN' }).map(n => NOMBRE_A_CLAVE[n]).filter(c => c !== 'puerto'), ORDEN);
 
@@ -247,10 +247,10 @@ const ID_A_CLAVE = { 'pf-serial': 'serial', 'pf-vlan': 'vlan', 'pf-nap': 'nap', 
 const foco = [...cadena.matchAll(/getElementById\('([^']+)'\)/g)].map(m => ID_A_CLAVE[m[1]]).filter(Boolean);
 check('salto del cursor al validar: mismo orden (con el puerto detrás de la NAP)', foco, ['serial', 'vlan', 'nap', 'puerto', 'metraje', 'posteadura', 'puertosDisponibles']);
 
-// Rótulos: el serial se llama "Serial / MAC" en el formulario y en la revisión; el drop conserva su nombre en cada lugar
-check('rótulo del serial en el formulario', /SERIAL \/ MAC <span/.test(formulario), true);
+// Rótulos: el serial se llama "Serial" en el formulario y en la revisión; el drop conserva su nombre en cada lugar
+check('rótulo del serial en el formulario', /SERIAL <span/.test(formulario), true);
 check('el rótulo del drop en el formulario no cambia', /METRAJE DEL DROP <span/.test(formulario), true);
-check('rótulos en el modal de revisión', datosAutorizacion({ ...instalacionOk, nombre: 'Ana' }).equipo.map(d => d.etiqueta).slice(0, 5), ['Serial / MAC', 'VLAN', 'NAP', 'Puerto del cliente', 'Drop']);
+check('rótulos en el modal de revisión', datosAutorizacion({ ...instalacionOk, nombre: 'Ana' }).equipo.map(d => d.etiqueta).slice(0, 5), ['Serial', 'VLAN', 'NAP', 'Puerto del cliente', 'Drop']);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

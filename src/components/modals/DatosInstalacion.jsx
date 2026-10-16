@@ -1,19 +1,26 @@
+import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import NapPuertoCampos from './NapPuertoCampos';
 import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
+import { evaluarSerialCaja } from '../../utils/serialOlt';
 
-const claseInput = (error) =>
-  `w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`;
+const claseInput = (error, correcto = false) =>
+  `w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`;
 const claseEtiqueta = 'text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1';
 
 // Lo que el técnico llena al instalar y la plantilla de la promotora trae vacío. Los campos van en el mismo orden
-// que en el modal de revisión de la oficina (ver DatosParaAutorizar): serial / MAC, VLAN, NAP y puerto donde
+// que en el modal de revisión de la oficina (ver DatosParaAutorizar): serial, VLAN, NAP y puerto donde
 // conecta el cliente (iguales que en la visita de conector externo), metraje del drop, posteadura (uno o varios
 // postes) y puertos disponibles en la NAP. Todo es obligatorio. Si se cambia el orden aquí, también el del
 // modal de revisión y el del foco al validar (PreFinalizarModal): lo vigila la prueba de utils/instalacion.
 export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, metraje, onMetraje, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
   const cambiarPoste = (i, valor) => onPostes(postes.map((p, j) => (j === i ? valor : p)));
+  // Recuadro del serial: verde si es correcto; rojo si no (el rojo sale al salir del campo, salvo "GOPN", que se avisa de una vez).
+  const [serialTocado, setSerialTocado] = useState(false);
+  const evaluacionSerial = evaluarSerialCaja(serial);
+  const serialRojo = evaluacionSerial.estado === 'error' && (serialTocado || evaluacionSerial.codigo === 'GOPN');
+  const serialVerde = evaluacionSerial.estado === 'ok';
 
   return (
     <div className="space-y-4">
@@ -21,7 +28,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
 
       <div className="space-y-1">
         <label htmlFor="pf-serial" className={claseEtiqueta}>
-          SERIAL / MAC <span className="font-normal text-red-500">(obligatorio)</span>
+          SERIAL <span className="font-normal text-red-500">(obligatorio)</span>
         </label>
         <input
           id="pf-serial"
@@ -33,11 +40,14 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           placeholder="Ej. HWTC1A2B3C4D"
           value={serial}
           onChange={(e) => onSerial(e.target.value.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase())}
-          aria-invalid={!!errores.serial}
-          aria-describedby={errores.serial ? 'pf-serial-error' : undefined}
-          className={claseInput(errores.serial)}
+          onBlur={() => setSerialTocado(true)}
+          aria-invalid={!!errores.serial || serialRojo}
+          aria-describedby={errores.serial || serialRojo || serialVerde ? 'pf-serial-error' : undefined}
+          className={claseInput(errores.serial || serialRojo, serialVerde)}
         />
-        {errores.serial && <p id="pf-serial-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.serial}</p>}
+        {errores.serial || serialRojo
+          ? <p id="pf-serial-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.serial || evaluacionSerial.mensaje}</p>
+          : serialVerde && <p id="pf-serial-error" role="status" className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacionSerial.mensaje}</p>}
       </div>
 
       <div className="space-y-1">

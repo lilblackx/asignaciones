@@ -178,6 +178,15 @@ async function payloadDeOrden(env, deps, accessToken, ticketId) {
   return { payload: payloadEnvioInventario({ ...ticket, id: ticketId }) };
 }
 
+// Lo que hay que enviar ahora: lo que dice la orden en este momento (así lo que la oficina corrigió después de una alerta, como un
+// serial mal escrito, llega al reintentar) o, si la orden ya se archivó y `usarGuardado`, lo que quedó guardado del envío.
+//   { payload } | { omitir: true } (la orden ya no tiene nada que enviar) | { archivada: true } (no hay de dónde sacarlo)
+async function payloadAEnviar(env, deps, accessToken, ticketId, existente, usarGuardado) {
+  const orden = await payloadDeOrden(env, deps, accessToken, ticketId);
+  if (orden.archivada) return usarGuardado && existente?.accion ? { payload: existente } : { archivada: true };
+  return orden.payload ? { payload: orden.payload } : { omitir: true };
+}
+
 async function borrarEnvio(env, deps, accessToken, ticketId) {
   await deps.commitFirestore(env, accessToken, [{ delete: `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${deps.rutaDatos(env)}/telecomEnvios/${ticketId}` }]);
 }
@@ -243,17 +252,14 @@ export async function manejarInventario(request, env, headers, uid, deps, ahoraM
     if (existente?.estado === ESTADO_ENVIADO) return json({ estado: ESTADO_ENVIADO, repetido: true }, 200, headers);
 
     if (reintento && !existente) return new Response('No hay un envío para reintentar.', { status: 404, headers });
-    // Reintentar usa lo que ya se guardó (la orden pudo archivarse); enviar y las marcas sin datos, la orden misma.
-    let payload = reintento && existente.accion ? existente : null;
-    if (!payload) {
-      const orden = await payloadDeOrden(env, deps, accessToken, ticketId);
-      if (orden.archivada) return new Response('Orden no encontrada.', { status: 404, headers });
-      if (!orden.payload) {
-        if (existente) await borrarEnvio(env, deps, accessToken, ticketId);
-        return json({ estado: 'OMITIDO' }, 200, headers);
-      }
-      payload = orden.payload;
+    // Se envía lo que dice la orden ahora; solo si ya se archivó, reintentar usa lo que quedó guardado.
+    const aEnviar = await payloadAEnviar(env, deps, accessToken, ticketId, existente, reintento);
+    if (aEnviar.archivada) return new Response('Orden no encontrada.', { status: 404, headers });
+    if (aEnviar.omitir) {
+      if (existente) await borrarEnvio(env, deps, accessToken, ticketId);
+      return json({ estado: 'OMITIDO' }, 200, headers);
     }
+    const payload = aEnviar.payload;
     const resultado = await procesar(env, deps, accessToken, ticketId, camposPayloadDe(payload), reintento ? { ...existente, intentos: 0 } : existente, ahoraMs);
     return json(resultado, 200, headers);
   } catch (err) {
@@ -277,18 +283,14 @@ export async function reintentarPendientes(env, deps, ahoraMs = Date.now()) {
   for (const doc of pendientes.slice(0, MAX_POR_CRON)) {
     const ticketId = doc.name.split('/').pop();
     const existente = camposAObjeto(doc.fields);
-    let payload = existente.accion ? existente : null;
-    if (!payload) {
-      const orden = await payloadDeOrden(env, deps, accessToken, ticketId);
-      if (orden.archivada) {
-        await guardarEnvio(env, deps, accessToken, ticketId, { ticketId, estado: 'ERROR', mensaje: MENSAJE_ARCHIVADA, intentos: existente.intentos || 0, creadoEn: existente.creadoEn || ahoraMs, actualizadoEn: ahoraMs });
-        await deps.avisarInventario(env, accessToken, 'Orden no enviada al inventario', MENSAJE_ARCHIVADA, { tipo: 'inventario', tag: `inventario:${ticketId}` }).catch(() => {});
-        continue;
-      }
-      if (!orden.payload) { await borrarEnvio(env, deps, accessToken, ticketId); continue; }
-      payload = orden.payload;
+    const aEnviar = await payloadAEnviar(env, deps, accessToken, ticketId, existente, true);
+    if (aEnviar.archivada) {
+      await guardarEnvio(env, deps, accessToken, ticketId, { ticketId, estado: 'ERROR', mensaje: MENSAJE_ARCHIVADA, intentos: existente.intentos || 0, creadoEn: existente.creadoEn || ahoraMs, actualizadoEn: ahoraMs });
+      await deps.avisarInventario(env, accessToken, 'Orden no enviada al inventario', MENSAJE_ARCHIVADA, { tipo: 'inventario', tag: `inventario:${ticketId}` }).catch(() => {});
+      continue;
     }
-    await procesar(env, deps, accessToken, ticketId, camposPayloadDe(payload), existente, ahoraMs);
+    if (aEnviar.omitir) { await borrarEnvio(env, deps, accessToken, ticketId); continue; }
+    await procesar(env, deps, accessToken, ticketId, camposPayloadDe(aEnviar.payload), existente, ahoraMs);
     reintentados++;
   }
   return { reintentados };
