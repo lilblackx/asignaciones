@@ -6,7 +6,8 @@ import { RETENCION_MS_HISTORIAL, RETENCION_MS_HISTORIAL_VENTAS } from '../utils/
 // Mientras la copia guardada en el equipo sea más nueva que esto no se vuelve a leer de Firestore: el historial solo
 // cambia cuando se cierra el día, y abrir la app varias veces seguidas no debe costar lecturas cada vez.
 export const VIGENCIA_COPIA_MS = 30 * 60 * 1000;
-const CLAVE_COPIA = 'asignaciones:historialInstalaciones:';
+// El número cambia cuando se corrigen datos ya guardados (relleno de plantillas): descarta las copias anteriores.
+const CLAVE_COPIA = 'asignaciones:historialInstalaciones:v2:';
 
 function copiaGuardada(llave) {
   try {

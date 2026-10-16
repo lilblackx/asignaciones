@@ -683,6 +683,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         ticketToSave.promotora = promotoraDeOrden(editingTicket);
         ticketToSave.promotoraClave = claveNombre(ticketToSave.promotora);
       }
+      // Si la oficina corrige una instalación ya finalizada, la plantilla guardada se rehace con lo corregido.
+      if (ticketToSave.estado === 'FINALIZADO') Object.assign(ticketToSave, plantillaFinalDe(ticketToSave));
       if (originalTicket) {
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
@@ -754,6 +756,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ubicacion: ubicacion.valor,
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
+    if (updatedTicket.estado === 'FINALIZADO') Object.assign(updatedTicket, plantillaFinalDe(updatedTicket));
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: 'Ubicación guardada.' });
     notifyTicketChange(ticket, updatedTicket);
