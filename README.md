@@ -51,7 +51,13 @@ PWA para el control y seguimiento de asignaciones (instalaciones, reconexiones, 
 
 ## Stack
 
-React 19, Vite 8, Tailwind CSS 4, Firebase (Auth, Firestore, Hosting, Cloud Messaging), `vite-plugin-pwa` con Workbox, Cloudflare Workers.
+- **App (PWA):** React 19 (JavaScript con JSX, sin TypeScript), Vite 8, Tailwind CSS 4 (con PostCSS y Autoprefixer), Lucide React para los iconos y la tipografía Inter (`@fontsource-variable/inter`). Sin librería de estado ni router: hooks propios. `vite-plugin-pwa` con Workbox y un Service Worker propio (`src/sw.js`, estrategia `injectManifest`) para el precache y las notificaciones push en segundo plano.
+- **Datos y servicios:** Firebase (Authentication, Cloud Firestore con reglas por rol e índices propios, Hosting con cabeceras de seguridad y Cloud Messaging).
+- **Servidores intermedios:** dos Cloudflare Workers (`cf-worker/` y `cf-worker-tomodat/`) desplegados con Wrangler 3, con `jose` para validar los tokens de Firebase y firmar la cuenta de servicio. El de Tomodat guarda el catálogo en Cloudflare KV.
+- **Servicios externos:** Tomodat (cajas NAP), SmartOLT (señal y datos de la ONU), el inventario del almacén (otro proyecto de Firebase), DolarAPI (tasa BCV del euro) y WhatsApp por enlace `wa.me` (sin integración por API).
+- **Calidad y herramientas:** ESLint 10 con reglas de React Hooks, scripts de prueba propios en Node (`scripts/test-*.mjs`, sin Jest ni Vitest), `@firebase/rules-unit-testing` con los emuladores de Firebase, Firebase CLI, `firebase-admin` y Node 22.
+
+El detalle completo está en [`docs/STACK-TECNOLOGICO.txt`](docs/STACK-TECNOLOGICO.txt).
 
 ## Requisitos
 
