@@ -76,6 +76,7 @@ const enc = (v) => (typeof v === 'string' ? s(v) : typeof v === 'number' ? n(v) 
 const fieldsDe = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, enc(v)]));
 const dec = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, 'stringValue' in v ? v.stringValue : 'integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : v]));
 
+let sinPermisoAuditoria = false; // sus reglas no dejan escribir auditLogs
 let roles, ordenes, envios, inventario, comportamientoTelecom, llamadasTelecom, commitsTelecom, loginsTelecom, pushes, consultasNuestras;
 const respuesta = (cuerpo, status = 200) => new Response(typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -100,7 +101,11 @@ globalThis.fetch = async (url, init = {}) => {
       const item = inventario[serial];
       return respuesta(item ? [{ document: { name: `${DOCS_TELECOM}/inventory/${item.id}`, fields: fieldsDe(item.campos) } }] : [{}]);
     }
-    if (u.endsWith(':commit')) { commitsTelecom.push(cuerpo.writes); return respuesta({}); }
+    if (u.endsWith(':commit')) {
+      if (sinPermisoAuditoria && cuerpo.writes.some((w) => w.update?.name.includes('/auditLogs/'))) return respuesta({ error: { status: 'PERMISSION_DENIED' } }, 403);
+      commitsTelecom.push(cuerpo.writes);
+      return respuesta({});
+    }
   }
   // --- nuestro Firestore ---
   if (u.includes('/users/')) {
@@ -270,6 +275,13 @@ reiniciar();
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: '  ANA   PEREZ ' };
 r = await enviar('inst1');
 check('el mismo cliente escrito distinto en su inventario (mayúsculas, sin tilde, espacios) no es "otro cliente"', [r.json.estado, commitsTelecom.length], ['ENVIADO', 1]);
+
+// 4b) Si sus reglas no dejan escribir la auditoría, el descuento del inventario sigue adelante sin ella
+reiniciar();
+sinPermisoAuditoria = true;
+r = await enviar('inst1');
+check('sin permiso para auditLogs: se envía igual, con el equipo y el material y sin la auditoría', [r.json.estado, commitsTelecom.length, commitsTelecom[0]?.length, Boolean(escrituraDe(commitsTelecom[0] || [], 'auditLogs'))], ['ENVIADO', 1, 2, false]);
+sinPermisoAuditoria = false;
 
 // 5) Cambio de equipo: solo el equipo, sin registro de material
 reiniciar();

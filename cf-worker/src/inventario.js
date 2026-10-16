@@ -176,10 +176,16 @@ export async function enviarAlInventario(env, ticketId, p, ahoraMs = Date.now())
     escrituras.push({ update: { name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/materialLogs/${id}`, fields: { id: { doubleValue: id }, ...campos(registro) } } });
   }
 
-  // Su historial de auditoría: una línea por orden enviada, aunque no hubiera material (el cambio de equipo no gasta).
-  escrituras.push(escrituraAuditoria(env, ticketId, p, fechaHora));
-
-  await llamarTelecom(env, `${docsTelecom(env)}:commit`, { writes: escrituras }, ahoraMs);
+  // Su historial de auditoría: una línea por orden enviada, aunque no hubiera material (el cambio de equipo no gasta). Va en el
+  // mismo commit que el resto; si sus reglas no nos dejan escribirla (403), el descuento del inventario no se frena por eso.
+  const url = `${docsTelecom(env)}:commit`;
+  try {
+    await llamarTelecom(env, url, { writes: [...escrituras, escrituraAuditoria(env, ticketId, p, fechaHora)] }, ahoraMs);
+  } catch (err) {
+    if (!String(err.message).includes(' 403:')) throw err;
+    console.error(`No se pudo escribir la auditoría de ${ticketId}; se envía sin ella:`, err);
+    await llamarTelecom(env, url, { writes: escrituras }, ahoraMs);
+  }
   return { estado: ESTADO_ENVIADO, mensaje: '' };
 }
 

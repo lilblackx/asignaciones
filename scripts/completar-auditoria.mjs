@@ -19,7 +19,8 @@ const desdeMs = desdeTexto ? Date.parse(`${desdeTexto}T00:00:00-04:00`) : 0;
 if (desdeTexto && Number.isNaN(desdeMs)) { console.error('--desde debe ser AAAA-MM-DD.'); process.exit(1); }
 
 const env = Object.fromEntries(['TELECOM_EMAIL', 'TELECOM_PASSWORD', 'TELECOM_API_KEY', 'TELECOM_PROJECT_ID', 'TELECOM_APP_ID'].map((k) => [k, process.env[k]]));
-const faltan = Object.entries(env).filter(([, v]) => !v).map(([k]) => k);
+// El proyecto y la ruta bastan para listar; el usuario y la clave solo hacen falta al escribir.
+const faltan = Object.entries(env).filter(([k, v]) => !v && (aplicar || k === 'TELECOM_PROJECT_ID' || k === 'TELECOM_APP_ID')).map(([k]) => k);
 if (faltan.length) { console.error(`Faltan estas variables: ${faltan.join(', ')}.`); process.exit(1); }
 
 initializeApp({
@@ -50,15 +51,23 @@ const sesion = await (await fetch(`https://identitytoolkit.googleapis.com/v1/acc
 })).json();
 if (!sesion.idToken) { console.error(`No se pudo iniciar sesión en el inventario (${sesion.error?.message || 'sin detalle'}).`); process.exit(1); }
 
-// Lotes de 100 (el límite del commit de Firestore es 500 escrituras).
+// Una por una y sin pisar las que ya existen: así se ve qué pasó con cada orden (si sus reglas solo dejan crear, una que ya
+// existía no debe tumbar a las demás).
 let escritas = 0;
-for (let i = 0; i < lineas.length; i += 100) {
+let yaExistian = 0;
+let sinPermiso = 0;
+for (const [i, linea] of lineas.entries()) {
   const res = await fetch(`https://firestore.googleapis.com/v1/projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents:commit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sesion.idToken}` },
-    body: JSON.stringify({ writes: lineas.slice(i, i + 100) }),
+    body: JSON.stringify({ writes: [{ ...linea, currentDocument: { exists: false } }] }),
   });
-  if (!res.ok) { console.error(`El inventario respondió ${res.status}: ${(await res.text()).slice(0, 200)}`); break; }
-  escritas += Math.min(100, lineas.length - i);
+  const codigo = enviados[i].codigo || enviados[i].id;
+  if (res.ok) { escritas++; continue; }
+  const estado = (await res.json().catch(() => ({})))?.error?.status;
+  if (estado === 'ALREADY_EXISTS') { yaExistian++; console.log(`  ${codigo}: ya tenía su línea.`); continue; }
+  if (estado === 'PERMISSION_DENIED') { sinPermiso++; console.log(`  ${codigo}: sin permiso para escribir en auditLogs.`); continue; }
+  console.error(`  ${codigo}: el inventario respondió ${res.status} (${estado || 'sin detalle'}).`);
 }
-console.log(`\nEscritas: ${escritas} de ${lineas.length}.`);
+console.log(`
+Escritas: ${escritas}. Ya existían: ${yaExistian}. Sin permiso: ${sinPermiso}. Total: ${lineas.length}.`);
