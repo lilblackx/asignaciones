@@ -89,7 +89,7 @@ export default function App({ auth }) {
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
   const verInventario = veEnviosInventario(currentUser);
-  const { envios: enviosInventario, recientes: enviosRecientes, cargandoRecientes, cargarRecientes, actualizarRecientes, reintentar: reintentarEnvio, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
+  const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
   useCompletarPromotoras(firebaseUser, role, tickets);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports, refreshReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
@@ -573,7 +573,7 @@ export default function App({ auth }) {
         />
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
-          {verInventario && <AvisoInventario cantidad={enviosInventario.length} onAbrir={() => setIsInventarioOpen(true)} />}
+          {verInventario && <AvisoInventario cantidad={enviosInventario.length} pendientes={enviosPendientes.length} onAbrir={() => setIsInventarioOpen(true)} />}
           {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} onActivar={push.activar} avisarFallo={isTecnico} />}
           <FiltersBar
             searchTerm={searchTerm}
@@ -881,11 +881,16 @@ export default function App({ auth }) {
         {verInventario && isInventarioOpen && (
           <EnviosInventarioModal
             envios={enviosInventario}
+            pendientes={enviosPendientes}
             recientes={enviosRecientes}
             cargando={cargandoRecientes}
+            hayMas={hayMasEnvios}
             onCargar={cargarRecientes}
+            onCargarMas={cargarMasEnvios}
             onActualizar={actualizarRecientes}
             onReintentar={reintentarEnvio}
+            onReintentarTodas={reintentarTodasEnvios}
+            onBuscar={buscarEnvios}
             onDescartar={descartarEnvio}
             onClose={() => setIsInventarioOpen(false)}
           />

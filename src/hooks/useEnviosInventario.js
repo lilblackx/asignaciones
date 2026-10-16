@@ -1,42 +1,69 @@
-import { useCallback, useEffect, useState } from 'react';
-import { collection, doc, getDocs, limit, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { collection, doc, getDocs, limit, onSnapshot, orderBy, query, startAfter, updateDoc, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { llamarInventario } from '../lib/inventario';
-import { ESTADOS_CON_ALERTA, ESTADO_DESCARTADO } from '../utils/envioInventario';
+import { ESTADOS_CON_ALERTA, ESTADO_DESCARTADO, ESTADO_ENVIADO, ESTADO_PENDIENTE } from '../utils/envioInventario';
 
-const TAMANO_RECIENTES = 30;
+const TAMANO_PAGINA = 10;
 const coleccionEnvios = () => collection(db, 'artifacts', appId, 'public', 'data', 'telecomEnvios');
 
 // Envíos al inventario del otro sistema: lo que pasó con cada orden aprobada. Solo para los usuarios del módulo (ver
 // utils/accesoInventario; las reglas de Firestore lo exigen también). `puedeVer` es false para cualquier otro y no se lee nada.
 //  - envios: las órdenes que necesitan que alguien las mire (serial que no existe en su inventario, equipo ya instalado a otro
 //    cliente, orden sin serial, o agotó los reintentos). Es un listener sobre pocos documentos: sin alertas no gasta nada más
-//    que la lectura inicial. Lo PENDIENTE no aparece aquí: se reintenta solo.
-//  - recientes: la actividad de los últimos envíos, de cualquier estado; se lee solo al abrir el módulo o al actualizar.
+//    que la lectura inicial.
+//  - pendientes: lo que ya falló al menos una vez por no poder llegar al otro sistema (red, clave...) y se reintenta solo cada
+//    15 minutos. Va en el mismo listener (una orden que se envía a la primera pasa por PENDIENTE sin intentos y no se cuenta).
+//  - recientes: la actividad de los últimos envíos, de cualquier estado; se leen solo los últimos 10 al abrir el módulo o al
+//    actualizar, y de 10 en 10 más con "Cargar más" (cada página cuesta sus lecturas, así que no se trae nada que no se pida).
 export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg) {
   const [envios, setEnvios] = useState([]);
+  const [pendientes, setPendientes] = useState([]);
   const [recientes, setRecientes] = useState([]);
   const [cargandoRecientes, setCargandoRecientes] = useState(false);
+  const [hayMas, setHayMas] = useState(false);
+  const ultimoDoc = useRef(null);
 
   useEffect(() => {
     if (!firebaseUser || !puedeVer) return undefined;
     const cancelar = onSnapshot(
-      query(coleccionEnvios(), where('estado', 'in', ESTADOS_CON_ALERTA)),
-      (snap) => setEnvios(snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.actualizadoEn || 0) - (a.actualizadoEn || 0))),
+      query(coleccionEnvios(), where('estado', 'in', [...ESTADOS_CON_ALERTA, ESTADO_PENDIENTE])),
+      (snap) => {
+        const todos = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.actualizadoEn || 0) - (a.actualizadoEn || 0));
+        setEnvios(todos.filter((e) => e.estado !== ESTADO_PENDIENTE));
+        setPendientes(todos.filter((e) => e.estado === ESTADO_PENDIENTE && e.intentos > 0));
+      },
       (error) => console.error('No se pudo escuchar los envíos al inventario:', error),
     );
-    return () => { cancelar(); setEnvios([]); };
+    return () => { cancelar(); setEnvios([]); setPendientes([]); };
   }, [firebaseUser, puedeVer]);
 
   // Las marcas que acaba de dejar la app (aún sin procesar) no traen fecha de actualización y no salen aquí.
   const cargarRecientes = useCallback(async () => {
     if (!firebaseUser || !puedeVer) return;
     try {
-      const snap = await getDocs(query(coleccionEnvios(), orderBy('actualizadoEn', 'desc'), limit(TAMANO_RECIENTES)));
+      const snap = await getDocs(query(coleccionEnvios(), orderBy('actualizadoEn', 'desc'), limit(TAMANO_PAGINA)));
       setRecientes(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      ultimoDoc.current = snap.docs[snap.docs.length - 1] || null;
+      setHayMas(snap.docs.length === TAMANO_PAGINA);
     } catch (error) {
       console.error('No se pudo cargar la actividad de envíos al inventario:', error);
     }
+  }, [firebaseUser, puedeVer]);
+
+  // La página siguiente, a continuación de la última que se leyó.
+  const cargarMas = useCallback(async () => {
+    if (!firebaseUser || !puedeVer || !ultimoDoc.current) return;
+    setCargandoRecientes(true);
+    try {
+      const snap = await getDocs(query(coleccionEnvios(), orderBy('actualizadoEn', 'desc'), startAfter(ultimoDoc.current), limit(TAMANO_PAGINA)));
+      setRecientes((previos) => [...previos, ...snap.docs.map((d) => ({ id: d.id, ...d.data() }))]);
+      ultimoDoc.current = snap.docs[snap.docs.length - 1] || ultimoDoc.current;
+      setHayMas(snap.docs.length === TAMANO_PAGINA);
+    } catch (error) {
+      console.error('No se pudo cargar más actividad de envíos al inventario:', error);
+    }
+    setCargandoRecientes(false);
   }, [firebaseUser, puedeVer]);
 
   const actualizarRecientes = useCallback(async () => {
@@ -57,6 +84,37 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
     return false;
   }, [cargarRecientes, setToastMsg]);
 
+  // Reintenta una lista de órdenes una tras otra (el Worker las procesa de a una). Un solo aviso al final y una sola lectura de
+  // la actividad, no una por orden.
+  const reintentarTodas = useCallback(async (lista) => {
+    let enviadas = 0;
+    for (const envio of lista) {
+      const r = await llamarInventario('/inventario/reintentar', envio.id);
+      if (r.ok && r.estado === ESTADO_ENVIADO) enviadas++;
+    }
+    await cargarRecientes();
+    setToastMsg?.(enviadas === lista.length
+      ? { type: 'success', text: `Se enviaron las ${enviadas} órdenes al inventario.` }
+      : { type: 'error', text: `Se enviaron ${enviadas} de ${lista.length} órdenes. Las demás siguen en revisión.` });
+    return enviadas;
+  }, [cargarRecientes, setToastMsg]);
+
+  // Busca en todo el historial por código de orden o serial (coincidencia exacta; hasta 5 de cada uno): para lo que no está en las
+  // últimas cargadas, sin leer todo.
+  const buscar = useCallback(async (texto) => {
+    const valor = String(texto || '').trim().toUpperCase();
+    if (!firebaseUser || !puedeVer || !valor) return [];
+    try {
+      const grupos = await Promise.all(['codigo', 'serial'].map((campo) => getDocs(query(coleccionEnvios(), where(campo, '==', valor), limit(5)))));
+      const porId = new Map();
+      for (const snap of grupos) for (const d of snap.docs) porId.set(d.id, { id: d.id, ...d.data() });
+      return [...porId.values()];
+    } catch (error) {
+      console.error('No se pudo buscar en los envíos al inventario:', error);
+      return [];
+    }
+  }, [firebaseUser, puedeVer]);
+
   // Da la alerta por resuelta sin enviar nada (la orden se arregló por otro lado). Queda guardada como DESCARTADO, no se borra.
   const descartar = useCallback(async (envio) => {
     try {
@@ -70,5 +128,5 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
     }
   }, [cargarRecientes, setToastMsg, usuario]);
 
-  return { envios, recientes, cargandoRecientes, cargarRecientes, actualizarRecientes, reintentar, descartar };
+  return { envios, pendientes, recientes, cargandoRecientes, hayMas, cargarRecientes, cargarMas, actualizarRecientes, reintentar, reintentarTodas, buscar, descartar };
 }

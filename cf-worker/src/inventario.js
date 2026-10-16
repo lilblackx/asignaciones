@@ -10,8 +10,8 @@
 // de la orden). Lo que se envía lo lee siempre el Worker de la propia orden: una marca no puede inventar datos.
 //
 // El Worker entra al Firebase del otro sistema con un usuario propio (secretos TELECOM_EMAIL y TELECOM_PASSWORD) y
-// escribe lo mismo que escribe su api-telecom.js: un registro en materialLogs y, si hay equipo, lo pasa a "Instalado" en
-// inventory. Las dos escrituras van en un solo commit (todo o nada) y los ids son fijos por orden, así que reenviar nunca
+// escribe lo mismo que escribe su api-telecom.js: un registro en materialLogs (si hubo material), una línea en auditLogs
+// y, si hay equipo, lo pasa a "Instalado" en inventory. Las escrituras van en un solo commit (todo o nada) y los ids son fijos por orden, así que reenviar nunca
 // descuenta dos veces. Solo se descuenta (y pasa a "Instalado") el equipo que figura "Con Técnico" en su inventario. Si el
 // serial no existe, o el equipo no está "Con Técnico" (p. ej. sigue "En Almacén"), no se envía nada de la orden: queda una
 // alerta en la app y un aviso push. El estado de cada envío vive en telecomEnvios/{id de la orden} (nuestro Firestore).
@@ -56,6 +56,22 @@ const ESTADO_CON_TECNICO = 'CON TECNICO';
 // Para comparar nombres de cliente y estados: sin tildes, sin mayúsculas ni espacios de más (su inventario puede tenerlos escritos distinto).
 const normalizarNombre = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
 
+// Quién figura en su historial de auditoría: un valor fijo, no el técnico ni quien aprobó la orden.
+export const USUARIO_AUDITORIA = 'Usuario Asignaciones';
+
+// La acción y el detalle de su auditLogs, con el estilo de su propio módulo ("Instalación a Cliente", "INSTALACIÓN NUEVA: ...").
+export function textoAuditoria(p) {
+  const metros = Number(Math.abs(p.dropMetros).toFixed(2));
+  const consumo = `(Consumo: ${Math.abs(p.apc)} APC, ${Math.abs(p.upc)} UPC, ${metros}m Drop).`;
+  if (p.accion === ACCION_AVERIA) {
+    return { accion: 'Avería', detalle: `AVERÍA: '${p.cliente}'${p.motivo ? ` (${p.motivo})` : ''}. Téc: '${p.tecnico}'. ${consumo}` };
+  }
+  if (p.accion === ACCION_INSTALACION) {
+    return { accion: 'Instalación a Cliente', detalle: `INSTALACIÓN NUEVA: Serial [${p.serial}] a '${p.cliente}'. Téc: '${p.tecnico}'. ${consumo}` };
+  }
+  return { accion: 'Cambio de Equipo', detalle: `CAMBIO DE EQUIPO: Serial [${p.serial}] a '${p.cliente}'. Téc: '${p.tecnico}'.` };
+}
+
 // --- Valores de Firestore (REST) ---
 const s = (v) => ({ stringValue: String(v ?? '') });
 const num = (v) => (Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v });
@@ -84,6 +100,18 @@ async function iniciarSesion(env, ahoraMs, renovar = false) {
 
 const docsTelecom = (env) => `https://firestore.googleapis.com/v1/projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents`;
 const rutaTelecom = (env) => `artifacts/${env.TELECOM_APP_ID}/public/data`;
+
+// La escritura de la línea de auditoría de una orden. El id sale de la orden, así que escribirla dos veces deja una sola línea
+// (también la usa scripts/completar-auditoria.mjs para las órdenes que se enviaron antes de que existiera).
+export function escrituraAuditoria(env, ticketId, p, fechaHora) {
+  const id = idRegistro(ticketId, p.finalizadoEn);
+  return {
+    update: {
+      name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/auditLogs/${id}`,
+      fields: { id: { doubleValue: id }, ...campos({ fechaHora, usuario: USUARIO_AUDITORIA, ...textoAuditoria(p) }) },
+    },
+  };
+}
 
 // Llamada a su Firestore con nuestra sesión; si la sesión venció se renueva una vez.
 async function llamarTelecom(env, url, cuerpo, ahoraMs) {
@@ -148,7 +176,9 @@ export async function enviarAlInventario(env, ticketId, p, ahoraMs = Date.now())
     escrituras.push({ update: { name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/materialLogs/${id}`, fields: { id: { doubleValue: id }, ...campos(registro) } } });
   }
 
-  if (escrituras.length === 0) return { estado: ESTADO_ENVIADO, mensaje: 'No había material que registrar.' };
+  // Su historial de auditoría: una línea por orden enviada, aunque no hubiera material (el cambio de equipo no gasta).
+  escrituras.push(escrituraAuditoria(env, ticketId, p, fechaHora));
+
   await llamarTelecom(env, `${docsTelecom(env)}:commit`, { writes: escrituras }, ahoraMs);
   return { estado: ESTADO_ENVIADO, mensaje: '' };
 }

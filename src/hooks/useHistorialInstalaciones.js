@@ -9,10 +9,11 @@ export const VIGENCIA_COPIA_MS = 30 * 60 * 1000;
 // El número cambia cuando se corrigen datos ya guardados (relleno de plantillas): descarta las copias anteriores.
 const CLAVE_COPIA = 'asignaciones:historialInstalaciones:v2:';
 
-function copiaGuardada(llave) {
+// La copia guardada en el equipo, vencida o no (`soloVigente` false): la vencida sirve de base para leer solo lo nuevo.
+function copiaGuardada(llave, soloVigente = true) {
   try {
     const c = JSON.parse(localStorage.getItem(CLAVE_COPIA + llave));
-    return c && Date.now() - c.t < VIGENCIA_COPIA_MS && Array.isArray(c.lista) ? c : null;
+    return c && (!soloVigente || Date.now() - c.t < VIGENCIA_COPIA_MS) && Array.isArray(c.lista) ? c : null;
   } catch {
     return null;
   }
@@ -20,14 +21,21 @@ function copiaGuardada(llave) {
 
 // Solo las de esta promotora (una consulta por nombre, como lo exigen las reglas). Lo vencido se descarta aquí: el
 // cierre del día lo borra, pero puede quedar hasta entonces.
+// Ventas (claves null) ve todo el historial, que son cientos de documentos: no se vuelve a leer completo cada vez que vence la copia.
+// Un resumen archivado no cambia (solo lo nuevo se agrega al cerrar el día), así que se pide lo archivado desde la última
+// lectura (con `>=`, por si el cierre aún estaba escribiendo el último lote) y se suma a lo que ya se tenía.
 async function leerHistorial(claves, llave) {
   const ref = collection(db, 'artifacts', appId, 'public', 'data', 'historialInstalaciones');
   // Ventas (claves null: todo el historial) ve 15 días; una promotora, 7. Lo anterior se guarda pero no se muestra.
   const desde = Date.now() - (claves === null ? RETENCION_MS_HISTORIAL_VENTAS : RETENCION_MS_HISTORIAL);
-  // `claves` null = perfil de ventas: todo el historial en una sola lectura.
-  const grupos = await Promise.all((claves ?? [null]).map((c) => getDocs(c === null ? ref : query(ref, where('promotoraClave', '==', c)))));
-  const lista = grupos.flatMap((snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }))).filter((h) => (h.archivadoEn || 0) >= desde);
-  try { localStorage.setItem(CLAVE_COPIA + llave, JSON.stringify({ t: Date.now(), lista })); } catch { /* sin almacenamiento: solo se pierde el ahorro */ }
+  const previa = claves === null ? copiaGuardada(llave, false) : null;
+  const lecturaDesde = previa ? Math.max(desde, previa.hasta || 0) : desde;
+  const grupos = await Promise.all((claves ?? [null]).map((c) => getDocs(c === null ? query(ref, where('archivadoEn', '>=', lecturaDesde)) : query(ref, where('promotoraClave', '==', c)))));
+  const porId = new Map((previa?.lista || []).map((h) => [h.id, h]));
+  for (const snap of grupos) for (const d of snap.docs) porId.set(d.id, { id: d.id, ...d.data() });
+  const lista = [...porId.values()].filter((h) => (h.archivadoEn || 0) >= desde);
+  const hasta = lista.reduce((m, h) => Math.max(m, h.archivadoEn || 0), 0);
+  try { localStorage.setItem(CLAVE_COPIA + llave, JSON.stringify({ t: Date.now(), hasta, lista })); } catch { /* sin almacenamiento: solo se pierde el ahorro */ }
   return lista;
 }
 

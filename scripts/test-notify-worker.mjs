@@ -203,6 +203,22 @@ check('borra del historial lo de más de 15 días', escrituras.filter((w) => w.d
 const corte = consultas.find((q) => q.from[0].collectionId === 'historialInstalaciones')?.where.fieldFilter;
 check('la limpieza pide lo anterior a hoy menos 15 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 15 * 86400000)]);
 check('el reporte del cierre sigue guardando todo (también la avería)', escrituras.filter((w) => w.update?.name.includes('/reports/')).length, 2);
+
+// --- Cron: lo que no debe costar nada ---
+const peticiones = [];
+globalThis.fetch = async (url, init = {}) => { peticiones.push(String(url)); return globalThis.fetchDelCierre(url, init); };
+globalThis.fetchDelCierre = async (url, init = {}) => {
+  const u = String(url);
+  if (u.includes('/config/cierreAutomatico')) return respuesta({ fields: { activo: { booleanValue: true }, hora: { stringValue: '22:00' }, dias: { arrayValue: { values: [0, 1, 2, 3, 4, 5, 6].map((d) => ({ integerValue: String(d) })) } }, actualizadoEn: { integerValue: '1' } } });
+  return fetchBase(url, init);
+};
+const { actualizarTasaBcv: tasaDelDia, cierreAutomatico: cierreFresco } = await import('../cf-worker/src/index.js?fresco');
+const MANANA_TEMPRANO = Date.parse('2026-10-14T06:00:00-04:00');
+check('antes de la hora de la tasa no hace ninguna petición (ni token ni lectura)', [(await tasaDelDia(env, MANANA_TEMPRANO)).actualizada, peticiones.length], [false, 0]);
+const MEDIODIA = Date.parse('2026-10-14T12:00:00-04:00');
+await Promise.all([cierreFresco(env, MEDIODIA), cierreFresco(env, MEDIODIA), cierreFresco(env, MEDIODIA)]);
+check('tareas que arrancan juntas comparten un solo token de Google', peticiones.filter((u) => u.includes('oauth2.googleapis.com/token')).length, 1);
+delete globalThis.fetchDelCierre;
 globalThis.fetch = fetchBase;
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');

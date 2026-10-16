@@ -8,6 +8,7 @@ const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/se
 
 let cachedFirebaseJwks = null;
 let cachedGoogleToken = null; // { accessToken, expiresAt }
+let tokenEnCurso = null; // la petición en marcha: las tareas del cron arrancan juntas y piden el token a la vez
 
 function corsHeaders(env, origin) {
   const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim());
@@ -32,12 +33,17 @@ async function verifyIdToken(idToken, projectId) {
   return payload; // payload.sub = uid del usuario que hace la llamada
 }
 
-async function getGoogleAccessToken(env) {
+// Una sola petición a la vez: sin esto, cada tarea del cron firmaba su propio JWT y pedía su propio token (tres por ejecución).
+function getGoogleAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
   if (cachedGoogleToken && cachedGoogleToken.expiresAt - 60 > now) {
-    return cachedGoogleToken.accessToken;
+    return Promise.resolve(cachedGoogleToken.accessToken);
   }
+  tokenEnCurso ??= pedirGoogleAccessToken(env, now).finally(() => { tokenEnCurso = null; });
+  return tokenEnCurso;
+}
 
+async function pedirGoogleAccessToken(env, now) {
   // replace: el secreto cargado desde PowerShell puede traer BOM (U+FEFF) al inicio y JSON.parse lo rechaza.
   const serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON.replace(/^﻿/, ''));
   const privateKey = await importPKCS8(serviceAccount.private_key, 'RS256');
@@ -665,6 +671,8 @@ export function debeActualizarTasa(config, ahoraMs) {
 }
 
 export async function actualizarTasaBcv(env, ahoraMs = Date.now()) {
+  // Antes de la hora de la actualización no hay nada que revisar: ni token ni lectura de Firestore.
+  if (ahoraMs < Date.parse(`${fechaCaracas(ahoraMs).fecha}T${HORA_TASA}:00${OFFSET_ZONA}`)) return { actualizada: false };
   const accessToken = await getGoogleAccessToken(env);
   const config = await leerConfig(env, accessToken, 'tasaBcv');
   if (!debeActualizarTasa(config, ahoraMs)) return { actualizada: false };

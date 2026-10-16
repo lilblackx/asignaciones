@@ -179,7 +179,7 @@ const escrituraDe = (writes, coleccion) => writes.find((w) => w.update.name.incl
 reiniciar();
 let r = await enviar('inst1');
 check('instalación: se envía', [r.status, r.json.estado], [200, 'ENVIADO']);
-check('una sola escritura atómica al otro sistema: el equipo y el registro de material', commitsTelecom.length === 1 && commitsTelecom[0].length === 2, true);
+check('una sola escritura atómica al otro sistema: el equipo, el registro de material y la auditoría', commitsTelecom.length === 1 && commitsTelecom[0].length === 3, true);
 const equipoEscrito = escrituraDe(commitsTelecom[0], 'inventory');
 check('el equipo pasa a "Instalado" con el cliente y la fecha, tocando solo esos campos y sin crearlo', [dec(equipoEscrito.update.fields), equipoEscrito.updateMask.fieldPaths, equipoEscrito.currentDocument],
   [{ estado: 'Instalado', cliente: 'Ana Pérez', fechaInstalacion: '2026-10-15', fechaHoraInstalacion: '2026-10-15 14:05:09' }, ['estado', 'cliente', 'fechaInstalacion', 'fechaHoraInstalacion'], { exists: true }]);
@@ -187,6 +187,9 @@ const registro = escrituraDe(commitsTelecom[0], 'materialLogs');
 const idEsperado = idRegistro('inst1', FIN);
 check('el registro de material va en negativo (el drop en km), con el serial y la hora de la orden', [registro.update.name.endsWith(`/materialLogs/${idEsperado}`), registro.update.fields.id, dec(registro.update.fields)],
   [true, { doubleValue: idEsperado }, { id: idEsperado, fecha: '2026-10-15', fechaHora: '2026-10-15 14:05:09', tecnico: 'GERARDO MOLERO', apc: -2, upc: -1, drop: -0.12, grapas: 'Instalación Nueva', equipoSerial: 'HWTC1A2B3C4D', cliente: 'Ana Pérez' }]);
+const auditoria = escrituraDe(commitsTelecom[0], 'auditLogs');
+check('la auditoría lleva el mismo id de la orden, el usuario fijo y el detalle con el consumo (drop en metros)', [auditoria.update.name.endsWith(`/auditLogs/${idEsperado}`), dec(auditoria.update.fields)],
+  [true, { id: idEsperado, fechaHora: '2026-10-15 14:05:09', usuario: 'Usuario Asignaciones', accion: 'Instalación a Cliente', detalle: "INSTALACIÓN NUEVA: Serial [HWTC1A2B3C4D] a 'Ana Pérez'. Téc: 'GERARDO MOLERO'. (Consumo: 2 APC, 1 UPC, 120m Drop)." }]);
 check('entra con su usuario y clave y escribe con esa sesión', [loginsTelecom[0], llamadasTelecom.every((l) => l.auth === 'Bearer TOKEN-1')],
   [{ email: 'api@tuempresa.com', password: 'clave-de-prueba', returnSecureToken: true }, true]);
 check('queda guardado como ENVIADO en nuestra base, con lo que se envió', (({ estado, intentos, accion, serial, apc, upc, dropMetros, codigo }) => ({ estado, intentos, accion, serial, apc, upc, dropMetros, codigo }))(envio('inst1')),
@@ -271,13 +274,17 @@ check('el mismo cliente escrito distinto en su inventario (mayúsculas, sin tild
 // 5) Cambio de equipo: solo el equipo, sin registro de material
 reiniciar();
 r = await enviar('cambio1');
-check('cambio de equipo: solo se marca el equipo nuevo como instalado, sin registro de material', [r.json.estado, commitsTelecom[0].length, commitsTelecom[0][0].update.name.includes('/inventory/inv-2')], ['ENVIADO', 1, true]);
+check('cambio de equipo: se marca el equipo nuevo como instalado y se audita, sin registro de material', [r.json.estado, commitsTelecom[0].length, commitsTelecom[0][0].update.name.includes('/inventory/inv-2'), Boolean(escrituraDe(commitsTelecom[0], 'materialLogs'))], ['ENVIADO', 2, true, false]);
+const auditoriaCambio = dec(escrituraDe(commitsTelecom[0], 'auditLogs').update.fields);
+check('cambio de equipo: acción y detalle propios', [auditoriaCambio.accion, auditoriaCambio.usuario, auditoriaCambio.detalle.startsWith('CAMBIO DE EQUIPO: Serial [ZTEG99887766]')], ['Cambio de Equipo', 'Usuario Asignaciones', true]);
 
 // 6) Recableado y visita: solo el material, como avería
 reiniciar();
 r = await enviar('rec1');
 const averia = escrituraDe(commitsTelecom[0], 'materialLogs').update.fields;
-check('recableado: solo el registro de material, sin buscar equipo', [r.json.estado, commitsTelecom[0].length, llamadasTelecom.some((l) => l.url.endsWith(':runQuery'))], ['ENVIADO', 1, false]);
+check('recableado: el registro de material y la auditoría, sin buscar equipo', [r.json.estado, commitsTelecom[0].length, llamadasTelecom.some((l) => l.url.endsWith(':runQuery'))], ['ENVIADO', 2, false]);
+const auditoriaAveria = dec(escrituraDe(commitsTelecom[0], 'auditLogs').update.fields);
+check('recableado: la auditoría es una avería con el motivo y su consumo', [auditoriaAveria.accion, auditoriaAveria.detalle], ['Avería', "AVERÍA: 'Ana Pérez' (Recableado - Orden #R1). Téc: 'GERARDO MOLERO'. (Consumo: 1 APC, 1 UPC, 40m Drop)."]);
 check('recableado: avería con el motivo pegado al nombre del cliente, sin serial', [dec(averia).grapas, dec(averia).cliente, dec(averia).apc, dec(averia).upc, dec(averia).drop, 'equipoSerial' in averia], ['Avería', 'Ana Pérez (Incidente: Recableado - Orden #R1)', -1, -1, -0.04, false]);
 r = await enviar('visita1');
 check('visita de conector: avería con sus conectores y sin drop', (({ cliente, apc, upc, drop }) => [cliente, apc, upc, drop])(dec(escrituraDe(commitsTelecom[1], 'materialLogs').update.fields)), ['Ana Pérez (Incidente: Visita de conector interno - Orden #V1)', -2, -1, 0]);
