@@ -1,4 +1,4 @@
-import { ArrowDownAZ, CheckCheck, CheckCircle2, Clock, Edit, ExternalLink, Flag, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
+import { ArrowDownAZ, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEnvioInfo, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -13,6 +13,11 @@ import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 
 const COLUMNAS = 9;
+// Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
+// Se pegan debajo del encabezado de la página (62px, sticky) y el separador debajo del título de columnas (su alto). Si cambia el
+// alto de alguno de los dos, hay que ajustar estas dos cifras.
+const ALTO_ENCABEZADO_PAGINA = 62;
+const ALTO_TITULOS = 37;
 
 export default function TicketsTable({
   filteredTickets,
@@ -42,15 +47,16 @@ export default function TicketsTable({
   const agrupado = sortBy === 'DEFECTO' || sortBy === 'FECHA';
 
   return (
-    <div className="hidden lg:block bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border border-zinc-300 dark:border-zinc-800 overflow-hidden transition-colors w-full">
+    <div className="hidden lg:block bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border border-zinc-300 dark:border-zinc-800 overflow-clip transition-colors w-full">
       <table className="w-full text-xs text-left table-fixed">
-        <thead className="text-[10px] text-white uppercase bg-black border-b-2 border-red-600">
-          <tr>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[9%] align-middle text-center">CÓDIGO</th>
+        <thead className="sticky z-[5] text-[10px] text-white uppercase bg-black" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
+          {/* La raya roja va como sombra interior de cada título: un borde de la tabla no se queda pegado al bajar. */}
+          <tr className="[&>th]:shadow-[inset_0_-2px_0_0_#dc2626]">
+            <th className="px-3 py-3 border-r border-zinc-800 w-[9%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[16%] align-middle text-center">NOMBRE</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">CÉDULA</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[14%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[16%] align-middle group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
+            <th className="px-3 py-3 border-r border-zinc-800 w-[11%] min-[1440px]:w-[9%] align-middle text-center">CÉDULA</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[14%] min-[1440px]:w-[20%] align-middle text-center">DIRECCIÓN</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[16%] min-[1440px]:w-[15%] align-middle group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
               <div className="flex items-center justify-center gap-1">
                 FALLA / TRABAJO
                 <ArrowDownAZ className={`w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
@@ -58,8 +64,8 @@ export default function TicketsTable({
             </th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
             <th className="px-2 py-3 border-r border-zinc-800 w-[6%] align-middle text-center">ENVIADO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[8%] align-middle text-center">ESTADO</th>
-            <th className="px-2 py-3 align-middle text-center text-red-500 w-[9%]">ACC</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[8%] min-[1440px]:w-[7%] align-middle text-center">ESTADO</th>
+            <th className="px-2 py-3 align-middle text-center w-[9%]">ACCIONES</th>
           </tr>
         </thead>
         <tbody>
@@ -77,14 +83,14 @@ export default function TicketsTable({
             const dia = nuevoDia ? (prioritaria ? { texto: 'PRIORIDAD ALTA', prioridad: true } : getEtiquetaDia(ticket.fecha, ticket.estado)) : null;
             return [
               nuevoDia && (
-                <tr key={`dia-${ticket.id}`} className={`${dia.prioridad ? 'bg-red-600' : 'bg-zinc-200/70 dark:bg-zinc-950'} border-b border-zinc-300 dark:border-zinc-800`}>
-                  <td colSpan={COLUMNAS} className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wide ${dia.prioridad ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                <tr key={`dia-${ticket.id}`} className="border-b border-zinc-300 dark:border-zinc-800">
+                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide ${dia.prioridad ? 'bg-red-600' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
                     {dia.prioridad && <Flag className="inline w-3 h-3 mr-1 -mt-0.5 fill-current" aria-hidden="true" />}{dia.texto}
                   </td>
                 </tr>
               ),
               <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
-                <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${eliminado ? 'border-l-zinc-500' : tipoEstilo.borde} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
+                <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${eliminado ? 'border-l-zinc-500' : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <span>{ticket.codigo}</span>
@@ -92,7 +98,8 @@ export default function TicketsTable({
                         <BotonPrioridad activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
                       )}
                     </div>
-                    {prioritaria && <InsigniaPrioridad />}
+                    {/* El aviso "PRIORIDAD ALTA" es para el técnico; la oficina ya la ve con la bandera y el separador de grupo. */}
+                    {prioritaria && isTecnico && <InsigniaPrioridad />}
                   </div>
                 </td>
                 <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight align-middle">
@@ -122,11 +129,11 @@ export default function TicketsTable({
                         rel="noopener noreferrer"
                         title="Buscar cliente en SmartOLT"
                         aria-label={`Buscar cédula ${ticket.cedula} en SmartOLT`}
-                        className="inline-flex items-center gap-1 text-sky-700 dark:text-sky-400 underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                        className="group inline-flex items-center gap-1 underline-offset-2 hover:underline focus-visible:underline hover:text-sky-700 dark:hover:text-sky-400 focus-visible:text-sky-700 dark:focus-visible:text-sky-400"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span>{renderCedulaConSaltos(formatCedula(ticket.cedula, ticket.tipoDocumento))}</span>
-                        <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
+                        <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity" aria-hidden="true" />
                       </a>
                     ) : renderCedulaConSaltos(formatCedula(ticket.cedula, ticket.tipoDocumento))}
                   </div>
@@ -196,7 +203,7 @@ export default function TicketsTable({
                           <a href={enlaceNavegacion} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar" className="p-1 text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 hover:bg-sky-200 dark:hover:bg-sky-900/50 rounded transition-colors"><Navigation className="w-3.5 h-3.5" /></a>
                         )}
                         {ticket.estado === 'PENDIENTE' ? (
-                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`Pre-finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-black bg-amber-500 hover:bg-amber-400 rounded font-bold transition-colors" title="Pre-finalizar orden"><CheckCircle2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`Pre-finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-black bg-amber-500 hover:bg-amber-400 rounded font-bold transition-colors" title="Pre-finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
                         ) : null}
@@ -207,7 +214,7 @@ export default function TicketsTable({
                         {canEditTickets ? (
                           <>
                             {ticket.estado === 'PENDIENTE' && (
-                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded transition-colors" title="Finalizar orden"><CheckCircle2 className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-600 hover:bg-emerald-500 rounded transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
                             )}
                             {ticket.estado === 'PRE-FINALIZADO' && (
                               <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>

@@ -49,50 +49,66 @@ export default function FiltersBar({
     { group: 'Filtrar por Técnico', options: technicians.map(t => ({ value: 'TEC:' + t.name, label: 'Solo: ' + t.name })) }
   ];
 
+  const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400';
+
   return (
-    <div className="mb-3 flex flex-col lg:flex-row gap-3">
-      <div className="relative flex-1 min-w-[180px]">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5" aria-hidden="true" />
-        <label htmlFor="ticket-search" className="sr-only">Buscar órdenes</label>
-        <input id="ticket-search" type="text" placeholder="Buscar por nombre, código o cédula..." className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-600 outline-none shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+    <div className="mb-3 space-y-3">
+      <div className="flex gap-2">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+          <label htmlFor="ticket-search" className="sr-only">Buscar órdenes</label>
+          <input
+            id="ticket-search"
+            type="search"
+            placeholder="Buscar por nombre, código o cédula..."
+            className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-3 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          aria-expanded={filtersOpen}
+          className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${filtersOpen ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
+        >
+          <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Filtros</span>
+          {activeFiltersCount > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{activeFiltersCount}</span>}
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setFiltersOpen(!filtersOpen)}
-        aria-expanded={filtersOpen}
-        className="sm:hidden relative shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl shadow-sm font-bold text-sm text-zinc-700 dark:text-zinc-300"
-      >
-        <SlidersHorizontal className="w-4 h-4" aria-hidden="true" /> Filtros
-        {activeFiltersCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{activeFiltersCount}</span>
-        )}
-      </button>
-
-      <div className={`${filtersOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row sm:flex-wrap gap-3`}>
-        <div className="sm:w-48">
-          <SelectMenu id="status-filter" ariaLabel="Filtrar por estado" icon={Filter} value={statusFilter} onChange={setStatusFilter} items={statusItems} />
-        </div>
-        <div className="sm:w-48">
-          <SelectMenu id="tipo-filter" ariaLabel="Filtrar por tipo de trabajo" icon={Wrench} value={tipoFilter} onChange={setTipoFilter} items={tipoItems} />
-        </div>
-        {/* Para TECNICO, sus órdenes ya están aisladas a él mismo: ordenar u
-            filtrar "por técnico" no tiene sentido (siempre sería él). */}
-        {!isTecnico && (
-          <div className="sm:w-56">
-            <SelectMenu id="sort-by" ariaLabel="Ordenar por" icon={ArrowDownAZ} value={sortBy} onChange={setSortBy} items={sortItems} />
+      {filtersOpen && (
+        <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
+          <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isTecnico ? 'md:max-w-xl' : 'md:grid-cols-3 md:max-w-3xl'}`}>
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className={ETIQUETA}>Estado</span>
+              <SelectMenu id="status-filter" ariaLabel="Filtrar por estado" icon={Filter} value={statusFilter} onChange={setStatusFilter} items={statusItems} />
+            </div>
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className={ETIQUETA}>Trabajo</span>
+              <SelectMenu id="tipo-filter" ariaLabel="Filtrar por tipo de trabajo" icon={Wrench} value={tipoFilter} onChange={setTipoFilter} items={tipoItems} />
+            </div>
+            {/* Para TECNICO, sus órdenes ya están aisladas a él mismo: ordenar u
+                filtrar "por técnico" no tiene sentido (siempre sería él). */}
+            {!isTecnico && (
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className={ETIQUETA}>Ordenar</span>
+                <SelectMenu id="sort-by" ariaLabel="Ordenar por" icon={ArrowDownAZ} value={sortBy} onChange={setSortBy} items={sortItems} />
+              </div>
+            )}
           </div>
-        )}
-        {activeFiltersCount > 0 && (
-          <button
-            type="button"
-            onClick={limpiarFiltros}
-            className="shrink-0 self-center flex items-center justify-center gap-1 px-1 py-1.5 font-bold text-xs text-red-600 dark:text-red-400 hover:underline"
-          >
-            <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar
-          </button>
-        )}
-      </div>
+          {activeFiltersCount > 0 && (
+            <button
+              type="button"
+              onClick={limpiarFiltros}
+              className="inline-flex items-center gap-1 font-bold text-xs text-red-600 dark:text-red-400 hover:underline"
+            >
+              <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

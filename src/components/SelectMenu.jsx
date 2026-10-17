@@ -9,7 +9,7 @@ const VIEWPORT_MARGIN = 8;
 
 // Dropdown propio (el <select> nativo no se puede estilizar). `items` mezcla
 // opciones sueltas { value, label } y grupos { group, options: [...] }.
-// `className` reemplaza el estilo del botón (debe dejar espacio a la derecha
+// `icon` se dibuja dentro del recuadro, a la izquierda. `className` reemplaza el estilo del botón (debe dejar espacio a la derecha
 // para la flecha: pr-*). El panel se pinta en un portal con posición fija para
 // que no lo recorte el scroll de los modales.
 export default function SelectMenu({
@@ -19,6 +19,8 @@ export default function SelectMenu({
   // Con w-full en `className` el selector ocupa todo el ancho; sin él (badges
   // pequeños) se ajusta al texto y la flecha queda pegada al botón.
   const fullWidth = /(^|\s)w-full(\s|$)/.test(className);
+  // Con ícono, el texto deja sitio a la izquierda (el relleno izquierdo pasa a pl-9).
+  const claseBoton = Icon ? className.replace(/(^|\s)pl-[\d.]+(?=\s|$)/, ' pl-9') : className;
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [pos, setPos] = useState(null);
@@ -146,7 +148,6 @@ export default function SelectMenu({
 
   return (
     <div className={`items-center gap-2 ${fullWidth ? 'flex w-full' : 'inline-flex'}`}>
-      {Icon && <Icon className="text-zinc-500 dark:text-zinc-400 w-4 h-4 shrink-0" aria-hidden="true" />}
       <div className={`relative ${fullWidth ? 'w-full' : ''}`}>
         <button
           ref={buttonRef}
@@ -161,10 +162,11 @@ export default function SelectMenu({
           disabled={disabled}
           onClick={() => (open ? setOpen(false) : openMenu())}
           onKeyDown={onKeyDown}
-          className={`block text-left ${className}`}
+          className={`block text-left ${claseBoton}`}
         >
           <span className="block truncate">{selected?.label}</span>
         </button>
+        {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true" />}
         <ChevronDown className={`absolute top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none transition-transform ${open ? 'rotate-180' : ''} ${chevronClassName}`} aria-hidden="true" />
 
         {open && pos && portalTarget && createPortal(

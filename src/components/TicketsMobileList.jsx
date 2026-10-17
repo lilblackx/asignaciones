@@ -70,7 +70,8 @@ export default function TicketsMobileList({
                 {canEditTickets && puedeCambiarPrioridad(ticket) && (
                   <BotonPrioridad activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
                 )}
-                {prioritaria && <InsigniaPrioridad />}
+                {/* El aviso "PRIORIDAD ALTA" es para el técnico; la oficina ya la ve con la bandera y el separador de grupo. */}
+                {prioritaria && isTecnico && <InsigniaPrioridad />}
               </div>
               <div className="flex flex-col">
                 <span className={`text-xs font-bold flex items-center gap-1 ${getFechaStyles(ticket.fecha, ticket.estado)}`}><Calendar className="w-3.5 h-3.5" /> {ticket.fecha}</span>
