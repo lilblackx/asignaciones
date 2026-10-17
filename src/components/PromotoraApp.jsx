@@ -9,7 +9,7 @@ import { useInstalacionesPromotora } from '../hooks/useInstalacionesPromotora';
 import { ESPERA_ACTUALIZAR_MS, useHistorialInstalaciones } from '../hooks/useHistorialInstalaciones';
 import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_ESTADOS_PROMOTORA, ORDEN_POR_DEFECTO, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, atrasoOrden, categoriaOrden, enRangoFecha, etiquetaFiltroEstado, fechaOrden, ordenarOrdenes, resumenPorPromotor, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
 import { tiempoTranscurrido } from '../utils/enCamino';
-import { mesDe, mesesRecientes, totalesDelMes } from '../utils/totalesMes';
+import { mesDe, mesesDeTotales, totalesDelMes } from '../utils/totalesMes';
 import { claveNombre } from '../utils/promotora';
 import { csvDeOrdenes, descargarCsv, nombreArchivoExportacion } from '../utils/exportarOrdenes';
 import Toast from './Toast';
@@ -112,7 +112,7 @@ export default function PromotoraApp({ auth }) {
   const copiarDeTarjeta = (orden) => copiar(textoPlantillaFinal(orden), `Plantilla de ${orden.codigo || 'la orden'} copiada.`);
 
   // Totales del mes (solo ventas): lo cerrado sale de un documento por mes; lo de hoy, de las órdenes en vivo que ya están cargadas.
-  const meses = useMemo(() => mesesRecientes(ahora), [ahora]);
+  const meses = useMemo(() => mesesDeTotales(ahora), [ahora]);
   const { contador, cargado: totalesCargados, error: errorTotales } = useEstadisticasMes(firebaseUser, verTodasInstalaciones, mes);
   const totales = useMemo(() => (totalesCargados || errorTotales ? totalesDelMes(contador, tickets, mes, ahora) : null), [contador, totalesCargados, errorTotales, tickets, mes, ahora]);
 

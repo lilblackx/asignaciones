@@ -27,6 +27,15 @@ export function mesesRecientes(ahora = Date.now(), cuantos = 6) {
   });
 }
 
+// Los totales empiezan en este mes: los anteriores no se muestran, y de aquí en adelante se van sumando solos al cerrar cada día.
+export const PRIMER_MES_TOTALES = '2026-10';
+
+// Los meses que se pueden ver: del actual hacia atrás, hasta `maximo`, sin pasar del primero (PRIMER_MES_TOTALES).
+export function mesesDeTotales(ahora = Date.now(), maximo = 6) {
+  const meses = mesesRecientes(ahora, maximo).filter((m) => m >= PRIMER_MES_TOTALES);
+  return meses.length ? meses : [mesDe(ahora)];
+}
+
 const CERO = { enProceso: 0, finalizadas: 0, canceladas: 0 };
 
 // { instalaciones: { enProceso, finalizadas, canceladas }, los: { ... } } del mes pedido.

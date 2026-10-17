@@ -2,7 +2,7 @@
 // No necesita el emulador. Uso: `npm run test:ventas`.
 import { readFileSync } from 'node:fs';
 import { csvDeOrdenes, filasExportacion } from '../src/utils/exportarOrdenes.js';
-import { etiquetaMes, incrementosMensuales, mesDe, mesesRecientes, totalesDelMes } from '../src/utils/totalesMes.js';
+import { PRIMER_MES_TOTALES, etiquetaMes, incrementosMensuales, mesDe, mesesDeTotales, mesesRecientes, totalesDelMes } from '../src/utils/totalesMes.js';
 import { incrementosMensuales as incrementosWorker } from '../cf-worker/src/index.js';
 import { formatearCedula } from '../src/utils/cedula.js';
 import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_POR_DEFECTO, atrasoOrden, enRangoFecha, estadoParaPromotora, fechaOrden, ordenarOrdenes, resumenPorPromotor } from '../src/utils/estadoInstalacion.js';
@@ -137,6 +137,8 @@ check('las preferencias se guardan solo en el navegador (sin Firebase) y toleran
 const OCTUBRE = '2026-10';
 check('el mes se cuenta en hora de Caracas (a las 23:30 del 31 todavía es octubre aunque en UTC ya sea noviembre)', [mesDe(Date.parse('2026-10-31T23:30:00-04:00')), mesDe(Date.parse('2026-11-01T00:30:00-04:00'))], ['2026-10', '2026-11']);
 check('los meses recientes: el actual primero, y cruzan el año', [mesesRecientes(Date.parse('2026-01-15T12:00:00-04:00'), 3), etiquetaMes('2026-10')], [['2026-01', '2025-12', '2025-11'], 'octubre 2026']);
+check('los totales empiezan en octubre de 2026: no se ofrecen meses anteriores', [PRIMER_MES_TOTALES, mesesDeTotales(Date.parse('2026-10-20T12:00:00-04:00')), mesesDeTotales(Date.parse('2026-12-05T12:00:00-04:00'))], ['2026-10', ['2026-10'], ['2026-12', '2026-11', '2026-10']]);
+check('con muchos meses por delante no pasa del tope de seis', mesesDeTotales(Date.parse('2027-08-05T12:00:00-04:00')).length, 6);
 const enVivo = [
   orden({ id: '1', estado: 'PENDIENTE' }),
   orden({ id: '2', estado: 'PENDIENTE', tecnico: 'J' }),

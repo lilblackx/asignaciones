@@ -3,6 +3,7 @@ import { CalendarDays, ChevronDown } from 'lucide-react';
 import SelectMenu from './SelectMenu';
 import { etiquetaMes } from '../utils/totalesMes';
 
+const nombreMes = (m) => etiquetaMes(m).replace(/^./, (c) => c.toUpperCase());
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
 function Cifra({ valor, etiqueta, nota, resaltar = false }) {
@@ -26,7 +27,13 @@ export default function TotalesMes({ mes, meses, onCambiarMes, totales, error })
     <section aria-label="Totales del mes" className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6">
         <div className="w-44">
-          <SelectMenu id="totales-mes" ariaLabel="Mes de los totales" icon={CalendarDays} value={mes} onChange={onCambiarMes} items={meses.map((m) => ({ value: m, label: etiquetaMes(m).replace(/^./, (c) => c.toUpperCase()) }))} />
+          {meses.length > 1 ? (
+            <SelectMenu id="totales-mes" ariaLabel="Mes de los totales" icon={CalendarDays} value={mes} onChange={onCambiarMes} items={meses.map((m) => ({ value: m, label: nombreMes(m) }))} />
+          ) : (
+            <p className="flex items-center gap-2 rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-2.5 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 shadow-sm">
+              <CalendarDays className="w-4 h-4 text-zinc-500 dark:text-zinc-400" aria-hidden="true" /> {nombreMes(mes)}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-end justify-end gap-x-5 gap-y-3 sm:gap-x-6 sm:ml-auto">
           <Cifra valor={inst?.finalizadas} etiqueta="Finalizadas" nota="solo instalaciones del mes" resaltar />
