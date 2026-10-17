@@ -141,6 +141,23 @@ service cloud.firestore {
       allow write: if canCerrar(appId);
     }
 
+    // Totales del mes de instalaciones y averías LOS finalizadas y canceladas (un documento por mes, "2026-10"). Los suma el cierre del
+    // día: el automático desde el Worker (cuenta de servicio, no pasa por estas reglas) y el manual desde la app de quien cierra, que
+    // solo puede sumar (los cuatro contadores, enteros, que nunca bajan). Los ve la oficina que cierra y el perfil de ventas.
+    match /artifacts/{appId}/public/data/estadisticasMensuales/{mes} {
+      function contadorSube(campo) {
+        return request.resource.data.get(campo, 0) is int
+          && request.resource.data.get(campo, 0) >= (resource == null ? 0 : resource.data.get(campo, 0));
+      }
+      allow read: if canCerrar(appId) || (isPromotoraRole(appId) && promotoraVeTodas(appId));
+      allow create, update: if canCerrar(appId)
+        && mes.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.keys().hasOnly(['instalacionesFinalizadas', 'instalacionesCanceladas', 'losResueltas', 'losCanceladas'])
+        && contadorSube('instalacionesFinalizadas') && contadorSube('instalacionesCanceladas')
+        && contadorSube('losResueltas') && contadorSube('losCanceladas');
+      allow delete: if false;
+    }
+
     // Quien ve y gestiona los envíos al inventario del otro sistema: solo estos usuarios (por nombre de usuario de la app).
     // Mantener sincronizado con USUARIOS_INVENTARIO de src/utils/accesoInventario.js (lo comprueba `npm run test:inventario`).
     function veInventario(appId) {

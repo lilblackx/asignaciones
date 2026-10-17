@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from 'jose';
 import { manejarApiMateriales } from './materiales-api.js';
 import { manejarInventario, reintentarPendientes } from './inventario.js';
 import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
+import { direccionCliente, nombrePersona } from '../../src/utils/datosCliente.js';
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
@@ -527,8 +528,8 @@ function resumenInstalacionFirestore(t, ahoraMs) {
   const texto = (k) => ({ stringValue: f[k]?.stringValue || '' });
   const numero = (k) => (f[k]?.integerValue !== undefined ? { integerValue: String(f[k].integerValue) } : { nullValue: null });
   return {
-    codigo: texto('codigo'), nombre: texto('nombre'), cedula: texto('cedula'), tipoDocumento: texto('tipoDocumento'),
-    direccion: texto('direccion'), tecnico: texto('tecnico'), estado: texto('estado'),
+    codigo: texto('codigo'), nombre: { stringValue: nombrePersona(f.nombre?.stringValue) }, cedula: texto('cedula'), tipoDocumento: texto('tipoDocumento'),
+    direccion: { stringValue: direccionCliente(f.direccion?.stringValue) }, tecnico: texto('tecnico'), estado: texto('estado'),
     tipoTrabajo: { stringValue: f.tipoTrabajo?.stringValue || TIPO_INSTALACION }, falla: { stringValue: esAveriaLosFirestore(f) ? 'LOS' : '' },
     promotora: { stringValue: promotora }, promotoraClave: { stringValue: claveNombre(promotora) },
     // La plantilla final se guarda en la orden al finalizarla (la app la arma); aquí solo se copia, sin repetir esa lógica.
@@ -557,6 +558,42 @@ async function limpiarHistorialInstalaciones(env, accessToken, ahoraMs) {
   for (let i = 0; i < borrados.length; i += MAX_ESCRITURAS_COMMIT) {
     await commitFirestore(env, accessToken, borrados.slice(i, i + MAX_ESCRITURAS_COMMIT));
   }
+}
+
+// --- Totales del mes (colección estadisticasMensuales, un documento por mes "2026-10") ---
+// Ventas lleva la cuenta mensual de instalaciones y averías LOS finalizadas y canceladas. Se suman aquí, en el mismo commit que archiva
+// las órdenes (todo o nada, y un cierre que se reintenta no cuenta dos veces), para que ventas lea un solo documento por mes en vez
+// de todo el historial. Cada orden cuenta en el mes en que se finalizó; si no trae una fecha de finalización creíble (las canceladas no
+// la tienen), en el mes del cierre. Lo mismo calcula scripts/calcular-totales-mensuales.mjs para los cierres de antes de que existiera.
+const VENTANA_FINALIZACION_MS = 40 * 24 * 60 * 60 * 1000;
+
+export function mesDeCierre(f, ahoraMs) {
+  const fin = Number(f?.finalizadoEn?.integerValue);
+  const ms = fin > ahoraMs - VENTANA_FINALIZACION_MS && fin <= ahoraMs ? fin : ahoraMs;
+  return fechaCaracas(ms).fecha.slice(0, 7);
+}
+
+// { '2026-10': { instalacionesFinalizadas: 3, losResueltas: 1 }, ... } de las órdenes que se archivan con este estado.
+export function incrementosMensuales(tickets, estado, ahoraMs) {
+  const porMes = {};
+  for (const t of tickets) {
+    const f = t.fields;
+    const esLos = esAveriaLosFirestore(f);
+    if (f?.tipoTrabajo?.stringValue !== TIPO_INSTALACION && !esLos) continue;
+    const campo = estado === 'FINALIZADO' ? (esLos ? 'losResueltas' : 'instalacionesFinalizadas') : (esLos ? 'losCanceladas' : 'instalacionesCanceladas');
+    const mes = mesDeCierre(f, ahoraMs);
+    porMes[mes] = { ...porMes[mes], [campo]: (porMes[mes]?.[campo] || 0) + 1 };
+  }
+  return porMes;
+}
+
+// Una escritura por mes: solo suma (documento nuevo si no existía; la máscara vacía deja intactos los demás campos).
+function escriturasMensuales(env, porMes) {
+  return Object.entries(porMes).map(([mes, campos]) => ({
+    update: { name: `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${rutaDatos(env)}/estadisticasMensuales/${mes}`, fields: {} },
+    updateMask: { fieldPaths: [] },
+    updateTransforms: Object.entries(campos).map(([fieldPath, n]) => ({ fieldPath, increment: { integerValue: String(n) } })),
+  }));
 }
 
 // Equivalente a archiveByEstado de useReports: crea el reporte y borra las
@@ -590,11 +627,15 @@ async function archivarPorEstado(env, accessToken, estado, tipoReporte, ahoraMs,
 
   const borrados = tickets.map((t) => ({ delete: t.name }));
   const reportName = `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${rutaDatos(env)}/reports/${reportId}`;
+  // Los totales del mes van con el reporte y los primeros borrados: o se archivó y se contó, o ninguna de las dos.
+  const totales = escriturasMensuales(env, incrementosMensuales(tickets, estado, ahoraMs));
+  const enElPrimero = MAX_ESCRITURAS_COMMIT - 1 - totales.length;
   await commitFirestore(env, accessToken, [
     { update: { name: reportName, fields: reporte }, currentDocument: { exists: false } },
-    ...borrados.slice(0, MAX_ESCRITURAS_COMMIT),
+    ...totales,
+    ...borrados.slice(0, enElPrimero),
   ]);
-  for (let i = MAX_ESCRITURAS_COMMIT; i < borrados.length; i += MAX_ESCRITURAS_COMMIT) {
+  for (let i = enElPrimero; i < borrados.length; i += MAX_ESCRITURAS_COMMIT) {
     await commitFirestore(env, accessToken, borrados.slice(i, i + MAX_ESCRITURAS_COMMIT));
   }
   // El cierre ya está hecho: si el historial falla no se reintenta el cierre (se archivaría dos veces), solo se avisa en el log.

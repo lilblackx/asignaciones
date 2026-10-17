@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { collection, doc, getDocs, limit, orderBy, query, startAfter, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDocs, increment, limit, orderBy, query, startAfter, where, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { RETENCION_MS_HISTORIAL_VENTAS, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
+import { incrementosMensuales } from '../utils/totalesMes';
 
 const REPORTS_PAGE_SIZE = 30;
 const MAX_ESCRITURAS_LOTE = 450; // Firestore admite 500 por lote
@@ -132,11 +133,19 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
     // como el reporte ya existe, un fallo ahí solo deja órdenes por borrar.
     const ticketRef = (id) => doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id.toString());
     const ids = seleccionados.map(t => t.id);
+    // Los totales del mes de ventas se suman en el mismo lote: o se archivó y se contó, o ninguna de las dos (ver totalesMes).
+    const totales = Object.entries(incrementosMensuales(seleccionados, estado, newReport.createdAt));
+    const enElPrimero = MAX_ESCRITURAS_LOTE - 1 - totales.length;
     const primerLote = writeBatch(db);
     primerLote.set(doc(db, 'artifacts', appId, 'public', 'data', 'reports', reportId), newReport);
-    ids.slice(0, MAX_ESCRITURAS_LOTE - 1).forEach(id => primerLote.delete(ticketRef(id)));
+    totales.forEach(([mes, campos]) => primerLote.set(
+      doc(db, 'artifacts', appId, 'public', 'data', 'estadisticasMensuales', mes),
+      Object.fromEntries(Object.entries(campos).map(([campo, n]) => [campo, increment(n)])),
+      { merge: true },
+    ));
+    ids.slice(0, enElPrimero).forEach(id => primerLote.delete(ticketRef(id)));
     await primerLote.commit();
-    for (let i = MAX_ESCRITURAS_LOTE - 1; i < ids.length; i += MAX_ESCRITURAS_LOTE) {
+    for (let i = enElPrimero; i < ids.length; i += MAX_ESCRITURAS_LOTE) {
       const lote = writeBatch(db);
       ids.slice(i, i + MAX_ESCRITURAS_LOTE).forEach(id => lote.delete(ticketRef(id)));
       await lote.commit();

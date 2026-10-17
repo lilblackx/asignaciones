@@ -4,7 +4,7 @@
 // No necesita emulador ni credenciales. Uso: `npm run test:notify`
 // (corre con --conditions=workerd para que jose use fetch, como en Cloudflare).
 import { SignJWT, exportJWK, exportPKCS8, generateKeyPair } from '../cf-worker/node_modules/jose/dist/browser/index.js';
-import worker from '../cf-worker/src/index.js';
+import worker, { incrementosMensuales } from '../cf-worker/src/index.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -161,7 +161,7 @@ const FINALIZADAS = [
   ticketDoc('t-inst', { codigo: 'IO5', nombre: 'Ana Pérez', cedula: '12.345.678', tipoDocumento: 'V', direccion: 'Calle 1', tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1000, finalizadoEn: 2000, serial: 'SECRETO123', cobroBs: '400', plantillaOriginal: '*Nap:*\n*Promotora:* alexis añez \n*Fuente:* x' }),
   ticketDoc('t-averia', { codigo: 'AS7', nombre: 'Luis', estado: 'FINALIZADO', tipoTrabajo: 'AVERÍA', createdAt: 1500 }),
 ];
-const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'Rosa', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana' })];
+const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'ROSA DE LA CRUZ', direccion: 'CALLE 5 CASA 10b', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana' })];
 const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 20 * 86400000) } } };
 const consultas = [];
 globalThis.fetch = async (url, init = {}) => {
@@ -198,11 +198,30 @@ check('el resumen NO lleva datos técnicos ni de cobro', Object.keys(dePrueba ||
 check('la promotora sale de la plantilla si la orden no la guardó', [dePrueba?.promotora, dePrueba?.promotoraClave], [{ stringValue: 'Alexis Añez' }, { stringValue: 'alexis anez' }]);
 const canceladaDoc = historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields;
 check('y se usa la que la orden ya trae', [canceladaDoc?.promotora, canceladaDoc?.promotoraClave], [{ stringValue: 'Sariana' }, { stringValue: 'sariana' }]);
+check('el nombre y la dirección entran al historial normalizados (el cierre automático los arregla al archivar)', [canceladaDoc?.nombre, canceladaDoc?.direccion], [{ stringValue: 'Rosa de la Cruz' }, { stringValue: 'Calle 5 Casa 10B' }]);
 check('una instalación sin fecha de finalizado guarda null', historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields.finalizadoEn, { nullValue: null });
 check('borra del historial lo de más de 15 días', escrituras.filter((w) => w.delete?.includes('/historialInstalaciones/')).map((w) => w.delete.split('/').pop()), ['vieja']);
 const corte = consultas.find((q) => q.from[0].collectionId === 'historialInstalaciones')?.where.fieldFilter;
 check('la limpieza pide lo anterior a hoy menos 15 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 15 * 86400000)]);
 check('el reporte del cierre sigue guardando todo (también la avería)', escrituras.filter((w) => w.update?.name.includes('/reports/')).length, 2);
+const totales = escrituras.filter((w) => w.update?.name.includes('/estadisticasMensuales/'));
+check('suma los totales del mes: una instalación finalizada y una cancelada, en el mes del cierre (la avería que no es LOS no cuenta)',
+  totales.map((w) => [w.update.name.split('/').pop(), w.updateTransforms.map((t) => [t.fieldPath, t.increment.integerValue])]),
+  [['2026-10', [['instalacionesFinalizadas', '1']]], ['2026-10', [['instalacionesCanceladas', '1']]]]);
+check('los totales solo suman: máscara vacía (no pisan lo ya contado) y sin campos propios', totales.every((w) => w.updateMask.fieldPaths.length === 0 && Object.keys(w.update.fields).length === 0), true);
+const primerCommit = commits.find((c) => c.writes?.some((w) => w.update?.name.includes('/reports/')))?.writes || [];
+check('los totales van en el mismo commit que el reporte y los borrados (todo o nada)', [primerCommit.some((w) => w.update?.name.includes('/estadisticasMensuales/')), primerCommit.some((w) => w.delete)], [true, true]);
+const campoInt = (n) => ({ integerValue: String(n) });
+const OCT_31 = Date.parse('2026-10-31T23:30:00-04:00'); // a las 23:30 en Caracas (ya es 1 de noviembre en UTC)
+const CIERRE_1_NOV = Date.parse('2026-11-01T22:00:00-04:00');
+const conFin = (finalizadoEn, extra = {}) => ({ fields: { tipoTrabajo: { stringValue: 'INSTALACIÓN' }, ...(finalizadoEn ? { finalizadoEn: campoInt(finalizadoEn) } : {}), ...extra } });
+check('cada orden cuenta en el mes en que se finalizó, en hora de Caracas (aunque se archive al mes siguiente)', incrementosMensuales([conFin(OCT_31), conFin(CIERRE_1_NOV - 3600000)], 'FINALIZADO', CIERRE_1_NOV),
+  { '2026-10': { instalacionesFinalizadas: 1 }, '2026-11': { instalacionesFinalizadas: 1 } });
+check('sin fecha de finalización creíble (ausente, muy vieja o futura) cuenta en el mes del cierre', incrementosMensuales([conFin(0), conFin(2000), conFin(CIERRE_1_NOV + 86400000)], 'FINALIZADO', CIERRE_1_NOV), { '2026-11': { instalacionesFinalizadas: 3 } });
+check('las averías LOS y las canceladas tienen su propio contador, y otras averías no cuentan', [
+  incrementosMensuales([{ fields: { tipoTrabajo: { stringValue: 'AVERÍA' }, falla: { stringValue: 'LOS' } } }, { fields: { tipoTrabajo: { stringValue: 'AVERÍA' }, falla: { stringValue: 'Sin señal' } } }], 'FINALIZADO', CIERRE_1_NOV),
+  incrementosMensuales([{ fields: { tipoTrabajo: { stringValue: 'AVERÍA' }, falla: { stringValue: 'LOS' } }, }, conFin(0)], 'CANCELADO', CIERRE_1_NOV),
+], [{ '2026-11': { losResueltas: 1 } }, { '2026-11': { losCanceladas: 1, instalacionesCanceladas: 1 } }]);
 
 // --- Cron: lo que no debe costar nada ---
 const peticiones = [];

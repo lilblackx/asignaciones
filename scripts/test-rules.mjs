@@ -531,6 +531,39 @@ await check('Nadie borra un registro de envío (tampoco lfernandez): queda el hi
   await assertFails(envios(asAdmin()).doc('alerta-1').delete());
 });
 
+// --- Totales del mes (estadisticasMensuales): los ve ventas y quien cierra; solo quien cierra suma, y nunca resta ---
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  await ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('estadisticasMensuales').doc('2026-10').set({ instalacionesFinalizadas: 5, losResueltas: 2 });
+});
+const mensual = (db, mes = '2026-10') => datos(db).collection('estadisticasMensuales').doc(mes);
+await check('Totales del mes: los leen ventas, quien cierra y el admin; no los leen otras promotoras, técnicos ni almacén', async () => {
+  await assertSucceeds(mensual(asVentas()).get());
+  await assertSucceeds(mensual(asCierra()).get());
+  await assertSucceeds(mensual(asAdmin()).get());
+  await assertFails(mensual(asPromotora()).get());
+  await assertFails(mensual(asTecnico()).get());
+  await assertFails(mensual(asAlmacen()).get());
+});
+await check('Totales del mes: quien cierra puede sumar (crear el mes o subir los contadores)', async () => {
+  await assertSucceeds(mensual(asCierra(), '2026-11').set({ instalacionesFinalizadas: 1 }, { merge: true }));
+  await assertSucceeds(mensual(asCierra()).set({ instalacionesFinalizadas: 6, instalacionesCanceladas: 1 }, { merge: true }));
+  await assertSucceeds(mensual(asAdmin()).set({ losResueltas: 3 }, { merge: true }));
+});
+await check('Totales del mes: no se puede restar, ni poner un valor que no sea entero, ni un campo ajeno, ni un mes mal escrito', async () => {
+  await assertFails(mensual(asCierra()).set({ instalacionesFinalizadas: 2 }, { merge: true }));
+  await assertFails(mensual(asCierra()).set({ instalacionesFinalizadas: '9' }, { merge: true }));
+  await assertFails(mensual(asCierra()).set({ otraCosa: 1 }, { merge: true }));
+  await assertFails(mensual(asCierra(), 'octubre').set({ instalacionesFinalizadas: 1 }));
+  await assertFails(mensual(asCierra(), '2026-13').set({ instalacionesFinalizadas: 1 }));
+});
+await check('Totales del mes: ventas, las promotoras y los técnicos no escriben, y nadie borra', async () => {
+  await assertFails(mensual(asVentas()).set({ instalacionesFinalizadas: 99 }, { merge: true }));
+  await assertFails(mensual(asPromotora()).set({ instalacionesFinalizadas: 99 }, { merge: true }));
+  await assertFails(mensual(asTecnico()).set({ instalacionesFinalizadas: 99 }, { merge: true }));
+  await assertFails(mensual(asCierra()).delete());
+  await assertFails(mensual(asAdmin()).delete());
+});
+
 await testEnv.cleanup();
 
 if (failures > 0) {
