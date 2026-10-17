@@ -9,6 +9,7 @@ import { ESTADO_EN_SITIO, deshacerLlegada, estaEnCamino, estadoViaje, iniciarVia
 import { parsePotencia } from '../utils/potencia';
 import { MENSAJE_TELEFONO_OBLIGATORIO, tieneTelefono } from '../utils/telefono';
 import { MENSAJE_PROMOTOR_OBLIGATORIO, claveNombre, nombrePromotora } from '../utils/promotora';
+import { direccionCliente, nombrePersona } from '../utils/datosCliente';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
@@ -565,6 +566,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const datosPromotora = esInstalacion ? { promotora: nombrePromotora(formData.promotora), promotoraClave: claveNombre(formData.promotora) } : {};
     const armarTicket = (codigo) => ({
       ...datosOrden,
+      nombre: nombrePersona(formData.nombre),
+      direccion: direccionCliente(formData.direccion),
       ...datosPromotora,
       ...(ventaTecnico ? { ventaTecnico } : {}),
       ubicacion: normalizarUbicacion(formData.ubicacion).valor || '',
@@ -673,7 +676,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const ticketFecha = originalTicket?.createdAt ? new Date(originalTicket.createdAt) : new Date();
 
     const armarTicket = (codigo) => {
-      const ticketToSave = { ...editingTicket, codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
+      const ticketToSave = { ...editingTicket, nombre: nombrePersona(editingTicket.nombre), direccion: direccionCliente(editingTicket.direccion), codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
       // Fecha en que se finalizó (la usa el módulo de materiales para filtrar por período).
       if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') ticketToSave.finalizadoEn = Date.now();
       // Si la orden deja de estar pendiente, el viaje "en camino" / "en sitio" termina.

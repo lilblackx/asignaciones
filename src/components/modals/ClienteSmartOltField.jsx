@@ -1,5 +1,6 @@
 import { AlertTriangle, Check, Loader2, RefreshCw, SearchX } from 'lucide-react';
 import { limpiarNombre } from '../../utils/clienteSmartolt';
+import { nombrePersona } from '../../utils/datosCliente';
 
 // Estado de la búsqueda de cliente en SmartOLT (ver useClienteSmartOlt) con dos piezas:
 // <ClienteSmartOltIcono> junto al campo de cédula (un icono de estado y el botón de
@@ -74,7 +75,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
                     </span>
                   )}
                   <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">
-                    {limpiarNombre(onu.nombre, estado.digitos) || 'Sin nombre'}
+                    {nombrePersona(limpiarNombre(onu.nombre, estado.digitos)) || 'Sin nombre'}
                   </span>
                 </span>
                 {onu.direccion && (

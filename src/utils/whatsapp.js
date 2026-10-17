@@ -4,6 +4,7 @@ import { normalizarNegritas } from './negritas.js';
 import { CODIGO_NAP, extraerCodigoNap } from './codigoNap.js';
 import { MAX_TELEFONOS, normalizarGuiones, telefonoInternacional, unirTelefonos } from './telefono.js';
 import { nombrePromotora } from './promotora.js';
+import { direccionCliente, nombrePersona } from './datosCliente.js';
 
 // La línea "Observaciones:" de la plantilla siempre lleva el aviso de cobro
 // (monto en Bs calculado según la tasa BCV del día). El campo "observacion" del
@@ -291,10 +292,10 @@ export function parseInstalacionTemplate(texto) {
       const url = extraerUbicacionDeTexto(valor);
       if (url) campos.ubicacion = url;
     } else if (campo === 'nombre') {
-      const nombre = extraerTextoLibre(valor, MAX_NOMBRE);
+      const nombre = nombrePersona(extraerTextoLibre(valor, MAX_NOMBRE));
       if (nombre) campos.nombre = nombre;
     } else if (campo === 'direccion') {
-      const direccion = extraerTextoLibre(valor, MAX_DIRECCION);
+      const direccion = direccionCliente(extraerTextoLibre(valor, MAX_DIRECCION));
       if (direccion) campos.direccion = direccion;
     } else if (campo === 'promotora') {
       // La que vendió la instalación: se guarda con su mayúscula y sin espacios de más; "N/A" y parecidos no cuentan.

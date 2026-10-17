@@ -1,5 +1,6 @@
 import { MAX_TELEFONOS, telefonoInternacional, unirTelefonos } from './telefono.js';
 import { unirNapPuerto } from './napPuerto.js';
+import { direccionCliente, nombrePersona } from './datosCliente.js';
 
 export const soloDigitos = (texto) => String(texto || '').replace(/\D/g, '');
 
@@ -73,8 +74,8 @@ export function napDeOnu(onu) {
 export function camposDeOnu(onu, cedula) {
   const tel = unirTelefonos(extraerTelefonos(onu.telefono));
   const campos = {
-    nombre: limpiarNombre(onu.nombre, cedula),
-    direccion: String(onu.direccion || '').trim(),
+    nombre: nombrePersona(limpiarNombre(onu.nombre, cedula)),
+    direccion: direccionCliente(onu.direccion),
     telefono: tel,
     nap: napDeOnu(onu),
     ubicacion: onu.latitud != null && onu.longitud != null ? `${onu.latitud}, ${onu.longitud}` : '',

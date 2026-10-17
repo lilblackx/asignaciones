@@ -47,7 +47,7 @@ SM
 // --- Plantilla real que no se leía (etiqueta en negrita sin dos puntos) ---
 check('plantilla real: cédula con "*C.I*" sin dos puntos', PLANTILLA_REAL, {
   nombre: 'Ricardo Jose Gonzalez Viloria', cedula: '34.250.195', telefono: '0412-0665119',
-  direccion: 'Ezequiel Zamora calle 96E', falla: 'SM', nap: 'N02H05',
+  direccion: 'Ezequiel Zamora Calle 96E', falla: 'SM', nap: 'N02H05',
 });
 
 // --- Formatos válidos de la cédula ---
@@ -188,7 +188,7 @@ const sinDireccion = { direccion: undefined };
 check('nombre normal', nom('Ricardo Jose Gonzalez Viloria'), { nombre: 'Ricardo Jose Gonzalez Viloria' });
 check('nombre: junta espacios repetidos', nom('  Ricardo   Jose  Gonzalez '), { nombre: 'Ricardo Jose Gonzalez' });
 check('nombre de empresa con números', nom('Inversiones 2020 C.A.'), { nombre: 'Inversiones 2020 C.A.' });
-check('nombre de exactamente 100 caracteres', nom('a'.repeat(100)), { nombre: 'a'.repeat(100) });
+check('nombre de exactamente 100 caracteres', nom('a'.repeat(100)), { nombre: 'A' + 'a'.repeat(99) });
 check('nombre: más largo que el campo (101)', nom('a'.repeat(101)), sinNombre);
 check('nombre: "N/A"', nom('N/A'), sinNombre);
 check('nombre: "Pendiente"', nom('Pendiente'), sinNombre);
@@ -199,10 +199,10 @@ check('nombre: un correo', nom('juan@gmail.com'), sinNombre);
 check('nombre: un enlace', nom('https://wa.me/584120665119'), sinNombre);
 check('nombre vacío seguido de otra etiqueta con valor', '*Nombres Completos:*\n*C.I* 34.250.195', { nombre: undefined, cedula: '34.250.195' });
 
-check('dirección normal', dir('Ezequiel Zamora calle 96E'), { direccion: 'Ezequiel Zamora calle 96E' });
-check('dirección con números y guion', dir('Urb. Los Olivos, casa 25-B'), { direccion: 'Urb. Los Olivos, casa 25-B' });
-check('dirección con números sueltos', dir('Av. 15 Delicias con calle 72'), { direccion: 'Av. 15 Delicias con calle 72' });
-check('dirección de exactamente 200 caracteres', dir('a'.repeat(200)), { direccion: 'a'.repeat(200) });
+check('dirección normal', dir('Ezequiel Zamora calle 96E'), { direccion: 'Ezequiel Zamora Calle 96E' });
+check('dirección con números y guion', dir('Urb. Los Olivos, casa 25-B'), { direccion: 'Urb. Los Olivos, Casa 25-B' });
+check('dirección con números sueltos', dir('Av. 15 Delicias con calle 72'), { direccion: 'Av. 15 Delicias con Calle 72' });
+check('dirección de exactamente 200 caracteres', dir('a'.repeat(200)), { direccion: 'A' + 'a'.repeat(199) });
 check('dirección: más larga que el campo (201)', dir('a'.repeat(201)), sinDireccion);
 check('dirección: con un teléfono pegado', dir('Calle 5 casa 10 tlf 04120665119'), sinDireccion);
 check('dirección: un correo', dir('darguinurdaneta692@gmail.com'), sinDireccion);
@@ -238,8 +238,8 @@ check('plantilla real con el teléfono de WhatsApp (guion no separable)', `I0000
 *Instalador:* Abraham
 *Observación:* La clienta cancela 25$ Por la Instalación, le toca Cancelar Nuevamente Entre los Primeros 5 días del mes de Noviembre  17$
 *NOTA:* Se puede hacer del M04F07 a 280m con 4 puertos libres`, {
-  nombre: 'Marielvis Chiquinquirá jayares Vargas', cedula: '30.419.134', telefono: '+58 414-3505086',
-  direccion: 'barrio el despertar av 73 calle 98 casa 98-1-22', falla: 'SM', instalador: 'Abraham', nap: 'M04F07',
+  nombre: 'Marielvis Chiquinquirá Jayares Vargas', cedula: '30.419.134', telefono: '+58 414-3505086',
+  direccion: 'Barrio El Despertar Av 73 Calle 98 Casa 98-1-22', falla: 'SM', instalador: 'Abraham', nap: 'M04F07',
 });
 
 // ============ La plantilla real completa (con la observación) ============
@@ -253,7 +253,7 @@ check('plantilla real completa', `${PLANTILLA_REAL}
 *Observación:* cancela 25$ o
 21,919.75 bs por instalación y vuelve a cancelar los primeros 5 días mes de noviembre 17$ de mensualidad.`, {
   nombre: 'Ricardo Jose Gonzalez Viloria', cedula: '34.250.195', telefono: '0412-0665119',
-  direccion: 'Ezequiel Zamora calle 96E', falla: 'SM', nap: 'N02H05',
+  direccion: 'Ezequiel Zamora Calle 96E', falla: 'SM', nap: 'N02H05',
 });
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
