@@ -1,35 +1,98 @@
-import { useMemo, useState } from 'react';
-import { Building2, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, Download, Megaphone, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { etiquetaRol } from '../constants';
 import { useToast } from '../hooks/useToast';
 import { useAhora } from '../hooks/useAhora';
+import { usePreferencia } from '../hooks/usePreferencia';
+import { useEstadisticasMes } from '../hooks/useEstadisticasMes';
 import { useInstalacionesPromotora } from '../hooks/useInstalacionesPromotora';
-import { useHistorialInstalaciones } from '../hooks/useHistorialInstalaciones';
-import { ORDEN_ESTADOS_PROMOTORA, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, categoriaOrden, etiquetaFiltroEstado, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
+import { ESPERA_ACTUALIZAR_MS, useHistorialInstalaciones } from '../hooks/useHistorialInstalaciones';
+import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_ESTADOS_PROMOTORA, ORDEN_POR_DEFECTO, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, atrasoOrden, categoriaOrden, enRangoFecha, etiquetaFiltroEstado, fechaOrden, ordenarOrdenes, resumenPorPromotor, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
+import { tiempoTranscurrido } from '../utils/enCamino';
+import { mesDe, mesesRecientes, totalesDelMes } from '../utils/totalesMes';
+import { claveNombre } from '../utils/promotora';
+import { csvDeOrdenes, descargarCsv, nombreArchivoExportacion } from '../utils/exportarOrdenes';
 import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
 import TarjetaInstalacion from './TarjetaInstalacion';
+import ResumenPromotores from './ResumenPromotores';
+import TotalesMes from './TotalesMes';
+import SelectMenu from './SelectMenu';
 import PlantillaFinalModal from './modals/PlantillaFinalModal';
 import { promotoraDeOrden } from '../utils/whatsapp';
 
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// El número va en un recuadro al lado de la etiqueta, como las insignias del resto de la app ("SIN TÉCNICO 3").
+function Contador({ n, tono }) {
+  return <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums ${tono}`}>{n}</span>;
+}
+
+const ETIQUETA_FILTRO = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400';
+const claveDePromotor = (o) => claveNombre(promotoraDeOrden(o)) || '-';
+
+// "Actualizar" del historial de las ya cerradas. Las órdenes abiertas llegan solas en vivo; esto solo vuelve a leer las cerradas, y no
+// más seguido que ESPERA_ACTUALIZAR_MS (la hora de la última lectura se guarda en el equipo, así que recargar la página no lo salta).
+function ActualizarHistorial({ leidoEn, actualizar, ahora, avisar }) {
+  const [segundo, setSegundo] = useState(() => Date.now());
+  const [leyendo, setLeyendo] = useState(false);
+  const restante = Math.max(0, leidoEn + ESPERA_ACTUALIZAR_MS - segundo);
+  const esperando = restante > 0;
+  // Solo cuenta los segundos mientras hay que esperar.
+  useEffect(() => {
+    if (!esperando) return undefined;
+    const id = setInterval(() => setSegundo(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [esperando]);
+
+  const pulsar = async () => {
+    setLeyendo(true);
+    const resultado = await actualizar();
+    setLeyendo(false);
+    if (resultado === 'ok') avisar({ type: 'success', text: 'Historial actualizado.' });
+    else if (resultado === 'error') avisar({ type: 'error', text: 'No se pudo actualizar el historial. Intenta de nuevo en un momento.' });
+  };
+  const cuenta = `${Math.floor(restante / 60000)}:${String(Math.ceil(restante / 1000) % 60).padStart(2, '0')}`;
+
+  return (
+    <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+      <span>{leidoEn ? `Actualizado ${tiempoTranscurrido(leidoEn, ahora)}` : 'Cargando...'}</span>
+      <button
+        type="button"
+        onClick={pulsar}
+        disabled={esperando || leyendo || !leidoEn}
+        title={esperando ? `Se puede actualizar de nuevo en ${cuenta} (así se cuidan las lecturas).` : 'Volver a leer las órdenes cerradas'}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700"
+      >
+        <RefreshCw className={`w-3 h-3 ${leyendo ? 'animate-spin' : ''}`} aria-hidden="true" /> {esperando ? `Actualizar (${cuenta})` : 'Actualizar'}
+      </button>
+    </div>
+  );
+}
 
 // Pantalla de la PROMOTORA: todas las instalaciones y en qué van. Solo lectura; no ve averías, cobros ni datos técnicos.
 export default function PromotoraApp({ auth }) {
   const { firebaseUser, currentUserName, currentUser, role, handleLogout, promotoraClaves, promotoraNombres, verTodasInstalaciones } = auth;
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // El tema y la categoría elegida se recuerdan en este equipo, por usuario (no cuestan nada en Firebase).
+  const [isDarkMode, setIsDarkMode] = usePreferencia(`tema:${currentUser}`, true, (v) => typeof v === 'boolean');
   const { toastMsg, setToastMsg } = useToast();
   const ahora = useAhora();
   // Solo ve las instalaciones de su promotora (los nombres que el administrador le asignó). Sin nombres no ve nada,
   // salvo el perfil de ventas (`verTodasInstalaciones`), que ve las de todas las promotoras.
   const sinNombre = !verTodasInstalaciones && promotoraClaves.length === 0;
   const { tickets, cargado, error } = useInstalacionesPromotora(firebaseUser, promotoraClaves, verTodasInstalaciones);
-  const historial = useHistorialInstalaciones(firebaseUser, promotoraClaves, verTodasInstalaciones);
+  const { historial, leidoEn, actualizar: actualizarHistorial, hayMas: hayMasCerradas, cargarMas: cargarMasCerradas, cargandoMas } = useHistorialInstalaciones(firebaseUser, promotoraClaves, verTodasInstalaciones);
   const [filtro, setFiltro] = useState('TODAS');
   // Solo ventas (ve todas) trabaja con instalaciones y averías LOS: elige ver las dos juntas, solo instalaciones o solo LOS.
-  const [categoria, setCategoria] = useState('TODO');
+  const [categoria, setCategoria] = usePreferencia(`categoria:${currentUser}`, 'TODO', (v) => ['TODO', 'INSTALACION', 'LOS'].includes(v));
   const vista = verTodasInstalaciones ? categoria : 'INSTALACION';
   const [busqueda, setBusqueda] = useState('');
+  const [fecha, setFecha] = useState('TODAS');
+  const [promotor, setPromotor] = useState('TODOS');
+  const [soloAtrasadas, setSoloAtrasadas] = useState(false);
+  const [criterioOrden, setCriterioOrden] = useState(ORDEN_POR_DEFECTO);
+  const [verResumen, setVerResumen] = useState(false);
+  const [verFiltros, setVerFiltros] = useState(false);
+  const [mes, setMes] = useState(() => mesDe(ahora));
   // Instalación finalizada cuya plantilla se está viendo (se guarda la orden; el texto se arma al mostrarla).
   const [plantillaDe, setPlantillaDe] = useState(null);
 
@@ -45,16 +108,43 @@ export default function PromotoraApp({ auth }) {
     }
   };
 
+  // "Copiar" de la tarjeta: la misma plantilla que muestra "Ver plantilla", sin abrirla.
+  const copiarDeTarjeta = (orden) => copiar(textoPlantillaFinal(orden), `Plantilla de ${orden.codigo || 'la orden'} copiada.`);
+
+  // Totales del mes (solo ventas): lo cerrado sale de un documento por mes; lo de hoy, de las órdenes en vivo que ya están cargadas.
+  const meses = useMemo(() => mesesRecientes(ahora), [ahora]);
+  const { contador, cargado: totalesCargados, error: errorTotales } = useEstadisticasMes(firebaseUser, verTodasInstalaciones, mes);
+  const totales = useMemo(() => (totalesCargados || errorTotales ? totalesDelMes(contador, tickets, mes, ahora) : null), [contador, totalesCargados, errorTotales, tickets, mes, ahora]);
+
   const todas = useMemo(() => unirInstalaciones(tickets, historial, ahora), [tickets, historial, ahora]);
   const cuantasPorCategoria = useMemo(() => todas.reduce((acc, o) => ({ ...acc, [categoriaOrden(o)]: (acc[categoriaOrden(o)] || 0) + 1 }), {}), [todas]);
-  // Lo que se ve según el selector de arriba; los filtros de estado, el conteo y el buscador trabajan sobre esto.
+  // Lo que se ve según el selector de arriba; los demás filtros, el conteo y el buscador trabajan sobre esto.
   const ordenes = useMemo(() => (vista === 'TODO' ? todas : todas.filter((o) => categoriaOrden(o) === vista)), [todas, vista]);
-  const conteo = useMemo(() => ordenes.reduce((acc, o) => ({ ...acc, [o.vista.clave]: (acc[o.vista.clave] || 0) + 1 }), {}), [ordenes]);
+  const porFecha = useMemo(() => ordenes.filter((o) => enRangoFecha(fechaOrden(o), fecha, ahora)), [ordenes, fecha, ahora]);
+  // Los promotores que hay en lo que se está viendo (para el selector y el resumen); el elegido que ya no está en la lista se descarta solo.
+  const filasPromotor = useMemo(() => (verTodasInstalaciones ? resumenPorPromotor(porFecha) : []), [porFecha, verTodasInstalaciones]);
+  const promotorActivo = filasPromotor.some((f) => (f.clave || '-') === promotor) ? promotor : 'TODOS';
+  const base = useMemo(() => (promotorActivo === 'TODOS' ? porFecha : porFecha.filter((o) => claveDePromotor(o) === promotorActivo)), [porFecha, promotorActivo]);
+  const conteo = useMemo(() => base.reduce((acc, o) => ({ ...acc, [o.vista.clave]: (acc[o.vista.clave] || 0) + 1 }), {}), [base]);
+  const atrasadas = useMemo(() => base.filter((o) => atrasoOrden(o, ahora)).length, [base, ahora]);
   const visibles = useMemo(() => {
     const q = sinTildes(busqueda).trim();
-    return ordenes.filter((o) => (filtro === 'TODAS' || o.vista.clave === filtro)
+    const lista = base.filter((o) => (filtro === 'TODAS' || o.vista.clave === filtro)
+      && (!soloAtrasadas || atrasoOrden(o, ahora))
       && (!q || sinTildes(`${o.nombre} ${o.cedula} ${o.codigo} ${verTodasInstalaciones ? promotoraDeOrden(o) : ''}`).includes(q)));
-  }, [ordenes, filtro, busqueda, verTodasInstalaciones]);
+    return ordenarOrdenes(lista, criterioOrden, ahora);
+  }, [base, filtro, soloAtrasadas, busqueda, verTodasInstalaciones, criterioOrden, ahora]);
+
+  // Cuántos de los filtros del panel (estado, atrasadas, fecha, promotor y orden) están puestos: se avisa en el botón aunque el panel esté cerrado.
+  const filtrosActivos = [filtro !== 'TODAS', soloAtrasadas, fecha !== 'TODAS', promotorActivo !== 'TODOS', criterioOrden !== ORDEN_POR_DEFECTO].filter(Boolean).length;
+  const hayFiltros = filtro !== 'TODAS' || busqueda !== '' || fecha !== 'TODAS' || promotorActivo !== 'TODOS' || soloAtrasadas || criterioOrden !== ORDEN_POR_DEFECTO;
+  const limpiarFiltros = () => { setFiltro('TODAS'); setBusqueda(''); setFecha('TODAS'); setPromotor('TODOS'); setSoloAtrasadas(false); setCriterioOrden(ORDEN_POR_DEFECTO); };
+  // Baja a Excel (CSV) lo que se ve ahora, con los filtros y el orden elegidos.
+  const exportar = () => {
+    descargarCsv(csvDeOrdenes(visibles, ahora), nombreArchivoExportacion(ahora));
+    setToastMsg({ type: 'success', text: `Se exportaron ${visibles.length} ${visibles.length === 1 ? 'orden' : 'órdenes'}.` });
+  };
+  const elegirPromotor = (clave) => setPromotor(promotorActivo === clave ? 'TODOS' : clave);
 
   const chip = (clave, texto, n) => (
     <button
@@ -64,8 +154,17 @@ export default function PromotoraApp({ auth }) {
       onClick={() => setFiltro(clave)}
       className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${filtro === clave ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500'}`}
     >
-      {texto} <span className="opacity-80">({n})</span>
+      <span>{texto}</span>
+      <Contador n={n} tono={filtro === clave ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
     </button>
+  );
+
+  // Los desplegables son el menú propio de la app (SelectMenu), como en la pantalla de la oficina.
+  const selector = (id, etiqueta, icono, valor, alCambiar, opciones) => (
+    <div className="flex flex-col gap-1 min-w-0">
+      <span className={ETIQUETA_FILTRO}>{etiqueta}</span>
+      <SelectMenu id={id} ariaLabel={etiqueta} icon={icono} value={valor} onChange={alCambiar} items={opciones.map(([value, label]) => ({ value, label }))} />
+    </div>
   );
 
   return (
@@ -75,16 +174,30 @@ export default function PromotoraApp({ auth }) {
         <EncabezadoSimple titulo={verTodasInstalaciones ? 'Instalaciones y LOS' : 'Instalaciones'} icono={Building2} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
         <main className="p-4 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
-            <input
-              type="search"
-              aria-label={verTodasInstalaciones ? 'Buscar por nombre, cédula, código o promotor' : 'Buscar por nombre, cédula o código'}
-              placeholder={verTodasInstalaciones ? 'Buscar nombre, cédula, código o promotor' : 'Buscar nombre, cédula o código'}
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-3 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
-            />
+          {verTodasInstalaciones && cargado && <TotalesMes mes={mes} meses={meses} onCambiarMes={setMes} totales={totales} error={errorTotales} />}
+
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+              <input
+                type="search"
+                aria-label={verTodasInstalaciones ? 'Buscar por nombre, cédula, código o promotor' : 'Buscar por nombre, cédula o código'}
+                placeholder={verTodasInstalaciones ? 'Buscar nombre, cédula, código o promotor' : 'Buscar nombre, cédula o código'}
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-3 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              aria-expanded={verFiltros}
+              onClick={() => setVerFiltros((v) => !v)}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${verFiltros ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Filtros</span>
+              {filtrosActivos > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{filtrosActivos}</span>}
+            </button>
           </div>
 
           {verTodasInstalaciones && (
@@ -99,20 +212,75 @@ export default function PromotoraApp({ auth }) {
                   type="button"
                   aria-pressed={categoria === clave}
                   onClick={() => { setCategoria(clave); setFiltro('TODAS'); }}
-                  className={`px-2 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white dark:bg-zinc-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'}`}
+                  className={`px-2 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
                 >
-                  {texto} <span className="opacity-80">({n})</span>
+                  <span>{texto}</span>
+                  <Contador n={n} tono={categoria === clave ? 'bg-zinc-200 dark:bg-zinc-700' : 'bg-zinc-300/70 dark:bg-zinc-800'} />
                 </button>
               ))}
             </div>
           )}
 
-          <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
-            {chip('TODAS', 'Todas', ordenes.length)}
-            {ORDEN_ESTADOS_PROMOTORA.filter((c) => conteo[c]).map((c) => chip(c, etiquetaFiltroEstado(c, vista), conteo[c]))}
-          </div>
+          {verFiltros && (
+            <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-4">
+              <div className="space-y-1.5">
+                <p className={ETIQUETA_FILTRO}>Estado</p>
+                <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+                  {chip('TODAS', 'Todas', base.length)}
+                  {ORDEN_ESTADOS_PROMOTORA.filter((c) => conteo[c]).map((c) => chip(c, etiquetaFiltroEstado(c, vista), conteo[c]))}
+                  {(atrasadas > 0 || soloAtrasadas) && (
+                    <button
+                      type="button"
+                      aria-pressed={soloAtrasadas}
+                      onClick={() => setSoloAtrasadas((v) => !v)}
+                      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${soloAtrasadas ? 'bg-amber-500 border-amber-500 text-black' : 'bg-amber-50 dark:bg-amber-950/30 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:border-amber-500'}`}
+                    >
+                      <span>Atrasadas</span>
+                      <Contador n={atrasadas} tono={soloAtrasadas ? 'bg-black/15' : 'bg-amber-200 dark:bg-amber-900/50'} />
+                    </button>
+                  )}
+                </div>
+              </div>
 
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">{visibles.length} de {ordenes.length} {vista === 'LOS' ? 'averías LOS' : vista === 'TODO' ? 'órdenes' : 'instalaciones'}</p>
+              <div className={`grid gap-2 ${verTodasInstalaciones ? 'grid-cols-2 md:grid-cols-3 md:max-w-2xl' : 'grid-cols-2 md:max-w-md'}`}>
+                {selector('filtro-fecha', 'Fecha', CalendarDays, fecha, setFecha, FILTROS_FECHA)}
+                {verTodasInstalaciones && selector('filtro-promotor', 'Promotor', Megaphone, promotorActivo, setPromotor, [['TODOS', `Todos (${porFecha.length})`], ...filasPromotor.map((f) => [f.clave || '-', `${f.nombre} (${f.total})`])])}
+                {selector('filtro-orden', 'Ordenar', ArrowDownAZ, criterioOrden, setCriterioOrden, OPCIONES_ORDEN)}
+              </div>
+
+              {verTodasInstalaciones && (
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    aria-expanded={verResumen}
+                    onClick={() => setVerResumen((v) => !v)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600"
+                  >
+                    Resumen por promotor <ChevronDown className={`w-3.5 h-3.5 transition-transform ${verResumen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportar}
+                    disabled={visibles.length === 0}
+                    title="Bajar a Excel (CSV) lo que se ve ahora"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700"
+                  >
+                    <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar a Excel ({visibles.length})
+                  </button>
+                </div>
+              )}
+              {verTodasInstalaciones && verResumen && <ResumenPromotores filas={filasPromotor} vista={vista} elegida={promotorActivo} onElegir={elegirPromotor} />}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+              {visibles.length} de {ordenes.length} {vista === 'LOS' ? 'averías LOS' : vista === 'TODO' ? 'órdenes' : 'instalaciones'}
+              {hayMasCerradas && <span className="text-zinc-500 dark:text-zinc-400"> · faltan cerradas por cargar</span>}
+              {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-600 dark:text-red-400 hover:underline">Limpiar filtros</button>}
+            </p>
+            <ActualizarHistorial leidoEn={leidoEn} actualizar={actualizarHistorial} ahora={ahora} avisar={setToastMsg} />
+          </div>
 
           {sinNombre ? (
             <p role="alert" className="text-sm text-amber-700 dark:text-amber-400 text-center py-10 max-w-md mx-auto">Tu usuario todavía no tiene un nombre de promotor asignado, por eso no ves instalaciones. Pídele al administrador que lo agregue en Usuarios.</p>
@@ -121,11 +289,25 @@ export default function PromotoraApp({ auth }) {
           ) : !cargado ? (
             <p role="status" className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">Cargando instalaciones...</p>
           ) : visibles.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con la búsqueda.'}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con los filtros.'}</p>
           ) : (
             <ul className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-              {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} mostrarTipo={verTodasInstalaciones} />)}
+              {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} onCopiarPlantilla={copiarDeTarjeta} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}
             </ul>
+          )}
+
+          {hayMasCerradas && cargado && (
+            <div className="flex flex-col items-center gap-1.5 pt-1">
+              <button
+                type="button"
+                onClick={cargarMasCerradas}
+                disabled={cargandoMas}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700 transition-colors"
+              >
+                {cargandoMas ? 'Cargando...' : 'Cargar más cerradas'}
+              </button>
+              <p className="text-[10px] text-zinc-400 text-center">Se muestran las cerradas más recientes; los números y filtros son de lo cargado.</p>
+            </div>
           )}
 
           <p className="text-[10px] text-zinc-400 text-center pt-2">

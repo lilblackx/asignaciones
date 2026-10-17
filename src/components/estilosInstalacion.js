@@ -9,3 +9,16 @@ export const ESTILO_ESTADO_PROMOTORA = {
   INSTALADA: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
   CANCELADA: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
 };
+
+// Variante SÓLIDA de cada estado (como las etiquetas de estado de la tabla de la oficina), para la tarjeta de orden (TarjetaInstalacion) sobre su cabecera negra.
+// Es igual en claro y oscuro: la cabecera es negra en los dos temas.
+export const ESTILO_ESTADO_PROMOTORA_SOLIDO = {
+  SIN_TECNICO: 'bg-zinc-600 text-white',
+  PROGRAMADA: 'bg-indigo-600 text-white',
+  ASIGNADA: 'bg-blue-600 text-white',
+  EN_CAMINO: 'bg-sky-600 text-white',
+  EN_SITIO: 'bg-teal-600 text-white',
+  EN_REVISION: 'bg-amber-400 text-black',
+  INSTALADA: 'bg-emerald-600 text-white',
+  CANCELADA: 'bg-red-600 text-white',
+};

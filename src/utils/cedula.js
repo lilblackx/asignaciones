@@ -6,3 +6,12 @@ export const formatCedula = (cedula, tipoDocumento) => {
   // RIF (jurídico/extranjero/gubernamental): sin puntos, solo el prefijo y los números.
   return `${tipoDocumento}-${String(cedula).replace(/\D/g, '')}`;
 };
+
+// La cédula con su prefijo, para las pantallas que siempre lo muestran (ventas y su exportación): "V-12345678". Si el valor ya trae
+// el prefijo ("V-22222222", escrito a mano o guardado así) no se vuelve a poner. Distinta de formatCedula: esa deja la cédula V sin prefijo.
+export const formatearCedula = (cedula, tipoDocumento) => {
+  const valor = String(cedula ?? '').trim();
+  if (!valor) return '';
+  if (/^[VEJGP]-/i.test(valor)) return valor.charAt(0).toUpperCase() + valor.slice(1);
+  return `${tipoDocumento || 'V'}-${valor}`;
+};

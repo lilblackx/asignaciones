@@ -127,3 +127,99 @@ export function unirInstalaciones(tickets, historial, ahora = Date.now()) {
     .sort((a, b) => (a.origen === b.origen ? 0 : a.origen === 'activa' ? -1 : 1)
       || (b.archivadoEn || b.createdAt || 0) - (a.archivadoEn || a.createdAt || 0));
 }
+
+// --- Lo que ventas usa para seguir las órdenes: fecha, filtro por fecha, atraso y resumen por promotor ---
+
+// La fecha con la que se ordena y se filtra: cuando se cerró (finalizada o cancelada) o, si sigue abierta, cuando se creó. Es la misma
+// que muestra la tarjeta.
+export function fechaOrden(t) {
+  const cerrada = t?.origen === 'historial' || t?.estado === 'FINALIZADO' || t?.estado === 'CANCELADO';
+  return (cerrada ? (t.finalizadoEn || t.archivadoEn) : t?.createdAt) || 0;
+}
+
+export const FILTROS_FECHA = [
+  ['TODAS', 'Todas las fechas'],
+  ['HOY', 'Hoy'],
+  ['AYER', 'Ayer'],
+  ['7_DIAS', 'Últimos 7 días'],
+];
+
+// ¿La fecha cae en el rango elegido? Los días se cuentan en hora local (como el resto de la app).
+export function enRangoFecha(ms, clave, ahora = Date.now()) {
+  if (clave === 'TODAS') return true;
+  if (!ms) return false;
+  const hoy = new Date(ahora);
+  hoy.setHours(0, 0, 0, 0);
+  const inicioHoy = hoy.getTime();
+  if (clave === 'HOY') return ms >= inicioHoy;
+  if (clave === 'AYER') return ms >= inicioHoy - DIA_MS && ms < inicioHoy;
+  if (clave === '7_DIAS') return ms >= inicioHoy - 6 * DIA_MS;
+  return true;
+}
+
+// Cuántos días de espera hacen que una orden se marque como atrasada: [aviso, urgente]. Solo las que aún no tienen quién las haga
+// (sin técnico) o que ya tienen técnico pero no se han hecho (asignada). Una programada se cuenta desde su fecha, no desde que se creó.
+const UMBRALES_ATRASO = { SIN_TECNICO: [1, 2], ASIGNADA: [2, 4] };
+
+// null si no está atrasada; si lo está, { nivel: 'aviso' | 'urgente', dias, que: 'Sin técnico' | 'Sin instalar' | 'Sin resolver', texto }.
+export function atrasoOrden(t, ahora = Date.now()) {
+  const umbral = UMBRALES_ATRASO[t?.vista?.clave];
+  if (!umbral) return null;
+  let desde = t.createdAt || 0;
+  const [anio, mes, dia] = String(t.fechaProgramada || '').split('-').map(Number);
+  if (anio && mes && dia) desde = new Date(anio, mes - 1, dia).getTime();
+  if (!desde) return null;
+  const dias = Math.floor((ahora - desde) / DIA_MS);
+  if (dias < umbral[0]) return null;
+  const que = t.vista.clave === 'SIN_TECNICO' ? 'Sin técnico' : esAveriaLos(t) ? 'Sin resolver' : 'Sin instalar';
+  return { nivel: dias >= umbral[1] ? 'urgente' : 'aviso', dias, que, texto: `${que} hace ${dias === 1 ? '1 día' : `${dias} días`}` };
+}
+
+// De cada promotor: cuántas órdenes hay en cada grupo de estados. Agrupa por la clave del nombre (mayúsculas y tildes no separan
+// a la misma persona); las órdenes sin promotor van juntas. Ordenado por instaladas y luego por total.
+export function resumenPorPromotor(ordenes) {
+  const grupo = { INSTALADA: 'instaladas', EN_REVISION: 'enRevision', CANCELADA: 'canceladas' };
+  const filas = new Map();
+  for (const o of ordenes) {
+    const nombre = promotoraDeOrden(o);
+    const clave = claveNombre(nombre);
+    const fila = filas.get(clave) || { clave, nombre: nombre || 'Sin promotor', instaladas: 0, enRevision: 0, enCurso: 0, canceladas: 0, total: 0 };
+    fila[grupo[o.vista?.clave] || 'enCurso']++;
+    fila.total++;
+    filas.set(clave, fila);
+  }
+  return [...filas.values()].sort((a, b) => b.instaladas - a.instaladas || b.total - a.total || a.nombre.localeCompare(b.nombre, 'es'));
+}
+
+export const ORDEN_POR_DEFECTO = 'URGENCIA';
+export const OPCIONES_ORDEN = [
+  ['URGENCIA', 'Urgencia'],
+  ['RECIENTES', 'Más recientes'],
+  ['ANTIGUAS', 'Más antiguas'],
+  ['ESTADO', 'Por estado'],
+];
+
+// Orden de urgencia: primero las atrasadas (las de más días antes); después, por estado: sin técnico, asignada, en camino, en sitio,
+// programada, en revisión, instalada o resuelta y cancelada. Dentro de cada grupo, la creada antes primero (sin fecha, al final).
+// En camino, en sitio y programada no estaban en la lista pedida: van justo después de "asignada", que es lo más cercano a "por hacer".
+const GRUPOS_URGENCIA = ['SIN_TECNICO', 'ASIGNADA', 'EN_CAMINO', 'EN_SITIO', 'PROGRAMADA', 'EN_REVISION', 'INSTALADA', 'CANCELADA'];
+const creadaEn = (t) => t.createdAt || t.creadaEn || fechaOrden(t) || 0;
+const porFechaAscendente = (a, b) => (!creadaEn(a) - !creadaEn(b)) || creadaEn(a) - creadaEn(b);
+
+function ordenarPorUrgencia(ordenes, ahora) {
+  const atraso = new Map(ordenes.map((o) => [o, atrasoOrden(o, ahora)]));
+  const grupo = (o) => (atraso.get(o) ? 0 : 1 + GRUPOS_URGENCIA.indexOf(o.vista.clave));
+  return [...ordenes].sort((a, b) => grupo(a) - grupo(b)
+    || ((atraso.get(b)?.dias || 0) - (atraso.get(a)?.dias || 0))
+    || porFechaAscendente(a, b));
+}
+
+// Ordena una copia de la lista. `ahora` solo hace falta para 'URGENCIA' (calcula los atrasos).
+export function ordenarOrdenes(ordenes, criterio, ahora = Date.now()) {
+  if (criterio === 'URGENCIA') return ordenarPorUrgencia(ordenes, ahora);
+  if (criterio === 'RECIENTES') return [...ordenes].sort((a, b) => fechaOrden(b) - fechaOrden(a));
+  // Las que no traen fecha van al final también al revés.
+  if (criterio === 'ANTIGUAS') return [...ordenes].sort((a, b) => (!fechaOrden(a) - !fechaOrden(b)) || fechaOrden(a) - fechaOrden(b));
+  if (criterio === 'ESTADO') return [...ordenes].sort((a, b) => ORDEN_ESTADOS_PROMOTORA.indexOf(a.vista.clave) - ORDEN_ESTADOS_PROMOTORA.indexOf(b.vista.clave) || fechaOrden(b) - fechaOrden(a));
+  return ordenes;
+}
