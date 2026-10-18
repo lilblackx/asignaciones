@@ -14,8 +14,8 @@ import UpdatePrompt from './components/UpdatePrompt.jsx'
 // petición condicional (If-None-Match): si no hubo cambios el servidor responde 304 sin
 // cuerpo, así que pesa unos cientos de bytes. Al detectar una versión nueva se muestra el
 // aviso "Actualización disponible" (UpdatePrompt) y el usuario decide cuándo recargar,
-// así no se interrumpe a alguien a mitad de cargar un ticket. Si la pestaña ya estaba en
-// segundo plano cuando se detectó, se aplica ahí mismo sin preguntar.
+// así no se interrumpe a alguien a mitad de cargar un ticket. El aviso se muestra
+// siempre, también si la app estaba en segundo plano: no se actualiza sola.
 const UPDATE_CHECK_INTERVAL_MS = 60 * 1000;
 
 const updateSW = registerSW({
@@ -33,10 +33,6 @@ const updateSW = registerSW({
     window.addEventListener('focus', buscarActualizacion);
   },
   onNeedRefresh() {
-    if (document.visibilityState === 'hidden') {
-      updateSW(true);
-      return;
-    }
     setUpdateAvailable(() => updateSW(true));
   },
   onOfflineReady() {

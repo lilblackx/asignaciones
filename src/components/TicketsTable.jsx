@@ -1,6 +1,7 @@
-import { ArrowDownAZ, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
+import { ArrowDownAZ, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Trash2, Wrench } from 'lucide-react';
+// Para reactivar la columna ENVIADO: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
-import { formatCedula, getEnvioInfo, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
+import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
 import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
@@ -13,7 +14,7 @@ import { estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 
-const COLUMNAS = 9;
+const COLUMNAS = 8;
 // Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
 // Se pegan debajo del encabezado de la página (62px, sticky) y el separador debajo del título de columnas (su alto). Si cambia el
 // alto de alguno de los dos, hay que ajustar estas dos cifras.
@@ -28,7 +29,7 @@ export default function TicketsTable({
   sortBy,
   setSortBy,
   getTecnicoColor,
-  onToggleAsignado,
+  // onToggleAsignado,
   onEdit,
   onDelete,
   onCopyWhatsApp,
@@ -55,25 +56,27 @@ export default function TicketsTable({
           {/* La raya roja va como sombra interior de cada título: un borde de la tabla no se queda pegado al bajar. */}
           <tr className="[&>th]:shadow-[inset_0_-2px_0_0_#dc2626]">
             <th className="px-3 py-3 border-r border-zinc-800 w-[9%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[16%] align-middle text-center">NOMBRE</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[18%] align-middle text-center">NOMBRE</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] min-[1440px]:w-[9%] align-middle text-center">CÉDULA</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[14%] min-[1440px]:w-[20%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[16%] min-[1440px]:w-[15%] align-middle group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
+            <th className="px-3 py-3 border-r border-zinc-800 w-[16%] min-[1440px]:w-[22%] align-middle text-center">DIRECCIÓN</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[17%] min-[1440px]:w-[16%] align-middle group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
               <div className="flex items-center justify-center gap-1">
                 FALLA / TRABAJO
                 <ArrowDownAZ className={`w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
               </div>
             </th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
+            {/* Columna ENVIADO desactivada por ahora (el estado de envío sigue en isAsignado y en el Excel); ver también su celda más abajo.
             <th className="px-2 py-3 border-r border-zinc-800 w-[6%] align-middle text-center">ENVIADO</th>
+            */}
             <th className="px-3 py-3 border-r border-zinc-800 w-[8%] min-[1440px]:w-[7%] align-middle text-center">ESTADO</th>
-            <th className="px-2 py-3 align-middle text-center w-[9%]">ACCIONES</th>
+            <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
           </tr>
         </thead>
         <tbody>
           {filteredTickets.map((ticket, index) => {
             const tipoEstilo = getTipoTrabajoEstilo(ticket.tipoTrabajo);
-            const envio = getEnvioInfo(ticket);
+            // const envio = getEnvioInfo(ticket); // solo la usa la celda ENVIADO, desactivada
             const enlaceNavegacion = getEnlaceNavegacion(ticket.ubicacion);
             const eliminado = ticket.estado === 'ELIMINADO';
             const prioritaria = esPrioritaria(ticket);
@@ -175,6 +178,7 @@ export default function TicketsTable({
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
                 </td>
+                {/* Celda ENVIADO desactivada (ver el encabezado).
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle bg-zinc-50/50 dark:bg-zinc-900/20">
                   <div className="flex items-center justify-center h-full min-h-[2rem]">
                     <button
@@ -196,6 +200,7 @@ export default function TicketsTable({
                     </button>
                   </div>
                 </td>
+                */}
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
                   <div className="flex items-center justify-center h-full min-h-[2rem]">
                     <span className={`inline-flex items-center justify-center px-2 py-1.5 text-[10px] font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
