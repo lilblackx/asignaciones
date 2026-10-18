@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, Radio } from 'lucide-react';
 import { consultarSenalOnu } from '../../lib/smartolt';
-import { calidadSenal, onuEnLinea, valorSenal } from '../../utils/senalOnu';
+import { onuEnLinea, valorSenal } from '../../utils/senalOnu';
+import { calidadValor } from '../../utils/valoresCliente';
+
+// Calidad con la escala de la empresa (la misma de los campos de valores del cliente), no la de SmartOLT: con dos
+// escalas distintas el aviso y el campo se contradecían (SmartOLT decía "Muy buena" y el campo "Regular").
+function Calidad({ valor }) {
+  const calidad = calidadValor(valor);
+  return calidad ? <> · <span className={`font-bold ${calidad.clase}`}>{calidad.texto}</span></> : null;
+}
 
 // "Ver valores": el técnico pide la potencia de la ONU del cliente a SmartOLT (solo al
 // presionar el botón, nunca sola). El valor de 1310 nm se muestra y queda capturado en el
@@ -63,10 +71,10 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
         {estado?.tipo === 'listo' && (
           <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs text-emerald-900 dark:text-emerald-200 space-y-0.5">
             {estado.valor !== null
-              ? <p><span className="font-bold">OLT Rx · Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span>{estado.onu.calidad && <> · {calidadSenal(estado.onu.calidad)}</>}</p>
+              ? <p><span className="font-bold">OLT Rx · Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span><Calidad valor={estado.valor} /></p>
               : <p role="alert" className="font-bold text-amber-800 dark:text-amber-300">OLT Rx 1310 nm: SmartOLT no la reportó</p>}
             {valorSenal(estado.onu.senal1490) !== null
-              ? <p><span className="font-bold">ONU Rx · Señal (1490 nm):</span> {valorSenal(estado.onu.senal1490)} dBm</p>
+              ? <p><span className="font-bold">ONU Rx · Señal (1490 nm):</span> {valorSenal(estado.onu.senal1490)} dBm<Calidad valor={valorSenal(estado.onu.senal1490)} /></p>
               : <p role="alert" className="font-bold text-amber-800 dark:text-amber-300">ONU Rx 1490 nm: SmartOLT no la reportó</p>}
             {estado.conservada
               ? <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">No se cambió la potencia del campo porque ya tiene un valor escrito.{valorSenal(estado.onu.senal1490) !== null && ' La señal de 1490 nm sí queda capturada con la orden.'} Para usar la de SmartOLT, borra el campo y consulta de nuevo.</p>

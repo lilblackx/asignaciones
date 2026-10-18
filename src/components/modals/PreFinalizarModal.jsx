@@ -192,7 +192,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
 
         {/* noValidate: las faltas las revisa handleSubmit, que muestra todos los errores y lleva el cursor al primero. */}
         <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-5 space-y-4">
-          <DevolucionAviso ticket={ticket} />
+          <DevolucionAviso ticket={ticket} conValores />
           {/* Resumen compacto de la orden */}
           <div className="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
             <div className="flex items-center gap-2">
