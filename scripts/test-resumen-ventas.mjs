@@ -81,7 +81,7 @@ const ids = (l) => l.map((o) => o.id).join('');
 check('más recientes primero (las sin fecha al final)', ids(ordenarOrdenes([a, b, c, d], 'RECIENTES')), 'dbac');
 check('más antiguas primero, y las sin fecha al final', ids(ordenarOrdenes([a, b, c, d], 'ANTIGUAS')), 'abdc');
 check('por estado: sin técnico, luego asignada, luego instalada', ids(ordenarOrdenes([d, b, a], 'ESTADO')), 'abd');
-check('el orden por defecto es la urgencia', [ORDEN_POR_DEFECTO, OPCIONES_ORDEN[0][0]], ['URGENCIA', 'URGENCIA']);
+check('el orden por defecto es lo más reciente primero, y la urgencia sigue como opción', [ORDEN_POR_DEFECTO, OPCIONES_ORDEN[0][0], OPCIONES_ORDEN.map(([c]) => c)], ['RECIENTES', 'RECIENTES', ['RECIENTES', 'URGENCIA', 'ANTIGUAS', 'ESTADO']]);
 // Urgencia: atrasadas (más días primero), sin técnico, asignada, en revisión, instalada y cancelada; dentro de cada grupo la creada antes primero.
 const u = (id, t) => orden({ id, ...t });
 const surtido = [
@@ -111,11 +111,22 @@ check('urgencia: las de historial se ordenan por su fecha de creación y las sin
 ], 'URGENCIA', AHORA).map((o) => o.id), ['vieja', 'nueva', 'sin-fecha']);
 check('el atraso de la tarjeta, el chip "Atrasadas" y el orden salen de la misma función (atrasoOrden)',
   [/atrasoOrden\(orden, ahora\)/.test(leer('../src/components/TarjetaInstalacion.jsx')), /atrasoOrden\(o, ahora\)/.test(leer('../src/components/PromotoraApp.jsx')), /atrasoOrden\(o, ahora\)/.test(leer('../src/utils/estadoInstalacion.js'))], [true, true, true]);
+// La prioridad alta (solo en órdenes pendientes) va siempre primero; luego rige el criterio.
+const pVieja = orden({ id: 'P', createdAt: AHORA - 9 * DIA, prioridadAlta: true, tecnico: 'J' });
+const pNueva = orden({ id: 'Q', createdAt: AHORA - 2 * DIA, prioridadAlta: true });
+const cerradaConMarca = orden({ id: 'X', estado: 'FINALIZADO', createdAt: AHORA - 40 * DIA, finalizadoEn: AHORA - 30 * DIA, prioridadAlta: true, tecnico: 'J' });
+check('la prioridad alta va primero y, dentro de ella, lo más reciente', ids(ordenarOrdenes([a, pVieja, b, pNueva], 'RECIENTES')), 'QPba');
+check('también con "más antiguas" (la prioridad no depende del criterio)', ids(ordenarOrdenes([b, a, pNueva, pVieja], 'ANTIGUAS')), 'PQab');
+check('y con urgencia', ids(ordenarOrdenes([a, pNueva, b], 'URGENCIA', AHORA)).startsWith('Q'), true);
+check('una orden ya cerrada con la marca de prioridad no sube', ids(ordenarOrdenes([a, cerradaConMarca, b], 'RECIENTES')), 'baX');
+check('sin prioridad no cambia nada', ids(ordenarOrdenes([a, b, c, d], 'RECIENTES')), 'dbac');
 check('ordenar no modifica la lista original', (() => { const l = [a, b]; ordenarOrdenes(l, 'RECIENTES'); return ids(l); })(), 'ab');
 
 // --- Cédula con prefijo (ventas) ---
 check('la cédula lleva su prefijo, el de su tipo de documento o V si no hay', [formatearCedula('12345678', 'V'), formatearCedula('12345678'), formatearCedula('403369895', 'J'), formatearCedula('', 'V'), formatearCedula(null)], ['V-12345678', 'V-12345678', 'J-403369895', '', '']);
 check('si el valor ya trae el prefijo no se duplica (V-V-22222222)', [formatearCedula('V-22222222', 'V'), formatearCedula('v-22222222'), formatearCedula('E-81234567', 'V'), formatearCedula('J-403369895', 'J'), formatearCedula(' G-20000000 ')], ['V-22222222', 'V-22222222', 'E-81234567', 'J-403369895', 'G-20000000']);
+check('el RIF y los demás documentos van sin puntos de miles; la cédula V los conserva', [formatearCedula('407.162.578', 'J'), formatearCedula('J-407.162.578', 'J'), formatearCedula('81.234.567', 'E'), formatearCedula('20.000.000', 'G'), formatearCedula('12.345.678', 'V'), formatearCedula('12.345.678'), formatearCedula('V-12.345.678')],
+  ['J-407162578', 'J-407162578', 'E-81234567', 'G-20000000', 'V-12.345.678', 'V-12.345.678', 'V-12.345.678']);
 check('la tarjeta y la exportación usan esa misma función', [/formatearCedula\(orden\.cedula, orden\.tipoDocumento\)/.test(leer('../src/components/TarjetaInstalacion.jsx')), /formatearCedula\(o\.cedula, o\.tipoDocumento\)/.test(leer('../src/utils/exportarOrdenes.js'))], [true, true]);
 check('la tarjeta usa la etiqueta de tipo de la tabla de la oficina, el estado sólido y la franja de atraso con la misma función (atrasoOrden)', [/getTipoTrabajoEstilo\(esLos \? 'AVERÍA' : 'INSTALACIÓN'\)/.test(leer('../src/components/TarjetaInstalacion.jsx')), /ESTILO_ESTADO_PROMOTORA_SOLIDO\[vista\.clave\]/.test(leer('../src/components/TarjetaInstalacion.jsx')), /atraso\.que/.test(leer('../src/components/TarjetaInstalacion.jsx'))], [true, true, true]);
 

@@ -112,10 +112,12 @@ export const getCreadoColor = (creado) => {
 export { formatCedula } from './cedula';
 
 // Evita que "break-all"/wrap corte una cédula en medio de un grupo de dígitos
-// (ej. "18.395.7" / "53"): solo se permite el salto justo después de cada punto
-// o guion (para los RIF con prefijo, ej. "J-403369895").
+// (ej. "18.395.7" / "53"): solo se permite el salto justo después de cada punto.
+// Un RIF con prefijo ("J-403369895", sin puntos) no se parte nunca: el único salto posible sería "J-" / "403369895".
 export const renderCedulaConSaltos = (cedula) => {
-  const partes = String(cedula || '').split(/([.-])/);
+  const texto = String(cedula || '');
+  if (/^[A-Za-z]-/.test(texto)) return <span className="whitespace-nowrap">{texto}</span>;
+  const partes = texto.split(/([.-])/);
   return partes.map((parte, i) => (
     <span key={i}>
       {parte}

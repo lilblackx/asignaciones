@@ -2,6 +2,7 @@
 // PRE-FINALIZADO), y el historial liviano de las terminadas que el cierre del día saca de la lista.
 import { estadoViaje, ESTADO_EN_SITIO, tiempoTranscurrido } from './enCamino.js';
 import { categoriaProgramada } from './programada.js';
+import { prioritariasPrimero } from './prioridad.js';
 import { claveNombre } from './promotora.js';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from './whatsapp.js';
 
@@ -192,10 +193,11 @@ export function resumenPorPromotor(ordenes) {
   return [...filas.values()].sort((a, b) => b.instaladas - a.instaladas || b.total - a.total || a.nombre.localeCompare(b.nombre, 'es'));
 }
 
-export const ORDEN_POR_DEFECTO = 'URGENCIA';
+// Lo más reciente arriba; la urgencia (atrasadas primero) queda como opción.
+export const ORDEN_POR_DEFECTO = 'RECIENTES';
 export const OPCIONES_ORDEN = [
-  ['URGENCIA', 'Urgencia'],
   ['RECIENTES', 'Más recientes'],
+  ['URGENCIA', 'Urgencia'],
   ['ANTIGUAS', 'Más antiguas'],
   ['ESTADO', 'Por estado'],
 ];
@@ -215,8 +217,13 @@ function ordenarPorUrgencia(ordenes, ahora) {
     || porFechaAscendente(a, b));
 }
 
-// Ordena una copia de la lista. `ahora` solo hace falta para 'URGENCIA' (calcula los atrasos).
+// Ordena una copia de la lista. Las de prioridad alta van siempre primero (como en la lista de la oficina), sea cual sea el criterio;
+// dentro de ellas y entre las demás rige el criterio elegido. `ahora` solo hace falta para 'URGENCIA' (calcula los atrasos).
 export function ordenarOrdenes(ordenes, criterio, ahora = Date.now()) {
+  return prioritariasPrimero(ordenarPorCriterio(ordenes, criterio, ahora));
+}
+
+function ordenarPorCriterio(ordenes, criterio, ahora) {
   if (criterio === 'URGENCIA') return ordenarPorUrgencia(ordenes, ahora);
   if (criterio === 'RECIENTES') return [...ordenes].sort((a, b) => fechaOrden(b) - fechaOrden(a));
   // Las que no traen fecha van al final también al revés.
