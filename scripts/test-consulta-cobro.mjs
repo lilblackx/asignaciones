@@ -1,7 +1,7 @@
 // Prueba la consulta del cobro de un recableado (src/utils/consultaCobro.js): el técnico pregunta con los metros, la oficina
 // responde un monto (Bs o $) o exonera, y esa respuesta llega ya elegida al aprobar. No necesita el emulador.
 // Uso: `npm run test:consultacobro`.
-import { cobroPrecargado, construirConsulta, construirRespuesta, consultaCobroDe, consultaPendiente, respuestaVigente, textoRespuesta } from '../src/utils/consultaCobro.js';
+import { cobroPrecargado, construirConsulta, construirRespuesta, consultaCobroDe, consultaPendiente, consultasNuevas, mapaConsultas, respuestaVigente, textoAvisoConsulta, textoAvisoRespuesta, textoRespuesta } from '../src/utils/consultaCobro.js';
 import { COBRO_EXONERADO, COBRO_OTRO, MONEDA_BS, MONEDA_USD, resolverCobro } from '../src/utils/cobro.js';
 
 let failures = 0;
@@ -50,6 +50,21 @@ check('una exoneración llega como "Exonerar"', cobroPrecargado({ ...consultada,
 check('con los mismos metros que se consultaron se precarga', cobroPrecargado({ ...respondida, metrosCable: 250 })?.modo, COBRO_OTRO);
 check('si el técnico terminó usando otros metros, no se precarga (la oficina elige)', cobroPrecargado({ ...respondida, metrosCable: 300 }), null);
 check('sin respuesta vigente no se precarga', [cobroPrecargado(consultada), cobroPrecargado(reconsultada), cobroPrecargado(orden())], [null, null, null]);
+
+// --- Avisos en la app abierta ---
+const otra = orden({ id: 'b' });
+const ids = (lista) => lista.map((t) => t.id);
+check('al abrir la app (sin lectura anterior) no se avisa de lo que ya estaba', consultasNuevas([consultada], null), { consultas: [], respuestas: [] });
+check('la oficina se entera de una consulta nueva', ids(consultasNuevas([consultada, otra], mapaConsultas([orden(), otra])).consultas), ['a']);
+check('y no se repite si nada cambió', consultasNuevas([consultada], mapaConsultas([consultada])), { consultas: [], respuestas: [] });
+check('una orden nueva que llega ya con consulta también se avisa', ids(consultasNuevas([consultada, otra], mapaConsultas([otra])).consultas), ['a']);
+check('un recordatorio (consulta más reciente) se vuelve a avisar', ids(consultasNuevas([recordatorio], mapaConsultas([consultada])).consultas), ['a']);
+check('una consulta ya respondida no se avisa a la oficina', consultasNuevas([respondida], mapaConsultas([orden()])).consultas, []);
+check('el técnico se entera de la respuesta', ids(consultasNuevas([respondida], mapaConsultas([consultada])).respuestas), ['a']);
+check('y no se repite', consultasNuevas([respondida], mapaConsultas([respondida])).respuestas, []);
+check('una respuesta que cambia (la oficina corrige el monto) se avisa de nuevo', ids(consultasNuevas([{ ...respondida, respuestaCobro: { ...monto.respuesta, en: T0 + 90000 } }], mapaConsultas([respondida])).respuestas), ['a']);
+check('el texto del aviso a la oficina', textoAvisoConsulta({ ...consultada, codigo: 'AS1' }), 'GERARDO pregunta el cobro del recableado de AS1 (250 m).');
+check('el texto del aviso al técnico', textoAvisoRespuesta({ ...respondida, codigo: 'AS1' }), 'AS1 (250 m): 5.000,5 Bs.');
 
 if (failures > 0) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

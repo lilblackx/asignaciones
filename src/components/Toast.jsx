@@ -1,4 +1,4 @@
-import { AlertCircle, Ban, Car, CheckCheck, CheckCircle2, Clock, Flag, MapPin, Undo2, UserCog, UserMinus, Wrench } from 'lucide-react';
+import { AlertCircle, Ban, Banknote, Car, CheckCheck, CheckCircle2, Clock, Flag, MapPin, Undo2, UserCog, UserMinus, Wrench } from 'lucide-react';
 
 export default function Toast({ toastMsg, onClose }) {
   if (!toastMsg) return null;
@@ -15,6 +15,8 @@ export default function Toast({ toastMsg, onClose }) {
   const isDesasignada = toastMsg.type === 'desasignada';
   const isEnCamino = toastMsg.type === 'encamino';
   const isLlegada = toastMsg.type === 'llegada';
+  const isConsultaCobro = toastMsg.type === 'consultaCobro';
+  const isRespuestaCobro = toastMsg.type === 'respuestaCobro';
   const accion = toastMsg.action;
 
   return (
@@ -24,13 +26,15 @@ export default function Toast({ toastMsg, onClose }) {
           : isPrioridad ? 'bg-red-700 text-white ring-2 ring-white/70'
           : isEnCamino ? 'bg-sky-600 text-white'
           : isLlegada ? 'bg-teal-600 text-white'
-          : isPreFinalizado || isAviso ? 'bg-amber-500 text-black'
+          : isRespuestaCobro ? 'bg-sky-600 text-white'
+          : isPreFinalizado || isAviso || isConsultaCobro ? 'bg-amber-500 text-black'
             : isTecnicoStatus ? 'bg-purple-600 text-white'
               : isAprobado ? 'bg-blue-600 text-white'
                 : isNuevaAsignacion ? 'bg-emerald-600 text-white'
                   : 'bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 border border-zinc-700 dark:border-zinc-200 text-white'
       }`}>
-        {isPrioridad ? <Flag className="w-4 h-4 shrink-0 mt-0.5 fill-current" aria-hidden="true" />
+        {isConsultaCobro || isRespuestaCobro ? <Banknote className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+          : isPrioridad ? <Flag className="w-4 h-4 shrink-0 mt-0.5 fill-current" aria-hidden="true" />
           : isDevuelto ? <Undo2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isEnCamino ? <Car className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isLlegada ? <MapPin className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />

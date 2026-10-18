@@ -51,3 +51,23 @@ export function cobroPrecargado(t) {
   if (respuesta.exonerado) return { modo: COBRO_EXONERADO, otro: '', moneda: MONEDA_BS };
   return { modo: COBRO_OTRO, otro: String(respuesta.valor).replace('.', ','), moneda: respuesta.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS };
 }
+
+// --- Avisos en la app (mientras está abierta; con la app cerrada llega el push) ---
+
+// Qué consultas y respuestas había en cada orden: id -> { pedida, respondida } (marcas de tiempo, 0 si no hay).
+export const mapaConsultas = (tickets) => new Map(tickets.map((t) => [t.id, { pedida: consultaCobroDe(t)?.pedidaEn || 0, respondida: t.respuestaCobro?.en || 0 }]));
+
+// Lo que llegó desde la lectura anterior. Sin lectura anterior (la app acaba de abrirse) no hay nada nuevo que avisar.
+//   consultas: órdenes con una consulta que la oficina aún debe responder y que no estaba antes (aviso para la oficina)
+//   respuestas: órdenes con una respuesta de la oficina que no estaba antes (aviso para el técnico)
+export function consultasNuevas(tickets, previa) {
+  if (!previa) return { consultas: [], respuestas: [] };
+  const antes = (t) => previa.get(t.id) || { pedida: 0, respondida: 0 };
+  return {
+    consultas: tickets.filter((t) => consultaPendiente(t) && consultaCobroDe(t).pedidaEn > antes(t).pedida),
+    respuestas: tickets.filter((t) => respuestaVigente(t) && respuestaVigente(t).en > antes(t).respondida),
+  };
+}
+
+export const textoAvisoConsulta = (t) => `${t.tecnico || 'Un técnico'} pregunta el cobro del recableado de ${t.codigo || 'una orden'} (${t.consultaCobro.metros} m).`;
+export const textoAvisoRespuesta = (t) => `${t.codigo || 'Orden'} (${t.respuestaCobro.metros} m): ${textoRespuesta(t.respuestaCobro)}.`;

@@ -16,7 +16,7 @@ import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { cambiosDatosTecnico } from '../utils/edicionDatosTecnico';
 import { errorSerialCaja } from '../utils/serialOlt';
 import { devolucionPendiente } from '../utils/devolucion';
-import { construirConsulta, construirRespuesta, textoRespuesta } from '../utils/consultaCobro';
+import { construirConsulta, construirRespuesta, consultasNuevas, mapaConsultas, textoAvisoConsulta, textoAvisoRespuesta, textoRespuesta } from '../utils/consultaCobro';
 import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado, llevaCobro, monedaDe, textoMonto, tieneCobroFinal, valorCobro } from '../utils/cobro';
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalacion } from '../utils/instalacion';
@@ -297,6 +297,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // id -> viaje ("en camino" / "en sitio") del snapshot anterior, para avisar a la oficina cuando un técnico
   // sale o llega. Solo de esta sesión: no se avisa de lo que ya estaba en curso al abrir la app.
   const viajeAnteriorRef = useRef(null);
+  // id -> consulta y respuesta de cobro del snapshot anterior, para avisar a la oficina de una consulta nueva y al técnico de su respuesta.
+  const consultaAnteriorRef = useRef(null);
   // Técnicos cuyo "en camino" se está guardando ahora mismo (ver iniciarEnCamino).
   const iniciandoViajeRef = useRef(new Set());
 
@@ -489,6 +491,20 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         avisarViajes(enCamino, 'encamino', textoAvisoEnCamino, (n) => `${n} técnicos van en camino a sus órdenes.`, playTecnicoStatusSound);
         avisarViajes(llegadas, 'llegada', textoAvisoLlegada, (n) => `${n} técnicos llegaron al sitio de sus órdenes.`, playAprobadoSound);
       }
+      // Consulta del cobro de un recableado: la oficina se entera de la pregunta y el técnico de la respuesta.
+      if (role === 'ADMIN' || role === 'USUARIO' || role === 'TECNICO') {
+        const { consultas, respuestas } = consultasNuevas(loadedTickets, consultaAnteriorRef.current);
+        const lista = role === 'TECNICO' ? respuestas : consultas;
+        if (lista.length > 0) {
+          const type = role === 'TECNICO' ? 'respuestaCobro' : 'consultaCobro';
+          const textoUno = role === 'TECNICO' ? textoAvisoRespuesta : textoAvisoConsulta;
+          const texto = lista.length === 1 ? textoUno(lista[0]) : (role === 'TECNICO' ? `${lista.length} consultas de cobro fueron respondidas.` : `${lista.length} técnicos preguntan el cobro de un recableado.`);
+          setToastMsg({ type, text: texto, duration: 9000 });
+          onNotify?.({ type, text: texto, ...(lista.length === 1 && { ticketId: lista[0].id }) });
+          (role === 'TECNICO' ? playAprobadoSound : playTecnicoStatusSound)();
+        }
+      }
+      consultaAnteriorRef.current = mapaConsultas(loadedTickets);
       viajeAnteriorRef.current = mapaViaje(loadedTickets);
       estadoAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.estado]));
       activasVistasRef.current = new Map(loadedTickets.filter(esActiva).map(t => [t.id, { id: t.id, codigo: t.codigo, nombre: t.nombre }]));
@@ -508,6 +524,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       prioridadAnteriorRef.current = null;
       activasVistasRef.current = new Map();
       viajeAnteriorRef.current = null;
+      consultaAnteriorRef.current = null;
     };
   }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
 
