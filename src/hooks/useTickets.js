@@ -16,6 +16,7 @@ import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { cambiosDatosTecnico } from '../utils/edicionDatosTecnico';
 import { errorSerialCaja } from '../utils/serialOlt';
 import { devolucionPendiente } from '../utils/devolucion';
+import { construirConsulta, construirRespuesta, textoRespuesta } from '../utils/consultaCobro';
 import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado, llevaCobro, monedaDe, textoMonto, tieneCobroFinal, valorCobro } from '../utils/cobro';
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalacion } from '../utils/instalacion';
@@ -622,7 +623,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
-    if (role === 'TECNICO' && editingTicket.estado === 'PRE-FINALIZADO' && !(editingTicket.observacion || '').trim()) {
+    if (role === 'TECNICO' && editingTicket.estado === 'PRE-FINALIZADO' && !(editingTicket.observacionTecnico || editingTicket.observacion || '').trim()) {
       setToastMsg({ type: 'error', text: 'Debes describir el trabajo realizado antes de pre-finalizar.' });
       return false;
     }
@@ -696,6 +697,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
         if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);
         if (originalTicket.observacion !== editingTicket.observacion) cambios.push(`Obs. modificada`);
+        if ((originalTicket.observacionTecnico || '') !== (editingTicket.observacionTecnico || '')) cambios.push('Obs. del técnico modificada');
         if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');
         if (esInstalacion(editingTicket.tipoTrabajo) && promotoraDeOrden(originalTicket) !== ticketToSave.promotora) cambios.push(`Promotor: ${ticketToSave.promotora || 'Vacío'}`);
         if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
@@ -768,10 +770,10 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
   // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
-  const preFinalizarTicket = async (ticket, { nap, observacion, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, montoBs, instalacion } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
-    if (!(observacion || '').trim()) {
+    if (!(observacionTecnico || '').trim()) {
       setToastMsg({ type: 'error', text: 'Debes describir el trabajo realizado antes de pre-finalizar.' });
       return false;
     }
@@ -835,7 +837,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       : {};
 
     let detalle = 'Marcado como PRE-FINALIZADO';
-    if (observacion && observacion.trim()) detalle += ` | Obs: ${observacion.trim()}`;
+    detalle += ` | Obs: ${observacionTecnico.trim()}`;
     if (nap && nap.trim()) detalle += ` | NAP: ${nap.trim()}`;
     detalle += detalleInstalacion(datosInstalacion);
     if (potenciaDbm != null) detalle += ` | Potencia: ${potenciaDbm} dBm`;
@@ -862,7 +864,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       nap: nap !== undefined ? nap : (ticket.nap || ''),
       potenciaDbm: potenciaDbm !== undefined ? potenciaDbm : (ticket.potenciaDbm ?? null),
       potencia1490Dbm: potencia1490Dbm !== undefined ? potencia1490Dbm : (ticket.potencia1490Dbm ?? null),
-      observacion: observacion !== undefined ? observacion : (ticket.observacion || ''),
+      // Lo que escribe el técnico va aparte: la observación de la oficina (`observacion`) no se toca.
+      observacionTecnico: observacionTecnico.trim(),
       tipoVisita: tipoVisita !== undefined ? tipoVisita : (ticket.tipoVisita || ''),
       ...camposConectores,
       ...camposSerialEquipo,
@@ -876,6 +879,82 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     await actualizarTicket(ticket, updatedTicket);
     setToastMsg({ type: 'success', text: datosInstalacion ? 'Orden marcada como Pre-finalizada. La plantilla ya lleva los datos de la instalación.' : 'Orden marcada como Pre-finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
+    return true;
+  };
+
+  // El técnico le pregunta a la oficina cuánto se cobra un recableado de `metros` m. Solo se guarda la consulta y se avisa a
+  // la oficina; la respuesta la escribe ella (ver responderConsultaCobro).
+  const consultarCobroRecableado = async (ticket, metros) => {
+    if (!firebaseUser || !ticket) return false;
+    if (!Number.isInteger(metros) || metros < 1) {
+      setToastMsg({ type: 'error', text: 'Indica los metros de cable para consultar el cobro.' });
+      return false;
+    }
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'TÉCNICO',
+      tipo: 'consultaCobro',
+      detalle: `Consulta del cobro del recableado: ${metros} m`,
+    };
+    const updatedTicket = {
+      ...ticket,
+      consultaCobro: construirConsulta(metros, currentUser),
+      historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion],
+    };
+    try {
+      await actualizarTicket(ticket, updatedTicket);
+    } catch (error) {
+      console.error('No se pudo enviar la consulta del cobro:', error);
+      setToastMsg({ type: 'error', text: 'No se pudo enviar la consulta. Revisa tu conexión e intenta de nuevo.' });
+      return false;
+    }
+    avisarPush({
+      target: { type: 'oficina' },
+      title: 'Consulta de cobro',
+      body: `${ticket.tecnico || 'Un técnico'} pregunta el cobro del recableado de ${ticket.codigo || 'una orden'} (${metros} m).`,
+      tipo: 'consultaCobro',
+      ticketId: ticket.id,
+    });
+    setToastMsg({ type: 'success', text: 'Consulta enviada a la oficina. Te avisaremos con la respuesta.' });
+    return true;
+  };
+
+  // La oficina responde el cobro que preguntó el técnico: un monto (en Bs o $) o exonerado. Al técnico le llega un aviso.
+  const responderConsultaCobro = async (ticket, seleccion) => {
+    if (!firebaseUser || !ticket) return false;
+    const { respuesta, error } = construirRespuesta(ticket.consultaCobro, seleccion, currentUser);
+    if (error) {
+      setToastMsg({ type: 'error', text: error });
+      return false;
+    }
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'OFICINA',
+      tipo: 'respuestaCobro',
+      detalle: `Cobro del recableado (${respuesta.metros} m): ${textoRespuesta(respuesta)}`,
+    };
+    const updatedTicket = {
+      ...ticket,
+      respuestaCobro: respuesta,
+      historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion],
+    };
+    try {
+      await actualizarTicket(ticket, updatedTicket);
+    } catch (error) {
+      console.error('No se pudo guardar la respuesta del cobro:', error);
+      setToastMsg({ type: 'error', text: 'No se pudo guardar la respuesta. Intenta de nuevo.' });
+      return false;
+    }
+    if (ticket.tecnico) {
+      avisarPush({
+        target: { type: 'tecnico', name: ticket.tecnico },
+        title: 'Cobro del recableado',
+        body: `${ticket.codigo || 'Orden'} (${respuesta.metros} m): ${textoRespuesta(respuesta)}.`,
+        tipo: 'respuestaCobro',
+        ticketId: ticket.id,
+      });
+    }
+    setToastMsg({ type: 'success', text: 'Respuesta enviada al técnico.' });
     return true;
   };
 
@@ -1182,6 +1261,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     toggleAsignado,
     guardarUbicacion,
     preFinalizarTicket,
+    consultarCobroRecableado,
+    responderConsultaCobro,
     aprobarFinalizarTicket,
     guardarValoresCliente,
     devolverTicket,

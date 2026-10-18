@@ -122,12 +122,12 @@ export function TipoTrabajoField({ variant, wrapperClassName, idPrefix, value, o
   );
 }
 
-export function ObservacionField({ variant, wrapperClassName, idPrefix, value, checked, onChange }) {
+export function ObservacionField({ variant, wrapperClassName, idPrefix, value, checked, onChange, etiqueta = 'OBSERVACIÓN' }) {
   const s = STYLES[variant];
   return (
     <div className={wrapperClassName}>
       <div className="flex items-center justify-between ml-1 mr-1">
-        <label htmlFor={`${idPrefix}-observacion`} className={s.labelObs}>OBSERVACIÓN</label>
+        <label htmlFor={`${idPrefix}-observacion`} className={s.labelObs}>{etiqueta}</label>
         <label htmlFor={`${idPrefix}-observacion-interna`} className={s.labelObsInterna}>
           <input id={`${idPrefix}-observacion-interna`} type="checkbox" name="observacionInterna" checked={checked} onChange={onChange} className={s.checkbox} />
           Observación interna
@@ -135,6 +135,18 @@ export function ObservacionField({ variant, wrapperClassName, idPrefix, value, c
       </div>
       <textarea id={`${idPrefix}-observacion`} name="observacion" maxLength="500" value={value} onChange={onChange} rows="2" className={s.textarea}></textarea>
       <p className={s.hint}>{checked ? 'Solo visible en el dashboard, no sale en la plantilla de WhatsApp.' : 'Se agrega en la plantilla de WhatsApp, después del aviso de cobro.'}</p>
+    </div>
+  );
+}
+
+// Lo que el técnico describió del trabajo al pre-finalizar: aparte de la observación de la oficina (ObservacionField).
+export function ObservacionTecnicoField({ wrapperClassName, idPrefix, value, onChange }) {
+  const s = STYLES.edit;
+  return (
+    <div className={wrapperClassName}>
+      <label htmlFor={`${idPrefix}-observacion-tecnico`} className={`${s.labelObs} ml-1 block`}>OBSERVACIÓN DEL TÉCNICO</label>
+      <textarea id={`${idPrefix}-observacion-tecnico`} name="observacionTecnico" maxLength="300" value={value} onChange={onChange} rows="2" className={s.textarea}></textarea>
+      <p className={s.hint}>Detalles del trabajo que escribió el técnico al pre-finalizar. No sale en la plantilla de WhatsApp.</p>
     </div>
   );
 }

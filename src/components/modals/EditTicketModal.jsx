@@ -15,7 +15,7 @@ import { TIPOS_POR_TRABAJO } from '../../constants';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { esInstalacion as trabajoEsInstalacion, napConPuerto } from '../../utils/instalacion';
 import { formularioDatosTecnico, formularioModificado, tieneDatosDelTecnico, validarDatosTecnico } from '../../utils/edicionDatosTecnico';
-import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
+import { CedulaField, ObservacionField, ObservacionTecnicoField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import { promotoraDeOrden, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
@@ -32,6 +32,8 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   // no hace desaparecer ni cambiar la sección.
   const [ordenAlAbrir] = useState(editingTicket);
   const [conDatosTecnico] = useState(() => !isTecnico && tieneDatosDelTecnico(editingTicket));
+  // La observación del técnico aparece cuando ya la escribió o cuando la orden ya pasó por sus manos (para poder corregirla).
+  const conObservacionTecnico = Boolean(ordenAlAbrir.observacionTecnico) || ordenAlAbrir.estado === 'PRE-FINALIZADO' || ordenAlAbrir.estado === 'FINALIZADO';
   const instalacionAlAbrir = trabajoEsInstalacion(ordenAlAbrir.tipoTrabajo);
   const [datosInicial] = useState(() => formularioDatosTecnico(editingTicket));
   const [datos, setDatos] = useState(datosInicial);
@@ -292,14 +294,33 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs font-mono text-zinc-900 dark:text-white shadow-sm transition-colors" placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
             </div>
           )}
-          <ObservacionField
-            variant="edit"
-            wrapperClassName="col-span-2 space-y-1"
-            idPrefix="ed"
-            value={editingTicket.observacion}
-            checked={editingTicket.observacionInterna !== false}
-            onChange={handleEditChange}
-          />
+          {isTecnico ? (
+            // El técnico no cambia lo que escribió la oficina: lo lee, y escribe lo suyo aparte.
+            <>
+              {editingTicket.observacion?.trim() && (
+                <div className="col-span-2 space-y-1">
+                  <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 block">NOTA DE LA OFICINA</span>
+                  <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{editingTicket.observacion}</p>
+                </div>
+              )}
+              <ObservacionTecnicoField wrapperClassName="col-span-2 space-y-1" idPrefix="ed" value={editingTicket.observacionTecnico || ''} onChange={handleEditChange} />
+            </>
+          ) : (
+            <>
+              <ObservacionField
+                variant="edit"
+                wrapperClassName="col-span-2 space-y-1"
+                idPrefix="ed"
+                value={editingTicket.observacion}
+                checked={editingTicket.observacionInterna !== false}
+                onChange={handleEditChange}
+                etiqueta="OBSERVACIÓN DE LA OFICINA"
+              />
+              {conObservacionTecnico && (
+                <ObservacionTecnicoField wrapperClassName="col-span-2 space-y-1" idPrefix="ed" value={editingTicket.observacionTecnico || ''} onChange={handleEditChange} />
+              )}
+            </>
+          )}
 
           <div className="col-span-2 mt-1">
             <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 block mb-1">HISTORIAL DE LA ORDEN</span>

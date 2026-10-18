@@ -31,6 +31,7 @@
     "test:ventas": "node scripts/test-resumen-ventas.mjs",
     "test:datos": "node scripts/test-datos-cliente.mjs",
     "test:cobro": "node scripts/test-cobro.mjs",
+    "test:consultacobro": "node scripts/test-consulta-cobro.mjs",
     "test:equipo": "node scripts/test-cambio-equipo.mjs",
     "test:valores": "node scripts/test-valores-cliente.mjs",
     "test:edicion": "node scripts/test-edicion-datos-tecnico.mjs"

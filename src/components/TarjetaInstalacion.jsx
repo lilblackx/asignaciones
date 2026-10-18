@@ -1,7 +1,7 @@
-import { AlarmClock, ClipboardCopy, FileText } from 'lucide-react';
+import { AlarmClock, CalendarClock, ClipboardCopy, FileText } from 'lucide-react';
 import { promotoraDeOrden } from '../utils/whatsapp';
 import { ESTILO_ESTADO_PROMOTORA_SOLIDO } from './estilosInstalacion';
-import { atrasoOrden, esAveriaLos, fechaOrden, textoPlantillaFinal } from '../utils/estadoInstalacion';
+import { atrasoOrden, esAveriaLos, fechaCorta, fechaOrden, textoPlantillaFinal } from '../utils/estadoInstalacion';
 import { formatearCedula } from '../utils/cedula';
 import { getTipoTrabajoEstilo } from '../utils/ticketDisplay';
 
@@ -25,6 +25,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
   const conPlantilla = Boolean(onVerPlantilla && vista.clave === 'INSTALADA' && textoPlantillaFinal(orden));
   const cedula = formatearCedula(orden.cedula, orden.tipoDocumento);
   const promotor = promotoraDeOrden(orden);
+  const programada = vista.clave === 'PROGRAMADA' ? fechaCorta(orden.fechaProgramada) : '';
 
   return (
     <li className="h-full flex flex-col min-w-0 rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
@@ -38,6 +39,13 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
         <div className={`w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide ${atraso.nivel === 'urgente' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'}`}>
           <AlarmClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>{atraso.que} · {atraso.dias === 1 ? '1 día' : `${atraso.dias} días`}</span>
+        </div>
+      )}
+
+      {programada && (
+        <div className="w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+          <CalendarClock className="w-3 h-3 shrink-0" aria-hidden="true" />
+          <span>Programada para el {programada}</span>
         </div>
       )}
 
@@ -61,7 +69,9 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
             <p className={ETIQUETA}>Técnico</p>
             {orden.tecnico
               ? <p className={VALOR}>{orden.tecnico}</p>
-              : <p className="mt-0.5 text-xs font-black uppercase text-amber-600 dark:text-amber-400">Sin técnico</p>}
+              : programada
+                ? <p className="mt-0.5 text-xs font-black uppercase text-zinc-500">Por asignar</p>
+                : <p className="mt-0.5 text-xs font-black uppercase text-amber-600 dark:text-amber-400">Sin técnico</p>}
           </div>
         </div>
       </div>

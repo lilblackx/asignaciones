@@ -6,6 +6,7 @@ import { faltantesInstalacion } from '../../utils/instalacion';
 import { evaluarPotencia } from '../../utils/potencia';
 import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, partesRecableado } from '../../utils/tipoVisita';
 import { COBRO_INICIAL, conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
+import { cobroPrecargado, consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
 import ContactoCliente from '../ContactoCliente';
 import DatosParaAutorizar from './DatosParaAutorizar';
 import CobroSelector from './CobroSelector';
@@ -22,7 +23,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
   const [motivo, setMotivo] = useState('');
   const [motivoError, setMotivoError] = useState('');
   // Cobro que verá el técnico (solo en visitas de conector): "Visita técnica" u "Otro monto".
-  const [cobro, setCobro] = useState(COBRO_INICIAL);
+  const [cobro, setCobro] = useState(() => cobroPrecargado(ticket) || COBRO_INICIAL);
   const [cobroError, setCobroError] = useState('');
   // Valores de señal del cliente (obligatorios): los campos, lo ya guardado en la orden y si se está guardando.
   const [oltTexto, setOltTexto] = useState(ticket?.valoresCliente?.olt1310Dbm != null ? String(ticket.valoresCliente.olt1310Dbm) : '');
@@ -156,6 +157,15 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
                   <Banknote className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" /> COBRO
                 </h3>
                 <p className="ml-6 mt-1"><span className="opacity-70">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
+                {consultaCobroDe(ticket) && (
+                  <p className="ml-6 mt-1 text-[11px] font-bold">
+                    {respuestaVigente(ticket)
+                      ? (cobroPrecargado(ticket)
+                        ? `El técnico consultó este cobro (${respuestaVigente(ticket).metros} m) y ya viene elegido: ${textoRespuesta(respuestaVigente(ticket))}. Cámbialo si hace falta.`
+                        : `Respondiste ${textoRespuesta(respuestaVigente(ticket))} para ${respuestaVigente(ticket).metros} m, pero el técnico registró ${ticket.metrosCable} m: elige el cobro.`)
+                      : `El técnico consultó el cobro (${ticket.consultaCobro.metros} m) y no se ha respondido.`}
+                  </p>
+                )}
                 {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <p className="ml-6 mt-1 text-[11px] opacity-80">El técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</p>}
               </div>
               <CobroSelector
@@ -200,12 +210,21 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
             </div>
           )}
 
+          {/* Lo que describió el técnico va aparte de la nota de la oficina. En las órdenes viejas (sin campo propio) queda un solo bloque. */}
           <div className="space-y-1">
             <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">OBSERVACIÓN / DETALLES DEL TRABAJO</span>
-            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap min-h-[3rem]">
-              {ticket.observacion || <span className="text-zinc-400 italic">Sin observación registrada.</span>}
+            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words min-h-[3rem]">
+              {ticket.observacionTecnico || ticket.observacion || <span className="text-zinc-400 italic">Sin observación registrada.</span>}
             </div>
           </div>
+          {ticket.observacionTecnico && ticket.observacion && (
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA DE LA OFICINA</span>
+              <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">
+                {ticket.observacion}
+              </div>
+            </div>
+          )}
 
           {devolviendo && (
             <div className="space-y-1">

@@ -11,6 +11,14 @@ body {
   font-feature-settings: "tnum" 1, "cv11" 1;
 }
 
+/* La "x" de limpiar que el navegador agrega a los campos de búsqueda se ve distinta en cada uno:
+   se oculta y los buscadores usan <BotonLimpiarBusqueda>. */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* Scrollbar a tono con la app (zinc/red), en vez del gris por defecto del navegador. */
 * {
   scrollbar-width: thin;

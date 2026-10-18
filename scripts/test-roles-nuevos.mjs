@@ -31,6 +31,8 @@ check('técnico en camino', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecni
 check('técnico en el sitio', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecnico: 'GERARDO MOLERO', desde: AHORA - 40 * 60000, llegoEn: AHORA - 10 * 60000 } }), ['EN_SITIO', 'Técnico en el sitio', 'GERARDO MOLERO · llegó hace 10 min']);
 check('un "en camino" caducado ya no cuenta', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecnico: 'GERARDO MOLERO', desde: AHORA - 5 * 3600000 } })?.[0], 'ASIGNADA');
 check('programada para otro día', vista({ tecnico: 'GERARDO MOLERO', fechaProgramada: '2026-10-20' }), ['PROGRAMADA', 'Programada', '20/10/2026 · GERARDO MOLERO']);
+check('programada a futuro sin técnico: no es "sin técnico", está agendada', vista({ fechaProgramada: '2026-10-20' }), ['PROGRAMADA', 'Programada', '20/10/2026']);
+check('programada para hoy sin técnico sí falta asignarla', vista({ fechaProgramada: '2026-10-14' })?.[0], 'SIN_TECNICO');
 check('programada para hoy ya es asignada', vista({ tecnico: 'GERARDO MOLERO', fechaProgramada: '2026-10-14' })?.[0], 'ASIGNADA');
 check('pre-finalizada: instalada, en revisión', vista({ estado: 'PRE-FINALIZADO', tecnico: 'GERARDO MOLERO' }), ['EN_REVISION', 'Instalada, en revisión', 'GERARDO MOLERO']);
 check('finalizada: instalada', vista({ estado: 'FINALIZADO', tecnico: 'GERARDO MOLERO' }), ['INSTALADA', 'Instalada', 'GERARDO MOLERO']);

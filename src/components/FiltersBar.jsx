@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowDownAZ, Filter, Search, SlidersHorizontal, Wrench, X } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../constants';
 import SelectMenu from './SelectMenu';
+import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 
 export default function FiltersBar({
   searchTerm, setSearchTerm,
@@ -61,10 +62,11 @@ export default function FiltersBar({
             id="ticket-search"
             type="search"
             placeholder="Buscar por nombre, código o cédula..."
-            className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-3 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+            className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <BotonLimpiarBusqueda valor={searchTerm} onLimpiar={() => setSearchTerm('')} />
         </div>
         <button
           type="button"

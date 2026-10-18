@@ -3,6 +3,7 @@ import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, Externa
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
 import DevolucionAviso from './DevolucionAviso';
+import ConsultaCobroAviso from './ConsultaCobroAviso';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
@@ -26,6 +27,7 @@ export default function TicketsMobileList({
   onPegarUbicacion,
   onPreFinalizar,
   onAprobarFinalizar,
+  onResponderCobro,
   onFinalizar,
   onTogglePrioridad,
   ahora,
@@ -146,10 +148,17 @@ export default function TicketsMobileList({
             </div>
             <DevolucionAviso ticket={ticket} />
             <CobroAviso ticket={ticket} />
+            <ConsultaCobroAviso ticket={ticket} onResponder={onResponderCobro} />
             {ticket.observacion && (
               <div className="flex items-start gap-2 text-sm">
                 <MessageSquareText className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" aria-label="Observación" role="img" />
                 <span className="text-zinc-700 dark:text-zinc-300 leading-tight">{ticket.observacion}</span>
+              </div>
+            )}
+            {ticket.observacionTecnico && (
+              <div className="flex items-start gap-2 text-sm">
+                <Wrench className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-label="Observación del técnico" role="img" />
+                <span className="text-amber-800 dark:text-amber-300 leading-tight">{ticket.observacionTecnico}</span>
               </div>
             )}
             {!isTecnico && (

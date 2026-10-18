@@ -5,6 +5,7 @@ import { buildSmartOltUrl } from '../utils/smartolt';
 import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
+import ConsultaCobroAviso from './ConsultaCobroAviso';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
@@ -35,6 +36,7 @@ export default function TicketsTable({
   onVerHistorial,
   onPreFinalizar,
   onAprobarFinalizar,
+  onResponderCobro,
   onFinalizar,
   onTogglePrioridad,
   ahora,
@@ -109,6 +111,7 @@ export default function TicketsTable({
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     <DevolucionAviso ticket={ticket} compact />
                     <CobroAviso ticket={ticket} compact />
+                    <ConsultaCobroAviso ticket={ticket} compact onResponder={onResponderCobro} />
                     {isTecnico && ticket.estado === 'PENDIENTE' && (
                       <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
                     )}
@@ -116,6 +119,12 @@ export default function TicketsTable({
                       <span className="flex items-start gap-1 text-[10px] text-zinc-500 dark:text-zinc-400" title={ticket.observacion}>
                         <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />
                         <span className="line-clamp-2">{ticket.observacion}</span>
+                      </span>
+                    )}
+                    {ticket.observacionTecnico && (
+                      <span className="flex items-start gap-1 text-[10px] text-amber-700 dark:text-amber-400" title={`Técnico: ${ticket.observacionTecnico}`}>
+                        <Wrench className="w-3 h-3 shrink-0 mt-px" aria-label="Observación del técnico" role="img" />
+                        <span className="line-clamp-2">{ticket.observacionTecnico}</span>
                       </span>
                     )}
                   </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { contarPendientes } from '../hooks/useInsigniaApp';
-import { Ban, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, MapPin, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
+import { Ban, Banknote, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, MapPin, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
 
 function tiempoRelativo(timestamp) {
   const diffMs = Date.now() - timestamp;
@@ -20,6 +20,8 @@ function iconoPara(type) {
   if (type === 'devuelto') return <Undo2 className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
   if (type === 'encamino') return <Car className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'llegada') return <MapPin className="w-4 h-4 text-teal-500 shrink-0" aria-hidden="true" />;
+  if (type === 'consultaCobro') return <Banknote className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
+  if (type === 'respuestaCobro') return <Banknote className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'cancelada') return <Ban className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
   if (type === 'desasignada') return <UserMinus className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
   if (type === 'cierreAutomatico') return <CalendarCheck className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;

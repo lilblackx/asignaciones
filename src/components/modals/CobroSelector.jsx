@@ -5,15 +5,19 @@ import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, MONEDA_BS, M
 // Qué cobro se le informa al técnico al finalizar la orden: "Visita técnica" (el monto de
 // siempre), "Otro monto" (escrito a mano; es el que verá el técnico en su aviso final) o
 // "Exonerar" (no se cobra; el aviso le dice que no cobre nada).
-// `idBase` evita ids repetidos si hay dos selectores en pantalla.
-export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion, onChange, error }) {
+// `idBase` evita ids repetidos si hay dos selectores en pantalla. `modos` limita las opciones que se ofrecen
+// (la consulta de cobro de un recableado no lleva "Visita técnica").
+export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion, onChange, error, modos = [COBRO_VISITA, COBRO_OTRO, COBRO_EXONERADO], tituloOtro = ETIQUETA_COBRO[COBRO_OTRO] }) {
   const inputRef = useRef(null);
   const esOtro = seleccion.modo === COBRO_OTRO;
   const moneda = seleccion.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS;
 
   // Al elegir "Otro monto" el cursor pasa al campo del monto; si el monto escrito no es válido, vuelve ahí.
+  // Si el selector ya se abre con "Otro monto" (cobro respondido de antemano), no se lleva el cursor: taparía el aviso de arriba.
+  const modoAlAbrir = useRef(seleccion.modo);
   useEffect(() => {
-    if (esOtro) inputRef.current?.focus();
+    if (!esOtro) modoAlAbrir.current = null;
+    if (esOtro && modoAlAbrir.current !== COBRO_OTRO) inputRef.current?.focus();
   }, [esOtro]);
   useEffect(() => {
     if (error) inputRef.current?.focus();
@@ -46,9 +50,9 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
     <div className="space-y-2 text-left">
       <p id={`${idBase}-titulo`} className="text-xs font-black text-sky-900 dark:text-sky-200">COBRO QUE VERÁ EL TÉCNICO</p>
       <div role="radiogroup" aria-labelledby={`${idBase}-titulo`} className="space-y-2">
-        {opcion(COBRO_VISITA, ETIQUETA_COBRO[COBRO_VISITA], montoVisita ? `${montoVisita} Bs (monto de siempre, con la tasa de hoy; siempre en Bs)` : 'La tasa no está configurada: el técnico no verá monto.')}
-        {opcion(COBRO_OTRO, ETIQUETA_COBRO[COBRO_OTRO], 'Escribe el monto que se debe cobrar, en Bs o en $')}
-        {opcion(COBRO_EXONERADO, ETIQUETA_COBRO[COBRO_EXONERADO], 'No se cobra esta visita al cliente')}
+        {modos.includes(COBRO_VISITA) && opcion(COBRO_VISITA, ETIQUETA_COBRO[COBRO_VISITA], montoVisita ? `${montoVisita} Bs (monto de siempre, con la tasa de hoy; siempre en Bs)` : 'La tasa no está configurada: el técnico no verá monto.')}
+        {modos.includes(COBRO_OTRO) && opcion(COBRO_OTRO, tituloOtro, 'Escribe el monto que se debe cobrar, en Bs o en $')}
+        {modos.includes(COBRO_EXONERADO) && opcion(COBRO_EXONERADO, ETIQUETA_COBRO[COBRO_EXONERADO], 'No se cobra esta visita al cliente')}
       </div>
       {esOtro && (
         <div className="space-y-1">

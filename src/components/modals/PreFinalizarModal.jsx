@@ -12,6 +12,8 @@ import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
 import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, esVisitaConector, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
+import { consultaCobroDe } from '../../utils/consultaCobro';
+import ConsultaCobroRecableado from './ConsultaCobroRecableado';
 import { esInstalacion as trabajoEsInstalacion, napConPuerto, validarInstalacion } from '../../utils/instalacion';
 import ConectoresRecableado, { CantidadesConectorInstalacion, CantidadesConectorVisita } from './ConectoresRecableado';
 import { normalizarConectoresInstalacion, parseConectoresInstalacion } from '../../utils/conectoresInstalacion';
@@ -20,7 +22,7 @@ import { errorSerialCaja } from '../../utils/serialOlt';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
 
-export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
+export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
   // La NAP y el puerto van en dos campos con conector externo y en las instalaciones.
   const conDosCampos = ticket?.tipoVisita === 'CONECTOR_EXTERNO' || trabajoEsInstalacion(ticket?.tipoTrabajo);
   const separado = conDosCampos ? separarNapPuerto(ticket?.nap) : null;
@@ -41,10 +43,11 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const [instInternoVerde, setInstInternoVerde] = useState(conectoresPrevios.interno.verde ? String(conectoresPrevios.interno.verde) : '');
   const [instInternoAzul, setInstInternoAzul] = useState(conectoresPrevios.interno.azul ? String(conectoresPrevios.interno.azul) : '');
   const [conectoresInstError, setConectoresInstError] = useState({ campo: '', mensaje: '' });
-  const [tipoVisitaElegido, setTipoVisita] = useState(ticket?.tipoVisita || '');
+  // Si ya consultó el cobro de un recableado, la orden se abre en ese recableado con esos metros.
+  const [tipoVisitaElegido, setTipoVisita] = useState(ticket?.tipoVisita || (consultaCobroDe(ticket) ? TIPO_RECABLEADO : ''));
   const [napError, setNapError] = useState('');
   const [puertoError, setPuertoError] = useState('');
-  const [observacion, setObservacion] = useState(ticket?.observacion || '');
+  const [observacion, setObservacion] = useState(ticket?.observacionTecnico || '');
   const potenciaInicial = ticket?.potenciaDbm != null ? String(ticket.potenciaDbm) : '';
   const [potencia, setPotenciaCampo] = useState(potenciaInicial);
   // La consulta a SmartOLT es asíncrona: lo que hay en el campo y lo último que ella escribió se
@@ -55,7 +58,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
   const [potencia1490, setPotencia1490] = useState(ticket?.potencia1490Dbm != null ? String(ticket.potencia1490Dbm) : '');
   // Recableado: metros de cable (obligatorios) y conectores colocados (opcionales). Visita de
   // conector: el color del conector colocado (el interno es obligatorio).
-  const [metros, setMetros] = useState(ticket?.metrosCable != null ? String(ticket.metrosCable) : '');
+  const [metros, setMetros] = useState(ticket?.metrosCable != null ? String(ticket.metrosCable) : (consultaCobroDe(ticket) ? String(ticket.consultaCobro.metros) : ''));
   const [colorExterno, setColorExterno] = useState(colorConectorExterno(ticket?.conectorExterno));
   const [colorInterno, setColorInterno] = useState(colorConectorInterno(ticket?.conectorInterno));
   // Visita de conector: cuántos conectores verdes y azules usó (texto, como se escribe).
@@ -138,7 +141,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
     await onConfirm(ticket, {
       nap: conectorExterno ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : nap,
       ...(instalacion ? { instalacion: { ...instalacion.datos, conectores: conectoresInst.valor } } : {}),
-      observacion,
+      observacionTecnico: observacion,
       potenciaDbm: potenciaParseada.valor ?? null,
       potencia1490Dbm: parsePotencia(potencia1490).valor ?? null,
       tipoVisita,
@@ -249,6 +252,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
                 </div>
                 {metrosError && <p id="pf-metros-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
               </div>
+              {onConsultarCobro && <ConsultaCobroRecableado ticket={ticket} metros={metros} onConsultar={(valor) => onConsultarCobro(ticket, valor)} />}
               <ConectoresRecableado colorExterno={colorExterno} colorInterno={colorInterno} onExterno={setColorExterno} onInterno={setColorInterno} />
             </div>
           )}
@@ -358,6 +362,13 @@ export default function PreFinalizarModal({ ticket, onConfirm, onClose }) {
             </p>
             {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={capturarSenal} />}
           </div>
+
+          {ticket.observacion?.trim() && (
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA DE LA OFICINA</span>
+              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{ticket.observacion}</p>
+            </div>
+          )}
 
           <div className="space-y-1">
             <label htmlFor="pf-obs"className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">

@@ -5,6 +5,7 @@ import { errorNombresPromotora } from '../../utils/promotora';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../../utils/passwordPolicy';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import Modal from '../Modal';
+import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import SelectMenu from '../SelectMenu';
 
 const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
@@ -212,14 +213,17 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 <UserPlus className="w-3.5 h-3.5" aria-hidden="true" /> Nuevo usuario
               </button>
             </div>
-            <input
-              type="search"
-              aria-label="Buscar usuario"
-              placeholder="Buscar por nombre o usuario"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 px-4 py-2.5 rounded-xl text-sm outline-none focus:border-red-600"
-            />
+            <div className="relative">
+              <input
+                type="search"
+                aria-label="Buscar usuario"
+                placeholder="Buscar por nombre o usuario"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 pl-4 pr-10 py-2.5 rounded-xl text-sm outline-none focus:border-red-600"
+              />
+              <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
+            </div>
             <div role="group" aria-label="Filtrar por rol" className="flex flex-wrap gap-2">
               {filtros.map((f) => (
                 <button

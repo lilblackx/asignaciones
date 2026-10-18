@@ -115,6 +115,11 @@ async function resolveTokens(env, accessToken, target) {
   } else if (target?.type === 'usuarios') {
     // Por nombre de usuario de la app (campo `username` del perfil).
     docs = (await Promise.all((target.usernames || []).map((u) => runQuery(env, accessToken, 'username', 'EQUAL', { stringValue: String(u) })))).flat();
+  } else if (target?.type === 'oficina') {
+    // Quien crea y atiende órdenes: ADMIN y USUARIO (p. ej. responder la consulta de cobro de un técnico).
+    const oficina = await Promise.all(['ADMIN', 'USUARIO'].map((r) => runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: r })));
+    const seen = new Set();
+    docs = oficina.flat().filter((d) => (seen.has(d.name) ? false : (seen.add(d.name), true)));
   } else if (target?.type === 'aprobadores') {
     const admins = await runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: 'ADMIN' });
     const puedeCerrar = await runQuery(env, accessToken, 'puedeCerrar', 'EQUAL', { booleanValue: true });

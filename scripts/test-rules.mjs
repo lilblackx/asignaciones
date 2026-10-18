@@ -236,6 +236,21 @@ await check('TECNICO puede pre-finalizar con NAP, potencia, observación e histo
   }));
 });
 
+await check('TECNICO puede escribir su observación aparte de la de la oficina', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ observacionTecnico: 'Drop partido, se requiere recablear' }));
+});
+
+await check('TECNICO puede consultar el cobro de un recableado, pero no responderlo', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ consultaCobro: { metros: 250, pedidaEn: 1000, pedidaPor: 'GERARDO' } }));
+  await assertFails(camposGerardo(asTecnico()).update({ respuestaCobro: { metros: 250, exonerado: true, monto: null, en: 2000 } }));
+});
+
+await check('ADMIN y USUARIO responden la consulta de cobro', async () => {
+  const respuesta = { metros: 250, exonerado: false, valor: 5000, monto: '5.000', moneda: 'BS', por: 'LUIS', en: 2000 };
+  await assertSucceeds(camposGerardo(asAdmin()).update({ respuestaCobro: respuesta }));
+  await assertSucceeds(camposGerardo(asUsuario()).update({ respuestaCobro: { ...respuesta, valor: 6000, monto: '6.000' } }));
+});
+
 await check('TECNICO puede registrar un recableado (metros, conectores, señal 1490 y tipo de visita)', async () => {
   await assertSucceeds(camposGerardo(asTecnico()).update({
     tipoVisita: 'RECABLEADO', metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL', potencia1490Dbm: -23.19

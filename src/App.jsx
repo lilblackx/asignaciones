@@ -58,6 +58,7 @@ const MaterialesModal = lazy(() => import('./components/modals/MaterialesModal')
 const PreFinalizarModal = lazy(() => import('./components/modals/PreFinalizarModal'));
 const CobroResultanteModal = lazy(() => import('./components/modals/CobroResultanteModal'));
 const AprobarFinalizarModal = lazy(() => import('./components/modals/AprobarFinalizarModal'));
+const ResponderCobroModal = lazy(() => import('./components/modals/ResponderCobroModal'));
 const UbicacionModal = lazy(() => import('./components/modals/UbicacionModal'));
 const HistorialOrdenModal = lazy(() => import('./components/modals/HistorialOrdenModal'));
 
@@ -85,7 +86,7 @@ export default function App({ auth }) {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
   const verInventario = veEnviosInventario(currentUser);
@@ -275,6 +276,7 @@ export default function App({ auth }) {
   const [finalizarTarget, setFinalizarTarget] = useState(null);
   const [ubicacionTarget, setUbicacionTarget] = useState(null);
   const [historialTarget, setHistorialTarget] = useState(null);
+  const [responderCobroTarget, setResponderCobroTarget] = useState(null);
 
   // Click en una notificación: lleva a la orden o a la acción que avisa. Si la orden ya no
   // está (o cambió de estado), cae a la vista de la lista más cercana.
@@ -321,6 +323,16 @@ export default function App({ auth }) {
         if (ticket && isTecnico && tieneCobroFinal(ticket)) mostrarCobro(ticket);
         else if (ticket) mostrarOrden(ticket);
         else setStatusFilter('FINALIZADO');
+        break;
+      case 'consultaCobro':
+        if (canEditTickets && ticket) setResponderCobroTarget(ticket);
+        else if (ticket) mostrarOrden(ticket);
+        else handleGoHome();
+        break;
+      case 'respuestaCobro':
+        if (isTecnico && ticket?.estado === 'PENDIENTE') setPreFinalizarTarget(ticket);
+        else if (ticket) mostrarOrden(ticket);
+        else handleGoHome();
         break;
       case 'tecnicoStatus':
         if (isAdmin) setIsAddTechModalOpen(true);
@@ -615,6 +627,7 @@ export default function App({ auth }) {
             onPegarUbicacion={handlePegarUbicacion}
             onPreFinalizar={setPreFinalizarTarget}
             onAprobarFinalizar={setAprobarTarget}
+            onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
             onFinalizar={setFinalizarTarget}
             onTogglePrioridad={handleTogglePrioridad}
             ahora={ahora}
@@ -639,6 +652,7 @@ export default function App({ auth }) {
             onVerHistorial={setHistorialTarget}
             onPreFinalizar={setPreFinalizarTarget}
             onAprobarFinalizar={setAprobarTarget}
+            onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
             onFinalizar={setFinalizarTarget}
             onTogglePrioridad={handleTogglePrioridad}
             ahora={ahora}
@@ -830,9 +844,18 @@ export default function App({ auth }) {
 
         {preFinalizarTarget && (
           <PreFinalizarModal
-            ticket={preFinalizarTarget}
+            ticket={tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget}
             onConfirm={handleConfirmPreFinalizar}
+            onConsultarCobro={consultarCobroRecableado}
             onClose={() => setPreFinalizarTarget(null)}
+          />
+        )}
+
+        {responderCobroTarget && (
+          <ResponderCobroModal
+            ticket={tickets.find(t => t.id === responderCobroTarget.id) || responderCobroTarget}
+            onResponder={responderConsultaCobro}
+            onClose={() => setResponderCobroTarget(null)}
           />
         )}
 

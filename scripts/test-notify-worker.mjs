@@ -43,6 +43,7 @@ const env = {
 
 // --- Servidores simulados ---
 let roles; // uid -> rol del perfil
+let busquedas; // filtros de las búsquedas de perfiles (runQuery)
 let tokensDelTecnico; // fcmTokens del perfil del técnico destino
 let comportamientoFcm; // token -> 'ok' | 'muerto' | 'rechaza-opciones'
 let enviosFcm;
@@ -60,6 +61,7 @@ globalThis.fetch = async (url, init = {}) => {
     return respuesta({ fields: { role: { stringValue: roles[uid] }, disabled: { booleanValue: false } } });
   }
   if (u.includes(':runQuery')) {
+    busquedas.push(JSON.parse(init.body).structuredQuery.where?.fieldFilter);
     return respuesta([{ document: { name: USER_DOC('tecnico-uid'), fields: { fcmTokens: { arrayValue: { values: tokensDelTecnico.map((t) => ({ stringValue: t })) } } } } }]);
   }
   if (u.includes(':commit')) {
@@ -99,6 +101,7 @@ const aviso = {
 };
 
 function reiniciar() {
+  busquedas = [];
   roles = { 'admin-uid': 'ADMIN', 'tecnico-uid': 'TECNICO' };
   tokensDelTecnico = ['tok-bueno'];
   comportamientoFcm = {};
@@ -151,6 +154,18 @@ r = await enviar('tecnico-uid', aviso);
 check('un TECNICO no puede avisar a un técnico', r.status, 403);
 check('y no se envió nada', enviosFcm.length, 0);
 
+
+// 6) Consulta de cobro: el técnico avisa a la oficina (ADMIN y USUARIO), sin duplicar a nadie
+reiniciar();
+roles['usuario-uid'] = 'USUARIO';
+r = await enviar('tecnico-uid', { target: { type: 'oficina' }, title: 'Consulta de cobro', body: 'GERARDO pregunta el cobro del recableado de AS9 (250 m).', tipo: 'consultaCobro', ticketId: 'abc123' });
+check('un TECNICO puede avisar a la oficina', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
+check('busca a los ADMIN y a los USUARIO', busquedas.map((f) => [f.field.fieldPath, f.value.stringValue]).sort(), [['role', 'ADMIN'], ['role', 'USUARIO']]);
+check('un mismo perfil que sale en las dos búsquedas recibe un solo aviso', enviosFcm.length, 1);
+check('el aviso lleva el tipo de la consulta', enviosFcm[0]?.data.tipo, 'consultaCobro');
+reiniciar();
+r = await enviar('tecnico-uid', aviso);
+check('pero sigue sin poder avisar a un técnico', r.status, 403);
 
 // --- Cierre automático: las instalaciones dejan un resumen liviano para la promotora ---
 const fetchBase = globalThis.fetch;

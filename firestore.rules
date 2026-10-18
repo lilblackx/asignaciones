@@ -111,7 +111,7 @@ service cloud.firestore {
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'instalacion', 'enCamino', 'historialEdiciones'])
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'instalacion', 'enCamino', 'historialEdiciones'])
           // "En camino" / "En sitio": solo a su nombre (o null para cancelarlo), nunca en nombre de otro técnico.
           && (request.resource.data.get('enCamino', null) == null
                || request.resource.data.enCamino.tecnico == tecnicoAsociado(appId))

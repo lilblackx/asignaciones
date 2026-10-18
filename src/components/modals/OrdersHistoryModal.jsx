@@ -205,6 +205,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                     {o.nap && <p><span className="font-semibold">NAP:</span> {o.nap}</p>}
                     {o.fechaProgramada && <p><span className="font-semibold">Programada:</span> {o.fechaProgramada}</p>}
                     <p><span className="font-semibold">Observación:</span> {o.observacion || '-'}</p>
+                    {o.observacionTecnico && <p><span className="font-semibold">Obs. del técnico:</span> {o.observacionTecnico}</p>}
                     {o.creado && <p><span className="font-semibold">Creada por:</span> {o.creado}</p>}
                     {puedeVerPlantilla && armarPlantilla?.(o) && (
                       <div className="pt-1.5">

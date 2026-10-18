@@ -52,6 +52,7 @@ const COLUMNAS = [
   ['Ubicación', t => t.ubicacion],
   ['Enviado', t => (t.isAsignado ? 'Sí' : 'No')],
   ['Observación', t => t.observacion],
+  ['Observación del técnico', t => t.observacionTecnico],
   ['Estado', t => t.estado],
 ];
 

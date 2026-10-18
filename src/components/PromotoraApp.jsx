@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, Download, Megaphone, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { etiquetaRol } from '../constants';
+import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import { useToast } from '../hooks/useToast';
 import { useAhora } from '../hooks/useAhora';
 import { usePreferencia } from '../hooks/usePreferencia';
@@ -185,8 +186,9 @@ export default function PromotoraApp({ auth }) {
                 placeholder={verTodasInstalaciones ? 'Buscar nombre, cédula, código o promotor' : 'Buscar nombre, cédula o código'}
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-3 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+                className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
               />
+              <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
             </div>
             <button
               type="button"

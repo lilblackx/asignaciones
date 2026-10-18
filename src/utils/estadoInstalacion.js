@@ -40,7 +40,7 @@ export const ESTADOS_PROMOTORA = {
 // Orden en que se muestran los filtros y las tarjetas (lo que más urge arriba).
 export const ORDEN_ESTADOS_PROMOTORA = ['SIN_TECNICO', 'PROGRAMADA', 'ASIGNADA', 'EN_CAMINO', 'EN_SITIO', 'EN_REVISION', 'INSTALADA', 'CANCELADA'];
 
-const fechaCorta = (iso) => {
+export const fechaCorta = (iso) => {
   const [anio, mes, dia] = String(iso || '').split('-');
   return anio && mes && dia ? `${dia}/${mes}/${anio}` : '';
 };
@@ -67,7 +67,8 @@ export function estadoParaPromotora(t, ahora = Date.now()) {
     case 'CANCELADO': return hecho('CANCELADA');
     case 'PRE-FINALIZADO': return hecho('EN_REVISION', t.tecnico || '');
     case 'PENDIENTE': {
-      if (!t.tecnico) return hecho('SIN_TECNICO');
+      // Sin técnico pero con fecha futura: no es que falte asignarla, está agendada para ese día.
+      if (!t.tecnico) return categoriaProgramada(t.fechaProgramada, new Date(ahora)) === 'futura' ? hecho('PROGRAMADA', fechaCorta(t.fechaProgramada)) : hecho('SIN_TECNICO');
       const viaje = estadoViaje(t, ahora);
       if (viaje === ESTADO_EN_SITIO) return hecho('EN_SITIO', `${t.tecnico} · llegó ${tiempoTranscurrido(t.enCamino.llegoEn, ahora)}`);
       if (viaje) return hecho('EN_CAMINO', `${t.tecnico} · salió ${tiempoTranscurrido(t.enCamino.desde, ahora)}`);

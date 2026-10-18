@@ -1,4 +1,4 @@
-import { Download, MessageSquareText, X } from 'lucide-react';
+import { Download, MessageSquareText, Wrench, X } from 'lucide-react';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import { formatCedula } from '../../../utils/ticketDisplay';
 
@@ -95,7 +95,10 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                       <span className="text-zinc-400 italic">No asignado</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400 italic leading-snug align-middle">{ticket.observacion || '-'}</td>
+                  <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400 italic leading-snug align-middle">
+                    {ticket.observacion || (ticket.observacionTecnico ? '' : '-')}
+                    {ticket.observacionTecnico && <span className={`block not-italic text-amber-700 dark:text-amber-400 ${ticket.observacion ? 'mt-1' : ''}`}><span className="font-semibold">Técnico:</span> {ticket.observacionTecnico}</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -121,6 +124,12 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                   <p className="flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
                     <MessageSquareText className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-px" aria-label="Observación" role="img" />
                     <span>{ticket.observacion}</span>
+                  </p>
+                )}
+                {ticket.observacionTecnico && (
+                  <p className="flex items-start gap-1.5 text-amber-700 dark:text-amber-400">
+                    <Wrench className="w-3.5 h-3.5 shrink-0 mt-px" aria-label="Observación del técnico" role="img" />
+                    <span>{ticket.observacionTecnico}</span>
                   </p>
                 )}
               </div>

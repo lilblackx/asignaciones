@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search, X } from 'lucide-react';
 import Modal from './Modal';
+import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import { ESTADOS_CON_ALERTA, TEXTO_ESTADO_ENVIO } from '../utils/envioInventario';
 
 const ETIQUETA_ESTADO = {
@@ -281,8 +282,9 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 placeholder="Código, cliente, serial o técnico"
-                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-red-600"
+                className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-red-600"
               />
+              <BotonLimpiarBusqueda valor={texto} onLimpiar={() => setTexto('')} />
             </label>
             <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
               {FILTROS.map((f) => (
