@@ -249,7 +249,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                 <label htmlFor="pf-metros" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
                   METROS DE CABLE <span className="font-normal text-red-500">(obligatorio)</span>
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="relative">
                   <input
                     id="pf-metros"
                     type="text"
@@ -259,9 +259,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                     onChange={(e) => { setMetros(e.target.value.replace(/\D/g, '').slice(0, 4)); if (metrosError) setMetrosError(''); }}
                     aria-invalid={!!metrosError}
                     aria-describedby={metrosError ? 'pf-metros-error' : undefined}
-                    className={`flex-1 min-w-0 bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+                    className={`w-full min-w-0 bg-white dark:bg-zinc-950 border pl-3 pr-9 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
                   />
-                  <span className="text-sm font-black text-zinc-500 dark:text-zinc-400 shrink-0">m</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
                 </div>
                 {metrosError && <p id="pf-metros-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
               </div>

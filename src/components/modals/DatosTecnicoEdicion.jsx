@@ -138,9 +138,9 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           {tipoVisita === TIPO_RECABLEADO && (
             <div className="col-span-2 space-y-3">
               <Campo id="pf-metros" etiqueta="METROS DE CABLE" error={errores.metros} className="col-span-2">
-                <div className="flex items-center gap-2">
-                  <input id="pf-metros" type="text" inputMode="numeric" placeholder="Ej. 35" value={form.metros} onChange={(e) => onChange({ metros: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.metros} aria-describedby={errores.metros ? 'pf-metros-error' : undefined} className={`flex-1 ${claseInput(errores.metros)}`} />
-                  <span className="text-xs font-black text-zinc-500 dark:text-zinc-400 shrink-0">m</span>
+                <div className="relative">
+                  <input id="pf-metros" type="text" inputMode="numeric" placeholder="Ej. 35" value={form.metros} onChange={(e) => onChange({ metros: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.metros} aria-describedby={errores.metros ? 'pf-metros-error' : undefined} className={`w-full pr-8 ${claseInput(errores.metros)}`} />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
                 </div>
               </Campo>
               <ConectoresRecableado colorExterno={form.colorExterno} colorInterno={form.colorInterno} onExterno={(v) => onChange({ colorExterno: v })} onInterno={(v) => onChange({ colorInterno: v })} />
