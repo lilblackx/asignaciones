@@ -9,6 +9,8 @@ export const VIGENCIA_COPIA_MS = 30 * 60 * 1000;
 // Lo mínimo que debe pasar entre una lectura y la siguiente cuando el usuario toca "Actualizar" (la hora de la última lectura
 // se guarda en el equipo, así que recargar la página tampoco la salta).
 export const ESPERA_ACTUALIZAR_MS = 2 * 60 * 1000;
+// Cada cuánto reintenta una actualización automática que todavía no podía hacerse (ver actualizarCuandoPueda).
+const REINTENTO_AUTOMATICO_MS = 15 * 1000;
 // Cuántas órdenes cerradas trae ventas por vez: las más recientes al abrir y otras tantas cada vez que pide "Cargar más". El historial de
 // 15 días son cientos de documentos y cada uno es una lectura; así solo se pagan las que de verdad se miran.
 export const TAMANO_PAGINA = 30;
@@ -93,6 +95,7 @@ async function leerMas(llave) {
 //  - `leidoEn`: cuándo se leyó por última vez (para mostrarlo).
 //  - `actualizar`: fuerza una lectura de lo nuevo, pero no antes de ESPERA_ACTUALIZAR_MS desde la anterior: devuelve 'ok', 'espera'
 //    (todavía no toca), 'ocupado' (ya hay una lectura en curso) o 'error'.
+//  - `actualizarCuandoPueda`: lo mismo sin botón y sin respuesta; reintenta hasta lograrlo (lo usa la pantalla cuando una orden sale de la lista).
 //  - `hayMas` / `cargarMas` / `cargandoMas`: solo ventas, que trae el historial por páginas (ver TAMANO_PAGINA).
 export function useHistorialInstalaciones(firebaseUser, claves, verTodas = false) {
   const llave = verTodas ? '*' : claves.join('|');
@@ -152,6 +155,22 @@ export function useHistorialInstalaciones(firebaseUser, claves, verTodas = false
     }
   }, [firebaseUser, llave, aplicar]);
 
+  // Pide una actualización por su cuenta (sin botón): si todavía no toca (espera mínima) o hay otra lectura en curso, reintenta cada rato
+  // hasta lograrla. Solo se usa cuando una orden sale de la lista en vivo, que es cuando el historial de verdad cambió.
+  const pendiente = useRef(false);
+  const reintento = useRef(null);
+  const actualizarCuandoPueda = useCallback(() => {
+    if (pendiente.current) return;
+    pendiente.current = true;
+    const intentar = async () => {
+      const r = await actualizar();
+      if (r === 'espera' || r === 'ocupado') reintento.current = setTimeout(intentar, REINTENTO_AUTOMATICO_MS);
+      else pendiente.current = false;
+    };
+    intentar();
+  }, [actualizar]);
+  useEffect(() => () => clearTimeout(reintento.current), []);
+
   // Trae la página siguiente (solo ventas). No cuenta como actualización: lo que trae es más viejo, no más reciente.
   const cargarMas = useCallback(async () => {
     if (!firebaseUser || !verTodas || leyendo.current || !hayMas) return;
@@ -168,5 +187,5 @@ export function useHistorialInstalaciones(firebaseUser, claves, verTodas = false
     }
   }, [firebaseUser, verTodas, llave, hayMas]);
 
-  return { historial, leidoEn, actualizar, hayMas, cargarMas, cargandoMas };
+  return { historial, leidoEn, actualizar, actualizarCuandoPueda, hayMas, cargarMas, cargandoMas };
 }

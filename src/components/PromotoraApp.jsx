@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, Download, Megaphone, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, Download, Megaphone, Search, SlidersHorizontal } from 'lucide-react';
 import { etiquetaRol } from '../constants';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import { useToast } from '../hooks/useToast';
@@ -7,9 +7,8 @@ import { useAhora } from '../hooks/useAhora';
 import { usePreferencia } from '../hooks/usePreferencia';
 import { useEstadisticasMes } from '../hooks/useEstadisticasMes';
 import { useInstalacionesPromotora } from '../hooks/useInstalacionesPromotora';
-import { ESPERA_ACTUALIZAR_MS, useHistorialInstalaciones } from '../hooks/useHistorialInstalaciones';
-import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_ESTADOS_PROMOTORA, ORDEN_POR_DEFECTO, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, atrasoOrden, categoriaOrden, enRangoFecha, etiquetaFiltroEstado, fechaOrden, ordenarOrdenes, resumenPorPromotor, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
-import { tiempoTranscurrido } from '../utils/enCamino';
+import { useHistorialInstalaciones } from '../hooks/useHistorialInstalaciones';
+import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_ESTADOS_PROMOTORA, ORDEN_POR_DEFECTO, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, algunaOrdenSalio, atrasoOrden, categoriaOrden, enRangoFecha, etiquetaFiltroEstado, fechaOrden, ordenarOrdenes, resumenPorPromotor, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
 import { mesDe, mesesDeTotales, totalesDelMes } from '../utils/totalesMes';
 import { claveNombre } from '../utils/promotora';
 import { csvDeOrdenes, descargarCsv, nombreArchivoExportacion } from '../utils/exportarOrdenes';
@@ -31,45 +30,6 @@ function Contador({ n, tono }) {
 const ETIQUETA_FILTRO = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400';
 const claveDePromotor = (o) => claveNombre(promotoraDeOrden(o)) || '-';
 
-// "Actualizar" del historial de las ya cerradas. Las órdenes abiertas llegan solas en vivo; esto solo vuelve a leer las cerradas, y no
-// más seguido que ESPERA_ACTUALIZAR_MS (la hora de la última lectura se guarda en el equipo, así que recargar la página no lo salta).
-function ActualizarHistorial({ leidoEn, actualizar, ahora, avisar }) {
-  const [segundo, setSegundo] = useState(() => Date.now());
-  const [leyendo, setLeyendo] = useState(false);
-  const restante = Math.max(0, leidoEn + ESPERA_ACTUALIZAR_MS - segundo);
-  const esperando = restante > 0;
-  // Solo cuenta los segundos mientras hay que esperar.
-  useEffect(() => {
-    if (!esperando) return undefined;
-    const id = setInterval(() => setSegundo(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [esperando]);
-
-  const pulsar = async () => {
-    setLeyendo(true);
-    const resultado = await actualizar();
-    setLeyendo(false);
-    if (resultado === 'ok') avisar({ type: 'success', text: 'Historial actualizado.' });
-    else if (resultado === 'error') avisar({ type: 'error', text: 'No se pudo actualizar el historial. Intenta de nuevo en un momento.' });
-  };
-  const cuenta = `${Math.floor(restante / 60000)}:${String(Math.ceil(restante / 1000) % 60).padStart(2, '0')}`;
-
-  return (
-    <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-      <span>{leidoEn ? `Actualizado ${tiempoTranscurrido(leidoEn, ahora)}` : 'Cargando...'}</span>
-      <button
-        type="button"
-        onClick={pulsar}
-        disabled={esperando || leyendo || !leidoEn}
-        title={esperando ? `Se puede actualizar de nuevo en ${cuenta} (así se cuidan las lecturas).` : 'Volver a leer las órdenes cerradas'}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700"
-      >
-        <RefreshCw className={`w-3 h-3 ${leyendo ? 'animate-spin' : ''}`} aria-hidden="true" /> {esperando ? `Actualizar (${cuenta})` : 'Actualizar'}
-      </button>
-    </div>
-  );
-}
-
 // Pantalla de la PROMOTORA: todas las instalaciones y en qué van. Solo lectura; no ve averías, cobros ni datos técnicos.
 export default function PromotoraApp({ auth }) {
   const { firebaseUser, currentUserName, currentUser, role, handleLogout, promotoraClaves, promotoraNombres, verTodasInstalaciones } = auth;
@@ -81,7 +41,15 @@ export default function PromotoraApp({ auth }) {
   // salvo el perfil de ventas (`verTodasInstalaciones`), que ve las de todas las promotoras.
   const sinNombre = !verTodasInstalaciones && promotoraClaves.length === 0;
   const { tickets, cargado, error } = useInstalacionesPromotora(firebaseUser, promotoraClaves, verTodasInstalaciones);
-  const { historial, leidoEn, actualizar: actualizarHistorial, hayMas: hayMasCerradas, cargarMas: cargarMasCerradas, cargandoMas } = useHistorialInstalaciones(firebaseUser, promotoraClaves, verTodasInstalaciones);
+  const { historial, actualizarCuandoPueda: actualizarHistorial, hayMas: hayMasCerradas, cargarMas: cargarMasCerradas, cargandoMas } = useHistorialInstalaciones(firebaseUser, promotoraClaves, verTodasInstalaciones);
+  // Las órdenes abiertas llegan solas en vivo; las cerradas se leen una vez (cuesta lecturas). Cuando una orden sale de la lista en vivo,
+  // el cierre del día la pasó al historial: ahí se vuelve a leer lo cerrado, sin que nadie tenga que pedirlo.
+  const idsEnVivo = useRef(null);
+  useEffect(() => {
+    if (!cargado) return;
+    if (algunaOrdenSalio(idsEnVivo.current, tickets)) actualizarHistorial();
+    idsEnVivo.current = new Set(tickets.map((t) => t.id));
+  }, [tickets, cargado, actualizarHistorial]);
   const [filtro, setFiltro] = useState('TODAS');
   // Solo ventas (ve todas) trabaja con instalaciones y averías LOS: elige ver las dos juntas, solo instalaciones o solo LOS.
   const [categoria, setCategoria] = usePreferencia(`categoria:${currentUser}`, 'TODO', (v) => ['TODO', 'INSTALACION', 'LOS'].includes(v));
@@ -281,7 +249,6 @@ export default function PromotoraApp({ auth }) {
               {hayMasCerradas && <span className="text-zinc-500 dark:text-zinc-400"> · faltan cerradas por cargar</span>}
               {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-600 dark:text-red-400 hover:underline">Limpiar filtros</button>}
             </p>
-            <ActualizarHistorial leidoEn={leidoEn} actualizar={actualizarHistorial} ahora={ahora} avisar={setToastMsg} />
           </div>
 
           {sinNombre ? (

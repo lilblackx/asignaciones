@@ -132,6 +132,14 @@ export function unirInstalaciones(tickets, historial, ahora = Date.now()) {
 
 // --- Lo que ventas usa para seguir las órdenes: fecha, filtro por fecha, atraso y resumen por promotor ---
 
+// ¿Salió alguna orden de la lista en vivo desde la lectura anterior? (`antes`: Set de ids, o null en la primera lectura.) Cuando el cierre
+// del día saca una orden de la lista, pasa al historial: ahí hay que volver a leer las cerradas.
+export const algunaOrdenSalio = (antes, tickets) => {
+  if (!antes) return false;
+  const ahora = new Set(tickets.map((t) => t.id));
+  return [...antes].some((id) => !ahora.has(id));
+};
+
 // La fecha con la que se ordena y se filtra: cuando se cerró (finalizada o cancelada) o, si sigue abierta, cuando se creó. Es la misma
 // que muestra la tarjeta.
 export function fechaOrden(t) {

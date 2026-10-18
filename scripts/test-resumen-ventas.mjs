@@ -5,7 +5,7 @@ import { csvDeOrdenes, filasExportacion } from '../src/utils/exportarOrdenes.js'
 import { PRIMER_MES_TOTALES, etiquetaMes, incrementosMensuales, mesDe, mesesDeTotales, mesesRecientes, totalesDelMes } from '../src/utils/totalesMes.js';
 import { incrementosMensuales as incrementosWorker } from '../cf-worker/src/index.js';
 import { formatearCedula } from '../src/utils/cedula.js';
-import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_POR_DEFECTO, atrasoOrden, enRangoFecha, estadoParaPromotora, fechaOrden, ordenarOrdenes, resumenPorPromotor } from '../src/utils/estadoInstalacion.js';
+import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_POR_DEFECTO, atrasoOrden, enRangoFecha, estadoParaPromotora, fechaOrden, ordenarOrdenes, resumenPorPromotor, algunaOrdenSalio } from '../src/utils/estadoInstalacion.js';
 
 let failures = 0;
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), 'utf8');
@@ -180,6 +180,10 @@ for (const estado of ['FINALIZADO', 'CANCELADO']) check(`el cierre manual y el a
 const hook = leer('../src/hooks/useHistorialInstalaciones.js');
 check('actualizar el historial tiene una espera mínima y no lee si ya hay una lectura en curso',
   /ESPERA_ACTUALIZAR_MS = 2 \* 60 \* 1000/.test(hook) && /Date\.now\(\) - ultima\.current < ESPERA_ACTUALIZAR_MS\) return 'espera'/.test(hook) && /leyendo\.current\) return 'ocupado'/.test(hook), true);
+// El historial de cerradas ya no tiene botón: se vuelve a leer solo cuando una orden sale de la lista en vivo (el cierre del día la pasó al historial).
+check('detecta que una orden salió de la lista en vivo', [algunaOrdenSalio(null, [{ id: 'a' }]), algunaOrdenSalio(new Set(['a', 'b']), [{ id: 'a' }, { id: 'b' }]), algunaOrdenSalio(new Set(['a', 'b']), [{ id: 'a' }]), algunaOrdenSalio(new Set(['a']), [{ id: 'a' }, { id: 'c' }])], [false, false, true, false]);
+check('la pantalla ya no tiene el botón Actualizar y pide la actualización sola', [/Volver a leer las órdenes cerradas|ActualizarHistorial/.test(leer('../src/components/PromotoraApp.jsx')), /algunaOrdenSalio\(idsEnVivo\.current, tickets\)\) actualizarHistorial\(\)/.test(leer('../src/components/PromotoraApp.jsx'))], [false, true]);
+check('la actualización automática reintenta si todavía no toca la espera mínima', /r === 'espera' \|\| r === 'ocupado'\) reintento\.current = setTimeout/.test(hook), true);
 check('la pantalla no lee nada de Firestore al filtrar u ordenar (todo se calcula con lo ya cargado)', /getDocs|onSnapshot|query\(/.test(leer('../src/components/PromotoraApp.jsx')), false);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
