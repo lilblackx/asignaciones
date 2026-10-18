@@ -17,3 +17,7 @@ export function devolucionPendiente(ticket) {
   }
   return null;
 }
+
+// Con qué texto se abre el campo de observación del técnico al pre-finalizar. Si la oficina le devolvió la orden empieza vacío:
+// el técnico escribe una respuesta nueva, sin mezclarla con su reporte anterior (que queda a la vista, solo para leer, y en el historial).
+export const reporteTecnicoInicial = (ticket) => (devolucionPendiente(ticket) ? '' : String(ticket?.observacionTecnico || ''));

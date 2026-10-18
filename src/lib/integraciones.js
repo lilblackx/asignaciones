@@ -39,7 +39,9 @@ async function consultarUnaVez(ruta, cuerpo, signal, servicio) {
     if (!res.ok) {
       // El Worker explica el motivo en el cuerpo ("SmartOLT limitó las consultas...", "tardó demasiado...").
       const motivo = (await res.text().catch(() => '')).trim();
-      throw new Error(`${servicio} no respondió (${res.status})${motivo && motivo.length <= 160 ? `: ${motivo}` : ''}.`);
+      // Si el Worker lo explicó, se muestra eso solo (sin repetir el código); si no, el código que devolvió.
+      const texto = motivo && motivo.length <= 200 ? motivo.replace(/\.$/, '') : `${servicio} no respondió (${res.status})`;
+      throw new Error(`${texto}.`);
     }
     return await res.json();
   } catch (err) {

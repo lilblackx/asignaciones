@@ -8,9 +8,11 @@ import { stripEmojis } from '../../utils/sanitizeInput';
 import { formatCedula } from '../../utils/ticketDisplay';
 import ContactoCliente from '../ContactoCliente';
 import DevolucionAviso from '../DevolucionAviso';
+import { devolucionPendiente, reporteTecnicoInicial } from '../../utils/devolucion';
+import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, esVisitaConector, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
+import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { consultaCobroDe } from '../../utils/consultaCobro';
 import ConsultaCobroRecableado from './ConsultaCobroRecableado';
@@ -47,7 +49,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const [tipoVisitaElegido, setTipoVisita] = useState(ticket?.tipoVisita || (consultaCobroDe(ticket) ? TIPO_RECABLEADO : ''));
   const [napError, setNapError] = useState('');
   const [puertoError, setPuertoError] = useState('');
-  const [observacion, setObservacion] = useState(ticket?.observacionTecnico || '');
+  const [observacion, setObservacion] = useState(() => reporteTecnicoInicial(ticket));
   const potenciaInicial = ticket?.potenciaDbm != null ? String(ticket.potenciaDbm) : '';
   const [potencia, setPotenciaCampo] = useState(potenciaInicial);
   // La consulta a SmartOLT es asíncrona: lo que hay en el campo y lo último que ella escribió se
@@ -71,6 +73,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const [metrosError, setMetrosError] = useState('');
   const [cantidadError, setCantidadError] = useState({ campo: '', mensaje: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Los datos ya validados que se guardarán si el técnico confirma; mientras haya algo aquí se ve el aviso de confirmación.
+  const [porConfirmar, setPorConfirmar] = useState(null);
   const [obsError, setObsError] = useState('');
 
   if (!ticket) return null;
@@ -80,6 +84,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const tipoVisita = esInstalacion ? '' : tipoVisitaElegido;
   const conectorExterno = tipoVisita === TIPO_CONECTOR_EXTERNO;
   const recableado = tipoVisita === TIPO_RECABLEADO;
+  // Lo que se resume en la confirmación para que el técnico vea qué está enviando: "Recableado: 250 m".
+  const etiquetaVisita = tipoVisita ? `${etiquetaTipoVisita(tipoVisita)}${recableado && metros ? `: ${metros} m` : ''}` : '';
   const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
   const potenciaParseada = parsePotencia(potencia);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
@@ -137,8 +143,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
     if (faltaObs || metrosParseados?.error || errorCantidad || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
-    setIsSubmitting(true);
-    await onConfirm(ticket, {
+    // Con todo en orden no se guarda todavía: primero se pide confirmar (ver ConfirmPreFinalizarModal).
+    setPorConfirmar({
       nap: conectorExterno ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : nap,
       ...(instalacion ? { instalacion: { ...instalacion.datos, conectores: conectoresInst.valor } } : {}),
       observacionTecnico: observacion,
@@ -148,11 +154,18 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
       serialEquipo: serialEquipoParseado?.valor ?? '',
       ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno, conectores: cantidades.valor }),
     });
+  };
+
+  const confirmarPreFinalizar = async () => {
+    setIsSubmitting(true);
+    await onConfirm(ticket, porConfirmar);
     setIsSubmitting(false);
   };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-50">
+    <>
+    {/* Con la confirmación abierta, Escape cierra solo la confirmación y no pierde lo escrito en el formulario. */}
+    <Modal onClose={() => { if (!porConfirmar) onClose(); }} zIndexClass="z-50">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
           <div>
@@ -370,6 +383,13 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
             </div>
           )}
 
+          {devolucionPendiente(ticket) && ticket.observacionTecnico?.trim() && (
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">TU REPORTE ANTERIOR</span>
+              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{ticket.observacionTecnico}</p>
+            </div>
+          )}
+
           <div className="space-y-1">
             <label htmlFor="pf-obs"className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
               OBSERVACIÓN / DETALLES DEL TRABAJO <span className="font-normal text-red-500">(obligatorio)</span>
@@ -418,5 +438,15 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
         </form>
       </div>
     </Modal>
+    {porConfirmar && (
+      <ConfirmPreFinalizarModal
+        ticket={ticket}
+        visita={etiquetaVisita}
+        isSubmitting={isSubmitting}
+        onCancel={() => setPorConfirmar(null)}
+        onConfirm={confirmarPreFinalizar}
+      />
+    )}
+    </>
   );
 }

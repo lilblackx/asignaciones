@@ -1,9 +1,9 @@
 // Prueba la devolución de órdenes, NAP/puerto y la potencia de SmartOLT (utils + Worker
 // con SmartOLT simulado). No necesita el emulador ni la llave. Uso: `npm run test:visita`.
-import { devolucionPendiente } from '../src/utils/devolucion.js';
+import { devolucionPendiente, reporteTecnicoInicial } from '../src/utils/devolucion.js';
 import { separarNapPuerto, unirNapPuerto } from '../src/utils/napPuerto.js';
 import { calidadSenal, puedeCapturarPotencia, valorSenal } from '../src/utils/senalOnu.js';
-import { buscarOnus, completarSenal, mapearOnu, mapearSenal, puertoDeOdb } from '../cf-worker-tomodat/src/index.js';
+import { ErrorSmartOlt, buscarOnus, completarSenal, mapearOnu, mapearSenal, puertoDeOdb } from '../cf-worker-tomodat/src/index.js';
 import { camposDeOnu, napDeOnu } from '../src/utils/clienteSmartolt.js';
 import { extraerCodigoNap } from '../src/utils/codigoNap.js';
 
@@ -22,6 +22,13 @@ check('devolución vigente: PENDIENTE con "devuelto" después de pre-finalizar',
 check('al pre-finalizar de nuevo la devolución desaparece', devolucionPendiente({ estado: 'PENDIENTE', historialEdiciones: [devuelta, pre] }), null);
 check('solo cuenta en PENDIENTE', devolucionPendiente({ estado: 'PRE-FINALIZADO', historialEdiciones: [devuelta] }), null);
 check('sin historial no hay devolución', devolucionPendiente({ estado: 'PENDIENTE' }), null);
+
+// El reporte del técnico al volver a pre-finalizar: si le devolvieron la orden empieza vacío, para no mezclarlo con el anterior.
+const reporte = { observacionTecnico: 'Se cambió el conector.' };
+check('con la orden devuelta el reporte nuevo empieza vacío', reporteTecnicoInicial({ estado: 'PENDIENTE', ...reporte, historialEdiciones: [pre, devuelta] }), '');
+check('sin devolución se conserva lo escrito', reporteTecnicoInicial({ estado: 'PENDIENTE', ...reporte, historialEdiciones: [] }), 'Se cambió el conector.');
+check('si ya volvió a pre-finalizar tras la devolución, se conserva su último reporte', reporteTecnicoInicial({ estado: 'PENDIENTE', ...reporte, historialEdiciones: [devuelta, pre] }), 'Se cambió el conector.');
+check('sin reporte guardado empieza vacío', [reporteTecnicoInicial({ estado: 'PENDIENTE', historialEdiciones: [] }), reporteTecnicoInicial(null)], ['', '']);
 
 check('une NAP y puerto', unirNapPuerto(' NAP 08 ', '3'), 'NAP 08 - Puerto 3');
 
@@ -109,6 +116,33 @@ o = await completar(base, [NADA, NADA, OK]);
 check('puede necesitar hasta el tercer intento', [o.senal1490, llamadasVivo.length], ['-22.84', 3]);
 o = await completar({ ...base, senal1310: null, senal1490: null }, [OK]);
 check('si faltan los dos se completan los dos', [o.senal1310, o.senal1490], ['-27.8', '-22.84']);
+
+// --- Cuando SmartOLT falla: un tropiezo rápido se reintenta una vez; el resto se explica en palabras claras ---
+const ONU_OK = { unique_external_id: 'A', name: 'JUAN PEREZ CI 12.345.678', signal_1310: '-19.4', signal_1490: '-22.1' };
+let respuestasSmartOlt; let llamadasSmartOlt;
+globalThis.fetch = async () => {
+  llamadasSmartOlt++;
+  const r = respuestasSmartOlt.shift();
+  return r === 'ok' ? new Response(JSON.stringify({ status: true, onus: [ONU_OK] }), { status: 200 }) : new Response('', { status: r });
+};
+const intentar = async (respuestas) => {
+  respuestasSmartOlt = [...respuestas]; llamadasSmartOlt = 0;
+  const t0 = Date.now();
+  try { return { onus: await buscarOnus(env, '12345678', CAMPOS, mapearSenal), llamadas: llamadasSmartOlt, ms: Date.now() - t0 }; }
+  catch (err) { return { error: err.message, claro: err instanceof ErrorSmartOlt, llamadas: llamadasSmartOlt, ms: Date.now() - t0 }; }
+};
+let r = await intentar([503, 'ok']);
+check('un 503 de un momento se reintenta una vez y sale bien', [r.onus?.length, r.llamadas], [1, 2]);
+r = await intentar([502, 504]);
+check('si el reintento también falla, avisa con palabras claras (sin repetir en bucle)', [r.error, r.claro, r.llamadas], ['SmartOLT no está respondiendo en este momento (error 504). Intenta en unos minutos.', true, 2]);
+r = await intentar([522, 'ok']);
+check('un 522 (SmartOLT no contestó) no se reintenta: cada intento tardaría otro tanto', [r.error, r.claro, r.llamadas], ['SmartOLT no está respondiendo en este momento (error 522). Intenta en unos minutos.', true, 1]);
+r = await intentar([524]);
+check('tampoco el 524', [r.llamadas, r.claro], [1, true]);
+r = await intentar([404]);
+check('un error del lado nuestro (4xx) no se dice "SmartOLT no responde" y no se reintenta', [r.error, r.claro, r.llamadas], ['SmartOLT respondió 404', false, 1]);
+r = await intentar(['ok']);
+check('con SmartOLT bien no se demora ni se repite nada', [r.onus?.length, r.llamadas, r.ms < 500], [1, 1, true]);
 
 if (failures > 0) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

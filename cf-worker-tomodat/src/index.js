@@ -298,6 +298,15 @@ export async function completarSenal(env, onu, { pausa = PAUSA_REINTENTO_MS } = 
 // (o varias personas buscando a la vez) puede topar con el límite por unos segundos.
 const ESPERA_MAX_429_MS = 6000;
 const ESPERA_429_POR_DEFECTO_MS = 2000;
+// Los fallos de pasarela que llegan al instante (502, 503, 504) suelen ser un tropiezo de un momento: se reintenta una vez. El 522 y el 524
+// (SmartOLT no contestó en ~20 s) no se reintentan: cada intento tardaría otro tanto y el técnico esperaría el doble.
+const FALLOS_RAPIDOS = [502, 503, 504];
+const PAUSA_FALLO_RAPIDO_MS = 1000;
+
+// Un problema de SmartOLT ya explicado en palabras claras: se muestra tal cual, sin el prefijo "No se pudo consultar SmartOLT:".
+export class ErrorSmartOlt extends Error {}
+const mensajeParaApp = (err) => (err instanceof ErrorSmartOlt ? err.message
+  : `No se pudo consultar SmartOLT: ${err.name === 'TimeoutError' ? 'SmartOLT tardó demasiado en responder' : err.message}`);
 
 async function pedirOnus(env, params) {
   return fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, {
@@ -317,7 +326,12 @@ async function consultarOnus(env, filtro, valor, campos = CAMPOS_ONU) {
       res = await pedirOnus(env, params);
     }
   }
-  if (res.status === 429) throw new Error(`SmartOLT limitó las consultas; reintenta en ${res.headers.get('Retry-After') || 'unos'} s`);
+  if (FALLOS_RAPIDOS.includes(res.status)) {
+    await new Promise((r) => setTimeout(r, PAUSA_FALLO_RAPIDO_MS));
+    res = await pedirOnus(env, params);
+  }
+  if (res.status === 429) throw new ErrorSmartOlt(`SmartOLT limitó las consultas; reintenta en ${res.headers.get('Retry-After') || 'unos'} s.`);
+  if (res.status >= 500) throw new ErrorSmartOlt(`SmartOLT no está respondiendo en este momento (error ${res.status}). Intenta en unos minutos.`);
   if (!res.ok) throw new Error(`SmartOLT respondió ${res.status}`);
   const data = await res.json();
   if (data?.status === false || !Array.isArray(data?.onus)) throw new Error(`SmartOLT: ${data?.error || 'respuesta inesperada'}`);
@@ -363,8 +377,7 @@ async function handleOnu(request, env, headers, ctx) {
     return json({ resultados: await buscarOnusCompartido(env, digitos, ctx) }, 200, headers);
   } catch (err) {
     console.error(err);
-    const mensaje = err.name === 'TimeoutError' ? 'SmartOLT tardó demasiado en responder' : err.message;
-    return new Response(`No se pudo consultar SmartOLT: ${mensaje}`, { status: 502, headers });
+    return new Response(mensajeParaApp(err), { status: 502, headers });
   }
 }
 
@@ -401,8 +414,7 @@ async function handleSenal(request, env, headers, idToken) {
     return json({ resultados: await Promise.all(onus.map((o) => completarSenal(env, o))) }, 200, headers);
   } catch (err) {
     console.error(err);
-    const mensaje = err.name === 'TimeoutError' ? 'SmartOLT tardó demasiado en responder' : err.message;
-    return new Response(`No se pudo consultar SmartOLT: ${mensaje}`, { status: 502, headers });
+    return new Response(mensajeParaApp(err), { status: 502, headers });
   }
 }
 

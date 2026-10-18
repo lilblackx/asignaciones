@@ -17,6 +17,7 @@ import { esInstalacion as trabajoEsInstalacion, napConPuerto } from '../../utils
 import { formularioDatosTecnico, formularioModificado, tieneDatosDelTecnico, validarDatosTecnico } from '../../utils/edicionDatosTecnico';
 import { CedulaField, ObservacionField, ObservacionTecnicoField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import { promotoraDeOrden, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
+import { devolucionPendiente } from '../../utils/devolucion';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -303,7 +304,20 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
                   <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{editingTicket.observacion}</p>
                 </div>
               )}
-              <ObservacionTecnicoField wrapperClassName="col-span-2 space-y-1" idPrefix="ed" value={editingTicket.observacionTecnico || ''} onChange={handleEditChange} />
+              {devolucionPendiente(ordenAlAbrir) ? (
+                // Orden devuelta: el reporte anterior solo se lee; el nuevo se escribe al pre-finalizar, para no mezclarlos.
+                <div className="col-span-2 space-y-1">
+                  {editingTicket.observacionTecnico?.trim() && (
+                    <>
+                      <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 block">TU REPORTE ANTERIOR</span>
+                      <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{editingTicket.observacionTecnico}</p>
+                    </>
+                  )}
+                  <p className="text-[9px] text-zinc-400 ml-1">La oficina te devolvió la orden: escribe tu nuevo reporte con el botón "Pre-finalizar" de la lista.</p>
+                </div>
+              ) : (
+                <ObservacionTecnicoField wrapperClassName="col-span-2 space-y-1" idPrefix="ed" value={editingTicket.observacionTecnico || ''} onChange={handleEditChange} />
+              )}
             </>
           ) : (
             <>
