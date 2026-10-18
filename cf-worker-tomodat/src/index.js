@@ -294,12 +294,29 @@ export async function completarSenal(env, onu, { pausa = PAUSA_REINTENTO_MS } = 
   return actual;
 }
 
-async function consultarOnus(env, filtro, valor, campos = CAMPOS_ONU) {
-  const params = new URLSearchParams({ page: '1', page_size: '25', fields: campos, [filtro]: valor });
-  const res = await fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, {
+// Si SmartOLT limita las consultas (429), espera lo que pide y reintenta una vez: crear órdenes seguidas
+// (o varias personas buscando a la vez) puede topar con el límite por unos segundos.
+const ESPERA_MAX_429_MS = 6000;
+const ESPERA_429_POR_DEFECTO_MS = 2000;
+
+async function pedirOnus(env, params) {
+  return fetch(`${env.SMARTOLT_BASE_URL}/api/onu/get_all_onus_details?${params}`, {
     headers: { 'X-Token': env.SMARTOLT_API_KEY },
     signal: AbortSignal.timeout(SMARTOLT_TIMEOUT_MS),
   });
+}
+
+async function consultarOnus(env, filtro, valor, campos = CAMPOS_ONU) {
+  const params = new URLSearchParams({ page: '1', page_size: '25', fields: campos, [filtro]: valor });
+  let res = await pedirOnus(env, params);
+  if (res.status === 429) {
+    const segundos = Number(res.headers.get('Retry-After'));
+    const espera = Number.isFinite(segundos) && segundos > 0 ? segundos * 1000 : ESPERA_429_POR_DEFECTO_MS;
+    if (espera <= ESPERA_MAX_429_MS) {
+      await new Promise((r) => setTimeout(r, espera));
+      res = await pedirOnus(env, params);
+    }
+  }
   if (res.status === 429) throw new Error(`SmartOLT limitó las consultas; reintenta en ${res.headers.get('Retry-After') || 'unos'} s`);
   if (!res.ok) throw new Error(`SmartOLT respondió ${res.status}`);
   const data = await res.json();

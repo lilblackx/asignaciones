@@ -36,7 +36,11 @@ async function consultarUnaVez(ruta, cuerpo, signal, servicio) {
       body: JSON.stringify(cuerpo),
       signal: controller.signal,
     });
-    if (!res.ok) throw new Error(`${servicio} no respondió (${res.status}).`);
+    if (!res.ok) {
+      // El Worker explica el motivo en el cuerpo ("SmartOLT limitó las consultas...", "tardó demasiado...").
+      const motivo = (await res.text().catch(() => '')).trim();
+      throw new Error(`${servicio} no respondió (${res.status})${motivo && motivo.length <= 160 ? `: ${motivo}` : ''}.`);
+    }
     return await res.json();
   } catch (err) {
     if (vencio) throw new Error(`${servicio} tardó demasiado en responder.`, { cause: err });
