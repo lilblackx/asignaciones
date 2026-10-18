@@ -4,6 +4,7 @@ import { TIPOS_TRABAJO } from '../../constants';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
 import Modal from '../Modal';
+import HistorialTimeline from '../HistorialTimeline';
 import SelectMenu from '../SelectMenu';
 import PlantillaFinalModal from './PlantillaFinalModal';
 
@@ -221,14 +222,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                     {o.estado === 'ELIMINADO' && <p><span className="font-semibold">Eliminada por:</span> {o.eliminadoPor} ({o.fechaEliminacion})</p>}
                     {(o.historialEdiciones || []).length > 0 && (
                       <div className="pt-1.5 mt-1.5 border-t border-zinc-100 dark:border-zinc-800">
-                        <p className="font-semibold mb-1">Historial de cambios</p>
-                        <ul className="space-y-1">
-                          {o.historialEdiciones.map((h, i) => (
-                            <li key={i} className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                              <span className="font-bold">{h.fecha}</span> · {h.operador} · {h.detalle}
-                            </li>
-                          ))}
-                        </ul>
+                        <p className="font-semibold mb-2">Historial de cambios</p>
+                        <HistorialTimeline ticket={o} />
                       </div>
                     )}
                   </div>

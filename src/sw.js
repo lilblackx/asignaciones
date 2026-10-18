@@ -27,7 +27,7 @@ onBackgroundMessage(messaging, (payload) => {
   self.registration.showNotification(title, {
     body,
     icon: '/icon-192x192.png',
-    badge: '/icon-192x192.png',
+    badge: '/badge-96x96.png',
     data,
     // Mismo evento = mismo aviso: un teléfono con dos tokens no muestra la orden duplicada.
     // renotify hace que, si el aviso anterior seguía en la bandeja, vuelva a sonar.

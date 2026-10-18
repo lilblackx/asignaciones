@@ -37,7 +37,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html}', '**/inter-latin*.woff2'],
       },
       // Agregamos los íconos de la PWA para que el Service Worker los cachee
-      includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-512x512.png'],
+      includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-512x512.png', 'badge-96x96.png'],
       manifest: {
         name: 'Asignaciones NS',
         short_name: 'Asignaciones',

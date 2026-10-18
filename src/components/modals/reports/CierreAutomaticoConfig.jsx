@@ -28,7 +28,7 @@ async function simularNotificaciones() {
   const permiso = await Notification.requestPermission();
   if (permiso !== 'granted') return `Permiso de notificaciones: ${permiso}. Actívalo para este sitio.`;
   NOTIFICACIONES_DE_PRUEBA.forEach(([titulo, body], i) => {
-    setTimeout(() => new Notification(titulo, { body, icon: '/icon-192x192.png', badge: '/icon-192x192.png', tag: `sim-cierre-${i}` }), i * 2500);
+    setTimeout(() => new Notification(titulo, { body, icon: '/icon-192x192.png', badge: '/badge-96x96.png', tag: `sim-cierre-${i}` }), i * 2500);
   });
   return 'Enviadas 3 notificaciones de prueba, una cada 2,5 s. Si no salen, revisa las notificaciones de Windows para tu navegador.';
 }
