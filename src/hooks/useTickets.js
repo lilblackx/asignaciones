@@ -109,7 +109,7 @@ async function actualizarTicket(original, actualizada) {
   await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', original.id.toString()), cambios);
 }
 
-export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify) {
+export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify, currentUserName = null) {
   const [tickets, setTickets] = useState([]);
   // false hasta que llega el primer snapshot de órdenes (antes, `tickets` está vacío).
   const [ticketsCargados, setTicketsCargados] = useState(false);
@@ -593,6 +593,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       falla: finalFalla,
       codigo,
       creado: currentUser,
+      // El nombre real de quien la crea: la plantilla lo muestra como operador, también a quienes no pueden leer la lista de usuarios.
+      creadoNombre: currentUserName || currentUser,
       createdAt: Date.now(),
       historialEdiciones: [],
       isAsignado: false,

@@ -32,7 +32,7 @@ export function generarMensajeWhatsApp(ticket, tasaConfig, montoBsFijo = null, m
     `NAP: ${ticket.nap || ''}`,
     `Puertos Disponibles en el NAP: ${ticket.puertosDisponibles || ''}`,
     `Materiales Utilizados: ${ticket.materiales || ''}`,
-    `Operador: ${ticket.creado || ''}`,
+    `Operador: ${ticket.creadoNombre || ticket.creado || ''}`,
     `Observaciones: ${observaciones}`,
     ...(enlace || enlaceNap ? [''] : []),
     ...(enlace ? [`*Ubicación:* ${enlace}`] : []),

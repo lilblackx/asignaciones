@@ -256,5 +256,17 @@ check('plantilla real completa', `${PLANTILLA_REAL}
   direccion: 'Ezequiel Zamora Calle 96E', falla: 'SM', nap: 'N02H05',
 });
 
+// ============ El operador de la plantilla de avería: el nombre real, no el usuario ============
+import { generarMensajeWhatsApp } from '../src/utils/whatsapp.js';
+const operadorDe = (t) => generarMensajeWhatsApp({ falla: 'Sin señal', ...t }, null).split('\n').find((l) => l.startsWith('Operador:'));
+const igual = (nombre, actual, esperado) => {
+  if (actual === esperado) console.log(`PASS  ${nombre}`);
+  else { failures++; console.log(`FAIL  ${nombre}\n      esperado ${esperado}, llegó ${actual}`); }
+};
+igual('con el nombre real guardado en la orden sale ese nombre', operadorDe({ creado: 'lfernandez', creadoNombre: 'Luis Fernandez' }), 'Operador: Luis Fernandez');
+igual('en una orden vieja (sin nombre) sale el usuario, como siempre', operadorDe({ creado: 'lfernandez' }), 'Operador: lfernandez');
+igual('el nombre real manda sobre el usuario que haya puesto la pantalla', operadorDe({ creado: 'Otro Nombre', creadoNombre: 'Luis Fernandez' }), 'Operador: Luis Fernandez');
+igual('sin ninguno queda vacío', operadorDe({}), 'Operador: ');
+
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);
