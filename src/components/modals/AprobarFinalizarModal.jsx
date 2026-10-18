@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Banknote, Cable, CheckCheck, CircleAlert, Eye, Undo2, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
+import ConfirmModal from './ConfirmModal';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { faltantesInstalacion } from '../../utils/instalacion';
 import { evaluarPotencia } from '../../utils/potencia';
@@ -22,6 +23,10 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
   const [devolviendo, setDevolviendo] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [motivoError, setMotivoError] = useState('');
+  // Confirmación final antes de cerrar o devolver: null, 'cerrar' o 'devolver'.
+  const [confirmando, setConfirmando] = useState(null);
+  // Lo que se eligió de cobro, ya validado, para usarlo al confirmar.
+  const [extraCierre, setExtraCierre] = useState(undefined);
   // Cobro que verá el técnico (solo en visitas de conector): "Visita técnica" u "Otro monto".
   const [cobro, setCobro] = useState(() => cobroPrecargado(ticket) || COBRO_INICIAL);
   const [cobroError, setCobroError] = useState('');
@@ -80,9 +85,15 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
       }
       extra = { montoBs: resuelto.cobroBs, cobroTipo: resuelto.tipo, cobroMoneda: resuelto.moneda };
     }
+    setExtraCierre(extra);
+    setConfirmando('cerrar');
+  };
+
+  const ejecutarCierre = async () => {
     setIsSubmitting(true);
-    await onConfirm(ticket, extra);
+    await onConfirm(ticket, extraCierre);
     setIsSubmitting(false);
+    setConfirmando(null);
   };
 
   const handleDevolver = async () => {
@@ -91,13 +102,20 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
       document.getElementById('aprobar-motivo')?.focus();
       return;
     }
+    setConfirmando('devolver');
+  };
+
+  const ejecutarDevolucion = async () => {
     setIsSubmitting(true);
     await onDevolver(ticket, motivo);
     setIsSubmitting(false);
+    setConfirmando(null);
   };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-50">
+    <>
+    {/* Con la confirmación abierta, Escape cierra solo la confirmación. */}
+    <Modal onClose={confirmando ? () => {} : onClose} zIndexClass="z-50">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-3xl max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-blue-500 flex justify-between items-center sticky top-0 z-10">
           <div>
@@ -300,5 +318,37 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
         </div>
       </div>
     </Modal>
+    {confirmando === 'cerrar' && (
+      <ConfirmModal
+        color="blue"
+        icon={CheckCheck}
+        title={finalizando ? '¿Finalizar esta orden?' : '¿Aprobar y finalizar esta orden?'}
+        description={finalizando ? 'La orden queda FINALIZADA sin que el técnico la haya pre-finalizado.' : 'Apruebas lo que cargó el técnico y la orden queda FINALIZADA.'}
+        confirmLabel={finalizando ? 'Sí, finalizar' : 'Sí, aprobar'}
+        processingLabel={finalizando ? 'Finalizando...' : 'Aprobando...'}
+        cancelLabel="Volver"
+        onCancel={() => setConfirmando(null)}
+        onConfirm={ejecutarCierre}
+      >
+        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` — ${ticket.nombre}` : ''}</p>
+      </ConfirmModal>
+    )}
+    {confirmando === 'devolver' && (
+      <ConfirmModal
+        color="red"
+        icon={Undo2}
+        title="¿Devolver esta orden al técnico?"
+        description="Vuelve a PENDIENTE y el técnico recibe una notificación con el motivo."
+        confirmLabel="Sí, devolver"
+        processingLabel="Devolviendo..."
+        cancelLabel="Volver"
+        onCancel={() => setConfirmando(null)}
+        onConfirm={ejecutarDevolucion}
+      >
+        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` — ${ticket.nombre}` : ''}</p>
+        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">Motivo: {motivo.trim()}</p>
+      </ConfirmModal>
+    )}
+    </>
   );
 }
