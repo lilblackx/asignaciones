@@ -30,6 +30,8 @@ async function check(name, fn) {
 }
 
 // --- Seed de datos de prueba, con reglas desactivadas (contexto admin del test) ---
+// Empieza de cero: lo que dejó una corrida anterior (órdenes creadas por las pruebas) haría fallar las que crean documentos.
+await testEnv.clearFirestore();
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
   const base = db.collection('artifacts').doc(APP_ID).collection('public').doc('data');
@@ -49,6 +51,8 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('users').doc('promotora2-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: ['Alexis Añez', 'Alexis'], promotoraClaves: ['alexis anez', 'alexis'] });
   await base.collection('users').doc('promotora-sin-uid').set({ role: 'PROMOTORA', disabled: false, promotoraNombres: [], promotoraClaves: [] });
   await base.collection('users').doc('ventas-uid').set({ role: 'PROMOTORA', disabled: false, verTodasInstalaciones: true, promotoraNombres: [], promotoraClaves: [] });
+  await base.collection('users').doc('creadora-uid').set({ role: 'PROMOTORA', disabled: false, username: 'sariana', puedeCrearVentas: true, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
+  await base.collection('users').doc('ventas-crea-uid').set({ role: 'PROMOTORA', disabled: false, username: 'ventas', puedeCrearVentas: true, verTodasInstalaciones: true, promotoraNombres: [], promotoraClaves: [] });
   await base.collection('users').doc('promotora-off-uid').set({ role: 'PROMOTORA', disabled: true, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
   await base.collection('tickets').doc('instalacion-1').set({ codigo: 'IO1', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Cliente', cedula: '1', tecnico: '', promotora: 'Sariana', promotoraClave: 'sariana' });
   await base.collection('tickets').doc('instalacion-2').set({ codigo: 'IO2', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Otro cliente', cedula: '2', tecnico: '', promotora: 'Alexis Añez', promotoraClave: 'alexis anez' });
@@ -79,6 +83,8 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
 
   await base.collection('technicians').doc('GERARDO-MOLERO').set({ name: 'GERARDO MOLERO', color: 'bg-fuchsia-500 text-white', activo: true });
   await base.collection('technicians').doc('REINEL-BRAVO').set({ name: 'REINEL BRAVO', color: 'bg-green-500 text-white', activo: true });
+  // Como los crea la app: el id es el nombre en mayúsculas (la regla de las ventas de la promotora lo usa para comprobar que el técnico existe).
+  await base.collection('technicians').doc('EDGAR MONTERO').set({ name: 'EDGAR MONTERO', color: 'bg-green-500 text-white', activo: true });
 
   await base.collection('config').doc('turnoInstalaciones').set({ orden: ['GERARDO MOLERO', 'REINEL BRAVO'], turnoActualIndex: 0 });
   await base.collection('config').doc('formasPago').set({ formas: [{ tipo: 'PAGO_MOVIL', banco: 'BNC', telefono: '0412-0000000', rif: 'J-000000000' }] });
@@ -471,6 +477,72 @@ await check('PROMOTORA NO puede escribir nada', async () => {
   await assertFails(datos(asPromotora()).collection('historialInstalaciones').doc('nuevo').set({ codigo: 'X' }));
   await assertFails(datos(asPromotora()).collection('counters').doc('A_O_2026').update({ ultimo: 7, actualizadoEn: 1 }));
 });
+// --- PROMOTORA con permiso de crear ventas: solo instalaciones pendientes, sin técnico y a nombre de su promotor ---
+const asCreadora = () => testEnv.authenticatedContext('creadora-uid').firestore();
+const asVentasCrea = () => testEnv.authenticatedContext('ventas-crea-uid').firestore();
+const ventaValida = (extra = {}) => ({
+  fecha: '19/10/2026', fechaProgramada: '', codigo: 'IO', nombre: 'Ana Pérez', cedula: '12.345.678', tipoDocumento: 'V', direccion: 'Av. 5',
+  telefono: '0414-1234567', nap: '', napCoordenadas: '', ubicacion: '', tipoTrabajo: 'INSTALACIÓN', falla: 'MRTV', tecnico: '', observacion: '',
+  observacionInterna: false, estado: 'PENDIENTE', plantillaOriginal: 'texto', promotora: 'Sariana', promotoraClave: 'sariana', creado: 'sariana',
+  creadoNombre: 'Sariana', createdAt: 1, historialEdiciones: [], isAsignado: false, ventaPromotora: true, ...extra,
+});
+const nuevaVenta = (db, id = 'venta-nueva') => datos(db).collection('tickets').doc(id);
+
+await check('PROMOTORA con permiso crea una venta a nombre de su promotor y la puede leer', async () => {
+  await assertSucceeds(nuevaVenta(asCreadora()).set(ventaValida()));
+  await assertSucceeds(susInstalaciones(asCreadora(), 'sariana').get());
+});
+await check('PROMOTORA con permiso NO crea ventas de otro promotor, ni a nombre de otro usuario', async () => {
+  await assertFails(nuevaVenta(asCreadora(), 'v2').set(ventaValida({ promotora: 'Maria', promotoraClave: 'maria' })));
+  await assertFails(nuevaVenta(asCreadora(), 'v3').set(ventaValida({ creado: 'otra' })));
+  await assertFails(nuevaVenta(asCreadora(), 'v4').set(ventaValida({ promotoraClave: '' })));
+});
+await check('PROMOTORA con permiso solo crea instalaciones pendientes, sin técnico y sin campos de más', async () => {
+  await assertFails(nuevaVenta(asCreadora(), 'v5').set(ventaValida({ tipoTrabajo: 'AVERÍA', falla: 'LOS' })));
+  await assertFails(nuevaVenta(asCreadora(), 'v6').set(ventaValida({ estado: 'FINALIZADO' })));
+  await assertFails(nuevaVenta(asCreadora(), 'v7').set(ventaValida({ tecnico: 'GERARDO MOLERO', ventaTecnico: 'GERARDO MOLERO', ventaTecnicoId: 'NO-EXISTE' })));
+  await assertFails(nuevaVenta(asCreadora(), 'v8').set(ventaValida({ cobroBs: 100 })));
+  await assertFails(nuevaVenta(asCreadora(), 'v9').set(ventaValida({ instalacion: { serial: 'X' } })));
+  await assertFails(nuevaVenta(asCreadora(), 'v10').set(ventaValida({ codigo: 'IO15' })));
+  await assertFails(nuevaVenta(asCreadora(), 'v11').set(ventaValida({ isAsignado: true })));
+  // Toda venta de una promotora lleva su marca (con ella la oficina recibe el aviso de nueva venta).
+  await assertFails(nuevaVenta(asCreadora(), 'v12').set(ventaValida({ ventaPromotora: false })));
+});
+await check('PROMOTORA con permiso crea la venta con el técnico de la plantilla, marcada como venta suya', async () => {
+  await assertSucceeds(nuevaVenta(asCreadora(), 'venta-con-tecnico').set(ventaValida({ tecnico: 'EDGAR MONTERO', ventaTecnico: 'EDGAR MONTERO', ventaTecnicoId: 'EDGAR MONTERO' })));
+  // No depende de cómo se llame el documento del técnico (ids con guion de datos viejos o de pruebas).
+  await assertSucceeds(nuevaVenta(asCreadora(), 'venta-con-tecnico-2').set(ventaValida({ tecnico: 'GERARDO MOLERO', ventaTecnico: 'GERARDO MOLERO', ventaTecnicoId: 'GERARDO-MOLERO' })));
+});
+await check('PROMOTORA con permiso NO asigna un técnico que no es el de la plantilla (inexistente, sin marca de venta o marca distinta)', async () => {
+  await assertFails(nuevaVenta(asCreadora(), 'vt1').set(ventaValida({ tecnico: 'NADIE', ventaTecnico: 'NADIE', ventaTecnicoId: 'NADIE' })));
+  await assertFails(nuevaVenta(asCreadora(), 'vt2').set(ventaValida({ tecnico: 'EDGAR MONTERO' })));
+  await assertFails(nuevaVenta(asCreadora(), 'vt3').set(ventaValida({ tecnico: 'EDGAR MONTERO', ventaTecnico: 'REINEL BRAVO', ventaTecnicoId: 'EDGAR MONTERO' })));
+  await assertFails(nuevaVenta(asCreadora(), 'vt4').set(ventaValida({ ventaTecnico: 'EDGAR MONTERO', ventaTecnicoId: 'EDGAR MONTERO' })));
+  // El documento tiene que ser el de ese técnico: el id de otro con el nombre de este no vale.
+  await assertFails(nuevaVenta(asCreadora(), 'vt5').set(ventaValida({ tecnico: 'EDGAR MONTERO', ventaTecnico: 'EDGAR MONTERO', ventaTecnicoId: 'REINEL-BRAVO' })));
+});
+await check('PROMOTORA con permiso lee los técnicos (para emparejar la plantilla); sin permiso no', async () => {
+  await assertSucceeds(datos(asCreadora()).collection('technicians').get());
+  await assertFails(datos(asPromotora()).collection('technicians').get());
+  await assertFails(datos(asVentas()).collection('technicians').get());
+});
+await check('PROMOTORA con permiso NO edita ni borra órdenes, ni toca los contadores', async () => {
+  await assertFails(ticketPath(asCreadora(), 'venta-nueva').update({ observacion: 'x' }));
+  await assertFails(ticketPath(asCreadora(), 'venta-nueva').delete());
+  await assertFails(datos(asCreadora()).collection('counters').doc('I_O_2026').set({ ultimo: 1, actualizadoEn: 1 }));
+});
+await check('PROMOTORA de ventas con permiso crea ventas de cualquier promotor', async () => {
+  await assertSucceeds(nuevaVenta(asVentasCrea(), 'venta-de-maria').set(ventaValida({ promotora: 'Maria', promotoraClave: 'maria', creado: 'ventas' })));
+  await assertFails(nuevaVenta(asVentasCrea(), 'venta-ajena').set(ventaValida({ promotora: 'Maria', promotoraClave: 'maria', creado: 'otra' })));
+});
+await check('PROMOTORA sin el permiso (aunque vea todas) NO crea ventas', async () => {
+  await assertFails(nuevaVenta(asPromotora(), 'sin-permiso').set(ventaValida()));
+  await assertFails(nuevaVenta(asVentas(), 'sin-permiso-2').set(ventaValida({ creado: '' })));
+});
+await check('El permiso de crear ventas no se lo puede dar nadie a sí mismo', async () => {
+  await assertFails(datos(asPromotora()).collection('users').doc('promotora-uid').update({ puedeCrearVentas: true }));
+});
+
 await check('Una PROMOTORA deshabilitada no lee nada', async () => {
   await assertFails(susInstalaciones(asPromotoraOff(), 'sariana').get());
   await assertFails(suHistorial(asPromotoraOff(), 'sariana').get());
@@ -607,6 +679,35 @@ await check('Totales del mes: ventas, las promotoras y los técnicos no escriben
   await assertFails(mensual(asTecnico()).set({ instalacionesFinalizadas: 99 }, { merge: true }));
   await assertFails(mensual(asCierra()).delete());
   await assertFails(mensual(asAdmin()).delete());
+});
+
+// --- Registro de activación de técnicos: la oficina y cada técnico (el suyo) agregan; nadie edita ni borra ---
+const logCol = (db) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('technicianLog');
+const evento = (tecnico, rol, extra = {}) => ({ tecnicoId: tecnico, tecnico, activo: true, en: Date.now(), dia: '2026-10-19', por: 'x', rol, ...extra });
+await check('Registro de técnicos: ADMIN y USUARIO agregan y leen', async () => {
+  await assertSucceeds(logCol(asAdmin()).doc('l-admin').set(evento('GERARDO MOLERO', 'ADMIN')));
+  await assertSucceeds(logCol(asUsuario()).doc('l-usuario').set(evento('REINEL BRAVO', 'USUARIO', { activo: false })));
+  await assertSucceeds(logCol(asUsuario()).get());
+  await assertSucceeds(logCol(asAdmin()).get());
+});
+await check('Registro de técnicos: el TECNICO agrega solo el suyo, y no lee', async () => {
+  await assertSucceeds(logCol(asTecnico()).doc('l-tecnico').set(evento('GERARDO MOLERO', 'TECNICO')));
+  await assertFails(logCol(asTecnico()).doc('l-ajeno').set(evento('REINEL BRAVO', 'TECNICO')));
+  await assertFails(logCol(asTecnico()).get());
+});
+await check('Registro de técnicos: no se puede mentir en el rol, ni agregar campos ni dejar valores mal formados', async () => {
+  await assertFails(logCol(asUsuario()).doc('l-1').set(evento('GERARDO MOLERO', 'ADMIN')));
+  await assertFails(logCol(asUsuario()).doc('l-2').set(evento('GERARDO MOLERO', 'USUARIO', { otro: 1 })));
+  await assertFails(logCol(asUsuario()).doc('l-3').set(evento('GERARDO MOLERO', 'USUARIO', { activo: 'si' })));
+  await assertFails(logCol(asUsuario()).doc('l-4').set(evento('GERARDO MOLERO', 'USUARIO', { en: 'ayer' })));
+  await assertFails(logCol(asUsuario()).doc('l-5').set(evento('', 'USUARIO')));
+});
+await check('Registro de técnicos: ALMACEN y PROMOTORA no leen ni escriben; nadie edita ni borra', async () => {
+  await assertFails(logCol(testEnv.authenticatedContext('almacen-uid').firestore()).get());
+  await assertFails(logCol(testEnv.authenticatedContext('promotora-uid').firestore()).get());
+  await assertFails(logCol(testEnv.authenticatedContext('almacen-uid').firestore()).doc('l-6').set(evento('GERARDO MOLERO', 'ALMACEN')));
+  await assertFails(logCol(asAdmin()).doc('l-admin').update({ activo: false }));
+  await assertFails(logCol(asAdmin()).doc('l-admin').delete());
 });
 
 await testEnv.cleanup();

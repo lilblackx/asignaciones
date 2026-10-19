@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search, X } from 'lucide-react';
-import Modal from './Modal';
+import { ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search } from 'lucide-react';
+import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from './Modal';
+import EncabezadoModulo from './EncabezadoModulo';
+import Colapsable from './Colapsable';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import { ESTADOS_CON_ALERTA, TEXTO_ESTADO_ENVIO } from '../utils/envioInventario';
+import Spinner from './Spinner';
 
 const ETIQUETA_ESTADO = {
   SERIAL_NO_ENCONTRADO: 'Serial no existe',
@@ -30,19 +33,22 @@ const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle
 // Aviso en la pantalla principal, solo para los usuarios del módulo: hay órdenes aprobadas que no se pudieron descontar del
 // inventario del almacén.
 export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
-  if (cantidad <= 0 && pendientes <= 0) return null;
   // Lo que necesita a alguien (rojo) manda sobre lo que se reintenta solo (ámbar).
   const urgente = cantidad > 0;
   return (
-    <div role="alert" className={`mb-3 rounded-xl border p-3 flex items-center gap-3 text-xs ${urgente ? 'border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-200' : 'border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200'}`}>
-      <PackageX className={`w-5 h-5 shrink-0 ${urgente ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} aria-hidden="true" />
-      <p className="flex-1 font-bold leading-snug">
-        {urgente
-          ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
-          : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
-      </p>
-      <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-lg text-white font-black ${urgente ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}>Ver</button>
-    </div>
+    <Colapsable>
+      {(cantidad > 0 || pendientes > 0) && (
+        <div role="alert" className={`mb-3 rounded-xl border p-3 flex items-center gap-3 text-xs ${urgente ? 'border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-200' : 'border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200'}`}>
+          <PackageX className={`w-5 h-5 shrink-0 ${urgente ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} aria-hidden="true" />
+          <p className="flex-1 font-bold leading-snug">
+            {urgente
+              ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
+              : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
+          </p>
+          <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-lg text-white font-black ${urgente ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}>Ver</button>
+        </div>
+      )}
+    </Colapsable>
   );
 }
 
@@ -162,23 +168,25 @@ function FilaReciente({ envio, onReintentar }) {
           <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${abierta ? 'rotate-180' : ''}`} aria-hidden="true" />
         </div>
       </button>
-      {abierta && (
-        <div className="px-3 pb-3 space-y-2">
-          <dl className="rounded-lg bg-zinc-100 dark:bg-zinc-800/60 p-2.5 text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
-            {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
-          </dl>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={copiar} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600">
-              <ClipboardCopy className="w-3 h-3" aria-hidden="true" /> {copiado ? 'Copiado' : 'Copiar resumen'}
-            </button>
-            {envio.estado === 'DESCARTADO' && (
-              <button type="button" onClick={reintentar} disabled={ocupado} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[11px] font-black hover:opacity-90 disabled:opacity-50">
-                <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reabrir y reintentar'}
+      <Colapsable>
+        {abierta && (
+          <div className="px-3 pb-3 space-y-2">
+            <dl className="rounded-lg bg-zinc-100 dark:bg-zinc-800/60 p-2.5 text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
+              {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
+            </dl>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={copiar} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600">
+                <ClipboardCopy className="w-3 h-3" aria-hidden="true" /> {copiado ? 'Copiado' : 'Copiar resumen'}
               </button>
-            )}
+              {envio.estado === 'DESCARTADO' && (
+                <button type="button" onClick={reintentar} disabled={ocupado} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[11px] font-black hover:opacity-90 disabled:opacity-50">
+                  <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reabrir y reintentar'}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Colapsable>
     </li>
   );
 }
@@ -226,13 +234,10 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
   const puedeBuscar = Boolean(consulta) && buscado !== texto.trim();
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex justify-between items-center sticky top-0 z-10">
-          <h2 className="text-base font-black text-white flex items-center gap-2"><PackageCheck className="w-5 h-5 text-red-500" aria-hidden="true" /> ENVÍOS AL INVENTARIO</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-4 space-y-5">
+    <Modal onClose={onClose} zIndexClass="z-50" completa>
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={PackageCheck} titulo="ENVÍOS AL INVENTARIO" onClose={onClose} />
+        <div className={`p-4 space-y-5 ${CENTRADO_ESTRECHO}`}>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug">
             Cada orden aprobada que instala un equipo o usa material se descuenta del inventario del almacén. Aquí ves lo que no se pudo enviar y lo que se envió.
           </p>
@@ -316,7 +321,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
             )}
             {hayMas && (
               <button type="button" onClick={onCargarMas} disabled={cargando} className="w-full px-3 py-2.5 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
-                {cargando ? 'Cargando...' : 'Cargar más'}
+                {cargando && <Spinner />}{cargando ? 'Cargando...' : 'Cargar más'}
               </button>
             )}
           </section>

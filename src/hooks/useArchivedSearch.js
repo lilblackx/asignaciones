@@ -17,7 +17,7 @@ export function useArchivedSearch(reports) {
           results.push({
             ...ticket,
             _reportFecha: rep.fechaCierre,
-            _reportTipo: rep.tipoReporte || 'CIERRE'
+            _reportTipo: rep.tipoReporte === 'CANCELADOS' || ticket.estado === 'CANCELADO' ? 'CANCELADOS' : 'CIERRE'
           });
         }
       });

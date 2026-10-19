@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Cable, ChevronDown, X } from 'lucide-react';
-import Modal from '../Modal';
+import { Cable, ChevronDown } from 'lucide-react';
+import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from '../Modal';
+import EncabezadoModulo from '../EncabezadoModulo';
 import { PERIODOS, consumoPorTecnico, inicioPeriodo, totalConectores } from '../../utils/consumoMateriales';
 import { aplanarArchivados } from '../../utils/reincidencia';
 import { ETIQUETA_COLOR, etiquetaTipoVisita } from '../../utils/tipoVisita';
+import Spinner from '../Spinner';
+import Colapsable from '../Colapsable';
 
 const numero = (n) => Number(n).toLocaleString('es-VE');
 const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—');
@@ -70,32 +73,34 @@ function FilaTecnico({ fila, abierto, onToggle }) {
       ) : (
         <div className="p-3 flex">{resumen}</div>
       )}
-      {abierto && conDatos && (
-        <ul id={idDetalle} className="border-t border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-800">
-          {fila.detalle.map((o) => (
-            <li key={o.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-bold text-zinc-800 dark:text-zinc-100 truncate">{o.codigo || 'S/C'}{o.nombre ? ` — ${o.nombre}` : ''}</p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {fechaCorta(o.fecha)}
-                  {o.clase === 'INSTALACION' && ' · Instalación'}
-                  {o.clase === 'CAMBIO_EQUIPO' && ' · Cambio de equipo'}
-                  {o.clase === 'VISITA' && ` · Visita de ${etiquetaTipoVisita(o.tipo).toLowerCase()}`}
-                  {o.verde > 0 && ` · ${textoConectores(o.verde, 'VERDE')}`}
-                  {o.azul > 0 && ` · ${textoConectores(o.azul, 'AZUL')}`}
-                  {totalConectores(o) === 0 && o.clase !== 'INSTALACION' && o.clase !== 'CAMBIO_EQUIPO' && ' · sin conectores'}
-                </p>
-                {o.serial && (
+      <Colapsable>
+        {abierto && conDatos && (
+          <ul id={idDetalle} className="border-t border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-800">
+            {fila.detalle.map((o) => (
+              <li key={o.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-zinc-800 dark:text-zinc-100 truncate">{o.codigo || 'S/C'}{o.nombre ? ` — ${o.nombre}` : ''}</p>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    {o.clase === 'CAMBIO_EQUIPO' ? 'Serial del equipo nuevo' : 'Serial'}: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{o.serial}</span>
+                    {fechaCorta(o.fecha)}
+                    {o.clase === 'INSTALACION' && ' · Instalación'}
+                    {o.clase === 'CAMBIO_EQUIPO' && ' · Cambio de equipo'}
+                    {o.clase === 'VISITA' && ` · Visita de ${etiquetaTipoVisita(o.tipo).toLowerCase()}`}
+                    {o.verde > 0 && ` · ${textoConectores(o.verde, 'VERDE')}`}
+                    {o.azul > 0 && ` · ${textoConectores(o.azul, 'AZUL')}`}
+                    {totalConectores(o) === 0 && o.clase !== 'INSTALACION' && o.clase !== 'CAMBIO_EQUIPO' && ' · sin conectores'}
                   </p>
-                )}
-              </div>
-              {o.metros != null && <span className="shrink-0 font-black text-zinc-900 dark:text-white">{numero(o.metros)} m</span>}
-            </li>
-          ))}
-        </ul>
-      )}
+                  {o.serial && (
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {o.clase === 'CAMBIO_EQUIPO' ? 'Serial del equipo nuevo' : 'Serial'}: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{o.serial}</span>
+                    </p>
+                  )}
+                </div>
+                {o.metros != null && <span className="shrink-0 font-black text-zinc-900 dark:text-white">{numero(o.metros)} m</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Colapsable>
     </li>
   );
 }
@@ -123,13 +128,10 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
   ].filter(Boolean).join(', ') + (porAprobar.metros > 0 ? ` (${numero(porAprobar.metros)} m de cable)` : '');
 
   const tarjeta = (
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full border border-zinc-300 dark:border-zinc-800 ${enPagina ? 'max-w-4xl mx-auto overflow-hidden' : 'max-w-2xl max-h-[92vh] overflow-y-auto'}`}>
-        <div className={`bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center ${enPagina ? '' : 'sticky top-0 z-10'}`}>
-          <h2 className="text-lg font-black text-white flex items-center gap-2"><Cable className="w-5 h-5 text-red-500" aria-hidden="true" /> MATERIALES</h2>
-          {!enPagina && <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>}
-        </div>
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full border border-zinc-300 dark:border-zinc-800 ${enPagina ? 'max-w-4xl mx-auto overflow-hidden' : `max-w-2xl max-h-[92vh] overflow-y-auto ${PANEL_COMPLETO}`}`}>
+        <EncabezadoModulo Icono={Cable} titulo="MATERIALES" onClose={enPagina ? undefined : onClose} className={enPagina ? '!static' : ''} />
 
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className={`p-4 sm:p-6 space-y-4 ${enPagina ? '' : CENTRADO_ESTRECHO}`}>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Metros de cable y conectores usados en los recableados, las instalaciones y las visitas de conector ya aprobados, en total y por técnico. Las instalaciones y los cambios de equipo se listan con su serial.</p>
 
           <div role="group" aria-label="Período" className="flex flex-wrap gap-2">
@@ -178,7 +180,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
             <span>Incluye las órdenes activas y {reports.length} reporte{reports.length === 1 ? '' : 's'} de cierre cargado{reports.length === 1 ? '' : 's'}.</span>
             {hasMoreReports && (
               <button type="button" onClick={onLoadMore} disabled={isLoadingReports} className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 disabled:opacity-50">
-                {isLoadingReports ? 'Cargando...' : 'Cargar reportes anteriores'}
+                {isLoadingReports && <Spinner />}{isLoadingReports ? 'Cargando...' : 'Cargar reportes anteriores'}
               </button>
             )}
           </div>
@@ -186,5 +188,5 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
       </div>
   );
 
-  return enPagina ? tarjeta : <Modal onClose={onClose} zIndexClass="z-50">{tarjeta}</Modal>;
+  return enPagina ? tarjeta : <Modal onClose={onClose} zIndexClass="z-50" completa>{tarjeta}</Modal>;
 }

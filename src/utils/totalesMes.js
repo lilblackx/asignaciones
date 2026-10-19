@@ -44,6 +44,15 @@ export function mesesDeTotales(ahora = Date.now(), maximo = 6) {
 
 const CERO = { enProceso: 0, finalizadas: 0, canceladas: 0 };
 
+// Lo mismo que incrementosMensuales, para un cierre que archiva a la vez las órdenes finalizadas y las canceladas (cada una con su estado).
+export function incrementosDeCierre(ordenes, ahoraMs = Date.now()) {
+  const porMes = {};
+  for (const estado of ['FINALIZADO', 'CANCELADO']) {
+    for (const [mes, campos] of Object.entries(incrementosMensuales(ordenes.filter((t) => t.estado === estado), estado, ahoraMs))) porMes[mes] = { ...porMes[mes], ...campos };
+  }
+  return porMes;
+}
+
 // { instalaciones: { enProceso, finalizadas, canceladas }, los: { ... } } del mes pedido.
 //   contador: el documento del mes ({} o null si todavía no se cerró nada).
 //   vivas: las órdenes que están ahora en la lista (se ignora lo que no es de ventas).

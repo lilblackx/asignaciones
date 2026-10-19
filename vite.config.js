@@ -35,6 +35,8 @@ export default defineConfig({
         injectionPoint: 'self.__WB_MANIFEST',
         // Fuente Inter (solo latin y latin-ext) en caché para que funcione sin conexión.
         globPatterns: ['**/*.{js,css,html}', '**/inter-latin*.woff2'],
+        // Las librerías que arman los PDF y Word de los reportes pesan y solo las usa quien exporta: se bajan en ese momento, no con la instalación de la app.
+        globIgnores: ['**/exportarPdf-*.js', '**/exportarDocx-*.js', '**/html2canvas*.js', '**/purify*.js', '**/index.es-*.js'],
       },
       // Agregamos los íconos de la PWA para que el Service Worker los cachee
       includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-512x512.png', 'badge-96x96.png'],

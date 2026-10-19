@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useCierreAutomatico } from '../../../hooks/useCierreAutomatico';
 import { diaDe } from '../../../utils/totalesMes';
+import Spinner from '../../Spinner';
 
 // Lunes a domingo (0 = domingo, como Date.getDay y el Worker).
 const DIAS = [
@@ -160,7 +161,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
               disabled={!draft || !!error || guardando}
               className="px-4 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {guardando ? 'Guardando...' : 'Guardar cambios'}
+              {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar cambios'}
             </button>
             {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-zinc-500 hover:underline">Descartar</button>}
             {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}

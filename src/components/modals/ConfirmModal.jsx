@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import Modal from '../Modal';
+import Spinner from '../Spinner';
 
 const THEMES = {
   red: {
@@ -90,7 +91,7 @@ export default function ConfirmModal({
             disabled={isProcessing}
             className={`flex-1 py-3 font-bold rounded-xl transition-colors shadow-md text-white ${isProcessing ? 'bg-zinc-400 cursor-not-allowed' : theme.confirmBg}`}
           >
-            {isProcessing ? processingLabel : confirmLabel}
+            {isProcessing && <Spinner />}{isProcessing ? processingLabel : confirmLabel}
           </button>
         </div>
       </div>

@@ -46,7 +46,7 @@ export function useUsers(firebaseUser, setToastMsg, role) {
     return () => unsub();
   }, [firebaseUser, role]);
 
-  const createUser = async ({ usuario, clave, role, nombre, puedeCerrar, tecnicoAsociado, promotoraNombres, verTodasInstalaciones }, createdBy) => {
+  const createUser = async ({ usuario, clave, role, nombre, puedeCerrar, tecnicoAsociado, promotoraNombres, verTodasInstalaciones, puedeCrearVentas }, createdBy) => {
     const username = normalizeUsername(usuario);
     const nombreCompleto = (nombre || '').trim();
     if (!username || !clave || !nombreCompleto) return;
@@ -64,6 +64,7 @@ export function useUsers(firebaseUser, setToastMsg, role) {
       puedeCerrar: !!puedeCerrar,
       ...datosPromotora(role, promotoraNombres),
       verTodasInstalaciones: role === 'PROMOTORA' && verTodasInstalaciones === true,
+      puedeCrearVentas: role === 'PROMOTORA' && puedeCrearVentas === true,
     };
 
     // Producción: el alta la hace el Worker (cuenta + perfil), porque el registro
@@ -131,11 +132,23 @@ export function useUsers(firebaseUser, setToastMsg, role) {
         tecnicoAsociado: role === 'TECNICO' ? (tecnicoAsociado || '').trim() : null,
         ...datosPromotora(role, promotoraNombres),
         // Dejar de ser PROMOTORA quita el "ve todas"; siéndolo, se guarda lo que marcó el administrador.
-        verTodasInstalaciones: role === 'PROMOTORA' && verTodas === true
+        verTodasInstalaciones: role === 'PROMOTORA' && verTodas === true,
+        // Dejar de ser PROMOTORA también quita el permiso de crear ventas; siéndolo, no se toca aquí (va aparte, en su botón).
+        ...(role !== 'PROMOTORA' && { puedeCrearVentas: false })
       });
       setToastMsg({ type: 'success', text: 'Rol actualizado.' });
     } catch {
       setToastMsg({ type: 'error', text: 'No se pudo cambiar el rol.' });
+    }
+  };
+
+  // Solo PROMOTORA: puede crear ventas (instalaciones nuevas) desde su pantalla.
+  const setUserPuedeCrearVentas = async (userId, puedeCrearVentas) => {
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), { puedeCrearVentas });
+      setToastMsg({ type: 'success', text: puedeCrearVentas ? 'Ahora puede crear ventas.' : 'Ya no puede crear ventas.' });
+    } catch {
+      setToastMsg({ type: 'error', text: 'No se pudo cambiar el permiso.' });
     }
   };
 
@@ -163,5 +176,5 @@ export function useUsers(firebaseUser, setToastMsg, role) {
     }
   };
 
-  return { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserTecnicoAsociado, adminResetPassword };
+  return { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, setUserTecnicoAsociado, adminResetPassword };
 }

@@ -2,10 +2,10 @@
 // No necesita el emulador. Uso: `npm run test:ventas`.
 import { readFileSync } from 'node:fs';
 import { csvDeOrdenes, filasExportacion } from '../src/utils/exportarOrdenes.js';
-import { PRIMER_MES_TOTALES, etiquetaMes, incrementosMensuales, mesDe, mesesDeTotales, mesesRecientes, totalesDelMes } from '../src/utils/totalesMes.js';
+import { PRIMER_MES_TOTALES, etiquetaMes, incrementosDeCierre, incrementosMensuales, mesDe, mesesDeTotales, mesesRecientes, totalesDelMes } from '../src/utils/totalesMes.js';
 import { incrementosMensuales as incrementosWorker } from '../cf-worker/src/index.js';
 import { formatearCedula } from '../src/utils/cedula.js';
-import { FILTROS_FECHA, OPCIONES_ORDEN, ORDEN_POR_DEFECTO, atrasoOrden, enRangoFecha, estadoParaPromotora, fechaOrden, ordenarOrdenes, resumenPorPromotor, algunaOrdenSalio } from '../src/utils/estadoInstalacion.js';
+import { FILTROS_FECHA, OPCIONES_ORDEN_DIRECCION, DIRECCION_POR_DEFECTO, claveFiltroFecha, ORDEN_POR_DEFECTO, atrasoOrden, enRangoFecha, estadoParaPromotora, fechaOrden, ordenarOrdenes, resumenPorPromotor, algunaOrdenSalio } from '../src/utils/estadoInstalacion.js';
 
 let failures = 0;
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), 'utf8');
@@ -78,10 +78,20 @@ const b = orden({ id: 'b', createdAt: AHORA - DIA, tecnico: 'J' });
 const c = orden({ id: 'c', createdAt: 0 });
 const d = orden({ id: 'd', estado: 'FINALIZADO', createdAt: AHORA - 5 * DIA, finalizadoEn: AHORA - 2 * 3600000, tecnico: 'J' });
 const ids = (l) => l.map((o) => o.id).join('');
+const ids2 = (l) => l.map((o) => o.codigo).join(' ');
 check('más recientes primero (las sin fecha al final)', ids(ordenarOrdenes([a, b, c, d], 'RECIENTES')), 'dbac');
 check('más antiguas primero, y las sin fecha al final', ids(ordenarOrdenes([a, b, c, d], 'ANTIGUAS')), 'abdc');
 check('por estado: sin técnico, luego asignada, luego instalada', ids(ordenarOrdenes([d, b, a], 'ESTADO')), 'abd');
-check('el orden por defecto es lo más reciente primero, y la urgencia sigue como opción', [ORDEN_POR_DEFECTO, OPCIONES_ORDEN[0][0], OPCIONES_ORDEN.map(([c]) => c)], ['RECIENTES', 'RECIENTES', ['RECIENTES', 'URGENCIA', 'ANTIGUAS', 'ESTADO']]);
+check('el orden por defecto es fecha descendente (lo más reciente primero); la urgencia y el estado siguen como opciones', [ORDEN_POR_DEFECTO, DIRECCION_POR_DEFECTO, OPCIONES_ORDEN_DIRECCION.map(([c]) => c)], ['FECHA', 'DESC', ['FECHA:DESC', 'FECHA:ASC', 'CODIGO:ASC', 'CODIGO:DESC', 'URGENCIA:DESC', 'URGENCIA:ASC', 'ESTADO:DESC', 'ESTADO:ASC']]);
+check('fecha descendente y ascendente (las sin fecha, al final de las dos)', [ids(ordenarOrdenes([a, b, c, d], 'FECHA', AHORA, 'DESC')), ids(ordenarOrdenes([a, b, c, d], 'FECHA', AHORA, 'ASC'))], ['dbac', 'abdc']);
+check('estado ascendente es el orden al revés del descendente', ids(ordenarOrdenes([d, b, a], 'ESTADO', AHORA, 'ASC')), ids(ordenarOrdenes([d, b, a], 'ESTADO', AHORA, 'DESC')).split('').reverse().join(''));
+check('urgencia ascendente pone lo menos urgente primero', ids(ordenarOrdenes([d, b, a], 'URGENCIA', AHORA, 'ASC')), ids(ordenarOrdenes([d, b, a], 'URGENCIA', AHORA, 'DESC')).split('').reverse().join(''));
+// Un día en concreto del calendario
+const diaElegido = new Date(2026, 9, 14, 15, 0).getTime();
+const mediaNoche = new Date(2026, 9, 14).getTime();
+check('día elegido: entra todo ese día (de la medianoche a la siguiente)', [enRangoFecha(diaElegido, 'DIA:2026-10-14', AHORA), enRangoFecha(mediaNoche, 'DIA:2026-10-14', AHORA), enRangoFecha(mediaNoche + DIA - 1, 'DIA:2026-10-14', AHORA)], [true, true, true]);
+check('día elegido: no entran el anterior ni el siguiente, ni las sin fecha', [enRangoFecha(mediaNoche - 1, 'DIA:2026-10-14', AHORA), enRangoFecha(mediaNoche + DIA, 'DIA:2026-10-14', AHORA), enRangoFecha(0, 'DIA:2026-10-14', AHORA)], [false, false, false]);
+check('"Elegir un día" sin fecha elegida no filtra; con fecha, filtra ese día; las demás opciones quedan igual', [claveFiltroFecha('DIA', ''), claveFiltroFecha('DIA', '2026-10-14'), claveFiltroFecha('HOY', '2026-10-14')], ['TODAS', 'DIA:2026-10-14', 'HOY']);
 // Urgencia: atrasadas (más días primero), sin técnico, asignada, en revisión, instalada y cancelada; dentro de cada grupo la creada antes primero.
 const u = (id, t) => orden({ id, ...t });
 const surtido = [
@@ -172,6 +182,8 @@ const cierreFin = Date.parse('2026-11-01T22:00:00-04:00');
 const tFin = (extra) => ({ tipoTrabajo: 'INSTALACIÓN', ...extra });
 const paraCerrar = [tFin({ finalizadoEn: Date.parse('2026-10-31T23:30:00-04:00') }), tFin({ finalizadoEn: cierreFin - 3600000 }), tFin({}), { tipoTrabajo: 'AVERÍA', falla: 'LOS', finalizadoEn: 5 }, { tipoTrabajo: 'AVERÍA', falla: 'Sin señal' }];
 check('el cierre manual de la app suma por mes y tipo, sin contar otras averías', incrementosMensuales(paraCerrar, 'FINALIZADO', cierreFin), { '2026-10': { instalacionesFinalizadas: 1 }, '2026-11': { instalacionesFinalizadas: 2, losResueltas: 1 } });
+const mezcla = [tFin({ estado: 'FINALIZADO', finalizadoEn: cierreFin - 3600000 }), tFin({ estado: 'CANCELADO' }), { tipoTrabajo: 'AVERÍA', falla: 'LOS', estado: 'CANCELADO' }, { tipoTrabajo: 'AVERÍA', falla: 'Sin señal', estado: 'FINALIZADO' }];
+check('un cierre con finalizadas y canceladas en un solo reporte suma cada una en su contador', incrementosDeCierre(mezcla, cierreFin), { '2026-11': { instalacionesFinalizadas: 1, instalacionesCanceladas: 1, losCanceladas: 1 } });
 // El cierre automático (Worker) y el manual (app) deben contar igual: mismas órdenes, mismos totales.
 const aFirestore = (t) => ({ fields: Object.fromEntries(Object.entries(t).map(([k, v]) => [k, typeof v === 'number' ? { integerValue: String(v) } : { stringValue: v }])) });
 for (const estado of ['FINALIZADO', 'CANCELADO']) check(`el cierre manual y el automático cuentan igual (${estado})`, incrementosMensuales(paraCerrar, estado, cierreFin), incrementosWorker(paraCerrar.map(aFirestore), estado, cierreFin));
@@ -185,6 +197,32 @@ check('detecta que una orden salió de la lista en vivo', [algunaOrdenSalio(null
 check('la pantalla ya no tiene el botón Actualizar y pide la actualización sola', [/Volver a leer las órdenes cerradas|ActualizarHistorial/.test(leer('../src/components/PromotoraApp.jsx')), /algunaOrdenSalio\(idsEnVivo\.current, tickets\)\) actualizarHistorial\(\)/.test(leer('../src/components/PromotoraApp.jsx'))], [false, true]);
 check('la actualización automática reintenta si todavía no toca la espera mínima', /r === 'espera' \|\| r === 'ocupado'\) reintento\.current = setTimeout/.test(hook), true);
 check('la pantalla no lee nada de Firestore al filtrar u ordenar (todo se calcula con lo ya cargado)', /getDocs|onSnapshot|query\(/.test(leer('../src/components/PromotoraApp.jsx')), false);
+
+// Dentro del mismo día se ordena por número de código, no por la hora exacta del cierre.
+const MISMO_DIA = new Date(2026, 9, 18, 10, 0).getTime();
+const cerrada = (codigo, hora) => orden({ id: codigo, codigo, estado: 'FINALIZADO', tecnico: 'J', finalizadoEn: MISMO_DIA + hora * 60000, createdAt: MISMO_DIA });
+const mismoDia = [cerrada('IO83', 1), cerrada('IO82', 5), cerrada('IO87', 2), cerrada('IO84', 9), cerrada('IO86', 3)];
+check('fecha ascendente, mismo día: IO82, IO83, IO84, IO86, IO87 (no por la hora de cierre)', ids2(ordenarOrdenes(mismoDia, 'FECHA', AHORA, 'ASC')), 'IO82 IO83 IO84 IO86 IO87');
+check('fecha descendente, mismo día: del código mayor al menor', ids2(ordenarOrdenes(mismoDia, 'FECHA', AHORA, 'DESC')), 'IO87 IO86 IO84 IO83 IO82');
+check('el número se compara como número (IO100 después de IO82) y un código sin número va al final', ids2(ordenarOrdenes([cerrada('IO100', 1), cerrada('IS', 2), cerrada('IO82', 3)], 'FECHA', AHORA, 'ASC')), 'IO82 IO100 IS');
+check('el día manda antes que el código: un día anterior va primero al ascender', ids2(ordenarOrdenes([cerrada('IO90', 1), { ...cerrada('IO99', 1), finalizadoEn: MISMO_DIA - DIA }], 'FECHA', AHORA, 'ASC')), 'IO99 IO90');
+
+// Por código: solo el número, sin importar el día.
+const dia = (n) => new Date(2026, 9, n, 12, 0).getTime();
+const deOtroDia = (codigo, n) => orden({ id: codigo, codigo, estado: 'FINALIZADO', tecnico: 'J', finalizadoEn: dia(n), createdAt: dia(n) });
+const variosDias = [deOtroDia('IO77', 15), deOtroDia('IO73', 16), deOtroDia('IO76', 15), deOtroDia('IO100', 14), deOtroDia('IO79', 17)];
+check('código ascendente: IO73, IO76, IO77, IO79, IO100 aunque sean de días distintos', ids2(ordenarOrdenes(variosDias, 'CODIGO', AHORA, 'ASC')), 'IO73 IO76 IO77 IO79 IO100');
+check('código descendente: del mayor al menor', ids2(ordenarOrdenes(variosDias, 'CODIGO', AHORA, 'DESC')), 'IO100 IO79 IO77 IO76 IO73');
+check('sin código, al final en las dos direcciones', [ids2(ordenarOrdenes([orden({ id: 'x', codigo: '' }), deOtroDia('IO5', 15)], 'CODIGO', AHORA, 'ASC')), ids2(ordenarOrdenes([orden({ id: 'x', codigo: '' }), deOtroDia('IO5', 15)], 'CODIGO', AHORA, 'DESC'))], ['IO5 ', 'IO5 ']);
+
+// --- Calendario de los filtros ---
+const cal = await import('../src/utils/calendario.js');
+const octubre = cal.casillasDelMes(2026, 10);
+check('octubre 2026 empieza en jueves (3 huecos con la semana desde el lunes) y tiene 31 días', [octubre.slice(0, 3), octubre[3], octubre.length - 3], [[null, null, null], '2026-10-01', 31]);
+check('febrero de un año bisiesto tiene 29 días y marzo de 2026 empieza en domingo (6 huecos)', [cal.casillasDelMes(2028, 2).filter(Boolean).length, cal.casillasDelMes(2026, 3).findIndex(Boolean)], [29, 6]);
+check('mover de mes cruza el año', [cal.mover(2026, 1, -1), cal.mover(2026, 12, 1), cal.mover(2026, 10, 1)], [{ anio: 2025, mes: 12 }, { anio: 2027, mes: 1 }, { anio: 2026, mes: 11 }]);
+check('fecha ISO y corta', [cal.fechaISO(new Date(2026, 9, 5, 23, 59)), cal.fechaCorta('2026-10-05'), cal.fechaCorta('2026-02-30'), cal.fechaCorta('')], ['2026-10-05', '05/10/2026', '', '']);
+check('el calendario no deja pasar de hoy y es el de la app (no el del navegador)', /iso > tope/.test(leer('../src/components/Calendario.jsx')) && !/type="date"/.test(leer('../src/components/PromotoraApp.jsx')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

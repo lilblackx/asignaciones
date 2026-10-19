@@ -30,9 +30,9 @@ try {
 }
 await base.collection('users').doc(uid).set({
   username: 'ventas', nombre: 'Ventas Demo', role: 'PROMOTORA', tecnicoAsociado: null, promotoraNombres: [], promotoraClaves: [],
-  verTodasInstalaciones: true, puedeCerrar: false, disabled: false, createdAt: Date.now(), createdBy: 'seed-script',
+  verTodasInstalaciones: true, puedeCrearVentas: true, puedeCerrar: false, disabled: false, createdAt: Date.now(), createdBy: 'seed-script',
 });
-console.log('OK  PROMOTORA usuario="ventas" clave="Ventas1234" (ve todas las instalaciones y las averías LOS)');
+console.log('OK  PROMOTORA usuario="ventas" clave="Ventas1234" (ve todas las instalaciones y las averías LOS, y crea ventas)');
 
 // --- Órdenes en vivo ---
 const HORA = 60 * 60 * 1000;

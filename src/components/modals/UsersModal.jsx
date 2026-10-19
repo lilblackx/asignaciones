@@ -4,9 +4,11 @@ import { ROLES, etiquetaRol } from '../../constants';
 import { errorNombresPromotora } from '../../utils/promotora';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../../utils/passwordPolicy';
 import { stripEmojis } from '../../utils/sanitizeInput';
-import Modal from '../Modal';
+import Modal, { PANEL_COMPLETO } from '../Modal';
+import EncabezadoModulo from '../EncabezadoModulo';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import SelectMenu from '../SelectMenu';
+import Spinner from '../Spinner';
 
 const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
 const ROL_NUEVO_ITEMS = [
@@ -28,9 +30,9 @@ const claseRol = (rol) => (rol === ROLES.ADMIN
       ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
       : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300');
 
-const EMPTY_NEW_USER = { usuario: '', nombre: '', clave: '', role: ROLES.USUARIO, puedeCerrar: false, tecnicoAsociado: '', promotoraNombres: '', verTodasInstalaciones: false };
+const EMPTY_NEW_USER = { usuario: '', nombre: '', clave: '', role: ROLES.USUARIO, puedeCerrar: false, tecnicoAsociado: '', promotoraNombres: '', verTodasInstalaciones: false, puedeCrearVentas: false };
 
-export default function UsersModal({ users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword, currentUsername, onClose, technicians = [] }) {
+export default function UsersModal({ users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword, currentUsername, onClose, technicians = [] }) {
   const [roleEditId, setRoleEditId] = useState(null);
   const [roleDraft, setRoleDraft] = useState('');
   const [techDraft, setTechDraft] = useState('');
@@ -175,6 +177,12 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     setTogglingId(null);
   };
 
+  const onTogglePuedeCrearVentas = async (id, puedeCrearVentas) => {
+    setTogglingId(id);
+    await setUserPuedeCrearVentas(id, puedeCrearVentas);
+    setTogglingId(null);
+  };
+
   const onTogglePuedeCerrar = async (id, puedeCerrar) => {
     setTogglingId(id);
     await setUserPuedeCerrar(id, puedeCerrar);
@@ -192,12 +200,9 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     .sort((a, b) => ORDEN_ROLES.indexOf(a.role) - ORDEN_ROLES.indexOf(b.role) || String(a.nombre || a.username).localeCompare(String(b.nombre || b.username), 'es'));
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-5 sm:px-6 py-4 border-b-2 border-red-600 flex justify-between items-center shrink-0">
-          <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-red-500" /> USUARIOS</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
-        </div>
+    <Modal onClose={onClose} zIndexClass="z-[60]" completa>
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={ShieldCheck} titulo="USUARIOS" onClose={onClose} />
 
         <div className="flex-1 overflow-y-auto lg:overflow-hidden lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           {/* Cuentas */}
@@ -321,8 +326,18 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                           <Pencil className="w-3 h-3" aria-hidden="true" /> {(u.promotoraNombres || []).length ? (u.promotoraNombres || []).join(' · ') : u.verTodasInstalaciones ? 'Sin nombre' : 'Sin nombre: no ve nada'}
                         </button>
                         {u.verTodasInstalaciones && (
-                          <span title="Ve las instalaciones de todas las promotoras (solo lectura). Se cambia con el lápiz." className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Ve todas</span>
+                          <span title="Ve las instalaciones de todas las promotoras. Se cambia con el lápiz." className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Ve todas</span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => onTogglePuedeCrearVentas(u.id, !u.puedeCrearVentas)}
+                          disabled={togglingId === u.id}
+                          aria-pressed={u.puedeCrearVentas === true}
+                          title="Permitir que cree ventas (instalaciones nuevas) desde su pantalla"
+                          className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50 ${u.puedeCrearVentas ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}
+                        >
+                          {u.puedeCrearVentas ? 'Crea ventas' : 'No crea ventas'}
+                        </button>
                       </>
                     )}
                   </div>
@@ -377,6 +392,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                             minLength={8}
                             value={resetDraft}
                             onChange={(e) => { setResetDraft(stripEmojis(e.target.value)); setResetError(''); }}
+                            aria-invalid={!!resetError}
                             onKeyDown={(e) => e.key === 'Enter' && saveResetPassword(u.id)}
                             placeholder="nueva clave"
                             className={EDICION}
@@ -461,6 +477,10 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     <input type="checkbox" checked={newUser.verTodasInstalaciones} onChange={(e) => { setNewUser({ ...newUser, verTodasInstalaciones: e.target.checked }); setUserError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                     Ver todas las instalaciones
                   </label>
+                  <label className="flex items-center gap-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                    <input type="checkbox" checked={newUser.puedeCrearVentas} onChange={(e) => setNewUser({ ...newUser, puedeCrearVentas: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
+                    Puede crear ventas
+                  </label>
                   <div className="space-y-2">
                     <label htmlFor="user-promotora" className={ETIQUETA}>NOMBRE EN LAS PLANTILLAS{newUser.verTodasInstalaciones && <span className="font-normal text-zinc-400"> (opcional)</span>}</label>
                     <input
@@ -488,7 +508,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
               {/* En PC, con el formulario largo (rol Ventas o Técnico), el botón se queda a la vista al desplazar. */}
               <div className="lg:sticky lg:-bottom-6 lg:-mx-6 lg:-mb-6 lg:px-6 lg:py-4 lg:bg-zinc-50 lg:dark:bg-zinc-950">
-                <button type="submit" disabled={isSubmitting} className={`px-6 py-3.5 w-full text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Creando...' : 'Crear Usuario'}</button>
+                <button type="submit" disabled={isSubmitting} className={`px-6 py-3.5 w-full text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Creando...' : 'Crear Usuario'}</button>
               </div>
             </form>
           </section>

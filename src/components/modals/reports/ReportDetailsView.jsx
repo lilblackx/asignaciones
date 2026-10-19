@@ -1,23 +1,28 @@
-import { Download, MessageSquareText, Wrench, X } from 'lucide-react';
+import { Download, FileText, MessageSquareText, Wrench } from 'lucide-react';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import { formatCedula } from '../../../utils/ticketDisplay';
+import { CENTRADO_AMPLIO } from '../../Modal';
+import EncabezadoModulo from '../../EncabezadoModulo';
+
+// Los cierres nuevos traen en un solo reporte las órdenes finalizadas y las canceladas; cada una se marca con su estado.
+function EstadoOrden({ ticket }) {
+  return (
+    <span className={`block mt-1 text-[9px] font-black uppercase ${ticket.estado === 'CANCELADO' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+      {ticket.estado === 'CANCELADO' ? 'Cancelada' : 'Finalizada'}
+    </span>
+  );
+}
 
 export default function ReportDetailsView({ report, getTecnicoColor, onBack, onClose }) {
+  const conCanceladas = report.canceladas !== undefined;
   return (
     <>
-      <div className="bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center shrink-0 gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={onBack}
-            className="text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg border border-zinc-700 transition-colors shrink-0"
-          >
-            ← Volver al Historial
-          </button>
-          <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-wider truncate">
-            Órdenes de Cierre ({report.fechaCierre})
-          </h2>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+      <EncabezadoModulo
+        Icono={FileText}
+        titulo={`ÓRDENES DE CIERRE (${report.fechaCierre})`}
+        onClose={onClose}
+        onVolver={onBack}
+        acciones={(
           <button
             onClick={() => exportReportToCsv(report)}
             title="Descargar CSV"
@@ -25,16 +30,11 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
           >
             <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">CSV</span>
           </button>
-          <button
-            onClick={onClose}
-            className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+        )}
+      />
 
-      <div className="p-6 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950">
+      <div className={`p-6 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950 ${CENTRADO_AMPLIO}`}>
+        <button onClick={onBack} className="lg:hidden mb-4 text-xs font-bold bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-white px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 transition-colors">← Volver al Historial</button>
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h3 className="font-black text-zinc-900 dark:text-white text-lg">Resumen de Jornada</h3>
@@ -42,9 +42,17 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
               Procesado por <span className="font-bold text-zinc-800 dark:text-zinc-200">{report.operador}</span> a las <span className="font-bold text-zinc-800 dark:text-zinc-200">{report.horaCierre}</span>
             </p>
           </div>
-          <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-5 py-2 rounded-xl text-center shadow-inner shrink-0 self-stretch sm:self-auto flex sm:flex-col justify-between items-center">
-            <span className="text-[10px] font-black tracking-wider uppercase">Cerradas</span>
-            <span className="text-2xl font-black">{report.total}</span>
+          <div className="flex gap-2 shrink-0 self-stretch sm:self-auto">
+            <div className="flex-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-5 py-2 rounded-xl text-center shadow-inner flex sm:flex-col justify-between items-center gap-2 sm:gap-0">
+              <span className="text-[10px] font-black tracking-wider uppercase">{conCanceladas ? 'Finalizadas' : 'Cerradas'}</span>
+              <span className="text-2xl font-black">{conCanceladas ? report.finalizadas : report.total}</span>
+            </div>
+            {conCanceladas && (
+              <div className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-5 py-2 rounded-xl text-center shadow-inner flex sm:flex-col justify-between items-center gap-2 sm:gap-0">
+                <span className="text-[10px] font-black tracking-wider uppercase">Canceladas</span>
+                <span className="text-2xl font-black">{report.canceladas}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -76,7 +84,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {(report.ticketsDetalle || []).map((ticket) => (
                 <tr key={ticket.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                  <td className="px-4 py-3 font-black text-red-600 dark:text-red-400 align-middle">{ticket.codigo}</td>
+                  <td className="px-4 py-3 align-middle"><span className="font-black text-red-600 dark:text-red-400">{ticket.codigo}</span>{conCanceladas && <EstadoOrden ticket={ticket} />}</td>
                   <td className="px-4 py-3 align-middle">
                     <div className="font-bold text-zinc-900 dark:text-white leading-tight">{ticket.nombre}</div>
                     <div className="text-[10px] text-zinc-500 mt-1">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</div>
@@ -109,7 +117,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
           {(report.ticketsDetalle || []).map((ticket) => (
             <div key={ticket.id} className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <span className="font-black text-red-600 dark:text-red-400 text-sm">{ticket.codigo}</span>
+                <span className="font-black text-red-600 dark:text-red-400 text-sm">{ticket.codigo}{conCanceladas && <span className={`ml-2 text-[9px] uppercase ${ticket.estado === 'CANCELADO' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{ticket.estado === 'CANCELADO' ? 'Cancelada' : 'Finalizada'}</span>}</span>
                 <span className="text-zinc-400 text-xs font-bold">{ticket.fecha}</span>
               </div>
               <div>

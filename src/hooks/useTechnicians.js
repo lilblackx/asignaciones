@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, deleteField, updateDoc, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, deleteField, updateDoc, query, where, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { playTecnicoStatusSound } from '../utils/notificationSound';
 import { estiloTecnico } from '../constants';
+import { eventoActivacion } from '../utils/logTecnico';
+
+// Registro de cuándo se activa o desactiva cada técnico (para el reporte de actividad).
+const logRef = () => collection(db, 'artifacts', appId, 'public', 'data', 'technicianLog');
 
 export function useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, onNotify) {
   const [technicians, setTechnicians] = useState([]);
@@ -49,7 +53,10 @@ export function useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado,
   const handleAddTech = async (newTech) => {
     if (!firebaseUser || newTech.name.trim() === '') return;
     const upperName = newTech.name.toUpperCase();
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'technicians', upperName), { name: upperName, color: newTech.color, activo: true });
+    const lote = writeBatch(db);
+    lote.set(doc(db, 'artifacts', appId, 'public', 'data', 'technicians', upperName), { name: upperName, color: newTech.color, activo: true });
+    lote.set(doc(logRef()), eventoActivacion({ tecnicoId: upperName, tecnico: upperName, activo: true, por: currentUser, rol: role }));
+    await lote.commit();
     setToastMsg({ type: 'success', text: 'Técnico agregado exitosamente.' });
   };
 
@@ -61,12 +68,18 @@ export function useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado,
 
   const toggleTechnicoActivo = async (techId, activo) => {
     if (!firebaseUser) return;
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'technicians', techId), {
+    const ahora = Date.now();
+    const tecnico = technicians.find(t => t.id === techId)?.name || techId;
+    // El cambio y su asiento en el registro se guardan juntos: si uno falla, el otro tampoco queda.
+    const lote = writeBatch(db);
+    lote.update(doc(db, 'artifacts', appId, 'public', 'data', 'technicians', techId), {
       activo,
       activoUpdatedBy: currentUser || null,
       activoUpdatedByRole: role || null,
-      activoUpdatedAt: Date.now()
+      activoUpdatedAt: ahora
     });
+    lote.set(doc(logRef()), eventoActivacion({ tecnicoId: techId, tecnico, activo, por: currentUser, rol: role }, ahora));
+    await lote.commit();
     setToastMsg({ type: activo ? 'success' : 'error', text: activo ? 'Técnico marcado como activo.' : 'Técnico marcado como inactivo.' });
   };
 

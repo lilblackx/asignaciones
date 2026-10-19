@@ -15,6 +15,7 @@ import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
 import PromotorField from './PromotorField';
 import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
+import Spinner from '../Spinner';
 
 export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -346,7 +347,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-2 sm:col-span-5 pt-1 flex gap-2 justify-end mt-1">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-xs transition-colors">Cancelar</button>
-            <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`px-4 py-1.5 text-white font-bold rounded-lg text-xs shadow-md transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
+            <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`px-4 py-1.5 text-white font-bold rounded-lg text-xs shadow-md transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
       </div>
@@ -392,7 +393,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
                 onClick={confirmDuplicateAndSubmit}
                 disabled={isSubmitting}
                 className={`flex-1 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-700'}`}>
-                {isSubmitting ? 'Creando...' : 'Sí, crear igual'}
+                {isSubmitting && <Spinner />}{isSubmitting ? 'Creando...' : 'Sí, crear igual'}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import Modal from '../Modal';
+import Spinner from '../Spinner';
 
 // Confirmación cuando un código escrito a mano se salta números del correlativo
 // (ej. "AO150" cuando el último es AO15): el contador se movería hasta ese número.
@@ -30,7 +31,7 @@ export default function ConfirmCodigoAltoModal({ salto, isSubmitting, onCancel, 
             onClick={onConfirm}
             disabled={isSubmitting}
             className={`flex-1 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-700'}`}>
-            {isSubmitting ? 'Guardando...' : 'Sí, usar ese'}
+            {isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Sí, usar ese'}
           </button>
         </div>
       </div>

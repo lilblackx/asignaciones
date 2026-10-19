@@ -1,0 +1,60 @@
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, FileSpreadsheet, FileText, FileType, Loader2 } from 'lucide-react';
+
+const OPCIONES = {
+  pdf: { etiqueta: 'PDF', detalle: 'Para presentar o imprimir', Icono: FileText },
+  docx: { etiqueta: 'Word', detalle: 'Documento editable (.docx)', Icono: FileType },
+  csv: { etiqueta: 'Excel (CSV)', detalle: 'Solo los datos, para analizar', Icono: FileSpreadsheet },
+};
+
+// El botón "Exportar" con sus formatos. formatos: ['pdf', 'docx', 'csv'] (los que tiene el reporte); ocupado: el formato que se está armando, o null.
+export default function MenuExportar({ formatos, onElegir, ocupado }) {
+  const [abierto, setAbierto] = useState(false);
+  const raiz = useRef(null);
+
+  useEffect(() => {
+    if (!abierto) return undefined;
+    const fuera = (e) => { if (raiz.current && !raiz.current.contains(e.target)) setAbierto(false); };
+    document.addEventListener('pointerdown', fuera);
+    return () => document.removeEventListener('pointerdown', fuera);
+  }, [abierto]);
+
+  return (
+    <div className="relative" ref={raiz}>
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        disabled={Boolean(ocupado)}
+        aria-haspopup="menu"
+        aria-expanded={abierto}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold disabled:opacity-70"
+      >
+        {ocupado ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : null}
+        {ocupado ? 'Generando...' : 'Exportar'}
+        {!ocupado && <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
+      </button>
+      {abierto && (
+        <div role="menu" className="absolute right-0 mt-2 w-64 z-20 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden">
+          {formatos.map((f) => {
+            const { etiqueta, detalle, Icono } = OPCIONES[f];
+            return (
+              <button
+                key={f}
+                role="menuitem"
+                type="button"
+                onClick={() => { setAbierto(false); onElegir(f); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border-b last:border-b-0 border-zinc-100 dark:border-zinc-800"
+              >
+                <Icono className="w-5 h-5 shrink-0 text-red-600" aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-zinc-900 dark:text-white">{etiqueta}</span>
+                  <span className="block text-[11px] text-zinc-500">{detalle}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

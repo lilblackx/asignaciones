@@ -12,11 +12,11 @@ export const TIPO_AVERIA = 'AVERÍA';
 export const FALLA_LOS = 'LOS';
 
 // Cuántos días de historial ve cada quien de una instalación ya cerrada (finalizada o cancelada): las promotoras 7 y el
-// perfil de ventas (ve todas) 15. Cada día de más son documentos de más que se leen cada vez que se abre la app (se guarda una
+// perfil de ventas (ve todas) 30. Cada día de más son documentos de más que se leen cada vez que se abre la app (se guarda una
 // copia en el equipo por 30 minutos para no leerlos de nuevo). En Firestore el historial se conserva lo que ve ventas, que
-// es lo más largo (15); cada pantalla descarta lo que sobra para ella. En cf-worker hay otra constante que debe valer igual.
+// es lo más largo (30); cada pantalla descarta lo que sobra para ella. En cf-worker hay otra constante que debe valer igual.
 export const RETENCION_DIAS_HISTORIAL = 7;
-export const RETENCION_DIAS_HISTORIAL_VENTAS = 15;
+export const RETENCION_DIAS_HISTORIAL_VENTAS = 30;
 const DIA_MS = 24 * 60 * 60 * 1000;
 export const RETENCION_MS_HISTORIAL = RETENCION_DIAS_HISTORIAL * DIA_MS;
 export const RETENCION_MS_HISTORIAL_VENTAS = RETENCION_DIAS_HISTORIAL_VENTAS * DIA_MS;
@@ -154,6 +154,10 @@ export const FILTROS_FECHA = [
   ['7_DIAS', 'Últimos 7 días'],
 ];
 
+// La clave con que se filtra: "DIA" (un día elegido en el calendario del filtro, que no es una opción de la lista) con una fecha es esa fecha ("DIA:2026-10-19", como la da el calendario);
+// sin fecha todavía no filtra nada.
+export const claveFiltroFecha = (fecha, dia) => (fecha === 'DIA' ? (/^\d{4}-\d{2}-\d{2}$/.test(dia || '') ? `DIA:${dia}` : 'TODAS') : fecha);
+
 // ¿La fecha cae en el rango elegido? Los días se cuentan en hora local (como el resto de la app).
 export function enRangoFecha(ms, clave, ahora = Date.now()) {
   if (clave === 'TODAS') return true;
@@ -164,6 +168,12 @@ export function enRangoFecha(ms, clave, ahora = Date.now()) {
   if (clave === 'HOY') return ms >= inicioHoy;
   if (clave === 'AYER') return ms >= inicioHoy - DIA_MS && ms < inicioHoy;
   if (clave === '7_DIAS') return ms >= inicioHoy - 6 * DIA_MS;
+  // Un día en concreto ("DIA:2026-10-19"): de su medianoche a la del día siguiente, en hora local.
+  if (typeof clave === 'string' && clave.startsWith('DIA:')) {
+    const [anio, mes, dia] = clave.slice(4).split('-').map(Number);
+    if (!anio || !mes || !dia) return true;
+    return ms >= new Date(anio, mes - 1, dia).getTime() && ms < new Date(anio, mes - 1, dia + 1).getTime();
+  }
   return true;
 }
 
@@ -202,12 +212,20 @@ export function resumenPorPromotor(ordenes) {
 }
 
 // Lo más reciente arriba; la urgencia (atrasadas primero) queda como opción.
-export const ORDEN_POR_DEFECTO = 'RECIENTES';
-export const OPCIONES_ORDEN = [
-  ['RECIENTES', 'Más recientes'],
-  ['URGENCIA', 'Urgencia'],
-  ['ANTIGUAS', 'Más antiguas'],
-  ['ESTADO', 'Por estado'],
+// Se elige por qué ordenar (fecha, código, urgencia o estado) y en qué dirección: descendente (lo más reciente / urgente primero) o ascendente.
+// "RECIENTES" y "ANTIGUAS" siguen valiendo como "fecha descendente" y "fecha ascendente".
+export const ORDEN_POR_DEFECTO = 'FECHA';
+export const DIRECCION_POR_DEFECTO = 'DESC';
+// Lo que se elige en el menú "Ordenar por": criterio y dirección juntos ("FECHA:DESC"). Cada criterio con sus dos direcciones.
+export const OPCIONES_ORDEN_DIRECCION = [
+  ['FECHA:DESC', 'Fecha · descendente (más recientes)'],
+  ['FECHA:ASC', 'Fecha · ascendente (más antiguas)'],
+  ['CODIGO:ASC', 'Código · ascendente (menor a mayor)'],
+  ['CODIGO:DESC', 'Código · descendente (mayor a menor)'],
+  ['URGENCIA:DESC', 'Urgencia · descendente (más urgentes)'],
+  ['URGENCIA:ASC', 'Urgencia · ascendente (menos urgentes)'],
+  ['ESTADO:DESC', 'Por estado · descendente (sin técnico primero)'],
+  ['ESTADO:ASC', 'Por estado · ascendente (canceladas primero)'],
 ];
 
 // Orden de urgencia: primero las atrasadas (las de más días antes); después, por estado: sin técnico, asignada, en camino, en sitio,
@@ -225,17 +243,49 @@ function ordenarPorUrgencia(ordenes, ahora) {
     || porFechaAscendente(a, b));
 }
 
+// Medianoche local del día de una fecha en milisegundos (0 si no hay fecha).
+const inicioDelDia = (ms) => { if (!ms) return 0; const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+
+// Compara dos códigos de orden por su letra y su número ("IO82" < "IO83" < "IO100"; no por texto, donde "IO100" iría antes que "IO82").
+// Un código sin número ("IS") va después de los numerados.
+export function compararCodigos(a, b) {
+  const [pa, na] = partesCodigo(a);
+  const [pb, nb] = partesCodigo(b);
+  return pa < pb ? -1 : pa > pb ? 1 : (na ?? Infinity) - (nb ?? Infinity) || 0;
+}
+const partesCodigo = (codigo) => {
+  const m = /^([A-Z]*)(\d+)?/.exec(String(codigo || '').trim().toUpperCase());
+  return [m?.[1] || '', m?.[2] ? Number(m[2]) : null];
+};
+
 // Ordena una copia de la lista. Las de prioridad alta van siempre primero (como en la lista de la oficina), sea cual sea el criterio;
 // dentro de ellas y entre las demás rige el criterio elegido. `ahora` solo hace falta para 'URGENCIA' (calcula los atrasos).
-export function ordenarOrdenes(ordenes, criterio, ahora = Date.now()) {
-  return prioritariasPrimero(ordenarPorCriterio(ordenes, criterio, ahora));
+export function ordenarOrdenes(ordenes, criterio, ahora = Date.now(), direccion = DIRECCION_POR_DEFECTO) {
+  return prioritariasPrimero(ordenarPorCriterio(ordenes, criterio, ahora, direccion));
 }
 
-function ordenarPorCriterio(ordenes, criterio, ahora) {
-  if (criterio === 'URGENCIA') return ordenarPorUrgencia(ordenes, ahora);
-  if (criterio === 'RECIENTES') return [...ordenes].sort((a, b) => fechaOrden(b) - fechaOrden(a));
-  // Las que no traen fecha van al final también al revés.
-  if (criterio === 'ANTIGUAS') return [...ordenes].sort((a, b) => (!fechaOrden(a) - !fechaOrden(b)) || fechaOrden(a) - fechaOrden(b));
-  if (criterio === 'ESTADO') return [...ordenes].sort((a, b) => ORDEN_ESTADOS_PROMOTORA.indexOf(a.vista.clave) - ORDEN_ESTADOS_PROMOTORA.indexOf(b.vista.clave) || fechaOrden(b) - fechaOrden(a));
-  return ordenes;
+function ordenarPorCriterio(ordenes, criterio, ahora, direccion) {
+  let ascendente = direccion === 'ASC';
+  let por = criterio;
+  if (por === 'RECIENTES') { por = 'FECHA'; ascendente = false; }
+  if (por === 'ANTIGUAS') { por = 'FECHA'; ascendente = true; }
+  // Por día y, dentro del mismo día, por número de código (IO82, IO83, IO84...); la hora exacta solo desempata al final. Las que no traen
+  // fecha van al final también al revés.
+  if (por === 'FECHA') {
+    const sentido = ascendente ? 1 : -1;
+    return [...ordenes].sort((a, b) => (!fechaOrden(a) - !fechaOrden(b))
+      || sentido * (inicioDelDia(fechaOrden(a)) - inicioDelDia(fechaOrden(b)))
+      || sentido * compararCodigos(a.codigo, b.codigo)
+      || sentido * (fechaOrden(a) - fechaOrden(b)));
+  }
+  // Solo por el número del código (IO73, IO76, IO77...), sin importar el día; la fecha desempata los códigos repetidos. Sin código, al final.
+  if (por === 'CODIGO') {
+    const sentido = ascendente ? 1 : -1;
+    return [...ordenes].sort((a, b) => (!a.codigo - !b.codigo) || sentido * compararCodigos(a.codigo, b.codigo) || sentido * (fechaOrden(a) - fechaOrden(b)));
+  }
+  if (por !== 'URGENCIA' && por !== 'ESTADO') return ordenes;
+  const lista = por === 'URGENCIA'
+    ? ordenarPorUrgencia(ordenes, ahora)
+    : [...ordenes].sort((a, b) => ORDEN_ESTADOS_PROMOTORA.indexOf(a.vista.clave) - ORDEN_ESTADOS_PROMOTORA.indexOf(b.vista.clave) || fechaOrden(b) - fechaOrden(a));
+  return ascendente ? [...lista].reverse() : lista;
 }

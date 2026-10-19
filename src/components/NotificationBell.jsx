@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { contarPendientes } from '../hooks/useInsigniaApp';
-import { Ban, Banknote, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, MapPin, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
+import { usePresencia } from '../hooks/usePresencia';
+import NumeroPulso from './NumeroPulso';
+import { Ban, Banknote, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, MapPin, Star, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
 
 function tiempoRelativo(timestamp) {
   const diffMs = Date.now() - timestamp;
@@ -14,6 +16,7 @@ function tiempoRelativo(timestamp) {
 
 function iconoPara(type) {
   if (type === 'prefinalizado') return <Clock className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
+  if (type === 'nuevaVenta') return <Star className="w-4 h-4 text-amber-500 fill-current shrink-0" aria-hidden="true" />;
   if (type === 'tecnicoStatus') return <UserCog className="w-4 h-4 text-purple-500 shrink-0" aria-hidden="true" />;
   if (type === 'aprobado') return <CheckCheck className="w-4 h-4 text-blue-500 shrink-0" aria-hidden="true" />;
   if (type === 'prioridad') return <Flag className="w-4 h-4 text-red-500 fill-current shrink-0" aria-hidden="true" />;
@@ -31,6 +34,7 @@ function iconoPara(type) {
 
 export default function NotificationBell({ notifications, unreadCount, isOpen, setIsOpen, dismissNotification, clearAll, preFinalizadoCount = 0, onOpenPreFinalizados, onOpenNotification }) {
   const ref = useRef(null);
+  const { montado, saliendo } = usePresencia(isOpen, 120);
   const hayPendientes = preFinalizadoCount > 0;
   // El icono no cambia de color: solo muestra un contador (el mismo que lleva la
   // insignia de la app instalada).
@@ -66,13 +70,13 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
         <Bell className="w-4 h-4" aria-hidden="true" />
         {contador > 0 && (
           <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-0.5 flex items-center justify-center leading-none">
-            {contador > 9 ? '9+' : contador}
+            <NumeroPulso valor={contador > 9 ? '9+' : contador} />
           </span>
         )}
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-80 sm:max-w-[90vw] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-20">
+      {montado && (
+        <div className={`fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-80 sm:max-w-[90vw] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-20 ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}>
           <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
             <span className="text-xs font-black text-white uppercase tracking-wide">Notificaciones</span>
             {notifications.length > 0 && (

@@ -4,6 +4,107 @@
 
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Transiciones de entrada: cortas (120-200 ms), sin fill-mode para no dejar transform residual sobre el elemento. */
+  --animate-fade-in-up: fade-in-up 0.2s ease-out;
+  --animate-fade-out-down: fade-out-down 0.2s ease-in forwards;
+  --animate-menu-entrada: menu-entrada 0.12s ease-out;
+  --animate-menu-salida: menu-salida 0.12s ease-in forwards;
+  --animate-aviso-entrada: aviso-entrada 0.2s ease-out;
+  --animate-aviso-salida: aviso-salida 0.2s ease-in forwards;
+  --animate-modal-fondo: modal-fondo 0.15s ease-out;
+  --animate-modal-panel: modal-panel 0.18s ease-out;
+  --animate-modal-fondo-salida: modal-fondo-salida 0.15s ease-in forwards;
+  --animate-modal-panel-salida: modal-panel-salida 0.15s ease-in forwards;
+  --animate-destello-fila: destello-fila 1.8s ease-out;
+  --animate-fade-in: fade-in 0.15s ease-out;
+  --animate-pulso-numero: pulso-numero 0.35s ease-out;
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(8px); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+  @keyframes pulso-numero {
+    40% { transform: scale(1.3); }
+  }
+  @keyframes fade-out-down {
+    to { opacity: 0; transform: translateY(8px); }
+  }
+  @keyframes menu-entrada {
+    from { opacity: 0; transform: scale(0.97); }
+  }
+  @keyframes menu-salida {
+    to { opacity: 0; transform: scale(0.97); }
+  }
+  @keyframes aviso-entrada {
+    from { grid-template-rows: 0fr; opacity: 0; }
+  }
+  @keyframes aviso-salida {
+    to { grid-template-rows: 0fr; opacity: 0; }
+  }
+  @keyframes modal-fondo {
+    from { opacity: 0; }
+  }
+  @keyframes modal-fondo-salida {
+    to { opacity: 0; }
+  }
+  @keyframes modal-panel-salida {
+    to { opacity: 0; transform: scale(0.97); }
+  }
+  @keyframes modal-panel {
+    from { opacity: 0; transform: scale(0.97); }
+  }
+  /* Sin "to": termina en el color propio de la fila (cebra, prioridad, en viaje), claro u oscuro. */
+  @keyframes destello-fila {
+    from { background-color: rgb(245 158 11 / 0.45); }
+  }
+}
+
+/* El contenido de un <Colapsable> se recorta solo mientras se pliega o despliega: ambos fotogramas fijan overflow, así que vale durante
+   toda la animación y después vuelve a lo normal (la salida lo conserva hasta desmontarse). */
+@keyframes recortar {
+  from, to { overflow: hidden; }
+}
+@media (min-width: 1024px) {
+  .colapsable-entrada > div { animation: recortar 0.2s; }
+  .colapsable-salida > div { animation: recortar 0.2s forwards; }
+}
+
+/* Sacudón de un campo inválido tras pulsar la acción principal de una ventana (ver utils/sacudidaErrores.js). Usa `translate` para no
+   chocar con el `transform` de otras clases. */
+@keyframes sacudon {
+  25% { translate: -4px 0; }
+  75% { translate: 4px 0; }
+}
+/* Aviso rojo sin campo marcado: se sacude la tarjeta de la ventana (no el [role=dialog], que ya tiene su propia animación de entrada). */
+[role="dialog"][data-sacudir-ventana] > * {
+  animation: sacudon 0.3s ease-in-out;
+}
+[data-sacudir] [aria-invalid="true"],
+[data-sacudir] input:invalid,
+[data-sacudir] textarea:invalid,
+[data-sacudir] select:invalid {
+  animation: sacudon 0.2s ease-in-out;
+}
+
+/* Al pulsar, el botón se encoge un poco (propiedad `scale`: no choca con transform ni con las transiciones de color). */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):not([role="combobox"]):not([role="menuitem"]):active {
+    scale: 0.95;
+  }
+  button.w-full:not(:disabled):active,
+  button.flex-1:not(:disabled):active {
+    scale: 0.98;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /* Números del mismo ancho: cédulas, teléfonos, códigos y montos quedan alineados. */

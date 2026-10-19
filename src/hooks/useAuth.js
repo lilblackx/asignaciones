@@ -103,6 +103,8 @@ export function useAuth() {
     promotoraClaves: profile?.promotoraClaves || [],
     // PROMOTORA de ventas: ve las instalaciones de todas las promotoras (lo marca el ADMIN en Usuarios).
     verTodasInstalaciones: profile?.role === 'PROMOTORA' && profile?.verTodasInstalaciones === true,
+    // PROMOTORA con permiso de crear ventas (instalaciones nuevas, nada más): lo marca el ADMIN en Usuarios.
+    puedeCrearVentas: profile?.role === 'PROMOTORA' && profile?.puedeCrearVentas === true,
     isTecnico: profile?.role === 'TECNICO',
     canCerrar: profile?.role === 'ADMIN' || profile?.puedeCerrar === true,
     authReady,

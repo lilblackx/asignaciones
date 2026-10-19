@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { MapPin, X } from 'lucide-react';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
-import HistorialTimeline from '../HistorialTimeline';
 import ContactoCliente from '../ContactoCliente';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
@@ -18,6 +17,7 @@ import { formularioDatosTecnico, formularioModificado, tieneDatosDelTecnico, val
 import { CedulaField, ObservacionField, ObservacionTecnicoField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import { promotoraDeOrden, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 import { devolucionPendiente } from '../../utils/devolucion';
+import Spinner from '../Spinner';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -336,16 +336,9 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             </>
           )}
 
-          <div className="col-span-2 mt-1">
-            <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 block mb-1">HISTORIAL DE LA ORDEN</span>
-            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-lg p-3">
-              <HistorialTimeline ticket={editingTicket} compact />
-            </div>
-          </div>
-
           <div className="col-span-2 pt-2 mt-1 flex gap-2 justify-end border-t border-zinc-100 dark:border-zinc-800">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-xs transition-colors">Cancelar</button>
-            <button type="submit" disabled={isSubmitting} className={`px-6 py-1.5 text-white font-bold rounded-lg text-xs transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Guardando...' : 'Actualizar'}</button>
+            <button type="submit" disabled={isSubmitting} className={`px-6 py-1.5 text-white font-bold rounded-lg text-xs transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Actualizar'}</button>
           </div>
         </form>
       </div>

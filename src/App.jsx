@@ -13,9 +13,12 @@ import { usePushToken } from './hooks/usePushToken';
 import { useToast } from './hooks/useToast';
 import { useNotifications } from './hooks/useNotifications';
 import { useTechnicians } from './hooks/useTechnicians';
+import { useLogTecnicos } from './hooks/useLogTecnicos';
+import { useTotalesMensuales } from './hooks/useTotalesMensuales';
 import { useUsers } from './hooks/useUsers';
 import { useTickets } from './hooks/useTickets';
 import { useAhora } from './hooks/useAhora';
+import { useFilasCambiadas } from './hooks/useFilasCambiadas';
 import { useReports } from './hooks/useReports';
 import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
@@ -52,6 +55,7 @@ const TechniciansModal = lazy(() => import('./components/modals/TechniciansModal
 const UsersModal = lazy(() => import('./components/modals/UsersModal'));
 const ConfirmModal = lazy(() => import('./components/modals/ConfirmModal'));
 const ReportsModal = lazy(() => import('./components/modals/ReportsModal'));
+const ReportesModal = lazy(() => import('./components/modals/ReportesModal'));
 const OrdersHistoryModal = lazy(() => import('./components/modals/OrdersHistoryModal'));
 const WhatsAppMessageModal = lazy(() => import('./components/modals/WhatsAppMessageModal'));
 const TasaBcvModal = lazy(() => import('./components/modals/TasaBcvModal'));
@@ -63,6 +67,7 @@ const AprobarFinalizarModal = lazy(() => import('./components/modals/AprobarFina
 const ResponderCobroModal = lazy(() => import('./components/modals/ResponderCobroModal'));
 const UbicacionModal = lazy(() => import('./components/modals/UbicacionModal'));
 const HistorialOrdenModal = lazy(() => import('./components/modals/HistorialOrdenModal'));
+const DetalleOrdenModal = lazy(() => import('./components/modals/DetalleOrdenModal'));
 
 const EMPTY_FORM = () => ({
   fecha: new Date().toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -87,9 +92,10 @@ export default function App({ auth }) {
   const canEditTickets = role === ROLES.ADMIN || role === ROLES.USUARIO;
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
-  const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
+  const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
   const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
+  const filasCambiadas = useFilasCambiadas(tickets, ticketsCargados);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
   const verInventario = veEnviosInventario(currentUser);
@@ -262,11 +268,14 @@ export default function App({ auth }) {
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isReportesOpen, setIsReportesOpen] = useState(false);
+  const logTecnicos = useLogTecnicos(firebaseUser, isReportesOpen);
+  const totalesMensuales = useTotalesMensuales(firebaseUser, isReportesOpen);
   const [selectedReportForDetails, setSelectedReportForDetails] = useState(null);
 
   useEffect(() => {
-    if (isReportModalOpen || isHistoryModalOpen) refreshReports();
-  }, [isReportModalOpen, isHistoryModalOpen, refreshReports]);
+    if (isReportModalOpen || isHistoryModalOpen || isReportesOpen) refreshReports();
+  }, [isReportModalOpen, isHistoryModalOpen, isReportesOpen, refreshReports]);
 
   const [isCierreConfirmOpen, setIsCierreConfirmOpen] = useState(false);
   const [cierreDateInput, setCierreDateInput] = useState('');
@@ -279,6 +288,7 @@ export default function App({ auth }) {
   const [finalizarTarget, setFinalizarTarget] = useState(null);
   const [ubicacionTarget, setUbicacionTarget] = useState(null);
   const [historialTarget, setHistorialTarget] = useState(null);
+  const [detalleTarget, setDetalleTarget] = useState(null);
   const [responderCobroTarget, setResponderCobroTarget] = useState(null);
 
   // Click en una notificación: lleva a la orden o a la acción que avisa. Si la orden ya no
@@ -305,6 +315,7 @@ export default function App({ auth }) {
         else handleGoHome();
         break;
       case 'nuevaAsignacion':
+      case 'nuevaVenta':
       case 'prioridad':
         if (ticket) mostrarOrden(ticket);
         else handleGoHome();
@@ -571,6 +582,7 @@ export default function App({ auth }) {
           isDarkMode={isDarkMode}
           setIsDarkMode={setIsDarkMode}
           onOpenReports={() => setIsReportModalOpen(true)}
+          onOpenReportes={() => setIsReportesOpen(true)}
           onOpenHistory={() => setIsHistoryModalOpen(true)}
           onOpenTechnicians={() => setIsAddTechModalOpen(true)}
           onOpenUsers={() => setIsUsersModalOpen(true)}
@@ -618,52 +630,58 @@ export default function App({ auth }) {
             </div>
           </div>
 
-          <TicketsMobileList
-            filteredTickets={visibleTickets}
-            canEditTickets={canEditTickets}
-            isTecnico={isTecnico}
-            hasAnyTickets={hasActiveAssignments}
-            getTecnicoColor={getTecnicoColor}
-            onToggleAsignado={handleToggleAsignado}
-            onEdit={abrirEdicion}
-            onDelete={setDeletingTicketId}
-            onCopyWhatsApp={handleCopyWhatsApp}
-            onPegarUbicacion={handlePegarUbicacion}
-            onPreFinalizar={setPreFinalizarTarget}
-            onAprobarFinalizar={setAprobarTarget}
-            onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
-            onFinalizar={setFinalizarTarget}
-            onTogglePrioridad={handleTogglePrioridad}
-            ahora={ahora}
-            onIniciarViaje={handleIniciarViaje}
-            onLlegue={handleLlegue}
-            onCancelarViaje={handleCancelarViaje}
-          />
+          {/* Al llegar los datos (ticketsCargados) la lista entra con un fundido en vez de aparecer de golpe. */}
+          <div key={String(ticketsCargados)} className="lg:animate-fade-in">
+            <TicketsMobileList
+              filteredTickets={visibleTickets}
+              canEditTickets={canEditTickets}
+              isTecnico={isTecnico}
+              hasAnyTickets={hasActiveAssignments}
+              getTecnicoColor={getTecnicoColor}
+              onToggleAsignado={handleToggleAsignado}
+              onEdit={abrirEdicion}
+              onDelete={setDeletingTicketId}
+              onCopyWhatsApp={handleCopyWhatsApp}
+              onPegarUbicacion={handlePegarUbicacion}
+              onVerDetalle={setDetalleTarget}
+              onPreFinalizar={setPreFinalizarTarget}
+              onAprobarFinalizar={setAprobarTarget}
+              onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
+              onFinalizar={setFinalizarTarget}
+              onTogglePrioridad={handleTogglePrioridad}
+              ahora={ahora}
+              onIniciarViaje={handleIniciarViaje}
+              onLlegue={handleLlegue}
+              onCancelarViaje={handleCancelarViaje}
+            />
 
-          <TicketsTable
-            filteredTickets={visibleTickets}
-            canEditTickets={canEditTickets}
-            isTecnico={isTecnico}
-            hasAnyTickets={hasActiveAssignments}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            getTecnicoColor={getTecnicoColor}
-            onToggleAsignado={handleToggleAsignado}
-            onEdit={abrirEdicion}
-            onDelete={setDeletingTicketId}
-            onCopyWhatsApp={handleCopyWhatsApp}
-            onPegarUbicacion={handlePegarUbicacion}
-            onVerHistorial={setHistorialTarget}
-            onPreFinalizar={setPreFinalizarTarget}
-            onAprobarFinalizar={setAprobarTarget}
-            onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
-            onFinalizar={setFinalizarTarget}
-            onTogglePrioridad={handleTogglePrioridad}
-            ahora={ahora}
-            onIniciarViaje={handleIniciarViaje}
-            onLlegue={handleLlegue}
-            onCancelarViaje={handleCancelarViaje}
-          />
+            <TicketsTable
+              filteredTickets={visibleTickets}
+              filasCambiadas={filasCambiadas}
+              canEditTickets={canEditTickets}
+              isTecnico={isTecnico}
+              hasAnyTickets={hasActiveAssignments}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              getTecnicoColor={getTecnicoColor}
+              onToggleAsignado={handleToggleAsignado}
+              onEdit={abrirEdicion}
+              onDelete={setDeletingTicketId}
+              onCopyWhatsApp={handleCopyWhatsApp}
+              onPegarUbicacion={handlePegarUbicacion}
+              onVerDetalle={setDetalleTarget}
+              onVerHistorial={setHistorialTarget}
+              onPreFinalizar={setPreFinalizarTarget}
+              onAprobarFinalizar={setAprobarTarget}
+              onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
+              onFinalizar={setFinalizarTarget}
+              onTogglePrioridad={handleTogglePrioridad}
+              ahora={ahora}
+              onIniciarViaje={handleIniciarViaje}
+              onLlegue={handleLlegue}
+              onCancelarViaje={handleCancelarViaje}
+            />
+          </div>
 
           {hasMore && (
             <div className="flex justify-center mt-4">
@@ -735,6 +753,7 @@ export default function App({ auth }) {
             updateUserNombre={updateUserNombre}
             setUserPuedeCerrar={setUserPuedeCerrar}
             setUserRole={setUserRole}
+            setUserPuedeCrearVentas={setUserPuedeCrearVentas}
             adminResetPassword={adminResetPassword}
             currentUsername={currentUser}
             technicians={technicians}
@@ -768,7 +787,6 @@ export default function App({ auth }) {
 
         {isReportModalOpen && (
           <ReportsModal
-            tickets={tickets}
             reports={reports}
             hasMoreReports={hasMoreReports}
             isLoadingReports={isLoadingReports}
@@ -783,6 +801,22 @@ export default function App({ auth }) {
             isAdmin={isAdmin}
             usuario={currentUser}
             onClose={() => setIsReportModalOpen(false)}
+          />
+        )}
+
+        {isReportesOpen && (
+          <ReportesModal
+            technicians={technicians}
+            tickets={tickets}
+            reports={reports}
+            hasMoreReports={hasMoreReports}
+            isLoadingReports={isLoadingReports}
+            onLoadMoreReports={loadMoreReports}
+            getTecnicoColor={getTecnicoColor}
+            logTecnicos={logTecnicos}
+            totalesMensuales={totalesMensuales}
+            usuario={currentUser}
+            onClose={() => setIsReportesOpen(false)}
           />
         )}
 
@@ -863,6 +897,14 @@ export default function App({ auth }) {
             ticket={tickets.find(t => t.id === responderCobroTarget.id) || responderCobroTarget}
             onResponder={responderConsultaCobro}
             onClose={() => setResponderCobroTarget(null)}
+          />
+        )}
+
+        {detalleTarget && (
+          <DetalleOrdenModal
+            ticket={tickets.find(t => t.id === detalleTarget.id) || detalleTarget}
+            onCopy={(texto, mensaje) => copyToClipboard(texto, mensaje)}
+            onClose={() => setDetalleTarget(null)}
           />
         )}
 

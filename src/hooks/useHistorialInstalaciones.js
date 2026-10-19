@@ -12,10 +12,11 @@ export const ESPERA_ACTUALIZAR_MS = 2 * 60 * 1000;
 // Cada cuánto reintenta una actualización automática que todavía no podía hacerse (ver actualizarCuandoPueda).
 const REINTENTO_AUTOMATICO_MS = 15 * 1000;
 // Cuántas órdenes cerradas trae ventas por vez: las más recientes al abrir y otras tantas cada vez que pide "Cargar más". El historial de
-// 15 días son cientos de documentos y cada uno es una lectura; así solo se pagan las que de verdad se miran.
+// 30 días son cientos de documentos y cada uno es una lectura; así solo se pagan las que de verdad se miran.
 export const TAMANO_PAGINA = 30;
-// El número cambia cuando cambia lo que se guarda en la copia (aquí, que ventas ya no la trae completa) o se corrigen datos ya guardados.
-const CLAVE_COPIA = 'asignaciones:historialInstalaciones:v3:';
+// El número cambia cuando cambia lo que se guarda en la copia (aquí, que ventas ya no la trae completa), se corrigen datos ya guardados o
+// cambian los días de historial (v4: de 15 a 30; una copia vieja no sabría que hay más días por leer).
+const CLAVE_COPIA = 'asignaciones:historialInstalaciones:v4:';
 
 // La copia guardada en el equipo, vencida o no (`soloVigente` false): la vencida sirve de base para leer solo lo nuevo.
 function copiaGuardada(llave, soloVigente = true) {

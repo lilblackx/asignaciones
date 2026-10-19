@@ -48,9 +48,9 @@ const resumen = resumenInstalacion(completa, 999);
 check('el resumen solo lleva lo que ve la promotora', Object.keys(resumen).sort(), ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
 check('con sus valores', [resumen.codigo, resumen.nombre, resumen.cedula, resumen.estado, resumen.creadaEn, resumen.finalizadoEn, resumen.archivadoEn], ['IO1', 'Ana', '12.345.678', 'FINALIZADO', 100, 200, 999]);
 check('sin datos técnicos sueltos, de cobro ni de contacto (solo la plantilla final)', JSON.stringify({ ...resumen, plantillaFinal: '' }).match(/SECRETO|1700|400|0414|interna|ABC123/), null);
-check('las promotoras ven 7 días de historial y ventas 15', [RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS], [7, 15]);
-check('el Worker conserva el historial lo que ve ventas (15), la app al cerrar también', /const RETENCION_MS_HISTORIAL = (\d+) \* 24/.exec(leer('../cf-worker/src/index.js'))?.[1] === String(RETENCION_DIAS_HISTORIAL_VENTAS) && /ahoraMs - RETENCION_MS_HISTORIAL_VENTAS/.test(leer('../src/hooks/useReports.js')), true);
-check('el historial descarta lo que sobra para cada pantalla (ventas 15 días, una promotora 7)', /Date\.now\(\) - RETENCION_MS_HISTORIAL;/.test(leer('../src/hooks/useHistorialInstalaciones.js')) && /Date\.now\(\) - RETENCION_MS_HISTORIAL_VENTAS;/.test(leer('../src/hooks/useHistorialInstalaciones.js')), true);
+check('las promotoras ven 7 días de historial y ventas 30', [RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS], [7, 30]);
+check('el Worker conserva el historial lo que ve ventas (30), la app al cerrar también', /const RETENCION_MS_HISTORIAL = (\d+) \* 24/.exec(leer('../cf-worker/src/index.js'))?.[1] === String(RETENCION_DIAS_HISTORIAL_VENTAS) && /ahoraMs - RETENCION_MS_HISTORIAL_VENTAS/.test(leer('../src/hooks/useReports.js')), true);
+check('el historial descarta lo que sobra para cada pantalla (ventas 30 días, una promotora 7)', /Date\.now\(\) - RETENCION_MS_HISTORIAL;/.test(leer('../src/hooks/useHistorialInstalaciones.js')) && /Date\.now\(\) - RETENCION_MS_HISTORIAL_VENTAS;/.test(leer('../src/hooks/useHistorialInstalaciones.js')), true);
 
 // --- Plantilla final (la que el técnico dejó llena) ---
 check('la plantilla final de una finalizada sale llena con el código, el técnico y lo que llenó el técnico', textoPlantillaFinal(completa), 'IO1\n*Instalador:* GERARDO MOLERO\n*Serial:* ABC123');

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, Cable, Coins, History, Landmark, LogOut, MoreVertical, Moon, PackageCheck, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
+import { BarChart, Cable, ClipboardList, Coins, History, Landmark, LogOut, MoreVertical, Moon, PackageCheck, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
 
@@ -11,6 +11,7 @@ export default function Header({
   isDarkMode,
   setIsDarkMode,
   onOpenReports,
+  onOpenReportes,
   onOpenHistory,
   onOpenTechnicians,
   onOpenUsers,
@@ -127,7 +128,10 @@ export default function Header({
                   {(isAdmin || canCerrar) && (
                     <>
                       <button onClick={runAndClose(onOpenReports)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors">
-                        <BarChart className="w-4 h-4"aria-hidden="true" /> Reportes
+                        <BarChart className="w-4 h-4"aria-hidden="true" /> Cierre
+                      </button>
+                      <button onClick={runAndClose(onOpenReportes)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
+                        <ClipboardList className="w-4 h-4" aria-hidden="true" /> Reportes
                       </button>
                       <button onClick={runAndClose(onOpenHistory)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
                         <History className="w-4 h-4"aria-hidden="true" /> Historial

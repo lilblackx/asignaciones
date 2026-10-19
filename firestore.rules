@@ -72,7 +72,9 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/technicians/{docId} {
       // TECNICO solo puede ver su propio técnico vinculado (el cliente debe
       // hacer where('name','==', tecnicoAsociado); sin eso el list se rechaza).
+      // Una PROMOTORA con permiso de crear ventas lee la lista para emparejar el "Instalador:" de la plantilla con un técnico.
       allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId)
+        || (isPromotoraRole(appId) && get(profilePath(appId)).data.get('puedeCrearVentas', false) == true)
         || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId));
 
       // Alta/baja/color son de ADMIN. El toggle de activo/inactivo (pantalla
@@ -89,7 +91,46 @@ service cloud.firestore {
         );
     }
 
+    // Registro de cuándo se activa o desactiva cada técnico (un documento por cambio; lo escribe la app junto al cambio de "activo").
+    // Solo se agrega: nadie lo edita ni lo borra. Lo lee la oficina; el TECNICO solo agrega los suyos.
+    match /artifacts/{appId}/public/data/technicianLog/{docId} {
+      allow read: if canCerrar(appId) || isAdminUser(appId) || isUsuarioRole(appId);
+      allow create: if (isAdminUser(appId) || isUsuarioRole(appId) || (isTecnicoRole(appId) && request.resource.data.get('tecnico', '') == tecnicoAsociado(appId)))
+        && request.resource.data.keys().hasOnly(['tecnicoId', 'tecnico', 'activo', 'en', 'dia', 'por', 'rol'])
+        && request.resource.data.tecnico is string && request.resource.data.tecnico.size() > 0
+        && request.resource.data.activo is bool
+        && request.resource.data.en is int && request.resource.data.dia is string
+        && request.resource.data.rol == get(profilePath(appId)).data.role;
+      allow update, delete: if false;
+    }
+
     match /artifacts/{appId}/public/data/tickets/{docId} {
+      // Venta que carga una PROMOTORA con permiso de crear ventas. Solo estos campos (nada de cobro ni de la instalación), el código
+      // sin número ("IS") como lo arma la app, creada a su nombre, y con un promotor que ella pueda ver después: uno de sus nombres o,
+      // con "ve todas" (ventas), cualquiera. El técnico solo puede ser el de la plantilla: uno registrado (ventaTecnicoId es su documento y su nombre debe ser el del técnico), y marcado como venta suya
+      // (ventaTecnico igual a tecnico); sin técnico, ninguno. La oficina numera la orden y le avisa al técnico cuando la ve.
+      function creaVentaPromotora(appId) {
+        let orden = request.resource.data;
+        return isPromotoraRole(appId)
+          && get(profilePath(appId)).data.get('puedeCrearVentas', false) == true
+          && orden.keys().hasOnly(['fecha', 'fechaProgramada', 'codigo', 'nombre', 'cedula', 'tipoDocumento', 'direccion', 'telefono', 'nap', 'napCoordenadas', 'ubicacion', 'tipoTrabajo', 'falla', 'tecnico', 'ventaTecnico', 'ventaTecnicoId', 'observacion', 'observacionInterna', 'estado', 'plantillaOriginal', 'promotora', 'promotoraClave', 'creado', 'creadoNombre', 'createdAt', 'historialEdiciones', 'isAsignado', 'ventaPromotora'])
+          && orden.tipoTrabajo == 'INSTALACIÓN'
+          && orden.estado == 'PENDIENTE'
+          && orden.get('ventaTecnico', '') == orden.get('tecnico', '')
+          && (
+            (orden.get('tecnico', '') == '' && orden.get('ventaTecnicoId', '') == '')
+            || (orden.get('ventaTecnicoId', '') != ''
+                && get(/databases/$(database)/documents/artifacts/$(appId)/public/data/technicians/$(orden.ventaTecnicoId)).data.name == orden.tecnico)
+          )
+          && orden.get('isAsignado', false) == false
+          && orden.get('ventaPromotora', false) == true
+          && orden.get('historialEdiciones', []).size() == 0
+          && orden.get('codigo', '').matches('^I[A-Z]{1,2}$')
+          && orden.get('creado', '') == get(profilePath(appId)).data.get('username', '')
+          && orden.get('promotoraClave', '') != ''
+          && (promotoraVeTodas(appId) || orden.get('promotoraClave', '') in promotoraClaves(appId));
+      }
+
       // TECNICO solo ve/edita sus propios tickets (los que tienen su nombre en
       // "tecnico"); el cliente debe hacer el query con where('tecnico','==', ...)
       // igualado a este valor, si no el list completo es rechazado.
@@ -102,8 +143,9 @@ service cloud.firestore {
         || (isPromotoraRole(appId) && promotoraVeTodas(appId) && resource.data.tipoTrabajo == 'AVERÍA' && resource.data.get('falla', '') == 'LOS')
         || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
 
-      // Crear órdenes es acción de ADMIN/USUARIO; TECNICO no tiene esa UI.
-      allow create: if isAdminUser(appId) || isUsuarioRole(appId);
+      // Crear órdenes es acción de ADMIN/USUARIO; TECNICO no tiene esa UI. Una PROMOTORA con permiso (puedeCrearVentas, lo
+      // marca el ADMIN) solo crea ventas: instalaciones pendientes, sin técnico y a nombre de su promotor.
+      allow create: if isAdminUser(appId) || isUsuarioRole(appId) || creaVentaPromotora(appId);
 
       // TECNICO: solo su propio ticket y solo los campos de su trabajo (los que
       // tiene habilitados en Pre-finalizar / Detalles). El estado solo puede pasar

@@ -3,6 +3,7 @@ import { AlertTriangle, Loader2, Radio } from 'lucide-react';
 import { consultarSenalOnu } from '../../lib/smartolt';
 import { onuEnLinea, valorSenal } from '../../utils/senalOnu';
 import { calidadValor } from '../../utils/valoresCliente';
+import Spinner from '../Spinner';
 
 // Calidad con la escala de la empresa (la misma de los campos de valores del cliente), no la de SmartOLT: con dos
 // escalas distintas el aviso y el campo se contradecían (SmartOLT decía "Muy buena" y el campo "Regular").
@@ -64,7 +65,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
         className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-60"
       >
         {buscando ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Radio className="w-3.5 h-3.5" aria-hidden="true" />}
-        {buscando ? 'Consultando SmartOLT...' : 'Ver valores'}
+        {buscando && <Spinner />}{buscando ? 'Consultando SmartOLT...' : 'Ver valores'}
       </button>
 
       <div role="status" aria-live="polite">

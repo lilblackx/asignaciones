@@ -9,6 +9,7 @@ import { formatCedula } from '../../utils/ticketDisplay';
 import { MONEDA_USD, conceptoCobro, estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
 import { normalizarFormasPago, textoCobroParaCliente } from '../../utils/formasPago';
 import { valoresGuardados } from '../../utils/valoresCliente';
+import Colapsable from '../Colapsable';
 
 function Dato({ icon: Icon, etiqueta, valor }) {
   if (!valor) return null;
@@ -97,26 +98,28 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
               <span className="flex items-center gap-1.5"><Landmark className="w-4 h-4" aria-hidden="true" /> Formas de pago</span>
               <ChevronDown className={`w-4 h-4 transition-transform ${pagosAbierto ? 'rotate-180' : ''}`} aria-hidden="true" />
             </button>
-            {pagosAbierto && (
-              formas.length === 0 ? (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Aún no se han cargado las formas de pago. Avisa al administrador.</p>
-              ) : (
-                <div className="space-y-3">
-                  {ticket.cobroBs && (
-                    <BotonCopiar
-                      copiado={copiado === 'mensaje'}
-                      onClick={() => copiar('mensaje', textoCobroParaCliente(ticket.cobroBs, formas, moneda), 'Monto y formas de pago copiados.')}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-md"
-                      tono="bg-emerald-700 hover:bg-emerald-800 text-white"
-                      tonoCopiado="bg-emerald-600 text-white"
-                    >
-                      Copiar monto y formas de pago
-                    </BotonCopiar>
-                  )}
-                  <FormasPagoLista formas={formas} onCopy={onCopy} />
-                </div>
-              )
-            )}
+            <Colapsable>
+              {pagosAbierto && (
+                formas.length === 0 ? (
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Aún no se han cargado las formas de pago. Avisa al administrador.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {ticket.cobroBs && (
+                      <BotonCopiar
+                        copiado={copiado === 'mensaje'}
+                        onClick={() => copiar('mensaje', textoCobroParaCliente(ticket.cobroBs, formas, moneda), 'Monto y formas de pago copiados.')}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-md"
+                        tono="bg-emerald-700 hover:bg-emerald-800 text-white"
+                        tonoCopiado="bg-emerald-600 text-white"
+                      >
+                        Copiar monto y formas de pago
+                      </BotonCopiar>
+                    )}
+                    <FormasPagoLista formas={formas} onCopy={onCopy} />
+                  </div>
+                )
+              )}
+            </Colapsable>
           </section>
         )}
 

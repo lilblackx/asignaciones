@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle, Coins, RefreshCw, X } from 'lucide-react';
-import Modal from '../Modal';
+import { AlertTriangle, Coins, RefreshCw } from 'lucide-react';
+import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from '../Modal';
+import EncabezadoModulo from '../EncabezadoModulo';
 import FormasPagoEditor from './FormasPagoEditor';
 import { diasDesactualizada } from '../../utils/tasa';
+import Spinner from '../Spinner';
 
 // Convierte una tasa/monto (número) a los dígitos que representarían sus centavos,
 // para poder editarlos como una calculadora: cada dígito que se escribe entra por la derecha.
@@ -71,12 +73,9 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
   };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center">
-          <h2 className="text-lg font-black text-white flex items-center gap-2"><Coins className="w-5 h-5 text-red-500" /> TASA Y PAGOS</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
-        </div>
+    <Modal onClose={onClose} zIndexClass="z-[60]" completa>
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={Coins} titulo="TASA Y PAGOS" onClose={onClose} />
 
         <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex border-b border-zinc-200 dark:border-zinc-800">
           {PESTANAS.map(p => (
@@ -96,11 +95,11 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
         </div>
 
         {pestana === 'formas' ? (
-          <div role="tabpanel" id="panel-formas" aria-labelledby="tab-formas" className="p-6">
+          <div role="tabpanel" id="panel-formas" aria-labelledby="tab-formas" className={`p-6 ${CENTRADO_ESTRECHO}`}>
             <FormasPagoEditor formasPago={formasPago} onGuardar={onGuardarFormasPago} />
           </div>
         ) : (
-          <div role="tabpanel" id="panel-tasa" aria-labelledby="tab-tasa" className="p-6 space-y-5">
+          <div role="tabpanel" id="panel-tasa" aria-labelledby="tab-tasa" className={`p-6 space-y-5 ${CENTRADO_ESTRECHO}`}>
             {estaDesactualizada && (
               <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-xl px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-400">
                 <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -167,7 +166,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
                   className={NUMBER_INPUT_CLASS}
                 />
               </div>
-              <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving ? 'Guardando...' : 'Guardar manual'}</button>
+              <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar manual'}</button>
             </form>
           </div>
         )}

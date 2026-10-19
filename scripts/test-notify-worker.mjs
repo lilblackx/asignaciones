@@ -43,6 +43,7 @@ const env = {
 
 // --- Servidores simulados ---
 let roles; // uid -> rol del perfil
+let conPermisoVentas; // uids con puedeCrearVentas
 let busquedas; // filtros de las búsquedas de perfiles (runQuery)
 let tokensDelTecnico; // fcmTokens del perfil del técnico destino
 let comportamientoFcm; // token -> 'ok' | 'muerto' | 'rechaza-opciones'
@@ -58,7 +59,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (u.includes('/users/')) {
     const uid = decodeURIComponent(u.split('/users/')[1]);
     if (!roles[uid]) return respuesta('no existe', 404);
-    return respuesta({ fields: { role: { stringValue: roles[uid] }, disabled: { booleanValue: false } } });
+    return respuesta({ fields: { role: { stringValue: roles[uid] }, disabled: { booleanValue: false }, puedeCrearVentas: { booleanValue: conPermisoVentas.has(uid) } } });
   }
   if (u.includes(':runQuery')) {
     busquedas.push(JSON.parse(init.body).structuredQuery.where?.fieldFilter);
@@ -103,6 +104,7 @@ const aviso = {
 function reiniciar() {
   busquedas = [];
   roles = { 'admin-uid': 'ADMIN', 'tecnico-uid': 'TECNICO' };
+  conPermisoVentas = new Set();
   tokensDelTecnico = ['tok-bueno'];
   comportamientoFcm = {};
   enviosFcm = [];
@@ -167,6 +169,24 @@ reiniciar();
 r = await enviar('tecnico-uid', aviso);
 check('pero sigue sin poder avisar a un técnico', r.status, 403);
 
+// 7) Nueva venta: una PROMOTORA con permiso avisa a la oficina, y solo a eso
+reiniciar();
+roles['usuario-uid'] = 'USUARIO';
+roles['promotora-uid'] = 'PROMOTORA';
+const avisoVenta = { target: { type: 'oficina' }, title: 'Nueva venta', body: '', tipo: 'nuevaVenta', ticketId: 'v1' };
+r = await enviar('promotora-uid', avisoVenta);
+check('una PROMOTORA sin permiso de crear ventas no avisa', r.status, 403);
+conPermisoVentas.add('promotora-uid');
+r = await enviar('promotora-uid', avisoVenta);
+check('una PROMOTORA con permiso avisa a la oficina de la venta nueva', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
+check('el aviso lleva el tipo y la orden', [enviosFcm[0]?.data.tipo, enviosFcm[0]?.data.ticketId], ['nuevaVenta', 'v1']);
+reiniciar();
+roles['promotora-uid'] = 'PROMOTORA';
+conPermisoVentas.add('promotora-uid');
+check('con permiso, no puede avisar a un técnico', (await enviar('promotora-uid', aviso)).status, 403);
+check('ni a los aprobadores', (await enviar('promotora-uid', { ...avisoVenta, target: { type: 'aprobadores' } })).status, 403);
+check('ni mandar otro tipo de aviso a la oficina', (await enviar('promotora-uid', { ...avisoVenta, tipo: 'consultaCobro' })).status, 403);
+
 // --- Cierre automático: las instalaciones dejan un resumen liviano para la promotora ---
 const fetchBase = globalThis.fetch;
 const HOY = 'Tue Oct 13 2026';
@@ -177,7 +197,7 @@ const FINALIZADAS = [
   ticketDoc('t-averia', { codigo: 'AS7', nombre: 'Luis', estado: 'FINALIZADO', tipoTrabajo: 'AVERÍA', createdAt: 1500 }),
 ];
 const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'ROSA DE LA CRUZ', direccion: 'CALLE 5 CASA 10b', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana' })];
-const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 20 * 86400000) } } };
+const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 40 * 86400000) } } };
 const consultas = [];
 globalThis.fetch = async (url, init = {}) => {
   const u = String(url);
@@ -215,14 +235,16 @@ const canceladaDoc = historial.find((w) => w.update.name.endsWith('/t-cancel'))?
 check('y se usa la que la orden ya trae', [canceladaDoc?.promotora, canceladaDoc?.promotoraClave], [{ stringValue: 'Sariana' }, { stringValue: 'sariana' }]);
 check('el nombre y la dirección entran al historial normalizados (el cierre automático los arregla al archivar)', [canceladaDoc?.nombre, canceladaDoc?.direccion], [{ stringValue: 'Rosa de la Cruz' }, { stringValue: 'Calle 5 Casa 10B' }]);
 check('una instalación sin fecha de finalizado guarda null', historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields.finalizadoEn, { nullValue: null });
-check('borra del historial lo de más de 15 días', escrituras.filter((w) => w.delete?.includes('/historialInstalaciones/')).map((w) => w.delete.split('/').pop()), ['vieja']);
+check('borra del historial lo de más de 30 días', escrituras.filter((w) => w.delete?.includes('/historialInstalaciones/')).map((w) => w.delete.split('/').pop()), ['vieja']);
 const corte = consultas.find((q) => q.from[0].collectionId === 'historialInstalaciones')?.where.fieldFilter;
-check('la limpieza pide lo anterior a hoy menos 15 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 15 * 86400000)]);
-check('el reporte del cierre sigue guardando todo (también la avería)', escrituras.filter((w) => w.update?.name.includes('/reports/')).length, 2);
+check('la limpieza pide lo anterior a hoy menos 30 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 30 * 86400000)]);
+const reportes = escrituras.filter((w) => w.update?.name.includes('/reports/'));
+check('el cierre guarda UN solo reporte con todo (finalizadas, canceladas y también la avería)', [reportes.length, reportes[0]?.update.fields.tipoReporte, reportes[0]?.update.fields.ticketsDetalle.arrayValue.values.length], [1, { stringValue: 'CIERRE' }, 3]);
+check('el reporte lleva el total y cuántas finalizadas y canceladas', [reportes[0]?.update.fields.total, reportes[0]?.update.fields.finalizadas, reportes[0]?.update.fields.canceladas], [{ integerValue: '3' }, { integerValue: '2' }, { integerValue: '1' }]);
 const totales = escrituras.filter((w) => w.update?.name.includes('/estadisticasMensuales/'));
 check('suma los totales del mes: una instalación finalizada y una cancelada, en el mes del cierre (la avería que no es LOS no cuenta)',
   totales.map((w) => [w.update.name.split('/').pop(), w.updateTransforms.map((t) => [t.fieldPath, t.increment.integerValue])]),
-  [['2026-10', [['instalacionesFinalizadas', '1']]], ['2026-10', [['instalacionesCanceladas', '1']]]]);
+  [['2026-10', [['instalacionesFinalizadas', '1'], ['instalacionesCanceladas', '1']]]]);
 check('los totales solo suman: máscara vacía (no pisan lo ya contado) y sin campos propios', totales.every((w) => w.updateMask.fieldPaths.length === 0 && Object.keys(w.update.fields).length === 0), true);
 const primerCommit = commits.find((c) => c.writes?.some((w) => w.update?.name.includes('/reports/')))?.writes || [];
 check('los totales van en el mismo commit que el reporte y los borrados (todo o nada)', [primerCommit.some((w) => w.update?.name.includes('/estadisticasMensuales/')), primerCommit.some((w) => w.delete)], [true, true]);

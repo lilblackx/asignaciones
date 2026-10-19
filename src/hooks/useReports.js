@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { collection, doc, getDocs, increment, limit, orderBy, query, setDoc, startAfter, where, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { RETENCION_MS_HISTORIAL_VENTAS, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
-import { diaDe, incrementosMensuales } from '../utils/totalesMes';
+import { diaDe, incrementosDeCierre } from '../utils/totalesMes';
 
 const REPORTS_PAGE_SIZE = 30;
 const MAX_ESCRITURAS_LOTE = 450; // Firestore admite 500 por lote
@@ -110,20 +110,23 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
     }
   };
 
-  const archiveByEstado = async (estado, tipoReporte, dateInput) => {
-    const seleccionados = tickets.filter(t => t.estado === estado);
+  // Un solo reporte por cierre, con las órdenes finalizadas y las canceladas (cada orden conserva su estado).
+  const archivarCierre = async (dateInput) => {
+    const seleccionados = [...tickets.filter(t => t.estado === 'FINALIZADO'), ...tickets.filter(t => t.estado === 'CANCELADO')];
     if (seleccionados.length === 0) return null;
 
-    const reportId = `${Date.now()}-${tipoReporte}`;
+    const reportId = `${Date.now()}-CIERRE`;
     const newReport = {
       id: reportId,
       fechaCierre: formatFecha(dateInput),
       horaCierre: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }),
       operador: currentUser,
       total: seleccionados.length,
+      finalizadas: seleccionados.filter(t => t.estado === 'FINALIZADO').length,
+      canceladas: seleccionados.filter(t => t.estado === 'CANCELADO').length,
       desglose: buildDesglose(seleccionados),
       ticketsDetalle: seleccionados,
-      tipoReporte,
+      tipoReporte: 'CIERRE',
       createdAt: Date.now()
     };
 
@@ -134,7 +137,7 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
     const ticketRef = (id) => doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id.toString());
     const ids = seleccionados.map(t => t.id);
     // Los totales del mes de ventas se suman en el mismo lote: o se archivó y se contó, o ninguna de las dos (ver totalesMes).
-    const totales = Object.entries(incrementosMensuales(seleccionados, estado, newReport.createdAt));
+    const totales = Object.entries(incrementosDeCierre(seleccionados, newReport.createdAt));
     const enElPrimero = MAX_ESCRITURAS_LOTE - 1 - totales.length;
     const primerLote = writeBatch(db);
     primerLote.set(doc(db, 'artifacts', appId, 'public', 'data', 'reports', reportId), newReport);
@@ -159,10 +162,9 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
 
     setIsProcessing(true);
     try {
-      const reporteCierre = await archiveByEstado('FINALIZADO', 'CIERRE', dateInput);
-      const reporteCancelados = await archiveByEstado('CANCELADO', 'CANCELADOS', dateInput);
+      const reporte = await archivarCierre(dateInput);
 
-      if (!reporteCierre && !reporteCancelados) {
+      if (!reporte) {
         setToastMsg({ type: 'error', text: 'No hay órdenes FINALIZADO o CANCELADO para cerrar.' });
         return null;
       }
@@ -176,10 +178,10 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
 
       // El nuevo reporte se agrega directo al estado local (en vez de re-consultar
       // Firestore) porque ya no hay listener en tiempo real que lo traiga solo.
-      setReports(prev => [...[reporteCierre, reporteCancelados].filter(Boolean), ...prev]);
+      setReports(prev => [reporte, ...prev]);
 
       setToastMsg({ type: 'success', text: 'Cierre de día procesado correctamente.' });
-      return reporteCierre || reporteCancelados;
+      return reporte;
     } catch (error) {
       console.error("Error al procesar el cierre:", error);
       setToastMsg({ type: 'error', text: 'Hubo un error procesando la operación.' });

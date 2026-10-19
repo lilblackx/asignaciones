@@ -9,6 +9,8 @@ import DevolucionAviso from './DevolucionAviso';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
+import InsigniaVentaTecnico from './InsigniaVentaTecnico';
+import BotonVerDetalle from './BotonVerDetalle';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
 import { estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
@@ -35,12 +37,14 @@ export default function TicketsTable({
   onCopyWhatsApp,
   onPegarUbicacion,
   onVerHistorial,
+  onVerDetalle,
   onPreFinalizar,
   onAprobarFinalizar,
   onResponderCobro,
   onFinalizar,
   onTogglePrioridad,
   ahora,
+  filasCambiadas,
   onIniciarViaje,
   onLlegue,
   onCancelarViaje
@@ -59,11 +63,12 @@ export default function TicketsTable({
             <th className="px-3 py-3 border-r border-zinc-800 w-[18%] align-middle text-center">NOMBRE</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] min-[1440px]:w-[9%] align-middle text-center">CÉDULA</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[16%] min-[1440px]:w-[22%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[17%] min-[1440px]:w-[16%] align-middle group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
-              <div className="flex items-center justify-center gap-1">
+            <th className="px-3 py-3 border-r border-zinc-800 w-[17%] min-[1440px]:w-[16%] align-middle text-center group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
+              {/* El título va centrado como los demás; el ícono de orden cuelga a su derecha sin correrlo. */}
+              <span className="relative block w-fit mx-auto">
                 FALLA / TRABAJO
-                <ArrowDownAZ className={`w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-              </div>
+                <ArrowDownAZ className={`absolute left-full top-1/2 -translate-y-1/2 ml-1 w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+              </span>
             </th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
             {/* Columna ENVIADO desactivada por ahora (el estado de envío sigue en isAsignado y en el Excel); ver también su celda más abajo.
@@ -94,7 +99,7 @@ export default function TicketsTable({
                   </td>
                 </tr>
               ),
-              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
+              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
                 <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${eliminado ? 'border-l-zinc-500' : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
@@ -109,7 +114,10 @@ export default function TicketsTable({
                 </td>
                 <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight align-middle">
                   <div className="flex flex-col justify-center h-full min-h-[2rem] gap-0.5">
-                    <span className="font-medium">{ticket.nombre}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium">{ticket.nombre}</span>
+                      {canEditTickets && onVerDetalle && <BotonVerDetalle ticket={ticket} onClick={onVerDetalle} />}
+                    </div>
                     {!agrupado && <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     <DevolucionAviso ticket={ticket} compact />
@@ -155,7 +163,10 @@ export default function TicketsTable({
                 </td>
                 <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight font-medium align-middle">
                   <div className="flex flex-col items-start justify-center h-full min-h-[2rem] gap-1">
-                    <span className={`inline-block text-[10px] font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className={`inline-block text-[10px] font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
+                      <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
+                    </div>
                     {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
                     {instalacionSinUbicacion(ticket) && (
                       canEditTickets ? (
@@ -203,7 +214,7 @@ export default function TicketsTable({
                 */}
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
                   <div className="flex items-center justify-center h-full min-h-[2rem]">
-                    <span className={`inline-flex items-center justify-center px-2 py-1.5 text-[10px] font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
+                    <span className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
                   </div>
                 </td>
                 <td className="px-1.5 py-2 text-center align-middle">

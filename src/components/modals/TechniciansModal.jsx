@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, ListOrdered, PackageCheck, RefreshCw, Trash2, Users, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ListOrdered, PackageCheck, RefreshCw, Trash2, Users } from 'lucide-react';
 import { COLOR_PALETTE, estiloTecnico, siguienteColorTecnico } from '../../constants';
 import { stripEmojis } from '../../utils/sanitizeInput';
-import Modal from '../Modal';
+import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from '../Modal';
+import EncabezadoModulo from '../EncabezadoModulo';
+import Spinner from '../Spinner';
 
 // Arranca del orden guardado (filtrando técnicos que ya no existen) y agrega
 // al final cualquiera que todavía no esté en la lista (técnico nuevo, o la
@@ -87,13 +89,10 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
   };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center">
-          <h2 className="text-lg font-black text-white flex items-center gap-2"><Users className="w-5 h-5 text-red-500" /> TÉCNICOS</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-6 space-y-5">
+    <Modal onClose={onClose} zIndexClass="z-[60]" completa>
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={Users} titulo="TÉCNICOS" onClose={onClose} />
+        <div className={`p-6 space-y-5 ${CENTRADO_ESTRECHO}`}>
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400 block ml-1">TÉCNICOS ACTIVOS</label>
             <div className="max-h-36 overflow-y-auto border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-2 space-y-2 bg-zinc-50 dark:bg-zinc-950">
@@ -157,7 +156,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                 disabled={!ordenCambio || savingOrden}
                 className={`w-full py-2 text-xs font-bold rounded-lg transition-colors ${!ordenCambio || savingOrden ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}
               >
-                {savingOrden ? 'Guardando...' : 'Guardar orden'}
+                {savingOrden && <Spinner />}{savingOrden ? 'Guardando...' : 'Guardar orden'}
               </button>
             </div>
           )}
@@ -220,7 +219,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
               <button type="button" onClick={cambiarColor} className="text-[10px] font-bold px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">Cambiar</button>
             </div>
             <div className="pt-2 flex gap-3 justify-end">
-              <button type="submit" disabled={isSubmitting} className={`px-6 py-3 w-full text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Guardando...' : 'Añadir Técnico'}</button>
+              <button type="submit" disabled={isSubmitting} className={`px-6 py-3 w-full text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Añadir Técnico'}</button>
             </div>
           </form>
         </div>

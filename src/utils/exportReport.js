@@ -81,6 +81,7 @@ export function exportReportToCsv(report) {
     `Hora: ${report.horaCierre}`,
     `Operador: ${report.operador}`,
     `Total: ${report.total}`,
+    ...(report.canceladas !== undefined ? [`Finalizadas: ${report.finalizadas}`, `Canceladas: ${report.canceladas}`] : []),
   ].join(';');
 
   const filas = [

@@ -4,6 +4,8 @@ import { ESTILO_ESTADO_PROMOTORA_SOLIDO } from './estilosInstalacion';
 import { atrasoOrden, esAveriaLos, fechaCorta, fechaOrden, textoPlantillaFinal } from '../utils/estadoInstalacion';
 import { formatearCedula } from '../utils/cedula';
 import { getTipoTrabajoEstilo } from '../utils/ticketDisplay';
+import BotonCopiar from './BotonCopiar';
+import { useCopiado } from '../hooks/useCopiado';
 
 // Una orden vista por ventas o por la promotora: quién es el cliente, dónde, y en qué va. Solo lectura. En las finalizadas,
 // "Ver plantilla" (`onVerPlantilla`) abre la plantilla final ya llena por el técnico, para leerla y copiarla.
@@ -15,7 +17,9 @@ const ETIQUETA = 'text-[10px] font-semibold uppercase tracking-wide text-zinc-50
 const VALOR = 'text-sm text-zinc-900 dark:text-zinc-100 mt-0.5 break-words';
 const BOTON = 'inline-flex items-center gap-1 text-[11px] font-bold rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
 
-export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlantilla, mostrarTipo = false, ahora }) {
+// `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
+export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlantilla, onCopy, mostrarTipo = false, ahora }) {
+  const { copiado, copiar } = useCopiado(onCopy);
   const { vista } = orden;
   const esLos = esAveriaLos(orden);
   const tipo = getTipoTrabajoEstilo(esLos ? 'AVERÍA' : 'INSTALACIÓN');
@@ -31,7 +35,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
     <li className="h-full flex flex-col min-w-0 rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="bg-black px-3 py-2 flex items-center gap-2">
         <span className="text-lg font-black text-white tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
-        {mostrarTipo && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
+        {mostrarTipo && <span className={`text-[10px] font-black px-2 py-1 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
         <span className={`ml-auto shrink-0 text-[10px] font-black uppercase tracking-wide rounded px-2 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
       </div>
 
@@ -51,7 +55,21 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
 
       <div className="p-3 flex-1 flex flex-col gap-3">
         <div className="min-w-0">
-          <h3 className="text-[15px] font-bold text-zinc-900 dark:text-white leading-tight break-words">{orden.nombre || 'Sin nombre'}</h3>
+          <div className="flex items-start gap-1.5">
+            <h3 className="text-[15px] font-bold text-zinc-900 dark:text-white leading-tight break-words min-w-0">{orden.nombre || 'Sin nombre'}</h3>
+            {onCopy && orden.nombre && (
+              <BotonCopiar
+                copiado={copiado === 'nombre'}
+                onClick={() => copiar('nombre', orden.nombre, 'Nombre copiado.')}
+                etiqueta={`Copiar el nombre de ${orden.nombre}`}
+                titulo="Copiar nombre"
+                className="shrink-0 p-1 -my-0.5 rounded"
+                tono="text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                tonoCopiado="text-emerald-600 dark:text-emerald-400"
+                iconoClase="w-3.5 h-3.5"
+              />
+            )}
+          </div>
           {cedula && <p className="text-xs tabular-nums text-zinc-500 mt-0.5">{cedula}</p>}
         </div>
 

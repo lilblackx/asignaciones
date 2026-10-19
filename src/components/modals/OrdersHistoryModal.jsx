@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, History, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, History, Search } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../../constants';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
-import Modal from '../Modal';
+import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
+import EncabezadoModulo from '../EncabezadoModulo';
 import HistorialTimeline from '../HistorialTimeline';
 import SelectMenu from '../SelectMenu';
 import PlantillaFinalModal from './PlantillaFinalModal';
+import Colapsable from '../Colapsable';
 
 const PAGE_SIZE = 25;
 const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO', 'ELIMINADO'];
@@ -51,7 +53,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         list.push({
           ...t,
           _key: `${rep.id}-${t.id}`,
-          _origen: `${rep.tipoReporte === 'CANCELADOS' ? 'Cancelados' : 'Cierre'} ${rep.fechaCierre}`,
+          _origen: `${rep.tipoReporte === 'CANCELADOS' || (rep.canceladas !== undefined && t.estado === 'CANCELADO') ? 'Cancelados' : 'Cierre'} ${rep.fechaCierre}`,
           _ts: t.createdAt || parseFecha(t.fecha)
         });
       });
@@ -113,14 +115,11 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   return (
     <>
     {/* Con la plantilla abierta, Escape cierra solo la plantilla y no el historial. */}
-    <Modal onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
-        <div className="bg-black px-6 py-4 border-b-2 border-red-600 flex justify-between items-center shrink-0">
-          <h2 className="text-lg font-black text-white flex items-center gap-2"><History className="w-5 h-5 text-red-500" /> HISTORIAL DE ÓRDENES</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
-        </div>
+    <Modal onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={History} titulo="HISTORIAL DE ÓRDENES" onClose={onClose} />
 
-        <div className="px-6 py-4 shrink-0 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 space-y-3">
+        <div className={`px-6 py-4 shrink-0 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
             <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
@@ -169,7 +168,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           )}
         </div>
 
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950 space-y-3">
+        <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950 space-y-3 ${CENTRADO_AMPLIO}`}>
           {shown.map(o => {
             const isOpen = expandedKey === o._key;
             return (
@@ -198,36 +197,38 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                   </div>
                 </button>
 
-                {isOpen && (
-                  <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 text-xs space-y-1.5 text-zinc-700 dark:text-zinc-300">
-                    <p><span className="font-semibold">Cédula:</span> {formatCedula(o.cedula, o.tipoDocumento) || '-'}</p>
-                    {o.telefono && <p><span className="font-semibold">Teléfono:</span> {o.telefono}</p>}
-                    <p><span className="font-semibold">Dirección:</span> {o.direccion || '-'}</p>
-                    {o.nap && <p><span className="font-semibold">NAP:</span> {o.nap}</p>}
-                    {o.fechaProgramada && <p><span className="font-semibold">Programada:</span> {o.fechaProgramada}</p>}
-                    <p><span className="font-semibold">Observación:</span> {o.observacion || '-'}</p>
-                    {o.observacionTecnico && <p><span className="font-semibold">Obs. del técnico:</span> {o.observacionTecnico}</p>}
-                    {o.creado && <p><span className="font-semibold">Creada por:</span> {o.creado}</p>}
-                    {puedeVerPlantilla && armarPlantilla?.(o) && (
-                      <div className="pt-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setPlantillaAbierta(o)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        >
-                          <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
-                        </button>
-                      </div>
-                    )}
-                    {o.estado === 'ELIMINADO' && <p><span className="font-semibold">Eliminada por:</span> {o.eliminadoPor} ({o.fechaEliminacion})</p>}
-                    {(o.historialEdiciones || []).length > 0 && (
-                      <div className="pt-1.5 mt-1.5 border-t border-zinc-100 dark:border-zinc-800">
-                        <p className="font-semibold mb-2">Historial de cambios</p>
-                        <HistorialTimeline ticket={o} />
-                      </div>
-                    )}
-                  </div>
-                )}
+                <Colapsable>
+                  {isOpen && (
+                    <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 text-xs space-y-1.5 text-zinc-700 dark:text-zinc-300">
+                      <p><span className="font-semibold">Cédula:</span> {formatCedula(o.cedula, o.tipoDocumento) || '-'}</p>
+                      {o.telefono && <p><span className="font-semibold">Teléfono:</span> {o.telefono}</p>}
+                      <p><span className="font-semibold">Dirección:</span> {o.direccion || '-'}</p>
+                      {o.nap && <p><span className="font-semibold">NAP:</span> {o.nap}</p>}
+                      {o.fechaProgramada && <p><span className="font-semibold">Programada:</span> {o.fechaProgramada}</p>}
+                      <p><span className="font-semibold">Observación:</span> {o.observacion || '-'}</p>
+                      {o.observacionTecnico && <p><span className="font-semibold">Obs. del técnico:</span> {o.observacionTecnico}</p>}
+                      {o.creado && <p><span className="font-semibold">Creada por:</span> {o.creado}</p>}
+                      {puedeVerPlantilla && armarPlantilla?.(o) && (
+                        <div className="pt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setPlantillaAbierta(o)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          >
+                            <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
+                          </button>
+                        </div>
+                      )}
+                      {o.estado === 'ELIMINADO' && <p><span className="font-semibold">Eliminada por:</span> {o.eliminadoPor} ({o.fechaEliminacion})</p>}
+                      {(o.historialEdiciones || []).length > 0 && (
+                        <div className="pt-1.5 mt-1.5 border-t border-zinc-100 dark:border-zinc-800">
+                          <p className="font-semibold mb-2">Historial de cambios</p>
+                          <HistorialTimeline ticket={o} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Colapsable>
               </div>
             );
           })}

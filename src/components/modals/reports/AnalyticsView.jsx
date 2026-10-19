@@ -1,62 +1,24 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Award, MapPinned, Repeat } from 'lucide-react';
+import { estadisticasOperativas } from '../../../utils/estadisticasOperativas';
+import { cifrasEstadisticas } from '../../../utils/modelosReporte';
+import Cifras from './Cifras';
 
-function buildAllTickets(tickets, reports) {
-  const archivados = reports.flatMap(r => r.ticketsDetalle || []);
-  return [...tickets, ...archivados];
-}
+const TIPOS_PRODUCTIVIDAD = [['TODO', 'Todo'], ['INSTALACION', 'Instalaciones'], ['AVERIA', 'Averías']];
 
-export default function AnalyticsView({ tickets, reports, getTecnicoColor, hasMoreReports, isLoadingReports, onLoadMoreReports }) {
-  const allTickets = useMemo(() => buildAllTickets(tickets, reports), [tickets, reports]);
-
-  const porTecnico = useMemo(() => {
-    const map = new Map();
-    allTickets.forEach(t => {
-      if (t.estado !== 'FINALIZADO' || !t.tecnico) return;
-      const key = t.tecnico.toUpperCase();
-      map.set(key, (map.get(key) || 0) + 1);
-    });
-    return [...map.entries()]
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [allTickets]);
-
-  const porNap = useMemo(() => {
-    const map = new Map();
-    allTickets.forEach(t => {
-      if (t.estado === 'ELIMINADO') return;
-      const nap = (t.nap || '').trim();
-      if (!nap) return;
-      map.set(nap, (map.get(nap) || 0) + 1);
-    });
-    return [...map.entries()]
-      .map(([nap, count]) => ({ nap, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-  }, [allTickets]);
-
-  const reincidentes = useMemo(() => {
-    const map = new Map();
-    allTickets.forEach(t => {
-      if (t.estado === 'ELIMINADO') return;
-      const cedula = (t.cedula || '').trim();
-      if (!cedula) return;
-      const entry = map.get(cedula) || { nombre: t.nombre, count: 0 };
-      entry.count += 1;
-      if (t.nombre) entry.nombre = t.nombre;
-      map.set(cedula, entry);
-    });
-    return [...map.entries()]
-      .map(([cedula, v]) => ({ cedula, nombre: v.nombre, count: v.count }))
-      .filter(x => x.count > 1)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 15);
-  }, [allTickets]);
+export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor, hasMoreReports, isLoadingReports, onLoadMoreReports }) {
+  const estadisticas = useMemo(() => estadisticasOperativas(ordenes, rango, tecnico), [ordenes, rango, tecnico]);
+  const { porTecnicoTipo, porNap, reincidentes } = estadisticas;
+  // Productividad: todo junto o solo instalaciones o solo averías.
+  const [tipoProductividad, setTipoProductividad] = useState('TODO');
+  const porTecnico = porTecnicoTipo[tipoProductividad];
 
   const maxTecnico = porTecnico[0]?.count || 1;
   const maxNap = porNap[0]?.count || 1;
 
   return (
+    <div>
+    <Cifras items={cifrasEstadisticas(estadisticas)} />
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {hasMoreReports && (
         <div className="lg:col-span-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
@@ -68,11 +30,26 @@ export default function AnalyticsView({ tickets, reports, getTecnicoColor, hasMo
         </div>
       )}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2 mb-4">
-          <Award className="w-4 h-4 text-amber-500" /> Productividad por Técnico
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+            <Award className="w-4 h-4 text-amber-500" /> Productividad por Técnico
+          </h3>
+          <div role="group" aria-label="Tipo de trabajo" className="flex gap-1 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+            {TIPOS_PRODUCTIVIDAD.map(([clave, texto]) => (
+              <button
+                key={clave}
+                type="button"
+                aria-pressed={tipoProductividad === clave}
+                onClick={() => setTipoProductividad(clave)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+              >
+                {texto}
+              </button>
+            ))}
+          </div>
+        </div>
         {porTecnico.length === 0 ? (
-          <p className="text-xs text-zinc-500 text-center py-6">Aún no hay órdenes finalizadas.</p>
+          <p className="text-xs text-zinc-500 text-center py-6">{tipoProductividad === 'TODO' ? 'Aún no hay órdenes finalizadas.' : `Aún no hay ${tipoProductividad === 'INSTALACION' ? 'instalaciones' : 'averías'} finalizadas.`}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {porTecnico.map(({ name, count }) => (
@@ -129,6 +106,7 @@ export default function AnalyticsView({ tickets, reports, getTecnicoColor, hasMo
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

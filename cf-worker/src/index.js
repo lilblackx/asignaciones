@@ -240,7 +240,7 @@ async function handleCreateUser(request, env, headers, callerUid) {
     return new Response('JSON inválido', { status: 400, headers });
   }
 
-  const { email, password, username, nombre, role, tecnicoAsociado, puedeCerrar, promotoraNombres, verTodasInstalaciones, createdBy } = body || {};
+  const { email, password, username, nombre, role, tecnicoAsociado, puedeCerrar, promotoraNombres, verTodasInstalaciones, puedeCrearVentas, createdBy } = body || {};
   const nombreLimpio = String(nombre || '').trim();
   if (!USERNAME_VALIDO.test(username || '') || !email || !nombreLimpio || !ROLES_VALIDOS.includes(role)) {
     return new Response('Datos de usuario inválidos.', { status: 400, headers });
@@ -281,6 +281,7 @@ async function handleCreateUser(request, env, headers, callerUid) {
       promotoraNombres: { arrayValue: { values: nombresPromotora.nombres.map((n) => ({ stringValue: n })) } },
       promotoraClaves: { arrayValue: { values: nombresPromotora.claves.map((c) => ({ stringValue: c })) } },
       verTodasInstalaciones: { booleanValue: veTodas },
+      puedeCrearVentas: { booleanValue: role === 'PROMOTORA' && puedeCrearVentas === true },
       disabled: { booleanValue: false },
       createdAt: { integerValue: String(Date.now()) },
       createdBy: { stringValue: String(createdBy || '') },
@@ -372,9 +373,9 @@ async function enviarADestinos(env, accessToken, destinos, title, body, extra) {
 }
 
 // ---------------------------------------------------------------------------
-// Cierre automático. Hace lo mismo que el botón "Ejecutar cierre" de Reportes
-// (useReports.cerrarDia): archiva las órdenes FINALIZADO en un reporte CIERRE y
-// las CANCELADO en uno CANCELADOS, y borra esas órdenes de la tabla principal.
+// Cierre automático. Hace lo mismo que el botón "Ejecutar cierre" de Cierre
+// (useReports.cerrarDia): archiva las órdenes FINALIZADO y CANCELADO en un solo
+// reporte CIERRE, y borra esas órdenes de la tabla principal.
 // La configuración (activo, hora, días) la edita un ADMIN en Reportes y vive en
 // config/cierreAutomatico. El cron corre cada pocos minutos y ejecuta el cierre
 // una vez por día cuando llega la hora configurada.
@@ -469,7 +470,7 @@ async function commitFirestore(env, accessToken, writes) {
 // cliente: lo único que la promotora ve de una instalación cuando el cierre la saca de la lista. Mantener sincronizados
 // los campos y los días con resumenInstalacion y RETENCION_DIAS_HISTORIAL_VENTAS de src/utils/estadoInstalacion.js (se conserva
 // lo que ve ventas, que es lo más largo; cada pantalla descarta lo que le sobra).
-const RETENCION_MS_HISTORIAL = 15 * 24 * 60 * 60 * 1000;
+const RETENCION_MS_HISTORIAL = 30 * 24 * 60 * 60 * 1000;
 const TIPO_INSTALACION = 'INSTALACIÓN';
 // Las averías LOS también pasan al historial: ventas las sigue junto con las instalaciones (esDeVentas en estadoInstalacion.js).
 const esAveriaLosFirestore = (f) => f?.tipoTrabajo?.stringValue === 'AVERÍA' && f?.falla?.stringValue === 'LOS';
@@ -603,11 +604,22 @@ function escriturasMensuales(env, porMes) {
   }));
 }
 
-// Equivalente a archiveByEstado de useReports: crea el reporte y borra las
-// órdenes. El reporte y los primeros borrados van en un solo commit (atómico).
-async function archivarPorEstado(env, accessToken, estado, tipoReporte, ahoraMs, fecha) {
-  const tickets = await runQuery(env, accessToken, 'estado', 'EQUAL', { stringValue: estado }, 'tickets');
-  if (tickets.length === 0) return 0;
+// Los totales del mes de un cierre que archiva a la vez las finalizadas y las canceladas (como incrementosDeCierre de totalesMes.js).
+function incrementosDeCierre(finalizadas, canceladas, ahoraMs) {
+  const porMes = {};
+  for (const [tickets, estado] of [[finalizadas, 'FINALIZADO'], [canceladas, 'CANCELADO']]) {
+    for (const [mes, campos] of Object.entries(incrementosMensuales(tickets, estado, ahoraMs))) porMes[mes] = { ...porMes[mes], ...campos };
+  }
+  return porMes;
+}
+
+// Equivalente a archivarCierre de useReports: un solo reporte con las órdenes finalizadas y las canceladas, y borra esas órdenes.
+// El reporte y los primeros borrados van en un solo commit (atómico). Devuelve cuántas de cada una archivó.
+async function archivarCierre(env, accessToken, ahoraMs, fecha) {
+  const finalizadas = await runQuery(env, accessToken, 'estado', 'EQUAL', { stringValue: 'FINALIZADO' }, 'tickets');
+  const canceladas = await runQuery(env, accessToken, 'estado', 'EQUAL', { stringValue: 'CANCELADO' }, 'tickets');
+  const tickets = [...finalizadas, ...canceladas];
+  if (tickets.length === 0) return { finalizadas: 0, canceladas: 0 };
 
   const desglose = {};
   for (const t of tickets) {
@@ -615,27 +627,29 @@ async function archivarPorEstado(env, accessToken, estado, tipoReporte, ahoraMs,
     desglose[tipo] = (desglose[tipo] || 0) + 1;
   }
   const [anio, mes, dia] = fecha.split('-');
-  const reportId = `${ahoraMs}-${tipoReporte}`;
+  const reportId = `${ahoraMs}-CIERRE`;
   const reporte = {
     id: { stringValue: reportId },
     fechaCierre: { stringValue: `${dia}/${mes}/${anio}` },
     horaCierre: { stringValue: new Date(ahoraMs).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', timeZone: ZONA_HORARIA }) },
     operador: { stringValue: 'AUTOMÁTICO' },
     total: { integerValue: String(tickets.length) },
+    finalizadas: { integerValue: String(finalizadas.length) },
+    canceladas: { integerValue: String(canceladas.length) },
     desglose: { mapValue: { fields: Object.fromEntries(Object.entries(desglose).map(([k, n]) => [k, { integerValue: String(n) }])) } },
     ticketsDetalle: {
       arrayValue: {
         values: tickets.map((t) => ({ mapValue: { fields: { ...t.fields, id: { stringValue: t.name.split('/').pop() } } } })),
       },
     },
-    tipoReporte: { stringValue: tipoReporte },
+    tipoReporte: { stringValue: 'CIERRE' },
     createdAt: { integerValue: String(ahoraMs) },
   };
 
   const borrados = tickets.map((t) => ({ delete: t.name }));
   const reportName = `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${rutaDatos(env)}/reports/${reportId}`;
   // Los totales del mes van con el reporte y los primeros borrados: o se archivó y se contó, o ninguna de las dos.
-  const totales = escriturasMensuales(env, incrementosMensuales(tickets, estado, ahoraMs));
+  const totales = escriturasMensuales(env, incrementosDeCierre(finalizadas, canceladas, ahoraMs));
   const enElPrimero = MAX_ESCRITURAS_COMMIT - 1 - totales.length;
   await commitFirestore(env, accessToken, [
     { update: { name: reportName, fields: reporte }, currentDocument: { exists: false } },
@@ -647,7 +661,7 @@ async function archivarPorEstado(env, accessToken, estado, tipoReporte, ahoraMs,
   }
   // El cierre ya está hecho: si el historial falla no se reintenta el cierre (se archivaría dos veces), solo se avisa en el log.
   await guardarHistorialInstalaciones(env, accessToken, tickets, ahoraMs).catch((err) => console.error('No se pudo guardar el historial de instalaciones:', err));
-  return tickets.length;
+  return { finalizadas: finalizadas.length, canceladas: canceladas.length };
 }
 
 async function avisarAprobadores(env, accessToken, title, body) {
@@ -671,8 +685,7 @@ export async function cierreAutomatico(env, ahoraMs = Date.now()) {
   if (!toca) return { ejecutado: false };
 
   try {
-    const finalizadas = await archivarPorEstado(env, accessToken, 'FINALIZADO', 'CIERRE', ahoraMs, toca.fecha);
-    const canceladas = await archivarPorEstado(env, accessToken, 'CANCELADO', 'CANCELADOS', ahoraMs, toca.fecha);
+    const { finalizadas, canceladas } = await archivarCierre(env, accessToken, ahoraMs, toca.fecha);
     await limpiarHistorialInstalaciones(env, accessToken, ahoraMs).catch((err) => console.error('No se pudo limpiar el historial de instalaciones:', err));
     const resumen = finalizadas + canceladas === 0
       ? 'No había órdenes FINALIZADO ni CANCELADO para cerrar.'
@@ -801,7 +814,10 @@ export default {
       // Avisar a un técnico es de quien asigna (ADMIN/USUARIO); avisar a los
       // aprobadores lo hace también el TECNICO al pre-finalizar.
       const rol = await rolActivo(env, accessToken, payload.sub);
-      const permitido = target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
+      // Una PROMOTORA solo avisa a la oficina de una venta nueva, y solo si el administrador le dio el permiso de crear ventas.
+      const permitido = rol === 'PROMOTORA'
+        ? target.type === 'oficina' && tipo === 'nuevaVenta' && (await getUserDoc(env, accessToken, payload.sub))?.fields?.puedeCrearVentas?.booleanValue === true
+        : target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
       if (!permitido) return new Response('Sin permiso para enviar esta notificación.', { status: 403, headers });
 
       const destinos = await resolveTokens(env, accessToken, target);

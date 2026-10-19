@@ -6,6 +6,8 @@ import DevolucionAviso from './DevolucionAviso';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
+import InsigniaVentaTecnico from './InsigniaVentaTecnico';
+import BotonVerDetalle from './BotonVerDetalle';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
 import { ESTADO_EN_SITIO, estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
@@ -25,6 +27,7 @@ export default function TicketsMobileList({
   onDelete,
   onCopyWhatsApp,
   onPegarUbicacion,
+  onVerDetalle,
   onPreFinalizar,
   onAprobarFinalizar,
   onResponderCobro,
@@ -80,13 +83,16 @@ export default function TicketsMobileList({
                 {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
               </div>
             </div>
-            <span className={`text-[10px] font-bold px-2.5 py-1 rounded ${getEstadoColor(ticket.estado)}`}>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>
               {ticket.estado}
             </span>
           </div>
           <div className={`p-4 flex-1 flex flex-col gap-3 ${ticket.estado === 'ELIMINADO' ? 'opacity-60' : ''}`}>
             <div>
-              <h3 className="font-black text-zinc-900 dark:text-white leading-tight">{ticket.nombre}</h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-black text-zinc-900 dark:text-white leading-tight min-w-0 break-words">{ticket.nombre}</h3>
+                {canEditTickets && onVerDetalle && <BotonVerDetalle ticket={ticket} onClick={onVerDetalle} />}
+              </div>
               <p className="text-sm text-zinc-500 font-medium">
                 C.I: {ticket.cedula && !isTecnico ? (
                   <a
@@ -139,7 +145,10 @@ export default function TicketsMobileList({
             <div className="flex items-start gap-2 text-sm">
               <Wrench className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
               <div className="flex flex-col">
-                <span className={`self-start text-[10px] font-black px-1.5 py-0.5 rounded mb-0.5 ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
+                <div className="flex flex-wrap items-center gap-1 mb-0.5">
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
+                  <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
+                </div>
                 {/* Sin falla, la orden guarda el tipo de trabajo como falla: no se repite. */}
                 {ticket.falla && ticket.falla !== ticket.tipoTrabajo && (
                   <span className="text-zinc-700 dark:text-zinc-300 font-medium leading-tight">{ticket.falla}</span>

@@ -4,6 +4,7 @@ import Modal from '../Modal';
 import CobroSelector from './CobroSelector';
 import { COBRO_EXONERADO, COBRO_OTRO, MONEDA_BS, parseMontoBs } from '../../utils/cobro';
 import { consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
+import Spinner from '../Spinner';
 
 // La oficina responde cuánto se cobra el recableado que consultó el técnico (ver utils/consultaCobro). Si ya había una
 // respuesta para esos metros se puede cambiar. `onResponder(ticket, { exonerado, otro, moneda })` guarda y avisa al técnico.
@@ -62,7 +63,7 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
               />
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
-                <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-black bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors disabled:opacity-50">{enviando ? 'Enviando...' : 'Enviar al técnico'}</button>
+                <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-black bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Enviando...' : 'Enviar al técnico'}</button>
               </div>
             </>
           )}

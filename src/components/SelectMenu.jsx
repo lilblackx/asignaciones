@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
+import { usePresencia } from '../hooks/usePresencia';
 
 const DEFAULT_CLASS = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl py-2.5 pl-3 pr-9 focus:ring-2 focus:ring-red-600 outline-none font-medium text-sm shadow-sm transition-colors aria-expanded:border-red-600 disabled:opacity-60 disabled:cursor-not-allowed';
 const PANEL_MAX_HEIGHT = 288;
@@ -9,11 +10,13 @@ const VIEWPORT_MARGIN = 8;
 
 // Dropdown propio (el <select> nativo no se puede estilizar). `items` mezcla
 // opciones sueltas { value, label } y grupos { group, options: [...] }.
-// `icon` se dibuja dentro del recuadro, a la izquierda. `className` reemplaza el estilo del botón (debe dejar espacio a la derecha
+// `icon` se dibuja dentro del recuadro, a la izquierda; con `onIconClick` el ícono es un botón aparte (con `iconLabel` para los lectores
+// de pantalla) que hace otra cosa sin abrir la lista (p. ej. abrir un calendario). `displayLabel` reemplaza el texto que muestra el botón
+// (para un valor que no está en la lista). `className` reemplaza el estilo del botón (debe dejar espacio a la derecha
 // para la flecha: pr-*). El panel se pinta en un portal con posición fija para
 // que no lo recorte el scroll de los modales.
 export default function SelectMenu({
-  id, value, onChange, items, ariaLabel, icon: Icon,
+  id, value, onChange, items, ariaLabel, icon: Icon, onIconClick, iconLabel, displayLabel,
   disabled = false, className = DEFAULT_CLASS, chevronClassName = 'w-3.5 h-3.5 right-3'
 }) {
   // Con w-full en `className` el selector ocupa todo el ancho; sin él (badges
@@ -25,6 +28,7 @@ export default function SelectMenu({
   const [activeIndex, setActiveIndex] = useState(0);
   const [pos, setPos] = useState(null);
   const [portalTarget, setPortalTarget] = useState(null);
+  const { montado, saliendo } = usePresencia(open, 120);
   const buttonRef = useRef(null);
   const listRef = useRef(null);
   const listId = useId();
@@ -164,12 +168,23 @@ export default function SelectMenu({
           onKeyDown={onKeyDown}
           className={`block text-left ${claseBoton}`}
         >
-          <span className="block truncate">{selected?.label}</span>
+          <span className="block truncate">{displayLabel ?? selected?.label}</span>
         </button>
-        {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true" />}
+        {Icon && (onIconClick ? (
+          <button
+            type="button"
+            onClick={onIconClick}
+            aria-label={iconLabel}
+            title={iconLabel}
+            disabled={disabled}
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-red-600 outline-none transition-colors disabled:opacity-50"
+          >
+            <Icon className="w-4 h-4" aria-hidden="true" />
+          </button>
+        ) : <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true" />)}
         <ChevronDown className={`absolute top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none transition-transform ${open ? 'rotate-180' : ''} ${chevronClassName}`} aria-hidden="true" />
 
-        {open && pos && portalTarget && createPortal(
+        {montado && pos && portalTarget && createPortal(
           <ul
             ref={listRef}
             id={listId}
@@ -177,7 +192,7 @@ export default function SelectMenu({
             aria-label={ariaLabel}
             onMouseDown={(e) => e.preventDefault()}
             style={pos}
-            className="fixed z-[300] w-max overflow-auto py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl"
+            className={`fixed z-[300] w-max overflow-auto py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}
           >
             {items.map(it =>
               it.group ? (

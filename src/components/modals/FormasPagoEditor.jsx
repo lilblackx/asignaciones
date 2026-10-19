@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { CAMPOS_POR_TIPO, FORMAS_PAGO_INICIALES, TIPOS_AGREGABLES, TITULO_POR_TIPO, formaVacia, normalizarFormasPago } from '../../utils/formasPago';
 import { ICONO_POR_TIPO } from './formasPagoIconos';
+import Spinner from '../Spinner';
 
 const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
 const LABEL_CLASS = 'text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 uppercase';
@@ -98,7 +99,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
       )}
       {!formasPago && <p className="text-[10px] text-amber-700 dark:text-amber-400 font-bold ml-1">Aún sin guardar: los técnicos no verán estos datos hasta que pulses Guardar.</p>}
 
-      <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving ? 'Guardando...' : 'Guardar formas de pago'}</button>
+      <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar formas de pago'}</button>
     </form>
   );
 }

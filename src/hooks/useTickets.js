@@ -11,6 +11,7 @@ import { MENSAJE_TELEFONO_OBLIGATORIO, tieneTelefono } from '../utils/telefono';
 import { MENSAJE_PROMOTOR_OBLIGATORIO, claveNombre, nombrePromotora } from '../utils/promotora';
 import { direccionCliente, nombrePersona } from '../utils/datosCliente';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
+import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { cambiosDatosTecnico } from '../utils/edicionDatosTecnico';
@@ -355,6 +356,17 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             onNotify?.({ type: 'prefinalizado', text: texto });
             playPreFinalizadoSound();
           }
+          // Avisa a la oficina cuando una promotora carga una venta (id que no estaba en el snapshot anterior).
+          const ventasNuevas = loadedTickets.filter(t =>
+            t.ventaPromotora === true && t.estado !== 'ELIMINADO' && !estadoAnteriorRef.current.has(t.id)
+          );
+          if (ventasNuevas.length > 0) {
+            const t = ventasNuevas[0];
+            const texto = ventasNuevas.length === 1 ? TEXTO_AVISO_NUEVA_VENTA : `${ventasNuevas.length} nuevas ventas`;
+            setToastMsg({ type: 'nuevaVenta', text: texto, duration: 7000 });
+            onNotify?.({ type: 'nuevaVenta', text: texto, ...(ventasNuevas.length === 1 && { ticketId: t.id }) });
+            playNuevaAsignacionSound();
+          }
         } else if (role === 'TECNICO') {
           // Avisa al técnico cuando le llega una orden nueva: el query ya está
           // acotado a sus propios tickets (where tecnico == tecnicoAsociado),
@@ -527,6 +539,35 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       consultaAnteriorRef.current = null;
     };
   }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
+
+  // Una venta que cargó una promotora con el técnico de la plantilla llega asignada pero sin número ("IS"): los contadores son
+  // de la oficina. La primera sesión de ADMIN/USUARIO que la ve la numera (en una transacción: si otra la numeró antes, se
+  // reutiliza ese código) y le avisa al técnico, como al asignarla desde Nueva Asignación. No consume el turno: es venta suya.
+  const numerarVentaRef = useRef(null);
+  useEffect(() => {
+    numerarVentaRef.current = async (t) => {
+      const fecha = t.createdAt ? new Date(t.createdAt) : new Date();
+      const guardada = await guardarConNumeracion(tickets, t.id, t.codigo, t.tipoTrabajo, t.tecnico, fecha, (codigo) => ({
+        ...t,
+        codigo,
+        historialEdiciones: [...(t.historialEdiciones || []), {
+          fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+          operador: currentUserRef.current || 'OPERADOR',
+          detalle: `Cód: ${codigo} | Venta cargada por ${t.creadoNombre || t.creado || 'la promotora'}, asignada a ${t.tecnico}`,
+        }],
+      }), t);
+      notifyTicketChange(null, guardada);
+    };
+  });
+  const ventasNumeradasRef = useRef(new Set());
+  useEffect(() => {
+    if (!firebaseUser || !ticketsCargados || (role !== 'ADMIN' && role !== 'USUARIO')) return;
+    for (const t of tickets) {
+      if (!esVentaPorNumerar(t) || ventasNumeradasRef.current.has(t.id)) continue;
+      ventasNumeradasRef.current.add(t.id);
+      numerarVentaRef.current(t).catch((err) => { ventasNumeradasRef.current.delete(t.id); console.error('No se pudo numerar la venta:', err); });
+    }
+  }, [firebaseUser, ticketsCargados, role, tickets]);
 
   // Para los formularios: si el código escrito a mano se salta números (ej. "AO150"
   // cuando va por AO15), devuelve { codigo, ultimo, esperado } para pedir confirmación.

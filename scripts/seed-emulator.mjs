@@ -50,7 +50,8 @@ const TECHS = [
 ];
 
 for (const t of TECHS) {
-  await base.collection('technicians').doc(t.name.replace(/\s+/g, '-')).set(t);
+  // El id es el nombre en mayúsculas, como los crea la app (las reglas de las ventas de la promotora lo usan para comprobar que el técnico existe).
+  await base.collection('technicians').doc(t.name).set(t);
 }
 console.log(`OK  ${TECHS.length} técnicos creados`);
 

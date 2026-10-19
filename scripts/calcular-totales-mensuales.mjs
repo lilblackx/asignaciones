@@ -33,12 +33,14 @@ console.log(`Reportes de cierre: ${reportes.length}${reportes.length ? ` (del ${
 const vistas = new Set();
 const totales = {};
 for (const r of reportes) {
-  const estado = r.tipoReporte === 'CANCELADOS' ? 'CANCELADO' : r.tipoReporte === 'CIERRE' ? 'FINALIZADO' : null;
-  if (!estado) continue;
-  const nuevas = (r.ticketsDetalle || []).filter((t) => t.id && !vistas.has(`${estado}:${t.id}`));
-  nuevas.forEach((t) => vistas.add(`${estado}:${t.id}`));
-  for (const [mes, campos] of Object.entries(incrementosMensuales(nuevas, estado, r.createdAt))) {
-    for (const [campo, n] of Object.entries(campos)) totales[mes] = { ...totales[mes], [campo]: (totales[mes]?.[campo] || 0) + n };
+  if (r.tipoReporte !== 'CANCELADOS' && r.tipoReporte !== 'CIERRE') continue;
+  // Un reporte viejo trae solo finalizadas (CIERRE) o solo canceladas (CANCELADOS); uno nuevo trae las dos, cada orden con su estado.
+  for (const estado of ['FINALIZADO', 'CANCELADO']) {
+    const nuevas = (r.ticketsDetalle || []).filter((t) => t.id && !vistas.has(`${estado}:${t.id}`) && (t.estado ? t.estado === estado : estado === (r.tipoReporte === 'CANCELADOS' ? 'CANCELADO' : 'FINALIZADO')));
+    nuevas.forEach((t) => vistas.add(`${estado}:${t.id}`));
+    for (const [mes, campos] of Object.entries(incrementosMensuales(nuevas, estado, r.createdAt))) {
+      for (const [campo, n] of Object.entries(campos)) totales[mes] = { ...totales[mes], [campo]: (totales[mes]?.[campo] || 0) + n };
+    }
   }
 }
 

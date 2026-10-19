@@ -14,6 +14,8 @@ import CobroSelector from './CobroSelector';
 import ConectorColocado from './ConectorColocado';
 import ValoresClienteAdmin from './ValoresClienteAdmin';
 import { exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../../utils/valoresCliente';
+import Spinner from '../Spinner';
+import Colapsable from '../Colapsable';
 
 // Revisión de una orden antes de cerrarla. Sirve para los dos cierres de la oficina: aprobar una orden que el
 // técnico pre-finalizó (con "Devolver" si algo no está bien) y finalizar directo una orden pendiente, sin que
@@ -244,28 +246,31 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
             </div>
           )}
 
-          {devolviendo && (
-            <div className="space-y-1">
-              <label htmlFor="motivo-devolucion" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
-                <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA DEVOLUCIÓN <span className="font-normal">(obligatorio)</span>
-              </label>
-              <textarea
-                id="motivo-devolucion"
-                value={motivo}
-                onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setMotivoError(''); }}
-                rows={3}
-                id="aprobar-motivo"
-                maxLength={500}
-                autoFocus
-                placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
-                className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
-              />
-              {motivoError && <p className="text-[11px] text-red-500 font-bold ml-1">{motivoError}</p>}
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">
-                La orden vuelve a PENDIENTE y el técnico recibe una notificación con este motivo.
-              </p>
-            </div>
-          )}
+          <Colapsable>
+            {devolviendo && (
+              <div className="space-y-1">
+                <label htmlFor="motivo-devolucion" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
+                  <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA DEVOLUCIÓN <span className="font-normal">(obligatorio)</span>
+                </label>
+                <textarea
+                  id="motivo-devolucion"
+                  value={motivo}
+                  onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setMotivoError(''); }}
+                  rows={3}
+                  aria-invalid={!!motivoError}
+                  id="aprobar-motivo"
+                  maxLength={500}
+                  autoFocus
+                  placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
+                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                />
+                {motivoError && <p className="text-[11px] text-red-500 font-bold ml-1">{motivoError}</p>}
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">
+                  La orden vuelve a PENDIENTE y el técnico recibe una notificación con este motivo.
+                </p>
+              </div>
+            )}
+          </Colapsable>
 
           <div className="sticky bottom-0 z-10 flex gap-2.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 px-4 sm:px-5 py-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
             <button
@@ -286,7 +291,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
                 }`}
               >
                 <Undo2 className="w-4 h-4 shrink-0" />
-                <span className="whitespace-nowrap">{isSubmitting ? 'Devolviendo...' : 'Devolver'}</span>
+                <span className="whitespace-nowrap">{isSubmitting && <Spinner />}{isSubmitting ? 'Devolviendo...' : 'Devolver'}</span>
               </button>
             ) : (
               <>
@@ -310,7 +315,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
                   }`}
                 >
                   <CheckCheck className="w-4 h-4 shrink-0" />
-                  <span className="whitespace-nowrap">{finalizando ? (isSubmitting ? 'Finalizando...' : 'Finalizar') : (isSubmitting ? 'Aprobando...' : 'Aprobar')}</span>
+                  <span className="whitespace-nowrap">{isSubmitting && <Spinner />}{finalizando ? (isSubmitting ? 'Finalizando...' : 'Finalizar') : (isSubmitting ? 'Aprobando...' : 'Aprobar')}</span>
                 </button>
               </>
             )}

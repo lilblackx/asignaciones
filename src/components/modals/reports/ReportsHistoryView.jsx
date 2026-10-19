@@ -1,6 +1,7 @@
 import { Calendar, Download, Eye, FileText } from 'lucide-react';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import CierreAutomaticoConfig from './CierreAutomaticoConfig';
+import Spinner from '../../Spinner';
 
 function todayIsoDate() {
   const d = new Date();
@@ -46,6 +47,13 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                       {(!rep.tipoReporte || rep.tipoReporte === 'CIERRE') && <span className="ml-1 text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded">CIERRE</span>}
                     </h4>
                     <span className="text-[10px] text-zinc-500 font-bold uppercase">{rep.horaCierre} - OP: {rep.operador}</span>
+                    {rep.canceladas !== undefined && (
+                      <span className="block mt-1 text-[10px] font-bold">
+                        <span className="text-emerald-600 dark:text-emerald-400">{rep.finalizadas} finalizadas</span>
+                        <span className="text-zinc-400"> · </span>
+                        <span className="text-red-600 dark:text-red-400">{rep.canceladas} canceladas</span>
+                      </span>
+                    )}
                   </div>
                   <div className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1 rounded-lg text-center">
                     <span className="block text-xs font-bold leading-none">TOTAL</span>
@@ -89,7 +97,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
             disabled={isLoadingReports}
             className="px-5 py-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl text-xs border border-zinc-200 dark:border-zinc-700 transition-colors disabled:opacity-50"
           >
-            {isLoadingReports ? 'Cargando...' : 'Cargar reportes anteriores'}
+            {isLoadingReports && <Spinner />}{isLoadingReports ? 'Cargando...' : 'Cargar reportes anteriores'}
           </button>
         </div>
       )}

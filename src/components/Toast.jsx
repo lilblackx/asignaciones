@@ -1,6 +1,32 @@
-import { AlertCircle, Ban, Banknote, Car, CheckCheck, CheckCircle2, Clock, Flag, MapPin, Undo2, UserCog, UserMinus, Wrench } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { sacudirVentanaDeLaUltimaAccion } from '../utils/sacudidaErrores';
+import { AlertCircle, Ban, Banknote, Car, CheckCheck, CheckCircle2, Clock, Flag, MapPin, Star, Undo2, UserCog, UserMinus, Wrench } from 'lucide-react';
 
-export default function Toast({ toastMsg, onClose }) {
+const DURACION_SALIDA_MS = 200;
+
+export default function Toast({ toastMsg: entrante, onClose }) {
+  // El padre quita el aviso poniéndolo en null; aquí se conserva el último unos instantes para poder animar su salida.
+  const [mostrado, setMostrado] = useState(entrante);
+  const [saliendo, setSaliendo] = useState(false);
+  if (entrante && entrante !== mostrado) {
+    setMostrado(entrante);
+    setSaliendo(false);
+  } else if (!entrante && mostrado && !saliendo) {
+    setSaliendo(true);
+  }
+
+  useEffect(() => {
+    if (!saliendo) return;
+    const id = setTimeout(() => { setMostrado(null); setSaliendo(false); }, DURACION_SALIDA_MS);
+    return () => clearTimeout(id);
+  }, [saliendo]);
+
+  // Un error que llega justo después de pulsar la acción de una ventana abierta sacude esa ventana.
+  useEffect(() => {
+    if (entrante?.type === 'error') sacudirVentanaDeLaUltimaAccion();
+  }, [entrante]);
+
+  const toastMsg = entrante || mostrado;
   if (!toastMsg) return null;
 
   const isError = toastMsg.type === 'error';
@@ -8,6 +34,7 @@ export default function Toast({ toastMsg, onClose }) {
   const isTecnicoStatus = toastMsg.type === 'tecnicoStatus';
   const isAprobado = toastMsg.type === 'aprobado';
   const isNuevaAsignacion = toastMsg.type === 'nuevaAsignacion';
+  const isNuevaVenta = toastMsg.type === 'nuevaVenta';
   const isAviso = toastMsg.type === 'aviso';
   const isDevuelto = toastMsg.type === 'devuelto';
   const isPrioridad = toastMsg.type === 'prioridad';
@@ -20,14 +47,14 @@ export default function Toast({ toastMsg, onClose }) {
   const accion = toastMsg.action;
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[120] animate-fade-in-up w-[92vw] sm:w-auto sm:max-w-sm px-2 pointer-events-none" role="status" aria-live="polite" aria-atomic="true">
+    <div className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[120] ${saliendo ? 'animate-fade-out-down' : 'animate-fade-in-up'} w-[92vw] sm:w-auto sm:max-w-sm px-2 pointer-events-none`} role="status" aria-live="polite" aria-atomic="true">
       <div className={`px-5 py-3 rounded-2xl shadow-xl flex items-start gap-2.5 font-bold text-sm ${
         isError || isDevuelto || isCancelada || isDesasignada ? 'bg-red-600 text-white'
           : isPrioridad ? 'bg-red-700 text-white ring-2 ring-white/70'
           : isEnCamino ? 'bg-sky-600 text-white'
           : isLlegada ? 'bg-teal-600 text-white'
           : isRespuestaCobro ? 'bg-sky-600 text-white'
-          : isPreFinalizado || isAviso || isConsultaCobro ? 'bg-amber-500 text-black'
+          : isPreFinalizado || isAviso || isConsultaCobro || isNuevaVenta ? 'bg-amber-500 text-black'
             : isTecnicoStatus ? 'bg-purple-600 text-white'
               : isAprobado ? 'bg-blue-600 text-white'
                 : isNuevaAsignacion ? 'bg-emerald-600 text-white'
@@ -41,6 +68,7 @@ export default function Toast({ toastMsg, onClose }) {
           : isCancelada ? <Ban className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isDesasignada ? <UserMinus className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isError || isAviso ? <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+          : isNuevaVenta ? <Star className="w-4 h-4 shrink-0 mt-0.5 fill-current" aria-hidden="true" />
           : isPreFinalizado ? <Clock className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
             : isTecnicoStatus ? <UserCog className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
               : isAprobado ? <CheckCheck className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />

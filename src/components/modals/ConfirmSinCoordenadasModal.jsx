@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import Modal from '../Modal';
+import Spinner from '../Spinner';
 
 // Aviso cuando la orden tiene NAP escrita pero no sus coordenadas: la plantilla
 // de WhatsApp saldría sin la ubicación de la NAP. El usuario decide si guarda igual.
@@ -27,7 +28,7 @@ export default function ConfirmSinCoordenadasModal({ nap, isSubmitting, onCancel
             onClick={onConfirm}
             disabled={isSubmitting}
             className={`flex-1 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-700'}`}>
-            {isSubmitting ? 'Guardando...' : 'Sí, guardar'}
+            {isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Sí, guardar'}
           </button>
         </div>
       </div>

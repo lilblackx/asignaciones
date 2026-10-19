@@ -1,5 +1,6 @@
 import { ClipboardCheck } from 'lucide-react';
 import Modal from '../Modal';
+import Spinner from '../Spinner';
 
 // Confirmación antes de pre-finalizar: la orden pasa a revisión de la oficina y el técnico ya no la puede cambiar ni deshacer.
 // "Volver" va primero para que sea el botón con el cursor al abrir: un toque o un Enter de más no pre-finaliza por error.
@@ -33,7 +34,7 @@ export default function ConfirmPreFinalizarModal({ ticket, visita, isSubmitting,
             onClick={onConfirm}
             disabled={isSubmitting}
             className={`flex-1 min-h-[48px] py-3 text-black font-black rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-400'}`}>
-            {isSubmitting ? 'Guardando...' : 'Sí, pre-finalizar'}
+            {isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Sí, pre-finalizar'}
           </button>
         </div>
       </div>

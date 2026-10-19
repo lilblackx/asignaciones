@@ -23,6 +23,7 @@ import SerialEquipoCampo from './SerialEquipoCampo';
 import { errorSerialCaja } from '../../utils/serialOlt';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
+import Spinner from '../Spinner';
 
 export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
   // La NAP y el puerto van en dos campos con conector externo y en las instalaciones.
@@ -432,7 +433,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               }`}
             >
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span className="whitespace-nowrap">{isSubmitting ? 'Guardando...' : 'Confirmar'}</span>
+              <span className="whitespace-nowrap">{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Confirmar'}</span>
             </button>
           </div>
         </form>
