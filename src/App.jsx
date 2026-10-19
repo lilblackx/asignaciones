@@ -21,6 +21,7 @@ import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
 import { useEnviosInventario } from './hooks/useEnviosInventario';
 import { veEnviosInventario } from './utils/accesoInventario';
+import { listarTecnicosInventario } from './lib/inventario';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
@@ -85,7 +86,7 @@ export default function App({ auth }) {
   const isAdmin = role === ROLES.ADMIN;
   const canEditTickets = role === ROLES.ADMIN || role === ROLES.USUARIO;
 
-  const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
+  const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
   const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
@@ -513,6 +514,7 @@ export default function App({ auth }) {
 
   const handleDeleteTechSeguro = conAviso(handleDeleteTech, 'No se pudo eliminar el técnico.');
   const toggleTechnicoActivoSeguro = conAviso(toggleTechnicoActivo, 'No se pudo cambiar el estado del técnico.');
+  const vincularTecnicoInventarioSeguro = conAviso(vincularTecnicoInventario, 'No se pudo guardar el nombre en el inventario.');
   const guardarOrdenSeguro = conAviso((nuevoOrden) => guardarOrden(nuevoOrden, currentUser), 'No se pudo guardar el orden de turno.');
 
   const handleCreateUser = async (newUser) => {
@@ -715,6 +717,9 @@ export default function App({ auth }) {
             handleAddTech={handleAddTechSubmit}
             handleDeleteTech={handleDeleteTechSeguro}
             onToggleActivo={toggleTechnicoActivoSeguro}
+            verInventario={verInventario}
+            onCargarTecnicosInventario={listarTecnicosInventario}
+            onVincularInventario={vincularTecnicoInventarioSeguro}
             ordenTurno={ordenTurno}
             tecnicoSugerido={tecnicoSugerido}
             onGuardarOrden={guardarOrdenSeguro}

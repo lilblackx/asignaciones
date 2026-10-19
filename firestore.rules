@@ -78,8 +78,11 @@ service cloud.firestore {
       // Alta/baja/color son de ADMIN. El toggle de activo/inactivo (pantalla
       // principal) también lo puede usar USUARIO (operativo, no estructural) y
       // cada TECNICO sobre su propio técnico vinculado, nunca sobre otro.
-      allow create, delete: if isAdminUser(appId);
-      allow update: if isAdminUser(appId)
+      // "Nombre en el inventario" (tecnicoInventario: con qué nombre conoce al técnico el inventario del almacén) solo lo
+      // escribe quien gestiona los envíos al inventario (veInventario, más abajo): ningún otro ADMIN lo pone ni lo cambia.
+      allow create: if isAdminUser(appId) && (!('tecnicoInventario' in request.resource.data) || veInventario(appId));
+      allow delete: if isAdminUser(appId);
+      allow update: if (isAdminUser(appId) && (veInventario(appId) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tecnicoInventario'])))
         || (
           (isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId)))
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activo', 'activoUpdatedBy', 'activoUpdatedByRole', 'activoUpdatedAt'])
@@ -177,7 +180,7 @@ service cloud.firestore {
         && request.resource.data.intentos == 0;
       // Descartar una alerta: pasa a DESCARTADO (queda el registro de lo que no se envió); no se borra nada.
       allow update: if veInventario(appId)
-        && resource.data.estado in ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'EQUIPO_NO_ASIGNADO', 'SIN_SERIAL', 'ERROR']
+        && resource.data.estado in ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'EQUIPO_NO_ASIGNADO', 'SIN_SERIAL', 'TECNICO_NO_VINCULADO', 'TECNICO_NO_ENCONTRADO', 'TECNICO_INACTIVO', 'EQUIPO_OTRO_TECNICO', 'ERROR']
         && request.resource.data.estado == 'DESCARTADO'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'actualizadoEn', 'descartadoPor']);
     }
@@ -199,6 +202,13 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/config/{docId} {
       allow read: if isActiveUser(appId);
       allow write: if isAdminUser(appId);
+    }
+
+    // El cierre manual deja en config/cierreAutomatico la fecha de hoy (cierreManualFecha) para que el cierre automático de ese día
+    // no corra. Lo puede escribir quien cierra, pero solo ese campo y sin crear el documento; la configuración sigue siendo de ADMIN.
+    match /artifacts/{appId}/public/data/config/cierreAutomatico {
+      allow update: if canCerrar(appId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cierreManualFecha']);
     }
 
     // El orden semanal (campo "orden") solo lo arma ADMIN. Pero USUARIO

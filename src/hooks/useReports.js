@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { collection, doc, getDocs, increment, limit, orderBy, query, startAfter, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDocs, increment, limit, orderBy, query, setDoc, startAfter, where, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { RETENCION_MS_HISTORIAL_VENTAS, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
-import { incrementosMensuales } from '../utils/totalesMes';
+import { diaDe, incrementosMensuales } from '../utils/totalesMes';
 
 const REPORTS_PAGE_SIZE = 30;
 const MAX_ESCRITURAS_LOTE = 450; // Firestore admite 500 por lote
@@ -168,6 +168,11 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
       }
 
       await limpiarHistorialInstalaciones(Date.now());
+
+      // El cierre de hoy ya está hecho a mano: el automático de hoy no debe correr (el Worker lo lee en config/cierreAutomatico).
+      // Si no se puede dejar la marca, el cierre ya está hecho; solo se avisa en consola.
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'cierreAutomatico'), { cierreManualFecha: diaDe(Date.now()) }, { merge: true })
+        .catch((error) => console.warn('No se pudo marcar el cierre manual de hoy:', error));
 
       // El nuevo reporte se agrega directo al estado local (en vez de re-consultar
       // Firestore) porque ya no hay listener en tiempo real que lo traiga solo.

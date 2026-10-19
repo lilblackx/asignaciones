@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowDown, ArrowUp, ListOrdered, Trash2, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowDown, ArrowUp, ListOrdered, PackageCheck, RefreshCw, Trash2, Users, X } from 'lucide-react';
 import { COLOR_PALETTE, estiloTecnico, siguienteColorTecnico } from '../../constants';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import Modal from '../Modal';
@@ -14,11 +14,41 @@ function mergeOrden(ordenGuardado, technicians) {
   return [...base, ...faltantes];
 }
 
-export default function TechniciansModal({ technicians, newTech, setNewTech, handleAddTech, handleDeleteTech, onToggleActivo, ordenTurno = [], tecnicoSugerido = null, onGuardarOrden, onClose }) {
+const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/s+/g, ' ').trim().toUpperCase();
+
+export default function TechniciansModal({ technicians, newTech, setNewTech, handleAddTech, handleDeleteTech, onToggleActivo, verInventario = false, onCargarTecnicosInventario, onVincularInventario, ordenTurno = [], tecnicoSugerido = null, onGuardarOrden, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [ordenLocal, setOrdenLocal] = useState(() => mergeOrden(ordenTurno, technicians));
   const [savingOrden, setSavingOrden] = useState(false);
+  // Nombre en el inventario (solo para quien gestiona los envíos): la lista de técnicos del almacén y a quién se está guardando.
+  const [tecnicosInventario, setTecnicosInventario] = useState(null);
+  const [errorInventario, setErrorInventario] = useState('');
+  const [vinculandoId, setVinculandoId] = useState(null);
+
+  const aplicarListaInventario = (r) => {
+    if (r.ok) setTecnicosInventario(r.tecnicos);
+    else setErrorInventario(r.mensaje || 'No se pudo leer la lista de técnicos del inventario.');
+  };
+  const actualizarTecnicosInventario = async () => {
+    setTecnicosInventario(null);
+    setErrorInventario('');
+    aplicarListaInventario(await onCargarTecnicosInventario());
+  };
+  // Se lee al abrir el módulo: la lista del almacén cambia poco y "Actualizar" la vuelve a leer.
+  useEffect(() => {
+    if (!verInventario || !onCargarTecnicosInventario) return undefined;
+    let vigente = true;
+    onCargarTecnicosInventario().then((r) => { if (vigente) aplicarListaInventario(r); });
+    return () => { vigente = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const vincular = async (tech, nombre) => {
+    setVinculandoId(tech.id);
+    await onVincularInventario(tech.id, nombre);
+    setVinculandoId(null);
+  };
 
   const ordenCambio = JSON.stringify(ordenLocal) !== JSON.stringify(mergeOrden(ordenTurno, technicians));
 
@@ -129,6 +159,53 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
               >
                 {savingOrden ? 'Guardando...' : 'Guardar orden'}
               </button>
+            </div>
+          )}
+
+          {verInventario && technicians.length > 0 && (
+            <div className="space-y-2 border-t border-zinc-200 dark:border-zinc-800 pt-4">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5 ml-1">
+                  <PackageCheck className="w-3.5 h-3.5" aria-hidden="true" /> NOMBRE EN EL INVENTARIO
+                </label>
+                <button type="button" onClick={actualizarTecnicosInventario} disabled={tecnicosInventario === null && !errorInventario} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50">
+                  <RefreshCw className={`w-3 h-3 ${tecnicosInventario === null && !errorInventario ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar
+                </button>
+              </div>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">
+                Elige con qué nombre conoce el inventario del almacén a cada técnico. El material y los equipos se descuentan a ese nombre; un técnico sin elegir no envía sus órdenes. Solo tú ves esto.
+              </p>
+              {errorInventario && <p role="alert" className="text-[11px] font-bold text-red-600 dark:text-red-400 ml-1">{errorInventario}</p>}
+              <div className="border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-2 space-y-2 bg-zinc-50 dark:bg-zinc-950">
+                {technicians.map(t => {
+                  const elegido = t.tecnicoInventario || '';
+                  const usados = new Set(technicians.filter(o => o.id !== t.id && o.tecnicoInventario).map(o => normalizar(o.tecnicoInventario)));
+                  const opciones = (tecnicosInventario || []).filter(o => !usados.has(normalizar(o.nombre)));
+                  const noEstaEnLista = Boolean(elegido) && tecnicosInventario !== null && !opciones.some(o => normalizar(o.nombre) === normalizar(elegido));
+                  const inactivoAlla = Boolean(elegido) && !noEstaEnLista && (tecnicosInventario || []).some(o => normalizar(o.nombre) === normalizar(elegido) && !o.activo);
+                  return (
+                    <div key={t.id} className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-100 dark:border-zinc-800 shadow-sm space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 break-words">{t.name}</span>
+                        <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded ${elegido && !noEstaEnLista && !inactivoAlla ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+                          {!elegido ? 'Sin elegir' : noEstaEnLista ? 'No está en el inventario' : inactivoAlla ? 'Inactivo en el inventario' : 'Elegido'}
+                        </span>
+                      </div>
+                      <select
+                        value={elegido}
+                        disabled={tecnicosInventario === null || vinculandoId === t.id}
+                        onChange={(e) => vincular(t, e.target.value)}
+                        aria-label={`Nombre en el inventario de ${t.name}`}
+                        className="w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg text-xs font-bold focus:ring-0 focus:border-red-600 outline-none disabled:opacity-60"
+                      >
+                        <option value="">{tecnicosInventario === null && !errorInventario ? 'Cargando...' : 'Sin elegir'}</option>
+                        {noEstaEnLista && <option value={elegido}>{elegido} (no está en el inventario)</option>}
+                        {opciones.map(o => <option key={o.nombre} value={o.nombre}>{o.activo ? o.nombre : `${o.nombre} (inactivo)`}</option>)}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

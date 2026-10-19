@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useCierreAutomatico } from '../../../hooks/useCierreAutomatico';
+import { diaDe } from '../../../utils/totalesMes';
 
 // Lunes a domingo (0 = domingo, como Date.getDay y el Worker).
 const DIAS = [
@@ -50,6 +51,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
   const { config, loading, guardar } = useCierreAutomatico();
   // draft: lo que el admin está editando; null = sin cambios sin guardar.
   const [draft, setDraft] = useState(null);
+  const [hoy] = useState(() => diaDe(Date.now())); // el día en que se abrió la pantalla
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [mensajeSim, setMensajeSim] = useState('');
@@ -85,6 +87,8 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
   const ultima = config?.ultimaEjecucionEn
     ? `${new Date(config.ultimaEjecucionEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })} · ${config.ultimoResultado || ''}`
     : config?.ultimoResultado || null;
+
+  const hoyCerradoAMano = config?.cierreManualFecha === hoy;
 
   return (
     <div className="mb-8 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
@@ -172,6 +176,12 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
             </div>
           )}
         </div>
+      )}
+
+      {hoyCerradoAMano && (
+        <p role="status" className="mt-4 text-xs font-bold text-blue-700 dark:text-blue-300">
+          Hoy ya se hizo el cierre manual: el automático no se ejecuta hoy.
+        </p>
       )}
 
       {ultima && (

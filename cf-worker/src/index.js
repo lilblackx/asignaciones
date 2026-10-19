@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from 'jose';
 import { manejarApiMateriales } from './materiales-api.js';
-import { manejarInventario, reintentarPendientes } from './inventario.js';
+import { listarTecnicosInventario, manejarInventario, reintentarPendientes } from './inventario.js';
 import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
 import { direccionCliente, nombrePersona } from '../../src/utils/datosCliente.js';
 
@@ -409,7 +409,7 @@ export function fechaCaracas(ahoraMs) {
 //  - ya pasó la hora de hoy, pero hace menos de GRACIA_CIERRE_MS;
 //  - no se configuró después de la hora de hoy (activarlo a las 3 pm con hora 8 am
 //    no dispara un cierre inmediato: corre mañana);
-//  - hoy todavía no se ejecutó.
+//  - hoy todavía no se ejecutó, ni automático ni a mano (cierreManualFecha la deja el cierre manual de la app).
 export function debeEjecutar(config, ahoraMs) {
   if (!config?.activo || !/^([01]\d|2[0-3]):[0-5]\d$/.test(config.hora || '')) return null;
   const { fecha, dia } = fechaCaracas(ahoraMs);
@@ -418,6 +418,8 @@ export function debeEjecutar(config, ahoraMs) {
   if (ahoraMs < programadaMs || ahoraMs - programadaMs > GRACIA_CIERRE_MS) return null;
   if ((config.actualizadoEn || 0) > programadaMs) return null;
   if (config.ultimaEjecucion === fecha) return null;
+  // Si hoy ya se hizo el cierre manual (lo deja marcado la app), el automático no corre ese día.
+  if (config.cierreManualFecha === fecha) return null;
   return { fecha };
 }
 
@@ -774,6 +776,9 @@ export default {
     }
     if (pathname === '/admin/create-user') {
       return handleCreateUser(request, env, headers, payload.sub);
+    }
+    if (pathname === '/inventario/tecnicos') {
+      return listarTecnicosInventario(env, headers, payload.sub, depsInventario);
     }
     if (pathname === '/inventario/enviar' || pathname === '/inventario/reintentar') {
       return manejarInventario(request, env, headers, payload.sub, depsInventario);

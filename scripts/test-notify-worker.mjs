@@ -252,6 +252,15 @@ check('antes de la hora de la tasa no hace ninguna petición (ni token ni lectur
 const MEDIODIA = Date.parse('2026-10-14T12:00:00-04:00');
 await Promise.all([cierreFresco(env, MEDIODIA), cierreFresco(env, MEDIODIA), cierreFresco(env, MEDIODIA)]);
 check('tareas que arrancan juntas comparten un solo token de Google', peticiones.filter((u) => u.includes('oauth2.googleapis.com/token')).length, 1);
+// Si hoy ya se hizo el cierre manual (cierreManualFecha), el automático de hoy no corre; mañana sí.
+{
+  const { debeEjecutar } = await import('../cf-worker/src/index.js');
+  const config = { activo: true, hora: '22:00', dias: [0, 1, 2, 3, 4, 5, 6], actualizadoEn: 1 };
+  check('sin cierre manual hoy, el automático toca a su hora', debeEjecutar(config, AHORA)?.fecha, '2026-10-13');
+  check('con el cierre manual de hoy hecho, el automático de hoy no corre', debeEjecutar({ ...config, cierreManualFecha: '2026-10-13' }, AHORA), null);
+  check('un cierre manual de otro día no lo frena', debeEjecutar({ ...config, cierreManualFecha: '2026-10-12' }, AHORA)?.fecha, '2026-10-13');
+  check('y al día siguiente vuelve a tocar aunque ayer se cerrara a mano', debeEjecutar({ ...config, cierreManualFecha: '2026-10-13' }, AHORA + 86400000)?.fecha, '2026-10-14');
+}
 delete globalThis.fetchDelCierre;
 globalThis.fetch = fetchBase;
 

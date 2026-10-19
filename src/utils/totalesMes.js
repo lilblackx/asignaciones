@@ -11,6 +11,12 @@ export function mesDe(ms) {
   return `${p.year}-${p.month}`;
 }
 
+// "2026-10-19" de una fecha, en hora de Caracas (el día del cierre, como lo cuenta el Worker).
+export function diaDe(ms) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_HORARIA, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
 // "octubre 2026"
 export function etiquetaMes(mes) {
   const [anio, numero] = mes.split('-').map(Number);

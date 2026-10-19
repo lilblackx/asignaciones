@@ -546,6 +546,36 @@ await check('Nadie borra un registro de envío (tampoco lfernandez): queda el hi
   await assertFails(envios(asAdmin()).doc('alerta-1').delete());
 });
 
+await check('El nombre del técnico en el inventario solo lo elige lfernandez: ningún otro ADMIN, USUARIO ni técnico lo pone o lo cambia', async () => {
+  await assertSucceeds(techPathGerardo(asLf()).update({ tecnicoInventario: 'GERARDO MOLERO' }));
+  await assertSucceeds(techPathGerardo(asLf()).update({ tecnicoInventario: 'OTRO NOMBRE' }));
+  await assertFails(techPathGerardo(asAdmin()).update({ tecnicoInventario: 'GERARDO' }));
+  await assertFails(techPathGerardo(asAdmin()).update({ color: 'bg-red-500 text-white', tecnicoInventario: 'GERARDO' }));
+  await assertFails(techPathGerardo(asUsuario()).update({ tecnicoInventario: 'OTRO' }));
+  await assertFails(techPathGerardo(asCierra()).update({ tecnicoInventario: 'OTRO' }));
+  await assertFails(techPathGerardo(asTecnico()).update({ tecnicoInventario: 'OTRO' }));
+  await assertFails(techsCol(asAdmin()).doc('NUEVO-1').set({ name: 'NUEVO 1', color: 'bg-red-500 text-white', activo: true, tecnicoInventario: 'X' }));
+  await assertSucceeds(techsCol(asLf()).doc('NUEVO-2').set({ name: 'NUEVO 2', color: 'bg-red-500 text-white', activo: true, tecnicoInventario: 'X' }));
+  // Lo demás del técnico sigue siendo de cualquier ADMIN, con o sin el campo elegido.
+  await assertSucceeds(techPathGerardo(asAdmin()).update({ color: 'bg-red-500 text-white' }));
+  await assertSucceeds(techsCol(asAdmin()).doc('NUEVO-3').set({ name: 'NUEVO 3', color: 'bg-red-500 text-white', activo: true }));
+});
+
+// --- El cierre manual marca el día en config/cierreAutomatico (cierreManualFecha) para que el automático de ese día no corra ---
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  await ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('config').doc('cierreAutomatico').set({ activo: true, hora: '22:00', dias: [1, 2] });
+});
+const cierreCfg = (db) => datos(db).collection('config').doc('cierreAutomatico');
+await check('Quien cierra marca el cierre manual del día (solo ese campo); la configuración sigue siendo de ADMIN', async () => {
+  await assertSucceeds(cierreCfg(asCierra()).set({ cierreManualFecha: '2026-10-19' }, { merge: true }));
+  await assertSucceeds(cierreCfg(asAdmin()).set({ cierreManualFecha: '2026-10-19' }, { merge: true }));
+  await assertFails(cierreCfg(asCierra()).set({ activo: false }, { merge: true }));
+  await assertFails(cierreCfg(asCierra()).set({ cierreManualFecha: '2026-10-19', hora: '01:00' }, { merge: true }));
+  await assertFails(cierreCfg(asUsuario()).set({ cierreManualFecha: '2026-10-19' }, { merge: true }));
+  await assertFails(cierreCfg(asTecnico()).set({ cierreManualFecha: '2026-10-19' }, { merge: true }));
+  await assertSucceeds(cierreCfg(asAdmin()).set({ hora: '21:00' }, { merge: true }));
+});
+
 // --- Totales del mes (estadisticasMensuales): los ve ventas y quien cierra; solo quien cierra suma, y nunca resta ---
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('estadisticasMensuales').doc('2026-10').set({ instalacionesFinalizadas: 5, losResueltas: 2 });

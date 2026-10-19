@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, deleteField, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { playTecnicoStatusSound } from '../utils/notificationSound';
 import { estiloTecnico } from '../constants';
@@ -70,5 +70,13 @@ export function useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado,
     setToastMsg({ type: activo ? 'success' : 'error', text: activo ? 'Técnico marcado como activo.' : 'Técnico marcado como inactivo.' });
   };
 
-  return { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo };
+  // Con qué nombre conoce el inventario del almacén a este técnico (solo lo elige el usuario del módulo de envíos; las reglas lo exigen).
+  // Sin nombre ('') se quita la elección y las órdenes del técnico dejan de enviarse hasta que se elija otro.
+  const vincularTecnicoInventario = async (techId, nombre) => {
+    if (!firebaseUser) return;
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'technicians', techId), { tecnicoInventario: nombre ? nombre : deleteField() });
+    setToastMsg({ type: 'success', text: nombre ? 'Nombre en el inventario guardado.' : 'Se quitó el nombre en el inventario.' });
+  };
+
+  return { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario };
 }

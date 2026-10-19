@@ -49,3 +49,25 @@ export async function llamarInventario(ruta, ticketId) {
   }
   return { ok: false, estado: '', mensaje: 'No se pudo conectar con el servidor.' };
 }
+
+// Los técnicos que tiene el inventario del almacén (para elegir con cuál se corresponde cada técnico de la app). Solo la
+// contestan los usuarios del módulo. Devuelve { ok, tecnicos: [{ nombre, activo }], mensaje }.
+export async function listarTecnicosInventario() {
+  if (NOTIFY_WORKER_URL === 'PENDIENTE_DEPLOY_WORKER') return { ok: false, tecnicos: [], mensaje: '' };
+  try {
+    const usuario = auth.currentUser;
+    if (!usuario) return { ok: false, tecnicos: [], mensaje: 'Sin sesión.' };
+    const res = await fetch(`${NOTIFY_WORKER_URL}/inventario/tecnicos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await usuario.getIdToken()}` },
+      body: '{}',
+    });
+    if (!res.ok) return { ok: false, tecnicos: [], mensaje: `El Worker respondió ${res.status}.` };
+    const datos = await res.json().catch(() => ({}));
+    if (datos.estado === 'DESHABILITADO') return { ok: false, tecnicos: [], mensaje: 'El envío al inventario está apagado.' };
+    return { ok: true, tecnicos: Array.isArray(datos.tecnicos) ? datos.tecnicos : [], mensaje: '' };
+  } catch (error) {
+    console.warn('No se pudo leer la lista de técnicos del inventario:', error);
+    return { ok: false, tecnicos: [], mensaje: 'No se pudo conectar con el servidor.' };
+  }
+}

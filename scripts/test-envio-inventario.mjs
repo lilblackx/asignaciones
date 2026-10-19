@@ -77,7 +77,7 @@ const fieldsDe = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k,
 const dec = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, 'stringValue' in v ? v.stringValue : 'integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : v]));
 
 let sinPermisoAuditoria = false; // sus reglas no dejan escribir auditLogs
-let roles, ordenes, envios, inventario, comportamientoTelecom, llamadasTelecom, commitsTelecom, loginsTelecom, pushes, consultasNuestras;
+let roles, ordenes, envios, inventario, tecnicosNuestros, tecnicosTelecom, comportamientoTelecom, llamadasTelecom, commitsTelecom, loginsTelecom, pushes, consultasNuestras;
 const respuesta = (cuerpo, status = 200) => new Response(typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo), { status, headers: { 'Content-Type': 'application/json' } });
 
 globalThis.fetch = async (url, init = {}) => {
@@ -96,6 +96,7 @@ globalThis.fetch = async (url, init = {}) => {
     llamadasTelecom.push({ url: u, auth: init.headers?.Authorization, cuerpo });
     if (comportamientoTelecom === 'caido') return respuesta('caído', 503);
     if (comportamientoTelecom === 'vencida' && init.headers?.Authorization === 'Bearer TOKEN-1') return respuesta('vencida', 401);
+    if (u.includes('/tecnicos?')) return respuesta({ documents: tecnicosTelecom.map((x, i) => ({ name: `${DOCS_TELECOM}/tecnicos/${i}`, fields: fieldsDe({ nombre: x.nombre, estado: x.estado }) })) });
     if (u.endsWith(':runQuery')) {
       const serial = cuerpo.structuredQuery.where.fieldFilter.value.stringValue;
       const item = inventario[serial];
@@ -112,6 +113,10 @@ globalThis.fetch = async (url, init = {}) => {
     const uid = decodeURIComponent(u.split('/users/')[1]);
     if (!roles[uid]) return respuesta('no existe', 404);
     return respuesta({ fields: { role: s(roles[uid].rol), username: s(roles[uid].username || uid), disabled: { booleanValue: false }, puedeCerrar: { booleanValue: roles[uid].puedeCerrar === true } } });
+  }
+  if (u.includes('/technicians/')) {
+    const id = decodeURIComponent(u.split('/technicians/')[1]);
+    return tecnicosNuestros[id] ? respuesta({ name: `${DOCS}/technicians/${id}`, fields: fieldsDe(tecnicosNuestros[id]) }) : respuesta('no existe', 404);
   }
   if (u.includes('/tickets/')) {
     const id = decodeURIComponent(u.split('/tickets/')[1]);
@@ -159,9 +164,12 @@ const reiniciar = () => {
   };
   envios = {};
   inventario = {
-    HWTC1A2B3C4D: { id: 'inv-1', campos: { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico', modelo: 'HG8145' } },
-    ZTEG99887766: { id: 'inv-2', campos: { serial: 'ZTEG99887766', estado: 'Con Técnico' } },
+    HWTC1A2B3C4D: { id: 'inv-1', campos: { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico', modelo: 'HG8145', tecnico: 'GERARDO MOLERO' } },
+    ZTEG99887766: { id: 'inv-2', campos: { serial: 'ZTEG99887766', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } },
   };
+  // El técnico de las órdenes ya tiene elegido su nombre en el inventario, y allá está activo.
+  tecnicosNuestros = { 'GERARDO MOLERO': { name: 'GERARDO MOLERO', tecnicoInventario: 'GERARDO MOLERO' } };
+  tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Activo' }, { nombre: 'OTRO TECNICO', estado: 'Activo' }];
   comportamientoTelecom = 'ok';
   llamadasTelecom = []; commitsTelecom = []; loginsTelecom = []; pushes = []; consultasNuestras = [];
 };
@@ -375,6 +383,64 @@ reiniciar();
 comportamientoTelecom = 'vencida';
 r = await enviar('inst1');
 check('si la sesión venció a mitad de camino se renueva y se envía', [r.json.estado, loginsTelecom.length, commitsTelecom.length], ['ENVIADO', 2, 1]);
+
+// 11) El técnico: su nombre en el inventario (el que elige la oficina), que esté en su lista y activo, y que el equipo sea suyo
+const orden = (id, tecnico) => { ordenes[id] = fieldsDe({ ...instalacion, estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', tecnico }); };
+reiniciar();
+tecnicosNuestros = {};
+r = await enviar('inst1');
+check('técnico sin nombre elegido en el inventario: no se envía nada (ni el equipo) y queda alerta con el técnico de la orden', [r.json.estado, commitsTelecom.length, llamadasTelecom.some((l) => l.url.endsWith(':runQuery')), envio('inst1').tecnicoOrden, envio('inst1').mensaje.includes('GERARDO MOLERO'), pushes.length], ['TECNICO_NO_VINCULADO', 0, false, 'GERARDO MOLERO', true, 1]);
+tecnicosNuestros = { 'GERARDO MOLERO': { name: 'GERARDO MOLERO', tecnicoInventario: 'GERARDO MOLERO' } };
+check('al elegirlo, reintentar lo envía', [(await reintentar('inst1')).json.estado, commitsTelecom.length], ['ENVIADO', 1]);
+reiniciar();
+tecnicosNuestros = {};
+check('una avería (solo material) tampoco se envía sin el nombre elegido', [(await enviar('rec1')).json.estado, commitsTelecom.length], ['TECNICO_NO_VINCULADO', 0]);
+
+reiniciar();
+orden('inst1', 'GERARDO');
+tecnicosNuestros = { GERARDO: { name: 'GERARDO', tecnicoInventario: 'GERARDO MOLERO' } };
+r = await enviar('inst1');
+const logCorto = dec(escrituraDe(commitsTelecom[0], 'materialLogs').update.fields);
+const auditoriaCorta = dec(escrituraDe(commitsTelecom[0], 'auditLogs').update.fields);
+check('el técnico "GERARDO" de la orden se escribe con el nombre elegido del inventario, en el material y en la auditoría', [r.json.estado, logCorto.tecnico, auditoriaCorta.detalle.includes("Téc: 'GERARDO MOLERO'"), envio('inst1').tecnico, envio('inst1').tecnicoOrden], ['ENVIADO', 'GERARDO MOLERO', true, 'GERARDO MOLERO', 'GERARDO']);
+
+reiniciar();
+tecnicosNuestros = { 'GERARDO MOLERO': { name: 'GERARDO MOLERO', tecnicoInventario: 'gerardo  molero' } };
+r = await enviar('inst1');
+check('el nombre elegido se compara sin mayúsculas ni espacios de más y se escribe como lo tiene el inventario', [r.json.estado, dec(escrituraDe(commitsTelecom[0], 'materialLogs').update.fields).tecnico], ['ENVIADO', 'GERARDO MOLERO']);
+
+reiniciar();
+tecnicosNuestros = { 'GERARDO MOLERO': { name: 'GERARDO MOLERO', tecnicoInventario: 'GERARDO' } };
+r = await enviar('inst1');
+check('un nombre elegido que ya no está en la lista del inventario no se envía (no se inventa una cuenta nueva)', [r.json.estado, commitsTelecom.length, pushes.length], ['TECNICO_NO_ENCONTRADO', 0, 1]);
+
+reiniciar();
+tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Inactivo' }];
+r = await enviar('inst1');
+check('técnico activo en Asignaciones pero inactivo en el inventario: no se envía nada hasta confirmarlo, con aviso', [r.json.estado, commitsTelecom.length, envio('inst1').mensaje.includes('Inactivo'), pushes.length], ['TECNICO_INACTIVO', 0, true, 1]);
+check('mientras siga inactivo, reintentar sigue sin enviar', [(await reintentar('inst1')).json.estado, commitsTelecom.length], ['TECNICO_INACTIVO', 0]);
+tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Activo' }];
+check('cuando lo activan en el inventario, reintentar lo envía', [(await reintentar('inst1')).json.estado, commitsTelecom.length], ['ENVIADO', 1]);
+reiniciar();
+tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Inactivo' }];
+check('el cron no lo reenvía solo mientras esté inactivo (no es un fallo de red)', [(await enviar('rec1')).json.estado, (await reintentarPendientes(env, depsInventario, T0)).reintentados, commitsTelecom.length], ['TECNICO_INACTIVO', 0, 0]);
+
+reiniciar();
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico', tecnico: 'OTRO TECNICO' };
+r = await enviar('inst1');
+check('equipo asignado a otro técnico en el inventario: no se envía nada y queda alerta con los dos nombres', [r.json.estado, commitsTelecom.length, envio('inst1').mensaje.includes('OTRO TECNICO') && envio('inst1').mensaje.includes('GERARDO MOLERO')], ['EQUIPO_OTRO_TECNICO', 0, true]);
+reiniciar();
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico', tecnico: 'gerardo molero' };
+check('el técnico del equipo se compara sin mayúsculas', (await enviar('inst1')).json.estado, 'ENVIADO');
+
+// Lista de técnicos del inventario, para elegir (solo el usuario del módulo)
+reiniciar();
+tecnicosTelecom = [{ nombre: 'OTRO TECNICO', estado: 'Activo' }, { nombre: 'ÁNGEL RUIZ', estado: 'Inactivo' }, { nombre: 'GERARDO MOLERO', estado: 'Activo' }];
+r = await llamar('/inventario/tecnicos', 'lf-uid', {});
+check('el usuario del módulo recibe la lista de técnicos del inventario, ordenada y con su estado', [r.status, r.json.tecnicos.map((x) => [x.nombre, x.activo])], [200, [['ÁNGEL RUIZ', false], ['GERARDO MOLERO', true], ['OTRO TECNICO', true]]]);
+check('nadie más la ve: ni otro ADMIN, ni un USUARIO', [(await llamar('/inventario/tecnicos', 'admin-uid', {})).status, (await llamar('/inventario/tecnicos', 'usuario-uid', {})).status], [403, 403]);
+check('sin los secretos la lista viene vacía y apagada', (await llamar('/inventario/tecnicos', 'lf-uid', {}, { ...env, TELECOM_PASSWORD: undefined })).json, { estado: 'DESHABILITADO', tecnicos: [] });
+check('las reglas de Firestore dejan elegir el nombre en el inventario solo a quien ve el módulo (los demás ADMIN no lo ponen ni lo cambian)', reglas.includes("isAdminUser(appId) && (veInventario(appId) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tecnicoInventario']))"), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

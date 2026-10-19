@@ -117,7 +117,11 @@ export function escrituraAuditoria(env, ticketId, p, fechaHora) {
 async function llamarTelecom(env, url, cuerpo, ahoraMs) {
   for (let intento = 0; intento < 2; intento++) {
     const idToken = await iniciarSesion(env, ahoraMs, intento > 0);
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` }, body: JSON.stringify(cuerpo) });
+    const res = await fetch(url, {
+      method: cuerpo ? 'POST' : 'GET',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+      ...(cuerpo ? { body: JSON.stringify(cuerpo) } : {}),
+    });
     if (res.status === 401 && intento === 0) continue;
     if (!res.ok) throw new Error(`El inventario respondió ${res.status}: ${(await res.text()).slice(0, 150)}`);
     return res.json();
@@ -132,11 +136,37 @@ async function buscarEquipo(env, serial, ahoraMs) {
   return filas.find((f) => f.document)?.document || null;
 }
 
+// Los técnicos que tiene el inventario del otro sistema (su colección "tecnicos"): la lista oficial de nombres. Todo lo que se
+// escribe a nombre de un técnico (material, auditoría) debe llevar uno de estos nombres tal cual, porque su pantalla suma el
+// stock de cada técnico por ese nombre: uno distinto ("EDGAR" en vez de "EDGAR MONTERO") cae en una cuenta que nadie ve.
+// Cada uno con su estado ("Activo" o no): un técnico que no está activo allá no recibe descuentos.
+export async function leerTecnicosTelecom(env, ahoraMs = Date.now()) {
+  const res = await llamarTelecom(env, `${docsTelecom(env)}/${rutaTelecom(env)}/tecnicos?pageSize=300`, null, ahoraMs);
+  return (res.documents || []).map((d) => {
+    const f = camposAObjeto(d.fields);
+    return { nombre: String(f.nombre || '').trim(), activo: normalizarNombre(f.estado) === 'ACTIVO', estado: String(f.estado || '') };
+  }).filter((t) => t.nombre);
+}
+
+// El técnico tal como lo tiene el inventario ({ nombre, activo, estado }), o null si no está en su lista (se compara sin tildes ni mayúsculas).
+async function buscarTecnicoTelecom(env, nombre, ahoraMs) {
+  const buscado = normalizarNombre(nombre);
+  return (await leerTecnicosTelecom(env, ahoraMs)).find((t) => normalizarNombre(t.nombre) === buscado) || null;
+}
+
 // Envía una orden. Devuelve { estado, mensaje }; si no se pudo llegar al otro sistema, lanza el error (queda PENDIENTE).
-export async function enviarAlInventario(env, ticketId, p, ahoraMs = Date.now()) {
-  const conEquipo = p.accion !== ACCION_AVERIA;
+export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.now()) {
+  const conEquipo = orden.accion !== ACCION_AVERIA;
   const escrituras = [];
-  const { fecha, fechaHora } = fechaHoraCaracas(p.finalizadoEn || ahoraMs);
+  const { fecha, fechaHora } = fechaHoraCaracas(orden.finalizadoEn || ahoraMs);
+
+  // El técnico va primero: sin su nombre del inventario no se escribe nada, ni siquiera el equipo.
+  if (!orden.tecnico) return { estado: 'TECNICO_NO_VINCULADO', mensaje: `${TEXTO_ESTADO_ENVIO.TECNICO_NO_VINCULADO}${orden.tecnicoOrden ? ` (técnico de la orden: ${orden.tecnicoOrden}).` : ''}` };
+  const tecnicoInventario = await buscarTecnicoTelecom(env, orden.tecnico, ahoraMs);
+  if (!tecnicoInventario) return { estado: 'TECNICO_NO_ENCONTRADO', mensaje: `${TEXTO_ESTADO_ENVIO.TECNICO_NO_ENCONTRADO} (elegido: ${orden.tecnico}).` };
+  // Activo aquí pero no allá: no se envía nada hasta que se confirme (activarlo en el inventario o elegir otro técnico) y se reintente.
+  if (!tecnicoInventario.activo) return { estado: 'TECNICO_INACTIVO', mensaje: `${TEXTO_ESTADO_ENVIO.TECNICO_INACTIVO} (${tecnicoInventario.nombre}: ${tecnicoInventario.estado || 'sin estado'}).` };
+  const p = { ...orden, tecnico: tecnicoInventario.nombre };
 
   if (conEquipo) {
     if (!p.serial) return { estado: 'SIN_SERIAL', mensaje: TEXTO_ESTADO_ENVIO.SIN_SERIAL };
@@ -153,6 +183,11 @@ export async function enviarAlInventario(env, ticketId, p, ahoraMs = Date.now())
     } else if (estadoActual !== ESTADO_CON_TECNICO) {
       // Solo se descuenta el equipo que ya tiene asignado un técnico ("Con Técnico"); uno que sigue en almacén no se toca.
       return { estado: 'EQUIPO_NO_ASIGNADO', mensaje: `El equipo figura "${actual.estado || 'sin estado'}" y no "Con Técnico" en el inventario: no se envió nada de esta orden.` };
+    }
+    // El equipo debe ser del técnico de la orden. Si el equipo no trae técnico (o trae "-") no hay con qué comparar.
+    const tecnicoEquipo = normalizarNombre(actual.tecnico);
+    if (tecnicoEquipo && tecnicoEquipo !== '-' && tecnicoEquipo !== normalizarNombre(p.tecnico)) {
+      return { estado: 'EQUIPO_OTRO_TECNICO', mensaje: `${TEXTO_ESTADO_ENVIO.EQUIPO_OTRO_TECNICO} (el equipo figura con ${actual.tecnico} y la orden es de ${p.tecnico}).` };
     }
     escrituras.push({
       update: { name: equipo.name, fields: campos({ estado: 'Instalado', cliente: p.cliente, fechaInstalacion: fecha, fechaHoraInstalacion: fechaHora }) },
@@ -214,13 +249,23 @@ async function payloadDeOrden(env, deps, accessToken, ticketId) {
   return { payload: payloadEnvioInventario({ ...ticket, id: ticketId }) };
 }
 
+// Pone en el payload el nombre con que el inventario conoce al técnico: el que se eligió en Asignaciones (campo
+// tecnicoInventario del técnico), no el nombre corto de la orden. `tecnicoOrden` queda con el de la orden. Sin elección, `tecnico`
+// queda vacío y el envío no sale. Un envío guardado que ya traía su nombre (orden archivada) lo conserva si el técnico ya no existe.
+async function conTecnicoInventario(env, deps, accessToken, p) {
+  const tecnicoOrden = String(p.tecnicoOrden || p.tecnico || '').trim();
+  const ficha = tecnicoOrden ? await leerDocumento(env, deps, accessToken, 'technicians', tecnicoOrden.toUpperCase()) : null;
+  const elegido = String(ficha?.tecnicoInventario || '').trim();
+  return { ...p, tecnicoOrden, tecnico: elegido || (p.tecnicoOrden ? String(p.tecnico || '') : '') };
+}
+
 // Lo que hay que enviar ahora: lo que dice la orden en este momento (así lo que la oficina corrigió después de una alerta, como un
 // serial mal escrito, llega al reintentar) o, si la orden ya se archivó y `usarGuardado`, lo que quedó guardado del envío.
 //   { payload } | { omitir: true } (la orden ya no tiene nada que enviar) | { archivada: true } (no hay de dónde sacarlo)
 async function payloadAEnviar(env, deps, accessToken, ticketId, existente, usarGuardado) {
   const orden = await payloadDeOrden(env, deps, accessToken, ticketId);
-  if (orden.archivada) return usarGuardado && existente?.accion ? { payload: existente } : { archivada: true };
-  return orden.payload ? { payload: orden.payload } : { omitir: true };
+  if (orden.archivada) return usarGuardado && existente?.accion ? { payload: await conTecnicoInventario(env, deps, accessToken, existente) } : { archivada: true };
+  return orden.payload ? { payload: await conTecnicoInventario(env, deps, accessToken, orden.payload) } : { omitir: true };
 }
 
 async function borrarEnvio(env, deps, accessToken, ticketId) {
@@ -230,7 +275,7 @@ async function borrarEnvio(env, deps, accessToken, ticketId) {
 // Una orden PENDIENTE que ya no se puede leer (se archivó antes de enviarse) pasa a ERROR con ese motivo: alguien debe revisarla.
 const MENSAJE_ARCHIVADA = 'La orden ya no está en la lista (el cierre del día la archivó antes de enviarse). Revisa el reporte de cierre.';
 
-const camposPayload = (p) => ({ accion: p.accion, codigo: p.codigo, tecnico: p.tecnico, cliente: p.cliente, serial: p.serial, apc: p.apc, upc: p.upc, dropMetros: p.dropMetros, motivo: p.motivo, finalizadoEn: p.finalizadoEn });
+const camposPayload = (p) => ({ accion: p.accion, codigo: p.codigo, tecnico: p.tecnico, tecnicoOrden: p.tecnicoOrden, cliente: p.cliente, serial: p.serial, apc: p.apc, upc: p.upc, dropMetros: p.dropMetros, motivo: p.motivo, finalizadoEn: p.finalizadoEn });
 
 // Envía y deja el estado guardado. Avisa a los usuarios del módulo solo cuando una orden pasa a un estado de alerta (una vez por cambio).
 async function procesar(env, deps, accessToken, ticketId, p, existente, ahoraMs) {
@@ -304,9 +349,23 @@ export async function manejarInventario(request, env, headers, uid, deps, ahoraM
   }
 }
 
+//   POST /inventario/tecnicos   la lista de técnicos del inventario, para elegir con cuál se corresponde cada técnico de la app
+//                               (solo los usuarios de USUARIOS_INVENTARIO)
+export async function listarTecnicosInventario(env, headers, uid, deps, ahoraMs = Date.now()) {
+  try {
+    const accessToken = await deps.getGoogleAccessToken(env);
+    if (!(await permisos(env, deps, accessToken, uid)).gestionar) return new Response('Sin permiso.', { status: 403, headers });
+    if (!inventarioActivo(env)) return json({ estado: 'DESHABILITADO', tecnicos: [] }, 200, headers);
+    return json({ tecnicos: (await leerTecnicosTelecom(env, ahoraMs)).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')) }, 200, headers);
+  } catch (err) {
+    console.error(err);
+    return new Response('No se pudo leer la lista de técnicos del inventario.', { status: 500, headers });
+  }
+}
+
 // De un documento guardado (o del payload) a { accion, codigo, ... } con los tipos que espera el envío.
 const camposPayloadDe = (d) => ({
-  accion: d.accion, codigo: String(d.codigo || ''), tecnico: String(d.tecnico || ''), cliente: String(d.cliente || ''), serial: String(d.serial || ''),
+  accion: d.accion, codigo: String(d.codigo || ''), tecnico: String(d.tecnico || ''), tecnicoOrden: String(d.tecnicoOrden || ''), cliente: String(d.cliente || ''), serial: String(d.serial || ''),
   apc: Number(d.apc) || 0, upc: Number(d.upc) || 0, dropMetros: Number(d.dropMetros) || 0, motivo: String(d.motivo || ''), finalizadoEn: Number(d.finalizadoEn) || 0,
 });
 

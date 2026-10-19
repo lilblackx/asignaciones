@@ -9,6 +9,10 @@ const ETIQUETA_ESTADO = {
   SERIAL_YA_INSTALADO: 'Ya instalado',
   EQUIPO_NO_ASIGNADO: 'No está con técnico',
   SIN_SERIAL: 'Sin serial',
+  TECNICO_NO_VINCULADO: 'Técnico sin vincular',
+  TECNICO_NO_ENCONTRADO: 'Técnico no existe',
+  TECNICO_INACTIVO: 'Técnico inactivo',
+  EQUIPO_OTRO_TECNICO: 'Equipo de otro técnico',
   ERROR: 'Error al enviar',
   ENVIADO: 'Enviado',
   PENDIENTE: 'Pendiente',
@@ -49,7 +53,7 @@ function Chip({ estado }) {
 function Detalle({ envio }) {
   return (
     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-      {ETIQUETA_ACCION[envio.accion] || 'Orden'}{envio.tecnico ? ` · ${envio.tecnico}` : ''} · {fechaHora(envio.actualizadoEn)}
+      {ETIQUETA_ACCION[envio.accion] || 'Orden'}{envio.tecnico || envio.tecnicoOrden ? ` · ${envio.tecnico || envio.tecnicoOrden}` : ''} · {fechaHora(envio.actualizadoEn)}
     </p>
   );
 }
@@ -115,7 +119,7 @@ const unidad = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 function lineasEnvio(e) {
   const lineas = [
     `${e.codigo || 'S/C'}${e.cliente ? ` — ${e.cliente}` : ''}`,
-    `${ETIQUETA_ACCION[e.accion] || 'Orden'}${e.tecnico ? ` · ${e.tecnico}` : ''}`,
+    `${ETIQUETA_ACCION[e.accion] || 'Orden'}${e.tecnico || e.tecnicoOrden ? ` · ${e.tecnico || e.tecnicoOrden}` : ''}`,
     `Estado: ${ETIQUETA_ESTADO[e.estado] || e.estado}${e.intentos ? ` (${unidad(e.intentos, 'intento', 'intentos')})` : ''}`,
   ];
   if (e.serial) lineas.push(`Serial: ${e.serial}`);
