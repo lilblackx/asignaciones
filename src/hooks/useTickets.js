@@ -547,16 +547,23 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   useEffect(() => {
     numerarVentaRef.current = async (t) => {
       const fecha = t.createdAt ? new Date(t.createdAt) : new Date();
-      const guardada = await guardarConNumeracion(tickets, t.id, t.codigo, t.tipoTrabajo, t.tecnico, fecha, (codigo) => ({
-        ...t,
-        codigo,
-        historialEdiciones: [...(t.historialEdiciones || []), {
-          fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
-          operador: currentUserRef.current || 'OPERADOR',
-          detalle: `Cód: ${codigo} | Venta cargada por ${t.creadoNombre || t.creado || 'la promotora'}, asignada a ${t.tecnico}`,
-        }],
-      }), t);
-      notifyTicketChange(null, guardada);
+      // Varias sesiones de la oficina ven la venta a la vez: solo la que le puso el número deja la línea en el historial
+      // y avisa al técnico; las demás reutilizan el código sin repetir ninguna de las dos cosas.
+      let reutilizada = false;
+      const guardada = await guardarConNumeracion(tickets, t.id, t.codigo, t.tipoTrabajo, t.tecnico, fecha, (codigo, yaNumerada) => {
+        reutilizada = Boolean(yaNumerada);
+        if (yaNumerada) return { ...t, codigo };
+        return {
+          ...t,
+          codigo,
+          historialEdiciones: [...(t.historialEdiciones || []), {
+            fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+            operador: currentUserRef.current || 'OPERADOR',
+            detalle: `Cód: ${codigo} | Venta cargada por ${t.creadoNombre || t.creado || 'la promotora'}, asignada a ${t.tecnico}`,
+          }],
+        };
+      }, t);
+      if (!reutilizada) notifyTicketChange(null, guardada);
     };
   });
   const ventasNumeradasRef = useRef(new Set());

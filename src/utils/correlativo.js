@@ -84,7 +84,7 @@ export async function generarCorrelativo(db, appId, tipoTrabajo, fecha = new Dat
       const ticketSnap = await transaction.get(ticketRef);
       const codigoGuardado = ticketSnap.exists() ? ticketSnap.data().codigo : null;
       if (codigoGuardado && !esCodigoSinNumero(codigoGuardado)) {
-        if (alReservar) alReservar(transaction, codigoGuardado);
+        if (alReservar) alReservar(transaction, codigoGuardado, true);
         return codigoGuardado;
       }
     }
@@ -184,7 +184,8 @@ export async function generarCorrelativoConCatchUp(db, appId, tickets, tipoTraba
 // Guarda la orden. Instalación sin número aún ("IS", "IMZ", etc.) con técnico asignado:
 // le corresponde numerarse, y el número + el guardado van en una sola transacción
 // (si falla el guardado no se gasta número; si otro clic ya la numeró, se reutiliza ese).
-// `armarTicket(codigo)` debe ser pura: la transacción puede reintentarla.
+// `armarTicket(codigo, yaNumerada)` debe ser pura: la transacción puede reintentarla.
+// `yaNumerada` es true cuando otro operador ya le puso número y solo se reutiliza.
 // `base` (la orden tal como la vio el usuario): si se pasa, solo se escriben los campos
 // que cambiaron respecto a ella (ver cambiosDeTicket), para no pisar lo que otro usuario
 // guardó mientras tanto. Sin `base` se escribe la orden completa.
@@ -201,8 +202,8 @@ export async function guardarConNumeracion(db, appId, tickets, ticketId, codigoA
     return ticket;
   }
   let guardado;
-  await generarCorrelativoConCatchUp(db, appId, tickets, tipoTrabajo, fecha, (transaction, codigo) => {
-    guardado = armarTicket(codigo);
+  await generarCorrelativoConCatchUp(db, appId, tickets, tipoTrabajo, fecha, (transaction, codigo, yaNumerada) => {
+    guardado = armarTicket(codigo, yaNumerada);
     if (!base) transaction.set(ticketRef, guardado);
     else {
       const cambios = cambiosDeTicket(base, guardado);
