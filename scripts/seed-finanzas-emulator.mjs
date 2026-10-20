@@ -91,6 +91,9 @@ for (let haceDias = 0; haceDias < 7; haceDias++) {
     });
   }
 }
+// Una instalación finalizada que quedó sin técnico en su ficha: Finanzas avisa que no se puede pagar.
+n++;
+ordenes.push({ id: `fin-seed-${n}`, codigo: `IO${300 + n}`, nombre: `Cliente ${300 + n}`, cedula: `V-${21000000 + n}`, direccion: 'Dirección de prueba', telefono: '04140000001', tecnico: '', tipoTrabajo: 'INSTALACIÓN', falla: 'MR', estado: 'FINALIZADO', creado: 'usuario', isAsignado: false, createdAt: ahora - 5 * HORA, prefinalizadoEn: ahora - 2 * HORA, finalizadoEn: ahora - HORA, historialEdiciones: [] });
 for (const { id, ...datos } of ordenes) await base.collection('tickets').doc(id).set(datos);
 
 // --- Tarifas y un pago ya hecho (con la misma lógica de la app) ---

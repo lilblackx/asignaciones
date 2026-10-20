@@ -36,8 +36,10 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
   const [pagando, setPagando] = useState(null);
   const [anulando, setAnulando] = useState(null);
   const [detalle, setDetalle] = useState(null);
+  const [verSinTecnico, setVerSinTecnico] = useState(false);
   const registrados = pagosDelPeriodo(pagos, rango);
-  const sinTecnico = items.filter((i) => i.tecnico === SIN_TECNICO).length;
+  const ordenesSinTecnico = items.filter((i) => i.tecnico === SIN_TECNICO);
+  const sinTecnico = ordenesSinTecnico.length;
   const tarjetas = filas.filter((f) => f.tecnico !== SIN_TECNICO);
 
   const confirmarPago = async () => {
@@ -55,7 +57,24 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
       <ResumenCifras items={cifrasPagos(tarjetas, sumaPagado(Object.values(pagadasPorTecnico)), tasa)} />
 
       <h3 className="text-sm font-bold text-zinc-900 dark:text-white pt-1">Técnicos · {etiquetaRango(rango)}</h3>
-      {sinTecnico > 0 && <p className="text-[11px] text-amber-700 dark:text-amber-400 mb-2">{textoOrdenes(sinTecnico)} sin técnico asignado: no se pueden pagar.</p>}
+      {sinTecnico > 0 && (
+        <div className="rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-300 space-y-2">
+          <p>
+            {textoOrdenes(sinTecnico)} finalizada{sinTecnico === 1 ? '' : 's'} sin técnico en su ficha: no hay a quién pagarla{sinTecnico === 1 ? '' : 's'}. La oficina debe asignarle el técnico a la orden.{' '}
+            <button type="button" aria-expanded={verSinTecnico} onClick={() => setVerSinTecnico((v) => !v)} className="font-black underline">{verSinTecnico ? 'Ocultar' : 'Ver cuál'}</button>
+          </p>
+          {verSinTecnico && (
+            <ul className="divide-y divide-amber-200 dark:divide-amber-900/50 border border-amber-200 dark:border-amber-900/50 rounded bg-white/60 dark:bg-black/20">
+              {ordenesSinTecnico.map((item) => (
+                <li key={item.clave} className="flex items-center justify-between gap-2 px-3 py-1.5">
+                  <span className="min-w-0 truncate"><button type="button" onClick={() => setDetalle(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-dotted underline-offset-2">{item.orden.codigo || 'S/C'}</button> · {item.orden.nombre}</span>
+                  <span className="shrink-0">{diaLegible(item.dia).slice(0, 5)} · {grupoDePago(item.concepto)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {tarjetas.length === 0 ? (
         <p className="text-xs text-zinc-500 text-center py-8">Ninguna orden pagable en este periodo.</p>
       ) : (
