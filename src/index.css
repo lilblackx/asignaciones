@@ -94,8 +94,10 @@
   button:not(:disabled):not([role="combobox"]):not([role="menuitem"]):active {
     scale: 0.95;
   }
-  button.w-full:not(:disabled):active,
-  button.flex-1:not(:disabled):active {
+  /* Un botón ancho se encoge menos: si no, su borde se corre más que su relleno, el puntero queda fuera al soltar y el clic
+     no llega (la flecha de una tarjeta ancha no abría). Lleva los mismos :not() de arriba para ganarle en especificidad. */
+  button.w-full:not(:disabled):not([role="combobox"]):not([role="menuitem"]):active,
+  button.flex-1:not(:disabled):not([role="combobox"]):not([role="menuitem"]):active {
     scale: 0.98;
   }
 }
