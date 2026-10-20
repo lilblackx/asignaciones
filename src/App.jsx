@@ -5,6 +5,7 @@ import { normalizarUbicacion } from './utils/ubicacion';
 import { avisoTasaDesactualizada, montoBsDe } from './utils/tasa';
 import { avisaCobroAlPreFinalizar } from './utils/tipoVisita';
 import { monedaDe, tieneCobroFinal } from './utils/cobro';
+import { enInfraestructura } from './utils/infraestructura';
 import TasaIndicador from './components/TasaIndicador';
 import AvisoNotificaciones from './components/AvisoNotificaciones';
 import EnviosInventarioModal, { AvisoInventario } from './components/AlertaInventario';
@@ -19,6 +20,7 @@ import { useUsers } from './hooks/useUsers';
 import { useTickets } from './hooks/useTickets';
 import { useAhora } from './hooks/useAhora';
 import { useFilasCambiadas } from './hooks/useFilasCambiadas';
+import { useBloqueosOrden } from './hooks/useBloqueosOrden';
 import { useReports } from './hooks/useReports';
 import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
@@ -65,6 +67,9 @@ const PreFinalizarModal = lazy(() => import('./components/modals/PreFinalizarMod
 const CobroResultanteModal = lazy(() => import('./components/modals/CobroResultanteModal'));
 const AprobarFinalizarModal = lazy(() => import('./components/modals/AprobarFinalizarModal'));
 const ResponderCobroModal = lazy(() => import('./components/modals/ResponderCobroModal'));
+const CancelarOrdenModal = lazy(() => import('./components/modals/CancelarOrdenModal'));
+const EscalarInfraestructuraModal = lazy(() => import('./components/modals/EscalarInfraestructuraModal'));
+const ResolverInfraestructuraModal = lazy(() => import('./components/modals/ResolverInfraestructuraModal'));
 const UbicacionModal = lazy(() => import('./components/modals/UbicacionModal'));
 const HistorialOrdenModal = lazy(() => import('./components/modals/HistorialOrdenModal'));
 const DetalleOrdenModal = lazy(() => import('./components/modals/DetalleOrdenModal'));
@@ -93,7 +98,7 @@ export default function App({ auth }) {
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, softDeleteTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
   const filasCambiadas = useFilasCambiadas(tickets, ticketsCargados);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
@@ -204,8 +209,9 @@ export default function App({ auth }) {
   // notificaciones); el botón de Tasa permite actualizarla a mano en cualquier momento.
 
   // Para TECNICO: solo sus propias órdenes. Para otros: todos los tickets.
+  // Lo que está esperando a infraestructura sale de su lista: no puede atenderlo hasta que la oficina lo resuelva.
   const ticketsParaVer = isTecnico && tecnicoAsociado
-    ? tickets.filter(t => t.tecnico?.toUpperCase() === tecnicoAsociado.toUpperCase())
+    ? tickets.filter(t => t.tecnico?.toUpperCase() === tecnicoAsociado.toUpperCase() && !enInfraestructura(t))
     : tickets;
 
   // Para el estado vacío: si el técnico no tiene ninguna orden ACTIVA (aunque
@@ -238,8 +244,7 @@ export default function App({ auth }) {
     setTipoFilter('TODOS');
     const activa = ticket.estado === 'PENDIENTE' || ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA';
     setStatusFilter(
-      ticket.estado === 'ELIMINADO' ? 'ELIMINADOS'
-        : activa ? (isTecnico && esProgramadaFutura(ticket) ? 'PROG_FUTURAS' : 'TODOS')
+      activa ? (isTecnico && esProgramadaFutura(ticket) ? 'PROG_FUTURAS' : 'TODOS')
         : (ticket.estado || 'TODOS').toUpperCase()
     );
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -264,7 +269,8 @@ export default function App({ auth }) {
     setEdicionBase(ticket);
     setEditingTicket(ticket);
   };
-  const [deletingTicketId, setDeletingTicketId] = useState(null);
+  // La orden que se está cancelando (pide el motivo).
+  const [cancelarTarget, setCancelarTarget] = useState(null);
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -290,6 +296,15 @@ export default function App({ auth }) {
   const [historialTarget, setHistorialTarget] = useState(null);
   const [detalleTarget, setDetalleTarget] = useState(null);
   const [responderCobroTarget, setResponderCobroTarget] = useState(null);
+  const [escalarTarget, setEscalarTarget] = useState(null);
+  const [resolverInfraTarget, setResolverInfraTarget] = useState(null);
+
+  // Aviso de "alguien está revisando esta orden": la que esta persona tiene abierta para aprobar, finalizar, resolver, escalar o editar.
+  // `revisando`: orden -> nombres de otras personas de la oficina que la tienen abierta ahora (solo aviso; ver hooks/useBloqueosOrden).
+  const { revisando } = useBloqueosOrden({
+    firebaseUser, rol: role, usuario: currentUser, nombre: currentUserName || currentUser, ahora,
+    ordenId: aprobarTarget?.id || finalizarTarget?.id || resolverInfraTarget?.id || escalarTarget?.id || cancelarTarget?.id || editingTicket?.id || null,
+  });
 
   // Click en una notificación: lleva a la orden o a la acción que avisa. Si la orden ya no
   // está (o cambió de estado), cae a la vista de la lista más cercana.
@@ -326,7 +341,7 @@ export default function App({ auth }) {
         else handleGoHome();
         break;
       case 'cancelada':
-        // Cancelada: sigue en su lista (con estado CANCELADO); eliminada o quitada ya no está.
+        // Cancelada: sigue en su lista (con estado CANCELADO); si se quitó o ya se cerró el día, ya no está.
         if (ticket) mostrarOrden(ticket);
         else handleGoHome();
         break;
@@ -345,6 +360,12 @@ export default function App({ auth }) {
         break;
       case 'respuestaCobro':
         if (isTecnico && ticket?.estado === 'PENDIENTE') setPreFinalizarTarget(ticket);
+        else if (ticket) mostrarOrden(ticket);
+        else handleGoHome();
+        break;
+      case 'infraestructura':
+        // La oficina abre la orden para decidir cómo sigue; el técnico la busca en su lista.
+        if (canEditTickets && enInfraestructura(ticket)) setResolverInfraTarget(ticket);
         else if (ticket) mostrarOrden(ticket);
         else handleGoHome();
         break;
@@ -466,6 +487,11 @@ export default function App({ auth }) {
     if (ok) setAprobarTarget(null);
   }, 'No se pudo aprobar la orden.');
 
+  // El técnico escala una orden suya y la oficina cualquiera pendiente: queda esperando a infraestructura con un motivo.
+  const handleEscalar = conAviso(async (ticket, motivo) => escalarAInfraestructura(ticket, motivo), 'No se pudo escalar la orden.');
+  // ADMIN/USUARIO: devuelven la orden al técnico o la cierran como trabajo adicional (TA).
+  const handleResolverInfra = conAviso(async (ticket, resolucion) => resolverInfraestructura(ticket, resolucion), 'No se pudo resolver la orden.');
+
   const handleDevolver = conAviso(async (ticket, motivo) => {
     const ok = await devolverTicket(ticket, motivo);
     if (ok) setAprobarTarget(null);
@@ -476,10 +502,8 @@ export default function App({ auth }) {
     if (ok) setFinalizarTarget(null);
   }, 'No se pudo finalizar la orden.');
 
-  const confirmDelete = conAviso(async () => {
-    await softDeleteTicket(deletingTicketId);
-    setDeletingTicketId(null);
-  }, 'No se pudo eliminar la orden.');
+  // Cancelar una orden: pide el motivo y avisa al técnico. Devuelve true si se pudo (el modal se cierra solo).
+  const handleCancelar = conAviso(async (ticket, motivo) => cancelarTicket(ticket, motivo), 'No se pudo cancelar la orden.');
 
   const confirmToggleAsignado = conAviso(async (ticket, newValue) => {
     await toggleAsignado(ticket, newValue);
@@ -625,7 +649,6 @@ export default function App({ auth }) {
           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-3 font-medium flex flex-col items-start gap-1 sm:flex-row sm:justify-between sm:items-center lg:pr-2">
             <span className="whitespace-nowrap">{visibleTickets.length} de {filteredTickets.length} registros</span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {statusFilter === 'ELIMINADOS' && <span className="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded">Viendo papelera</span>}
               {canEditTickets && !tasaLoading && <TasaIndicador tasaConfig={tasaConfig} onClick={isAdmin ? () => setIsTasaModalOpen(true) : undefined} />}
             </div>
           </div>
@@ -640,13 +663,16 @@ export default function App({ auth }) {
               getTecnicoColor={getTecnicoColor}
               onToggleAsignado={handleToggleAsignado}
               onEdit={abrirEdicion}
-              onDelete={setDeletingTicketId}
+              onCancelar={setCancelarTarget}
               onCopyWhatsApp={handleCopyWhatsApp}
               onPegarUbicacion={handlePegarUbicacion}
               onVerDetalle={setDetalleTarget}
               onPreFinalizar={setPreFinalizarTarget}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
+              onEscalar={canEditTickets ? setEscalarTarget : undefined}
+              onResolverInfra={canEditTickets ? setResolverInfraTarget : undefined}
+              revisando={revisando}
               onFinalizar={setFinalizarTarget}
               onTogglePrioridad={handleTogglePrioridad}
               ahora={ahora}
@@ -666,7 +692,7 @@ export default function App({ auth }) {
               getTecnicoColor={getTecnicoColor}
               onToggleAsignado={handleToggleAsignado}
               onEdit={abrirEdicion}
-              onDelete={setDeletingTicketId}
+              onCancelar={setCancelarTarget}
               onCopyWhatsApp={handleCopyWhatsApp}
               onPegarUbicacion={handlePegarUbicacion}
               onVerDetalle={setDetalleTarget}
@@ -674,6 +700,8 @@ export default function App({ auth }) {
               onPreFinalizar={setPreFinalizarTarget}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
+              onEscalar={canEditTickets ? setEscalarTarget : undefined}
+              onResolverInfra={canEditTickets ? setResolverInfraTarget : undefined}
               onFinalizar={setFinalizarTarget}
               onTogglePrioridad={handleTogglePrioridad}
               ahora={ahora}
@@ -764,6 +792,8 @@ export default function App({ auth }) {
         {finalizarTarget && (
           <AprobarFinalizarModal
             ticket={finalizarTarget}
+            actual={tickets.find(t => t.id === finalizarTarget.id) || null}
+            otrosRevisando={revisando.get(finalizarTarget.id)}
             montoBs={montoBsDe(tasaConfig)}
             onConfirm={confirmFinalizar}
             onGuardarValores={guardarValoresCliente}
@@ -772,16 +802,11 @@ export default function App({ auth }) {
           />
         )}
 
-        {deletingTicketId !== null && (
-          <ConfirmModal
-            color="red"
-            title="¿Eliminar Orden?"
-            description='La orden pasará a la papelera y quedará registrado que usted la eliminó.'
-            confirmLabel="Sí, Eliminar"
-            processingLabel="Eliminando..."
-            zIndexClass="z-[70]"
-            onCancel={() => setDeletingTicketId(null)}
-            onConfirm={confirmDelete}
+        {cancelarTarget && (
+          <CancelarOrdenModal
+            ticket={tickets.find(t => t.id === cancelarTarget.id) || cancelarTarget}
+            onConfirmar={handleCancelar}
+            onClose={() => setCancelarTarget(null)}
           />
         )}
 
@@ -816,6 +841,9 @@ export default function App({ auth }) {
             logTecnicos={logTecnicos}
             totalesMensuales={totalesMensuales}
             usuario={currentUser}
+            nombreUsuario={currentUserName || currentUser}
+            esAdmin={isAdmin}
+            firebaseUser={firebaseUser}
             onClose={() => setIsReportesOpen(false)}
           />
         )}
@@ -900,6 +928,25 @@ export default function App({ auth }) {
           />
         )}
 
+        {escalarTarget && (
+          <EscalarInfraestructuraModal
+            ticket={tickets.find(t => t.id === escalarTarget.id) || escalarTarget}
+            otrosRevisando={revisando.get(escalarTarget.id)}
+            esTecnico={isTecnico}
+            onConfirmar={handleEscalar}
+            onClose={() => setEscalarTarget(null)}
+          />
+        )}
+
+        {resolverInfraTarget && (
+          <ResolverInfraestructuraModal
+            ticket={tickets.find(t => t.id === resolverInfraTarget.id) || resolverInfraTarget}
+            otrosRevisando={revisando.get(resolverInfraTarget.id)}
+            onResolver={handleResolverInfra}
+            onClose={() => setResolverInfraTarget(null)}
+          />
+        )}
+
         {detalleTarget && (
           <DetalleOrdenModal
             ticket={tickets.find(t => t.id === detalleTarget.id) || detalleTarget}
@@ -930,6 +977,8 @@ export default function App({ auth }) {
         {aprobarTarget && (
           <AprobarFinalizarModal
             ticket={aprobarTarget}
+            actual={tickets.find(t => t.id === aprobarTarget.id) || null}
+            otrosRevisando={revisando.get(aprobarTarget.id)}
             montoBs={montoBsDe(tasaConfig)}
             onConfirm={handleConfirmAprobarFinalizar}
             onGuardarValores={guardarValoresCliente}

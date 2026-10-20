@@ -23,7 +23,7 @@ check('sin enCamino no hay viaje', estadoViaje(orden, T0), null);
 check('con salida y sin llegada: en camino', estadoViaje({ ...orden, enCamino: { tecnico: 'GERARDO', desde: T0 } }, T0 + 5 * MIN), 'EN_CAMINO');
 check('con llegada: en sitio', estadoViaje({ ...orden, enCamino: { tecnico: 'GERARDO', desde: T0, llegoEn: T0 + 20 * MIN } }, T0 + 30 * MIN), 'EN_SITIO');
 check('si la orden no está pendiente el viaje no cuenta',
-  ['PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO', 'ELIMINADO'].map(estado => estadoViaje({ ...orden, estado, enCamino: { tecnico: 'GERARDO', desde: T0 } }, T0 + MIN)), [null, null, null, null]);
+  ['PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'].map(estado => estadoViaje({ ...orden, estado, enCamino: { tecnico: 'GERARDO', desde: T0 } }, T0 + MIN)), [null, null, null]);
 check('si la orden pasó a otro técnico el viaje no cuenta', estadoViaje({ ...orden, tecnico: 'REINEL', enCamino: { tecnico: 'GERARDO', desde: T0 } }, T0 + MIN), null);
 check('sin técnico no hay viaje', estadoViaje({ ...orden, tecnico: '', enCamino: { tecnico: '', desde: T0 } }, T0 + MIN), null);
 check('sin orden no hay viaje', [estadoViaje(null), estadoViaje(undefined)], [null, null]);

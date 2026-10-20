@@ -1,5 +1,6 @@
 import { doc, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { cambiosDeTicket } from './cambiosTicket.js';
+import { ConflictoOrdenError } from './concurrencia.js';
 
 // Códigos de mes: letra única salvo los 6 meses que colisionan
 // (Marzo/Mayo, Junio/Julio, Abril/Agosto)
@@ -189,7 +190,9 @@ export async function generarCorrelativoConCatchUp(db, appId, tickets, tipoTraba
 // `base` (la orden tal como la vio el usuario): si se pasa, solo se escriben los campos
 // que cambiaron respecto a ella (ver cambiosDeTicket), para no pisar lo que otro usuario
 // guardó mientras tanto. Sin `base` se escribe la orden completa.
-export async function guardarConNumeracion(db, appId, tickets, ticketId, codigoActual, tipoTrabajo, tecnicoFinal, fecha, armarTicket, base = null) {
+// `verificar(ordenActual)` (opcional, solo con `base` y sin numerar): la orden se vuelve a leer dentro de una transacción y, si devuelve
+// un texto, no se escribe y se lanza un ConflictoOrdenError con ese texto (otra persona ya la cambió; ver utils/concurrencia).
+export async function guardarConNumeracion(db, appId, tickets, ticketId, codigoActual, tipoTrabajo, tecnicoFinal, fecha, armarTicket, base = null, verificar = null) {
   const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticketId.toString());
   const tieneTecnico = Boolean(tecnicoFinal && tecnicoFinal.toString().trim());
   if (!(esCodigoSinNumero(codigoActual) && tieneTecnico)) {
@@ -197,7 +200,14 @@ export async function guardarConNumeracion(db, appId, tickets, ticketId, codigoA
     if (!base) await setDoc(ticketRef, ticket);
     else {
       const cambios = cambiosDeTicket(base, ticket);
-      if (Object.keys(cambios).length > 0) await updateDoc(ticketRef, cambios);
+      if (verificar) {
+        await runTransaction(db, async (transaction) => {
+          const actual = await transaction.get(ticketRef);
+          const problema = verificar(actual.exists() ? { id: actual.id, ...actual.data() } : null);
+          if (problema) throw new ConflictoOrdenError(problema);
+          if (Object.keys(cambios).length > 0) transaction.update(ticketRef, cambios);
+        });
+      } else if (Object.keys(cambios).length > 0) await updateDoc(ticketRef, cambios);
     }
     return ticket;
   }

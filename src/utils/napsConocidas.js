@@ -6,7 +6,7 @@ import { normalizarCoordenadasNap } from './ubicacion';
 // y sin repetidas. Sirve para no depender de Tomodat cuando la NAP ya se conoce.
 export function construirNapsConocidas(activos = [], archivados = []) {
   const ordenadas = [...activos, ...archivados]
-    .filter(t => t?.nap && t.napCoordenadas && t.estado !== 'ELIMINADO')
+    .filter(t => t?.nap && t.napCoordenadas)
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   const mapa = new Map();

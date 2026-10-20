@@ -17,6 +17,8 @@ import { CLIENTES_NAP_SOSPECHOSA, causasDeAveria } from './causasAveria.js';
 import { resumenEjecutivo } from './resumenEjecutivo.js';
 import { NOTA_COBROS, RESULTADOS, cifrasCobros, columnasDesglose, columnasMonto, columnasResultado, filaDesglose, filasMonto, filasResultado, resumenCobros } from './cobrosReporte.js';
 import { NOTA_HORAS, cifrasDeTramos, colasDeLaOficina, columnasPorTecnico, columnasPorTipo, columnasTramo, esperasDelCiclo, filaPorTecnico, filaPorTipo, filaTramo } from './esperasCiclo.js';
+import { HOJAS, armarHoja, columnasMaterialesVisitas, filasMaterialesVisitas } from './reporteMensual.js';
+import { cifrasVnTa, columnasEstadisticaVnTa, columnasVnTa, estadisticaRegistros, filaVnTa, filasEstadisticaVnTa, ordenarRegistros } from './registroVnTa.js';
 import { etiquetaMes } from './totalesMes.js';
 import { mesesDeLaTendencia, tendenciaMensual, textoVariacion } from './tendenciaMensual.js';
 
@@ -29,7 +31,7 @@ const horas = (ms) => Math.round((ms / HORA_MS) * 100) / 100;
 // --- Cifras de arriba de cada reporte ---
 export function cifrasEstadisticas({ finalizadas, totalOrdenes, porTecnico, reincidentes }) {
   return [
-    { etiqueta: 'Órdenes', valor: totalOrdenes, detalle: 'sin contar eliminadas' },
+    { etiqueta: 'Órdenes', valor: totalOrdenes, detalle: 'incluye las canceladas' },
     { etiqueta: 'Finalizadas', valor: finalizadas, detalle: totalOrdenes ? `${Math.round((finalizadas / totalOrdenes) * 100)}% de las órdenes` : 'Sin órdenes' },
     { etiqueta: 'Técnico líder', valor: porTecnico[0]?.name || '—', detalle: porTecnico[0] ? `${porTecnico[0].count} finalizadas` : 'Sin finalizadas' },
     { etiqueta: 'Clientes reincidentes', valor: reincidentes.length, detalle: 'con más de una orden' },
@@ -278,5 +280,34 @@ export function documentoCobros(ctx) {
     { tipo: 'tabla', titulo: 'Por concepto (tipo de visita)', columnas: columnasDesglose('Concepto'), filas: resumen.porConcepto.map(filaDesglose), vacio: 'Ninguna orden con cobro en este periodo.' },
     { tipo: 'tabla', titulo: 'Por técnico', columnas: columnasDesglose('Técnico'), filas: resumen.porTecnico.map(filaDesglose), vacio: 'Ninguna orden con cobro en este periodo.' },
     { tipo: 'texto', texto: NOTA_COBROS },
+  ]);
+}
+
+// Registro de estadísticas: las hojas del mes que el departamento lleva en su hoja de cálculo. Visitas técnicas, averías e instalaciones se arman solas
+// con las órdenes (cuadro de estadística, materiales y lista de cada orden); VN y TA se llena a mano (`registrosVnTa`, ver utils/registroVnTa). La
+// lista completa (19 o 20 columnas) va solo en el CSV; el PDF y el Word llevan una lista resumida que cabe en la hoja vertical.
+export function documentoRegistroEstadisticas(ctx) {
+  const { ordenes, rango, tecnico, registrosVnTa = [] } = ctx;
+  const bloquesDeHoja = (h) => [
+    { tipo: 'seccion', titulo: h.nombre },
+    { tipo: 'cifras', titulo: `Resumen de ${h.singular}`, items: h.cifras },
+    { tipo: 'tabla', titulo: h.tituloEstadistica, columnas: h.columnasEstadistica, filas: h.filasEstadistica },
+    { tipo: 'tabla', titulo: `Materiales de ${h.singular}`, columnas: columnasMaterialesVisitas(), filas: filasMaterialesVisitas(h.estadistica) },
+    { tipo: 'texto', texto: `${h.nota}${h.aviso ? ` ${h.aviso}` : ''}` },
+    { tipo: 'tabla', noCsv: true, titulo: `${h.nombre} del periodo (${h.lista.length})`, columnas: h.columnasCompacta, filas: h.lista.map((t) => h.filaCompacta(t)), vacio: 'Ninguna orden en este periodo.' },
+    { tipo: 'tabla', soloCsv: true, titulo: `Hoja de ${h.singular}`, columnas: h.columnasLista, filas: h.lista.map((t, i) => h.filaLista(t, i + 1)), vacio: 'Ninguna orden en este periodo.' },
+  ];
+  // VN y TA (a mano): el técnico filtrado de arriba también aplica a sus filas.
+  const filasVnTa = ordenarRegistros(registrosVnTa).filter((r) => !tecnico || String(r.tecnico || '').toUpperCase() === tecnico.toUpperCase());
+  const eVnTa = estadisticaRegistros(filasVnTa);
+  const bloquesVnTa = [
+    { tipo: 'seccion', titulo: 'VN y TA' },
+    { tipo: 'cifras', titulo: 'Resumen de VN y TA', items: cifrasVnTa(eVnTa) },
+    { tipo: 'tabla', titulo: 'Estadística de VN y TA', columnas: columnasEstadisticaVnTa(), filas: filasEstadisticaVnTa(eVnTa) },
+    { tipo: 'tabla', titulo: `Hoja de VN y TA (${filasVnTa.length})`, columnas: columnasVnTa(), filas: filasVnTa.map(filaVnTa), vacio: 'Ningún registro de VN o TA en este periodo.' },
+  ];
+  return encabezado('Registro de estadísticas', rango, tecnico, ctx, [
+    ...HOJAS.filter((h) => !h.manual).flatMap(({ id }) => bloquesDeHoja(armarHoja(id, ordenes, rango, { tecnico }))),
+    ...bloquesVnTa,
   ]);
 }

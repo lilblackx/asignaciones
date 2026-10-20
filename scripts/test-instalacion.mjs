@@ -165,8 +165,8 @@ check('la plantilla completa (así la copia el técnico)', completa.split('\n').
 // Antes de pre-finalizar (o si la devuelven al técnico) la plantilla es la original, con los campos vacíos,
 // aunque la orden conserve datos de antes; desde que se pre-finaliza (y ya finalizada) lleva los del técnico.
 check('mientras no esté pre-finalizada sale la plantilla original, con los campos vacíos',
-  ['PENDIENTE', 'CANCELADO', 'ELIMINADO', undefined].map(estado => generarMensajeWhatsAppInstalacion({ ...orden, estado, instalacion: datos.datos })),
-  Array(4).fill(COMO_SIEMPRE));
+  ['PENDIENTE', 'CANCELADO', undefined].map(estado => generarMensajeWhatsAppInstalacion({ ...orden, estado, instalacion: datos.datos })),
+  Array(3).fill(COMO_SIEMPRE));
 check('pre-finalizada o finalizada la plantilla lleva los datos del técnico',
   ['PRE-FINALIZADO', 'PRE-FINALIZADA', 'FINALIZADO'].map(estado => generarMensajeWhatsAppInstalacion({ ...orden, estado, instalacion: datos.datos })),
   Array(3).fill(LLENA));

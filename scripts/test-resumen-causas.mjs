@@ -27,11 +27,10 @@ const ordenes = [
   averia('4', { falla: 'Sin señal', nap: 'O07D05', estado: 'PENDIENTE', finalizadoEn: undefined }),
   averia('5', { falla: 'Sin señal', nap: 'O07D05', cedula: '10001', estado: 'CANCELADO', createdAt: caracas('2026-10-16', 9), finalizadoEn: undefined }), // mismo cliente que la 1, al día siguiente de finalizarla
   averia('6', { tipoTrabajo: 'INSTALACIÓN', falla: '' }), // no es avería
-  averia('7', { estado: 'ELIMINADO' }),
   averia('8', { createdAt: caracas('2026-09-10', 9), finalizadoEn: caracas('2026-09-10', 12) }), // fuera del periodo
 ];
 const c = causasDeAveria(ordenes, RANGO);
-check('cuenta solo averías del periodo, sin eliminadas ni otros tipos', [c.total, c.resueltas], [5, 3]);
+check('cuenta solo averías del periodo, sin otros tipos', [c.total, c.resueltas], [5, 3]);
 check('por falla: total, porcentaje, resueltas, canceladas y tiempo medio de resolución', c.porFalla.map((f) => [f.nombre, f.total, f.pct, f.resueltas, f.canceladas, f.resolucionMedia]), [['LOS', 3, 60, 3, 0, 3 * HORA], ['SIN SEÑAL', 2, 40, 0, 1, null]]);
 check('tiempo medio de resolución total y NAPs afectadas', [c.resolucionMedia, c.napsAfectadas], [3 * HORA, 2]);
 check('por NAP: averías, clientes distintos y fallas principales', c.porNap.map((n) => [n.nap, n.total, n.clientes, n.principales, n.sospechosa]), [['N10D14', 3, 3, ['LOS'], true], ['O07D05', 2, 2, ['SIN SEÑAL'], false]]);

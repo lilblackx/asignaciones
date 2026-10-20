@@ -111,10 +111,10 @@ await check('catch-up: respeta órdenes existentes con número mayor al contador
   eq(await generarCorrelativo(db, APP_ID, 'MUDANZA', hoy, 40), `V${mes}41`);
 });
 
-await check('maxNumeroExistente cuenta papelera, ignora otro mes/año y otros prefijos', () => {
+await check('maxNumeroExistente cuenta las canceladas, ignora otro mes/año y otros prefijos', () => {
   const tickets = [
     { codigo: `A${mes}15`, createdAt: hoy.getTime() },
-    { codigo: `A${mes}16`, createdAt: hoy.getTime(), estado: 'ELIMINADO' },
+    { codigo: `A${mes}16`, createdAt: hoy.getTime(), estado: 'CANCELADO' },
     { codigo: `A${mes}99`, createdAt: new Date(anio - 1, 0, 1).getTime() },
     { codigo: `V${mes}50`, createdAt: hoy.getTime() },
   ];

@@ -28,7 +28,7 @@ export function napDeOrden(t) {
 const media = (lista) => (lista.length ? lista.reduce((s, n) => s + n, 0) / lista.length : null);
 
 export function causasDeAveria(ordenes, rango, { tecnico } = {}) {
-  const averias = ordenes.filter((t) => t.tipoTrabajo === 'AVERÍA' && t.estado !== 'ELIMINADO' && Number(t.createdAt) > 0 && delTecnico(t, tecnico));
+  const averias = ordenes.filter((t) => t.tipoTrabajo === 'AVERÍA' && Number(t.createdAt) > 0 && delTecnico(t, tecnico));
   const delPeriodo = averias.filter((t) => enRango(diaDe(Number(t.createdAt)), rango));
 
   const fallas = new Map();

@@ -1,5 +1,6 @@
 // Reportes de gestión de técnicos: tiempo de atención, productividad y calidad. Todo sale de las órdenes (vivas y ya archivadas en los
 // cierres) y del registro de activación de técnicos. Los días son los de Caracas, como en el resto de los reportes.
+import { comoCancelada } from './cancelacion.js';
 import { diaDe } from './totalesMes.js';
 import { enRango } from './periodoReporte.js';
 import { clasificarEvento } from './historial.js';
@@ -38,7 +39,9 @@ export function todasLasOrdenes(tickets, reports) {
   const lista = [];
   // A las archivadas se les agrega cuándo se hizo el cierre que las guardó (`_cierreEn`), por si no traen fecha propia.
   const archivadas = reports.flatMap((r) => (r.ticketsDetalle || []).map((t) => ({ ...t, _cierreEn: r.createdAt })));
-  for (const t of [...tickets, ...archivadas]) {
+  for (const original of [...tickets, ...archivadas]) {
+    // Una que quedó como ELIMINADO de antes se lee como cancelada (ya solo existe cancelada).
+    const t = comoCancelada(original);
     const clave = t.id ?? `${t.codigo}-${t.createdAt}`;
     if (vistas.has(clave)) continue;
     vistas.add(clave);
@@ -160,7 +163,7 @@ export function calidad(ordenes, rango, { tecnico } = {}) {
   const averiasPorCliente = new Map();
   for (const t of ordenes) {
     const cliente = soloDigitos(t.cedula);
-    if (cliente.length < 5 || t.tipoTrabajo !== 'AVERÍA' || t.estado === 'ELIMINADO' || !(Number(t.createdAt) > 0)) continue;
+    if (cliente.length < 5 || t.tipoTrabajo !== 'AVERÍA' || !(Number(t.createdAt) > 0)) continue;
     if (!averiasPorCliente.has(cliente)) averiasPorCliente.set(cliente, []);
     averiasPorCliente.get(cliente).push(t);
   }

@@ -14,6 +14,7 @@ import { textoConectoresInstalacion } from '../../utils/conectoresInstalacion';
 import { estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../../utils/whatsapp';
 import { valoresGuardados } from '../../utils/valoresCliente';
+import CancelacionAviso from '../CancelacionAviso';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 const fechaProgramada = (iso) => { const [y, m, d] = String(iso || '').split('-'); return y && m && d ? `${d}/${m}/${y}` : ''; };
@@ -79,6 +80,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose }) {
             <InsigniaVentaTecnico ticket={ticket} />
             {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{ticket.falla}</span>}
           </div>
+
+          <CancelacionAviso ticket={ticket} />
 
           <Seccion icono={User} titulo="Cliente">
             <Dato etiqueta="Nombre">{ticket.nombre}</Dato>

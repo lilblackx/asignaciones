@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, onSnapshot, doc, setDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, runTransaction, setDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
 import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound, playTecnicoStatusSound } from '../utils/notificationSound';
@@ -14,10 +14,13 @@ import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/wh
 import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
+import { ConflictoOrdenError, verificarEstado } from '../utils/concurrencia';
 import { camposTiempos, conTiempos } from '../utils/tiemposOrden';
 import { cambiosDatosTecnico } from '../utils/edicionDatosTecnico';
 import { errorSerialCaja } from '../utils/serialOlt';
 import { devolucionPendiente } from '../utils/devolucion';
+import { ESTADO_CANCELADO, camposCancelacion, cancelaAhora, comoCancelada, lineaMotivoCancelacion, motivoCancelacion, parseMotivoCancelacion } from '../utils/cancelacion';
+import { ORIGEN_OFICINA, ORIGEN_TECNICO, RESULTADO_CERRADA, RESULTADO_DEVUELTA, cambiosInfraestructura, construirEscalada, construirResolucion, enInfraestructura, infraestructuraDe, mapaInfraestructura, parseMotivo, puedeEscalar, textoEscaladaOficina, textoEscaladaTecnico, textoResueltaTecnico } from '../utils/infraestructura';
 import { construirConsulta, construirRespuesta, consultasNuevas, mapaConsultas, textoAvisoConsulta, textoAvisoRespuesta, textoRespuesta } from '../utils/consultaCobro';
 import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado, llevaCobro, monedaDe, textoMonto, tieneCobroFinal, valorCobro } from '../utils/cobro';
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
@@ -111,6 +114,20 @@ async function actualizarTicket(original, actualizada) {
   await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', original.id.toString()), cambios);
 }
 
+// Como actualizarTicket, pero dentro de una transacción que vuelve a leer la orden: si otra persona ya la cambió (por ejemplo, la finalizó
+// mientras esta la tenía abierta), `verificar` da el texto del problema y no se escribe nada (ConflictoOrdenError). Así, de dos personas que
+// finalizan la misma orden a la vez, solo una guarda. Ver utils/concurrencia.
+async function actualizarTicketConGuardia(original, actualizada, verificar) {
+  const ref = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', original.id.toString());
+  const cambios = cambiosDeTicket(original, conTiempos(original, actualizada));
+  await runTransaction(db, async (transaction) => {
+    const actual = await transaction.get(ref);
+    const problema = verificar(actual.exists() ? { id: actual.id, ...actual.data() } : null);
+    if (problema) throw new ConflictoOrdenError(problema);
+    if (Object.keys(cambios).length > 0) transaction.update(ref, cambios);
+  });
+}
+
 export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify, currentUserName = null) {
   const [tickets, setTickets] = useState([]);
   // false hasta que llega el primer snapshot de órdenes (antes, `tickets` está vacío).
@@ -147,6 +164,21 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const mostrarCobro = (ticket) => actualizarCobrosVistos(set => { set.delete(ticket.id); set.delete(claveCobro(ticket)); return set; });
   // Pre-finalizar con conector interno: el cobro se informa en ese momento, sin esperar la aprobación.
   const mostrarCobroInmediato = (ticket, montoBs) => setCobroInmediato({ ...ticket, estado: 'PRE-FINALIZADO', cobroBs: montoBs, cobroTipo: null });
+
+  // Guarda con la guardia de actualizarTicketConGuardia. Devuelve true si se guardó; false si otra persona ya había cambiado la orden (se avisa
+  // con el texto del conflicto y no se escribe nada). Cualquier otro error sigue su camino (lo muestra quien llama).
+  const guardarConGuardia = async (original, actualizada, verificar) => {
+    try {
+      await actualizarTicketConGuardia(original, actualizada, verificar);
+      return true;
+    } catch (error) {
+      if (error instanceof ConflictoOrdenError) {
+        setToastMsg({ type: 'error', duration: 12000, text: error.message });
+        return false;
+      }
+      throw error;
+    }
+  };
 
   // Al aprobar o finalizar una orden que gasta material o instala un equipo (instalación, cambio de equipo, recableado,
   // visita de conector), se envía al inventario del otro sistema. La marca "pendiente" se deja antes de avisar al Worker:
@@ -190,16 +222,15 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // viajan con el push para que al tocarlo la app abra esa orden.
   const notifyTicketChange = (original, updated) => {
     const ticketId = updated.id;
-    // Al técnico que tenía la orden se le avisa si se la quitan (reasignada o sin técnico), la
-    // cancelan o la envían a la papelera. Si ya estaba cerrada (finalizada, cancelada) no hay nada que avisar.
+    // Al técnico que tenía la orden se le avisa si se la quitan (reasignada o sin técnico) o la cancelan. Si ya estaba
+    // cerrada (finalizada, cancelada) no hay nada que avisar.
     if (original?.tecnico && esActiva(original)) {
-      const cerrada = updated.estado === 'CANCELADO' || updated.estado === 'ELIMINADO';
+      const cerrada = updated.estado === 'CANCELADO';
       if (cerrada) {
-        const eliminada = updated.estado === 'ELIMINADO';
         avisarPush({
           target: { type: 'tecnico', name: original.tecnico },
-          title: eliminada ? 'Orden eliminada' : 'Orden cancelada',
-          body: `La orden ${etiquetaOrden(updated)} fue ${eliminada ? 'eliminada' : 'cancelada'}. Ya no tienes que atenderla.`,
+          title: 'Orden cancelada',
+          body: `La orden ${etiquetaOrden(updated)} fue cancelada.${motivoCancelacion(updated) ? ` Motivo: ${motivoCancelacion(updated)}.` : ''} Ya no tienes que atenderla.`,
           tipo: 'cancelada',
           ticketId,
         });
@@ -301,6 +332,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const viajeAnteriorRef = useRef(null);
   // id -> consulta y respuesta de cobro del snapshot anterior, para avisar a la oficina de una consulta nueva y al técnico de su respuesta.
   const consultaAnteriorRef = useRef(null);
+  // id -> cuándo se escaló a infraestructura (0 si no espera), para avisar a la oficina de una escalada del técnico y al técnico de lo que hizo la oficina.
+  const infraestructuraAnteriorRef = useRef(null);
   // Técnicos cuyo "en camino" se está guardando ahora mismo (ver iniciarEnCamino).
   const iniciandoViajeRef = useRef(new Set());
 
@@ -313,7 +346,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ? query(ticketsRef, where('tecnico', '==', tecnicoAsociado))
       : ticketsRef;
     const unsubTickets = onSnapshot(ticketsQuery, (snapshot) => {
-      const loadedTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Las que quedaron como ELIMINADO de antes se leen como canceladas (ya solo existe cancelada).
+      const loadedTickets = snapshot.docs.map(doc => comoCancelada({ id: doc.id, ...doc.data() }));
       loadedTickets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setTickets(loadedTickets);
       setTicketsCargados(true);
@@ -359,7 +393,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           }
           // Avisa a la oficina cuando una promotora carga una venta (id que no estaba en el snapshot anterior).
           const ventasNuevas = loadedTickets.filter(t =>
-            t.ventaPromotora === true && t.estado !== 'ELIMINADO' && !estadoAnteriorRef.current.has(t.id)
+            t.ventaPromotora === true && !estadoAnteriorRef.current.has(t.id)
           );
           if (ventasNuevas.length > 0) {
             const t = ventasNuevas[0];
@@ -375,7 +409,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           // asignación nueva, sea por creación directa o por reasignación
           // desde Editar.
           const nuevasAsignaciones = loadedTickets.filter(t =>
-            !estadoAnteriorRef.current.has(t.id) && t.estado !== 'ELIMINADO'
+            !estadoAnteriorRef.current.has(t.id)
           );
           const conPrioridadN = nuevasAsignaciones.filter(esPrioritaria).length;
           if (nuevasAsignaciones.length === 1) {
@@ -409,7 +443,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           }
 
           const conUbicacionNueva = loadedTickets.filter(t =>
-            t.ubicacion && t.estado !== 'ELIMINADO'
+            t.ubicacion
             && ubicacionAnteriorRef.current?.has(t.id) && !ubicacionAnteriorRef.current.get(t.id)
           );
           if (conUbicacionNueva.length === 1) {
@@ -425,15 +459,15 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             playNuevaAsignacionSound();
           }
 
-          // Avisa al técnico cuando le cancelan o eliminan una orden que tenía por atender.
+          // Avisa al técnico cuando le cancelan una orden que tenía por atender.
           const canceladas = loadedTickets.filter(t =>
-            (t.estado === 'CANCELADO' || t.estado === 'ELIMINADO')
+            t.estado === 'CANCELADO'
             && ['PENDIENTE', 'PRE-FINALIZADO'].includes(estadoAnteriorRef.current.get(t.id))
           );
           if (canceladas.length > 0) {
             const t = canceladas[0];
             const texto = canceladas.length === 1
-              ? `La orden ${etiquetaOrden(t)} fue ${t.estado === 'ELIMINADO' ? 'eliminada' : 'cancelada'}. Ya no tienes que atenderla.`
+              ? `La orden ${etiquetaOrden(t)} fue cancelada.${motivoCancelacion(t) ? ` Motivo: ${motivoCancelacion(t)}.` : ''} Ya no tienes que atenderla.`
               : `${canceladas.length} órdenes fueron canceladas. Ya no tienes que atenderlas.`;
             setToastMsg({ type: 'cancelada', text: texto, duration: 9000 });
             onNotify?.({ type: 'cancelada', text: texto, ...(canceladas.length === 1 && { ticketId: t.id }) });
@@ -517,6 +551,24 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           (role === 'TECNICO' ? playAprobadoSound : playTecnicoStatusSound)();
         }
       }
+      // Escalar a infraestructura: la oficina se entera de lo que escaló un técnico; el técnico, de lo que escaló la oficina y de lo que se resolvió.
+      if (role === 'ADMIN' || role === 'USUARIO' || role === 'TECNICO') {
+        const { escaladas, resueltas } = cambiosInfraestructura(loadedTickets, infraestructuraAnteriorRef.current);
+        const delTecnico = escaladas.filter((t) => infraestructuraDe(t).origen === ORIGEN_TECNICO);
+        const delaOficina = escaladas.filter((t) => infraestructuraDe(t).origen === ORIGEN_OFICINA);
+        const avisos = role === 'TECNICO'
+          ? [{ lista: delaOficina, textoUno: textoEscaladaTecnico, textoVarios: (n) => `${n} órdenes fueron escaladas a infraestructura. Ya no tienes que atenderlas por ahora.` },
+            { lista: resueltas, textoUno: textoResueltaTecnico, textoVarios: (n) => `${n} órdenes salieron de infraestructura. Revisa tu lista.` }]
+          : [{ lista: delTecnico, textoUno: textoEscaladaOficina, textoVarios: (n) => `Los técnicos escalaron ${n} órdenes a infraestructura.` }];
+        for (const { lista, textoUno, textoVarios } of avisos) {
+          if (lista.length === 0) continue;
+          const texto = lista.length === 1 ? textoUno(lista[0]) : textoVarios(lista.length);
+          setToastMsg({ type: 'infraestructura', text: texto, duration: 9000 });
+          onNotify?.({ type: 'infraestructura', text: texto, ...(lista.length === 1 && { ticketId: lista[0].id }) });
+          (role === 'TECNICO' ? playDevueltaSound : playTecnicoStatusSound)();
+        }
+      }
+      infraestructuraAnteriorRef.current = mapaInfraestructura(loadedTickets);
       consultaAnteriorRef.current = mapaConsultas(loadedTickets);
       viajeAnteriorRef.current = mapaViaje(loadedTickets);
       estadoAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.estado]));
@@ -538,6 +590,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       activasVistasRef.current = new Map();
       viajeAnteriorRef.current = null;
       consultaAnteriorRef.current = null;
+      infraestructuraAnteriorRef.current = null;
     };
   }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
 
@@ -742,6 +795,15 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
+    // Cancelar una orden pide el motivo (se ve en la lista, el historial, ventas y los reportes).
+    if (cancelaAhora(originalTicket, editingTicket)) {
+      const motivo = parseMotivoCancelacion(editingTicket.motivoCancelacion);
+      if (motivo.error) {
+        setToastMsg({ type: 'error', text: motivo.error });
+        return false;
+      }
+    }
+
     const ticketFecha = originalTicket?.createdAt ? new Date(originalTicket.createdAt) : new Date();
 
     const armarTicket = (codigo) => {
@@ -750,6 +812,10 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') ticketToSave.finalizadoEn = Date.now();
       // Si la orden deja de estar pendiente, el viaje "en camino" / "en sitio" termina.
       if (originalTicket?.enCamino && editingTicket.estado !== 'PENDIENTE') ticketToSave.enCamino = null;
+      // Motivo de la cancelación (con quién y cuándo); si la orden no está cancelada no queda ningún motivo escrito a medias en el formulario.
+      const cancelacion = camposCancelacion(originalTicket, ticketToSave, { por: currentUser });
+      if (ticketToSave.estado !== ESTADO_CANCELADO && !('motivoCancelacion' in cancelacion)) delete ticketToSave.motivoCancelacion;
+      Object.assign(ticketToSave, cancelacion);
       // Promotora de la instalación: la escrita o, si se vacía, la que dice la plantilla.
       if (role !== 'TECNICO' && esInstalacion(editingTicket.tipoTrabajo)) {
         ticketToSave.promotora = promotoraDeOrden(editingTicket);
@@ -760,6 +826,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       if (originalTicket) {
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
+        if (ticketToSave.estado === ESTADO_CANCELADO && (originalTicket.motivoCancelacion || '') !== (ticketToSave.motivoCancelacion || '')) cambios.push(lineaMotivoCancelacion(motivoCancelacion(ticketToSave)));
         if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(`Técnico: ${editingTicket.tecnico || 'Sin asignar'}`);
         if (originalTicket.tipoTrabajo !== editingTicket.tipoTrabajo) cambios.push(`Trabajo: ${editingTicket.tipoTrabajo}`);
         if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
@@ -789,16 +856,31 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return ticketToSave;
     };
 
-    const ticketToSave = await guardarConNumeracion(
-      tickets,
-      editingTicket.id,
-      editingTicket.codigo,
-      editingTicket.tipoTrabajo,
-      editingTicket.tecnico,
-      ticketFecha,
-      armarTicket,
-      originalTicket || null
-    );
+    // Si esta edición cambia el estado (por ejemplo, cancelar), la orden debe seguir en el estado en que se abrió: si otra persona ya la
+    // finalizó o la canceló, no se pisa.
+    const verificarCambioDeEstado = originalTicket && editingTicket.estado !== originalTicket.estado
+      ? verificarEstado([originalTicket.estado])
+      : null;
+    let ticketToSave;
+    try {
+      ticketToSave = await guardarConNumeracion(
+        tickets,
+        editingTicket.id,
+        editingTicket.codigo,
+        editingTicket.tipoTrabajo,
+        editingTicket.tecnico,
+        ticketFecha,
+        armarTicket,
+        originalTicket || null,
+        verificarCambioDeEstado
+      );
+    } catch (error) {
+      if (error instanceof ConflictoOrdenError) {
+        setToastMsg({ type: 'error', duration: 12000, text: error.message });
+        return false;
+      }
+      throw error;
+    }
 
     // Corrección manual del código (no la generada arriba): sincroniza el contador también.
     if (originalTicket && originalTicket.codigo !== editingTicket.codigo && ticketToSave.codigo === editingTicket.codigo) {
@@ -1061,7 +1143,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
-    await actualizarTicket(ticket, updatedTicket);
+    if (!(await guardarConGuardia(ticket, updatedTicket, verificarEstado(['PRE-FINALIZADO'])))) return false;
     setToastMsg({ type: 'success', text: 'Orden aprobada y finalizada con éxito.' });
     notifyTicketChange(ticket, updatedTicket);
     enviarAlInventario(updatedTicket);
@@ -1092,7 +1174,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
-    await actualizarTicket(ticket, updatedTicket);
+    if (!(await guardarConGuardia(ticket, updatedTicket, verificarEstado(['PRE-FINALIZADO'])))) return false;
     setToastMsg({ type: 'success', text: 'Orden devuelta al técnico.' });
     notifyTicketChange(ticket, updatedTicket);
     return true;
@@ -1130,7 +1212,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
     };
 
-    await actualizarTicket(ticket, updatedTicket);
+    if (!(await guardarConGuardia(ticket, updatedTicket, verificarEstado(['PENDIENTE'], (actual) => !enInfraestructura(actual))))) return false;
     setToastMsg({ type: 'success', text: 'Orden finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
     enviarAlInventario(updatedTicket);
@@ -1193,6 +1275,110 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           : 'Prioridad alta marcada. Aún no tiene técnico: le llegará marcada cuando la asignes.'
     });
     notifyTicketChange(ticket, updatedTicket);
+  };
+
+  // --- Escalar a infraestructura (ver utils/infraestructura) ---
+  // El técnico (en una orden suya) o la oficina dejan la orden esperando a infraestructura, con un motivo. Sigue PENDIENTE, pero sale de
+  // la lista del técnico (la pantalla la oculta) y cae el aviso de "en camino". Quien no la escaló recibe el aviso.
+  const escalarAInfraestructura = async (ticket, motivoEscrito) => {
+    if (!firebaseUser || !ticket) return false;
+    // Sobre la orden más reciente: si otro la escaló o la cerró mientras tanto, no se pisa.
+    const actual = tickets.find(t => t.id === ticket.id) || ticket;
+    if (!puedeEscalar(actual)) {
+      setToastMsg({ type: 'error', text: enInfraestructura(actual) ? 'Esta orden ya está en infraestructura.' : 'Esta orden no se puede escalar a infraestructura.' });
+      return false;
+    }
+    const motivo = parseMotivo(motivoEscrito);
+    if (motivo.error) {
+      setToastMsg({ type: 'error', text: motivo.error });
+      return false;
+    }
+    const origen = role === 'TECNICO' ? ORIGEN_TECNICO : ORIGEN_OFICINA;
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || (origen === ORIGEN_TECNICO ? 'TÉCNICO' : 'OFICINA'),
+      tipo: 'infraestructura',
+      detalle: `Escalada a infraestructura | Motivo: ${motivo.valor}`,
+    };
+    const updatedTicket = {
+      ...actual,
+      infraestructura: construirEscalada({ motivo: motivo.valor, por: currentUser, origen, tecnico: actual.tecnico }),
+      ...(actual.enCamino ? { enCamino: null } : {}),
+      historialEdiciones: [...(actual.historialEdiciones || []), nuevaEdicion],
+    };
+    try {
+      if (!(await guardarConGuardia(actual, updatedTicket, verificarEstado(['PENDIENTE'], puedeEscalar)))) return false;
+    } catch (error) {
+      console.error('No se pudo escalar la orden a infraestructura:', error);
+      setToastMsg({ type: 'error', text: 'No se pudo escalar la orden. Revisa tu conexión e intenta de nuevo.' });
+      return false;
+    }
+    if (origen === ORIGEN_TECNICO) {
+      avisarPush({
+        target: { type: 'oficina' },
+        title: 'Escalada a infraestructura',
+        body: `${actual.tecnico || 'Un técnico'} escaló la orden ${etiquetaOrden(actual)} a infraestructura: ${motivo.valor}`,
+        tipo: 'infraestructura',
+        ticketId: actual.id,
+      });
+      setToastMsg({ type: 'success', text: 'Orden escalada a infraestructura. La oficina ya lo sabe.' });
+    } else {
+      if (actual.tecnico) {
+        avisarPush({
+          target: { type: 'tecnico', name: actual.tecnico },
+          title: 'Orden escalada a infraestructura',
+          body: textoEscaladaTecnico(actual),
+          tipo: 'infraestructura',
+          ticketId: actual.id,
+        });
+      }
+      setToastMsg({ type: 'success', text: actual.tecnico ? `Orden escalada a infraestructura. Se le avisó a ${actual.tecnico}.` : 'Orden escalada a infraestructura.' });
+    }
+    return true;
+  };
+
+  // La oficina resuelve una escalada: `devolver` la orden al técnico (sigue PENDIENTE y vuelve a su lista) o `cerrar` como trabajo
+  // adicional (TA: se finaliza sin cobro y sin gastar material). `nota` es opcional y el técnico la lee al recibirla.
+  // Para pasarla a otro técnico: devolverla y cambiar el técnico desde Editar (así se respeta la numeración del código).
+  const resolverInfraestructura = async (ticket, { resultado, nota } = {}) => {
+    if (!firebaseUser || !ticket) return false;
+    const actual = tickets.find(t => t.id === ticket.id) || ticket;
+    if (!enInfraestructura(actual)) {
+      setToastMsg({ type: 'error', text: 'Esta orden ya no está esperando a infraestructura.' });
+      return false;
+    }
+    const cerrar = resultado === RESULTADO_CERRADA;
+    const infraestructura = construirResolucion(infraestructuraDe(actual), { resultado: cerrar ? RESULTADO_CERRADA : RESULTADO_DEVUELTA, por: currentUser, nota });
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'OFICINA',
+      tipo: 'infraestructura',
+      detalle: `${cerrar ? 'Cerrada como trabajo adicional de infraestructura (TA)' : 'Devuelta por infraestructura al técnico'}${infraestructura.nota ? ` | Nota: ${infraestructura.nota}` : ''}`,
+    };
+    const updatedTicket = {
+      ...actual,
+      infraestructura,
+      ...(cerrar ? { estado: 'FINALIZADO', finalizadoEn: Date.now() } : {}),
+      historialEdiciones: [...(actual.historialEdiciones || []), nuevaEdicion],
+    };
+    try {
+      if (!(await guardarConGuardia(actual, updatedTicket, verificarEstado(['PENDIENTE'], enInfraestructura)))) return false;
+    } catch (error) {
+      console.error('No se pudo resolver la escalada a infraestructura:', error);
+      setToastMsg({ type: 'error', text: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' });
+      return false;
+    }
+    if (actual.tecnico) {
+      avisarPush({
+        target: { type: 'tecnico', name: actual.tecnico },
+        title: cerrar ? 'Orden cerrada' : 'Orden de vuelta de infraestructura',
+        body: textoResueltaTecnico(updatedTicket),
+        tipo: 'infraestructura',
+        ticketId: actual.id,
+      });
+    }
+    setToastMsg({ type: 'success', text: cerrar ? 'Orden cerrada como trabajo adicional (TA).' : 'Orden devuelta al técnico.' });
+    return true;
   };
 
   // --- "En camino" / "En sitio" (el técnico avisa a la oficina; ver utils/enCamino) ---
@@ -1263,20 +1449,32 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     return true;
   };
 
-  const softDeleteTicket = async (deletingTicketId) => {
-    if (!firebaseUser || !deletingTicketId) return;
-    const ticketToUpdate = tickets.find(t => t.id === deletingTicketId);
-    if (ticketToUpdate) {
-      const updatedTicket = {
-        ...ticketToUpdate,
-        estado: 'ELIMINADO',
-        eliminadoPor: currentUser || 'OPERADOR',
-        fechaEliminacion: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })
-      };
-      await actualizarTicket(ticketToUpdate, updatedTicket);
-      notifyTicketChange(ticketToUpdate, updatedTicket);
+  // Cancela una orden (ya no hay "eliminar": cancelada es el único estado de baja). El motivo es obligatorio y queda con quién y cuándo; se ve en la
+  // lista, el historial, ventas y los reportes, y el técnico recibe un aviso con él. La guardia evita pisar a otra persona que ya la cerró o la canceló.
+  const cancelarTicket = async (ticket, motivoEscrito) => {
+    if (!firebaseUser || !ticket) return false;
+    const actual = tickets.find(t => t.id === ticket.id) || ticket;
+    if (actual.estado === ESTADO_CANCELADO) {
+      setToastMsg({ type: 'error', text: 'Esta orden ya está cancelada.' });
+      return false;
     }
-    setToastMsg({ type: 'success', text: 'Orden enviada a la papelera.' });
+    const motivo = parseMotivoCancelacion(motivoEscrito);
+    if (motivo.error) {
+      setToastMsg({ type: 'error', text: motivo.error });
+      return false;
+    }
+    const nuevaEdicion = {
+      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
+      operador: currentUser || 'OPERADOR',
+      tipo: 'cancelado',
+      detalle: `Estado: CANCELADO | ${lineaMotivoCancelacion(motivo.valor)}`,
+    };
+    const cancelada = { ...actual, estado: ESTADO_CANCELADO, ...(actual.enCamino ? { enCamino: null } : {}) };
+    const updatedTicket = { ...cancelada, ...camposCancelacion(actual, { ...cancelada, motivoCancelacion: motivo.valor }, { por: currentUser }), historialEdiciones: [...(actual.historialEdiciones || []), nuevaEdicion] };
+    if (!(await guardarConGuardia(actual, updatedTicket, verificarEstado([actual.estado])))) return false;
+    notifyTicketChange(actual, updatedTicket);
+    setToastMsg({ type: 'success', text: 'Orden cancelada.' });
+    return true;
   };
 
   // Devuelve el ticket ya guardado (con el código final) para que quien llame
@@ -1327,7 +1525,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     createTicket,
     verificarCodigoManual,
     updateTicket,
-    softDeleteTicket,
+    cancelarTicket,
     toggleAsignado,
     guardarUbicacion,
     preFinalizarTicket,
@@ -1338,6 +1536,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     devolverTicket,
     finalizarTicket,
     togglePrioridad,
+    escalarAInfraestructura,
+    resolverInfraestructura,
     iniciarEnCamino,
     marcarLlegada,
     cancelarViaje

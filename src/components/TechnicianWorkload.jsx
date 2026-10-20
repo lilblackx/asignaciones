@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { Car, MapPin } from 'lucide-react';
+import { Car, HardHat, MapPin } from 'lucide-react';
 import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
+import { enInfraestructura } from '../utils/infraestructura';
 import NumeroPulso from './NumeroPulso';
 
 export default function TechnicianWorkload({ tickets, technicians, getTecnicoColor, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje }) {
@@ -10,7 +11,8 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
   const counts = useMemo(() => {
     const byTech = new Map(technicians.map(t => [t.name.toUpperCase(), 0]));
     tickets.forEach(t => {
-      if (t.estado !== 'PENDIENTE' || !t.tecnico) return;
+      // Lo que espera a infraestructura no cuenta como carga del técnico: no puede atenderlo.
+      if (t.estado !== 'PENDIENTE' || !t.tecnico || enInfraestructura(t)) return;
       const key = t.tecnico.toUpperCase();
       if (byTech.has(key)) byTech.set(key, byTech.get(key) + 1);
     });
@@ -26,13 +28,19 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
     [tickets, canEditTickets]
   );
 
+  // Órdenes esperando a infraestructura: solo lo ve quien las resuelve.
+  const enInfra = useMemo(
+    () => (canEditTickets ? tickets.filter(enInfraestructura).length : 0),
+    [tickets, canEditTickets]
+  );
+
   // Técnicos que avisaron que van en camino o que ya llegaron: solo lo ve quien coordina.
   const viajes = useMemo(() => {
     if (!canEditTickets) return { enCamino: 0, enSitio: 0 };
     return { enCamino: tickets.filter(t => estaEnCamino(t, ahora)).length, enSitio: tickets.filter(t => estaEnSitio(t, ahora)).length };
   }, [tickets, canEditTickets, ahora]);
 
-  if (counts.length === 0 && sinTecnico === 0) return null;
+  if (counts.length === 0 && sinTecnico === 0 && enInfra === 0) return null;
 
   return (
     <div className="mb-3 flex flex-wrap gap-1.5" aria-label="Técnicos y sus asignaciones activas">
@@ -51,13 +59,14 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
       {[
         { filtro: 'EN_CAMINO', cantidad: viajes.enCamino, etiqueta: 'EN CAMINO', singular: 'técnico en camino', plural: 'técnicos en camino', Icono: Car, clase: 'bg-sky-100 text-sky-800 border-sky-300 hover:bg-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/40 dark:hover:bg-sky-500/25' },
         { filtro: 'EN_SITIO', cantidad: viajes.enSitio, etiqueta: 'EN SITIO', singular: 'técnico en sitio', plural: 'técnicos en sitio', Icono: MapPin, clase: 'bg-teal-100 text-teal-800 border-teal-300 hover:bg-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/40 dark:hover:bg-teal-500/25' },
+        { filtro: 'EN_INFRAESTRUCTURA', cantidad: enInfra, etiqueta: 'INFRAESTRUCTURA', singular: 'orden en infraestructura', plural: 'órdenes en infraestructura', Icono: HardHat, clase: 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/40 dark:hover:bg-orange-500/25' },
       ].filter(v => v.cantidad > 0).map(({ filtro, cantidad, etiqueta, singular, plural, Icono, clase }) => (
         <button
           key={filtro}
           type="button"
           onClick={() => onOpenViaje?.(filtro)}
           aria-label={`${cantidad} ${cantidad === 1 ? singular : plural}. Ver lista`}
-          title={`Ver órdenes con ${plural}`}
+          title={filtro === 'EN_INFRAESTRUCTURA' ? 'Ver las órdenes en infraestructura' : `Ver órdenes con ${plural}`}
           className={`inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold rounded leading-none border transition-colors cursor-pointer ${clase}`}
         >
           <Icono className="w-3 h-3" aria-hidden="true" />

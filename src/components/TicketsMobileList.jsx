@@ -1,9 +1,12 @@
 import { esProgramadaFutura } from '../utils/programada';
-import { Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Send, Trash2, TriangleAlert, Wrench } from 'lucide-react';
+import { Ban, Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Send, TriangleAlert, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
 import DevolucionAviso from './DevolucionAviso';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
+import InfraestructuraAviso from './InfraestructuraAviso';
+import CancelacionAviso from './CancelacionAviso';
+import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
@@ -11,6 +14,7 @@ import BotonVerDetalle from './BotonVerDetalle';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
 import { ESTADO_EN_SITIO, estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
+import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getCreadoColor, getEnvioInfo, getEstadoColor, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
@@ -24,13 +28,16 @@ export default function TicketsMobileList({
   getTecnicoColor,
   onToggleAsignado,
   onEdit,
-  onDelete,
+  onCancelar,
   onCopyWhatsApp,
   onPegarUbicacion,
   onVerDetalle,
   onPreFinalizar,
   onAprobarFinalizar,
   onResponderCobro,
+  onEscalar,
+  onResolverInfra,
+  revisando,
   onFinalizar,
   onTogglePrioridad,
   ahora,
@@ -67,7 +74,7 @@ export default function TicketsMobileList({
         const sinPlantilla = ordenSinPlantilla(ticket);
         const viaje = estadoViaje(ticket, ahora);
         return (
-        <div key={ticket.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'ELIMINADO' ? 'border-red-500/50 dark:border-red-900/50' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
+        <div key={ticket.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
           <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-start sm:items-center bg-zinc-50 dark:bg-zinc-950">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <div className="flex items-center gap-2">
@@ -87,7 +94,7 @@ export default function TicketsMobileList({
               {ticket.estado}
             </span>
           </div>
-          <div className={`p-4 flex-1 flex flex-col gap-3 ${ticket.estado === 'ELIMINADO' ? 'opacity-60' : ''}`}>
+          <div className="p-4 flex-1 flex flex-col gap-3">
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="font-black text-zinc-900 dark:text-white leading-tight min-w-0 break-words">{ticket.nombre}</h3>
@@ -124,7 +131,7 @@ export default function TicketsMobileList({
                 </span>
               )
             )}
-            {ticket.estado !== 'ELIMINADO' && (hayTelefono || enlaceUbicacion || enlaceNap) && (
+            {(hayTelefono || enlaceUbicacion || enlaceNap) && (
               // Una sola fila (los que existan se reparten el ancho); texto corto y
               // aria-label completo para no gastar dos filas de alto por tarjeta.
               <div className="flex gap-2">
@@ -155,9 +162,17 @@ export default function TicketsMobileList({
                 )}
               </div>
             </div>
+            <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
             <DevolucionAviso ticket={ticket} />
+            <CancelacionAviso ticket={ticket} />
             <CobroAviso ticket={ticket} />
             <ConsultaCobroAviso ticket={ticket} onResponder={onResponderCobro} />
+            <InfraestructuraAviso ticket={ticket} onResolver={canEditTickets ? onResolverInfra : undefined} />
+            {canEditTickets && onEscalar && puedeEscalar(ticket) && (
+              <button type="button" onClick={() => onEscalar(ticket)} className="self-start inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
+                <HardHat className="w-4 h-4" aria-hidden="true" /> Escalar a infraestructura
+              </button>
+            )}
             {ticket.observacion && (
               <div className="flex items-start gap-2 text-sm">
                 <MessageSquareText className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" aria-label="Observación" role="img" />
@@ -175,7 +190,7 @@ export default function TicketsMobileList({
                 <button
                   type="button"
                   onClick={() => onToggleAsignado(ticket)}
-                  disabled={!canEditTickets || ticket.estado === 'ELIMINADO'}
+                  disabled={!canEditTickets}
                   aria-pressed={envio.enviado}
                   aria-label={`Orden ${ticket.codigo || ticket.id}: ${envio.detalle}`}
                   title={envio.detalle}
@@ -222,7 +237,6 @@ export default function TicketsMobileList({
             </div>
           )}
 
-          {ticket.estado !== 'ELIMINADO' ? (
             isTecnico ? (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
                 <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
@@ -237,13 +251,21 @@ export default function TicketsMobileList({
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : null}
+                {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
+                    comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.
+                {onEscalar && puedeEscalar(ticket) && (
+                  <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-orange-700 dark:text-orange-400 font-bold hover:bg-orange-50 dark:hover:bg-orange-900/20 text-[13px] transition-colors">
+                    <HardHat className="w-4 h-4" /> Escalar
+                  </button>
+                )}
+                */}
               </div>
             ) : (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
                 <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : undefined} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"><ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}</button>
                 {canEditTickets ? (
                   <>
-                    {ticket.estado === 'PENDIENTE' && (
+                    {ticket.estado === 'PENDIENTE' && !enInfraestructura(ticket) && (
                       <button onClick={() => onFinalizar(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-[13px] transition-colors">
                         <CheckCircle2 className="w-4 h-4" /> Finalizar
                       </button>
@@ -254,18 +276,13 @@ export default function TicketsMobileList({
                       </button>
                     )}
                     <button onClick={() => onEdit(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-zinc-700 dark:text-zinc-300 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] transition-colors"><Edit className="w-4 h-4" /> Editar</button>
-                    <button onClick={() => onDelete(ticket.id)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-red-600 dark:text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-[13px] transition-colors"><Trash2 className="w-4 h-4" /> Eliminar</button>
+                    {ticket.estado !== 'CANCELADO' && <button onClick={() => onCancelar(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-red-600 dark:text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-[13px] transition-colors"><Ban className="w-4 h-4" /> Cancelar</button>}
                   </>
                 ) : (
                   <div className="flex-1 py-3 text-center text-xs text-zinc-500 font-medium">Solo visualización</div>
                 )}
               </div>
             )
-          ) : (
-            <div className="bg-zinc-900 dark:bg-black text-white p-2 text-xs text-center font-medium border-t border-zinc-800">
-              Log: Eliminado por <span className="font-bold text-red-400">{ticket.eliminadoPor}</span> el {ticket.fechaEliminacion}
-            </div>
-          )}
         </div>
         );
       })}

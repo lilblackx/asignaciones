@@ -26,7 +26,8 @@ export default function FiltersBar({
     ...(!isTecnico ? [
       { value: 'PENDIENTE_SIN_TECNICO', label: 'Sin técnico' },
       { value: 'EN_CAMINO', label: 'En camino' },
-      { value: 'EN_SITIO', label: 'En sitio' }
+      { value: 'EN_SITIO', label: 'En sitio' },
+      { value: 'EN_INFRAESTRUCTURA', label: 'En infraestructura' }
     ] : []),
     { value: 'INSTALACION_SIN_UBICACION', label: 'Instalaciones sin ubicación' },
     { group: 'Programadas', options: [
@@ -35,8 +36,7 @@ export default function FiltersBar({
       { value: 'PROG_FUTURAS', label: 'Futuras' }
     ] },
     { value: 'FINALIZADO', label: 'Finalizados' },
-    { value: 'CANCELADO', label: 'Cancelados' },
-    { value: 'ELIMINADOS', label: 'Eliminados' }
+    { value: 'CANCELADO', label: 'Cancelados' }
   ];
   const tipoItems = [
     { value: 'TODOS', label: 'Todos los trabajos' },

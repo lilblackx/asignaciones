@@ -112,11 +112,11 @@ export function exportOrdersToCsv(orders, filtros) {
   descargarCsv(`historial_ordenes_${fechaArchivoHoy()}.csv`, filas);
 }
 
-// Un renglón por técnico sobre las órdenes indicadas (no cuenta las eliminadas).
+// Un renglón por técnico sobre las órdenes indicadas.
 export function exportResumenTecnicosToCsv(orders, filtros) {
   const porTecnico = new Map();
   orders.forEach(t => {
-    if (!t.tecnico || t.estado === 'ELIMINADO') return;
+    if (!t.tecnico) return;
     const r = porTecnico.get(t.tecnico) || { total: 0, finalizadas: 0, canceladas: 0, abiertas: 0, potencias: [] };
     r.total += 1;
     if (t.estado === 'FINALIZADO') r.finalizadas += 1;

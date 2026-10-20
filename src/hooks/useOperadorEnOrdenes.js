@@ -14,7 +14,7 @@ export function useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tick
     if (!firebaseUser || role !== 'ADMIN' || !ticketsCargados || users.length === 0) return;
     const nombreDe = new Map(users.filter((u) => u.username && u.nombre).map((u) => [u.username, u.nombre]));
     const pendientes = tickets
-      .filter((t) => t.estado !== 'ELIMINADO' && !t.creadoNombre && nombreDe.has(t.creado) && !intentadas.current.has(t.id))
+      .filter((t) => !t.creadoNombre && nombreDe.has(t.creado) && !intentadas.current.has(t.id))
       .slice(0, MAX_POR_LOTE);
     if (pendientes.length === 0) return;
     pendientes.forEach((t) => intentadas.current.add(t.id));

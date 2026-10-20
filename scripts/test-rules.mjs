@@ -36,8 +36,8 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
   const base = db.collection('artifacts').doc(APP_ID).collection('public').doc('data');
 
-  await base.collection('users').doc('admin-uid').set({ role: 'ADMIN', disabled: false });
-  await base.collection('users').doc('usuario-uid').set({ role: 'USUARIO', disabled: false });
+  await base.collection('users').doc('admin-uid').set({ role: 'ADMIN', disabled: false, username: 'admin' });
+  await base.collection('users').doc('usuario-uid').set({ role: 'USUARIO', disabled: false, username: 'usuario' });
   await base.collection('users').doc('tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO', disabled: false });
   await base.collection('users').doc('otro-tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO', disabled: false });
   await base.collection('users').doc('almacen-uid').set({ role: 'ALMACEN', disabled: false });
@@ -77,7 +77,17 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
     nombre: 'CLIENTE', direccion: 'CALLE 1', nap: '', observacion: '', historialEdiciones: [{ detalle: 'creada' }]
   });
   await base.collection('tickets').doc('gerardo-finalizado').set({
-    tecnico: 'GERARDO MOLERO', codigo: 'AS4', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'FINALIZADO'
+    tecnico: 'GERARDO MOLERO', codigo: 'AS4', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'FINALIZADO',
+    finalizadoEn: 1000, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', observacion: ''
+  });
+  // Avisos de "alguien está revisando": uno vigente de otra persona y uno ya vencido.
+  await base.collection('bloqueosOrden').doc('ticket-de-reinel__usuario').set({ ticketId: 'ticket-de-reinel', por: 'usuario', nombre: 'Usuario Demo', desde: Date.now(), venceEn: Date.now() + 5 * 60000 });
+  await base.collection('bloqueosOrden').doc('ticket-de-gerardo__usuario').set({ ticketId: 'ticket-de-gerardo', por: 'usuario', nombre: 'Usuario Demo', desde: 1, venceEn: 2 });
+  // Escalar a infraestructura: una orden pendiente sin escalar y otra que ya espera a infraestructura.
+  await base.collection('tickets').doc('gerardo-infra').set({ tecnico: 'GERARDO MOLERO', codigo: 'AS5', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'PENDIENTE', historialEdiciones: [{ detalle: 'creada' }] });
+  await base.collection('tickets').doc('gerardo-infra-activa').set({
+    tecnico: 'GERARDO MOLERO', codigo: 'AS6', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'PENDIENTE', historialEdiciones: [{ detalle: 'creada' }],
+    infraestructura: { activa: true, motivo: 'Falta un poste', por: 'gerardo', origen: 'TECNICO', en: 1000, tecnico: 'GERARDO MOLERO' }
   });
   await base.collection('counters').doc('A_O_2026').set({ ultimo: 5, actualizadoEn: 0 });
 
@@ -319,6 +329,140 @@ await check('TECNICO NO puede marcar "en camino" en la orden de otro técnico', 
 await check('TECNICO NO puede escribir el cobro ni la fecha de finalización', async () => {
   await assertFails(camposGerardo(asTecnico()).update({ cobroBs: '5.696' }));
   await assertFails(camposGerardo(asTecnico()).update({ finalizadoEn: 1 }));
+});
+
+// Escalar a infraestructura: el técnico deja su orden esperando (a su nombre y con motivo); resolverla es de la oficina.
+const escalada = (extra = {}) => ({ activa: true, motivo: 'Falta un poste frente a la casa', por: 'gerardo', origen: 'TECNICO', en: 5000, tecnico: 'GERARDO MOLERO', ...extra });
+const ordenInfra = (db) => ticketPath(db, 'gerardo-infra');
+
+await check('TECNICO NO puede escribir infraestructura a nombre de otro técnico, como oficina, sin motivo o con campos de más', async () => {
+  await assertFails(ordenInfra(asTecnico()).update({ infraestructura: escalada({ tecnico: 'REINEL BRAVO' }) }));
+  await assertFails(ordenInfra(asTecnico()).update({ infraestructura: escalada({ origen: 'OFICINA' }) }));
+  await assertFails(ordenInfra(asTecnico()).update({ infraestructura: escalada({ motivo: '' }) }));
+  await assertFails(ordenInfra(asTecnico()).update({ infraestructura: escalada({ motivo: 'x'.repeat(301) }) }));
+  await assertFails(ordenInfra(asTecnico()).update({ infraestructura: escalada({ resultado: 'CERRADA' }) }));
+  await assertFails(ordenInfra(asTecnico()).update({ infraestructura: escalada({ activa: false }) }));
+  await assertFails(ordenInfra(asTecnico()).update({ infraestructura: escalada({ en: '5000' }) }));
+});
+
+await check('TECNICO NO puede escalar una orden ya finalizada ni la de otro técnico', async () => {
+  await assertFails(ticketPath(asTecnico(), 'gerardo-finalizado').update({ infraestructura: escalada() }));
+  await assertFails(ticketPath(asTecnico(), 'ticket-de-reinel').update({ infraestructura: escalada({ tecnico: 'REINEL BRAVO' }) }));
+});
+
+// Por ahora solo la oficina escala: el técnico no puede, ni siquiera con un pedido bien armado. (Para reactivarlo, ver firestore.rules.)
+await check('TECNICO NO puede escalar su orden a infraestructura (por ahora solo la oficina)', async () => {
+  await assertFails(ordenInfra(asTecnico()).update({
+    infraestructura: escalada(), enCamino: null, salioEn: null, llegoEn: null,
+    historialEdiciones: [{ detalle: 'creada' }, { tipo: 'infraestructura', detalle: 'Escalada a infraestructura | Motivo: Falta un poste frente a la casa' }]
+  }));
+});
+
+await check('TECNICO NO puede resolver ni volver a escalar una orden que ya espera a infraestructura', async () => {
+  const activa = ticketPath(asTecnico(), 'gerardo-infra-activa');
+  await assertFails(activa.update({ infraestructura: { ...escalada(), activa: false, resultado: 'DEVUELTA', resueltaPor: 'gerardo', resueltaEn: 6000 } }));
+  await assertFails(activa.update({ infraestructura: escalada({ en: 7000 }) }));
+});
+
+await check('ADMIN y USUARIO escalan una orden a infraestructura', async () => {
+  const delaOficina = escalada({ origen: 'OFICINA', por: 'ana', tecnico: 'GERARDO MOLERO' });
+  await assertSucceeds(ordenInfra(asAdmin()).update({ infraestructura: delaOficina }));
+  await assertSucceeds(ticketPath(asUsuario(), 'gerardo-campos').update({ infraestructura: delaOficina }));
+});
+
+await check('ADMIN y USUARIO resuelven la escalada: la devuelven al técnico o la cierran como TA', async () => {
+  const resuelta = { ...escalada({ tecnico: 'GERARDO MOLERO' }), activa: false, resultado: 'DEVUELTA', resueltaPor: 'ana', resueltaEn: 6000, nota: 'Poste puesto' };
+  await assertSucceeds(ticketPath(asAdmin(), 'gerardo-infra-activa').update({ infraestructura: resuelta }));
+  await assertSucceeds(ticketPath(asUsuario(), 'gerardo-infra-activa').update({ infraestructura: { ...resuelta, resultado: 'CERRADA' }, estado: 'FINALIZADO', finalizadoEn: 7000 }));
+});
+
+// Dos personas finalizando la misma orden: una orden ya FINALIZADA no cambia su cierre (hora de finalización ni cobro).
+const cerrada = (db) => ticketPath(db, 'gerardo-finalizado');
+await check('una orden ya finalizada NO deja cambiar su hora de finalización ni su cobro (ADMIN ni USUARIO)', async () => {
+  for (const db of [asAdmin(), asUsuario()]) {
+    await assertFails(cerrada(db).update({ finalizadoEn: 2000 }));
+    await assertFails(cerrada(db).update({ cobroBs: '9.999' }));
+    await assertFails(cerrada(db).update({ cobroTipo: 'EXONERADO', cobroBs: null }));
+    await assertFails(cerrada(db).update({ estado: 'FINALIZADO', finalizadoEn: 3000, cobroBs: '1' }));
+  }
+});
+
+await check('una orden ya finalizada sí deja corregir lo demás (observación, datos del técnico)', async () => {
+  await assertSucceeds(cerrada(asAdmin()).update({ observacion: 'corregida' }));
+  await assertSucceeds(cerrada(asUsuario()).update({ finalizadoEn: 1000, cobroBs: '5.696', observacion: 'otra vez' }));
+});
+
+await check('finalizar una orden pendiente sigue funcionando (pasa a FINALIZADO con su hora y su cobro)', async () => {
+  await assertSucceeds(ticketPath(asAdmin(), 'gerardo-infra').update({ estado: 'FINALIZADO', finalizadoEn: 5000, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' }));
+});
+
+await check('...y la segunda persona que intenta finalizarla ya no puede cambiar el cierre', async () => {
+  await assertFails(ticketPath(asUsuario(), 'gerardo-infra').update({ estado: 'FINALIZADO', finalizadoEn: 5001, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' }));
+});
+
+// Avisos de "alguien está revisando esta orden"
+const aviso = (db, id) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('bloqueosOrden').doc(id);
+const avisoDe = (por, extra = {}) => ({ ticketId: 'gerardo-campos', por, nombre: 'Demo', desde: Date.now(), venceEn: Date.now() + 3 * 60000, ...extra });
+await check('la oficina crea y renueva su aviso, a su nombre', async () => {
+  await assertSucceeds(aviso(asAdmin(), 'gerardo-campos__admin').set(avisoDe('admin')));
+  await assertSucceeds(aviso(asAdmin(), 'gerardo-campos__admin').set(avisoDe('admin', { venceEn: Date.now() + 4 * 60000 })));
+  await assertSucceeds(aviso(asUsuario(), 'gerardo-campos__usuario').set(avisoDe('usuario')));
+});
+await check('no se puede avisar a nombre de otro, con otro id, con campos de más ni con un vencimiento de más de 10 minutos', async () => {
+  await assertFails(aviso(asAdmin(), 'gerardo-campos__usuario').set(avisoDe('usuario')));
+  await assertFails(aviso(asAdmin(), 'gerardo-campos__otro').set(avisoDe('admin')));
+  await assertFails(aviso(asAdmin(), 'gerardo-campos__admin').set(avisoDe('admin', { extra: 1 })));
+  await assertFails(aviso(asAdmin(), 'gerardo-campos__admin').set(avisoDe('admin', { venceEn: Date.now() + 11 * 60000 })));
+  await assertFails(aviso(asAdmin(), 'gerardo-campos__admin').set(avisoDe('admin', { venceEn: 'mañana' })));
+});
+await check('el TECNICO no lee ni escribe avisos de revisión', async () => {
+  await assertFails(aviso(asTecnico(), 'ticket-de-reinel__usuario').get());
+  await assertFails(aviso(asTecnico(), 'gerardo-campos__tecnico').set(avisoDe('tecnico')));
+});
+await check('la oficina lee los avisos de las demás', async () => {
+  await assertSucceeds(aviso(asAdmin(), 'ticket-de-reinel__usuario').get());
+  await assertSucceeds(aviso(asUsuario(), 'ticket-de-reinel__usuario').get());
+});
+await check('cada quien borra el suyo; el vigente de otro no se borra, el vencido sí', async () => {
+  await assertSucceeds(aviso(asAdmin(), 'gerardo-campos__admin').delete());
+  await assertFails(aviso(asAdmin(), 'ticket-de-reinel__usuario').delete());
+  await assertSucceeds(aviso(asAdmin(), 'ticket-de-gerardo__usuario').delete());
+  await assertSucceeds(aviso(asUsuario(), 'gerardo-campos__usuario').delete());
+});
+
+// Registro de VN y TA (se llena a mano)
+const filaVnTa = (db, id) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('registroVnTa').doc(id);
+const filaDe = (por, extra = {}) => ({ codigo: 'VAN01', trabajo: 'VN', tecnico: '', fecha: '2026-10-11', observacion: 'Puertos liberados', operador: 'Renny Cova', creadoPor: por, creadoEn: 1000, actualizadoEn: 1000, ...extra });
+await check('la oficina crea filas del registro de VN y TA a su nombre', async () => {
+  await assertSucceeds(filaVnTa(asAdmin(), 'VAN01-a').set(filaDe('admin')));
+  await assertSucceeds(filaVnTa(asUsuario(), 'TA01-a').set(filaDe('usuario', { codigo: 'TA01', trabajo: 'TA', tecnico: 'Edgar', observacion: 'Apoyo en reparar NAP' })));
+});
+await check('no se puede registrar a nombre de otro, con un código que no corresponde, con campos de más ni con datos mal formados', async () => {
+  await assertFails(filaVnTa(asAdmin(), 'x1').set(filaDe('usuario')));
+  await assertFails(filaVnTa(asAdmin(), 'x2').set(filaDe('admin', { codigo: 'TA01' })));
+  await assertFails(filaVnTa(asAdmin(), 'x3').set(filaDe('admin', { trabajo: 'TA' })));
+  await assertFails(filaVnTa(asAdmin(), 'x4').set(filaDe('admin', { extra: 1 })));
+  await assertFails(filaVnTa(asAdmin(), 'x5').set(filaDe('admin', { fecha: '11/10/2026' })));
+  await assertFails(filaVnTa(asAdmin(), 'x6').set(filaDe('admin', { trabajo: 'OTRO' })));
+  await assertFails(filaVnTa(asAdmin(), 'x7').set(filaDe('admin', { observacion: 'x'.repeat(501) })));
+  await assertFails(filaVnTa(asAdmin(), 'x8').set(filaDe('admin', { operador: '' })));
+});
+await check('el TECNICO y las demás cuentas no leen ni escriben el registro de VN y TA', async () => {
+  await assertFails(filaVnTa(asTecnico(), 'VAN01-a').get());
+  await assertFails(filaVnTa(asTecnico(), 'x9').set(filaDe('tecnico')));
+  await assertFails(filaVnTa(testEnv.authenticatedContext('almacen-uid').firestore(), 'VAN01-a').get());
+});
+await check('la oficina lee las filas y corrige técnico, fecha y observación, pero no el código, el tipo ni quién lo creó', async () => {
+  await assertSucceeds(filaVnTa(asUsuario(), 'VAN01-a').get());
+  await assertSucceeds(filaVnTa(asUsuario(), 'VAN01-a').set(filaDe('admin', { tecnico: 'Jose', observacion: 'corregida', actualizadoEn: 2000 })));
+  await assertFails(filaVnTa(asUsuario(), 'VAN01-a').set(filaDe('admin', { codigo: 'VAN09' })));
+  await assertFails(filaVnTa(asUsuario(), 'VAN01-a').set(filaDe('usuario')));
+  await assertFails(filaVnTa(asUsuario(), 'VAN01-a').set(filaDe('admin', { creadoEn: 5 })));
+});
+await check('borrar una fila: el ADMIN siempre; el USUARIO solo la que él registró', async () => {
+  await assertFails(filaVnTa(asUsuario(), 'VAN01-a').delete());
+  await assertSucceeds(filaVnTa(asUsuario(), 'TA01-a').delete());
+  await assertSucceeds(filaVnTa(asAdmin(), 'VAN01-a').delete());
 });
 
 await check('ADMIN y USUARIO pueden marcar la prioridad alta de una orden; el TECNICO no', async () => {

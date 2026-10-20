@@ -198,7 +198,7 @@ export function generarPdf(modelo) {
     if (b.tipo === 'cifras') cifras(b.items);
     else if (b.tipo === 'seccion') encabezadoDeSeccion(b.titulo);
     else if (b.tipo === 'texto') parrafo(b.texto);
-    else if (b.tipo === 'tabla') tabla(b);
+    else if (b.tipo === 'tabla' && !b.soloCsv) tabla(b);
     else if (b.tipo === 'lista') lista(b);
     else if (b.tipo === 'grafico') grafico(b);
   }

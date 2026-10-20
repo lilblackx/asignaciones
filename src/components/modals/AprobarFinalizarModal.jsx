@@ -16,11 +16,16 @@ import ValoresClienteAdmin from './ValoresClienteAdmin';
 import { exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../../utils/valoresCliente';
 import Spinner from '../Spinner';
 import Colapsable from '../Colapsable';
+import AvisoCambioDeOrden from '../AvisoCambioDeOrden';
+import AvisoRevision from '../AvisoRevision';
+import { cambioMientrasAbierta } from '../../utils/concurrencia';
 
 // Revisión de una orden antes de cerrarla. Sirve para los dos cierres de la oficina: aprobar una orden que el
 // técnico pre-finalizó (con "Devolver" si algo no está bien) y finalizar directo una orden pendiente, sin que
 // el técnico la haya pre-finalizado. Los datos y el cobro se ven igual en los dos.
-export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGuardarValores, onDevolver, onCopy, onClose }) {
+// `actual`: la misma orden en vivo (cambia si otra persona la finaliza, la devuelve o la cancela mientras esta la tiene abierta); con un cambio
+// se avisa y no deja guardar. `otrosRevisando`: nombres de otras personas que también la tienen abierta (solo aviso).
+export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando = [], montoBs, onConfirm, onGuardarValores, onDevolver, onCopy, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [devolviendo, setDevolviendo] = useState(false);
   const [motivo, setMotivo] = useState('');
@@ -41,6 +46,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
   const [guardandoValores, setGuardandoValores] = useState(false);
 
   if (!ticket) return null;
+  const cambio = actual === undefined ? null : cambioMientrasAbierta(ticket, actual);
   // Pendiente = finalizar directo; pre-finalizada = aprobar. Devolver solo existe al aprobar.
   const finalizando = ticket.estado === 'PENDIENTE';
   const faltantes = faltantesInstalacion(ticket);
@@ -69,6 +75,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
   };
 
   const handleConfirm = async () => {
+    if (cambio) return;
     // Sin los valores del cliente guardados (y al día con lo escrito en los campos) no se cierra la orden. Donde son
     // opcionales (instalaciones) solo se exige si escribió algo: así no se pierde lo que no guardó.
     const escribioValores = oltTexto.trim() !== '' || onuTexto.trim() !== '';
@@ -99,6 +106,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
   };
 
   const handleDevolver = async () => {
+    if (cambio) return;
     if (!motivo.trim()) {
       setMotivoError('Escribe el motivo para que el técnico sepa qué corregir.');
       document.getElementById('aprobar-motivo')?.focus();
@@ -139,6 +147,9 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
             <Eye className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             {finalizando ? 'Solo lectura. El técnico aún no pre-finalizó esta orden: verifica los datos antes de finalizarla.' : 'Solo lectura. Verifica los datos que cargó el técnico antes de aprobar.'}
           </p>
+
+          <AvisoCambioDeOrden texto={cambio} />
+          {!cambio && <AvisoRevision nombres={otrosRevisando} />}
 
           {faltantes.length > 0 && (
             <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-800 dark:text-red-300">
@@ -285,9 +296,9 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
               <button
                 type="button"
                 onClick={handleDevolver}
-                disabled={isSubmitting}
+                disabled={isSubmitting || Boolean(cambio)}
                 className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-red-600 hover:bg-red-700 border border-red-600 hover:border-red-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  isSubmitting || cambio ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <Undo2 className="w-4 h-4 shrink-0" />
@@ -299,7 +310,7 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
                   <button
                     type="button"
                     onClick={() => setDevolviendo(true)}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || Boolean(cambio)}
                     className="flex-1 py-3 text-xs sm:text-sm text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <Undo2 className="w-4 h-4 shrink-0" />
@@ -309,9 +320,9 @@ export default function AprobarFinalizarModal({ ticket, montoBs, onConfirm, onGu
                 <button
                   type="button"
                   onClick={handleConfirm}
-                  disabled={isSubmitting || guardandoValores}
+                  disabled={isSubmitting || guardandoValores || Boolean(cambio)}
                   className={`flex-1 py-3 text-xs sm:text-sm text-white font-black bg-blue-600 hover:bg-blue-700 border border-blue-600 hover:border-blue-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                    isSubmitting || cambio ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
                   <CheckCheck className="w-4 h-4 shrink-0" />

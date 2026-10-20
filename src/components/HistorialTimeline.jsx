@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Ban, BadgeCheck, Banknote, Car, CheckCheck, Clock, Flag, Gauge, MapPin, Pencil, Plus, Send, Undo2, UserCog } from 'lucide-react';
+import { ArrowRightLeft, Ban, BadgeCheck, Banknote, Car, CheckCheck, Clock, Flag, Gauge, HardHat, MapPin, Pencil, Plus, Send, Undo2, UserCog } from 'lucide-react';
 import { construirLineaDeTiempo } from '../utils/historial';
 
 const TIPOS = {
@@ -17,6 +17,7 @@ const TIPOS = {
   cancelado: { icono: Ban, titulo: 'Cancelada', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
   consultaCobro: { icono: Banknote, titulo: 'Consulta de cobro', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
   respuestaCobro: { icono: Banknote, titulo: 'Cobro respondido', color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
+  infraestructura: { icono: HardHat, titulo: 'Infraestructura', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
   valores: { icono: Gauge, titulo: 'Valores del cliente', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
   estado: { icono: ArrowRightLeft, titulo: 'Cambio de estado', color: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200' },
   ubicacion: { icono: MapPin, titulo: 'Ubicación', color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
@@ -24,7 +25,7 @@ const TIPOS = {
 };
 
 // Líneas que solo repiten el título del evento: no se muestran.
-const REPETIDAS = /^(Marcado como PRE-FINALIZADO|Devuelta al técnico|Valores del cliente guardados|Aprobado y marcado como FINALIZADO|Va en camino|Llegó al sitio)$/;
+const REPETIDAS = /^(Marcado como PRE-FINALIZADO|Devuelta al técnico|Valores del cliente guardados|Aprobado y marcado como FINALIZADO|Va en camino|Llegó al sitio|Escalada a infraestructura)$/;
 
 // "Serial: X" -> etiqueta en negrita y valor aparte. Solo si lo anterior a ":" es corto, para no partir frases.
 function LineaDetalle({ texto }) {

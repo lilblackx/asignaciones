@@ -9,7 +9,6 @@ export const getEstadoColor = (estado) => {
   if (e === 'PENDIENTE') return 'bg-slate-600 text-white';
   if (e === 'PRE-FINALIZADO' || e === 'PRE-FINALIZADA') return 'bg-amber-500 text-black dark:bg-amber-600 dark:text-white font-bold';
   if (e === 'FINALIZADO') return 'bg-emerald-700 text-white';
-  if (e === 'ELIMINADO') return 'bg-zinc-800 text-white dark:bg-zinc-600';
   return 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200';
 };
 
@@ -36,7 +35,7 @@ const parseFechaTicket = (fechaStr) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-const ESTADOS_CERRADOS = ['FINALIZADO', 'CANCELADO', 'ELIMINADO'];
+const ESTADOS_CERRADOS = ['FINALIZADO', 'CANCELADO'];
 
 // Encabezado de grupo por día: "Hoy · 29/09/2026" o "Ayer · ...". Para órdenes
 // aún abiertas con 2+ días de antigüedad agrega "hace N días" y marca `atrasado`.
@@ -75,7 +74,7 @@ export const getEnvioInfo = (ticket) => {
 };
 
 export const getFechaStyles =(fechaStr, estado) => {
-  if (estado === 'FINALIZADO' || estado === 'CANCELADO' || estado === 'ELIMINADO') {
+  if (estado === 'FINALIZADO' || estado === 'CANCELADO') {
     return "text-zinc-500 dark:text-zinc-400 font-medium";
   }
   try {

@@ -16,10 +16,10 @@ const pendiente = { id: 'a', estado: 'PENDIENTE', prioridadAlta: true };
 check('una orden pendiente con prioridad marcada es prioritaria', esPrioritaria(pendiente), true);
 check('sin la marca, o con la marca quitada, no lo es', [{ id: 'b', estado: 'PENDIENTE' }, { id: 'c', estado: 'PENDIENTE', prioridadAlta: false }].map(esPrioritaria), [false, false]);
 check('pre-finalizada o cerrada ya no cuenta, aunque conserve la marca',
-  ['PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO', 'ELIMINADO'].map(estado => esPrioritaria({ ...pendiente, estado })), [false, false, false, false]);
+  ['PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'].map(estado => esPrioritaria({ ...pendiente, estado })), [false, false, false]);
 check('sin orden no es prioritaria', [esPrioritaria(null), esPrioritaria(undefined)], [false, false]);
 check('la prioridad solo se cambia mientras la orden está pendiente',
-  ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'ELIMINADO'].map(estado => puedeCambiarPrioridad({ estado })), [true, false, false, false]);
+  ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'].map(estado => puedeCambiarPrioridad({ estado })), [true, false, false, false]);
 
 // --- Orden de la lista ---
 const lista = [

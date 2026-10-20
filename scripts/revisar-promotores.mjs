@@ -18,7 +18,7 @@ initializeApp({
 });
 
 const appId = process.env.APP_ID || 'default-app-id';
-const CERRADAS = ['FINALIZADO', 'CANCELADO', 'ELIMINADO'];
+const CERRADAS = ['FINALIZADO', 'CANCELADO'];
 const snap = await getFirestore().collection(`artifacts/${appId}/public/data/tickets`).where('tipoTrabajo', '==', 'INSTALACIÓN').get();
 
 const porPromotor = new Map();

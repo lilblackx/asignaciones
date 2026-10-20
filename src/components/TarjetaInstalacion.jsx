@@ -3,6 +3,7 @@ import { promotoraDeOrden } from '../utils/whatsapp';
 import { ESTILO_ESTADO_PROMOTORA_SOLIDO } from './estilosInstalacion';
 import { atrasoOrden, esAveriaLos, fechaCorta, fechaOrden, textoPlantillaFinal } from '../utils/estadoInstalacion';
 import { formatearCedula } from '../utils/cedula';
+import { motivoCancelacion } from '../utils/cancelacion';
 import { getTipoTrabajoEstilo } from '../utils/ticketDisplay';
 import BotonCopiar from './BotonCopiar';
 import { useCopiado } from '../hooks/useCopiado';
@@ -30,6 +31,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
   const cedula = formatearCedula(orden.cedula, orden.tipoDocumento);
   const promotor = promotoraDeOrden(orden);
   const programada = vista.clave === 'PROGRAMADA' ? fechaCorta(orden.fechaProgramada) : '';
+  const motivo = vista.clave === 'CANCELADA' ? motivoCancelacion(orden) : '';
 
   return (
     <li className="h-full flex flex-col min-w-0 rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
@@ -50,6 +52,13 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
         <div className="w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
           <CalendarClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>Programada para el {programada}</span>
+        </div>
+      )}
+
+      {motivo && (
+        <div className="w-full px-3 py-1.5 bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200 text-[11px] leading-snug">
+          <p className="font-black uppercase tracking-wide">Motivo de la cancelación</p>
+          <p className="break-words whitespace-pre-wrap">{motivo}</p>
         </div>
       )}
 

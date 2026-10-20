@@ -149,14 +149,41 @@ service cloud.firestore {
 
       // TECNICO: solo su propio ticket y solo los campos de su trabajo (los que
       // tiene habilitados en Pre-finalizar / Detalles). El estado solo puede pasar
-      // de PENDIENTE a PRE-FINALIZADO: nunca FINALIZADO/CANCELADO/ELIMINADO, ni
+      // de PENDIENTE a PRE-FINALIZADO: nunca FINALIZADO ni CANCELADO, ni
       // reabrir una orden. El historial solo crece: no puede borrar entradas.
-      allow update: if isAdminUser(appId) || isUsuarioRole(appId)
+      // Una orden ya finalizada no cambia su cierre: ni la hora de finalización ni el cobro. Si dos personas finalizan la misma orden a la vez,
+      // la segunda escritura llega con la orden ya FINALIZADA y se rechaza aquí (la app, además, lo evita con una transacción).
+      function noPisaElCierre() {
+        return !(resource.data.get('estado', '') == 'FINALIZADO'
+          && request.resource.data.get('estado', '') == 'FINALIZADO'
+          && (request.resource.data.get('finalizadoEn', null) != resource.data.get('finalizadoEn', null)
+            || request.resource.data.get('cobroBs', null) != resource.data.get('cobroBs', null)
+            || request.resource.data.get('cobroTipo', null) != resource.data.get('cobroTipo', null)));
+      }
+
+      allow update: if ((isAdminUser(appId) || isUsuarioRole(appId)) && noPisaElCierre())
         || (
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones'])
+          // Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, agregar
+          // 'infraestructura' a la lista de arriba y esta condición (el técnico solo deja la orden esperando, a su nombre y con motivo):
+          // && (
+          //   !request.resource.data.diff(resource.data).affectedKeys().hasAny(['infraestructura'])
+          //   || (
+          //     resource.data.estado == 'PENDIENTE'
+          //     && resource.data.get('infraestructura', {}).get('activa', false) != true
+          //     && request.resource.data.infraestructura.keys().hasOnly(['activa', 'motivo', 'por', 'origen', 'en', 'tecnico'])
+          //     && request.resource.data.infraestructura.activa == true
+          //     && request.resource.data.infraestructura.origen == 'TECNICO'
+          //     && request.resource.data.infraestructura.tecnico == tecnicoAsociado(appId)
+          //     && request.resource.data.infraestructura.motivo is string
+          //     && request.resource.data.infraestructura.motivo.size() > 0
+          //     && request.resource.data.infraestructura.motivo.size() <= 300
+          //     && request.resource.data.infraestructura.en is int
+          //   )
+          // )
           // Las horas del ciclo (reporte de esperas) son números o null; asignadoEn y primerAsignadoEn solo los escribe la oficina.
           && (request.resource.data.get('salioEn', null) == null || request.resource.data.salioEn is int)
           && (request.resource.data.get('llegoEn', null) == null || request.resource.data.llegoEn is int)
@@ -171,9 +198,62 @@ service cloud.firestore {
           && request.resource.data.get('historialEdiciones', []).hasAll(resource.data.get('historialEdiciones', []))
         );
 
-      // El flujo normal borra vía "estado: ELIMINADO" (update, papelera). El borrado
+      // El flujo normal da de baja una orden cancelándola (estado CANCELADO, con su motivo). El borrado
       // físico real solo lo usa el proceso de cierre (Reportes), reservado a canCerrar.
       allow delete: if canCerrar(appId);
+    }
+
+    // Aviso de "alguien está revisando esta orden": un documento por orden y persona ("<id de la orden>__<usuario>"), con vencimiento de pocos
+    // minutos (la app lo renueva mientras el modal sigue abierto y lo borra al cerrarlo). Solo la oficina lo lee y escribe, solo a su nombre,
+    // y nunca vence a más de 10 minutos. No bloquea nada: avisa. Un aviso vencido lo puede borrar cualquiera de la oficina (limpieza).
+    match /artifacts/{appId}/public/data/bloqueosOrden/{docId} {
+      function usuarioActual(appId) {
+        return get(profilePath(appId)).data.get('username', '');
+      }
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId);
+      allow create, update: if (isAdminUser(appId) || isUsuarioRole(appId))
+        && request.resource.data.keys().hasOnly(['ticketId', 'por', 'nombre', 'desde', 'venceEn'])
+        && request.resource.data.por == usuarioActual(appId)
+        && request.resource.data.por is string && request.resource.data.por.size() > 0
+        && request.resource.data.ticketId is string && request.resource.data.ticketId.size() > 0
+        && docId == request.resource.data.ticketId + '__' + request.resource.data.por
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 100
+        && request.resource.data.desde is int && request.resource.data.venceEn is int
+        && request.resource.data.venceEn <= request.time.toMillis() + 600000;
+      allow delete: if (isAdminUser(appId) || isUsuarioRole(appId))
+        && (resource.data.por == usuarioActual(appId) || resource.data.venceEn < request.time.toMillis());
+    }
+
+    // Registro de VN y TA (la pestaña VN/TA de la hoja del departamento): se llena a mano, una fila por documento. Lo leen y lo escriben la oficina
+    // (ADMIN y USUARIO). Al crear queda quién lo registró (creadoPor, el usuario de quien escribe); el código, el tipo, quién lo creó y cuándo no
+    // cambian después. Borrar: el ADMIN o quien lo registró.
+    match /artifacts/{appId}/public/data/registroVnTa/{docId} {
+      function usuarioDe(appId) {
+        return get(profilePath(appId)).data.get('username', '');
+      }
+      function filaValida() {
+        let r = request.resource.data;
+        return r.keys().hasOnly(['codigo', 'trabajo', 'tecnico', 'fecha', 'observacion', 'operador', 'creadoPor', 'creadoEn', 'actualizadoEn'])
+          && r.trabajo in ['VN', 'TA']
+          && r.codigo is string
+          && ((r.trabajo == 'VN' && r.codigo.matches('^VAN[0-9]{2,}$')) || (r.trabajo == 'TA' && r.codigo.matches('^TA[0-9]{2,}$')))
+          && r.fecha is string && r.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && r.tecnico is string && r.tecnico.size() <= 100
+          && r.observacion is string && r.observacion.size() <= 500
+          && r.operador is string && r.operador.size() > 0 && r.operador.size() <= 100
+          && r.creadoPor is string && r.creadoEn is int && r.actualizadoEn is int;
+      }
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId);
+      allow create: if (isAdminUser(appId) || isUsuarioRole(appId))
+        && filaValida()
+        && request.resource.data.creadoPor == usuarioDe(appId) && usuarioDe(appId) != '';
+      allow update: if (isAdminUser(appId) || isUsuarioRole(appId))
+        && filaValida()
+        && request.resource.data.codigo == resource.data.codigo
+        && request.resource.data.trabajo == resource.data.trabajo
+        && request.resource.data.creadoPor == resource.data.creadoPor
+        && request.resource.data.creadoEn == resource.data.creadoEn;
+      allow delete: if isAdminUser(appId) || (isUsuarioRole(appId) && resource.data.creadoPor == usuarioDe(appId));
     }
 
     match /artifacts/{appId}/public/data/reports/{docId} {

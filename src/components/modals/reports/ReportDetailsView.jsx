@@ -1,6 +1,7 @@
 import { Download, FileText, MessageSquareText, Wrench } from 'lucide-react';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import { formatCedula } from '../../../utils/ticketDisplay';
+import { motivoCancelacion } from '../../../utils/cancelacion';
 import { CENTRADO_AMPLIO } from '../../Modal';
 import EncabezadoModulo from '../../EncabezadoModulo';
 
@@ -106,6 +107,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                   <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400 italic leading-snug align-middle">
                     {ticket.observacion || (ticket.observacionTecnico ? '' : '-')}
                     {ticket.observacionTecnico && <span className={`block not-italic text-amber-700 dark:text-amber-400 ${ticket.observacion ? 'mt-1' : ''}`}><span className="font-semibold">Técnico:</span> {ticket.observacionTecnico}</span>}
+                    {motivoCancelacion(ticket) && <span className="block not-italic text-red-700 dark:text-red-300 mt-1"><span className="font-semibold">Cancelada:</span> {motivoCancelacion(ticket)}</span>}
                   </td>
                 </tr>
               ))}
@@ -128,6 +130,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
               <div className="border-t border-zinc-100 dark:border-zinc-800/80 pt-2 flex flex-col gap-1 text-xs">
                 <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
                 <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'SIN TÉCNICO'}</p>
+                {motivoCancelacion(ticket) && <p className="text-red-700 dark:text-red-300"><span className="font-semibold">Motivo de la cancelación:</span> {motivoCancelacion(ticket)}</p>}
                 {ticket.observacion && (
                   <p className="flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
                     <MessageSquareText className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-px" aria-label="Observación" role="img" />

@@ -196,7 +196,7 @@ const FINALIZADAS = [
   ticketDoc('t-inst', { codigo: 'IO5', nombre: 'Ana Pérez', cedula: '12.345.678', tipoDocumento: 'V', direccion: 'Calle 1', tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1000, finalizadoEn: 2000, serial: 'SECRETO123', cobroBs: '400', plantillaOriginal: '*Nap:*\n*Promotora:* alexis añez \n*Fuente:* x' }),
   ticketDoc('t-averia', { codigo: 'AS7', nombre: 'Luis', estado: 'FINALIZADO', tipoTrabajo: 'AVERÍA', createdAt: 1500 }),
 ];
-const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'ROSA DE LA CRUZ', direccion: 'CALLE 5 CASA 10b', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana' })];
+const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'ROSA DE LA CRUZ', direccion: 'CALLE 5 CASA 10b', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana', motivoCancelacion: '  El cliente | ya no  quiere el servicio ' })];
 const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 40 * 86400000) } } };
 const consultas = [];
 globalThis.fetch = async (url, init = {}) => {
@@ -229,7 +229,8 @@ check('el resumen lleva lo que ve la promotora', [dePrueba?.codigo, dePrueba?.no
 check('y las fechas: creada, finalizada y archivada', [dePrueba?.creadaEn, dePrueba?.finalizadoEn, dePrueba?.archivadoEn],
   [{ integerValue: '1000' }, { integerValue: '2000' }, { integerValue: String(AHORA) }]);
 check('el resumen NO lleva datos técnicos ni de cobro', Object.keys(dePrueba || {}).sort(),
-  ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
+  ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'motivoCancelacion', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
+check('el motivo de la cancelación pasa limpio al historial de ventas; el de una finalizada va vacío', [historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields.motivoCancelacion, dePrueba?.motivoCancelacion], [{ stringValue: 'El cliente / ya no quiere el servicio' }, { stringValue: '' }]);
 check('la promotora sale de la plantilla si la orden no la guardó', [dePrueba?.promotora, dePrueba?.promotoraClave], [{ stringValue: 'Alexis Añez' }, { stringValue: 'alexis anez' }]);
 const canceladaDoc = historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields;
 check('y se usa la que la orden ya trae', [canceladaDoc?.promotora, canceladaDoc?.promotoraClave], [{ stringValue: 'Sariana' }, { stringValue: 'sariana' }]);

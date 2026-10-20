@@ -17,12 +17,15 @@ import { formularioDatosTecnico, formularioModificado, tieneDatosDelTecnico, val
 import { CedulaField, ObservacionField, ObservacionTecnicoField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import { promotoraDeOrden, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 import { devolucionPendiente } from '../../utils/devolucion';
+import { MAX_LARGO_MOTIVO_CANCELACION, cancelaAhora, parseMotivoCancelacion } from '../../utils/cancelacion';
+import { stripEmojis } from '../../utils/sanitizeInput';
 import Spinner from '../Spinner';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
+  const [errorMotivo, setErrorMotivo] = useState('');
 
   const esInstalacion = editingTicket.tipoTrabajo?.toUpperCase().includes('INSTAL');
   // Instalación o reconexión que se creó sin la plantilla de la promotora: aquí se puede pegar. Si ya la tiene, no se
@@ -103,6 +106,15 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   const onSubmit = (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    // Cancelar la orden pide el motivo: se ve en la lista, el historial, ventas y los reportes.
+    if (cancelaAhora(ordenAlAbrir, editingTicket)) {
+      const motivo = parseMotivoCancelacion(editingTicket.motivoCancelacion);
+      if (motivo.error) {
+        setErrorMotivo(motivo.error);
+        document.getElementById('ed-motivo-cancelacion')?.focus();
+        return;
+      }
+    }
     // Un dato con error: el cursor va al primero, en el orden del formulario.
     const campoConError = napCoordenadasParseadas.error ? 'ed-nap-coords' : ubicacionParseada.error ? 'ed-ubicacion' : potenciaParseada.error ? 'ed-potencia' : null;
     if (campoConError) {
@@ -207,6 +219,26 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             {isTecnico && <p className="text-[9px] text-zinc-400 ml-1">Usa el botón "Pre-finalizar" de la lista para cambiar el estado.</p>}
             {!isTecnico && editingTicket.estado !== 'FINALIZADO' && <p className="text-[9px] text-zinc-400 ml-1">Para finalizar usa "Finalizar" o "Aprobar" en la lista: ahí se elige el cobro resultante.</p>}
           </div>
+          {!isTecnico && editingTicket.estado === 'CANCELADO' && (
+            <div className="col-span-2 space-y-1">
+              <label htmlFor="ed-motivo-cancelacion" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">
+                MOTIVO DE LA CANCELACIÓN {cancelaAhora(ordenAlAbrir, editingTicket) && <span className="font-normal">(obligatorio)</span>}
+              </label>
+              <textarea
+                id="ed-motivo-cancelacion"
+                name="motivoCancelacion"
+                value={editingTicket.motivoCancelacion || ''}
+                onChange={(e) => { handleEditChange({ target: { name: 'motivoCancelacion', value: stripEmojis(e.target.value), type: 'text' } }); setErrorMotivo(''); }}
+                rows={2}
+                maxLength={MAX_LARGO_MOTIVO_CANCELACION}
+                aria-invalid={!!errorMotivo}
+                placeholder="Ej. El cliente ya no quiere el servicio, no hay cobertura en la zona..."
+                className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2 focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm resize-none"
+              />
+              {errorMotivo && <p role="alert" className="text-[11px] text-red-500 font-bold ml-1">{errorMotivo}</p>}
+              <p className="text-[9px] text-zinc-400 ml-1">Se ve en la lista, el historial, ventas y los reportes.</p>
+            </div>
+          )}
           <TecnicoField
             variant="edit"
             wrapperClassName="col-span-2 space-y-1"

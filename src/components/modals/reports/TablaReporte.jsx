@@ -17,7 +17,7 @@ export default function TablaReporte({ titulo, nota, columnas, filas, vacio = 'S
             <tbody>
               {filas.map((fila, i) => (
                 <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800/60">
-                  {fila.map((celda, j) => <td key={j} className={`py-2 pr-3 ${columnas[j]?.derecha ? 'text-right font-black whitespace-nowrap' : ''} ${j === 0 ? 'font-bold' : ''}`}>{celda}</td>)}
+                  {fila.map((celda, j) => <td key={j} className={`py-2 pr-3 ${columnas[j]?.derecha ? 'text-right font-black whitespace-nowrap' : ''} ${columnas[j]?.sinSalto ? 'whitespace-nowrap' : ''} ${j === 0 ? 'font-bold' : ''}`}>{celda}</td>)}
                 </tr>
               ))}
             </tbody>

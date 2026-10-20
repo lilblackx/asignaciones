@@ -3,6 +3,7 @@ import { instalacionSinUbicacion } from '../utils/ubicacion';
 import { categoriaProgramada, esProgramadaFutura, mananaISO } from '../utils/programada';
 import { prioritariasPrimero } from '../utils/prioridad';
 import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
+import { enInfraestructura } from '../utils/infraestructura';
 
 const PAGE_SIZE = 50;
 
@@ -35,7 +36,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
         : statusFilter === 'PRE-FINALIZADO' ? (t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
         : statusFilter === 'EN_CAMINO' ? estaEnCamino(t, ahora)
         : statusFilter === 'EN_SITIO' ? estaEnSitio(t, ahora)
-        : statusFilter === 'ELIMINADOS' ? t.estado === 'ELIMINADO'
+        : statusFilter === 'EN_INFRAESTRUCTURA' ? enInfraestructura(t)
         : statusFilter === 'INSTALACION_SIN_UBICACION' ? instalacionSinUbicacion(t)
         : statusFilter === 'PENDIENTE_SIN_TECNICO' ? t.estado === 'PENDIENTE' && (!t.tecnico || t.tecnico.trim() === '')
         : t.estado?.toUpperCase() === statusFilter;

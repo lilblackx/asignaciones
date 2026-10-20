@@ -6,6 +6,7 @@
 //   - "Exonerar": la visita no se cobra; el técnico ve en su aviso que no debe cobrar nada.
 
 import { esInstalacion } from './instalacion.js';
+import { cerradaComoTA } from './infraestructura.js';
 import { etiquetaTipoVisita } from './tipoVisita.js';
 
 export const COBRO_VISITA = 'VISITA_TECNICA';
@@ -60,7 +61,8 @@ export const estaExonerado = (t) => t?.cobroTipo === COBRO_EXONERADO;
 
 // Toda orden lleva cobro resultante, menos las instalaciones: quien la aprueba o la finaliza siempre elige
 // "Visita técnica", "Otro monto" o "Exonerar", y el técnico lo ve cuando se finaliza (sin importar el tipo de visita).
-export const llevaCobro = (t) => Boolean(t) && !esInstalacion(t.tipoTrabajo);
+// Tampoco la lleva la orden que se cerró como trabajo adicional de infraestructura (TA): no hubo visita que cobrar.
+export const llevaCobro = (t) => Boolean(t) && !esInstalacion(t.tipoTrabajo) && !cerradaComoTA(t);
 
 // Nombre de lo que se cobra: el tipo de visita ("Conector interno", "Recableado") o, sin visita, el tipo de
 // trabajo ("Instalación", "Avería").

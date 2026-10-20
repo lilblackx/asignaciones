@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { sacudirVentanaDeLaUltimaAccion } from '../utils/sacudidaErrores';
-import { AlertCircle, Ban, Banknote, Car, CheckCheck, CheckCircle2, Clock, Flag, MapPin, Star, Undo2, UserCog, UserMinus, Wrench } from 'lucide-react';
+import { AlertCircle, Ban, Banknote, Car, CheckCheck, CheckCircle2, Clock, Flag, HardHat, MapPin, Star, Undo2, UserCog, UserMinus, Wrench } from 'lucide-react';
 
 const DURACION_SALIDA_MS = 200;
 
@@ -44,6 +44,7 @@ export default function Toast({ toastMsg: entrante, onClose }) {
   const isLlegada = toastMsg.type === 'llegada';
   const isConsultaCobro = toastMsg.type === 'consultaCobro';
   const isRespuestaCobro = toastMsg.type === 'respuestaCobro';
+  const isInfraestructura = toastMsg.type === 'infraestructura';
   const accion = toastMsg.action;
 
   return (
@@ -54,6 +55,7 @@ export default function Toast({ toastMsg: entrante, onClose }) {
           : isEnCamino ? 'bg-sky-600 text-white'
           : isLlegada ? 'bg-teal-600 text-white'
           : isRespuestaCobro ? 'bg-sky-600 text-white'
+          : isInfraestructura ? 'bg-orange-600 text-white'
           : isPreFinalizado || isAviso || isConsultaCobro || isNuevaVenta ? 'bg-amber-500 text-black'
             : isTecnicoStatus ? 'bg-purple-600 text-white'
               : isAprobado ? 'bg-blue-600 text-white'
@@ -62,6 +64,7 @@ export default function Toast({ toastMsg: entrante, onClose }) {
       }`}>
         {isConsultaCobro || isRespuestaCobro ? <Banknote className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isPrioridad ? <Flag className="w-4 h-4 shrink-0 mt-0.5 fill-current" aria-hidden="true" />
+          : isInfraestructura ? <HardHat className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isDevuelto ? <Undo2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isEnCamino ? <Car className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isLlegada ? <MapPin className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, History, Search } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../../constants';
+import { motivoCancelacion } from '../../utils/cancelacion';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
@@ -11,7 +12,7 @@ import PlantillaFinalModal from './PlantillaFinalModal';
 import Colapsable from '../Colapsable';
 
 const PAGE_SIZE = 25;
-const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO', 'ELIMINADO'];
+const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'];
 
 // "dd/mm/yyyy" (formato de ticket.fecha) -> timestamp; 0 si no se puede leer.
 function parseFecha(fecha) {
@@ -219,7 +220,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                           </button>
                         </div>
                       )}
-                      {o.estado === 'ELIMINADO' && <p><span className="font-semibold">Eliminada por:</span> {o.eliminadoPor} ({o.fechaEliminacion})</p>}
+                      {motivoCancelacion(o) && <p><span className="font-semibold">Motivo de la cancelación:</span> {motivoCancelacion(o)}{o.canceladaPor ? ` (${o.canceladaPor})` : ''}</p>}
                       {(o.historialEdiciones || []).length > 0 && (
                         <div className="pt-1.5 mt-1.5 border-t border-zinc-100 dark:border-zinc-800">
                           <p className="font-semibold mb-2">Historial de cambios</p>

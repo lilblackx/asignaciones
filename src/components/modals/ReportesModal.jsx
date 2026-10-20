@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ClipboardList, Gauge, Hourglass, Receipt, LayoutDashboard, LineChart, ShieldCheck, Timer, TrendingUp, UserCheck, Wrench } from 'lucide-react';
+import { ClipboardList, ClipboardPen, Gauge, Hourglass, Receipt, LayoutDashboard, LineChart, ShieldCheck, Timer, TrendingUp, UserCheck, Wrench } from 'lucide-react';
 import AnalyticsView from './reports/AnalyticsView';
 import ActivacionTecnicosView from './reports/ActivacionTecnicosView';
 import TiempoAtencionView from './reports/TiempoAtencionView';
 import EsperasCicloView from './reports/EsperasCicloView';
 import CobrosView from './reports/CobrosView';
+import RegistroEstadisticasView from './reports/RegistroEstadisticasView';
 import ProductividadView from './reports/ProductividadView';
 import CalidadView from './reports/CalidadView';
 import ResumenEjecutivoView from './reports/ResumenEjecutivoView';
@@ -19,8 +20,9 @@ import { csvDeDocumento, csvReporte, lineasPeriodo } from '../../utils/csvReport
 import { META_HORAS, calidad, pendientesMasAntiguas, productividad, seccionesCalidad, seccionesProductividad, seccionesTiempoAtencion, tiempoDeAtencion, todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { descargarCsv } from '../../utils/exportarOrdenes';
 import { exportarDocumento } from '../../utils/exportarDocumento';
-import { documentoActivacion, documentoCalidad, documentoCausasAveria, documentoCobros, documentoEsperasCiclo, documentoEstadisticas, documentoProductividad, documentoResumenEjecutivo, documentoTendencia, documentoTiempoAtencion } from '../../utils/modelosReporte';
+import { documentoActivacion, documentoCalidad, documentoCausasAveria, documentoCobros, documentoEsperasCiclo, documentoEstadisticas, documentoProductividad, documentoRegistroEstadisticas, documentoResumenEjecutivo, documentoTendencia, documentoTiempoAtencion } from '../../utils/modelosReporte';
 import { diaDe } from '../../utils/totalesMes';
+import { useRegistroVnTa } from '../../hooks/useRegistroVnTa';
 import { rangoDe } from '../../utils/periodoReporte';
 
 // Los reportes, agrupados por tema. Para sumar uno: agrega aquí su entrada y su vista más abajo.
@@ -39,6 +41,10 @@ const GRUPOS = [
       {
         id: 'ESTADISTICAS', nombre: 'Estadísticas', Icono: LineChart, documento: documentoEstadisticas,
         exportar: (contexto) => ({ texto: csvDeDocumento(documentoEstadisticas(contexto)), nombre: `estadisticas_${contexto.rango.desde}_${contexto.rango.hasta}.csv` }),
+      },
+      {
+        id: 'REGISTRO', nombre: 'Registro de estadísticas', Icono: ClipboardPen, documento: documentoRegistroEstadisticas,
+        exportar: (contexto) => ({ texto: csvDeDocumento(documentoRegistroEstadisticas(contexto)), nombre: `registro-de-estadisticas_${contexto.rango.desde}_${contexto.rango.hasta}.csv` }),
       },
       {
         id: 'CAUSAS', nombre: 'Causas de avería', Icono: Wrench, documento: documentoCausasAveria,
@@ -108,6 +114,9 @@ export default function ReportesModal({
   logTecnicos,
   totalesMensuales,
   usuario,
+  nombreUsuario,
+  esAdmin = false,
+  firebaseUser,
   onClose
 }) {
   const [reporteId, setReporteId] = useState(REPORTES[0].id);
@@ -123,6 +132,11 @@ export default function ReportesModal({
   const rango = useMemo(() => rangoDe(periodo, personalizado), [periodo, personalizado]);
   const nombresTecnicos = useMemo(() => technicians.map((t) => t.name).filter(Boolean).sort(), [technicians]);
 
+  // El registro de VN y TA se llena a mano: solo se escucha mientras se ve el Registro de estadísticas.
+  // Con un detalle abierto encima (en el Registro de estadísticas), Escape y "atrás" cierran solo el detalle.
+  const [detalleAbierto, setDetalleAbierto] = useState(false);
+  const vnta = useRegistroVnTa({ firebaseUser, activo: reporteId === 'REGISTRO', rango, usuario, nombre: nombreUsuario });
+
   // Las órdenes de los reportes de gestión: las vivas y las ya archivadas en los cierres cargados.
   const ordenes = useMemo(() => todasLasOrdenes(tickets, reports), [tickets, reports]);
   const historial = { hasMoreReports, isLoadingReports, onLoadMoreReports };
@@ -135,7 +149,7 @@ export default function ReportesModal({
     setErrorExportar('');
     setExportando(formato);
     try {
-      const contexto = { eventos: logTecnicos.eventos, ordenes, rango, tecnico, metaHoras, contadores: totalesMensuales.contadores, tickets, ventana: ventanaMeses, ahora: Date.now(), generadoPor: usuario };
+      const contexto = { registrosVnTa: vnta.registros, eventos: logTecnicos.eventos, ordenes, rango, tecnico, metaHoras, contadores: totalesMensuales.contadores, tickets, ventana: ventanaMeses, ahora: Date.now(), generadoPor: usuario };
       if (formato === 'csv') {
         const { texto, nombre } = reporte.exportar(contexto);
         descargarCsv(texto, nombre);
@@ -151,7 +165,7 @@ export default function ReportesModal({
   };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]" completa>
+    <Modal onClose={detalleAbierto ? () => {} : onClose} zIndexClass="z-[60]" completa>
       <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={ClipboardList} titulo="REPORTES" onClose={onClose} />
 
@@ -215,6 +229,7 @@ export default function ReportesModal({
             {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{errorExportar}</p>}
             <div key={reporteId} className="lg:animate-fade-in">
               {reporteId === 'RESUMEN' && <ResumenEjecutivoView ordenes={ordenes} eventos={logTecnicos.eventos} contadores={totalesMensuales.contadores} tickets={tickets} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
+              {reporteId === 'REGISTRO' && <RegistroEstadisticasView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} onDetalleAbierto={setDetalleAbierto} vnta={{ ...vnta, tecnicos: nombresTecnicos, hoy, puedeBorrar: (r) => esAdmin || r.creadoPor === usuario }} />}
               {reporteId === 'CAUSAS' && <CausasAveriaView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} />}
               {reporteId === 'TENDENCIA' && <TendenciaMensualView contadores={totalesMensuales.contadores} cargando={totalesMensuales.cargando} error={totalesMensuales.error} tickets={tickets} ventana={ventanaMeses} onVentana={setVentanaMeses} />}
               {reporteId === 'COBROS' && <CobrosView ordenes={ordenes} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}

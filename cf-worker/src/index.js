@@ -543,6 +543,8 @@ function resumenInstalacionFirestore(t, ahoraMs) {
     // La plantilla final se guarda en la orden al finalizarla (la app la arma); aquí solo se copia, sin repetir esa lógica.
     plantillaFinal: { stringValue: f.estado?.stringValue === 'FINALIZADO' && !esAveriaLosFirestore(f) ? (f.plantillaFinal?.stringValue || '') : '' },
     creadaEn: numero('createdAt'), finalizadoEn: numero('finalizadoEn'), archivadoEn: { integerValue: String(ahoraMs) },
+    // Por qué se canceló (solo en las canceladas; igual que en resumenInstalacion de src/utils/estadoInstalacion.js): ventas lo ve en la tarjeta.
+    motivoCancelacion: { stringValue: f.estado?.stringValue === 'CANCELADO' ? String(f.motivoCancelacion?.stringValue || '').replace(/\|/g, '/').replace(/\s+/g, ' ').trim() : '' },
   };
 }
 

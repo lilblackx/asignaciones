@@ -37,15 +37,15 @@ check('programada para hoy ya es asignada', vista({ tecnico: 'GERARDO MOLERO', f
 check('pre-finalizada: instalada, en revisión', vista({ estado: 'PRE-FINALIZADO', tecnico: 'GERARDO MOLERO' }), ['EN_REVISION', 'Instalada, en revisión', 'GERARDO MOLERO']);
 check('finalizada: instalada', vista({ estado: 'FINALIZADO', tecnico: 'GERARDO MOLERO' }), ['INSTALADA', 'Instalada', 'GERARDO MOLERO']);
 check('cancelada', vista({ estado: 'CANCELADO' }), ['CANCELADA', 'Cancelada', '']);
-check('eliminada no se muestra', vista({ estado: 'ELIMINADO' }), null);
-check('ningún texto usa términos internos', Object.values(ESTADOS_PROMOTORA).some((t) => /PRE-FINALIZADO|ELIMINADO|PENDIENTE/.test(t)), false);
+check('ningún texto usa términos internos', Object.values(ESTADOS_PROMOTORA).some((t) => /PRE-FINALIZADO|PENDIENTE/.test(t)), false);
 check('todos los estados tienen lugar en el orden', [...ORDEN_ESTADOS_PROMOTORA].sort(), Object.keys(ESTADOS_PROMOTORA).sort());
 
 // --- Resumen que guarda el cierre ---
 const completa = { ...base, id: 'x', cedula: '12.345.678', tipoDocumento: 'V', direccion: 'Calle 1', tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO', createdAt: 100, finalizadoEn: 200,
   serial: 'SECRETO', vlan: '1700', cobroBs: '400', telefono: '0414-1', observacion: 'interna', plantillaOriginal: 'IO-0\n*Instalador:* \n*Serial:*', instalacion: { serial: 'ABC123' } };
 const resumen = resumenInstalacion(completa, 999);
-check('el resumen solo lleva lo que ve la promotora', Object.keys(resumen).sort(), ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
+check('el resumen solo lleva lo que ve la promotora', Object.keys(resumen).sort(), ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'motivoCancelacion', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
+check('el resumen de una cancelada lleva el motivo; el de una finalizada va vacío', [resumenInstalacion({ ...completa, estado: 'CANCELADO', motivoCancelacion: ' No hay  cobertura ' }, 1).motivoCancelacion, resumen.motivoCancelacion], ['No hay cobertura', '']);
 check('con sus valores', [resumen.codigo, resumen.nombre, resumen.cedula, resumen.estado, resumen.creadaEn, resumen.finalizadoEn, resumen.archivadoEn], ['IO1', 'Ana', '12.345.678', 'FINALIZADO', 100, 200, 999]);
 check('sin datos técnicos sueltos, de cobro ni de contacto (solo la plantilla final)', JSON.stringify({ ...resumen, plantillaFinal: '' }).match(/SECRETO|1700|400|0414|interna|ABC123/), null);
 check('las promotoras ven 7 días de historial y ventas 30', [RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS], [7, 30]);
@@ -86,7 +86,6 @@ check('solo ventas elige entre instalaciones, LOS o todo (las demás promotoras 
 // --- Activas + historial ---
 const activas = [
   { ...base, id: '1', codigo: 'IO1', createdAt: 10 },
-  { ...base, id: '2', codigo: 'IO2', estado: 'ELIMINADO', createdAt: 20 },
   { ...base, id: '3', codigo: 'AS3', tipoTrabajo: 'AVERÍA', createdAt: 30 },
   { ...base, id: '4', codigo: 'IO4', estado: 'FINALIZADO', tecnico: 'X', createdAt: 5 },
 ];
@@ -95,7 +94,7 @@ const hist = [
   { id: '9', codigo: 'IO9', nombre: 'vieja', estado: 'CANCELADO', archivadoEn: AHORA - 86400000 },
 ];
 const unidas = unirInstalaciones(activas, hist, AHORA);
-check('solo instalaciones, sin eliminadas, sin duplicados', unidas.map((o) => o.codigo), ['IO1', 'IO4', 'IO9']);
+check('solo instalaciones, sin duplicados', unidas.map((o) => o.codigo), ['IO1', 'IO4', 'IO9']);
 check('las activas van primero y gana la activa si está en las dos', unidas.map((o) => o.origen), ['activa', 'activa', 'historial']);
 check('cada una trae su estado', unidas.map((o) => o.vista.clave), ['SIN_TECNICO', 'INSTALADA', 'CANCELADA']);
 

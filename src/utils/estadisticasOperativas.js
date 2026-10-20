@@ -1,9 +1,7 @@
 // Estadísticas operativas de las órdenes de un periodo: finalizadas por técnico, NAPs con más fallas y clientes con varias órdenes.
 import { diaDe } from './totalesMes.js';
 import { enRango } from './periodoReporte.js';
-import { esInstalacion } from './instalacion.js';
-
-const normalizarTipo = (tipo) => String(tipo || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+import { grupoDeTrabajo } from './tiposDeTrabajo.js';
 
 // El día (Caracas) al que cuenta una orden: cuando se cerró o, si sigue abierta, cuando se creó. Sin fecha conocida, no cuenta en ningún periodo.
 // `_cierreEn` lo agrega todasLasOrdenes a las órdenes archivadas: cuándo se hizo el cierre que las guardó.
@@ -19,7 +17,8 @@ export function estadisticasOperativas(ordenes, rango, tecnico) {
     return dia && enRango(dia, rango) && (!tecnico || (t.tecnico || '').toUpperCase() === tecnico.toUpperCase());
   });
 
-  // Finalizadas por técnico: en total y separadas en instalaciones y averías (las demás — reconexión, mudanza, garantía... — solo suman al total).
+  // Finalizadas por técnico: en total y separadas por grupo de trabajo (ver tiposDeTrabajo): instalaciones, averías (con reconexiones, low signal y cambios
+  // de equipo), visitas (mudanzas, retiros, garantías y validaciones de NAP) y otros. Cada orden cae en un solo grupo: los grupos suman el total.
   const finalizadasDe = (acepta) => {
     const por = new Map();
     for (const t of lista) {
@@ -32,14 +31,18 @@ export function estadisticasOperativas(ordenes, rango, tecnico) {
   const porTecnico = finalizadasDe(() => true);
   const porTecnicoTipo = {
     TODO: porTecnico,
-    INSTALACION: finalizadasDe((t) => esInstalacion(t.tipoTrabajo)),
-    AVERIA: finalizadasDe((t) => normalizarTipo(t.tipoTrabajo) === 'AVERIA'),
+    INSTALACION: finalizadasDe((t) => grupoDeTrabajo(t) === 'INSTALACION'),
+    AVERIA: finalizadasDe((t) => grupoDeTrabajo(t) === 'AVERIA'),
+    VISITA: finalizadasDe((t) => grupoDeTrabajo(t) === 'VISITA'),
+    OTRO: finalizadasDe((t) => grupoDeTrabajo(t) === 'OTRO'),
   };
+  const sumar = (lista) => lista.reduce((suma, f) => suma + f.count, 0);
+  const totalesPorTipo = Object.fromEntries(Object.entries(porTecnicoTipo).map(([clave, lista]) => [clave, sumar(lista)]));
 
   const napsPor = new Map();
   for (const t of lista) {
     const nap = (t.nap || '').trim();
-    if (t.estado === 'ELIMINADO' || !nap) continue;
+    if (!nap) continue;
     napsPor.set(nap, (napsPor.get(nap) || 0) + 1);
   }
   const porNap = [...napsPor.entries()].map(([nap, count]) => ({ nap, count })).sort((a, b) => b.count - a.count).slice(0, 10);
@@ -47,7 +50,7 @@ export function estadisticasOperativas(ordenes, rango, tecnico) {
   const clientes = new Map();
   for (const t of lista) {
     const cedula = (t.cedula || '').trim();
-    if (t.estado === 'ELIMINADO' || !cedula) continue;
+    if (!cedula) continue;
     const entrada = clientes.get(cedula) || { nombre: t.nombre, count: 0 };
     entrada.count += 1;
     if (t.nombre) entrada.nombre = t.nombre;
@@ -58,9 +61,10 @@ export function estadisticasOperativas(ordenes, rango, tecnico) {
   return {
     porTecnico,
     porTecnicoTipo,
+    totalesPorTipo,
     porNap,
     reincidentes,
     finalizadas: porTecnico.reduce((suma, t) => suma + t.count, 0),
-    totalOrdenes: lista.filter((t) => t.estado !== 'ELIMINADO').length,
+    totalOrdenes: lista.length,
   };
 }

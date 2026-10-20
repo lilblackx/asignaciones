@@ -1,4 +1,4 @@
-import { ArrowDownAZ, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Trash2, Wrench } from 'lucide-react';
+import { ArrowDownAZ, Ban, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 // Para reactivar la columna ENVIADO: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
@@ -7,6 +7,9 @@ import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
+import InfraestructuraAviso from './InfraestructuraAviso';
+import CancelacionAviso from './CancelacionAviso';
+import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
@@ -15,6 +18,7 @@ import ViajeControl, { EtiquetaViaje } from './ViajeControl';
 import { estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
+import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 
 const COLUMNAS = 8;
 // Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
@@ -33,7 +37,7 @@ export default function TicketsTable({
   getTecnicoColor,
   // onToggleAsignado,
   onEdit,
-  onDelete,
+  onCancelar,
   onCopyWhatsApp,
   onPegarUbicacion,
   onVerHistorial,
@@ -41,6 +45,9 @@ export default function TicketsTable({
   onPreFinalizar,
   onAprobarFinalizar,
   onResponderCobro,
+  onEscalar,
+  onResolverInfra,
+  revisando,
   onFinalizar,
   onTogglePrioridad,
   ahora,
@@ -83,7 +90,6 @@ export default function TicketsTable({
             const tipoEstilo = getTipoTrabajoEstilo(ticket.tipoTrabajo);
             // const envio = getEnvioInfo(ticket); // solo la usa la celda ENVIADO, desactivada
             const enlaceNavegacion = getEnlaceNavegacion(ticket.ubicacion);
-            const eliminado = ticket.estado === 'ELIMINADO';
             const prioritaria = esPrioritaria(ticket);
             const sinPlantilla = ordenSinPlantilla(ticket);
             const enViaje = Boolean(estadoViaje(ticket, ahora));
@@ -99,8 +105,8 @@ export default function TicketsTable({
                   </td>
                 </tr>
               ),
-              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${eliminado ? 'opacity-60' : ''} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
-                <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${eliminado ? 'border-l-zinc-500' : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
+              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
+                <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <span>{ticket.codigo}</span>
@@ -120,9 +126,12 @@ export default function TicketsTable({
                     </div>
                     {!agrupado && <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
+                    <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
                     <DevolucionAviso ticket={ticket} compact />
+                    <CancelacionAviso ticket={ticket} compact />
                     <CobroAviso ticket={ticket} compact />
                     <ConsultaCobroAviso ticket={ticket} compact onResponder={onResponderCobro} />
+                    <InfraestructuraAviso ticket={ticket} compact onResolver={canEditTickets ? onResolverInfra : undefined} />
                     {isTecnico && ticket.estado === 'PENDIENTE' && (
                       <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
                     )}
@@ -195,7 +204,7 @@ export default function TicketsTable({
                     <button
                       type="button"
                       onClick={() => onToggleAsignado(ticket)}
-                      disabled={!canEditTickets || eliminado || isTecnico}
+                      disabled={!canEditTickets || isTecnico}
                       aria-label={`Orden ${ticket.codigo || ticket.id}: ${envio.detalle}`}
                       aria-pressed={envio.enviado}
                       title={envio.detalle}
@@ -219,9 +228,7 @@ export default function TicketsTable({
                 </td>
                 <td className="px-1.5 py-2 text-center align-middle">
                   <div className="flex flex-wrap items-center justify-center h-full min-h-[2rem] gap-1">
-                    {eliminado ? (
-                      <span className="text-[10px] text-red-500 font-bold">Por: {ticket.eliminadoPor}</span>
-                    ) : isTecnico ? (
+                    {isTecnico ? (
                       <>
                         <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {enlaceNavegacion && (
@@ -232,13 +239,19 @@ export default function TicketsTable({
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
                         ) : null}
+                        {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
+                            comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.
+                        {onEscalar && puedeEscalar(ticket) && (
+                          <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="p-1 text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded transition-colors" title="Escalar a infraestructura"><HardHat className="w-3.5 h-3.5" /></button>
+                        )}
+                        */}
                       </>
                     ) : (
                       <>
                         <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp (marca como enviada)'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {canEditTickets ? (
                           <>
-                            {ticket.estado === 'PENDIENTE' && (
+                            {ticket.estado === 'PENDIENTE' && !enInfraestructura(ticket) && (
                               <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-600 hover:bg-emerald-500 rounded transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
                             )}
                             {ticket.estado === 'PRE-FINALIZADO' && (
@@ -248,9 +261,10 @@ export default function TicketsTable({
                             <RowMenu
                               label={`Más acciones de orden ${ticket.codigo || ticket.id}`}
                               items={[
+                                ...(onEscalar && puedeEscalar(ticket) ? [{ label: 'Escalar a infraestructura', icon: HardHat, onClick: () => onEscalar(ticket) }] : []),
                                 { label: 'Editar', icon: Edit, onClick: () => onEdit(ticket) },
                                 { label: 'Historial', icon: History, onClick: () => onVerHistorial(ticket) },
-                                { label: 'Eliminar', icon: Trash2, danger: true, onClick: () => onDelete(ticket.id) },
+                                ...(ticket.estado !== 'CANCELADO' ? [{ label: 'Cancelar orden', icon: Ban, danger: true, onClick: () => onCancelar(ticket) }] : []),
                               ]}
                             />
                           </>

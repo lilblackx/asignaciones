@@ -4,6 +4,7 @@ import { estadoViaje, ESTADO_EN_SITIO, tiempoTranscurrido } from './enCamino.js'
 import { categoriaProgramada } from './programada.js';
 import { prioritariasPrimero } from './prioridad.js';
 import { claveNombre } from './promotora.js';
+import { motivoCancelacion } from './cancelacion.js';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from './whatsapp.js';
 
 export const TIPO_INSTALACION = 'INSTALACIÓN';
@@ -59,7 +60,7 @@ export function etiquetaFiltroEstado(clave, categoria = 'INSTALACION') {
   return ESTADOS_PROMOTORA[clave];
 }
 
-// { clave, etiqueta, detalle } o null si la orden no se muestra (eliminada, u otro estado interno).
+// { clave, etiqueta, detalle } o null si la orden no se muestra (otro estado interno).
 export function estadoParaPromotora(t, ahora = Date.now()) {
   if (!t) return null;
   const hecho = (clave, detalle = '') => ({ clave, etiqueta: (esAveriaLos(t) && ESTADOS_LOS[clave]) || ESTADOS_PROMOTORA[clave], detalle });
@@ -105,6 +106,8 @@ export function resumenInstalacion(t, ahoraMs = Date.now()) {
     falla: esAveriaLos(t) ? FALLA_LOS : '',
     creadaEn: t.createdAt || null,
     finalizadoEn: t.finalizadoEn || null,
+    // Por qué se canceló (solo en las canceladas): ventas lo ve en la tarjeta, también cuando la orden ya salió de la lista.
+    motivoCancelacion: motivoCancelacion(t),
     promotora,
     promotoraClave: claveNombre(promotora),
     plantillaFinal: textoPlantillaFinal(t),

@@ -26,8 +26,8 @@ export function lineasPeriodo({ desde, hasta }, tecnico) {
 export function csvDeDocumento(modelo) {
   const secciones = [];
   for (const b of modelo.bloques) {
-    if (b.tipo === 'cifras') secciones.push({ titulo: 'Resumen', cabecera: ['Indicador', 'Valor', 'Detalle'], filas: b.items.map((i) => [i.etiqueta, i.valor, i.detalle || '']) });
-    else if (b.tipo === 'tabla') secciones.push({ titulo: b.titulo || '', cabecera: b.columnas.map((c) => c.titulo), filas: b.filas });
+    if (b.tipo === 'cifras') secciones.push({ titulo: b.titulo || 'Resumen', cabecera: ['Indicador', 'Valor', 'Detalle'], filas: b.items.map((i) => [i.etiqueta, i.valor, i.detalle || '']) });
+    else if (b.tipo === 'tabla' && !b.noCsv) secciones.push({ titulo: b.titulo || '', cabecera: b.columnas.map((c) => c.titulo), filas: b.filas });
   }
   return csvReporte([modelo.titulo, modelo.subtitulo], secciones);
 }
