@@ -10,11 +10,13 @@ import { lineasPeriodo } from './csvReporte.js';
 import { diaLegible } from './periodoReporte.js';
 import { estadisticasOperativas } from './estadisticasOperativas.js';
 import {
-  VENTANA_REINCIDENCIA_DIAS, calidad, formatoTiempo, pendientesMasAntiguas, productividad, textoPorcentaje, tiempoDeAtencion,
+  VENTANA_REINCIDENCIA_DIAS, calidad, formatoTiempo, pendientesMasAntiguas, porcentaje, productividad, textoPorcentaje, tiempoDeAtencion,
 } from './gestionTecnicos.js';
 import { activacionPorTecnico, formatoDuracion } from './logTecnico.js';
 import { CLIENTES_NAP_SOSPECHOSA, causasDeAveria } from './causasAveria.js';
 import { resumenEjecutivo } from './resumenEjecutivo.js';
+import { NOTA_COBROS, RESULTADOS, cifrasCobros, columnasDesglose, columnasMonto, columnasResultado, filaDesglose, filasMonto, filasResultado, resumenCobros } from './cobrosReporte.js';
+import { NOTA_HORAS, cifrasDeTramos, colasDeLaOficina, columnasPorTecnico, columnasPorTipo, columnasTramo, esperasDelCiclo, filaPorTecnico, filaPorTipo, filaTramo } from './esperasCiclo.js';
 import { etiquetaMes } from './totalesMes.js';
 import { mesesDeLaTendencia, tendenciaMensual, textoVariacion } from './tendenciaMensual.js';
 
@@ -231,5 +233,50 @@ export function documentoResumenEjecutivo(ctx) {
     { tipo: 'grafico', variante: 'columnas', titulo: 'Finalizadas por mes', subtitulo: 'Instalaciones y averías LOS terminadas (todo el negocio)', series: [{ nombre: 'Instalaciones', color: AZUL }, { nombre: 'Averías LOS', color: NARANJA }], categorias: r.filasMes.map((f) => ({ etiqueta: `${f.etiqueta}${f.enCurso ? '*' : ''}`, valores: [f.instalaciones.finalizadas, f.los.finalizadas] })) },
     { tipo: 'tabla', titulo: 'Comparativo por técnico', nota: 'Del periodo elegido. Reincidencia, señal débil y devueltas: menos es mejor.', columnas: [{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Atención media', derecha: true }, { titulo: 'Por hora activa', derecha: true }, { titulo: 'Reincidencia', derecha: true }, { titulo: 'Señal débil', derecha: true }, { titulo: 'Devueltas', derecha: true }], filas: r.tecnicos.map((f) => [f.tecnico, String(f.finalizadas), f.atencionMedia === null ? '—' : formatoTiempo(f.atencionMedia), f.porHora === null ? '—' : decimalHora(f.porHora), textoPorcentaje(f.pctReincidencia), textoPorcentaje(f.pctDebil), textoPorcentaje(f.pctDevueltas)]), vacio: 'Sin órdenes finalizadas ni actividad en este periodo.' },
     { tipo: 'texto', texto: '* Mes en curso: incompleto, no es comparable con un mes terminado. Las alertas se activan con estos umbrales: menos de 80% de órdenes resueltas en 48 h, pendientes de más de 3 días, reincidencia mayor a 10%, señal débil mayor a 20%, devoluciones mayores a 15%, caída de finalizadas de 20% o más entre meses completos y aumento de 5 puntos en la tasa de cancelación.' },
+  ]);
+}
+
+export function documentoEsperasCiclo(ctx) {
+  const { ordenes, rango, tecnico, ahora } = ctx;
+  const esperas = esperasDelCiclo(ordenes, rango, { tecnico });
+  const colas = colasDeLaOficina(ordenes, ahora, { tecnico });
+  const filaCola = ({ orden, esperaMs }) => [orden.codigo || '', orden.nombre || '', orden.tecnico || 'Sin técnico', orden.tipoTrabajo || '', formatoTiempo(esperaMs)];
+  const columnasCola = [{ titulo: 'Código' }, { titulo: 'Cliente' }, { titulo: 'Técnico' }, { titulo: 'Tipo' }, { titulo: 'Espera', derecha: true }];
+  const promedioHoras = (lista) => lista.filter((f) => f.cantidad > 0).map((f) => ({ nombre: f.nombre, valores: [horas(f.promedio)], textos: [formatoTiempo(f.promedio)] }));
+  const graficoTramos = (quien, titulo) => {
+    const categorias = promedioHoras(esperas.tramos.filter((t) => t.quien === quien));
+    return categorias.length ? [{ tipo: 'grafico', variante: 'barras', titulo, series: [{ nombre: 'Horas', color: quien === 'OFICINA' ? NARANJA : AZUL }], categorias: categorias.map(({ nombre, valores, textos }) => ({ etiqueta: nombre, valores, textos })) }] : [];
+  };
+  return encabezado('Esperas del ciclo', rango, tecnico, ctx, [
+    { tipo: 'cifras', items: [{ etiqueta: 'Órdenes finalizadas', valor: esperas.finalizadas, detalle: 'en el periodo' }, { etiqueta: 'Con horas registradas', valor: esperas.conHoras, detalle: 'miden al menos un tramo' }] },
+    { tipo: 'seccion', titulo: 'Oficina' },
+    { tipo: 'cifras', items: cifrasDeTramos(esperas, 'OFICINA') },
+    ...graficoTramos('OFICINA', 'Tiempo promedio por tramo de la oficina (horas)'),
+    { tipo: 'tabla', titulo: 'Tramos de la oficina', columnas: columnasTramo('Tramo'), filas: esperas.tramos.filter((t) => t.quien === 'OFICINA').map(filaTramo), vacio: 'Sin órdenes en este periodo.' },
+    { tipo: 'tabla', titulo: 'Por tipo de trabajo', columnas: columnasPorTipo(), filas: esperas.porTipo.map(filaPorTipo), vacio: 'Ninguna orden con horas de la oficina en este periodo.' },
+    { tipo: 'tabla', titulo: `Sin técnico ahora (${colas.sinTecnico.total})`, nota: 'Órdenes pendientes que aún no tienen técnico, la más vieja primero.', columnas: columnasCola, filas: colas.sinTecnico.lista.map(filaCola), vacio: 'Todas las órdenes pendientes tienen técnico.' },
+    { tipo: 'tabla', titulo: `Pre-finalizadas por aprobar (${colas.porAprobar.total})`, nota: 'Esperan la aprobación de la oficina, la más vieja primero.', columnas: columnasCola, filas: colas.porAprobar.lista.map(filaCola), vacio: 'No hay órdenes por aprobar.' },
+    { tipo: 'seccion', titulo: 'Técnico' },
+    { tipo: 'cifras', items: cifrasDeTramos(esperas, 'TÉCNICO') },
+    ...graficoTramos('TÉCNICO', 'Tiempo promedio por tramo del técnico (horas)'),
+    { tipo: 'tabla', titulo: 'Tramos del técnico', columnas: columnasTramo('Tramo'), filas: esperas.tramos.filter((t) => t.quien === 'TÉCNICO').map(filaTramo), vacio: 'Sin órdenes en este periodo.' },
+    { tipo: 'tabla', titulo: 'Por técnico', columnas: columnasPorTecnico(), filas: esperas.porTecnico.map(filaPorTecnico), vacio: 'Ninguna orden con horas del técnico en este periodo.' },
+    { tipo: 'texto', texto: NOTA_HORAS },
+  ]);
+}
+
+export function documentoCobros(ctx) {
+  const { ordenes, rango, tecnico } = ctx;
+  const resumen = resumenCobros(ordenes, rango, { tecnico });
+  const { total } = resumen;
+  const cuenta = { visita: total.visita, otro: total.otro, exonerada: total.exoneradas, sinCobro: total.sinCobro };
+  return encabezado('Cobros y exoneraciones', rango, tecnico, ctx, [
+    { tipo: 'cifras', items: cifrasCobros(resumen) },
+    ...(total.total ? [{ tipo: 'grafico', variante: 'barras', titulo: 'Órdenes por resultado del cobro', series: [{ nombre: 'Órdenes', color: AZUL }], categorias: RESULTADOS.map((r) => ({ etiqueta: r.nombre, valores: [cuenta[r.id]], textos: [`${cuenta[r.id]} (${textoPorcentaje(porcentaje(cuenta[r.id], total.total))})`] })) }] : []),
+    { tipo: 'tabla', titulo: 'Resultado del cobro', columnas: columnasResultado(), filas: filasResultado(resumen), vacio: 'Ninguna orden con cobro en este periodo.' },
+    { tipo: 'tabla', titulo: 'Monto cobrado', nota: 'Suma de las órdenes cobradas, separada por moneda.', columnas: columnasMonto(), filas: filasMonto(resumen) },
+    { tipo: 'tabla', titulo: 'Por concepto (tipo de visita)', columnas: columnasDesglose('Concepto'), filas: resumen.porConcepto.map(filaDesglose), vacio: 'Ninguna orden con cobro en este periodo.' },
+    { tipo: 'tabla', titulo: 'Por técnico', columnas: columnasDesglose('Técnico'), filas: resumen.porTecnico.map(filaDesglose), vacio: 'Ninguna orden con cobro en este periodo.' },
+    { tipo: 'texto', texto: NOTA_COBROS },
   ]);
 }

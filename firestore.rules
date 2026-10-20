@@ -156,7 +156,11 @@ service cloud.firestore {
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'instalacion', 'enCamino', 'historialEdiciones'])
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones'])
+          // Las horas del ciclo (reporte de esperas) son números o null; asignadoEn y primerAsignadoEn solo los escribe la oficina.
+          && (request.resource.data.get('salioEn', null) == null || request.resource.data.salioEn is int)
+          && (request.resource.data.get('llegoEn', null) == null || request.resource.data.llegoEn is int)
+          && (request.resource.data.get('prefinalizadoEn', null) == null || request.resource.data.prefinalizadoEn is int)
           // "En camino" / "En sitio": solo a su nombre (o null para cancelarlo), nunca en nombre de otro técnico.
           && (request.resource.data.get('enCamino', null) == null
                || request.resource.data.enCamino.tecnico == tecnicoAsociado(appId))

@@ -7,7 +7,7 @@ import { POTENCIA_MIN_DBM } from './potencia.js';
 import { duracionActivaPorDia } from './logTecnico.js';
 
 const MIN_MS = 60 * 1000;
-const HORA_MS = 60 * MIN_MS;
+export const HORA_MS = 60 * MIN_MS;
 const DIA_MS = 24 * HORA_MS;
 
 // Las metas de atención que se pueden elegir, en horas (168 = 7 días).
@@ -54,8 +54,8 @@ export function inicioAtencion(t) {
   return Math.max(creada, programada || 0);
 }
 
-const finalizadaEn = (t, rango) => t.estado === 'FINALIZADO' && Number(t.finalizadoEn) > 0 && enRango(diaDe(Number(t.finalizadoEn)), rango);
-const delTecnico = (t, tecnico) => !tecnico || (t.tecnico || '').toUpperCase() === tecnico.toUpperCase();
+export const finalizadaEn = (t, rango) => t.estado === 'FINALIZADO' && Number(t.finalizadoEn) > 0 && enRango(diaDe(Number(t.finalizadoEn)), rango);
+export const delTecnico = (t, tecnico) => !tecnico || (t.tecnico || '').toUpperCase() === tecnico.toUpperCase();
 
 // Cuánto tardó en finalizarse (ms), o null si faltan fechas.
 export function duracionAtencion(t) {
@@ -85,7 +85,7 @@ export function estadisticaDuraciones(duraciones, metaMs) {
   };
 }
 
-const agrupar = (lista, clave) => {
+export const agrupar = (lista, clave) => {
   const mapa = new Map();
   for (const item of lista) {
     const k = clave(item) || 'SIN ASIGNAR';

@@ -14,6 +14,7 @@ import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/wh
 import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
+import { camposTiempos, conTiempos } from '../utils/tiemposOrden';
 import { cambiosDatosTecnico } from '../utils/edicionDatosTecnico';
 import { errorSerialCaja } from '../utils/serialOlt';
 import { devolucionPendiente } from '../utils/devolucion';
@@ -105,7 +106,7 @@ const guardarConNumeracion = (...args) => guardarConNumeracionBase(db, appId, ..
 // Guarda solo lo que cambió entre `original` (como la vio el usuario) y `actualizada`:
 // si otro usuario editó la orden mientras tanto, sus cambios no se pierden.
 async function actualizarTicket(original, actualizada) {
-  const cambios = cambiosDeTicket(original, actualizada);
+  const cambios = cambiosDeTicket(original, conTiempos(original, actualizada));
   if (Object.keys(cambios).length === 0) return;
   await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', original.id.toString()), cambios);
 }
@@ -783,6 +784,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           ticketToSave.historialEdiciones = [...(originalTicket.historialEdiciones || []), nuevaEdicion];
         }
       }
+      // Las horas del ciclo (asignación, salida, llegada, pre-finalización) para el reporte de esperas.
+      Object.assign(ticketToSave, camposTiempos(originalTicket, ticketToSave));
       return ticketToSave;
     };
 

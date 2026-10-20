@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { ClipboardList, Gauge, LayoutDashboard, LineChart, ShieldCheck, Timer, TrendingUp, UserCheck, Wrench } from 'lucide-react';
+import { ClipboardList, Gauge, Hourglass, Receipt, LayoutDashboard, LineChart, ShieldCheck, Timer, TrendingUp, UserCheck, Wrench } from 'lucide-react';
 import AnalyticsView from './reports/AnalyticsView';
 import ActivacionTecnicosView from './reports/ActivacionTecnicosView';
 import TiempoAtencionView from './reports/TiempoAtencionView';
+import EsperasCicloView from './reports/EsperasCicloView';
+import CobrosView from './reports/CobrosView';
 import ProductividadView from './reports/ProductividadView';
 import CalidadView from './reports/CalidadView';
 import ResumenEjecutivoView from './reports/ResumenEjecutivoView';
@@ -17,7 +19,7 @@ import { csvDeDocumento, csvReporte, lineasPeriodo } from '../../utils/csvReport
 import { META_HORAS, calidad, pendientesMasAntiguas, productividad, seccionesCalidad, seccionesProductividad, seccionesTiempoAtencion, tiempoDeAtencion, todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { descargarCsv } from '../../utils/exportarOrdenes';
 import { exportarDocumento } from '../../utils/exportarDocumento';
-import { documentoActivacion, documentoCalidad, documentoCausasAveria, documentoEstadisticas, documentoProductividad, documentoResumenEjecutivo, documentoTendencia, documentoTiempoAtencion } from '../../utils/modelosReporte';
+import { documentoActivacion, documentoCalidad, documentoCausasAveria, documentoCobros, documentoEsperasCiclo, documentoEstadisticas, documentoProductividad, documentoResumenEjecutivo, documentoTendencia, documentoTiempoAtencion } from '../../utils/modelosReporte';
 import { diaDe } from '../../utils/totalesMes';
 import { rangoDe } from '../../utils/periodoReporte';
 
@@ -43,6 +45,10 @@ const GRUPOS = [
         exportar: (contexto) => ({ texto: csvDeDocumento(documentoCausasAveria(contexto)), nombre: `causas-de-averia_${contexto.rango.desde}_${contexto.rango.hasta}.csv` }),
       },
       {
+        id: 'COBROS', nombre: 'Cobros y exoneraciones', Icono: Receipt, documento: documentoCobros,
+        exportar: (contexto) => ({ texto: csvDeDocumento(documentoCobros(contexto)), nombre: `cobros_${contexto.rango.desde}_${contexto.rango.hasta}.csv` }),
+      },
+      {
         id: 'TENDENCIA', nombre: 'Tendencia mensual', Icono: TrendingUp, usaTotales: true, sinFiltros: true, documento: documentoTendencia,
         exportar: ({ contadores, tickets, ventana, ahora }) => ({
           texto: csvTendencia(tendenciaMensual(contadores, tickets, mesesDeLaTendencia(contadores, ahora, ventana), ahora)),
@@ -60,6 +66,10 @@ const GRUPOS = [
           texto: csvReporte(['Tiempo de atención', ...lineasPeriodo(rango, tecnico)], seccionesTiempoAtencion(tiempoDeAtencion(ordenes, rango, { tecnico, metaMs: metaHoras * 3600000 }), pendientesMasAntiguas(ordenes, ahora, { tecnico }), metaHoras)),
           nombre: `tiempo-de-atencion_${rango.desde}_${rango.hasta}.csv`,
         }),
+      },
+      {
+        id: 'ESPERAS', nombre: 'Esperas del ciclo', Icono: Hourglass, documento: documentoEsperasCiclo,
+        exportar: (contexto) => ({ texto: csvDeDocumento(documentoEsperasCiclo(contexto)), nombre: `esperas-del-ciclo_${contexto.rango.desde}_${contexto.rango.hasta}.csv` }),
       },
       {
         id: 'PRODUCTIVIDAD', nombre: 'Productividad', Icono: Gauge, usaLog: true, documento: documentoProductividad,
@@ -207,7 +217,9 @@ export default function ReportesModal({
               {reporteId === 'RESUMEN' && <ResumenEjecutivoView ordenes={ordenes} eventos={logTecnicos.eventos} contadores={totalesMensuales.contadores} tickets={tickets} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'CAUSAS' && <CausasAveriaView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} />}
               {reporteId === 'TENDENCIA' && <TendenciaMensualView contadores={totalesMensuales.contadores} cargando={totalesMensuales.cargando} error={totalesMensuales.error} tickets={tickets} ventana={ventanaMeses} onVentana={setVentanaMeses} />}
-              {reporteId === 'TIEMPO' && <TiempoAtencionView ordenes={ordenes} rango={rango} tecnico={tecnico} metaHoras={metaHoras} onMeta={setMetaHoras} getTecnicoColor={getTecnicoColor} historial={historial} />}
+              {reporteId === 'COBROS' && <CobrosView ordenes={ordenes} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
+              {reporteId === 'ESPERAS' &&<EsperasCicloView ordenes={ordenes} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
+              {reporteId === 'TIEMPO' &&<TiempoAtencionView ordenes={ordenes} rango={rango} tecnico={tecnico} metaHoras={metaHoras} onMeta={setMetaHoras} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'PRODUCTIVIDAD' && <ProductividadView ordenes={ordenes} eventos={logTecnicos.eventos} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'CALIDAD' && <CalidadView ordenes={ordenes} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'ESTADISTICAS' && (

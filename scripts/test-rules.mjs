@@ -296,6 +296,18 @@ await check('TECNICO puede marcar "en camino", "llegué" y cancelarlo en su orde
   await assertSucceeds(camposGerardo(asTecnico()).update({ enCamino: null }));
 });
 
+await check('TECNICO puede guardar las horas del ciclo (salida, llegada, pre-finalización) como números o null', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ salioEn: 1000, llegoEn: 2000 }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ llegoEn: null }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ salioEn: null, prefinalizadoEn: 3000 }));
+});
+
+await check('TECNICO NO puede guardar las horas como texto ni escribir las de asignación', async () => {
+  await assertFails(camposGerardo(asTecnico()).update({ salioEn: '1000' }));
+  await assertFails(camposGerardo(asTecnico()).update({ asignadoEn: 1000 }));
+  await assertFails(camposGerardo(asTecnico()).update({ primerAsignadoEn: 1000 }));
+});
+
 await check('TECNICO NO puede marcar "en camino" a nombre de otro técnico', async () => {
   await assertFails(camposGerardo(asTecnico()).update({ enCamino: { tecnico: 'REINEL', desde: 1 } }));
 });
