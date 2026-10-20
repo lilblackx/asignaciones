@@ -100,6 +100,14 @@
   button.flex-1:not(:disabled):not([role="combobox"]):not([role="menuitem"]):active {
     scale: 0.98;
   }
+  /* Una fila o tarjeta entera que se despliega no encoge su caja (el borde se correría y un clic en su margen no haría nada):
+     se encoge lo que lleva dentro. */
+  button.w-full.text-left:not(:disabled):not([role="combobox"]):not([role="menuitem"]):active {
+    scale: none;
+  }
+  button.w-full.text-left:not(:disabled):not([role="combobox"]):not([role="menuitem"]):active > * {
+    scale: 0.98;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
