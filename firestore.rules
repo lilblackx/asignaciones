@@ -38,6 +38,21 @@ service cloud.firestore {
       return isActiveUser(appId) && get(profilePath(appId)).data.role == 'PROMOTORA';
     }
 
+    // FINANZAS lee las órdenes, los técnicos y los reportes (sin escribir nada de eso) y lleva sus propias colecciones: la conciliación de
+    // cobros, las tarifas y los pagos a técnicos (más abajo). El ADMIN también las escribe.
+    function isFinanzasRole(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'FINANZAS';
+    }
+
+    function llevaFinanzas(appId) {
+      return isAdminUser(appId) || isFinanzasRole(appId);
+    }
+
+    // El nombre de usuario de quien escribe: lo que queda en "por" de cada registro de Finanzas.
+    function usuarioFinanzas(appId) {
+      return get(profilePath(appId)).data.get('username', '');
+    }
+
     // Los nombres (normalizados) con que una PROMOTORA aparece en las plantillas; ve las instalaciones con alguno.
     function promotoraClaves(appId) {
       return get(profilePath(appId)).data.get('promotoraClaves', []);
@@ -73,7 +88,7 @@ service cloud.firestore {
       // TECNICO solo puede ver su propio técnico vinculado (el cliente debe
       // hacer where('name','==', tecnicoAsociado); sin eso el list se rechaza).
       // Una PROMOTORA con permiso de crear ventas lee la lista para emparejar el "Instalador:" de la plantilla con un técnico.
-      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId)
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId) || isFinanzasRole(appId)
         || (isPromotoraRole(appId) && get(profilePath(appId)).data.get('puedeCrearVentas', false) == true)
         || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId));
 
@@ -137,7 +152,7 @@ service cloud.firestore {
       // ALMACEN cuenta el material de todas las órdenes; PROMOTORA solo ve las instalaciones que vendió ella (su
       // promotoraClave está entre las suyas). El cliente debe consultar con where('tipoTrabajo','==','INSTALACIÓN') y
       // where('promotoraClave','==', una de sus claves), si no la lectura es rechazada.
-      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId)
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId) || isFinanzasRole(appId)
         || (isPromotoraRole(appId) && resource.data.tipoTrabajo == 'INSTALACIÓN' && (promotoraVeTodas(appId) || resource.data.get('promotoraClave', '') in promotoraClaves(appId)))
         // Ventas (el PROMOTOR con "ve todas") también sigue las averías de tipo LOS: solo esas, y solo ellas.
         || (isPromotoraRole(appId) && promotoraVeTodas(appId) && resource.data.tipoTrabajo == 'AVERÍA' && resource.data.get('falla', '') == 'LOS')
@@ -257,8 +272,8 @@ service cloud.firestore {
     }
 
     match /artifacts/{appId}/public/data/reports/{docId} {
-      // ALMACEN lee los reportes para sumar el material de las órdenes ya archivadas.
-      allow read: if canCerrar(appId) || isAlmacenRole(appId);
+      // ALMACEN lee los reportes para sumar el material de las órdenes ya archivadas; FINANZAS, para los cobros y pagos de las ya archivadas.
+      allow read: if canCerrar(appId) || isAlmacenRole(appId) || isFinanzasRole(appId);
       allow write: if canCerrar(appId);
     }
 
@@ -309,6 +324,68 @@ service cloud.firestore {
         && resource.data.estado in ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'EQUIPO_NO_ASIGNADO', 'SIN_SERIAL', 'TECNICO_NO_VINCULADO', 'TECNICO_NO_ENCONTRADO', 'TECNICO_INACTIVO', 'EQUIPO_OTRO_TECNICO', 'ERROR']
         && request.resource.data.estado == 'DESCARTADO'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'actualizadoEn', 'descartadoPor']);
+    }
+
+    // --- Finanzas (pago a técnicos): lo escriben FINANZAS y el ADMIN, siempre a nombre de quien lo hace (por) ---
+
+    // Lo que se le paga al técnico por cada concepto, en dólares: un solo documento ("actual").
+    match /artifacts/{appId}/public/data/tarifasPago/{docId} {
+      function tarifaValida(campo) {
+        let v = request.resource.data.get(campo, null);
+        return (v is int || v is float) && v >= 0 && v <= 100000;
+      }
+      allow read: if llevaFinanzas(appId);
+      allow create, update: if llevaFinanzas(appId) && docId == 'actual'
+        && request.resource.data.keys().hasOnly(['INSTALACION', 'VISITA', 'AVERIA', 'RECABLEADO', 'por', 'en'])
+        && tarifaValida('INSTALACION') && tarifaValida('VISITA') && tarifaValida('AVERIA')
+        && (!('RECABLEADO' in request.resource.data) || tarifaValida('RECABLEADO'))
+        && request.resource.data.por == usuarioFinanzas(appId)
+        && request.resource.data.en is int;
+      allow delete: if false;
+    }
+
+    // Un pago a un técnico por un periodo. Solo se crea; después solo se puede anular (queda el registro y las órdenes vuelven a estar por pagar).
+    match /artifacts/{appId}/public/data/pagosTecnicos/{docId} {
+      function pagoValido() {
+        let p = request.resource.data;
+        return p.keys().hasOnly(['tecnico', 'desde', 'hasta', 'cantidades', 'tarifas', 'total', 'cantidadOrdenes', 'nota', 'por', 'creadoEn', 'anulado'])
+          && p.tecnico is string && p.tecnico.size() > 0 && p.tecnico.size() <= 100
+          && p.desde is string && p.desde.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && p.hasta is string && p.hasta.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && p.cantidades is map && p.tarifas is map
+          && (p.total is int || p.total is float) && p.total > 0
+          && p.cantidadOrdenes is int && p.cantidadOrdenes > 0 && p.cantidadOrdenes <= 450
+          && p.nota is string && p.nota.size() <= 300
+          && p.por == usuarioFinanzas(appId) && p.por != ''
+          && p.creadoEn is int
+          && p.anulado == false;
+      }
+      allow read: if llevaFinanzas(appId);
+      allow create: if llevaFinanzas(appId) && pagoValido();
+      allow update: if llevaFinanzas(appId)
+        && resource.data.get('anulado', false) == false
+        && request.resource.data.anulado == true
+        && request.resource.data.anuladoPor == usuarioFinanzas(appId)
+        && request.resource.data.anuladoEn is int
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn']);
+      allow delete: if false;
+    }
+
+    // Cada orden incluida en un pago (el id es el de la orden): una orden no se paga dos veces porque este documento solo se puede crear si no
+    // existe. Se crea junto con su pago, en el mismo lote; al anular el pago se borran y las órdenes vuelven a estar por pagar.
+    match /artifacts/{appId}/public/data/ordenesPagadas/{docId} {
+      allow read: if llevaFinanzas(appId);
+      allow create: if llevaFinanzas(appId)
+        && request.resource.data.keys().hasOnly(['pagoId', 'tecnico', 'concepto', 'monto', 'dia', 'codigo'])
+        && request.resource.data.pagoId is string && request.resource.data.pagoId.size() > 0
+        && existsAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosTecnicos/$(request.resource.data.pagoId))
+        && request.resource.data.concepto in ['INSTALACION', 'VISITA', 'AVERIA', 'RECABLEADO']
+        && request.resource.data.tecnico is string && request.resource.data.tecnico.size() > 0
+        && (request.resource.data.monto is int || request.resource.data.monto is float) && request.resource.data.monto >= 0
+        && request.resource.data.dia is string && request.resource.data.dia.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.codigo is string && request.resource.data.codigo.size() <= 40;
+      allow update: if false;
+      allow delete: if llevaFinanzas(appId);
     }
 
     match /artifacts/{appId}/public/data/counters/{counterId} {

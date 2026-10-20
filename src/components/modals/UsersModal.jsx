@@ -10,23 +10,24 @@ import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
 
-const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
+const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
 const ROL_NUEVO_ITEMS = [
   { value: ROLES.USUARIO, label: 'USUARIO (sin Técnicos/Usuarios/Tasa y pagos)' },
   { value: ROLES.TECNICO, label: 'TÉCNICO (asignaciones propias y pre-finalizar)' },
   { value: ROLES.ALMACEN, label: 'ALMACÉN (solo ve Materiales)' },
   { value: ROLES.PROMOTORA, label: 'VENTAS (ve sus instalaciones, o todas con "Ver todas")' },
+  { value: ROLES.FINANZAS, label: 'FINANZAS (cobros, pago a técnicos y reportes; no toca las órdenes)' },
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];
 const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
 
-const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA];
+const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS];
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const claseRol = (rol) => (rol === ROLES.ADMIN
   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
   : rol === ROLES.TECNICO
     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-    : [ROLES.ALMACEN, ROLES.PROMOTORA].includes(rol)
+    : [ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS].includes(rol)
       ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
       : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300');
 

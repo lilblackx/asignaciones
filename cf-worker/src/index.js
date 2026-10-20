@@ -206,7 +206,7 @@ async function handleResetPassword(request, env, headers, callerUid) {
 // Alta de usuario hecha por un ADMIN: crea la cuenta de Auth y su perfil. Va por
 // el Worker para poder cerrar el registro público de Firebase Auth (con el registro
 // abierto, cualquiera con la apiKey pública podía crearse una cuenta).
-const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA'];
+const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS'];
 const USERNAME_VALIDO = /^[a-z0-9._-]{1,40}$/;
 
 async function crearCuentaAuth(env, accessToken, email, password) {

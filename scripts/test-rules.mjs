@@ -53,6 +53,8 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('users').doc('ventas-uid').set({ role: 'PROMOTORA', disabled: false, verTodasInstalaciones: true, promotoraNombres: [], promotoraClaves: [] });
   await base.collection('users').doc('creadora-uid').set({ role: 'PROMOTORA', disabled: false, username: 'sariana', puedeCrearVentas: true, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
   await base.collection('users').doc('ventas-crea-uid').set({ role: 'PROMOTORA', disabled: false, username: 'ventas', puedeCrearVentas: true, verTodasInstalaciones: true, promotoraNombres: [], promotoraClaves: [] });
+  await base.collection('users').doc('finanzas-uid').set({ role: 'FINANZAS', disabled: false, username: 'fina' });
+  await base.collection('users').doc('finanzas-off-uid').set({ role: 'FINANZAS', disabled: true, username: 'fina-off' });
   await base.collection('users').doc('promotora-off-uid').set({ role: 'PROMOTORA', disabled: true, promotoraNombres: ['Sariana'], promotoraClaves: ['sariana'] });
   await base.collection('tickets').doc('instalacion-1').set({ codigo: 'IO1', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Cliente', cedula: '1', tecnico: '', promotora: 'Sariana', promotoraClave: 'sariana' });
   await base.collection('tickets').doc('instalacion-2').set({ codigo: 'IO2', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Otro cliente', cedula: '2', tecnico: '', promotora: 'Alexis Añez', promotoraClave: 'alexis anez' });
@@ -864,6 +866,115 @@ await check('Registro de técnicos: ALMACEN y PROMOTORA no leen ni escriben; nad
   await assertFails(logCol(testEnv.authenticatedContext('almacen-uid').firestore()).doc('l-6').set(evento('GERARDO MOLERO', 'ALMACEN')));
   await assertFails(logCol(asAdmin()).doc('l-admin').update({ activo: false }));
   await assertFails(logCol(asAdmin()).doc('l-admin').delete());
+});
+
+// --- FINANZAS: lee órdenes y reportes, no las toca, y lleva tarifas y pagos ---
+const asFinanzas = () => testEnv.authenticatedContext('finanzas-uid').firestore();
+const asFinanzasOff = () => testEnv.authenticatedContext('finanzas-off-uid').firestore();
+const fin = (db, nombre) => datos(db).collection(nombre);
+const tarifas = (extra = {}) => ({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5, RECABLEADO: 8, por: 'fina', en: 1, ...extra });
+const pagoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', desde: '2026-10-01', hasta: '2026-10-15', cantidades: { INSTALACION: 1, VISITA: 0, AVERIA: 1 }, tarifas: { INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }, total: 23.5, cantidadOrdenes: 2, nota: '', por: 'fina', creadoEn: 1, anulado: false, ...extra });
+const ordenPagada = (pagoId, extra = {}) => ({ pagoId, tecnico: 'GERARDO MOLERO', concepto: 'AVERIA', monto: 3.5, dia: '2026-10-14', codigo: 'AS1', ...extra });
+// Un pago con sus órdenes en un solo lote, como lo guarda la app.
+const guardarPago = (db, pagoId, pago, ordenes) => {
+  const lote = db.batch();
+  lote.set(fin(db, 'pagosTecnicos').doc(pagoId), pago);
+  for (const [id, datosOrden] of ordenes) lote.set(fin(db, 'ordenesPagadas').doc(id), datosOrden);
+  return lote.commit();
+};
+
+await check('FINANZAS lee las órdenes, los técnicos y los reportes', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'tickets').get());
+  await assertSucceeds(fin(asFinanzas(), 'technicians').get());
+  await assertSucceeds(fin(asFinanzas(), 'reports').get());
+});
+await check('FINANZAS NO puede escribir órdenes, reportes ni técnicos', async () => {
+  await assertFails(ticketPath(asFinanzas(), 'instalacion-1').update({ observacion: 'x' }));
+  await assertFails(fin(asFinanzas(), 'tickets').doc('nueva-fin').set({ codigo: 'X', tipoTrabajo: 'AVERÍA' }));
+  await assertFails(ticketPath(asFinanzas(), 'instalacion-1').delete());
+  await assertFails(fin(asFinanzas(), 'reports').doc('reporte-1').update({ total: 9 }));
+  await assertFails(fin(asFinanzas(), 'technicians').doc('GERARDO-MOLERO').update({ activo: false }));
+});
+await check('FINANZAS NO lee usuarios ni el historial de instalaciones', async () => {
+  await assertFails(fin(asFinanzas(), 'users').get());
+  await assertFails(fin(asFinanzas(), 'historialInstalaciones').get());
+});
+await check('FINANZAS NO lee ni escribe el registro de VN y TA', async () => {
+  const fila = { codigo: 'VAN01', trabajo: 'VN', tecnico: '', fecha: '2026-10-14', observacion: '', operador: 'Fina', creadoPor: 'fina', creadoEn: 1, actualizadoEn: 1 };
+  await assertFails(fin(asFinanzas(), 'registroVnTa').get());
+  await assertFails(fin(asFinanzas(), 'registroVnTa').doc('fila-fin').set(fila));
+  await assertFails(fin(asFinanzas(), 'counters').doc('VNTA_VAN_2026-10').set({ ultimo: 1, actualizadoEn: 1 }));
+});
+await check('Un FINANZAS deshabilitado no lee nada', async () => {
+  await assertFails(fin(asFinanzasOff(), 'tickets').get());
+  await assertFails(fin(asFinanzasOff(), 'tarifasPago').get());
+});
+await check('Las colecciones de Finanzas son solo de FINANZAS y el ADMIN: USUARIO, TECNICO, ALMACEN y PROMOTORA no las leen ni escriben', async () => {
+  for (const contexto of [asUsuario(), asTecnico(), asAlmacen(), asPromotora()]) {
+    for (const nombre of ['tarifasPago', 'pagosTecnicos', 'ordenesPagadas']) await assertFails(fin(contexto, nombre).get());
+    await assertFails(fin(contexto, 'tarifasPago').doc('actual').set(tarifas()));
+  }
+});
+
+await check('Tarifas: FINANZAS y ADMIN las fijan en el documento "actual"', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas()));
+  await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').get());
+  await assertSucceeds(fin(asAdmin(), 'tarifasPago').doc('actual').set(tarifas({ por: 'admin', AVERIA: 4 })));
+  // Un cliente que todavía no manda el recableado (la versión anterior de la app) sigue pudiendo guardar.
+  const { RECABLEADO, ...sinRecableado } = tarifas();
+  await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').set(sinRecableado));
+  await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas()));
+});
+await check('Tarifas: sin números negativos, sin campos de más, sin otro documento y siempre a su nombre', async () => {
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ AVERIA: -1 })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ AVERIA: 'cinco' })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ RECABLEADO: -2 })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ RECABLEADO: 'ocho' })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ extra: 1 })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('otro').set(tarifas()));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ por: 'otro' })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').delete());
+});
+
+await check('Pagar: el pago y sus órdenes se guardan en un solo lote', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-1', pagoDe(), [['orden-a', ordenPagada('p-1', { concepto: 'INSTALACION', monto: 20 })], ['orden-b', ordenPagada('p-1')]]));
+});
+await check('Pagar: una orden ya pagada no se paga dos veces (ni por otra persona)', async () => {
+  await assertFails(guardarPago(asFinanzas(), 'p-2', pagoDe(), [['orden-a', ordenPagada('p-2')], ['orden-c', ordenPagada('p-2')]]));
+  await assertFails(guardarPago(asAdmin(), 'p-3', pagoDe({ por: 'admin' }), [['orden-b', ordenPagada('p-3')]]));
+});
+await check('Pagar: una orden suelta, sin su pago en el lote, no se guarda', async () => {
+  await assertFails(fin(asFinanzas(), 'ordenesPagadas').doc('orden-d').set(ordenPagada('p-inexistente')));
+});
+await check('Pagar: el pago va a nombre de quien lo hace y con datos válidos', async () => {
+  await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe({ por: 'otro' }), [['orden-e', ordenPagada('p-4')]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe({ total: 0 }), [['orden-e', ordenPagada('p-4')]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe({ anulado: true }), [['orden-e', ordenPagada('p-4')]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe({ extra: 1 }), [['orden-e', ordenPagada('p-4')]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe(), [['orden-e', ordenPagada('p-4', { concepto: 'OTRO' })]]));
+});
+await check('Pagar: un recableado se guarda con su concepto', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-rec', pagoDe({ cantidadOrdenes: 1, total: 8 }), [['orden-recableado', ordenPagada('p-rec', { concepto: 'RECABLEADO', monto: 8 })]]));
+});
+await check('Pagar: un pago grande (400 órdenes) cabe en un solo lote', async () => {
+  const ordenes = Array.from({ length: 400 }, (_, i) => [`masiva-${i}`, ordenPagada('p-grande')]);
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-grande', pagoDe({ cantidadOrdenes: 400, total: 1400 }), ordenes));
+});
+await check('Anular: queda el pago marcado y las órdenes vuelven a estar por pagar', async () => {
+  const db = asFinanzas();
+  const lote = db.batch();
+  lote.update(fin(db, 'pagosTecnicos').doc('p-1'), { anulado: true, anuladoPor: 'fina', anuladoEn: 5 });
+  lote.delete(fin(db, 'ordenesPagadas').doc('orden-a'));
+  lote.delete(fin(db, 'ordenesPagadas').doc('orden-b'));
+  await assertSucceeds(lote.commit());
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-5', pagoDe(), [['orden-a', ordenPagada('p-5', { concepto: 'INSTALACION', monto: 20 })]]));
+});
+await check('Anular: no se anula dos veces, no se cambia otro campo del pago ni se borra el pago', async () => {
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 6 }));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-5').update({ total: 1 }));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-5').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 6 }));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-5').delete());
+  await assertFails(fin(asFinanzas(), 'ordenesPagadas').doc('orden-a').update({ monto: 1 }));
 });
 
 await testEnv.cleanup();

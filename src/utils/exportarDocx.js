@@ -5,6 +5,7 @@ import {
 } from 'docx';
 import { graficoAImagen } from './graficoImagen.js';
 import { fechaHoraLegible } from './formatoFecha.js';
+import { cargarLogo } from './logoReportes.js';
 
 const MARCA = 'ASIGNACIONES NS';
 const ANCHO_UTIL = 9638; // A4 (11906) menos márgenes de 2 cm, en veinteavos de punto
@@ -54,11 +55,27 @@ function seccion(titulo, nota) {
   ];
 }
 
-// Anchos de las columnas según lo que llevan, sin que ninguna quede demasiado angosta.
+// Anchos de las columnas según lo que llevan: reparto proporcional al texto de cada una, pero ninguna baja de lo que mide su palabra más larga
+// (así una fecha, "Órdenes" o "Pagado" no se parten en dos líneas); las demás se reparten lo que sobra.
+const TWIPS_POR_LETRA = 100;
+const RELLENO_CELDA = 260;
 function anchosDeColumnas(b) {
-  const pesos = b.columnas.map((c, i) => Math.min(30, Math.max(7, c.titulo.length, ...b.filas.map((f) => String(f[i] ?? '').length))));
-  const suma = pesos.reduce((s, p) => s + p, 0);
-  const anchos = pesos.map((p) => Math.floor((p / suma) * ANCHO_UTIL));
+  const textos = (i) => [b.columnas[i].titulo, ...b.filas.map((f) => String(f[i] ?? ''))];
+  const pesos = b.columnas.map((_, i) => Math.min(30, Math.max(7, ...textos(i).map((t) => t.length))));
+  const minimos = b.columnas.map((_, i) => Math.max(...textos(i).flatMap((t) => t.split(/\s+/)).map((p) => p.length)) * TWIPS_POR_LETRA + RELLENO_CELDA);
+  const fijas = new Set();
+  let anchos = [];
+  for (let vuelta = 0; vuelta <= b.columnas.length; vuelta += 1) {
+    const espacio = ANCHO_UTIL - [...fijas].reduce((s, i) => s + minimos[i], 0);
+    const sumaLibres = pesos.reduce((s, p, i) => (fijas.has(i) ? s : s + p), 0);
+    anchos = pesos.map((p, i) => (fijas.has(i) ? minimos[i] : Math.floor((p / sumaLibres) * espacio)));
+    const chica = anchos.findIndex((a, i) => !fijas.has(i) && a < minimos[i]);
+    if (chica === -1) break;
+    fijas.add(chica);
+  }
+  // Si ni así caben (muchas columnas), se reducen todas en proporción.
+  const total = anchos.reduce((s, a) => s + a, 0);
+  if (total > ANCHO_UTIL) anchos = anchos.map((a) => Math.floor((a / total) * ANCHO_UTIL));
   anchos[0] += ANCHO_UTIL - anchos.reduce((s, a) => s + a, 0);
   return anchos;
 }
@@ -110,8 +127,37 @@ function grafico(b) {
   ];
 }
 
+// La banda negra de la portada con el logo (sus letras son blancas: sobre fondo claro no se verían), con la línea roja de la marca debajo.
+function bandaConLogo(logo) {
+  const alto = 60;
+  const ancho = Math.round((logo.ancho / logo.alto) * alto);
+  const borde = { style: BorderStyle.SINGLE, size: 12, color: 'DC2626' };
+  return [
+    new Table({
+      width: { size: ANCHO_UTIL, type: WidthType.DXA },
+      columnWidths: [ANCHO_UTIL],
+      layout: TableLayoutType.FIXED,
+      borders: { ...SIN_BORDES, insideHorizontal: SIN_BORDE, insideVertical: SIN_BORDE },
+      rows: [new TableRow({
+        cantSplit: true,
+        children: [new TableCell({
+          width: { size: ANCHO_UTIL, type: WidthType.DXA },
+          shading: { type: ShadingType.CLEAR, fill: '000000', color: 'auto' },
+          margins: { top: 100, bottom: 100, left: 200, right: 200 },
+          verticalAlign: VerticalAlign.CENTER,
+          borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: borde },
+          children: [parrafo([new ImageRun({ type: 'png', data: logo.bytes, transformation: { width: ancho, height: alto }, altText: { title: 'Network Speed', description: 'Logo de Network Speed', name: 'Logo' } })])],
+        })],
+      })],
+    }),
+    parrafo([], { spacing: { after: 200 } }),
+  ];
+}
+
 export async function generarDocx(modelo) {
+  const logo = await cargarLogo();
   const hijos = [
+    ...(logo ? bandaConLogo(logo) : []),
     parrafo([corrida(modelo.titulo, { size: 44, bold: true, color: '0B0B0B' })], { spacing: { after: 60 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: 'DC2626', space: 6 } } }),
     parrafo([corrida(modelo.subtitulo, { size: 21, color: '52514E' })], { spacing: { before: 100, after: 40 } }),
     parrafo([corrida(`Generado el ${fechaHoraLegible(modelo.generado.en)}${modelo.generado.por ? ` por ${modelo.generado.por}` : ''}`, { size: 17, color: '898781' })], { spacing: { after: 240 } }),

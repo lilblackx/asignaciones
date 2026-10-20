@@ -13,7 +13,8 @@ const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 da
 // (o corregir una), debajo las cifras y la lista del periodo con sus botones de editar y borrar.
 //   registros: las filas del periodo (useRegistroVnTa), ya filtradas aquí por el técnico elegido arriba
 //   puedeBorrar(registro): true si el usuario puede borrarla (un administrador o quien la registró)
-export default function VnTaView({ registros, cargando, error, agregar, actualizar, eliminar, tecnicos, hoy, tecnico, puedeBorrar }) {
+//   soloLectura: sin formulario ni botones (Finanzas la ve pero no la llena)
+export default function VnTaView({ registros, cargando, error, agregar, actualizar, eliminar, tecnicos, hoy, tecnico, puedeBorrar, soloLectura = false }) {
   const vacio = { trabajo: 'VN', tecnico: '', fecha: hoy, observacion: '' };
   const [form, setForm] = useState(vacio);
   const [editandoId, setEditandoId] = useState(null);
@@ -53,7 +54,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
     if (editandoId === id) limpiar();
   };
 
-  const filas = visibles.map((r) => [
+  const filas = visibles.map((r) => soloLectura ? filaVnTa(r) : [
     ...filaVnTa(r),
     <span key={r.id} className="inline-flex items-center gap-1 whitespace-nowrap">
       {borrandoId === r.id ? (
@@ -72,7 +73,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
 
   return (
     <div>
-      <form onSubmit={guardar} className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm mb-4">
+      {!soloLectura && <form onSubmit={guardar} className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm mb-4">
         <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">{editandoId ? 'Corregir registro' : 'Agregar registro'}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
@@ -105,9 +106,9 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
           {editandoId && <button type="button" onClick={limpiar} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-xs font-bold"><X className="w-4 h-4" aria-hidden="true" /> Cancelar</button>}
           {!editandoId && <p className="text-[11px] text-zinc-500">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador.</p>}
         </div>
-      </form>
+      </form>}
 
-      {error && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{error}</p>}
+      {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{error}</p>}
       <Cifras items={cifrasVnTa(estadistica)} />
       <p className="text-[11px] text-zinc-500 -mt-1 mb-4">{NOTA_VNTA}</p>
 
@@ -118,7 +119,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
       <TablaReporte
         titulo={`Hoja de VN y TA (${visibles.length})`}
         nota={cargando ? 'Cargando...' : 'Las filas del periodo elegido arriba, con las columnas de la hoja de cálculo.'}
-        columnas={[...columnasVnTa(), { titulo: '' }]}
+        columnas={soloLectura ? columnasVnTa() : [...columnasVnTa(), { titulo: '' }]}
         filas={filas}
         vacio="Ningún registro de VN o TA en este periodo."
       />

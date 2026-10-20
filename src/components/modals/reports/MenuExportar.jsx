@@ -8,7 +8,8 @@ const OPCIONES = {
 };
 
 // El botón "Exportar" con sus formatos. formatos: ['pdf', 'docx', 'csv'] (los que tiene el reporte); ocupado: el formato que se está armando, o null.
-export default function MenuExportar({ formatos, onElegir, ocupado }) {
+// `extra`: clases que se suman al botón; `alinear`: de qué lado se abre el menú ('derecha' por defecto: pegado al borde derecho del botón).
+export default function MenuExportar({ formatos, onElegir, ocupado, extra = '', alinear = 'derecha' }) {
   const [abierto, setAbierto] = useState(false);
   const raiz = useRef(null);
 
@@ -27,14 +28,14 @@ export default function MenuExportar({ formatos, onElegir, ocupado }) {
         disabled={Boolean(ocupado)}
         aria-haspopup="menu"
         aria-expanded={abierto}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold disabled:opacity-70"
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold disabled:opacity-70 ${extra}`}
       >
         {ocupado ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : null}
         {ocupado ? 'Generando...' : 'Exportar'}
         {!ocupado && <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
       </button>
       {abierto && (
-        <div role="menu" className="absolute right-0 mt-2 w-64 z-20 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden">
+        <div role="menu" className={`absolute ${alinear === 'izquierda' ? 'left-0' : 'right-0'} mt-2 w-64 z-20 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden`}>
           {formatos.map((f) => {
             const { etiqueta, detalle, Icono } = OPCIONES[f];
             return (

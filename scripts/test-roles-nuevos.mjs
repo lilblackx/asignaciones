@@ -156,12 +156,16 @@ check('almacén: botón Actualizar', /onClick=\{actualizar\}/.test(almacenApp), 
 
 // --- Aislamiento: la app de oficina y técnicos no se toca ---
 const root = leer('../src/Root.jsx');
-check('Root manda cada rol de solo lectura a su pantalla', /ROLES\.ALMACEN \|\| auth\.role === ROLES\.PROMOTORA/.test(root) && /<App auth=\{auth\} \/>/.test(root), true);
-check('las pantallas nuevas no importan hooks de edición', ['AlmacenApp', 'PromotoraApp'].some((f) => /useTickets'|usePushToken|useUsers/.test(leer(`../src/components/${f}.jsx`))), false);
+check('Root manda cada rol de solo lectura a su pantalla', /\[ROLES\.ALMACEN\]: AlmacenApp, \[ROLES\.PROMOTORA\]: PromotoraApp, \[ROLES\.FINANZAS\]: FinanzasApp/.test(root) && /<App auth=\{auth\} \/>/.test(root), true);
+check('las pantallas de Almacén y Promotora no importan hooks de edición', ['AlmacenApp', 'PromotoraApp'].some((f) => /useTickets'|usePushToken|useUsers/.test(leer(`../src/components/${f}.jsx`))), false);
 const reglas = leer('../firestore.rules');
 check('las reglas no dan escritura a los roles nuevos', /allow (create|update|delete|write)[^;]*(isAlmacenRole|isPromotoraRole)/.test(reglas), false);
+// Finanzas solo escribe sus colecciones, siempre con llevaFinanzas (FINANZAS o ADMIN): ninguna regla de órdenes, reportes o técnicos la nombra.
+check('FINANZAS solo escribe en las colecciones de Finanzas', /allow (create|update|delete|write)[^;]*isFinanzasRole/.test(reglas), false);
+check('las colecciones de Finanzas se escriben con llevaFinanzas', ['tarifasPago', 'pagosTecnicos', 'ordenesPagadas'].every((c) => new RegExp(`match /artifacts/\\{appId\\}/public/data/${c}/[^}]*\\}[\\s\\S]*?allow (create|update|delete)[^;]*llevaFinanzas`).test(reglas)), true);
 const worker = leer('../cf-worker/src/index.js');
-check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA'\]/.test(worker), true);
+check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS'\]/.test(worker), true);
+check('Finanzas tiene su pantalla y no importa hooks de la oficina', /FinanzasApp/.test(root) && !/useTickets'|usePushToken|useUsers/.test(leer('../src/components/FinanzasApp.jsx')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

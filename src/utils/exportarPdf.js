@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import { graficoAImagen } from './graficoImagen.js';
 import { fechaHoraLegible } from './formatoFecha.js';
+import { cargarLogo } from './logoReportes.js';
 
 const MARCA = 'ASIGNACIONES NS';
 const MARGEN = 15;
@@ -23,7 +24,8 @@ const limpio = (texto) => String(texto ?? '')
   .replace(/…/g, '...')
   .replace(new RegExp('[^\x20-\x7E\xA0-\xFF]', 'g'), '');
 
-export function generarPdf(modelo) {
+export async function generarPdf(modelo) {
+  const logo = await cargarLogo();
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
   const ancho = doc.internal.pageSize.getWidth();
   const alto = doc.internal.pageSize.getHeight();
@@ -41,10 +43,16 @@ export function generarPdf(modelo) {
   doc.rect(0, 0, ancho, 24, 'F');
   doc.setFillColor(...ROJO);
   doc.rect(0, 24, ancho, 1.2, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(255, 255, 255);
-  texto(MARCA, MARGEN, 14.5);
+  if (logo) {
+    // El logo (sin fondo, con letras blancas) sobre la banda negra, a la altura de la banda menos un respiro.
+    const altoLogo = 17;
+    doc.addImage(logo.bytes, 'PNG', MARGEN, (24 - altoLogo) / 2, (logo.ancho / logo.alto) * altoLogo, altoLogo, 'logo', 'FAST');
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    texto(MARCA, MARGEN, 14.5);
+  }
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(200, 200, 200);
