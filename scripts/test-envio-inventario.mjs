@@ -77,6 +77,8 @@ const fieldsDe = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k,
 const dec = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, 'stringValue' in v ? v.stringValue : 'integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : v]));
 
 let sinPermisoAuditoria = false; // sus reglas no dejan escribir auditLogs
+let sinPermisoNotificaciones = false; // sus reglas no dejan escribir syncNotifications
+let notificacionesTelecom = [];
 let roles, ordenes, envios, inventario, tecnicosNuestros, tecnicosTelecom, comportamientoTelecom, llamadasTelecom, commitsTelecom, loginsTelecom, pushes, consultasNuestras;
 const respuesta = (cuerpo, status = 200) => new Response(typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -104,6 +106,11 @@ globalThis.fetch = async (url, init = {}) => {
     }
     if (u.endsWith(':commit')) {
       if (sinPermisoAuditoria && cuerpo.writes.some((w) => w.update?.name.includes('/auditLogs/'))) return respuesta({ error: { status: 'PERMISSION_DENIED' } }, 403);
+      if (cuerpo.writes.every((w) => w.update?.name.includes('/syncNotifications/'))) {
+        if (sinPermisoNotificaciones) return respuesta({ error: { status: 'PERMISSION_DENIED' } }, 403);
+        notificacionesTelecom.push(...cuerpo.writes);
+        return respuesta({});
+      }
       commitsTelecom.push(cuerpo.writes);
       return respuesta({});
     }
@@ -171,6 +178,7 @@ const reiniciar = () => {
   tecnicosNuestros = { 'GERARDO MOLERO': { name: 'GERARDO MOLERO', tecnicoInventario: 'GERARDO MOLERO' } };
   tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Activo' }, { nombre: 'OTRO TECNICO', estado: 'Activo' }];
   comportamientoTelecom = 'ok';
+  sinPermisoNotificaciones = false; notificacionesTelecom = [];
   llamadasTelecom = []; commitsTelecom = []; loginsTelecom = []; pushes = []; consultasNuestras = [];
 };
 
@@ -441,6 +449,26 @@ check('el usuario del módulo recibe la lista de técnicos del inventario, orden
 check('nadie más la ve: ni otro ADMIN, ni un USUARIO', [(await llamar('/inventario/tecnicos', 'admin-uid', {})).status, (await llamar('/inventario/tecnicos', 'usuario-uid', {})).status], [403, 403]);
 check('sin los secretos la lista viene vacía y apagada', (await llamar('/inventario/tecnicos', 'lf-uid', {}, { ...env, TELECOM_PASSWORD: undefined })).json, { estado: 'DESHABILITADO', tecnicos: [] });
 check('las reglas de Firestore dejan elegir el nombre en el inventario solo a quien ve el módulo (los demás ADMIN no lo ponen ni lo cambian)', reglas.includes("isAdminUser(appId) && (veInventario(appId) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tecnicoInventario']))"), true);
+
+// Notificaciones para el módulo del otro sistema (syncNotifications)
+reiniciar();
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico', tecnico: 'OTRO TECNICO' };
+await enviar('inst1');
+const notif = notificacionesTelecom.map((w) => ({ ruta: w.update.name.split('/public/data/')[1].split('/')[0], campos: dec(w.update.fields) }));
+check('una alerta deja un documento en syncNotifications con el formato del otro sistema', [notif.length, notif[0]?.ruta, Object.keys(notif[0]?.campos || {}).sort(), notif[0]?.campos.tipo, notif[0]?.campos.estado, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(notif[0]?.campos.fechaHora)],
+  [1, 'syncNotifications', ['estado', 'fechaHora', 'id', 'mensaje', 'tipo'], 'Error de Descuento', 'Pendiente', true]);
+check('el mensaje dice la orden, el técnico, el serial y el motivo', ['IS10', "'GERARDO MOLERO'", 'HWTC1A2B3C4D', 'OTRO TECNICO'].map((t) => notif[0].campos.mensaje.includes(t)), [true, true, true, true]);
+check('el id del documento es el id numérico y va en el campo id', notificacionesTelecom[0].update.name.endsWith(`/${notif[0].campos.id}`), true);
+
+reiniciar();
+await enviar('inst1');
+check('un envío correcto no deja notificación', notificacionesTelecom.length, 0);
+
+reiniciar();
+sinPermisoNotificaciones = true;
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico', tecnico: 'OTRO TECNICO' };
+r = await enviar('inst1');
+check('si sus reglas no dejan escribir la notificación, el envío igual queda con su alerta', [r.status, r.json.estado, envio('inst1').estado], [200, 'EQUIPO_OTRO_TECNICO', 'EQUIPO_OTRO_TECNICO']);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

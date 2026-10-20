@@ -4,6 +4,7 @@
 //
 //   POST /inventario/enviar     { ticketId }  la app lo llama al aprobar/finalizar una orden (ADMIN, USUARIO o quien cierra)
 //   POST /inventario/reintentar { ticketId }  desde el módulo de la app, solo para los usuarios de USUARIOS_INVENTARIO
+//   POST /inventario/notificar  { ticketId }  vuelve a escribir el aviso de una orden con alerta en syncNotifications, solo para USUARIOS_INVENTARIO
 //   cron                        envía lo PENDIENTE: lo que no se pudo enviar (red caída, clave rechazada...) y lo que la app
 //                               marcó al aprobar pero no alcanzó a llamar al Worker; cada 15 minutos
 // Al aprobar, la app deja en telecomEnvios/{id} una marca mínima { ticketId, estado: PENDIENTE, intentos: 0 } (sin datos
@@ -16,7 +17,8 @@
 // serial no existe, o el equipo no está "Con Técnico" (p. ej. sigue "En Almacén"), no se envía nada de la orden: queda una
 // alerta en la app y un aviso push. El estado de cada envío vive en telecomEnvios/{id de la orden} (nuestro Firestore).
 //
-// Las alertas y los avisos push son solo de los usuarios de USUARIOS_INVENTARIO (src/utils/accesoInventario.js).
+// Las alertas y los avisos push son solo de los usuarios de USUARIOS_INVENTARIO (src/utils/accesoInventario.js). Además, cada
+// alerta deja un documento en syncNotifications del otro sistema (notificarAlInventario) para su módulo de notificaciones.
 // Sin los secretos configurados el envío está apagado: no escribe nada ni genera alertas.
 import { ACCION_AVERIA, ACCION_INSTALACION, ESTADOS_CON_ALERTA, ESTADO_ENVIADO, ESTADO_PENDIENTE, TEXTO_ESTADO_ENVIO, payloadEnvioInventario } from '../../src/utils/envioInventario.js';
 import { veEnviosInventario } from '../../src/utils/accesoInventario.js';
@@ -111,6 +113,35 @@ export function escrituraAuditoria(env, ticketId, p, fechaHora) {
       fields: { id: { doubleValue: id }, ...campos({ fechaHora, usuario: USUARIO_AUDITORIA, ...textoAuditoria(p) }) },
     },
   };
+}
+
+// Aviso para el módulo de notificaciones del otro sistema: un documento en su colección syncNotifications con el formato de su
+// módulo { id, fechaHora, tipo, mensaje, estado: 'Pendiente' }. Cada aviso es un documento nuevo (su id lleva la hora del aviso).
+export const TIPO_NOTIFICACION = 'Error de Descuento';
+export const ESTADO_NOTIFICACION = 'Pendiente';
+
+export function textoNotificacion(p, mensaje) {
+  const orden = `${p.codigo || 'S/C'}${p.cliente ? ` (${p.cliente})` : ''}`;
+  const tecnico = p.tecnico || p.tecnicoOrden;
+  return `Fallo al descontar material de la orden ${orden}.${tecnico ? ` Técnico '${tecnico}'.` : ''}${p.serial ? ` Serial ${p.serial}.` : ''} ${mensaje}`.trim();
+}
+
+// Escribe el aviso; si no se puede (sus reglas, red) lanza el error.
+async function escribirNotificacion(env, ticketId, estado, p, mensaje, ahoraMs) {
+  const id = idRegistro(`${ticketId}:${estado}`, ahoraMs);
+  const notificacion = { fechaHora: fechaHoraCaracas(ahoraMs).fechaHora, tipo: TIPO_NOTIFICACION, mensaje: textoNotificacion(p, mensaje), estado: ESTADO_NOTIFICACION };
+  const name = `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/syncNotifications/${id}`;
+  await llamarTelecom(env, `${docsTelecom(env)}:commit`, { writes: [{ update: { name, fields: { id: { doubleValue: id }, ...campos(notificacion) } } }] }, ahoraMs);
+}
+
+// Al pasar una orden a alerta: no frena nada si falla, la alerta de la app ya salió.
+async function notificarAlInventario(env, ticketId, estado, p, mensaje, ahoraMs) {
+  if (!inventarioActivo(env)) return;
+  try {
+    await escribirNotificacion(env, ticketId, estado, p, mensaje, ahoraMs);
+  } catch (err) {
+    console.error(`No se pudo escribir la notificación de ${ticketId} en el inventario:`, err);
+  }
 }
 
 // Llamada a su Firestore con nuestra sesión; si la sesión venció se renueva una vez.
@@ -299,6 +330,7 @@ async function procesar(env, deps, accessToken, ticketId, p, existente, ahoraMs)
     const detalle = `${p.codigo || 'S/C'}${p.serial ? ` · ${p.serial}` : ''}: ${mensaje || TEXTO_ESTADO_ENVIO[estado]}`;
     await deps.avisarInventario(env, accessToken, 'Orden no enviada al inventario', detalle, { tipo: 'inventario', tag: `inventario:${ticketId}` })
       .catch((err) => console.error('No se pudo avisar del envío al inventario:', err));
+    await notificarAlInventario(env, ticketId, estado, p, mensaje || TEXTO_ESTADO_ENVIO[estado], ahoraMs);
   }
   return { estado, mensaje };
 }
@@ -363,6 +395,33 @@ export async function listarTecnicosInventario(env, headers, uid, deps, ahoraMs 
   }
 }
 
+// Vuelve a avisar al otro sistema de una orden que sigue con alerta (el botón "Reenviar aviso" del módulo). Solo para los usuarios
+// del módulo. A diferencia del aviso automático, aquí sí se le dice a quien lo pidió si no se pudo escribir.
+export async function reenviarNotificacion(request, env, headers, uid, deps, ahoraMs = Date.now()) {
+  let body;
+  try { body = await request.json(); } catch { return new Response('JSON inválido', { status: 400, headers }); }
+  const ticketId = String(body?.ticketId || '');
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(ticketId)) return new Response('Falta ticketId.', { status: 400, headers });
+  try {
+    const accessToken = await deps.getGoogleAccessToken(env);
+    if (!(await permisos(env, deps, accessToken, uid)).gestionar) return new Response('Sin permiso.', { status: 403, headers });
+    if (!inventarioActivo(env)) return json({ estado: 'DESHABILITADO' }, 200, headers);
+    const existente = await leerDocumento(env, deps, accessToken, 'telecomEnvios', ticketId);
+    if (!existente) return new Response('No hay un envío con ese id.', { status: 404, headers });
+    if (!ESTADOS_CON_ALERTA.includes(existente.estado)) return json({ estado: 'SIN_ALERTA' }, 200, headers);
+    try {
+      await escribirNotificacion(env, ticketId, existente.estado, camposPayloadDe(existente), existente.mensaje || TEXTO_ESTADO_ENVIO[existente.estado], ahoraMs);
+    } catch (err) {
+      console.error(`No se pudo reenviar la notificación de ${ticketId}:`, err);
+      return json({ estado: 'NO_ENVIADA', mensaje: String(err.message || err).slice(0, 200) }, 200, headers);
+    }
+    return json({ estado: 'NOTIFICADA' }, 200, headers);
+  } catch (err) {
+    console.error(err);
+    return new Response('No se pudo reenviar la notificación.', { status: 500, headers });
+  }
+}
+
 // De un documento guardado (o del payload) a { accion, codigo, ... } con los tipos que espera el envío.
 const camposPayloadDe = (d) => ({
   accion: d.accion, codigo: String(d.codigo || ''), tecnico: String(d.tecnico || ''), tecnicoOrden: String(d.tecnicoOrden || ''), cliente: String(d.cliente || ''), serial: String(d.serial || ''),
@@ -382,6 +441,7 @@ export async function reintentarPendientes(env, deps, ahoraMs = Date.now()) {
     if (aEnviar.archivada) {
       await guardarEnvio(env, deps, accessToken, ticketId, { ticketId, estado: 'ERROR', mensaje: MENSAJE_ARCHIVADA, intentos: existente.intentos || 0, creadoEn: existente.creadoEn || ahoraMs, actualizadoEn: ahoraMs });
       await deps.avisarInventario(env, accessToken, 'Orden no enviada al inventario', MENSAJE_ARCHIVADA, { tipo: 'inventario', tag: `inventario:${ticketId}` }).catch(() => {});
+      await notificarAlInventario(env, ticketId, 'ERROR', existente, MENSAJE_ARCHIVADA, ahoraMs);
       continue;
     }
     if (aEnviar.omitir) { await borrarEnvio(env, deps, accessToken, ticketId); continue; }

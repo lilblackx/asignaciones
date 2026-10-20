@@ -84,6 +84,18 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
     return false;
   }, [cargarRecientes, setToastMsg]);
 
+  // Vuelve a avisar al otro sistema (su módulo de notificaciones) de una orden con alerta. Devuelve true si el aviso quedó escrito.
+  const reenviarAviso = useCallback(async (envio) => {
+    const r = await llamarInventario('/inventario/notificar', envio.id);
+    if (r.ok && r.estado === 'NOTIFICADA') {
+      setToastMsg?.({ type: 'success', text: `Se reenvió el aviso de la orden ${envio.codigo || 'S/C'} a la app del almacén.` });
+      return true;
+    }
+    const motivo = r.ok ? (r.estado === 'SIN_ALERTA' ? 'La orden ya no tiene alerta.' : r.estado === 'DESHABILITADO' ? 'El envío al inventario está apagado.' : r.mensaje) : r.mensaje;
+    setToastMsg?.({ type: 'error', text: `No se pudo reenviar el aviso.${motivo ? ` ${motivo}` : ''}` });
+    return false;
+  }, [setToastMsg]);
+
   // Reintenta una lista de órdenes una tras otra (el Worker las procesa de a una). Un solo aviso al final y una sola lectura de
   // la actividad, no una por orden.
   const reintentarTodas = useCallback(async (lista) => {
@@ -128,5 +140,5 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
     }
   }, [cargarRecientes, setToastMsg, usuario]);
 
-  return { envios, pendientes, recientes, cargandoRecientes, hayMas, cargarRecientes, cargarMas, actualizarRecientes, reintentar, reintentarTodas, buscar, descartar };
+  return { envios, pendientes, recientes, cargandoRecientes, hayMas, cargarRecientes, cargarMas, actualizarRecientes, reintentar, reenviarAviso, reintentarTodas, buscar, descartar };
 }

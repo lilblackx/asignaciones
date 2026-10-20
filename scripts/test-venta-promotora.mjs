@@ -27,6 +27,10 @@ check('no trae campos de cobro, instalación ni viaje (las reglas no los dejan p
 check('el historial arranca vacío', venta.historialEdiciones, []);
 check('lleva la marca de venta de promotora (la oficina recibe el aviso)', venta.ventaPromotora, true);
 check('sin instalador es una instalación normal: ni técnico ni marca de venta de técnico', [venta.tecnico, 'ventaTecnico' in venta, 'ventaTecnicoId' in venta], ['', false, false]);
+const conNap = armarVentaPromotora({ ...datos, nap: ' N10D14 ', napCoordenadas: 'Lat: 10.6616 / Lng: -71.7061' }, { username: 'sariana', nombre: 'Sariana' }, ahora);
+check('la NAP y sus coordenadas (de Tomodat o pegadas) se guardan normalizadas', [conNap.nap, conNap.napCoordenadas], ['N10D14', '10.6616, -71.7061']);
+check('sin coordenadas de NAP queda vacío', venta.napCoordenadas, '');
+check('unas coordenadas de NAP inválidas impiden guardar', errorVentaPromotora({ ...datos, napCoordenadas: 'hola' }, propia).startsWith('Coordenadas de la NAP'), true);
 check('el aviso a la oficina solo dice "Nueva venta"', TEXTO_AVISO_NUEVA_VENTA, 'Nueva venta');
 
 // --- Validación ---

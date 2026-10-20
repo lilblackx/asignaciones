@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, MapPin, Star, X } from 'lucide-react';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { TIPO_VENTA, camposDePlantillaVenta, instaladorDePlantilla, tecnicoRegistradoDePlantilla } from '../../utils/ventaPromotora';
 import { leerTecnicos } from '../../hooks/useCrearVenta';
-import { normalizarUbicacion } from '../../utils/ubicacion';
+import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
+import { construirNapsConocidas } from '../../utils/napsConocidas';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import TelefonosField from './TelefonosField';
+import NapCoordenadasField from './NapCoordenadasField';
+import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
 import PromotorField from './PromotorField';
 import { CedulaField } from './TicketFormFields';
 import Spinner from '../Spinner';
@@ -18,7 +21,7 @@ const TIPOS_ITEMS = [{ value: '', label: 'Seleccione...' }, ...(TIPOS_POR_TRABAJ
 const nombreBonito = (nombre) => nombre.toLowerCase().replace(/(^|\s)\S/g, (m) => m.toUpperCase());
 const ACTIVAS = new Set(['PENDIENTE', 'PRE-FINALIZADO']);
 
-const FORM_VACIO = (promotora) => ({ plantillaOriginal: '', cedula: '', tipoDocumento: 'V', nombre: '', telefono: '', direccion: '', falla: '', promotora, ubicacion: '', nap: '' });
+const FORM_VACIO = (promotora) => ({ plantillaOriginal: '', cedula: '', tipoDocumento: 'V', nombre: '', telefono: '', direccion: '', falla: '', promotora, ubicacion: '', nap: '', napCoordenadas: '' });
 
 // Nueva venta de una PROMOTORA con permiso de crear ventas: solo instalaciones. La plantilla pegada rellena el resto; la oficina
 // asigna el técnico después. Con "ve todas" (ventas) el promotor se escribe; si no, se elige entre los nombres de su usuario.
@@ -27,6 +30,9 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
   const [form, setForm] = useState(() => FORM_VACIO(verTodas ? '' : promotoraNombres[0] || ''));
   const [guardando, setGuardando] = useState(false);
   const [intento, setIntento] = useState(false);
+  const [sinCoordenadas, setSinCoordenadas] = useState(false);
+  // Coordenadas de NAP de las órdenes que ya ve esta usuaria: con ellas no hace falta esperar a Tomodat.
+  const napsConocidas = useMemo(() => construirNapsConocidas(tickets), [tickets]);
   // null = leyendo, 'error' = no se pudieron leer
   const [tecnicos, setTecnicos] = useState(null);
   useEffect(() => {
@@ -56,11 +62,22 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
   const duplicada = form.cedula && tickets.find((t) => t.cedula === form.cedula && ACTIVAS.has(t.estado));
   const faltaTipo = intento && !form.falla;
 
-  const enviar = async (e) => {
+  const napCoordenadas = normalizarCoordenadasNap(form.napCoordenadas);
+  // Con NAP escrita pero sin coordenadas, avisa y deja que decida (igual que al crear la orden en la oficina).
+  const faltanNapCoordenadas = Boolean(form.nap?.trim()) && !napCoordenadas.valor;
+
+  const enviar = (e) => {
     e.preventDefault();
     setIntento(true);
     if (!form.falla) { document.getElementById('nv-falla')?.focus(); return; }
+    if (napCoordenadas.error) { document.getElementById('nv-nap-coords')?.focus(); return; }
     if (ubicacion.error) { document.getElementById('nv-ubicacion')?.focus(); return; }
+    if (faltanNapCoordenadas) { setSinCoordenadas(true); return; }
+    guardar();
+  };
+
+  const guardar = async () => {
+    setSinCoordenadas(false);
     setGuardando(true);
     const creada = await onCrear({ ...form, tecnico, tecnicoId: registrado?.id || '' });
     setGuardando(false);
@@ -156,6 +173,13 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           </div>
 
           <div className="col-span-2 space-y-0.5">
+            <label htmlFor="nv-nap" className={ETIQUETA}>NAP</label>
+            <input id="nv-nap" type="text" maxLength="50" name="nap" value={form.nap} onChange={cambiar} className={CAMPO} />
+          </div>
+
+          <NapCoordenadasField variant="create" idPrefix="nv" wrapperClassName="col-span-2 space-y-0.5" nap={form.nap} value={form.napCoordenadas} onChange={(v) => poner('napCoordenadas', v)} autoBuscar napsConocidas={napsConocidas} />
+
+          <div className="col-span-2 space-y-0.5">
             <label htmlFor="nv-ubicacion" className={ETIQUETA}>UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps, opcional)</span></label>
             <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error} className={`${CAMPO} ${ubicacion.error ? 'border-red-500' : ''}`} />
             {ubicacion.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{ubicacion.error}</p>}
@@ -168,6 +192,10 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           </div>
         </form>
       </div>
+
+      {sinCoordenadas && (
+        <ConfirmSinCoordenadasModal nap={form.nap.trim()} textoConfirmar="Crear la venta" onCancel={() => setSinCoordenadas(false)} onConfirm={guardar} />
+      )}
     </Modal>
   );
 }

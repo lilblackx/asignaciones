@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search } from 'lucide-react';
+import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search } from 'lucide-react';
 import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
@@ -73,8 +73,9 @@ function Serial({ serial }) {
   );
 }
 
-function TarjetaAlerta({ envio, onReintentar, onDescartar }) {
+function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar }) {
   const [ocupado, setOcupado] = useState(false);
+  const [avisando, setAvisando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const motivo = envio.mensaje || TEXTO_ESTADO_ENVIO[envio.estado] || '';
 
@@ -82,6 +83,11 @@ function TarjetaAlerta({ envio, onReintentar, onDescartar }) {
     setOcupado(true);
     await onReintentar(envio);
     setOcupado(false);
+  };
+  const reenviarAviso = async () => {
+    setAvisando(true);
+    await onReenviarAviso(envio);
+    setAvisando(false);
   };
   const descartar = async () => {
     setOcupado(true);
@@ -114,6 +120,9 @@ function TarjetaAlerta({ envio, onReintentar, onDescartar }) {
             Descartar
           </button>
         )}
+        <button type="button" onClick={reenviarAviso} disabled={ocupado || avisando} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
+          <Bell className="w-3.5 h-3.5" aria-hidden="true" /> {avisando ? 'Reenviando aviso...' : 'Reenviar aviso a la app del almacén'}
+        </button>
       </div>
     </li>
   );
@@ -136,9 +145,10 @@ function lineasEnvio(e) {
   return lineas;
 }
 
-function FilaReciente({ envio, onReintentar }) {
+function FilaReciente({ envio, onReintentar, onReenviarAviso }) {
   const [abierta, setAbierta] = useState(false);
   const [ocupado, setOcupado] = useState(false);
+  const [avisando, setAvisando] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const lineas = lineasEnvio(envio);
 
@@ -153,6 +163,11 @@ function FilaReciente({ envio, onReintentar }) {
     setOcupado(true);
     await onReintentar(envio);
     setOcupado(false);
+  };
+  const reenviarAviso = async () => {
+    setAvisando(true);
+    await onReenviarAviso(envio);
+    setAvisando(false);
   };
 
   return (
@@ -178,6 +193,11 @@ function FilaReciente({ envio, onReintentar }) {
               <button type="button" onClick={copiar} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600">
                 <ClipboardCopy className="w-3 h-3" aria-hidden="true" /> {copiado ? 'Copiado' : 'Copiar resumen'}
               </button>
+              {ESTADOS_CON_ALERTA.includes(envio.estado) && (
+                <button type="button" onClick={reenviarAviso} disabled={avisando} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
+                  <Bell className="w-3 h-3" aria-hidden="true" /> {avisando ? 'Reenviando aviso...' : 'Reenviar aviso'}
+                </button>
+              )}
               {envio.estado === 'DESCARTADO' && (
                 <button type="button" onClick={reintentar} disabled={ocupado} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[11px] font-black hover:opacity-90 disabled:opacity-50">
                   <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reabrir y reintentar'}
@@ -203,7 +223,7 @@ const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u03
 // Módulo "Envíos al inventario" (solo para los usuarios de utils/accesoInventario): arriba, las órdenes aprobadas que no se
 // pudieron descontar del inventario del almacén, con "Reintentar" (por ejemplo, después de que el almacén ingresó el serial)
 // y "Descartar" (se da por resuelta sin enviar; queda guardada); abajo, la actividad reciente de los envíos.
-export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReintentarTodas, onBuscar, onDescartar, onClose }) {
+export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReenviarAviso, onReintentarTodas, onBuscar, onDescartar, onClose }) {
   useEffect(() => { onCargar(); }, [onCargar]);
   const [filtro, setFiltro] = useState('TODOS');
   const [texto, setTexto] = useState('');
@@ -270,7 +290,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700">No hay órdenes pendientes de revisar.</p>
             ) : (
               <ul className="space-y-2.5">
-                {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onDescartar={onDescartar} />)}
+                {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} onDescartar={onDescartar} />)}
               </ul>
             )}
           </section>
@@ -310,7 +330,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               </p>
             ) : (
               <ul className="border border-zinc-200 dark:border-zinc-800 rounded-xl divide-y divide-zinc-200 dark:divide-zinc-800">
-                {visibles.map((e) => <FilaReciente key={e.id} envio={e} onReintentar={onReintentar} />)}
+                {visibles.map((e) => <FilaReciente key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} />)}
               </ul>
             )}
 

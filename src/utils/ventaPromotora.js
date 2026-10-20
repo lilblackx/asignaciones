@@ -1,7 +1,7 @@
 import { esCodigoSinNumero, generarCodigoBase } from './correlativo.js';
 import { claveNombre, nombrePromotora } from './promotora.js';
 import { direccionCliente, nombrePersona } from './datosCliente.js';
-import { normalizarUbicacion } from './ubicacion.js';
+import { normalizarCoordenadasNap, normalizarUbicacion } from './ubicacion.js';
 import { tieneTelefono } from './telefono.js';
 import { parseInstalacionTemplate } from './whatsapp.js';
 import { buscarTecnicoPorNombre } from './tecnicoVenta.js';
@@ -51,6 +51,8 @@ export function errorVentaPromotora(datos, { verTodas, promotoraClaves }) {
   if (!verTodas && !promotoraClaves.includes(clave)) return 'El promotor tiene que ser uno de los nombres de tu usuario.';
   const ubicacion = normalizarUbicacion(datos.ubicacion);
   if (ubicacion.error) return `Ubicación: ${ubicacion.error}`;
+  const napCoordenadas = normalizarCoordenadasNap(datos.napCoordenadas);
+  if (napCoordenadas.error) return `Coordenadas de la NAP: ${napCoordenadas.error}`;
   return '';
 }
 
@@ -67,7 +69,7 @@ export function armarVentaPromotora(datos, { username, nombre }, ahora = new Dat
     direccion: direccionCliente(datos.direccion),
     telefono: datos.telefono,
     nap: (datos.nap || '').trim(),
-    napCoordenadas: '',
+    napCoordenadas: normalizarCoordenadasNap(datos.napCoordenadas).valor || '',
     ubicacion: normalizarUbicacion(datos.ubicacion).valor || '',
     tipoTrabajo: TIPO_VENTA,
     falla: datos.falla,
