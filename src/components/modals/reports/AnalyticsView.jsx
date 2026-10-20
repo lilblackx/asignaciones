@@ -12,8 +12,6 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
   const estadisticas = useMemo(() => estadisticasOperativas(ordenes, rango, tecnico), [ordenes, rango, tecnico]);
   const { porTecnicoTipo, totalesPorTipo, porNap, reincidentes } = estadisticas;
   const pestañas = TIPOS_PRODUCTIVIDAD.filter(([clave]) => clave !== 'OTRO' || totalesPorTipo.OTRO > 0);
-  // "12 finalizadas = 5 instalaciones + 6 averías + 1 visitas": así se ve de dónde sale el total.
-  const composicion = ['INSTALACION', 'AVERIA', 'VISITA', 'OTRO'].filter((clave) => clave !== 'OTRO' || totalesPorTipo.OTRO > 0).map((clave) => `${totalesPorTipo[clave]} ${NOMBRE_DEL_TIPO[clave]}`).join(' + ');
   // Productividad: todo junto o solo instalaciones o solo averías.
   const [tipoProductividad, setTipoProductividad] = useState('TODO');
   const porTecnico = porTecnicoTipo[tipoProductividad];
@@ -53,7 +51,6 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
             ))}
           </div>
         </div>
-        {totalesPorTipo.TODO > 0 && <p className="text-[11px] text-zinc-500 -mt-2 mb-3">{totalesPorTipo.TODO} finalizadas = {composicion}. Averías incluye reconexiones, low signal y cambios de equipo; Visitas, mudanzas, retiros, garantías y validaciones de NAP.</p>}
         {porTecnico.length === 0 ? (
           <p className="text-xs text-zinc-500 text-center py-6">{tipoProductividad === 'TODO' ? 'Aún no hay órdenes finalizadas.' : `Aún no hay ${NOMBRE_DEL_TIPO[tipoProductividad]} finalizadas.`}</p>
         ) : (
