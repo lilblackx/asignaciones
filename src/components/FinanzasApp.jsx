@@ -3,6 +3,7 @@ import { Banknote } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
 import { useFinanzas } from '../hooks/useFinanzas';
+import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
 import { rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
@@ -14,6 +15,7 @@ import { documentoPagosTecnicos, documentoResumenPagos } from '../utils/modelosR
 import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
 import BarraFinanzas from './finanzas/BarraFinanzas';
+import TasaBcv from './finanzas/TasaBcv';
 import PagosFinanzas from './finanzas/PagosFinanzas';
 import ResumenPagado from './finanzas/ResumenPagado';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
@@ -43,6 +45,9 @@ export default function FinanzasApp({ auth }) {
 
   const rango = useMemo(() => rangoDe(periodo, personalizado), [periodo, personalizado]);
   const finanzas = useFinanzas({ firebaseUser, rango, usuario: currentUser, setToastMsg });
+  // La tasa BCV del dólar, para mostrar los bolívares (cada pago guarda la de su momento).
+  const bcv = useTasaDolar();
+  const tasa = bcv.tasa;
   const ordenes = useMemo(() => todasLasOrdenes(tickets, reports), [tickets, reports]);
   const nombresTecnicos = useMemo(() => technicians.map((t) => t.name).filter(Boolean).sort(), [technicians]);
   const historial = { hasMoreReports: hayMasReportes, isLoadingReports: cargandoReportes, onLoadMoreReports: cargarReportesAnteriores };
@@ -51,10 +56,13 @@ export default function FinanzasApp({ auth }) {
   const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas), [items, finanzas.tarifas, finanzas.idsPagadas]);
   // Lo ya pagado en el periodo por técnico (respeta el técnico elegido arriba).
   const pagadasPorTecnico = useMemo(
-    () => totalesPagados(finanzas.pagadas.filter((p) => !tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase())),
-    [finanzas.pagadas, tecnico],
+    () => {
+      const tasaDe = (pagoId) => finanzas.pagos.find((p) => p.id === pagoId)?.tasa || tasa;
+      return totalesPagados(finanzas.pagadas.filter((p) => !tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()), tasaDe);
+    },
+    [finanzas.pagadas, finanzas.pagos, tecnico, tasa],
   );
-  const pagado = useMemo(() => resumenPagado(finanzas.pagos, rango, { tecnico }), [finanzas.pagos, rango, tecnico]);
+  const pagado = useMemo(() => resumenPagado(finanzas.pagos, rango, { tecnico, tasa }), [finanzas.pagos, rango, tecnico, tasa]);
 
   const actual = SECCIONES.find((s) => s.id === seccion);
 
@@ -62,7 +70,7 @@ export default function FinanzasApp({ auth }) {
     setErrorExportar('');
     setExportando(formato);
     try {
-      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico } };
+      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa } };
       const documento = actual.documento(contexto);
       if (formato === 'csv') descargarCsv(csvDeDocumento(documento), `${actual.archivo}_${rango.desde}_${rango.hasta}.csv`);
       else await exportarDocumento(documento, formato, rango);
@@ -95,6 +103,8 @@ export default function FinanzasApp({ auth }) {
               </button>
             ))}
           </div>
+
+          <TasaBcv tasa={bcv.tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={bcv.actualizar} />
 
           {error && !actualizadoEn ? (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
@@ -130,13 +140,14 @@ export default function FinanzasApp({ auth }) {
                   pagos={finanzas.pagos}
                   pagadasPorTecnico={pagadasPorTecnico}
                   rango={rango}
+                  tasa={tasa}
                   ocupado={finanzas.ocupado}
                   historial={historial}
-                  onPagar={(fila) => finanzas.pagar(fila, rango, '')}
+                  onPagar={(fila) => finanzas.pagar(fila, rango, '', tasa)}
                   onAnular={finanzas.anular}
                 />
               )}
-              {seccion === 'PRECIOS' && <TabuladorPrecios tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}
+              {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}
               {seccion === 'REPORTE' && <ResumenPagado resumen={pagado} rango={rango} />}
             </>
           )}

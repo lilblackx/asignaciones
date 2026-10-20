@@ -4,7 +4,7 @@ import ResumenCifras from './ResumenCifras';
 import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
-import { CONCEPTOS_PAGO, SIN_TECNICO, cifrasPagos, conceptosSinTarifa, dolares, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
+import { SIN_TECNICO, aBs, bolivares, cifrasPagos, conceptosSinTarifa, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoGrupos, textoOrdenes } from '../../utils/finanzas';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 
 // Las tarjetas siguen el estilo de las de ventas (TarjetaInstalacion): cabecera negra con el nombre y el estado en sólido, etiquetas pequeñas en
@@ -14,7 +14,6 @@ const CIFRA = 'text-2xl font-black text-zinc-900 dark:text-white tabular-nums le
 const TARJETA = 'h-full flex flex-col min-w-0 rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden';
 const BOTON = 'inline-flex items-center gap-1 text-[11px] font-bold rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50';
 const BOTON_PRINCIPAL = 'inline-flex items-center gap-1.5 text-xs font-black rounded bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 transition-colors disabled:opacity-50';
-const nombreConcepto = (id) => CONCEPTOS_PAGO.find((c) => c.id === id)?.nombre || id;
 const ESTADO = {
   POR_PAGAR: { texto: 'Por pagar', clase: 'bg-amber-400 text-black' },
   PAGADO: { texto: 'Pagado', clase: 'bg-emerald-600 text-white' },
@@ -32,7 +31,7 @@ function Cabecera({ titulo, estado }) {
 
 // Pago a técnicos: una tarjeta por técnico con sus órdenes y lo que se le debe, y un botón para marcarlo pagado. Se le debe lo que el Registro de
 // estadísticas cuenta como pagado a técnico y todavía no está en ningún pago; el total sale del tabulador de precios.
-export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPorTecnico, rango, ocupado, historial, onPagar, onAnular }) {
+export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular }) {
   const [abierto, setAbierto] = useState(null);
   const [pagando, setPagando] = useState(null);
   const [anulando, setAnulando] = useState(null);
@@ -53,7 +52,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
   return (
     <div className="space-y-3">
       <AvisoHistorial {...historial} />
-      <ResumenCifras items={cifrasPagos(tarjetas, sumaPagado(Object.values(pagadasPorTecnico)))} />
+      <ResumenCifras items={cifrasPagos(tarjetas, sumaPagado(Object.values(pagadasPorTecnico)), tasa)} />
 
       <h3 className="text-sm font-bold text-zinc-900 dark:text-white pt-1">Técnicos · {etiquetaRango(rango)}</h3>
       {sinTecnico > 0 && <p className="text-[11px] text-amber-700 dark:text-amber-400 mb-2">{textoOrdenes(sinTecnico)} sin técnico asignado: no se pueden pagar.</p>}
@@ -66,7 +65,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
             const pagado = pagadasPorTecnico[fila.tecnico];
             const sinTarifa = conceptosSinTarifa(fila, tarifas);
             const expandido = abierto === fila.tecnico;
-            const desglose = CONCEPTOS_PAGO.filter(({ id }) => fila.cantidades[id] > 0).map(({ id, singular, plural }) => `${fila.cantidades[id]} ${fila.cantidades[id] === 1 ? singular : plural}`).join(' · ');
+            const desglose = textoGrupos(fila.cantidades);
             return (
               <li key={fila.tecnico} className={TARJETA}>
                 <Cabecera titulo={fila.tecnico} estado={pendientes > 0 ? 'POR_PAGAR' : 'PAGADO'} />
@@ -87,6 +86,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
                     <div className="min-w-0 text-right">
                       <p className={ETIQUETA}>Total a pagar</p>
                       <p className={CIFRA}>{dolares(fila.total)}</p>
+                      {tasa > 0 && <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">{bolivares(aBs(fila.total, tasa))}</p>}
                     </div>
                   </div>
 
@@ -100,7 +100,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
                     {pagado && (
                       <div>
                         <p className={ETIQUETA}>Ya pagado en el periodo</p>
-                        <p className="text-sm text-zinc-900 dark:text-zinc-100 mt-0.5">{dolares(pagado.total)} · {textoOrdenes(pagado.ordenes)}</p>
+                        <p className="text-sm text-zinc-900 dark:text-zinc-100 mt-0.5">{dolares(pagado.total)}{pagado.bs > 0 ? ` (${bolivares(pagado.bs)})` : ''} · {textoOrdenes(pagado.ordenes)}</p>
                       </div>
                     )}
                   </div>
@@ -110,7 +110,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
                       {fila.pendientes.map((item) => (
                         <li key={item.clave} className="flex items-center justify-between gap-2 px-3 py-1.5">
                           <span className="min-w-0 truncate"><button type="button" onClick={() => setDetalle(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-dotted underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button> · {item.orden.nombre}</span>
-                          <span className="shrink-0 text-zinc-500">{diaLegible(item.dia).slice(0, 5)} · {nombreConcepto(item.concepto)}</span>
+                          <span className="shrink-0 text-zinc-500">{diaLegible(item.dia).slice(0, 5)} · {grupoDePago(item.concepto)}</span>
                         </li>
                       ))}
                     </ul>
@@ -154,6 +154,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
                 <div className="min-w-0 text-right">
                   <p className={ETIQUETA}>Total</p>
                   <p className={`${CIFRA} ${p.anulado ? 'line-through text-zinc-500 dark:text-zinc-500' : ''}`}>{dolares(p.total)}</p>
+                  {(p.tasa > 0 || tasa > 0) && <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">{bolivares(aBs(p.total, p.tasa > 0 ? p.tasa : tasa))}</p>}
                 </div>
               </div>
               <div className="border-t border-zinc-200 dark:border-zinc-800 px-3 py-2 min-h-12 flex items-center justify-between gap-2">
@@ -165,13 +166,13 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
         </ul>
       )}
 
-      {detalle && <DetalleOrdenFinanzas item={detalle} tarifas={tarifas} onClose={() => setDetalle(null)} />}
+      {detalle && <DetalleOrdenFinanzas item={detalle} tarifas={tarifas} tasa={tasa} onClose={() => setDetalle(null)} />}
       {pagando && (
         <ConfirmModal
           color="blue"
           icon={CheckCircle2}
           title={`¿Marcar pagado a ${pagando.tecnico}?`}
-          description={`${textoOrdenes(pagando.pendientes.length)} por ${dolares(pagando.total)} (${etiquetaRango(rango)}). Quedan pagadas y no se pueden pagar otra vez.`}
+          description={`${textoOrdenes(pagando.pendientes.length)} por ${dolares(pagando.total)}${tasa > 0 ? ` (${bolivares(aBs(pagando.total, tasa))} a ${tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs por dólar)` : ''} · ${etiquetaRango(rango)}. Quedan pagadas y no se pueden pagar otra vez.${tasa > 0 ? '' : ' No hay tasa BCV: el pago se guarda solo en dólares.'}`}
           confirmLabel="Sí, marcar pagado"
           processingLabel="Guardando..."
           onCancel={() => setPagando(null)}

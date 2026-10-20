@@ -105,7 +105,8 @@ export const conceptosSinTarifa = (fila, tarifas) => CONCEPTOS_PAGO.filter(({ id
 export const idDePago = (tecnico, ahora) => `${ahora}-${String(tecnico).toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(0, 20) || 'TECNICO'}`;
 
 // El pago y sus órdenes, listos para guardar en un lote: { pagoId, pago, ordenes: [{ id, datos }] } o { error }.
-export function armarPago(fila, rango, tarifas, { por, ahora, nota = '' }) {
+// `tasa`: bolívares por dólar (BCV) del momento del pago; se guarda para que el pago en Bs no cambie después.
+export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = null }) {
   if (fila.tecnico === SIN_TECNICO) return { error: 'Estas órdenes no tienen técnico: no se pueden pagar.' };
   if (fila.pendientes.length === 0) return { error: 'No hay órdenes por pagar.' };
   if (fila.pendientes.length > MAX_ORDENES_POR_PAGO) return { error: `Son demasiadas órdenes para un solo pago (máximo ${MAX_ORDENES_POR_PAGO}). Elige un periodo más corto.` };
@@ -123,6 +124,7 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '' }) {
     por,
     creadoEn: ahora,
     anulado: false,
+    ...(tasa > 0 && { tasa: redondear(tasa) }),
   };
   const ordenes = fila.pendientes.map((item) => ({
     id: item.clave,
@@ -131,24 +133,45 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '' }) {
   return { pagoId, pago, ordenes };
 }
 
+// --- Bolívares (tasa BCV del dólar) ---
+
+// La respuesta de la API (ve.dolarapi.com/v1/dolares/oficial) → { tasa, fecha } o null si no trae una tasa usable.
+export function parseTasaDolar(json) {
+  const tasa = Number(json?.promedio ?? json?.venta);
+  if (!(tasa > 0)) return null;
+  const fecha = Date.parse(json?.fechaActualizacion);
+  return { tasa: redondear(tasa), fecha: Number.isFinite(fecha) ? fecha : null };
+}
+
+// Dólares → bolívares con la tasa dada (null si no hay tasa).
+export const aBs = (usd, tasa) => (tasa > 0 ? redondear((Number(usd) || 0) * tasa) : null);
+
+// "113.980,00 Bs" (con espacio sin salto); "—" si no hay monto.
+export const bolivares = (valor) => (valor == null ? '—' : `${valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${String.fromCharCode(160)}Bs`);
+
 // --- Textos ---
 
 // Con espacio sin salto: "109,00 $" no se parte en dos líneas en las tablas de los PDF y Word.
 export const dolares = (valor) => `${(Number(valor) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${String.fromCharCode(160)}$`;
 
-export const columnasPagosTecnico = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Instalaciones', derecha: true }, { titulo: 'Visitas', derecha: true }, { titulo: 'Averías', derecha: true }, { titulo: 'Recableados', derecha: true }, { titulo: 'Total por pagar', derecha: true }];
-export const filaPagoTecnico = (f) => [f.tecnico, String(f.pendientes.length), String(f.cantidades.INSTALACION), String(f.cantidades.VISITA), String(f.cantidades.AVERIA), String(f.cantidades.RECABLEADO), dolares(f.total)];
+export const columnasPagosTecnico = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Instalaciones', derecha: true }, { titulo: 'Averías', derecha: true }, { titulo: 'Total por pagar', derecha: true }, { titulo: 'En Bs', derecha: true }];
+export const filaPagoTecnico = (f, tasa = null) => [f.tecnico, String(f.pendientes.length), String(gruposDelReporte(f.cantidades).instalaciones), String(gruposDelReporte(f.cantidades).averias), dolares(f.total), bolivares(aBs(f.total, tasa))];
+
+// Cómo se nombra el trabajo de una orden pagada: o instalación o avería (todo lo que no es instalación es avería).
+export const grupoDePago = (concepto) => (concepto === 'INSTALACION' ? 'Instalación' : 'Avería');
 
 // { ordenes, monto } de varios técnicos de totalesPagados.
-export const sumaPagado = (lista) => ({ ordenes: lista.reduce((s, v) => s + v.ordenes, 0), monto: redondear(lista.reduce((s, v) => s + v.total, 0)) });
+export const sumaPagado = (lista) => ({ ordenes: lista.reduce((s, v) => s + v.ordenes, 0), monto: redondear(lista.reduce((s, v) => s + v.total, 0)), bs: redondear(lista.reduce((s, v) => s + (v.bs || 0), 0)) });
 
-// Lo ya pagado en el periodo, por técnico: { [técnico]: { ordenes, total } } a partir de los documentos de ordenesPagadas.
-export function totalesPagados(pagadas) {
+// Lo ya pagado en el periodo, por técnico: { [técnico]: { ordenes, total, bs } } a partir de los documentos de ordenesPagadas. `tasaDe(pagoId)` da la tasa
+// con que se hizo cada pago (los bolívares de un pago no cambian con la tasa de hoy).
+export function totalesPagados(pagadas, tasaDe = () => null) {
   const por = {};
   for (const p of pagadas) {
-    por[p.tecnico] ??= { ordenes: 0, total: 0 };
+    por[p.tecnico] ??= { ordenes: 0, total: 0, bs: 0 };
     por[p.tecnico].ordenes += 1;
     por[p.tecnico].total = redondear(por[p.tecnico].total + (Number(p.monto) || 0));
+    por[p.tecnico].bs = redondear(por[p.tecnico].bs + (aBs(p.monto, tasaDe(p.pagoId)) || 0));
   }
   return por;
 }
@@ -156,19 +179,20 @@ export function totalesPagados(pagadas) {
 export const NOTA_PAGOS = 'Se paga lo que el Registro de estadísticas cuenta como pagado a técnico: instalaciones finalizadas y visitas o averías exoneradas o cobradas (low signal siempre); los recableados llevan su propia tarifa. La garantía, las canceladas, las órdenes sin cobro registrado, las validaciones de NAP y lo escalado a infraestructura no entran. Cada orden se paga una sola vez.';
 
 // `yaPagado`: { ordenes, monto } de lo que ya se pagó en el periodo.
-export function cifrasPagos(filas, yaPagado) {
+export function cifrasPagos(filas, yaPagado, tasa = null) {
   const conPendientes = filas.filter((f) => f.pendientes.length > 0);
   return [
-    { etiqueta: 'Total a pagar', valor: dolares(totalPendiente(filas)), detalle: 'con las tarifas de hoy' },
+    { etiqueta: 'Total a pagar', valor: dolares(totalPendiente(filas)), detalle: tasa > 0 ? bolivares(aBs(totalPendiente(filas), tasa)) : 'con las tarifas de hoy' },
     { etiqueta: 'Técnicos por pagar', valor: conPendientes.length, detalle: `${textoOrdenes(conPendientes.reduce((s, f) => s + f.pendientes.length, 0))} por pagar` },
-    { etiqueta: 'Ya pagado', valor: dolares(yaPagado.monto), detalle: `${textoOrdenes(yaPagado.ordenes)} del periodo` },
+    { etiqueta: 'Ya pagado', valor: dolares(yaPagado.monto), detalle: yaPagado.bs > 0 ? bolivares(yaPagado.bs) : `${textoOrdenes(yaPagado.ordenes)} del periodo` },
   ];
 }
 
-export const columnasPagosRegistrados = () => [{ titulo: 'Fecha' }, { titulo: 'Técnico' }, { titulo: 'Periodo' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total', derecha: true }, { titulo: 'Estado' }, { titulo: 'Registró' }, { titulo: 'Nota' }];
-export const filaPagoRegistrado = (p) => [
+export const columnasPagosRegistrados = () => [{ titulo: 'Fecha' }, { titulo: 'Técnico' }, { titulo: 'Periodo' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Estado' }, { titulo: 'Nota' }];
+// `tasaHoy`: se usa solo si el pago no guardó la tasa de su momento (pagos hechos antes de mostrar bolívares).
+export const filaPagoRegistrado = (p, tasaHoy = null) => [
   diaDe(Number(p.creadoEn)).split('-').reverse().join('/'), p.tecnico, `${p.desde.split('-').reverse().join('/')} – ${p.hasta.split('-').reverse().join('/')}`,
-  String(p.cantidadOrdenes), dolares(p.total), p.anulado ? 'Anulado' : 'Pagado', p.por || '', p.nota || '',
+  String(p.cantidadOrdenes), dolares(p.total), bolivares(aBs(p.total, p.tasa > 0 ? p.tasa : tasaHoy)), p.anulado ? 'Anulado' : 'Pagado', p.nota || '',
 ];
 // Los pagos hechos (no anulados primero) en el periodo.
 export const pagosDelPeriodo = (pagos, rango) => pagos.filter((p) => enRango(diaDe(Number(p.creadoEn)), rango)).sort((a, b) => Number(b.creadoEn) - Number(a.creadoEn));
@@ -177,30 +201,44 @@ export const pagosDelPeriodo = (pagos, rango) => pagos.filter((p) => enRango(dia
 
 // Lo que se pagó en el periodo (los pagos registrados ese día y no anulados), en total y por técnico:
 // { total, ordenes, pagos, porTecnico: [{ tecnico, pagos, ordenes, total, cantidades, ultimo }] } de más a menos pagado.
-export function resumenPagado(pagos, rango, { tecnico } = {}) {
+// `tasa`: la de hoy, para los pagos que no guardaron la suya. Cada pago convierte a bolívares con la tasa de su momento.
+export function resumenPagado(pagos, rango, { tecnico, tasa = null } = {}) {
   const vigentes = pagosDelPeriodo(pagos, rango).filter((p) => !p.anulado && (!tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()));
   const mapa = new Map();
   for (const p of vigentes) {
-    if (!mapa.has(p.tecnico)) mapa.set(p.tecnico, { tecnico: p.tecnico, pagos: 0, ordenes: 0, total: 0, cantidades: vacio(), ultimo: 0 });
+    if (!mapa.has(p.tecnico)) mapa.set(p.tecnico, { tecnico: p.tecnico, pagos: 0, ordenes: 0, total: 0, cantidades: vacio(), ultimo: 0, bs: 0 });
     const f = mapa.get(p.tecnico);
     f.pagos += 1;
     f.ordenes += Number(p.cantidadOrdenes) || 0;
     f.total = redondear(f.total + (Number(p.total) || 0));
+    f.bs = redondear(f.bs + (aBs(p.total, p.tasa > 0 ? p.tasa : tasa) || 0));
     for (const { id } of CONCEPTOS_PAGO) f.cantidades[id] += Number(p.cantidades?.[id]) || 0;
     f.ultimo = Math.max(f.ultimo, Number(p.creadoEn) || 0);
   }
   const porTecnico = [...mapa.values()].sort((a, b) => b.total - a.total || a.tecnico.localeCompare(b.tecnico));
-  return { total: redondear(porTecnico.reduce((s, f) => s + f.total, 0)), ordenes: porTecnico.reduce((s, f) => s + f.ordenes, 0), pagos: vigentes.length, porTecnico };
+  return { total: redondear(porTecnico.reduce((s, f) => s + f.total, 0)), bs: redondear(porTecnico.reduce((s, f) => s + f.bs, 0)), ordenes: porTecnico.reduce((s, f) => s + f.ordenes, 0), pagos: vigentes.length, porTecnico };
 }
 
 export const cifrasResumenPagado = (r) => [
-  { etiqueta: 'Total pagado', valor: dolares(r.total), detalle: `${r.pagos} ${r.pagos === 1 ? 'pago' : 'pagos'} en el periodo` },
+  { etiqueta: 'Total pagado', valor: dolares(r.total), detalle: r.bs > 0 ? bolivares(r.bs) : `${r.pagos} ${r.pagos === 1 ? 'pago' : 'pagos'} en el periodo` },
   { etiqueta: 'Órdenes pagadas', valor: r.ordenes },
   { etiqueta: 'Técnicos pagados', valor: r.porTecnico.length },
 ];
 
-export const columnasResumenPagado = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes pagadas', derecha: true }, { titulo: 'Instalaciones', derecha: true }, { titulo: 'Visitas', derecha: true }, { titulo: 'Averías', derecha: true }, { titulo: 'Recableados', derecha: true }, { titulo: 'Total pagado', derecha: true }];
-export const filaResumenPagado = (f) => [f.tecnico, String(f.ordenes), String(f.cantidades.INSTALACION), String(f.cantidades.VISITA), String(f.cantidades.AVERIA), String(f.cantidades.RECABLEADO), dolares(f.total)];
+// En el reporte de lo pagado solo hay dos grupos: instalaciones y averías. Todo lo que no es instalación (visitas, averías y recableados) cuenta como avería.
+export const gruposDelReporte = (cantidades) => ({
+  instalaciones: Number(cantidades?.INSTALACION) || 0,
+  averias: (Number(cantidades?.VISITA) || 0) + (Number(cantidades?.AVERIA) || 0) + (Number(cantidades?.RECABLEADO) || 0),
+});
+
+// "6 instalaciones · 18 averías" (solo los grupos que tienen órdenes).
+export function textoGrupos(cantidades) {
+  const { instalaciones, averias } = gruposDelReporte(cantidades);
+  return [instalaciones > 0 && `${instalaciones} ${instalaciones === 1 ? 'instalación' : 'instalaciones'}`, averias > 0 && `${averias} ${averias === 1 ? 'avería' : 'averías'}`].filter(Boolean).join(' · ');
+}
+
+export const columnasResumenPagado = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes pagadas', derecha: true }, { titulo: 'Instalaciones', derecha: true }, { titulo: 'Averías', derecha: true }, { titulo: 'Total pagado', derecha: true }, { titulo: 'En Bs', derecha: true }];
+export const filaResumenPagado = (f) => [f.tecnico, String(f.ordenes), String(gruposDelReporte(f.cantidades).instalaciones), String(gruposDelReporte(f.cantidades).averias), dolares(f.total), bolivares(f.bs || null)];
 
 // "Se pagó 245,00 $ por 15 órdenes a REINEL BRAVO".
 export const frasePagado = (f) => `Se pagó ${dolares(f.total)} por ${textoOrdenes(f.ordenes)} a ${f.tecnico}`;

@@ -2,7 +2,7 @@
 // por técnico con las tarifas, que una orden ya pagada no se cobre dos veces y cómo se arma un pago. No necesita el emulador.
 // Uso: `npm run test:finanzas`.
 import {
-  CONCEPTOS_PAGO, SIN_TECNICO, armarPago, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, frasePagado, ordenesPagables, parseTarifa, resumenPagado, resumenPagos, sumaPagado, tarifasCompletas, totalesPagados, totalPendiente,
+  CONCEPTOS_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
 } from '../src/utils/finanzas.js';
 import { ROLES, etiquetaRol } from '../src/constants.js';
 
@@ -69,8 +69,8 @@ check('sin precio de recableado avisa y no suma', conceptosSinTarifa(filasRec[0]
 
 // --- Lo ya pagado, por técnico ---
 const ya = totalesPagados([{ tecnico: 'GERARDO', monto: 3.5 }, { tecnico: 'GERARDO', monto: 20 }, { tecnico: 'LUIS', monto: 5 }]);
-check('lo pagado por técnico', ya, { GERARDO: { ordenes: 2, total: 23.5 }, LUIS: { ordenes: 1, total: 5 } });
-check('suma de lo pagado', sumaPagado(Object.values(ya)), { ordenes: 3, monto: 28.5 });
+check('lo pagado por técnico', ya, { GERARDO: { ordenes: 2, total: 23.5, bs: 0 }, LUIS: { ordenes: 1, total: 5, bs: 0 } });
+check('suma de lo pagado', sumaPagado(Object.values(ya)), { ordenes: 3, monto: 28.5, bs: 0 });
 check('las cifras: total a pagar, técnicos por pagar y ya pagado', cifrasPagos(resumenPagos(items, tarifasCompletas({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }), new Set()).filter((f) => f.tecnico !== SIN_TECNICO), { ordenes: 3, monto: 28.5 }).map((c) => [c.etiqueta, c.valor]), [['Total a pagar', dolares(55.5)], ['Técnicos por pagar', 2], ['Ya pagado', dolares(28.5)]]);
 
 // --- Totales con tarifas ---
@@ -123,12 +123,37 @@ const pagosPrueba = [
 ];
 const pagado = resumenPagado(pagosPrueba, rango);
 check('el resumen suma lo pagado: no cuenta lo anulado ni lo de otro periodo', [pagado.total, pagado.ordenes, pagado.pagos, pagado.porTecnico.length], [385, 29, 3, 2]);
-check('REINEL: 245 + 40 por 19 órdenes en 2 pagos, con el detalle por concepto', pagado.porTecnico[0], { tecnico: 'REINEL BRAVO', pagos: 2, ordenes: 19, total: 285, cantidades: { INSTALACION: 5, VISITA: 1, AVERIA: 12, RECABLEADO: 1 }, ultimo: dia(18) });
+check('REINEL: 245 + 40 por 19 órdenes en 2 pagos, con el detalle por concepto', pagado.porTecnico[0], { tecnico: 'REINEL BRAVO', pagos: 2, ordenes: 19, total: 285, cantidades: { INSTALACION: 5, VISITA: 1, AVERIA: 12, RECABLEADO: 1 }, ultimo: dia(18), bs: 0 });
 check('GERARDO: un pago de 100 por 10 órdenes (un cantidades incompleto no rompe)', [pagado.porTecnico[1].total, pagado.porTecnico[1].ordenes, pagado.porTecnico[1].cantidades.INSTALACION], [100, 10, 0]);
 check('la frase del reporte', frasePagado({ tecnico: 'REINEL BRAVO', ordenes: 15, total: 245 }), `Se pagó ${dolares(245)} por 15 órdenes a REINEL BRAVO`);
 check('filtrar por técnico', resumenPagado(pagosPrueba, rango, { tecnico: 'gerardo molero' }).total, 100);
 check('las cifras del reporte', cifrasResumenPagado(pagado).map((c) => [c.etiqueta, c.valor]), [['Total pagado', dolares(385)], ['Órdenes pagadas', 29], ['Técnicos pagados', 2]]);
-check('sin pagos el resumen está vacío', resumenPagado([], rango), { total: 0, ordenes: 0, pagos: 0, porTecnico: [] });
+check('sin pagos el resumen está vacío', resumenPagado([], rango), { total: 0, bs: 0, ordenes: 0, pagos: 0, porTecnico: [] });
+
+// --- Bolívares con la tasa BCV del dólar ---
+check('la API trae el promedio y la fecha', parseTasaDolar({ moneda: 'USD', promedio: 569.604, fechaActualizacion: '2026-10-20T11:00:00.000Z' }), { tasa: 569.6, fecha: Date.parse('2026-10-20T11:00:00.000Z') });
+check('sin promedio usa la venta; sin tasa usable no hay tasa', [parseTasaDolar({ venta: 570 })?.tasa, parseTasaDolar({ promedio: 0 }), parseTasaDolar({ promedio: 'x' }), parseTasaDolar(null)], [570, null, null, null]);
+check('dólares a bolívares', [aBs(245, 569.6), aBs(0.5, 569.6), aBs(10, null), aBs(10, 0)], [139552, 284.8, null, null]);
+check('el texto en bolívares lleva espacio fijo y dos decimales', [bolivares(139552), bolivares(null)], [`139.552,00${String.fromCharCode(160)}Bs`, '—']);
+const conTasa = armarPago({ ...gerardo }, rango, tarifasCompletas({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }), { por: 'fina', ahora: dia(20), tasa: 569.604 });
+check('el pago guarda la tasa de su momento', [conTasa.pago.tasa, armarPago({ ...gerardo }, rango, tarifasCompletas({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }), { por: 'fina', ahora: dia(20) }).pago.tasa], [569.6, undefined]);
+const pagosBs = [
+  { tecnico: 'REINEL BRAVO', total: 245, cantidadOrdenes: 15, cantidades: { AVERIA: 15 }, creadoEn: dia(15), tasa: 500 },
+  { tecnico: 'REINEL BRAVO', total: 40, cantidadOrdenes: 4, cantidades: { AVERIA: 4 }, creadoEn: dia(18) },
+];
+const rBs = resumenPagado(pagosBs, rango, { tasa: 600 });
+check('cada pago convierte con la tasa de su momento; el que no la guardó, con la de hoy', [rBs.porTecnico[0].bs, rBs.bs], [146500, 146500]);
+check('lo pagado en bolívares por técnico con la tasa de cada pago', (({ REINEL }) => REINEL.bs)(totalesPagados([{ tecnico: 'REINEL', monto: 10, pagoId: 'a' }, { tecnico: 'REINEL', monto: 10, pagoId: 'b' }], (id) => ({ a: 500, b: 600 })[id])), 11000);
+check('las cifras muestran los bolívares', [cifrasPagos(resumenPagos(items, tarifasCompletas({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }), new Set()).filter((f) => f.tecnico !== SIN_TECNICO), { ordenes: 3, monto: 28.5, bs: 14250 }, 500).map((c) => c.detalle)[0], cifrasResumenPagado(rBs)[0].detalle], [bolivares(27750), bolivares(146500)]);
+
+// --- El reporte agrupa en instalaciones y averías (todo lo que no es instalación es avería) ---
+check('visitas, averías y recableados cuentan como averías', gruposDelReporte({ INSTALACION: 5, VISITA: 1, AVERIA: 12, RECABLEADO: 1 }), { instalaciones: 5, averias: 14 });
+check('un cantidades incompleto o vacío no rompe', [gruposDelReporte({ AVERIA: 3 }), gruposDelReporte(undefined)], [{ instalaciones: 0, averias: 3 }, { instalaciones: 0, averias: 0 }]);
+check('el texto del reporte solo nombra los dos grupos', [textoGrupos({ INSTALACION: 6, VISITA: 4, AVERIA: 13, RECABLEADO: 1 }), textoGrupos({ INSTALACION: 1 }), textoGrupos({ VISITA: 1 }), textoGrupos({})], ['6 instalaciones · 18 averías', '1 instalación', '1 avería', '']);
+check('las columnas y la fila del reporte son técnico, órdenes, instalaciones, averías, total y bolívares', [columnasResumenPagado().map((c) => c.titulo), filaResumenPagado({ tecnico: 'REINEL', ordenes: 24, total: 230, bs: 202832.4, cantidades: { INSTALACION: 6, VISITA: 4, AVERIA: 13, RECABLEADO: 1 } })], [['Técnico', 'Órdenes pagadas', 'Instalaciones', 'Averías', 'Total pagado', 'En Bs'], ['REINEL', '24', '6', '18', dolares(230), bolivares(202832.4)]]);
+
+check('cada orden pagada se nombra instalación o avería', [grupoDePago('INSTALACION'), grupoDePago('AVERIA'), grupoDePago('VISITA'), grupoDePago('RECABLEADO')], ['Instalación', 'Avería', 'Avería', 'Avería']);
+check('la tabla por pagar del documento también usa solo instalaciones y averías', [columnasPagosTecnico().map((c) => c.titulo), filaPagoTecnico({ tecnico: 'REINEL', pendientes: new Array(24), total: 230, cantidades: { INSTALACION: 6, VISITA: 4, AVERIA: 13, RECABLEADO: 1 } }, 500)], [['Técnico', 'Órdenes', 'Instalaciones', 'Averías', 'Total por pagar', 'En Bs'], ['REINEL', '24', '6', '18', dolares(230), bolivares(115000)]]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

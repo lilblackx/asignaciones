@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import Spinner from '../Spinner';
 import { stripEmojis } from '../../utils/sanitizeInput';
-import { CONCEPTOS_PAGO, parseTarifa } from '../../utils/finanzas';
+import { CONCEPTOS_PAGO, aBs, bolivares, parseTarifa } from '../../utils/finanzas';
 
 // Misma tarjeta que las de ventas y las de los técnicos: cabecera negra, etiquetas pequeñas y un pie con la acción.
 const ETIQUETA = 'text-[10px] font-semibold uppercase tracking-wide text-zinc-500';
 const CAMPO = 'w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-3 pr-8 py-2.5 rounded-xl text-sm text-zinc-900 dark:text-white focus:ring-0 focus:border-red-600 outline-none';
 const enTexto = (valor) => String(valor).replace('.', ',');
 
-function Formulario({ tarifas, ocupado, onGuardar }) {
+function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
   const [borrador, setBorrador] = useState(() => Object.fromEntries(CONCEPTOS_PAGO.map(({ id }) => [id, enTexto(tarifas[id])])));
   const [errores, setErrores] = useState({});
   const cambiado = CONCEPTOS_PAGO.some(({ id }) => borrador[id] !== enTexto(tarifas[id]));
@@ -32,7 +32,7 @@ function Formulario({ tarifas, ocupado, onGuardar }) {
       </div>
 
       <div className="p-3 space-y-3">
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">Lo que se le paga al técnico por cada orden de ese tipo. Un pago ya registrado conserva los precios de ese momento.</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">Lo que se le paga al técnico por cada orden de ese tipo, en dólares, con su equivalente en bolívares a la tasa BCV de hoy. Un pago ya registrado conserva los precios y la tasa de ese momento.</p>
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3">
           {CONCEPTOS_PAGO.map(({ id, nombre }) => (
             <div key={id} className="min-w-0">
@@ -49,7 +49,9 @@ function Formulario({ tarifas, ocupado, onGuardar }) {
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400 pointer-events-none">$</span>
               </div>
-              {errores[id] && <p role="alert" className="text-[11px] text-red-500 font-bold mt-1">{errores[id]}</p>}
+              {errores[id] ? <p role="alert" className="text-[11px] text-red-500 font-bold mt-1">{errores[id]}</p> : tasa > 0 && (
+                <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mt-1 tabular-nums">{bolivares(aBs(parseTarifa(borrador[id]).valor ?? 0, tasa))}</p>
+              )}
             </div>
           ))}
         </div>
@@ -66,7 +68,7 @@ function Formulario({ tarifas, ocupado, onGuardar }) {
 }
 
 // La pestaña "Tabulador de precios": lo que se paga por cada tipo de orden. El formulario se vuelve a armar (key) cuando cambian los precios guardados.
-export default function TabuladorPrecios({ tarifas, tarifasCargadas, ocupado, onGuardar }) {
+export default function TabuladorPrecios({ tarifas, tasa = null, tarifasCargadas, ocupado, onGuardar }) {
   if (!tarifasCargadas) return <p role="status" className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">Cargando...</p>;
-  return <Formulario key={JSON.stringify(tarifas)} tarifas={tarifas} ocupado={ocupado} onGuardar={onGuardar} />;
+  return <Formulario key={JSON.stringify(tarifas)} tarifas={tarifas} tasa={tasa} ocupado={ocupado} onGuardar={onGuardar} />;
 }

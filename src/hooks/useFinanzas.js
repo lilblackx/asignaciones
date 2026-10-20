@@ -64,8 +64,8 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
   );
 
   // Un pago y sus órdenes en un solo lote: si alguna orden ya la pagó otra persona mientras tanto, no se guarda nada.
-  const pagar = async (fila, rangoPago, nota) => {
-    const armado = armarPago(fila, rangoPago, tarifas, { por: usuario, ahora: Date.now(), nota });
+  const pagar = async (fila, rangoPago, nota, tasa = null) => {
+    const armado = armarPago(fila, rangoPago, tarifas, { por: usuario, ahora: Date.now(), nota, tasa });
     if (armado.error) { setToastMsg({ type: 'error', text: armado.error }); return false; }
     return ejecutar(async () => {
       const lote = writeBatch(db);

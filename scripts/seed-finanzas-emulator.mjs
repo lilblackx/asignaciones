@@ -4,7 +4,7 @@
 //    en $, exoneradas (garantías, low signal, retiros), instalaciones (sin cobro), una sin cobro registrado y canceladas con su motivo;
 //  - conciliaciones de la mayoría de los cobros de hace 2 días o más, con la forma de pago que cuadra con la moneda (Bs: pago móvil o transferencia;
 //    $: Zelle) y su referencia;
-//  - las tarifas y un pago ya registrado para GERARDO de los días 4 a 6 (calculado con la misma lógica de la app); REINEL queda sin pagar.
+//  - las tarifas y un pago ya registrado para GERARDO de los días 4 a 6 (calculado con la misma lógica de la app, con la tasa BCV de hace 3 días); REINEL queda sin pagar.
 // Requiere `npm run emulators` y, antes, `npm run seed:emulator` (usuarios y técnicos). Entra con finanzas / Finanzas1234.
 // Uso: `node scripts/seed-finanzas-emulator.mjs [--limpiar]` (con --limpiar quita las finalizadas y canceladas de otros seeds). Se puede repetir: borra y vuelve a armar lo suyo (ids "fin-seed-*" y las colecciones de Finanzas).
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
@@ -99,7 +99,7 @@ const tarifas = tarifasCompletas({ INSTALACION: 25, VISITA: 5, AVERIA: 4, RECABL
 await base.collection('tarifasPago').doc('actual').set({ ...tarifas, por: POR, en: ahora - 7 * DIA });
 const rangoPagado = { desde: diaDe(ahora - 6 * DIA), hasta: diaDe(ahora - 4 * DIA) };
 const filaPagada = resumenPagos(ordenesPagables(ordenes, rangoPagado, { tecnico: TECNICOS[0] }), tarifas, new Set()).find((f) => f.tecnico === TECNICOS[0]);
-const pago = armarPago(filaPagada, rangoPagado, tarifas, { por: POR, ahora: ahora - 3 * DIA, nota: 'Pago de la semana anterior' });
+const pago = armarPago(filaPagada, rangoPagado, tarifas, { por: POR, ahora: ahora - 3 * DIA, nota: 'Pago de la semana anterior', tasa: 566.8 });
 const lote = db.batch();
 lote.set(base.collection('pagosTecnicos').doc(pago.pagoId), pago.pago);
 for (const { id, datos } of pago.ordenes) lote.set(base.collection('ordenesPagadas').doc(id), datos);

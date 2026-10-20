@@ -316,14 +316,14 @@ export function documentoRegistroEstadisticas(ctx) {
 // Finanzas: lo que se le debe a cada técnico (con las tarifas de hoy) y los pagos registrados en el periodo.
 export function documentoPagosTecnicos(ctx) {
   const { rango, tecnico, pagosFinanzas } = ctx;
-  const { filas, pagos, pagadasPorTecnico } = pagosFinanzas;
+  const { filas, pagos, pagadasPorTecnico, tasa = null } = pagosFinanzas;
   const delTecnico = (nombre) => !tecnico || String(nombre).toUpperCase() === tecnico.toUpperCase();
   const visibles = filas.filter((f) => delTecnico(f.tecnico));
   const registrados = pagosDelPeriodo(pagos, rango).filter((p) => delTecnico(p.tecnico));
   return encabezado('Pago a técnicos', rango, tecnico, ctx, [
-    { tipo: 'cifras', items: cifrasPagos(visibles, sumaPagado(Object.entries(pagadasPorTecnico).filter(([nombre]) => delTecnico(nombre)).map(([, v]) => v))) },
-    { tipo: 'tabla', titulo: 'Por pagar a cada técnico', columnas: columnasPagosTecnico(), filas: visibles.filter((f) => f.pendientes.length > 0).map(filaPagoTecnico), vacio: 'Nada por pagar en este periodo.' },
-    { tipo: 'tabla', titulo: `Pagos registrados (${registrados.length})`, columnas: columnasPagosRegistrados(), filas: registrados.map(filaPagoRegistrado), vacio: 'Ningún pago registrado en este periodo.' },
+    { tipo: 'cifras', items: cifrasPagos(visibles, sumaPagado(Object.entries(pagadasPorTecnico).filter(([nombre]) => delTecnico(nombre)).map(([, v]) => v)), tasa) },
+    { tipo: 'tabla', titulo: 'Por pagar a cada técnico', columnas: columnasPagosTecnico(), filas: visibles.filter((f) => f.pendientes.length > 0).map((f) => filaPagoTecnico(f, tasa)), vacio: 'Nada por pagar en este periodo.' },
+    { tipo: 'tabla', titulo: `Pagos registrados (${registrados.length})`, columnas: columnasPagosRegistrados(), filas: registrados.map((p) => filaPagoRegistrado(p, tasa)), vacio: 'Ningún pago registrado en este periodo.' },
     { tipo: 'texto', texto: NOTA_PAGOS },
   ]);
 }
@@ -331,12 +331,13 @@ export function documentoPagosTecnicos(ctx) {
 // Finanzas: el resumen de lo pagado en el periodo, por técnico (cuánto se le pagó y por cuántas órdenes) y cada pago registrado.
 export function documentoResumenPagos(ctx) {
   const { rango, tecnico, pagosFinanzas } = ctx;
-  const resumen = resumenPagado(pagosFinanzas.pagos, rango, { tecnico });
+  const { tasa = null } = pagosFinanzas;
+  const resumen = resumenPagado(pagosFinanzas.pagos, rango, { tecnico, tasa });
   const registrados = pagosDelPeriodo(pagosFinanzas.pagos, rango).filter((p) => !tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase());
   return encabezado('Resumen de pagos', rango, tecnico, ctx, [
     { tipo: 'cifras', items: cifrasResumenPagado(resumen) },
     { tipo: 'tabla', titulo: 'Pagado a cada técnico', columnas: columnasResumenPagado(), filas: resumen.porTecnico.map(filaResumenPagado), vacio: 'Ningún pago registrado en este periodo.' },
-    { tipo: 'tabla', titulo: `Pagos registrados (${registrados.length})`, columnas: columnasPagosRegistrados(), filas: registrados.map(filaPagoRegistrado), vacio: 'Ningún pago registrado en este periodo.' },
-    { tipo: 'texto', texto: 'Cuenta los pagos registrados en el periodo; los anulados no suman. Los montos son los del tabulador de precios del momento de cada pago.' },
+    { tipo: 'tabla', titulo: `Pagos registrados (${registrados.length})`, columnas: columnasPagosRegistrados(), filas: registrados.map((p) => filaPagoRegistrado(p, tasa)), vacio: 'Ningún pago registrado en este periodo.' },
+    { tipo: 'texto', texto: 'Cuenta los pagos registrados en el periodo; los anulados no suman. Los montos son los del tabulador de precios del momento de cada pago, y los bolívares, con la tasa BCV del dólar de ese momento (si un pago no la guardó, con la de hoy).' },
   ]);
 }

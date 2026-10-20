@@ -1,5 +1,5 @@
 import ResumenCifras from './ResumenCifras';
-import { CONCEPTOS_PAGO, cifrasResumenPagado, dolares, frasePagado, textoOrdenes } from '../../utils/finanzas';
+import { bolivares, cifrasResumenPagado, dolares, frasePagado, textoGrupos, textoOrdenes } from '../../utils/finanzas';
 import { diaDe } from '../../utils/totalesMes';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 
@@ -34,12 +34,13 @@ export default function ResumenPagado({ resumen, rango }) {
                   <div className="min-w-0 text-right">
                     <p className={ETIQUETA}>Total pagado</p>
                     <p className={CIFRA}>{dolares(f.total)}</p>
+                    {f.bs > 0 && <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">{bolivares(f.bs)}</p>}
                   </div>
                 </div>
                 <div>
                   <p className={ETIQUETA}>Detalle</p>
                   <p className="text-sm text-zinc-900 dark:text-zinc-100 mt-0.5 break-words">
-                    {CONCEPTOS_PAGO.filter(({ id }) => f.cantidades[id] > 0).map(({ id, singular, plural }) => `${f.cantidades[id]} ${f.cantidades[id] === 1 ? singular : plural}`).join(' · ') || '—'}
+                    {textoGrupos(f.cantidades) || '—'}
                   </p>
                 </div>
               </div>

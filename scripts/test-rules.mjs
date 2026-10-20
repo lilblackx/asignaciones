@@ -953,6 +953,11 @@ await check('Pagar: el pago va a nombre de quien lo hace y con datos válidos', 
   await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe({ extra: 1 }), [['orden-e', ordenPagada('p-4')]]));
   await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe(), [['orden-e', ordenPagada('p-4', { concepto: 'OTRO' })]]));
 });
+await check('Pagar: el pago guarda la tasa BCV de su momento (número positivo)', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-tasa', pagoDe({ cantidadOrdenes: 1, total: 8, tasa: 569.6 }), [['orden-tasa', ordenPagada('p-tasa', { concepto: 'AVERIA', monto: 8 })]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-tasa-mala', pagoDe({ tasa: -1 }), [['orden-tasa-1', ordenPagada('p-tasa-mala')]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-tasa-texto', pagoDe({ tasa: '569' }), [['orden-tasa-2', ordenPagada('p-tasa-texto')]]));
+});
 await check('Pagar: un recableado se guarda con su concepto', async () => {
   await assertSucceeds(guardarPago(asFinanzas(), 'p-rec', pagoDe({ cantidadOrdenes: 1, total: 8 }), [['orden-recableado', ordenPagada('p-rec', { concepto: 'RECABLEADO', monto: 8 })]]));
 });
