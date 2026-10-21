@@ -7,6 +7,7 @@ import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils
 import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
+import CampoFecha from '../CampoFecha';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
 import { ClienteSmartOltIcono, ClienteSmartOltMensaje } from './ClienteSmartOltField';
@@ -182,7 +183,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-fecha-prog" className="text-[10px] font-bold text-zinc-500 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
-            <input id="tk-fecha-prog" type="date" name="fechaProgramada" value={formData.fechaProgramada} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded text-xs [color-scheme:light] dark:[color-scheme:dark]" />
+            <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 rounded text-xs" />
           </div>
           <CedulaField
             variant="create"

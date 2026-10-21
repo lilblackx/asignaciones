@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import { useCierreAutomatico } from '../../../hooks/useCierreAutomatico';
 import { diaDe } from '../../../utils/totalesMes';
 import Spinner from '../../Spinner';
+import CampoHora from '../../CampoHora';
 
 // Lunes a domingo (0 = domingo, como Date.getDay y el Worker).
 const DIAS = [
@@ -129,13 +130,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
         <div className="mt-4 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <label htmlFor="cierre-hora" className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">Hora</label>
-            <input
-              id="cierre-hora"
-              type="time"
-              value={valores.hora}
-              onChange={(e) => cambio({ hora: e.target.value })}
-              className="w-full sm:w-36 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-red-600 [color-scheme:light] dark:[color-scheme:dark]"
-            />
+            <CampoHora id="cierre-hora" ariaLabel="Hora del cierre" valor={valores.hora} onChange={(v) => cambio({ hora: v })} />
           </div>
           <div role="group" aria-label="Días de la semana" className="flex flex-wrap gap-1.5">
             {DIAS.map(d => {

@@ -5,6 +5,7 @@ import { stripEmojis } from '../../../utils/sanitizeInput';
 import Cifras from './Cifras';
 import TablaReporte from './TablaReporte';
 import Spinner from '../../Spinner';
+import CampoFecha from '../../CampoFecha';
 
 const CAMPO = 'w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600';
 const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400';
@@ -95,7 +96,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
           </div>
           <div className="space-y-1">
             <label htmlFor="vnta-fecha" className={ETIQUETA}>Fecha</label>
-            <input id="vnta-fecha" type="date" value={form.fecha} onChange={(e) => cambiar('fecha', e.target.value)} className={CAMPO} />
+            <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase="w-full h-10 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600" />
           </div>
           <div className="space-y-1 sm:col-span-2 lg:col-span-4">
             <label htmlFor="vnta-observacion" className={ETIQUETA}>Observación <span className="font-normal normal-case">(opcional)</span></label>

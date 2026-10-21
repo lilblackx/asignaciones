@@ -5,9 +5,9 @@ import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
 import { useFinanzas } from '../hooks/useFinanzas';
 import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
-import { rangoDe } from '../utils/periodoReporte';
+import { diaLegible, rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
-import { mudanzasSinTipo, ordenesPagables, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { FECHA_CORTE, mudanzasSinTipo, ordenesPagables, rangoPagable, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
 import { exportarDocumento } from '../utils/exportarDocumento';
@@ -16,7 +16,9 @@ import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
 import BarraFinanzas from './finanzas/BarraFinanzas';
 import TasaBcv from './finanzas/TasaBcv';
-import PagosFinanzas from './finanzas/PagosFinanzas';
+import TecnicosFinanzas from './finanzas/TecnicosFinanzas';
+import TamanoLetra from './finanzas/TamanoLetra';
+import { useTamanoLetra } from '../hooks/useTamanoLetra';
 import ResumenPagado from './finanzas/ResumenPagado';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
 
@@ -25,9 +27,9 @@ const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'Americ
 
 // `documento` y `archivo`: lo que se baja con "Exportar" en esa sección (el tabulador no tiene).
 const SECCIONES = [
-  { id: 'PAGOS', nombre: 'Técnicos', documento: documentoPagosTecnicos, archivo: 'pago-a-tecnicos' },
-  { id: 'PRECIOS', nombre: 'Tabulador de precios' },
-  { id: 'REPORTE', nombre: 'Reporte de pagos', documento: documentoResumenPagos, archivo: 'resumen-de-pagos' },
+  { id: 'PAGOS', nombre: 'Técnicos', corto: 'Técnicos', documento: documentoPagosTecnicos, archivo: 'pago-a-tecnicos' },
+  { id: 'PRECIOS', nombre: 'Tabulador de precios', corto: 'Precios' },
+  { id: 'REPORTE', nombre: 'Reporte de pagos', corto: 'Reporte', documento: documentoResumenPagos, archivo: 'resumen-de-pagos' },
 ];
 
 // Pantalla de FINANZAS: pagar a los técnicos, el tabulador de precios y el reporte de lo pagado. No toca las órdenes: lo que guarda va en sus propias colecciones.
@@ -38,6 +40,7 @@ export default function FinanzasApp({ auth }) {
   // Sin listeners en vivo sobre las órdenes (ver useDatosAlmacen): se leen al abrir y con "Actualizar".
   const { tickets, technicians, reports, cargado, error, actualizadoEn, actualizando, actualizar, hayMasReportes, cargandoReportes, cargarReportesAnteriores } = useDatosAlmacen(firebaseUser);
 
+  const [nivelLetra, setNivelLetra] = useTamanoLetra();
   const [seccion, setSeccion] = useState('PAGOS');
   const [periodo, setPeriodo] = useState('7_DIAS');
   const [hoy] = useState(() => diaDe(Date.now()));
@@ -55,9 +58,13 @@ export default function FinanzasApp({ auth }) {
   const nombresTecnicos = useMemo(() => technicians.map((t) => t.name).filter(Boolean).sort(), [technicians]);
   const historial = { hasMoreReports: hayMasReportes, isLoadingReports: cargandoReportes, onLoadMoreReports: cargarReportesAnteriores };
 
-  const items = useMemo(() => ordenesPagables(ordenes, rango, { tecnico, registros: finanzas.registros, tiposMudanza: finanzas.tiposMudanza }), [ordenes, rango, tecnico, finanzas.registros, finanzas.tiposMudanza]);
-  const sinTipo = useMemo(() => mudanzasSinTipo(ordenes, rango, { tecnico, tiposMudanza: finanzas.tiposMudanza }), [ordenes, rango, tecnico, finanzas.tiposMudanza]);
-  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas), [items, finanzas.tarifas, finanzas.idsPagadas]);
+  // Lo que se debe cuenta desde la fecha de corte: lo anterior del periodo elegido no se muestra.
+  const rangoDeuda = useMemo(() => rangoPagable(rango), [rango]);
+  const items = useMemo(() => ordenesPagables(ordenes, rangoDeuda, { tecnico, registros: finanzas.registros, tiposMudanza: finanzas.tiposMudanza }), [ordenes, rangoDeuda, tecnico, finanzas.registros, finanzas.tiposMudanza]);
+  const sinTipo = useMemo(() => mudanzasSinTipo(ordenes, rangoDeuda, { tecnico, tiposMudanza: finanzas.tiposMudanza }), [ordenes, rangoDeuda, tecnico, finanzas.tiposMudanza]);
+  // Los adelantos del técnico elegido arriba (o de todos).
+  const adelantosVisibles = useMemo(() => finanzas.adelantos.filter((a) => !tecnico || String(a.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.adelantos, tecnico]);
+  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles]);
   // Lo ya pagado en el periodo por técnico (respeta el técnico elegido arriba).
   const pagadasPorTecnico = useMemo(
     () => {
@@ -78,7 +85,7 @@ export default function FinanzasApp({ auth }) {
     setErrorExportar('');
     setExportando(formato);
     try {
-      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa } };
+      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles } };
       const documento = actual.documento(contexto);
       if (formato === 'csv') descargarCsv(csvDeDocumento(documento), `${actual.archivo}_${rango.desde}_${rango.hasta}.csv`);
       else await exportarDocumento(documento, formato, rango);
@@ -96,33 +103,36 @@ export default function FinanzasApp({ auth }) {
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple titulo="Finanzas" icono={Banknote} nombre={currentUserName || currentUser} rol={role} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
-        <main className="p-4 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
-          <div role="tablist" aria-label="Secciones de Finanzas" className="flex gap-1.5 p-1 rounded-xl bg-zinc-200 dark:bg-zinc-900 md:max-w-xl mb-2">
-            {SECCIONES.map(({ id, nombre }) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={seccion === id}
-                onClick={() => setSeccion(id)}
-                className={`flex-1 px-2 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors ${seccion === id ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
-              >
-                {nombre}
-              </button>
-            ))}
+        <main className="p-4 sm:p-6 w-full flex-1 space-y-3 text-base">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div role="tablist" aria-label="Secciones de Finanzas" className="flex gap-2 w-full md:w-auto">
+              {SECCIONES.map(({ id, nombre, corto }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={seccion === id}
+                  onClick={() => setSeccion(id)}
+                  className={`flex-1 md:flex-none h-10 px-4 rounded-lg text-base font-semibold border-2 transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                >
+                  <span className="sm:hidden">{corto}</span><span className="hidden sm:inline">{nombre}</span>
+                </button>
+              ))}
+            </div>
+            <TamanoLetra nivel={nivelLetra} onNivel={setNivelLetra} />
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
             <TasaBcv tasa={bcv.tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={bcv.actualizar} />
             {cargado && (
-              <span role="status" className="sm:ml-auto text-xs text-zinc-600 dark:text-zinc-400 whitespace-nowrap">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
+              <span role="status" className="sm:ml-auto text-sm text-zinc-600 dark:text-zinc-300">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
             )}
           </div>
 
           {error && !actualizadoEn ? (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-lg text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
-            <p role="status" className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">Cargando...</p>
+            <p role="status" className="text-lg text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando...</p>
           ) : (
             <>
               {seccion !== 'PRECIOS' && (
@@ -142,25 +152,33 @@ export default function FinanzasApp({ auth }) {
                   exportando={exportando}
                 />
               )}
-              {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{errorExportar}</p>}
-              {finanzas.error && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
+              {errorExportar && <p role="alert" className="text-base text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-lg px-4 py-3">{errorExportar}</p>}
+              {finanzas.error && <p role="alert" className="text-base text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-lg px-4 py-3">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
 
-              <div key={seccion} className="lg:animate-fade-in space-y-3">
+              {seccion === 'PAGOS' && FECHA_CORTE && rango.desde < FECHA_CORTE && (
+                <p role="status" className="text-base text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 rounded-lg px-4 py-3">
+                  Finanzas cuenta lo que se debe a los técnicos desde el {diaLegible(FECHA_CORTE)}: lo anterior de este periodo no se muestra.
+                </p>
+              )}
+              <div key={seccion} className="lg:animate-fade-in space-y-4">
               {seccion === 'PAGOS' && (
-                <PagosFinanzas
+                <TecnicosFinanzas
                   filas={filasPagos}
                   items={items}
                   sinTipo={sinTipo}
                   onTipoMudanza={finanzas.guardarTipoMudanza}
                   tarifas={finanzas.tarifas}
                   pagos={finanzas.pagos}
+                  adelantos={adelantosVisibles}
                   pagadasPorTecnico={pagadasPorTecnico}
                   rango={rango}
                   tasa={tasa}
                   ocupado={finanzas.ocupado}
                   historial={historial}
-                  onPagar={(fila) => finanzas.pagar(fila, rango, '', tasa)}
+                  onPagar={(fila, opciones) => finanzas.pagar(fila, rangoDeuda, { ...opciones, tasa })}
                   onAnular={finanzas.anular}
+                  onAdelanto={finanzas.registrarAdelanto}
+                  onAnularAdelanto={finanzas.anularAdelanto}
                 />
               )}
               {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}

@@ -7,6 +7,7 @@ import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/expor
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import HistorialTimeline from '../HistorialTimeline';
+import CampoFecha from '../CampoFecha';
 import SelectMenu from '../SelectMenu';
 import PlantillaFinalModal from './PlantillaFinalModal';
 import Colapsable from '../Colapsable';
@@ -24,7 +25,7 @@ function parseFecha(fecha) {
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 const selectClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 pl-2 pr-7 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500';
-const inputClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-2 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500 [color-scheme:light] dark:[color-scheme:dark]';
+const fechaClass = 'w-full h-9 flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500 hover:border-zinc-400 transition-colors';
 
 // `puedeVerPlantilla` (solo ADMIN y usuarios con permiso de cierre, los que llegan a este historial) muestra en cada orden con
 // plantilla (de cualquier trabajo y estado) el botón "Ver plantilla"; `plantillaDe(orden)` arma el texto (vacío si no hay) y
@@ -130,8 +131,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
             <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
             <SelectMenu ariaLabel="Técnico" value={tecnico} onChange={withResetValue(setTecnico)} items={tecnicoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
-            <input type="date" aria-label="Desde" title="Desde" value={desde} onChange={withReset(setDesde)} className={inputClass} />
-            <input type="date" aria-label="Hasta" title="Hasta" value={hasta} onChange={withReset(setHasta)} className={inputClass} />
+            <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={fechaClass} />
+            <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={fechaClass} />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
             <span>

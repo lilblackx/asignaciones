@@ -820,9 +820,12 @@ export default {
       // aprobadores lo hace también el TECNICO al pre-finalizar.
       const rol = await rolActivo(env, accessToken, payload.sub);
       // Una PROMOTORA solo avisa a la oficina de una venta nueva, y solo si el administrador le dio el permiso de crear ventas.
+      // FINANZAS solo le avisa a un técnico que se le registró un pago o un adelanto.
       const permitido = rol === 'PROMOTORA'
         ? target.type === 'oficina' && tipo === 'nuevaVenta' && (await getUserDoc(env, accessToken, payload.sub))?.fields?.puedeCrearVentas?.booleanValue === true
-        : target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
+        : rol === 'FINANZAS'
+          ? target.type === 'tecnico' && ['pagoTecnico', 'adelantoTecnico'].includes(tipo)
+          : target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
       if (!permitido) return new Response('Sin permiso para enviar esta notificación.', { status: 403, headers });
 
       const destinos = await resolveTokens(env, accessToken, target);

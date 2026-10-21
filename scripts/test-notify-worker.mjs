@@ -187,6 +187,21 @@ check('con permiso, no puede avisar a un técnico', (await enviar('promotora-uid
 check('ni a los aprobadores', (await enviar('promotora-uid', { ...avisoVenta, target: { type: 'aprobadores' } })).status, 403);
 check('ni mandar otro tipo de aviso a la oficina', (await enviar('promotora-uid', { ...avisoVenta, tipo: 'consultaCobro' })).status, 403);
 
+// 8) Pago y adelanto: FINANZAS le avisa a un técnico, y solo eso
+reiniciar();
+roles['finanzas-uid'] = 'FINANZAS';
+const avisoPago = { target: { type: 'tecnico', name: 'GERARDO MOLERO' }, title: 'Pago recibido', body: 'Se te registró un pago de 54,00 $ por 3 órdenes.', tipo: 'pagoTecnico' };
+r = await enviar('finanzas-uid', avisoPago);
+check('FINANZAS avisa a un técnico de su pago', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
+check('el aviso lleva el tipo del pago y no abre ninguna orden', [enviosFcm[0]?.data.tipo, enviosFcm[0]?.data.ticketId], ['pagoTecnico', undefined]);
+reiniciar();
+roles['finanzas-uid'] = 'FINANZAS';
+check('FINANZAS avisa también de un adelanto', (await enviar('finanzas-uid', { ...avisoPago, title: 'Adelanto registrado', tipo: 'adelantoTecnico' })).status, 200);
+check('pero no puede mandar el aviso de una asignación a un técnico', (await enviar('finanzas-uid', { ...avisoPago, tipo: 'nuevaAsignacion' })).status, 403);
+check('ni avisar a la oficina ni a los aprobadores', [(await enviar('finanzas-uid', { ...avisoPago, target: { type: 'oficina' } })).status, (await enviar('finanzas-uid', { ...avisoPago, target: { type: 'aprobadores' } })).status], [403, 403]);
+check('ni sin tipo', (await enviar('finanzas-uid', { ...avisoPago, tipo: undefined })).status, 403);
+check('no se envió nada de lo rechazado', enviosFcm.length, 1);
+
 // --- Cierre automático: las instalaciones dejan un resumen liviano para la promotora ---
 const fetchBase = globalThis.fetch;
 const HOY = 'Tue Oct 13 2026';

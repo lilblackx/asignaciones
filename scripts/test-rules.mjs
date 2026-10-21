@@ -1007,6 +1007,55 @@ await check('Anular: no se anula dos veces, no se cambia otro campo del pago ni 
   await assertFails(fin(asFinanzas(), 'ordenesPagadas').doc('orden-a').update({ monto: 1 }));
 });
 
+// --- Pago con moneda, forma, referencia, adelantos y aviso al técnico ---
+const pagoConDatos = (extra = {}) => pagoDe({ descuento: 20, neto: 3.5, adelantos: [{ id: 'adel-1', monto: 20 }], moneda: 'BS', forma: 'Pago móvil', banco: 'Banesco', referencia: '123', pagadoEn: 5, montoPagado: 3091.9, notificado: true, tasa: 883.4, ...extra });
+await check('Pagar: el pago con moneda, forma, referencia, fecha, adelantos y aviso se guarda', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-datos', pagoConDatos(), [['orden-datos-a', ordenPagada('p-datos', { concepto: 'INSTALACION', monto: 20 })], ['orden-datos-b', ordenPagada('p-datos')]]));
+});
+await check('Pagar: moneda inventada, descuento o neto mayores que el total, forma vacía o aviso que no es sí o no se rechazan', async () => {
+  const intentos = [{ moneda: 'EUR' }, { descuento: 99 }, { neto: 99 }, { forma: '' }, { notificado: 'si' }, { pagadoEn: 'ayer' }, { referencia: 'x'.repeat(41) }, { banco: 'x'.repeat(41) }, { banco: 5 }, { montoPagado: -1 }, { extra: 1 }];
+  for (const [i, extra] of intentos.entries()) await assertFails(guardarPago(asFinanzas(), `p-mal-${i}`, pagoConDatos(extra), [[`orden-mal-${i}`, ordenPagada(`p-mal-${i}`)]]));
+});
+
+// Adelantos a los técnicos
+const adelantoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', monto: 50, aplicado: 0, forma: 'Zelle', banco: 'Chase', referencia: 'ZL-9', pagadoEn: 5, nota: '', por: 'fina', creadoEn: 6, anulado: false, notificado: true, ...extra });
+await check('Adelanto: Finanzas lo registra a su nombre, en dólares, sin descontar nada todavía', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').set(adelantoDe()));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').set(adelantoDe({ forma: 'Efectivo', referencia: '' })));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-pm').set(adelantoDe({ forma: 'Pago móvil' })));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-tr').set(adelantoDe({ forma: 'Transferencia' })));
+});
+await check('Adelanto: sin monto, con una forma inventada, ya descontado, a nombre de otro, con campos de más o ya anulado no se guarda', async () => {
+  const intentos = [{ monto: 0 }, { monto: -5 }, { monto: 'cinco' }, { forma: 'Bitcoin' }, { aplicado: 10 }, { por: 'otro' }, { extra: 1 }, { anulado: true }, { tecnico: '' }, { referencia: 'x'.repeat(41) }, { banco: 'x'.repeat(41) }, { banco: 7 }];
+  for (const [i, extra] of intentos.entries()) await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc(`adel-mal-${i}`).set(adelantoDe(extra)));
+  await assertFails(fin(asUsuario(), 'adelantosTecnicos').doc('adel-usuario').set(adelantoDe({ por: 'usuario' })));
+});
+await check('Adelanto: al pagar se descuenta (solo cambia aplicado, sin pasar del monto), al anular el pago se devuelve', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 20 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 60 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: -1 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 30, monto: 99 }));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
+});
+await check('Adelanto: se anula solo si no se descontó nada, a nombre de quien lo hace, y no se borra', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 10 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 9 }));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ aplicado: 5 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').delete());
+});
+await check('Cada técnico lee solo sus pagos y sus adelantos (para ver el aviso con la app abierta); no escribe ni lee los de otro', async () => {
+  const propios = (db, nombre) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection(nombre).where('tecnico', '==', 'GERARDO MOLERO').get();
+  await assertSucceeds(propios(asTecnico(), 'pagosTecnicos'));
+  await assertSucceeds(propios(asTecnico(), 'adelantosTecnicos'));
+  await assertFails(fin(asTecnico(), 'adelantosTecnicos').get());
+  await assertFails(fin(asTecnico(), 'pagosTecnicos').get());
+  await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-3').set(adelantoDe({ por: 'tecnico' })));
+  await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
+  await assertFails(fin(asOtroTecnico(), 'adelantosTecnicos').doc('adel-1').get());
+});
+
 // Finanzas marca las filas de VN y TA que paga; mientras están pagadas la oficina no las edita ni las borra
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   const col = ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('registroVnTa');

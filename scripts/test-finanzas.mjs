@@ -2,7 +2,7 @@
 // por técnico con las tarifas, que una orden ya pagada no se cobre dos veces y cómo se arma un pago. No necesita el emulador.
 // Uso: `npm run test:finanzas`.
 import {
-  CONCEPTOS_PAGO, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
+  CONCEPTOS_PAGO, FECHA_CORTE, rangoPagable, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
 } from '../src/utils/finanzas.js';
 import { ROLES, etiquetaRol } from '../src/constants.js';
 
@@ -133,7 +133,7 @@ const pagosPrueba = [
 ];
 const pagado = resumenPagado(pagosPrueba, rango);
 check('el resumen suma lo pagado: no cuenta lo anulado ni lo de otro periodo', [pagado.total, pagado.ordenes, pagado.pagos, pagado.porTecnico.length], [385, 29, 3, 2]);
-check('REINEL: 245 + 40 por 19 órdenes en 2 pagos, con el detalle por concepto', pagado.porTecnico[0], { tecnico: 'REINEL BRAVO', pagos: 2, ordenes: 19, total: 285, cantidades: { INSTALACION: 5, AVERIA: 12, MUDANZA_INTERNA: 1, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1, LOW_SIGNAL: 0, CAMBIO_EQUIPO: 0 }, ultimo: dia(18), bs: 0 });
+check('REINEL: 245 + 40 por 19 órdenes en 2 pagos, con el detalle por concepto', pagado.porTecnico[0], { tecnico: 'REINEL BRAVO', pagos: 2, ordenes: 19, total: 285, descuento: 0, neto: 285, cantidades: { INSTALACION: 5, AVERIA: 12, MUDANZA_INTERNA: 1, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1, LOW_SIGNAL: 0, CAMBIO_EQUIPO: 0 }, ultimo: dia(18), bs: 0 });
 check('GERARDO: un pago de 100 por 10 órdenes (un cantidades incompleto no rompe)', [pagado.porTecnico[1].total, pagado.porTecnico[1].ordenes, pagado.porTecnico[1].cantidades.INSTALACION], [100, 10, 0]);
 check('la frase del reporte', frasePagado({ tecnico: 'REINEL BRAVO', ordenes: 15, total: 245 }), `Se pagó ${dolares(245)} por 15 órdenes a REINEL BRAVO`);
 check('filtrar por técnico', resumenPagado(pagosPrueba, rango, { tecnico: 'gerardo molero' }).total, 100);
@@ -160,10 +160,10 @@ check('las cifras muestran los bolívares', [cifrasPagos(resumenPagos(items, tar
 check('visitas, averías y recableados cuentan como averías', gruposDelReporte({ INSTALACION: 5, AVERIA: 12, MUDANZA_INTERNA: 1, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1 }), { instalaciones: 5, averias: 14, validacionesNap: 0, adicionales: 0 });
 check('un cantidades incompleto o vacío no rompe', [gruposDelReporte({ AVERIA: 3 }), gruposDelReporte(undefined)], [{ instalaciones: 0, averias: 3, validacionesNap: 0, adicionales: 0 }, { instalaciones: 0, averias: 0, validacionesNap: 0, adicionales: 0 }]);
 check('el texto del reporte nombra los grupos que tienen órdenes', [textoGrupos({ INSTALACION: 6, AVERIA: 13, MUDANZA_INTERNA: 4, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1 }), textoGrupos({ INSTALACION: 1 }), textoGrupos({ MUDANZA_EXTERNA: 1 }), textoGrupos({})], ['6 instalaciones · 18 averías', '1 instalación', '1 avería', '']);
-check('las columnas y la fila del reporte traen instalaciones, averías, validaciones de NAP y trabajos adicionales', [columnasResumenPagado().map((c) => c.titulo), filaResumenPagado({ tecnico: 'REINEL', ordenes: 24, total: 230, bs: 202832.4, cantidades: { INSTALACION: 6, AVERIA: 13, MUDANZA_INTERNA: 4, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1 } })], [['Técnico', 'Órdenes pagadas', 'Instalaciones', 'Averías', 'Val. NAP', 'Trab. adicional', 'Total pagado', 'En Bs'], ['REINEL', '24', '6', '18', '0', '0', dolares(230), bolivares(202832.4)]]);
+check('las columnas y la fila del reporte traen instalaciones, averías, validaciones de NAP y trabajos adicionales', [columnasResumenPagado().map((c) => c.titulo), filaResumenPagado({ tecnico: 'REINEL', ordenes: 24, total: 230, bs: 202832.4, cantidades: { INSTALACION: 6, AVERIA: 13, MUDANZA_INTERNA: 4, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1 } })], [['Técnico', 'Órdenes pagadas', 'Instalaciones', 'Averías', 'Val. NAP', 'Trab. adicional', 'Total pagado', 'Adelantos', 'Neto pagado', 'Total en Bs'], ['REINEL', '24', '6', '18', '0', '0', dolares(230), dolares(0), dolares(230), bolivares(202832.4)]]);
 
 check('cada orden pagada se nombra instalación o avería', [grupoDePago('INSTALACION'), grupoDePago('AVERIA'), grupoDePago('MUDANZA_EXTERNA'), grupoDePago('RECABLEADO')], ['Instalación', 'Avería', 'Avería', 'Avería']);
-check('la tabla por pagar del documento trae los mismos cuatro grupos', [columnasPagosTecnico().map((c) => c.titulo), filaPagoTecnico({ tecnico: 'REINEL', pendientes: new Array(24), total: 230, cantidades: { INSTALACION: 6, AVERIA: 13, MUDANZA_INTERNA: 4, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1 } }, 500)], [['Técnico', 'Órdenes', 'Instalaciones', 'Averías', 'Val. NAP', 'Trab. adicional', 'Total por pagar', 'En Bs'], ['REINEL', '24', '6', '18', '0', '0', dolares(230), bolivares(115000)]]);
+check('la tabla por pagar del documento trae los mismos cuatro grupos', [columnasPagosTecnico().map((c) => c.titulo), filaPagoTecnico({ tecnico: 'REINEL', pendientes: new Array(24), total: 230, cantidades: { INSTALACION: 6, AVERIA: 13, MUDANZA_INTERNA: 4, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1 } }, 500)], [['Técnico', 'Órdenes', 'Instalaciones', 'Averías', 'Val. NAP', 'Trab. adicional', 'Total órdenes', 'Adelantos', 'Total por pagar', 'En Bs'], ['REINEL', '24', '6', '18', '0', '0', dolares(230), dolares(0), dolares(230), bolivares(115000)]]);
 
 // --- Low signal y cambio de equipo: precio propio, pero en el reporte siguen siendo averías ---
 const cambioEquipo = orden({ tipoTrabajo: 'CAMBIO DE EQUIPO', falla: 'SM', cobroBs: '30', cobroTipo: 'OTRO_MONTO', cobroMoneda: 'USD' });
@@ -212,6 +212,14 @@ check('las ya pagadas salen ordenadas por día, con la marca de pagada y el mont
 check('con la orden cargada trae el cliente y el detalle; sin ella solo lo que guardó el pago', yaPagadasDelReporte.map((i) => [i.conDetalle, i.orden.nombre]), [[false, ''], [true, averiaCobrada.nombre]]);
 check('una orden pagada con un precio que ya cambió conserva lo que se pagó', ordenesYaPagadas([{ ...docsPagados[0], monto: 9 }], itemsPagados)[0].monto, 9);
 check('sin pagos no hay órdenes', ordenesYaPagadas([], itemsPagados), []);
+
+// --- Fecha de corte: Finanzas cuenta desde el lunes 26/10/2026 ---
+check('por ahora no hay fecha de corte: el periodo se queda como se eligió', [FECHA_CORTE, rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' })], ['', { desde: '2026-10-15', hasta: '2026-10-21' }]);
+check('un periodo que cruza el corte empieza en el corte', rangoPagable({ desde: '2026-10-15', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-26', hasta: '2026-10-28' });
+check('un periodo posterior al corte no cambia', rangoPagable({ desde: '2026-10-27', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-27', hasta: '2026-10-28' });
+const antesDelCorte = rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }, '2026-10-26');
+check('un periodo anterior al corte queda vacío: ninguna orden ni fila se cuenta', [antesDelCorte.desde > antesDelCorte.hasta, ordenesPagables([averiaCobrada], antesDelCorte, { registros: [vnConTecnico] }).length], [true, 0]);
+check('con el corte puesto en el rango, las órdenes de antes no cuentan y las de después sí', [ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-14')).length, ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-15')).length], [1, 0]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

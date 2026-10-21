@@ -110,6 +110,12 @@ for (const [i, { haceDias, ...fila }] of filasVnTa.entries()) {
   await base.collection('registroVnTa').doc(`fin-seed-vnta-${i + 1}`).set({ ...fila, fecha: diaDe(ahora - haceDias * DIA), operador: 'Prueba', creadoPor: 'usuario', creadoEn: ahora, actualizadoEn: ahora });
 }
 
+// Un adelanto en dólares para REINEL BRAVO (por descontar en su próximo pago) y otro ya anulado.
+for (const d of (await base.collection('adelantosTecnicos').get()).docs) await d.ref.delete();
+const hace = (dias, horas) => ahora - dias * DIA - horas * HORA;
+await base.collection('adelantosTecnicos').doc('fin-seed-adelanto-1').set({ tecnico: TECNICOS[1], monto: 30, aplicado: 0, forma: 'Zelle', referencia: 'ZL-5521', pagadoEn: hace(1, 3), nota: 'Para gasolina', por: 'finanzas', creadoEn: hace(1, 3), anulado: false, notificado: true });
+await base.collection('adelantosTecnicos').doc('fin-seed-adelanto-2').set({ tecnico: TECNICOS[1], monto: 10, aplicado: 0, forma: 'Efectivo', referencia: '', pagadoEn: hace(2, 1), nota: '', por: 'finanzas', creadoEn: hace(2, 1), anulado: true, anuladoPor: 'finanzas', anuladoEn: hace(2, 0), notificado: false });
+
 // --- Tarifas y un pago ya hecho (con la misma lógica de la app) ---
 const POR = 'finanzas';
 const tarifas = tarifasCompletas({ INSTALACION: 25, AVERIA: 4, MUDANZA_INTERNA: 5, MUDANZA_EXTERNA: 8, VALIDACION_NAP: 2, TRABAJO_ADICIONAL: 6, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10 });

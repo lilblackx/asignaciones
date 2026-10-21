@@ -20,6 +20,7 @@ import { devolucionPendiente } from '../../utils/devolucion';
 import { MAX_LARGO_MOTIVO_CANCELACION, cancelaAhora, parseMotivoCancelacion } from '../../utils/cancelacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import Spinner from '../Spinner';
+import CampoFecha from '../CampoFecha';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -177,7 +178,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           </div>
           <div className="col-span-1 space-y-1">
             <label htmlFor="ed-fechaprog" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">F. PROG (Opcional)</label>
-            <input id="ed-fechaprog" disabled={isTecnico} type="date" name="fechaProgramada" value={editingTicket.fechaProgramada || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-60 disabled:cursor-not-allowed" />
+            <CampoFecha id="ed-fechaprog" ariaLabel="Fecha programada" vacio="Sin fecha" disabled={isTecnico} valor={editingTicket.fechaProgramada || ''} onChange={(v) => handleEditChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-2 rounded-lg focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <div className="col-span-1 space-y-1">
             <label htmlFor="ed-codigo" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">CÓDIGO<span className="text-red-600"> *</span></label>

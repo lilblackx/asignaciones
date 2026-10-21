@@ -13,6 +13,7 @@ import { crearConAviso } from './utils/errores';
 import { usePushToken } from './hooks/usePushToken';
 import { useToast } from './hooks/useToast';
 import { useNotifications } from './hooks/useNotifications';
+import { useAvisosPagos } from './hooks/useAvisosPagos';
 import { useTechnicians } from './hooks/useTechnicians';
 import { useLogTecnicos } from './hooks/useLogTecnicos';
 import { useTotalesMensuales } from './hooks/useTotalesMensuales';
@@ -102,6 +103,8 @@ export default function App({ auth }) {
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
   const filasCambiadas = useFilasCambiadas(tickets, ticketsCargados);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
+  // El técnico se entera de un pago o un adelanto que Finanzas le registra, también con la app abierta.
+  useAvisosPagos({ firebaseUser, tecnico: isTecnico ? tecnicoAsociado : null, onNotify: notifications.addNotification, setToastMsg });
   // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
   const verInventario = veEnviosInventario(currentUser);
   const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
@@ -346,6 +349,9 @@ export default function App({ auth }) {
         else handleGoHome();
         break;
       case 'desasignada':
+      case 'pagoTecnico':
+      case 'adelantoTecnico':
+        // Un pago o un adelanto no es una orden: el técnico vuelve a su lista.
         handleGoHome();
         break;
       case 'aprobado':

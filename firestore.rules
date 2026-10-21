@@ -378,8 +378,18 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/pagosTecnicos/{docId} {
       function pagoValido() {
         let p = request.resource.data;
-        return p.keys().hasOnly(['tecnico', 'desde', 'hasta', 'cantidades', 'tarifas', 'total', 'cantidadOrdenes', 'nota', 'por', 'creadoEn', 'anulado', 'tasa'])
+        return p.keys().hasOnly(['tecnico', 'desde', 'hasta', 'cantidades', 'tarifas', 'total', 'cantidadOrdenes', 'nota', 'por', 'creadoEn', 'anulado', 'tasa', 'descuento', 'neto', 'adelantos', 'moneda', 'forma', 'banco', 'referencia', 'pagadoEn', 'montoPagado', 'notificado'])
           && (!('tasa' in p) || ((p.tasa is int || p.tasa is float) && p.tasa > 0 && p.tasa < 100000000))
+          && (!('descuento' in p) || ((p.descuento is int || p.descuento is float) && p.descuento >= 0 && p.descuento <= p.total))
+          && (!('neto' in p) || ((p.neto is int || p.neto is float) && p.neto >= 0 && p.neto <= p.total))
+          && (!('adelantos' in p) || (p.adelantos is list && p.adelantos.size() <= 50))
+          && (!('moneda' in p) || p.moneda in ['BS', 'USD'])
+          && (!('forma' in p) || (p.forma is string && p.forma.size() > 0 && p.forma.size() <= 40))
+          && (!('banco' in p) || (p.banco is string && p.banco.size() <= 40))
+          && (!('referencia' in p) || (p.referencia is string && p.referencia.size() <= 40))
+          && (!('pagadoEn' in p) || p.pagadoEn is int)
+          && (!('montoPagado' in p) || ((p.montoPagado is int || p.montoPagado is float) && p.montoPagado >= 0))
+          && (!('notificado' in p) || p.notificado is bool)
           && p.tecnico is string && p.tecnico.size() > 0 && p.tecnico.size() <= 100
           && p.desde is string && p.desde.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
           && p.hasta is string && p.hasta.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
@@ -391,7 +401,8 @@ service cloud.firestore {
           && p.creadoEn is int
           && p.anulado == false;
       }
-      allow read: if llevaFinanzas(appId);
+      // El técnico lee solo los suyos (para ver el aviso de pago con la app abierta).
+      allow read: if llevaFinanzas(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
       allow create: if llevaFinanzas(appId) && pagoValido();
       allow update: if llevaFinanzas(appId)
         && resource.data.get('anulado', false) == false
@@ -399,6 +410,39 @@ service cloud.firestore {
         && request.resource.data.anuladoPor == usuarioFinanzas(appId)
         && request.resource.data.anuladoEn is int
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn']);
+      allow delete: if false;
+    }
+
+    // Adelantos a un técnico (siempre en dólares): se restan de lo que tiene por pagar. `aplicado` es lo que ya se descontó en pagos (sube al pagar, baja al anular el
+    // pago, nunca pasa de `monto`); un adelanto solo se anula si no se ha descontado nada. El técnico lee solo los suyos.
+    match /artifacts/{appId}/public/data/adelantosTecnicos/{docId} {
+      function adelantoValido() {
+        let a = request.resource.data;
+        return a.keys().hasOnly(['tecnico', 'monto', 'aplicado', 'forma', 'banco', 'referencia', 'pagadoEn', 'nota', 'por', 'creadoEn', 'anulado', 'notificado'])
+          && a.tecnico is string && a.tecnico.size() > 0 && a.tecnico.size() <= 100
+          && (a.monto is int || a.monto is float) && a.monto > 0 && a.monto <= 100000
+          && a.aplicado == 0
+          && a.forma in ['Zelle', 'Pago móvil', 'Transferencia', 'Efectivo', 'Otro']
+          && a.banco is string && a.banco.size() <= 40
+          && a.referencia is string && a.referencia.size() <= 40
+          && a.pagadoEn is int && a.creadoEn is int
+          && a.nota is string && a.nota.size() <= 300
+          && a.por == usuarioFinanzas(appId) && a.por != ''
+          && a.anulado == false
+          && a.notificado is bool;
+      }
+      allow read: if llevaFinanzas(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
+      allow create: if llevaFinanzas(appId) && adelantoValido();
+      allow update: if llevaFinanzas(appId) && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['aplicado'])
+          && (request.resource.data.aplicado is int || request.resource.data.aplicado is float)
+          && request.resource.data.aplicado >= 0 && request.resource.data.aplicado <= resource.data.monto
+          && resource.data.anulado == false)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn'])
+          && resource.data.aplicado == 0 && resource.data.anulado == false
+          && request.resource.data.anulado == true
+          && request.resource.data.anuladoPor == usuarioFinanzas(appId)
+          && request.resource.data.anuladoEn is int));
       allow delete: if false;
     }
 

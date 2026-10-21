@@ -1,6 +1,7 @@
 import { RefreshCw } from 'lucide-react';
 import { PERIODOS } from '../../../utils/periodoReporte';
 import MenuExportar from './MenuExportar';
+import CampoFecha from '../../CampoFecha';
 
 const inputClase = 'bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-600 [color-scheme:light] dark:[color-scheme:dark]';
 
@@ -26,11 +27,11 @@ export default function FiltrosReporte({ soloAcciones = false, periodo, onPeriod
         <>
           <label className="flex flex-col gap-1 text-[10px] font-bold uppercase text-zinc-500">
             Desde
-            <input type="date" value={personalizado.desde} max={personalizado.hasta} onChange={(e) => e.target.value && onPersonalizado({ ...personalizado, desde: e.target.value })} className={inputClase} />
+            <CampoFecha ariaLabel="Desde" valor={personalizado.desde} max={personalizado.hasta} onChange={(v) => v && onPersonalizado({ ...personalizado, desde: v })} flotante clase={inputClase} ancho="w-36" />
           </label>
           <label className="flex flex-col gap-1 text-[10px] font-bold uppercase text-zinc-500">
             Hasta
-            <input type="date" value={personalizado.hasta} min={personalizado.desde} max={hoy} onChange={(e) => e.target.value && onPersonalizado({ ...personalizado, hasta: e.target.value })} className={inputClase} />
+            <CampoFecha ariaLabel="Hasta" valor={personalizado.hasta} min={personalizado.desde} max={hoy} onChange={(v) => v && onPersonalizado({ ...personalizado, hasta: v })} flotante clase={inputClase} ancho="w-36" />
           </label>
         </>
       )}
