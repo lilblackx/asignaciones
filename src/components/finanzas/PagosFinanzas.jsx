@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, TriangleAlert } from 'lucide-react';
 import ResumenCifras from './ResumenCifras';
+import Colapsable from '../Colapsable';
 import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
@@ -31,12 +32,13 @@ function Cabecera({ titulo, estado }) {
 
 // Pago a técnicos: una tarjeta por técnico con sus órdenes y lo que se le debe, y un botón para marcarlo pagado. Se le debe lo que el Registro de
 // estadísticas cuenta como pagado a técnico y todavía no está en ningún pago; el total sale del tabulador de precios.
-export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular }) {
+export default function PagosFinanzas({ filas, items, sinTipo = [], onTipoMudanza, tarifas, pagos, pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular }) {
   const [abierto, setAbierto] = useState(null);
   const [pagando, setPagando] = useState(null);
   const [anulando, setAnulando] = useState(null);
   const [detalle, setDetalle] = useState(null);
   const [verSinTecnico, setVerSinTecnico] = useState(false);
+  const [verSinTipo, setVerSinTipo] = useState(false);
   const registrados = pagosDelPeriodo(pagos, rango);
   const ordenesSinTecnico = items.filter((i) => i.tecnico === SIN_TECNICO);
   const sinTecnico = ordenesSinTecnico.length;
@@ -63,7 +65,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
             {textoOrdenes(sinTecnico)} finalizada{sinTecnico === 1 ? '' : 's'} sin técnico en su ficha: no hay a quién pagarla{sinTecnico === 1 ? '' : 's'}. La oficina debe asignarle el técnico a la orden.{' '}
             <button type="button" aria-expanded={verSinTecnico} onClick={() => setVerSinTecnico((v) => !v)} className="font-black underline">{verSinTecnico ? 'Ocultar' : 'Ver cuál'}</button>
           </p>
-          {verSinTecnico && (
+          <Colapsable>{verSinTecnico && (
             <ul className="divide-y divide-amber-200 dark:divide-amber-900/50 border border-amber-200 dark:border-amber-900/50 rounded bg-white/60 dark:bg-black/20">
               {ordenesSinTecnico.map((item) => (
                 <li key={item.clave} className="flex items-center justify-between gap-2 px-3 py-1.5">
@@ -72,7 +74,29 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
                 </li>
               ))}
             </ul>
-          )}
+          )}</Colapsable>
+        </div>
+      )}
+      {sinTipo.length > 0 && (
+        <div className="rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-300 space-y-2">
+          <p>
+            {sinTipo.length === 1 ? '1 mudanza finalizada no tiene' : `${sinTipo.length} mudanzas finalizadas no tienen`} tipo (interna o externa) y no se paga{sinTipo.length === 1 ? '' : 'n'} hasta que se lo pongas, porque cada tipo tiene su precio. Elígelo aquí mismo: las órdenes de un cierre ya no se pueden editar.{' '}
+            <button type="button" aria-expanded={verSinTipo} onClick={() => setVerSinTipo((v) => !v)} className="font-black underline">{verSinTipo ? 'Ocultar' : 'Ver cuáles'}</button>
+          </p>
+          <Colapsable>{verSinTipo && (
+            <ul className="divide-y divide-amber-200 dark:divide-amber-900/50 border border-amber-200 dark:border-amber-900/50 rounded bg-white/60 dark:bg-black/20">
+              {sinTipo.map((item) => (
+                <li key={item.clave} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 px-3 py-1.5">
+                  <span className="min-w-0 basis-full sm:basis-auto sm:truncate"><span className="font-bold">{item.orden.codigo || 'S/C'}</span> · {item.orden.nombre} · {diaLegible(item.dia).slice(0, 5)} · {item.tecnico === SIN_TECNICO ? 'sin técnico' : item.tecnico}</span>
+                  <span className="shrink-0 inline-flex gap-1.5">
+                    {['INTERNA', 'EXTERNA'].map((tipo) => (
+                      <button key={tipo} type="button" disabled={ocupado} onClick={() => onTipoMudanza(item.clave, tipo)} aria-label={`Mudanza ${tipo.toLowerCase()}: ${item.orden.codigo || 'sin código'}`} className={BOTON}>{tipo === 'INTERNA' ? 'Interna' : 'Externa'}</button>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}</Colapsable>
         </div>
       )}
       {tarjetas.length === 0 ? (
@@ -124,7 +148,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
                     )}
                   </div>
 
-                  {expandido && (
+                  <Colapsable>{expandido && (
                     <ul className="max-h-56 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded text-[11px]">
                       {fila.pendientes.map((item) => (
                         <li key={item.clave} className="flex items-center justify-between gap-2 px-3 py-1.5">
@@ -133,7 +157,7 @@ export default function PagosFinanzas({ filas, items, tarifas, pagos, pagadasPor
                         </li>
                       ))}
                     </ul>
-                  )}
+                  )}</Colapsable>
                 </div>
 
                 <div className="border-t border-zinc-200 dark:border-zinc-800 px-3 py-2 min-h-12 flex items-center justify-between gap-2">

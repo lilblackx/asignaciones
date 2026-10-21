@@ -12,7 +12,7 @@ export default function BarrasReporte({ titulo, subtitulo, filas }) {
           <li key={f.etiqueta} className="flex items-center gap-3">
             <span className="w-28 sm:w-40 shrink-0 truncate text-xs font-bold text-zinc-700 dark:text-zinc-200" title={f.etiqueta}>{f.etiqueta}</span>
             <div className="flex-1 min-w-0 h-4 flex items-center">
-              <div className="h-full rounded-r-[4px] bg-[#2a78d6] dark:bg-[#3987e5]" style={{ width: `${Math.max((f.valor / maximo) * 100, f.valor > 0 ? 1.5 : 0)}%` }} />
+              <div className="h-full rounded-r-[4px] bg-[#2a78d6] dark:bg-[#3987e5] origin-left lg:animate-crecer-x" style={{ width: `${Math.max((f.valor / maximo) * 100, f.valor > 0 ? 1.5 : 0)}%` }} />
             </div>
             <span className="w-24 shrink-0 text-right text-xs font-black text-zinc-800 dark:text-zinc-100">{f.texto}</span>
           </li>

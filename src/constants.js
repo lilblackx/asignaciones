@@ -85,6 +85,7 @@ const TIPOS_DE_EQUIPO = ['MRTV', 'MTV', 'MR', 'SM'];
 export const TIPOS_POR_TRABAJO = {
   'INSTALACIÓN': TIPOS_DE_EQUIPO,
   'CAMBIO DE EQUIPO': TIPOS_DE_EQUIPO,
+  'MUDANZA': ['Interna', 'Externa'],
   'AVERÍA': ['LOS', 'Verificación de servicio', 'Verificación de equipos', 'Configuración de router', 'Tensado de drop'],
 };
 

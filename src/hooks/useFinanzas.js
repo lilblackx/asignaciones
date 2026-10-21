@@ -10,10 +10,12 @@ const aLista = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 // Los pagos más recientes: alcanzan para el reporte de un mes o más y para la lista de pagos registrados.
 const MAX_PAGOS_VISIBLES = 300;
 
-// Lo que lleva Finanzas, en vivo mientras la pantalla está abierta: las órdenes ya pagadas del periodo elegido, las tarifas y los últimos pagos. Son pocos documentos (solo lo que Finanzas escribe), no las órdenes: esas se leen aparte (useDatosAlmacen).
+// Lo que lleva Finanzas, en vivo mientras la pantalla está abierta: las órdenes ya pagadas del periodo elegido, las filas del registro de VN y TA del periodo, las tarifas y los últimos pagos. Son pocos documentos (solo lo que Finanzas escribe), no las órdenes: esas se leen aparte (useDatosAlmacen).
 export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
   const [tarifasGuardadas, setTarifasGuardadas] = useState(null);
   const [pagadas, setPagadas] = useState([]);
+  const [registros, setRegistros] = useState([]);
+  const [tiposMudanza, setTiposMudanza] = useState({});
   const [pagos, setPagos] = useState([]);
   const [error, setError] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -22,6 +24,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     if (!firebaseUser) return;
     const alFallar = (que) => (e) => { console.error(`No se pudo leer ${que}:`, e); setError(true); };
     const bajas = [
+      onSnapshot(datos('tiposMudanza'), (s) => setTiposMudanza(Object.fromEntries(s.docs.map((d) => [d.id, d.data().tipo]))), alFallar('el tipo de las mudanzas')),
       onSnapshot(documento('tarifasPago', 'actual'), (s) => setTarifasGuardadas(s.exists() ? s.data() : {}), alFallar('las tarifas')),
       onSnapshot(query(datos('pagosTecnicos'), orderBy('creadoEn', 'desc'), limit(MAX_PAGOS_VISIBLES)), (s) => setPagos(aLista(s)), alFallar('los pagos')),
     ];
@@ -35,6 +38,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     const delPeriodo = (nombre) => query(datos(nombre), where('dia', '>=', desde), where('dia', '<=', hasta));
     const bajas = [
       onSnapshot(delPeriodo('ordenesPagadas'), (s) => setPagadas(aLista(s)), alFallar('las órdenes pagadas')),
+      onSnapshot(query(datos('registroVnTa'), where('fecha', '>=', desde), where('fecha', '<=', hasta)), (s) => setRegistros(aLista(s)), alFallar('el registro de VN y TA')),
     ];
     return () => bajas.forEach((baja) => baja());
   }, [firebaseUser, desde, hasta]);
@@ -63,6 +67,12 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     'Tarifas guardadas.', 'No se pudieron guardar las tarifas.',
   );
 
+  // El tipo de una mudanza anterior al campo TIPO, que ya está en un cierre y no se puede editar: se guarda aquí con el id de la orden.
+  const guardarTipoMudanza = (clave, tipo) => ejecutar(
+    () => setDoc(documento('tiposMudanza', clave), { tipo, por: usuario, en: Date.now() }),
+    `Mudanza ${tipo === 'EXTERNA' ? 'externa' : 'interna'}: queda por pagar con ese precio.`, 'No se pudo guardar el tipo de la mudanza.',
+  );
+
   // Un pago y sus órdenes en un solo lote: si alguna orden ya la pagó otra persona mientras tanto, no se guarda nada.
   const pagar = async (fila, rangoPago, nota, tasa = null) => {
     const armado = armarPago(fila, rangoPago, tarifas, { por: usuario, ahora: Date.now(), nota, tasa });
@@ -71,6 +81,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       const lote = writeBatch(db);
       lote.set(documento('pagosTecnicos', armado.pagoId), armado.pago);
       for (const { id, datos: d } of armado.ordenes) lote.set(documento('ordenesPagadas', id), d);
+      for (const { id, datos: d } of armado.registros) lote.update(documento('registroVnTa', id), d);
       await lote.commit();
     },`Pago registrado: ${fila.tecnico}.`, 'No se pudo registrar el pago. Alguna orden pudo haberse pagado ya: revisa e intenta de nuevo.');
   };
@@ -80,8 +91,10 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     lote.update(documento('pagosTecnicos', pago.id), { anulado: true, anuladoPor: usuario, anuladoEn: Date.now() });
     const ordenes = await getDocs(query(datos('ordenesPagadas'), where('pagoId', '==', pago.id)));
     ordenes.docs.forEach((d) => lote.delete(d.ref));
+    const marcadas = await getDocs(query(datos('registroVnTa'), where('pagoId', '==', pago.id)));
+    marcadas.docs.forEach((d) => lote.update(d.ref, { pagoId: '', pagadoEn: 0 }));
     await lote.commit();
   }, 'Pago anulado: las órdenes vuelven a estar por pagar.', 'No se pudo anular el pago.');
 
-  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular };
+  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas, registros, tiposMudanza, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza };
 }

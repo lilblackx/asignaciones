@@ -305,7 +305,7 @@ export default function PromotoraApp({ auth }) {
           ) : visibles.length === 0 ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con los filtros.'}</p>
           ) : (
-            <ul className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            <ul key={`${categoria}-${vista}`} className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 lg:animate-fade-in">
               {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} onCopiarPlantilla={copiarDeTarjeta} onCopy={copiar} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}
             </ul>
           )}

@@ -40,6 +40,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
         ))}
       </div>
 
+      <div key={hojaId} className="lg:animate-fade-in">
       {manual ? <VnTaView {...vnta} tecnico={tecnico} /> : (
       <>
       <Cifras items={hoja.cifras.map((c) => (c.id ? { ...c, detalle: c.detalle ? `${c.detalle} · ver detalle` : 'ver detalle', onClick: () => setDetalle({ tipo: 'CIFRA', id: c.id }) } : c))} />
@@ -76,6 +77,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
       />
       </>
       )}
+      </div>
       {detalle?.tipo === 'CIFRA' && hoja && (() => {
         const cifra = hoja.cifras.find((c) => c.id === detalle.id);
         const ordenes = ordenesDeCifra(hoja.hoja, detalle.id, hoja.lista);

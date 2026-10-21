@@ -14,6 +14,8 @@ const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 da
 //   registros: las filas del periodo (useRegistroVnTa), ya filtradas aquí por el técnico elegido arriba
 //   puedeBorrar(registro): true si el usuario puede borrarla (un administrador o quien la registró)
 //   soloLectura: sin formulario ni botones (Finanzas la ve pero no la llena)
+// El técnico es el que apoyó el trabajo y es a quien Finanzas le paga (cada tipo con su precio); sin técnico lo hizo infraestructura sola y no se paga a nadie.
+// Una fila que Finanzas ya pagó (pagoId) no se edita ni se borra: ya cuenta ese técnico y esa fecha.
 export default function VnTaView({ registros, cargando, error, agregar, actualizar, eliminar, tecnicos, hoy, tecnico, puedeBorrar, soloLectura = false }) {
   const vacio = { trabajo: 'VN', tecnico: '', fecha: hoy, observacion: '' };
   const [form, setForm] = useState(vacio);
@@ -57,7 +59,9 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
   const filas = visibles.map((r) => soloLectura ? filaVnTa(r) : [
     ...filaVnTa(r),
     <span key={r.id} className="inline-flex items-center gap-1 whitespace-nowrap">
-      {borrandoId === r.id ? (
+      {r.pagoId ? (
+        <span title="Finanzas ya la pagó: no se puede editar ni borrar" className="px-2 py-1 rounded bg-emerald-600 text-white text-[11px] font-bold">Pagada</span>
+      ) : borrandoId === r.id ? (
         <>
           <button type="button" onClick={() => borrar(r.id)} className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold">Sí, borrar</button>
           <button type="button" onClick={() => setBorrandoId(null)} className="px-2 py-1 rounded border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold">No</button>
@@ -83,7 +87,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="vnta-tecnico" className={ETIQUETA}>Técnico <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-tecnico" className={ETIQUETA}>Técnico que apoyó <span className="font-normal normal-case">(opcional)</span></label>
             <select id="vnta-tecnico" value={form.tecnico} onChange={(e) => cambiar('tecnico', e.target.value)} className={CAMPO}>
               <option value="">Sin técnico</option>
               {tecnicos.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
@@ -104,7 +108,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             {guardando ? <Spinner /> : <Plus className="w-4 h-4" aria-hidden="true" />}{editandoId ? 'Guardar cambios' : 'Agregar'}
           </button>
           {editandoId && <button type="button" onClick={limpiar} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-xs font-bold"><X className="w-4 h-4" aria-hidden="true" /> Cancelar</button>}
-          {!editandoId && <p className="text-[11px] text-zinc-500">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador.</p>}
+          {!editandoId && <p className="text-[11px] text-zinc-500">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
         </div>
       </form>}
 

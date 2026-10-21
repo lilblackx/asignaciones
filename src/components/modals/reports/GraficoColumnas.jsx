@@ -91,7 +91,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
                     {m.valores.map((v, k) => (
                       <div key={series[k].nombre} className="relative flex-1 max-w-6 h-full flex items-end">
                         <div
-                          className={`w-full rounded-t-[4px] ${series[k].color} group-hover:brightness-110 transition-[filter]`}
+                          className={`w-full rounded-t-[4px] ${series[k].color} origin-bottom lg:animate-crecer-y group-hover:brightness-110 transition-[filter]`}
                           style={{ height: v > 0 ? `max(2px, ${(v / maximo) * 100}%)` : 0 }}
                         />
                         {i === ultimo && v > 0 && (

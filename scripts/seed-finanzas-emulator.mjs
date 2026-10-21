@@ -4,6 +4,7 @@
 //    en $, exoneradas (garantías, low signal, retiros), instalaciones (sin cobro), una sin cobro registrado y canceladas con su motivo;
 //  - conciliaciones de la mayoría de los cobros de hace 2 días o más, con la forma de pago que cuadra con la moneda (Bs: pago móvil o transferencia;
 //    $: Zelle) y su referencia;
+//  - cuatro filas del registro de VN y TA (tres con técnico, que se pagan con su precio, y una sin técnico, que no se paga);
 //  - las tarifas y un pago ya registrado para GERARDO de los días 4 a 6 (calculado con la misma lógica de la app, con la tasa BCV de hace 3 días); REINEL queda sin pagar.
 // Requiere `npm run emulators` y, antes, `npm run seed:emulator` (usuarios y técnicos). Entra con finanzas / Finanzas1234.
 // Uso: `node scripts/seed-finanzas-emulator.mjs [--limpiar]` (con --limpiar quita las finalizadas y canceladas de otros seeds). Se puede repetir: borra y vuelve a armar lo suyo (ids "fin-seed-*" y las colecciones de Finanzas).
@@ -43,7 +44,8 @@ const TRABAJOS = [
   { tipoTrabajo: 'CAMBIO DE EQUIPO', falla: 'SM', ...otroUsd(30, 'CAMBIO_EQUIPO') },
   { tipoTrabajo: 'LOW SIGNAL', falla: 'Señal baja', ...exonerado() },
   { tipoTrabajo: 'INSTALACIÓN', falla: 'MTV' },
-  { tipoTrabajo: 'MUDANZA', falla: '', ...otroUsd(25) },
+  { tipoTrabajo: 'MUDANZA', falla: 'Interna', ...otroUsd(25) },
+  { tipoTrabajo: 'MUDANZA', falla: 'Externa', ...otroUsd(25) },
   { tipoTrabajo: 'AVERÍA', falla: 'Sin señal', ...visita('CONECTOR_EXTERNO') },
   { tipoTrabajo: 'GARANTIA', falla: '', ...exonerado() },
   { tipoTrabajo: 'AVERÍA', falla: 'Sin señal', ...exonerado('CONECTOR_INTERNO') },
@@ -96,9 +98,21 @@ n++;
 ordenes.push({ id: `fin-seed-${n}`, codigo: `IO${300 + n}`, nombre: `Cliente ${300 + n}`, cedula: `V-${21000000 + n}`, direccion: 'Dirección de prueba', telefono: '04140000001', tecnico: '', tipoTrabajo: 'INSTALACIÓN', falla: 'MR', estado: 'FINALIZADO', creado: 'usuario', isAsignado: false, createdAt: ahora - 5 * HORA, prefinalizadoEn: ahora - 2 * HORA, finalizadoEn: ahora - HORA, historialEdiciones: [] });
 for (const { id, ...datos } of ordenes) await base.collection('tickets').doc(id).set(datos);
 
+// Filas del registro de VN y TA: con técnico se le pagan (cada tipo con su precio); la que no lo tiene la hizo infraestructura sola y no se paga a nadie.
+for (const d of (await base.collection('registroVnTa').get()).docs) if (d.id.startsWith('fin-seed-')) await d.ref.delete();
+const filasVnTa = [
+  { trabajo: 'VN', codigo: 'VAN91', tecnico: TECNICOS[0], haceDias: 1, observacion: 'Puertos liberados' },
+  { trabajo: 'VN', codigo: 'VAN92', tecnico: TECNICOS[1], haceDias: 2, observacion: '' },
+  { trabajo: 'TA', codigo: 'TA91', tecnico: TECNICOS[0], haceDias: 2, observacion: 'Apoyo en reparar NAP' },
+  { trabajo: 'TA', codigo: 'TA92', tecnico: '', haceDias: 3, observacion: 'Lo hizo infraestructura sola' },
+];
+for (const [i, { haceDias, ...fila }] of filasVnTa.entries()) {
+  await base.collection('registroVnTa').doc(`fin-seed-vnta-${i + 1}`).set({ ...fila, fecha: diaDe(ahora - haceDias * DIA), operador: 'Prueba', creadoPor: 'usuario', creadoEn: ahora, actualizadoEn: ahora });
+}
+
 // --- Tarifas y un pago ya hecho (con la misma lógica de la app) ---
 const POR = 'finanzas';
-const tarifas = tarifasCompletas({ INSTALACION: 25, VISITA: 5, AVERIA: 4, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10 });
+const tarifas = tarifasCompletas({ INSTALACION: 25, AVERIA: 4, MUDANZA_INTERNA: 5, MUDANZA_EXTERNA: 8, VALIDACION_NAP: 2, TRABAJO_ADICIONAL: 6, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10 });
 await base.collection('tarifasPago').doc('actual').set({ ...tarifas, por: POR, en: ahora - 7 * DIA });
 const rangoPagado = { desde: diaDe(ahora - 6 * DIA), hasta: diaDe(ahora - 4 * DIA) };
 const filaPagada = resumenPagos(ordenesPagables(ordenes, rangoPagado, { tecnico: TECNICOS[0] }), tarifas, new Set()).find((f) => f.tecnico === TECNICOS[0]);

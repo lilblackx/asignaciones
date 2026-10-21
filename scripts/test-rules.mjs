@@ -872,8 +872,8 @@ await check('Registro de técnicos: ALMACEN y PROMOTORA no leen ni escriben; nad
 const asFinanzas = () => testEnv.authenticatedContext('finanzas-uid').firestore();
 const asFinanzasOff = () => testEnv.authenticatedContext('finanzas-off-uid').firestore();
 const fin = (db, nombre) => datos(db).collection(nombre);
-const tarifas = (extra = {}) => ({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10, por: 'fina', en: 1, ...extra });
-const pagoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', desde: '2026-10-01', hasta: '2026-10-15', cantidades: { INSTALACION: 1, VISITA: 0, AVERIA: 1 }, tarifas: { INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }, total: 23.5, cantidadOrdenes: 2, nota: '', por: 'fina', creadoEn: 1, anulado: false, ...extra });
+const tarifas = (extra = {}) => ({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, MUDANZA_EXTERNA: 8, VALIDACION_NAP: 2, TRABAJO_ADICIONAL: 6, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10, por: 'fina', en: 1, ...extra });
+const pagoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', desde: '2026-10-01', hasta: '2026-10-15', cantidades: { INSTALACION: 1, AVERIA: 1, MUDANZA_INTERNA: 0 }, tarifas: { INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5 }, total: 23.5, cantidadOrdenes: 2, nota: '', por: 'fina', creadoEn: 1, anulado: false, ...extra });
 const ordenPagada = (pagoId, extra = {}) => ({ pagoId, tecnico: 'GERARDO MOLERO', concepto: 'AVERIA', monto: 3.5, dia: '2026-10-14', codigo: 'AS1', ...extra });
 // Un pago con sus órdenes en un solo lote, como lo guarda la app.
 const guardarPago = (db, pagoId, pago, ordenes) => {
@@ -899,9 +899,9 @@ await check('FINANZAS NO lee usuarios ni el historial de instalaciones', async (
   await assertFails(fin(asFinanzas(), 'users').get());
   await assertFails(fin(asFinanzas(), 'historialInstalaciones').get());
 });
-await check('FINANZAS NO lee ni escribe el registro de VN y TA', async () => {
+await check('FINANZAS lee el registro de VN y TA, pero no crea filas ni contadores', async () => {
   const fila = { codigo: 'VAN01', trabajo: 'VN', tecnico: '', fecha: '2026-10-14', observacion: '', operador: 'Fina', creadoPor: 'fina', creadoEn: 1, actualizadoEn: 1 };
-  await assertFails(fin(asFinanzas(), 'registroVnTa').get());
+  await assertSucceeds(fin(asFinanzas(), 'registroVnTa').get());
   await assertFails(fin(asFinanzas(), 'registroVnTa').doc('fila-fin').set(fila));
   await assertFails(fin(asFinanzas(), 'counters').doc('VNTA_VAN_2026-10').set({ ultimo: 1, actualizadoEn: 1 }));
 });
@@ -963,6 +963,26 @@ await check('Pagar: el pago guarda la tasa BCV de su momento (número positivo)'
 await check('Pagar: low signal y cambio de equipo se guardan con su concepto', async () => {
   await assertSucceeds(guardarPago(asFinanzas(), 'p-ls', pagoDe({ cantidadOrdenes: 2, total: 13 }), [['orden-ls', ordenPagada('p-ls', { concepto: 'LOW_SIGNAL', monto: 3 })], ['orden-ce', ordenPagada('p-ls', { concepto: 'CAMBIO_EQUIPO', monto: 10 })]]));
 });
+await check('Pagar: una validación de NAP y un trabajo adicional se guardan con su concepto', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-vnta', pagoDe({ cantidadOrdenes: 2, total: 8 }), [['vnta_fila-1', ordenPagada('p-vnta', { concepto: 'VALIDACION_NAP', monto: 2, codigo: 'VAN01' })], ['vnta_fila-2', ordenPagada('p-vnta', { concepto: 'TRABAJO_ADICIONAL', monto: 6, codigo: 'TA01' })]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-vnta-mal', pagoDe(), [['vnta_fila-3', ordenPagada('p-vnta-mal', { concepto: 'OTRO_CONCEPTO' })]]));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ VALIDACION_NAP: -1 })));
+});
+await check('Pagar: una mudanza interna y una externa se guardan con su concepto', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-mud', pagoDe({ cantidadOrdenes: 2, total: 13 }), [['orden-mi', ordenPagada('p-mud', { concepto: 'MUDANZA_INTERNA', monto: 5 })], ['orden-me', ordenPagada('p-mud', { concepto: 'MUDANZA_EXTERNA', monto: 8 })]]));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ MUDANZA_EXTERNA: -1 })));
+});
+await check('Tipo de mudanza de un cierre: Finanzas lo elige a su nombre, solo interna o externa, y no se borra', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').set({ tipo: 'EXTERNA', por: 'fina', en: 1 }));
+  await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').set({ tipo: 'INTERNA', por: 'fina', en: 2 }));
+  await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').get());
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('x').set({ tipo: 'OTRA', por: 'fina', en: 1 }));
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('x').set({ tipo: 'INTERNA', por: 'otro', en: 1 }));
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('x').set({ tipo: 'INTERNA', por: 'fina', en: 1, extra: 1 }));
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').delete());
+  await assertFails(fin(asUsuario(), 'tiposMudanza').doc('y').set({ tipo: 'INTERNA', por: 'usuario', en: 1 }));
+  await assertFails(fin(asUsuario(), 'tiposMudanza').get());
+});
 await check('Pagar: un recableado se guarda con su concepto', async () => {
   await assertSucceeds(guardarPago(asFinanzas(), 'p-rec', pagoDe({ cantidadOrdenes: 1, total: 8 }), [['orden-recableado', ordenPagada('p-rec', { concepto: 'RECABLEADO', monto: 8 })]]));
 });
@@ -985,6 +1005,31 @@ await check('Anular: no se anula dos veces, no se cambia otro campo del pago ni 
   await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-5').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 6 }));
   await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-5').delete());
   await assertFails(fin(asFinanzas(), 'ordenesPagadas').doc('orden-a').update({ monto: 1 }));
+});
+
+// Finanzas marca las filas de VN y TA que paga; mientras están pagadas la oficina no las edita ni las borra
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  const col = ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('registroVnTa');
+  await col.doc('pagable-1').set(filaDe('admin', { codigo: 'VAN07', tecnico: 'GERARDO MOLERO' }));
+  await col.doc('pagable-2').set(filaDe('usuario', { codigo: 'TA07', trabajo: 'TA', tecnico: 'GERARDO MOLERO' }));
+});
+await check('FINANZAS marca la fila con el pago (solo pagoId y pagadoEn) y la desmarca al anular', async () => {
+  await assertSucceeds(filaVnTa(asFinanzas(), 'pagable-1').update({ pagoId: 'p-vnta', pagadoEn: 10 }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').update({ pagoId: 'p-vnta', pagadoEn: 10, tecnico: 'OTRO' }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').update({ fecha: '2026-10-12' }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').update({ pagoId: 5, pagadoEn: 10 }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').delete());
+});
+await check('la oficina no edita ni borra una fila pagada, ni se marca sola como pagada', async () => {
+  await assertFails(filaVnTa(asAdmin(), 'pagable-1').update({ tecnico: 'OTRO', fecha: '2026-10-11', observacion: 'x', actualizadoEn: 2 }));
+  await assertFails(filaVnTa(asAdmin(), 'pagable-1').delete());
+  await assertFails(filaVnTa(asUsuario(), 'pagable-2').update({ pagoId: 'inventado', pagadoEn: 1 }));
+  await assertFails(filaVnTa(asUsuario(), 'nueva-pagada').set(filaDe('usuario', { codigo: 'VAN08', pagoId: 'p', pagadoEn: 1 })));
+});
+await check('al anular el pago la fila vuelve a ser de la oficina', async () => {
+  await assertSucceeds(filaVnTa(asFinanzas(), 'pagable-1').update({ pagoId: '', pagadoEn: 0 }));
+  await assertSucceeds(filaVnTa(asAdmin(), 'pagable-1').update({ tecnico: 'OTRO', observacion: 'corregida', actualizadoEn: 3, fecha: '2026-10-11', codigo: 'VAN07', trabajo: 'VN', operador: 'Renny Cova', creadoPor: 'admin', creadoEn: 1000 }));
+  await assertSucceeds(filaVnTa(asAdmin(), 'pagable-1').delete());
 });
 
 await testEnv.cleanup();

@@ -7,8 +7,10 @@ import { etiquetaTipoVisita } from '../../utils/tipoVisita';
 import { fechaHoraLegible } from '../../utils/formatoFecha';
 import { culminadaEn } from '../../utils/reporteMensual';
 import { aBs, bolivares, dolares, grupoDePago } from '../../utils/finanzas';
+import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
+// Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
 const ETIQUETA = 'text-[10px] font-semibold uppercase tracking-wide text-zinc-500';
 const VALOR = 'text-sm text-zinc-900 dark:text-zinc-100 mt-0.5 break-words';
 
@@ -22,7 +24,7 @@ function Dato({ etiqueta, children }) {
 }
 
 // Qué tipo de avería fue, porque el precio cambia según el tipo (ver el tabulador de precios).
-const TIPO_DE_AVERIA = { VISITA: 'Visita', RECABLEADO: 'Recableado', LOW_SIGNAL: 'Low signal', CAMBIO_EQUIPO: 'Cambio de equipo' };
+const TIPO_DE_AVERIA = { MUDANZA_INTERNA: 'Mudanza interna', MUDANZA_EXTERNA: 'Mudanza externa', RECABLEADO: 'Recableado', LOW_SIGNAL: 'Low signal', CAMBIO_EQUIPO: 'Cambio de equipo' };
 
 function textoCobro(orden) {
   if (estaExonerado(orden)) return 'Exonerado';
@@ -32,7 +34,7 @@ function textoCobro(orden) {
 
 // `item`: { orden, concepto, tecnico } de ordenesPagables; `tarifas`: el tabulador de precios.
 export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose }) {
-  const { orden, concepto } = item;
+  const { orden, concepto, registro } = item;
   const terminada = culminadaEn(orden) || Number(orden.finalizadoEn) || 0;
   const trabajo = [orden.tipoTrabajo, orden.falla].filter(Boolean).join(' · ');
 
@@ -42,7 +44,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
         <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded tracking-wide">DETALLE DE LA ORDEN</span>
+              <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded tracking-wide">{registro ? 'DETALLE DEL REGISTRO' : 'DETALLE DE LA ORDEN'}</span>
               <span className="text-xs font-bold text-red-400">{orden.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{orden.nombre || 'Sin nombre'}</h2>
@@ -53,6 +55,14 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
         </div>
 
         <div className="p-4 space-y-4">
+          {registro ? (
+            <div className="grid grid-cols-2 gap-4">
+              <Dato etiqueta="Trabajo realizado">{TRABAJOS_VNTA[registro.trabajo]?.nombre}</Dato>
+              <Dato etiqueta="Técnico que apoyó">{registro.tecnico}</Dato>
+              <Dato etiqueta="Fecha">{fechaLegible(registro.fecha)}</Dato>
+              <Dato etiqueta="Registrado por">{registro.operador}</Dato>
+            </div>
+          ) : (
           <div className="grid grid-cols-2 gap-4">
             <Dato etiqueta="Cliente">{orden.nombre}</Dato>
             <Dato etiqueta="Cédula">{formatearCedula(orden.cedula, orden.tipoDocumento)}</Dato>
@@ -63,6 +73,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
             <Dato etiqueta="Cobro al cliente">{textoCobro(orden)}</Dato>
             <Dato etiqueta="Dirección">{orden.direccion}</Dato>
           </div>
+          )}
 
           <div className="flex items-center justify-between gap-3 rounded-md bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
             <div className="min-w-0">

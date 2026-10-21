@@ -7,7 +7,7 @@ import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
 import { rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
-import { ordenesPagables, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { mudanzasSinTipo, ordenesPagables, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
 import { exportarDocumento } from '../utils/exportarDocumento';
@@ -52,7 +52,8 @@ export default function FinanzasApp({ auth }) {
   const nombresTecnicos = useMemo(() => technicians.map((t) => t.name).filter(Boolean).sort(), [technicians]);
   const historial = { hasMoreReports: hayMasReportes, isLoadingReports: cargandoReportes, onLoadMoreReports: cargarReportesAnteriores };
 
-  const items = useMemo(() => ordenesPagables(ordenes, rango, { tecnico }), [ordenes, rango, tecnico]);
+  const items = useMemo(() => ordenesPagables(ordenes, rango, { tecnico, registros: finanzas.registros, tiposMudanza: finanzas.tiposMudanza }), [ordenes, rango, tecnico, finanzas.registros, finanzas.tiposMudanza]);
+  const sinTipo = useMemo(() => mudanzasSinTipo(ordenes, rango, { tecnico, tiposMudanza: finanzas.tiposMudanza }), [ordenes, rango, tecnico, finanzas.tiposMudanza]);
   const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas), [items, finanzas.tarifas, finanzas.idsPagadas]);
   // Lo ya pagado en el periodo por técnico (respeta el técnico elegido arriba).
   const pagadasPorTecnico = useMemo(
@@ -132,10 +133,13 @@ export default function FinanzasApp({ auth }) {
               {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{errorExportar}</p>}
               {finanzas.error && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
 
+              <div key={seccion} className="lg:animate-fade-in space-y-3">
               {seccion === 'PAGOS' && (
                 <PagosFinanzas
                   filas={filasPagos}
                   items={items}
+                  sinTipo={sinTipo}
+                  onTipoMudanza={finanzas.guardarTipoMudanza}
                   tarifas={finanzas.tarifas}
                   pagos={finanzas.pagos}
                   pagadasPorTecnico={pagadasPorTecnico}
@@ -149,6 +153,7 @@ export default function FinanzasApp({ auth }) {
               )}
               {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}
               {seccion === 'REPORTE' && <ResumenPagado resumen={pagado} rango={rango} />}
+              </div>
             </>
           )}
         </main>
