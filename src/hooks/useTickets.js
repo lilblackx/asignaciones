@@ -29,6 +29,7 @@ import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../
 import { payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { lineaTecnico } from '../utils/historial';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -613,7 +614,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           historialEdiciones: [...(t.historialEdiciones || []), {
             fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
             operador: currentUserRef.current || 'OPERADOR',
-            detalle: `Cód: ${codigo} | Venta cargada por ${t.creadoNombre || t.creado || 'la promotora'}, asignada a ${t.tecnico}`,
+            detalle: `Cód: ${codigo} | ${lineaTecnico('', t.tecnico)} | Venta cargada por ${t.creadoNombre || t.creado || 'la promotora'} con el técnico de su plantilla`,
           }],
         };
       }, t);
@@ -698,7 +699,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       // El nombre real de quien la crea: la plantilla lo muestra como operador, también a quienes no pueden leer la lista de usuarios.
       creadoNombre: currentUserName || currentUser,
       createdAt: Date.now(),
-      historialEdiciones: [],
+      // Si ya nace con técnico, queda anotado quién se la asignó y cuándo.
+      historialEdiciones: tieneTecnico ? [{ fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }), operador: currentUser || 'OPERADOR', detalle: lineaTecnico('', formData.tecnico.trim()) }] : [],
       isAsignado: false,
     });
     const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', newId);
@@ -827,7 +829,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
         if (ticketToSave.estado === ESTADO_CANCELADO && (originalTicket.motivoCancelacion || '') !== (ticketToSave.motivoCancelacion || '')) cambios.push(lineaMotivoCancelacion(motivoCancelacion(ticketToSave)));
-        if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(`Técnico: ${editingTicket.tecnico || 'Sin asignar'}`);
+        if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(lineaTecnico(originalTicket.tecnico, editingTicket.tecnico));
         if (originalTicket.tipoTrabajo !== editingTicket.tipoTrabajo) cambios.push(`Trabajo: ${editingTicket.tipoTrabajo}`);
         if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
         if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);

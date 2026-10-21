@@ -3,6 +3,7 @@ import { ArrowDownAZ, Filter, Search, SlidersHorizontal, Wrench, X } from 'lucid
 import { TIPOS_TRABAJO } from '../constants';
 import SelectMenu from './SelectMenu';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
+import Colapsable from './Colapsable';
 
 export default function FiltersBar({
   searchTerm, setSearchTerm,
@@ -74,13 +75,13 @@ export default function FiltersBar({
           aria-expanded={filtersOpen}
           className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${filtersOpen ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
         >
-          <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+          <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
           <span className="hidden sm:inline">Filtros</span>
           {activeFiltersCount > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{activeFiltersCount}</span>}
         </button>
       </div>
 
-      {filtersOpen && (
+      <Colapsable>{filtersOpen && (
         <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
           <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isTecnico ? 'md:max-w-xl' : 'md:grid-cols-3 md:max-w-3xl'}`}>
             <div className="flex flex-col gap-1 min-w-0">
@@ -110,7 +111,7 @@ export default function FiltersBar({
             </button>
           )}
         </div>
-      )}
+      )}</Colapsable>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Banknote } from 'lucide-react';
+import { Banknote, RefreshCw } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
 import { useFinanzas } from '../hooks/useFinanzas';
@@ -19,6 +19,9 @@ import TasaBcv from './finanzas/TasaBcv';
 import PagosFinanzas from './finanzas/PagosFinanzas';
 import ResumenPagado from './finanzas/ResumenPagado';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
+
+// "3:45 p. m." (hora de Caracas) de cuando se leyeron las órdenes por última vez.
+const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(ms));
 
 // `documento` y `archivo`: lo que se baja con "Exportar" en esa sección (el tabulador no tiene).
 const SECCIONES = [
@@ -109,6 +112,20 @@ export default function FinanzasApp({ auth }) {
             ))}
           </div>
 
+          {cargado && (
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-zinc-600 dark:text-zinc-400">
+              <span role="status">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
+              <button
+                type="button"
+                onClick={actualizar}
+                disabled={actualizando}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-60 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
+              </button>
+            </div>
+          )}
+
           <TasaBcv tasa={bcv.tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={bcv.actualizar} />
 
           {error && !actualizadoEn ? (
@@ -127,8 +144,6 @@ export default function FinanzasApp({ auth }) {
                   tecnico={tecnico}
                   onTecnico={setTecnico}
                   tecnicos={nombresTecnicos}
-                  cargando={actualizando}
-                  onRecargar={actualizar}
                   formatosExportar={['pdf', 'docx', 'csv']}
                   onExportar={exportar}
                   exportando={exportando}

@@ -20,6 +20,19 @@ export function clasificarEvento(entrada) {
   return 'edicion';
 }
 
+// Cuando el técnico de la orden cambia, la línea dice de quién a quién ("Técnico: Sin asignar → GERARDO"): el evento se titula según lo que pasó, para
+// que se vea cuándo y quién asignó la orden. Las entradas viejas solo traen el técnico nuevo ("Técnico: GERARDO") y quedan como "Cambio de técnico".
+export const SIN_ASIGNAR = 'Sin asignar';
+export const lineaTecnico = (antes, despues) => `Técnico: ${antes || SIN_ASIGNAR} → ${despues || SIN_ASIGNAR}`;
+
+export function tituloDeAsignacion(lineas) {
+  const m = lineas.map((l) => /^Técnico:\s*(.+?)\s*→\s*(.+)$/.exec(l)).find(Boolean);
+  if (!m) return null;
+  if (m[1] === SIN_ASIGNAR) return 'Orden asignada';
+  if (m[2] === SIN_ASIGNAR) return 'Técnico retirado';
+  return 'Orden reasignada';
+}
+
 // Más reciente primero. Incluye el evento "creada", que no vive en el historial.
 export function construirLineaDeTiempo(ticket) {
   const eventos = (ticket?.historialEdiciones || []).map((e, i) => ({
@@ -28,7 +41,7 @@ export function construirLineaDeTiempo(ticket) {
     fecha: e.fecha || '',
     operador: e.operador || '',
     lineas: String(e.detalle || '').split(' | ').map(l => l.trim()).filter(Boolean),
-  })).reverse();
+  })).map((ev) => (ev.tipo === 'tecnico' ? { ...ev, titulo: tituloDeAsignacion(ev.lineas) } : ev)).reverse();
 
   const fechaCreacion = ticket?.createdAt
     ? new Date(ticket.createdAt).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })

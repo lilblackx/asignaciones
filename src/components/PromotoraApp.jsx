@@ -201,7 +201,7 @@ export default function PromotoraApp({ auth }) {
               onClick={() => setVerFiltros((v) => !v)}
               className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${verFiltros ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
             >
-              <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+              <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${verFiltros ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
               <span className="hidden sm:inline">Filtros</span>
               {filtrosActivos > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{filtrosActivos}</span>}
             </button>
@@ -228,7 +228,7 @@ export default function PromotoraApp({ auth }) {
             </div>
           )}
 
-          {verFiltros && (
+          <Colapsable>{verFiltros && (
             <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-4">
               <div className="space-y-1.5">
                 <p className={ETIQUETA_FILTRO}>Estado</p>
@@ -286,7 +286,7 @@ export default function PromotoraApp({ auth }) {
               )}
               <Colapsable>{verTodasInstalaciones && verResumen && <ResumenPromotores filas={filasPromotor} vista={vista} elegida={promotorActivo} onElegir={elegirPromotor} />}</Colapsable>
             </div>
-          )}
+          )}</Colapsable>
 
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">

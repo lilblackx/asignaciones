@@ -49,12 +49,13 @@ export function causasDeAveria(ordenes, rango, { tecnico } = {}) {
   for (const t of delPeriodo) {
     const nap = napDeOrden(t);
     if (!nap) continue;
-    if (!naps.has(nap)) naps.set(nap, { nap, total: 0, clientes: new Set(), fallas: new Map(), ultima: 0 });
+    if (!naps.has(nap)) naps.set(nap, { nap, total: 0, clientes: new Set(), fallas: new Map(), ultima: 0, ordenes: [] });
     const n = naps.get(nap);
     n.total += 1;
     n.clientes.add(soloDigitos(t.cedula) || `orden-${t.id ?? t.codigo}`);
     n.fallas.set(nombreDeFalla(t), (n.fallas.get(nombreDeFalla(t)) || 0) + 1);
     n.ultima = Math.max(n.ultima, Number(t.createdAt));
+    n.ordenes.push({ orden: t, dato: nombreDeFalla(t) });
   }
   const porNap = [...naps.values()]
     .map((n) => ({
@@ -63,6 +64,7 @@ export function causasDeAveria(ordenes, rango, { tecnico } = {}) {
       clientes: n.clientes.size,
       principales: [...n.fallas.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([nombre]) => nombre),
       ultima: n.ultima,
+      ordenes: n.ordenes,
       sospechosa: n.clientes.size >= CLIENTES_NAP_SOSPECHOSA,
     }))
     .sort((a, b) => b.total - a.total || a.nap.localeCompare(b.nap))

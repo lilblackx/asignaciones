@@ -42,7 +42,8 @@ export default function HistorialTimeline({ ticket, compact = false }) {
   return (
     <ol className={`relative space-y-3 ${compact ? 'max-h-64 overflow-y-auto pr-1' : ''}`} aria-label="Historial de la orden">
       {eventos.map((ev, i) => {
-        const { icono: Icono, titulo, color } = TIPOS[ev.tipo] || TIPOS.edicion;
+        const { icono: Icono, titulo: tituloDelTipo, color } = TIPOS[ev.tipo] || TIPOS.edicion;
+        const titulo = ev.titulo || tituloDelTipo;
         const esUltimo = i === eventos.length - 1;
         return (
           <li key={ev.clave} className="relative flex gap-3">
