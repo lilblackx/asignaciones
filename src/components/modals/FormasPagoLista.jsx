@@ -12,7 +12,7 @@ function FilaCopiable({ id, etiqueta, contexto, valor, copiado, onCopiar }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2 border-b border-zinc-200 dark:border-zinc-800 last:border-b-0">
       <div className="min-w-0">
-        <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">{etiqueta}</div>
+        <div className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">{etiqueta}</div>
         <div className="text-sm font-black text-zinc-900 dark:text-white font-mono break-words">{valor}</div>
       </div>
       <BotonCopiarDato
@@ -72,7 +72,7 @@ export default function FormasPagoLista({ formas, onCopy }) {
           onClick={() => copiar('todas', textoTodasLasFormas(formas), 'Todas las formas de pago copiadas.')}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-md"
           tono="bg-red-600 hover:bg-red-700 text-white"
-          tonoCopiado="bg-emerald-600 text-white"
+          tonoCopiado="bg-emerald-700 text-white"
         >
           Copiar todas las formas de pago
         </BotonCopiar>

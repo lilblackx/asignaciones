@@ -3,6 +3,7 @@ import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, Download, Megaphone,
 import { etiquetaRol } from '../constants';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import { useToast } from '../hooks/useToast';
+import { useTema } from '../hooks/useTema';
 import { useAhora } from '../hooks/useAhora';
 import { usePreferencia } from '../hooks/usePreferencia';
 import { useEstadisticasMes } from '../hooks/useEstadisticasMes';
@@ -15,6 +16,7 @@ import { claveNombre } from '../utils/promotora';
 import { csvDeOrdenes, descargarCsv, nombreArchivoExportacion } from '../utils/exportarOrdenes';
 import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
+import PieVersion from './PieVersion';
 import TarjetaInstalacion from './TarjetaInstalacion';
 import ResumenPromotores from './ResumenPromotores';
 import TotalesMes from './TotalesMes';
@@ -34,14 +36,15 @@ function Contador({ n, tono }) {
   return <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums ${tono}`}>{n}</span>;
 }
 
-const ETIQUETA_FILTRO = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400';
+const ETIQUETA_FILTRO = 'text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
 const claveDePromotor = (o) => claveNombre(promotoraDeOrden(o)) || '-';
 
 // Pantalla de la PROMOTORA: todas las instalaciones y en qué van. Solo lectura; no ve averías, cobros ni datos técnicos.
-export default function PromotoraApp({ auth }) {
+// `onAbrirMenu`: cuando un administrador está aquí dentro del menú lateral (solo lectura, ve las de todas las promotoras), el botón ☰ que lo abre en el celular.
+export default function PromotoraApp({ auth, onAbrirMenu }) {
   const { firebaseUser, currentUserName, currentUser, role, handleLogout, promotoraClaves, promotoraNombres, verTodasInstalaciones, puedeCrearVentas } = auth;
   // El tema y la categoría elegida se recuerdan en este equipo, por usuario (no cuestan nada en Firebase).
-  const [isDarkMode, setIsDarkMode] = usePreferencia(`tema:${currentUser}`, true, (v) => typeof v === 'boolean');
+  const [isDarkMode, setIsDarkMode] = useTema(currentUser);
   const { toastMsg, setToastMsg } = useToast();
   const ahora = useAhora();
   // Solo ve las instalaciones de su promotora (los nombres que el administrador le asignó). Sin nombres no ve nada,
@@ -157,7 +160,7 @@ export default function PromotoraApp({ auth }) {
       type="button"
       aria-pressed={filtro === clave}
       onClick={() => setFiltro(clave)}
-      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${filtro === clave ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500'}`}
+      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${filtro === clave ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500'}`}
     >
       <span>{texto}</span>
       <Contador n={n} tono={filtro === clave ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
@@ -175,9 +178,9 @@ export default function PromotoraApp({ auth }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-screen bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
-        <EncabezadoSimple titulo={verTodasInstalaciones ? 'Instalaciones y LOS' : 'Instalaciones'} tituloCorto="Instalaciones" icono={Building2} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} accion={puedeCrearVentas ? { texto: 'Nuevo', onClick: () => setCreandoVenta(true), deshabilitado: !verTodasInstalaciones && promotoraClaves.length === 0, ayuda: !verTodasInstalaciones && promotoraClaves.length === 0 ? 'Tu usuario todavía no tiene un nombre de promotor asignado' : 'Nueva venta' } : null} />
+        <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo={verTodasInstalaciones ? 'Instalaciones y LOS' : 'Instalaciones'} tituloCorto="Instalaciones" icono={Building2} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} accion={puedeCrearVentas ? { texto: 'Nuevo', onClick: () => setCreandoVenta(true), deshabilitado: !verTodasInstalaciones && promotoraClaves.length === 0, ayuda: !verTodasInstalaciones && promotoraClaves.length === 0 ? 'Tu usuario todavía no tiene un nombre de promotor asignado' : 'Nueva venta' } : null} />
 
         <main className="p-4 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
           {verTodasInstalaciones && cargado && <TotalesMes mes={mes} meses={meses} onCambiarMes={setMes} totales={totales} error={errorTotales} />}
@@ -191,7 +194,7 @@ export default function PromotoraApp({ auth }) {
                 placeholder={verTodasInstalaciones ? 'Buscar nombre, cédula, código o promotor' : 'Buscar nombre, cédula o código'}
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+                className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
               />
               <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
             </div>
@@ -199,7 +202,7 @@ export default function PromotoraApp({ auth }) {
               type="button"
               aria-expanded={verFiltros}
               onClick={() => setVerFiltros((v) => !v)}
-              className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${verFiltros ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${verFiltros ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
             >
               <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${verFiltros ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
               <span className="hidden sm:inline">Filtros</span>
@@ -208,7 +211,7 @@ export default function PromotoraApp({ auth }) {
           </div>
 
           {verTodasInstalaciones && (
-            <div role="group" aria-label="Qué órdenes ver" className="flex gap-1.5 p-1 rounded-xl bg-zinc-200 dark:bg-zinc-900 md:max-w-xl">
+            <div role="group" aria-label="Qué órdenes ver" className="flex gap-1.5 p-1 rounded-xl bg-zinc-300 dark:bg-zinc-900 md:max-w-xl">
               {[
                 ['TODO', 'Todo', todas.length],
                 ['INSTALACION', 'Instalaciones', cuantasPorCategoria.INSTALACION || 0],
@@ -219,7 +222,7 @@ export default function PromotoraApp({ auth }) {
                   type="button"
                   aria-pressed={categoria === clave}
                   onClick={() => { setCategoria(clave); setFiltro('TODAS'); }}
-                  className={`flex-1 whitespace-nowrap px-2 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                  className={`flex-1 whitespace-nowrap px-2 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
                 >
                   <span>{texto}</span>
                   <Contador n={n} tono={categoria === clave ? 'bg-zinc-200 dark:bg-zinc-700' : 'bg-zinc-300/70 dark:bg-zinc-800'} />
@@ -240,7 +243,7 @@ export default function PromotoraApp({ auth }) {
                       type="button"
                       aria-pressed={soloAtrasadas}
                       onClick={() => setSoloAtrasadas((v) => !v)}
-                      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${soloAtrasadas ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500'}`}
+                      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${soloAtrasadas ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500'}`}
                     >
                       <span>Atrasadas</span>
                       <Contador n={atrasadas} tono={soloAtrasadas ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
@@ -261,7 +264,7 @@ export default function PromotoraApp({ auth }) {
               {fecha === 'DIA' && calendarioAbierto && (
                 <Calendario valor={dia} max={fechaISO(ahora)} onElegir={(iso) => { setDia(iso); setCalendarioAbierto(false); }} onCerrar={() => setCalendarioAbierto(false)} />
               )}
-              {fecha === 'DIA' && <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Las órdenes cerradas se conservan {verTodasInstalaciones ? RETENCION_DIAS_HISTORIAL_VENTAS : RETENCION_DIAS_HISTORIAL} días; de un día anterior solo salen las que siguen abiertas.</p>}
+              {fecha === 'DIA' && <p className="text-[10px] text-zinc-600 dark:text-zinc-400">Las órdenes cerradas se conservan {verTodasInstalaciones ? RETENCION_DIAS_HISTORIAL_VENTAS : RETENCION_DIAS_HISTORIAL} días; de un día anterior solo salen las que siguen abiertas.</p>}
 
               {verTodasInstalaciones && (
                 <div className="flex flex-wrap gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
@@ -269,7 +272,7 @@ export default function PromotoraApp({ auth }) {
                     type="button"
                     aria-expanded={verResumen}
                     onClick={() => setVerResumen((v) => !v)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600"
                   >
                     Resumen por promotor <ChevronDown className={`w-3.5 h-3.5 transition-transform ${verResumen ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </button>
@@ -278,7 +281,7 @@ export default function PromotoraApp({ auth }) {
                     onClick={exportar}
                     disabled={visibles.length === 0}
                     title="Bajar a Excel (CSV) lo que se ve ahora"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700"
                   >
                     <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar a Excel ({visibles.length})
                   </button>
@@ -291,7 +294,7 @@ export default function PromotoraApp({ auth }) {
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
               {visibles.length} de {ordenes.length} {vista === 'LOS' ? 'averías LOS' : vista === 'TODO' ? 'órdenes' : 'instalaciones'}
-              {hayMasCerradas && <span className="text-zinc-500 dark:text-zinc-400"> · faltan cerradas por cargar</span>}
+              {hayMasCerradas && <span className="text-zinc-600 dark:text-zinc-400"> · faltan cerradas por cargar</span>}
               {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-600 dark:text-red-400 hover:underline">Limpiar filtros</button>}
             </p>
           </div>
@@ -301,9 +304,9 @@ export default function PromotoraApp({ auth }) {
           ) : error ? (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
-            <p role="status" className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">Cargando instalaciones...</p>
+            <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando instalaciones...</p>
           ) : visibles.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con los filtros.'}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con los filtros.'}</p>
           ) : (
             <ul key={`${categoria}-${vista}`} className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 lg:animate-fade-in">
               {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} onCopiarPlantilla={copiarDeTarjeta} onCopy={copiar} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}
@@ -316,7 +319,7 @@ export default function PromotoraApp({ auth }) {
                 type="button"
                 onClick={cargarMasCerradas}
                 disabled={cargandoMas}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700 transition-colors"
               >
                 {cargandoMas && <Spinner />}{cargandoMas ? 'Cargando...' : 'Cargar más cerradas'}
               </button>
@@ -329,6 +332,7 @@ export default function PromotoraApp({ auth }) {
             Las terminadas o canceladas se muestran durante {verTodasInstalaciones ? RETENCION_DIAS_HISTORIAL_VENTAS : RETENCION_DIAS_HISTORIAL} días.
           </p>
         </main>
+        <PieVersion />
 
         {creandoVenta && (
           <Suspense fallback={null}>

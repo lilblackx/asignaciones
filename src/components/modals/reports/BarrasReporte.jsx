@@ -6,7 +6,7 @@ export default function BarrasReporte({ titulo, subtitulo, filas }) {
   return (
     <section className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm mb-4">
       <h3 className="text-sm font-bold text-zinc-900 dark:text-white">{titulo}</h3>
-      {subtitulo && <p className="text-[11px] text-zinc-500 mt-0.5">{subtitulo}</p>}
+      {subtitulo && <p className="text-[11px] text-zinc-600 dark:text-zinc-500 mt-0.5">{subtitulo}</p>}
       <ul className="mt-3 flex flex-col gap-2">
         {filas.map((f) => (
           <li key={f.etiqueta} className="flex items-center gap-3">

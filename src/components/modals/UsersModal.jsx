@@ -4,7 +4,7 @@ import { ROLES, etiquetaRol } from '../../constants';
 import { errorNombresPromotora } from '../../utils/promotora';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../../utils/passwordPolicy';
 import { stripEmojis } from '../../utils/sanitizeInput';
-import Modal, { PANEL_COMPLETO } from '../Modal';
+import Modal, { PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import SelectMenu from '../SelectMenu';
@@ -19,7 +19,7 @@ const ROL_NUEVO_ITEMS = [
   { value: ROLES.FINANZAS, label: 'FINANZAS (cobros, pago a técnicos y reportes; no toca las órdenes)' },
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];
-const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
+const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
 
 const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS];
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -33,7 +33,7 @@ const claseRol = (rol) => (rol === ROLES.ADMIN
 
 const EMPTY_NEW_USER = { usuario: '', nombre: '', clave: '', role: ROLES.USUARIO, puedeCerrar: false, tecnicoAsociado: '', promotoraNombres: '', verTodasInstalaciones: false, puedeCrearVentas: false };
 
-export default function UsersModal({ users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword, currentUsername, onClose, technicians = [] }) {
+export default function UsersModal({ users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword, currentUsername, onClose, technicians = [], enPagina = false }) {
   const [roleEditId, setRoleEditId] = useState(null);
   const [roleDraft, setRoleDraft] = useState('');
   const [techDraft, setTechDraft] = useState('');
@@ -190,9 +190,9 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     setTogglingId(null);
   };
 
-  const CAMPO = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none transition-colors shadow-sm';
+  const CAMPO = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none transition-colors shadow-sm';
   const ETIQUETA = 'text-sm font-bold text-zinc-700 dark:text-zinc-300 ml-1';
-  const EDICION = 'w-full text-sm font-bold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 outline-none focus:border-red-600';
+  const EDICION = 'w-full text-sm font-bold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-lg px-3 py-2 outline-none focus:border-red-600';
 
   const filtros = [{ value: 'TODOS', label: 'Todos', n: users.length }, ...ORDEN_ROLES.map((r) => ({ value: r, label: etiquetaRol(r), n: users.filter((u) => u.role === r).length })).filter((f) => f.n > 0)];
   const q = sinTildes(busqueda).trim();
@@ -201,15 +201,15 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     .sort((a, b) => ORDEN_ROLES.indexOf(a.role) - ORDEN_ROLES.indexOf(b.role) || String(a.nombre || a.username).localeCompare(String(b.nombre || b.username), 'es'));
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={ShieldCheck} titulo="USUARIOS" onClose={onClose} />
+    <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={ShieldCheck} titulo="USUARIOS" onClose={onClose} enPagina={enPagina} />
 
         <div className="flex-1 overflow-y-auto lg:overflow-hidden lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           {/* Cuentas */}
-          <section aria-label="Cuentas" className="p-4 sm:p-6 space-y-4 lg:overflow-y-auto lg:border-r lg:border-zinc-200 lg:dark:border-zinc-800">
+          <section aria-label="Cuentas" className="p-4 sm:p-6 space-y-4 bg-fondo lg:overflow-y-auto lg:border-r lg:border-zinc-200 lg:dark:border-zinc-800">
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-sm font-black tracking-wide text-zinc-700 dark:text-zinc-300">CUENTAS <span className="text-zinc-400 font-bold">({users.length})</span></h3>
+              <h3 className="text-sm font-black tracking-wide text-zinc-700 dark:text-zinc-300">CUENTAS <span className="text-zinc-600 dark:text-zinc-400 font-bold">({users.length})</span></h3>
               {/* En pantallas angostas el formulario queda debajo de la lista: este botón baja hasta él. */}
               <button
                 type="button"
@@ -237,7 +237,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   type="button"
                   aria-pressed={filtroRol === f.value}
                   onClick={() => setFiltroRol(f.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-colors ${filtroRol === f.value ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-colors ${filtroRol === f.value ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'}`}
                 >
                   {f.label} <span className="opacity-80">({f.n})</span>
                 </button>
@@ -268,7 +268,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                           <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"><Pencil className="w-3.5 h-3.5" /></button>
                         </p>
                       )}
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">@{u.username}{u.disabled && ' · deshabilitado'}</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">@{u.username}{u.disabled && ' · deshabilitado'}</p>
                     </div>
                     {u.username !== currentUsername && (
                       <button
@@ -310,7 +310,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                         type="button"
                         onClick={() => onTogglePuedeCerrar(u.id, !u.puedeCerrar)}
                         disabled={togglingId === u.id}
-                        className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50 ${u.puedeCerrar ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}
+                        className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50 ${u.puedeCerrar ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}
                         title="Permitir realizar cierres"
                       >
                         {u.puedeCerrar ? 'Puede cerrar' : 'Sin cierres'}
@@ -322,7 +322,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                           type="button"
                           onClick={() => startPromEdit(u)}
                           title="Cambiar los nombres con que aparece en las plantillas y si ve todas las instalaciones"
-                          className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg ${(u.promotoraNombres || []).length ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300' : u.verTodasInstalaciones ? 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}
+                          className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg ${(u.promotoraNombres || []).length ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300' : u.verTodasInstalaciones ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}
                         >
                           <Pencil className="w-3 h-3" aria-hidden="true" /> {(u.promotoraNombres || []).length ? (u.promotoraNombres || []).join(' · ') : u.verTodasInstalaciones ? 'Sin nombre' : 'Sin nombre: no ve nada'}
                         </button>
@@ -335,7 +335,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                           disabled={togglingId === u.id}
                           aria-pressed={u.puedeCrearVentas === true}
                           title="Permitir que cree ventas (instalaciones nuevas) desde su pantalla"
-                          className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50 ${u.puedeCrearVentas ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50 ${u.puedeCrearVentas ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}
                         >
                           {u.puedeCrearVentas ? 'Crea ventas' : 'No crea ventas'}
                         </button>
@@ -361,7 +361,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       {promError && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{promError}</p>}
                       <div className="flex gap-2">
                         <button type="button" onClick={() => savePromRole(u.id)} disabled={togglingId === u.id} aria-label={`Guardar nombres de ${u.username}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-40"><Check className="w-3.5 h-3.5" /> Guardar</button>
-                        <button type="button" onClick={cancelRoleEdit} aria-label="Cancelar" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold"><X className="w-3.5 h-3.5" /> Cancelar</button>
+                        <button type="button" onClick={cancelRoleEdit} aria-label="Cancelar" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold"><X className="w-3.5 h-3.5" /> Cancelar</button>
                       </div>
                     </div>
                   )}
@@ -378,7 +378,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       />
                       <div className="flex gap-2">
                         <button type="button" onClick={() => saveTechRole(u.id)} disabled={!techDraft || togglingId === u.id} aria-label={`Confirmar rol de ${u.username}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-40"><Check className="w-3.5 h-3.5" /> Guardar</button>
-                        <button type="button" onClick={cancelRoleEdit} aria-label="Cancelar" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold"><X className="w-3.5 h-3.5" /> Cancelar</button>
+                        <button type="button" onClick={cancelRoleEdit} aria-label="Cancelar" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold"><X className="w-3.5 h-3.5" /> Cancelar</button>
                       </div>
                     </div>
                   )}
@@ -404,7 +404,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                         {resetError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{resetError}</p>}
                       </div>
                     ) : (
-                      <button type="button" onClick={() => startResetPassword(u)} className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
+                      <button type="button" onClick={() => startResetPassword(u)} className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
                         <KeyRound className="w-3.5 h-3.5" aria-hidden="true" /> Cambiar clave
                       </button>
                     )}
@@ -412,12 +412,12 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 </li>
               ))}
             </ul>
-            {users.length === 0 && <p className="text-sm text-center text-zinc-500 py-6">No hay usuarios.</p>}
-            {users.length > 0 && visibles.length === 0 && <p className="text-sm text-center text-zinc-500 py-6">Ningún usuario coincide con la búsqueda.</p>}
+            {users.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-500 py-6">No hay usuarios.</p>}
+            {users.length > 0 && visibles.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-500 py-6">Ningún usuario coincide con la búsqueda.</p>}
           </section>
 
           {/* Nuevo usuario */}
-          <section aria-label="Nuevo usuario" className="p-4 sm:p-6 border-t-2 border-zinc-200 dark:border-zinc-800 lg:border-t-0 lg:overflow-y-auto bg-zinc-50 dark:bg-zinc-950">
+          <section aria-label="Nuevo usuario" className="p-4 sm:p-6 border-t-2 border-zinc-200 dark:border-zinc-800 lg:border-t-0 lg:overflow-y-auto bg-fondo">
             <form onSubmit={handleSubmit} className="space-y-4">
               <h3 className="text-sm font-black tracking-wide text-zinc-700 dark:text-zinc-300">NUEVO USUARIO</h3>
               <div className="grid gap-4 grid-cols-[minmax(0,1fr)] sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)]">
@@ -432,7 +432,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 <div className="space-y-2 min-w-0">
                   <label htmlFor="user-clave" className={ETIQUETA}>CLAVE</label>
                   <input id="user-clave" required type="password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO} placeholder="mínimo 8 caracteres" />
-                  <p className="text-[11px] text-zinc-500 ml-1">{PASSWORD_POLICY_HINT}</p>
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-500 ml-1">{PASSWORD_POLICY_HINT}</p>
                   {passwordError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
                 <div className="space-y-2 min-w-0">
@@ -468,7 +468,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     className={SELECT_FORM_CLASS}
                     chevronClassName="w-4 h-4 right-3"
                   />
-                  <p className="text-[11px] text-zinc-500 ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-500 ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
                 </div>
               )}
 
@@ -493,7 +493,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       placeholder="Ej. Sariana"
                       className={SELECT_FORM_CLASS}
                     />
-                    <p className="text-[11px] text-zinc-500 ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-500 ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
                   </div>
                 </div>
               )}
@@ -508,7 +508,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               {userError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{userError}</p>}
 
               {/* En PC, con el formulario largo (rol Ventas o Técnico), el botón se queda a la vista al desplazar. */}
-              <div className="lg:sticky lg:-bottom-6 lg:-mx-6 lg:-mb-6 lg:px-6 lg:py-4 lg:bg-zinc-50 lg:dark:bg-zinc-950">
+              <div className="lg:sticky lg:-bottom-6 lg:-mx-6 lg:-mb-6 lg:px-6 lg:py-4 lg:bg-zinc-200 lg:dark:bg-zinc-950">
                 <button type="submit" disabled={isSubmitting} className={`px-6 py-3.5 w-full text-white font-bold rounded-xl transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Creando...' : 'Crear Usuario'}</button>
               </div>
             </form>

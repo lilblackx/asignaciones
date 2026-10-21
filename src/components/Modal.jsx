@@ -9,6 +9,8 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea:not([disab
 //   <Modal completa> + PANEL_COMPLETO en el panel + un CENTRADO_* en el cuerpo, para que el contenido no se estire en pantallas anchas.
 export const PANEL_COMPLETO = 'lg:max-w-none lg:h-dvh lg:max-h-dvh lg:rounded-none lg:border-0';
 // Rellena los costados del cuerpo para centrar el contenido con un ancho máximo (80 rem / 48 rem), sin tocar el relleno en móvil.
+// El mismo módulo como página dentro del marco del administrador (`enPagina`): ocupa el alto de la pantalla bajo el encabezado de la app, sin ventana ni borde.
+export const PANEL_PAGINA = 'w-full h-[calc(100dvh-62px-2.5rem)] overflow-y-auto bg-fondo flex flex-col';
 export const CENTRADO_AMPLIO = 'lg:px-[max(1.5rem,calc((100%-80rem)/2))]';
 export const CENTRADO_ESTRECHO = 'lg:px-[max(1.5rem,calc((100%-48rem)/2))]';
 
@@ -59,7 +61,12 @@ if (typeof window !== 'undefined') {
 
 // `onVolver`: si la ventana tiene niveles (p. ej. el detalle de un cierre dentro de Cierre), "atrás" y Escape suben un nivel en vez de
 // cerrar; sin él, cierran. El "atrás" del navegador cierra la ventana en vez de sacar al usuario de la app.
-export default function Modal({ onClose, onVolver, zIndexClass = 'z-50', completa = false, children }) {
+// `enPagina`: sin ventana: el contenido va directo en la página que lo contiene (ver PANEL_PAGINA).
+export default function Modal({ enPagina = false, ...props }) {
+  return enPagina ? <>{props.children}</> : <VentanaModal {...props} />;
+}
+
+function VentanaModal({ onClose, onVolver, zIndexClass = 'z-50', completa = false, children }) {
   const overlayRef = useRef(null);
   const panelRef = useRef(null);
   const onCloseRef = useRef(onClose);

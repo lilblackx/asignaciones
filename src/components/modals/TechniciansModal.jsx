@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, ListOrdered, PackageCheck, RefreshCw, Trash2, Users } from 'lucide-react';
 import { COLOR_PALETTE, estiloTecnico, siguienteColorTecnico } from '../../constants';
 import { stripEmojis } from '../../utils/sanitizeInput';
-import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from '../Modal';
+import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import Spinner from '../Spinner';
 
@@ -18,7 +18,7 @@ function mergeOrden(ordenGuardado, technicians) {
 
 const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/s+/g, ' ').trim().toUpperCase();
 
-export default function TechniciansModal({ technicians, newTech, setNewTech, handleAddTech, handleDeleteTech, onToggleActivo, verInventario = false, onCargarTecnicosInventario, onVincularInventario, ordenTurno = [], tecnicoSugerido = null, onGuardarOrden, onClose }) {
+export default function TechniciansModal({ technicians, newTech, setNewTech, handleAddTech, handleDeleteTech, onToggleActivo, verInventario = false, onCargarTecnicosInventario, onVincularInventario, ordenTurno = [], tecnicoSugerido = null, onGuardarOrden, onClose, enPagina = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [ordenLocal, setOrdenLocal] = useState(() => mergeOrden(ordenTurno, technicians));
@@ -89,9 +89,9 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
   };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={Users} titulo="TÉCNICOS" onClose={onClose} />
+    <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={Users} titulo="TÉCNICOS" onClose={onClose} enPagina={enPagina} />
         <div className={`p-6 space-y-5 ${CENTRADO_ESTRECHO}`}>
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400 block ml-1">TÉCNICOS ACTIVOS</label>
@@ -119,7 +119,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   </div>
                 );
               })}
-              {technicians.length === 0 && <p className="text-xs text-center text-zinc-500 py-3">No hay técnicos.</p>}
+              {technicians.length === 0 && <p className="text-xs text-center text-zinc-600 dark:text-zinc-500 py-3">No hay técnicos.</p>}
             </div>
           </div>
 
@@ -128,7 +128,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
               <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5 ml-1">
                 <ListOrdered className="w-3.5 h-3.5" /> TURNO PARA INSTALACIONES
               </label>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">
                 Orden semanal manual. Al asignar una instalación, el turno pasa al siguiente de la lista (saltando a los inactivos).
                 {tecnicoSugerido
                   ? <> Turno actual: <strong className="text-zinc-700 dark:text-zinc-300">{tecnicoSugerido}</strong>.</>
@@ -144,8 +144,8 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       <span className={`flex-1 inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500'}`}>
                         {nombre}
                       </span>
-                      <button type="button" onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="p-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowUp className="w-3.5 h-3.5" /></button>
-                      <button type="button" onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="p-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowDown className="w-3.5 h-3.5" /></button>
+                      <button type="button" onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="p-1 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowUp className="w-3.5 h-3.5" /></button>
+                      <button type="button" onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="p-1 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowDown className="w-3.5 h-3.5" /></button>
                     </div>
                   );
                 })}
@@ -171,7 +171,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   <RefreshCw className={`w-3 h-3 ${tecnicosInventario === null && !errorInventario ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar
                 </button>
               </div>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">
                 Elige con qué nombre conoce el inventario del almacén a cada técnico. El material y los equipos se descuentan a ese nombre; un técnico sin elegir no envía sus órdenes. Solo tú ves esto.
               </p>
               {errorInventario && <p role="alert" className="text-[11px] font-bold text-red-600 dark:text-red-400 ml-1">{errorInventario}</p>}
@@ -195,7 +195,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                         disabled={tecnicosInventario === null || vinculandoId === t.id}
                         onChange={(e) => vincular(t, e.target.value)}
                         aria-label={`Nombre en el inventario de ${t.name}`}
-                        className="w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg text-xs font-bold focus:ring-0 focus:border-red-600 outline-none disabled:opacity-60"
+                        className="w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg text-xs font-bold focus:ring-0 focus:border-red-600 outline-none disabled:opacity-60"
                       >
                         <option value="">{tecnicosInventario === null && !errorInventario ? 'Cargando...' : 'Sin elegir'}</option>
                         {noEstaEnLista && <option value={elegido}>{elegido} (no está en el inventario)</option>}
@@ -211,11 +211,11 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
           <form onSubmit={onSubmit} className="border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-5">
             <div className="space-y-2">
               <label htmlFor="tech-name" className="text-sm font-bold text-zinc-700 dark:text-zinc-300 ml-1">NUEVO TÉCNICO</label>
-              <input id="tech-name" required type="text" maxLength="60" value={newTech.name} onChange={(e) => setNewTech({ ...newTech, name: stripEmojis(e.target.value) })} className="w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none uppercase transition-colors shadow-sm" placeholder="Nombre completo" />
+              <input id="tech-name" required type="text" maxLength="60" value={newTech.name} onChange={(e) => setNewTech({ ...newTech, name: stripEmojis(e.target.value) })} className="w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none uppercase transition-colors shadow-sm" placeholder="Nombre completo" />
             </div>
             <div className="flex items-center gap-3 ml-1">
               <span className={`px-2.5 py-1.5 rounded text-xs font-bold ${colorActual}`}>{newTech.name.trim() || 'ETIQUETA'}</span>
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 flex-1">{newTech.color ? 'Color elegido' : 'Color automático'}</span>
+              <span className="text-[10px] text-zinc-600 dark:text-zinc-400 flex-1">{newTech.color ? 'Color elegido' : 'Color automático'}</span>
               <button type="button" onClick={cambiarColor} className="text-[10px] font-bold px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">Cambiar</button>
             </div>
             <div className="pt-2 flex gap-3 justify-end">

@@ -1056,6 +1056,108 @@ await check('Cada técnico lee solo sus pagos y sus adelantos (para ver el aviso
   await assertFails(fin(asOtroTecnico(), 'adelantosTecnicos').doc('adel-1').get());
 });
 
+// Revisión de pagos (la barrera antes de Finanzas): solo el ADMIN escribe; Finanzas la lee
+const revisionDe = (extra = {}) => ({ estado: 'APROBADA', motivo: '', firma: 'abc123', dia: '2026-10-27', codigo: 'IO1', tecnico: 'GERARDO MOLERO', concepto: 'INSTALACION', tecnicoCorregido: '', conceptoCorregido: '', por: 'admin', en: 10, historial: [{ estado: 'APROBADA', por: 'admin', en: 10 }], ...extra });
+await check('Revisión: el administrador aprueba a su nombre y Finanzas la lee', async () => {
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-1').set(revisionDe()));
+  await assertSucceeds(fin(asFinanzas(), 'revisionPagos').doc('rev-1').get());
+  await assertSucceeds(fin(asFinanzas(), 'revisionPagos').get());
+});
+await check('Revisión: retener y excluir piden motivo; aprobar no', async () => {
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-2').set(revisionDe({ estado: 'RETENIDA', motivo: '' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-3').set(revisionDe({ estado: 'EXCLUIDA', motivo: '' })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-2').set(revisionDe({ estado: 'RETENIDA', motivo: 'Falta confirmar el cobro' })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-3').set(revisionDe({ estado: 'EXCLUIDA', motivo: 'Orden de prueba' })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-4').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', conceptoCorregido: 'MUDANZA_EXTERNA' })));
+});
+await check('Revisión: ni Finanzas, ni la oficina ni el técnico la escriben; el ADMIN no firma a nombre de otro ni inventa estados, conceptos o campos', async () => {
+  await assertFails(fin(asFinanzas(), 'revisionPagos').doc('rev-x').set(revisionDe({ por: 'fina' })));
+  await assertFails(fin(asUsuario(), 'revisionPagos').doc('rev-x').set(revisionDe({ por: 'usuario' })));
+  await assertFails(fin(asTecnico(), 'revisionPagos').doc('rev-x').set(revisionDe()));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ por: 'otro' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ estado: 'PAGADA' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ conceptoCorregido: 'REGALO' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ extra: 1 })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ dia: 'ayer' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ historial: 'nada' })));
+});
+await check('Revisión: la oficina y el técnico no la leen; el ADMIN puede deshacer borrándola y Finanzas no', async () => {
+  await assertFails(fin(asUsuario(), 'revisionPagos').get());
+  await assertFails(fin(asTecnico(), 'revisionPagos').get());
+  await assertFails(fin(asFinanzas(), 'revisionPagos').doc('rev-1').delete());
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-1').delete());
+});
+
+// Descuentos y bonos por una orden pasada de un técnico a otro (los crea el ADMIN al aprobar; Finanzas solo mueve `aplicado`)
+const ajusteDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', tipo: 'DESCUENTO', monto: 6, aplicado: 0, clave: 'o1', codigo: 'IO2', claveOrigen: 'o0', codigoOrigen: 'IO1', de: 'GERARDO MOLERO', a: 'REINEL BRAVO', por: 'admin', creadoEn: 20, notificado: true, ...extra });
+const bonoDe = (extra = {}) => ajusteDe({ tecnico: 'REINEL BRAVO', tipo: 'BONO', ...extra });
+await check('Ajustes: el administrador crea el descuento al técnico de antes y el bono al nuevo, a su nombre', async () => {
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('desc_o1').set(ajusteDe()));
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').set(bonoDe()));
+  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').get());
+});
+await check('Ajustes: no se inventan: el descuento es de quien perdió la orden y el bono de quien la recibió, con monto positivo y sin nada aplicado', async () => {
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x1').set(ajusteDe({ tecnico: 'REINEL BRAVO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x2').set(bonoDe({ tecnico: 'GERARDO MOLERO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x3').set(ajusteDe({ monto: 0 })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x4').set(ajusteDe({ monto: -3 })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x5').set(ajusteDe({ aplicado: 2 })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x6').set(ajusteDe({ tipo: 'REGALO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x7').set(ajusteDe({ a: 'GERARDO MOLERO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x8').set(ajusteDe({ por: 'otro' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x9').set(ajusteDe({ extra: 1 })));
+});
+await check('Ajustes: Finanzas, la oficina y el técnico no los crean ni los borran', async () => {
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('y1').set(ajusteDe({ por: 'fina' })));
+  await assertFails(fin(asUsuario(), 'ajustesTecnicos').doc('y2').set(ajusteDe({ por: 'usuario' })));
+  await assertFails(fin(asTecnico(), 'ajustesTecnicos').doc('y3').set(ajusteDe()));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').delete());
+  await assertFails(fin(asTecnico(), 'ajustesTecnicos').doc('desc_o1').delete());
+});
+await check('Ajustes: el técnico lee solo los suyos; la oficina no los lee', async () => {
+  await assertSucceeds(fin(asTecnico(), 'ajustesTecnicos').doc('desc_o1').get());
+  await assertFails(fin(asTecnico(), 'ajustesTecnicos').doc('bono_o1').get());
+  await assertFails(fin(asOtroTecnico(), 'ajustesTecnicos').doc('desc_o1').get());
+  await assertFails(fin(asUsuario(), 'ajustesTecnicos').get());
+});
+await check('Ajustes: Finanzas solo mueve `aplicado` (sin pasar de monto) y el ADMIN no lo toca ni lo borra una vez aplicado', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 6 }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ aplicado: 7 }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ monto: 1 }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ aplicado: -1 }));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').delete());
+  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 0 }));
+});
+await check('Ajustes: el ADMIN vuelve a guardar o borra los que no se han aplicado', async () => {
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').set(bonoDe({ monto: 8 })));
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').delete());
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('desc_o1').delete());
+});
+await check('Revisión: el descuento es un número no negativo', async () => {
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-d1').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', descuento: 6 })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-d2').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', descuento: -1 })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-d3').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', descuento: 'seis' })));
+});
+await check('Revisión: la decisión de la garantía lleva la orden original o el motivo de no descontar', async () => {
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-g1').set(revisionDe({ estado: 'PENDIENTE', descuento: 6, descuentoDe: { id: 'o0', codigo: 'IO1', tecnico: 'GERARDO MOLERO' } })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-g2').set(revisionDe({ estado: 'APROBADA', garantiaSinDescuento: 'Garantía de la empresa' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-g3').set(revisionDe({ descuentoDe: { id: '', codigo: 'IO1', tecnico: 'X' } })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-g4').set(revisionDe({ descuentoDe: { id: 'o0', codigo: 'IO1', tecnico: 'X', extra: 1 } })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-g5').set(revisionDe({ garantiaSinDescuento: '' })));
+  await assertFails(fin(asFinanzas(), 'revisionPagos').doc('rev-g6').set(revisionDe({ por: 'fina', descuento: 6 })));
+});
+await check('Pagos: se paga un bono solo (sin órdenes) y el neto puede pasar del total si hay bono', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'pagosTecnicos').doc('p-bono').set(pagoDe({ total: 0, cantidadOrdenes: 0, bonos: 6, neto: 6, cantidades: {}, tarifas: {}, ajustes: [{ id: 'bono_o1', monto: 6, tipo: 'BONO' }] })));
+  await assertSucceeds(fin(asFinanzas(), 'pagosTecnicos').doc('p-bono2').set(pagoDe({ bonos: 6, neto: 29.5, ajustes: [{ id: 'bono_o1', monto: 6, tipo: 'BONO' }] })));
+  await assertSucceeds(fin(asFinanzas(), 'pagosTecnicos').doc('p-desc').set(pagoDe({ descuento: 6, neto: 17.5, ajustes: [{ id: 'desc_o1', monto: 6, tipo: 'DESCUENTO' }] })));
+});
+await check('Pagos: sin órdenes ni bono no se paga, y el neto no pasa de total más bono', async () => {
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x1').set(pagoDe({ total: 0, cantidadOrdenes: 0, neto: 0 })));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x2').set(pagoDe({ neto: 30 })));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x3').set(pagoDe({ bonos: 6, neto: 40 })));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x4').set(pagoDe({ bonos: -2 })));
+});
+
 // Finanzas marca las filas de VN y TA que paga; mientras están pagadas la oficina no las edita ni las borra
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   const col = ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('registroVnTa');

@@ -159,9 +159,9 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           )}
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-700 dark:text-zinc-300">
-            <span className="inline-flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" aria-hidden="true" /><span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-zinc-500 dark:text-zinc-400">— {ticket.falla}</span>}</span>
+            <span className="inline-flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" aria-hidden="true" /><span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-zinc-600 dark:text-zinc-400">— {ticket.falla}</span>}</span>
             {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></span>}
-            {ticket.creado && <span className="text-zinc-500 dark:text-zinc-400">Creado por: {ticket.creado}</span>}
+            {ticket.creado && <span className="text-zinc-600 dark:text-zinc-400">Creado por: {ticket.creado}</span>}
           </div>
 
           <DatosParaAutorizar ticket={ticket} onCopy={onCopy} />
@@ -236,7 +236,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                 )}
               </div>
               {ticket.potencia1490Dbm != null && (
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
               )}
             </div>
           )}
@@ -273,10 +273,10 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                   maxLength={500}
                   autoFocus
                   placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
-                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
                 />
                 {motivoError && <p className="text-[11px] text-red-500 font-bold ml-1">{motivoError}</p>}
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 ml-1">
                   La orden vuelve a PENDIENTE y el técnico recibe una notificación con este motivo.
                 </p>
               </div>
@@ -288,7 +288,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
               type="button"
               onClick={devolviendo ? () => { setDevolviendo(false); setMotivoError(''); } : onClose}
               disabled={isSubmitting}
-              className="flex-1 flex items-center justify-center py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
             >
               {devolviendo ? 'Volver' : 'Cancelar'}
             </button>

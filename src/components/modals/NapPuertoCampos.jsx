@@ -22,7 +22,7 @@ export default function NapPuertoCampos({ nap, onNap, napError, puerto, onPuerto
         value={nap}
         onChange={(e) => onNap(stripEmojis(e.target.value))}
         aria-invalid={!!napError}
-        className={`col-start-1 row-start-2 w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${napError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+        className={`col-start-1 row-start-2 w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${napError ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
       />
       <input
         id="pf-puerto"
@@ -33,7 +33,7 @@ export default function NapPuertoCampos({ nap, onNap, napError, puerto, onPuerto
         value={puerto}
         onChange={(e) => onPuerto(e.target.value.replace(/\D/g, ''))}
         aria-invalid={!!puertoError}
-        className={`col-start-2 row-start-2 w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${puertoError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+        className={`col-start-2 row-start-2 w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${puertoError ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
       />
       {napError && <p role="alert" className="col-start-1 row-start-3 text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{napError}</p>}
       {puertoError && <p role="alert" className="col-start-2 row-start-3 text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{puertoError}</p>}

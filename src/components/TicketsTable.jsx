@@ -1,4 +1,4 @@
-import { ArrowDownAZ, Ban, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPin, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
+import { ArrowDownAZ, Ban, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 // Para reactivar la columna ENVIADO: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
@@ -13,6 +13,7 @@ import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
+import InsigniaGarantia from './InsigniaGarantia';
 import BotonVerDetalle from './BotonVerDetalle';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
 import { estadoViaje } from '../utils/enCamino';
@@ -74,7 +75,7 @@ export default function TicketsTable({
               {/* El título va centrado como los demás; el ícono de orden cuelga a su derecha sin correrlo. */}
               <span className="relative block w-fit mx-auto">
                 FALLA / TRABAJO
-                <ArrowDownAZ className={`absolute left-full top-1/2 -translate-y-1/2 ml-1 w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                <ArrowDownAZ className={`absolute left-full top-1/2 -translate-y-1/2 ml-1 w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-600 dark:text-zinc-500 group-hover:text-zinc-300'}`} />
               </span>
             </th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
@@ -124,7 +125,7 @@ export default function TicketsTable({
                       <span className="font-medium">{ticket.nombre}</span>
                       {canEditTickets && onVerDetalle && <BotonVerDetalle ticket={ticket} onClick={onVerDetalle} />}
                     </div>
-                    {!agrupado && <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{ticket.fecha}</span>}
+                    {!agrupado && <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
                     <DevolucionAviso ticket={ticket} compact />
@@ -136,7 +137,7 @@ export default function TicketsTable({
                       <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
                     )}
                     {ticket.observacion && (
-                      <span className="flex items-start gap-1 text-[10px] text-zinc-500 dark:text-zinc-400" title={ticket.observacion}>
+                      <span className="flex items-start gap-1 text-[10px] text-zinc-600 dark:text-zinc-400" title={ticket.observacion}>
                         <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />
                         <span className="line-clamp-2">{ticket.observacion}</span>
                       </span>
@@ -175,6 +176,7 @@ export default function TicketsTable({
                     <div className="flex flex-wrap items-center gap-1">
                       <span className={`inline-block text-[10px] font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
                       <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
+                      {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                     </div>
                     {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
                     {instalacionSinUbicacion(ticket) && (
@@ -212,8 +214,8 @@ export default function TicketsTable({
                         envio.cambioTrasEnvio
                           ? 'bg-amber-500 text-black hover:bg-amber-400'
                           : envio.enviado
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-500'
-                            : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-700 disabled:hover:bg-zinc-200 dark:disabled:hover:bg-zinc-800'
+                            ? 'bg-emerald-700 text-white hover:bg-emerald-500'
+                            : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-700 disabled:hover:bg-zinc-200 dark:disabled:hover:bg-zinc-800'
                       }`}
                     >
                       {envio.cambioTrasEnvio ? <TriangleAlert className="w-3.5 h-3.5" /> : envio.enviado ? <CheckCheck className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
@@ -257,7 +259,6 @@ export default function TicketsTable({
                             {ticket.estado === 'PRE-FINALIZADO' && (
                               <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>
                             )}
-                            <button onClick={() => onPegarUbicacion(ticket)} aria-label={`${ticket.ubicacion ? 'Cambiar' : 'Pegar'} ubicación de orden ${ticket.codigo || ticket.id}`} title={ticket.ubicacion ? 'Cambiar ubicación' : 'Pegar ubicación desde el portapapeles'} className={`p-1 rounded transition-colors ${ticket.ubicacion ? 'text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 hover:bg-sky-200 dark:hover:bg-sky-900/50' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}><MapPin className="w-3.5 h-3.5" /></button>
                             <RowMenu
                               label={`Más acciones de orden ${ticket.codigo || ticket.id}`}
                               items={[
@@ -280,12 +281,12 @@ export default function TicketsTable({
           })}
           {filteredTickets.length === 0 && (
             <tr>
-              <td colSpan={COLUMNAS} className="px-4 py-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">
+              <td colSpan={COLUMNAS} className="px-4 py-12 text-center text-zinc-600 dark:text-zinc-400 font-medium">
                 {isTecnico && !hasAnyTickets ? (
                   <div className="flex flex-col items-center gap-2">
-                    <Wrench className="w-6 h-6 text-zinc-400 dark:text-zinc-600" aria-hidden="true" />
+                    <Wrench className="w-6 h-6 text-zinc-500 dark:text-zinc-600" aria-hidden="true" />
                     <span>No tienes asignaciones en este momento.</span>
-                    <span className="text-xs text-zinc-400 dark:text-zinc-500">Cuando te asignen una orden, aparecerá aquí.</span>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-500">Cuando te asignen una orden, aparecerá aquí.</span>
                   </div>
                 ) : isTecnico ? (
                   'No tienes asignaciones que coincidan con los filtros actuales.'

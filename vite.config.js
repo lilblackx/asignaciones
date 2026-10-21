@@ -2,8 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+
+// La versión de la app (package.json) y de qué compilación es (fecha y commit), para el pie discreto de la app.
+const version = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')).version
+const commit = (() => { try { return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch { return '' } })()
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+    __APP_COMPILACION__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+    __APP_COMMIT__: JSON.stringify(commit),
+  },
   build: {
     rolldownOptions: {
       output: {

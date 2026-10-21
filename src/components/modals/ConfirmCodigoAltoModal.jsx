@@ -13,10 +13,10 @@ export default function ConfirmCodigoAltoModal({ salto, isSubmitting, onCancel, 
             <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-500" />
           </div>
           <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">¿Código fuera de secuencia?</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-2">
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-2">
             El último código es el número <strong>{salto.ultimo}</strong> y escribiste <strong>{salto.codigo}</strong>. El siguiente en la secuencia sería el <strong>{salto.esperado}</strong>.
           </p>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm">
             Si continúas, las próximas órdenes automáticas seguirán desde {salto.codigo}. ¿Es correcto?
           </p>
         </div>
@@ -24,7 +24,7 @@ export default function ConfirmCodigoAltoModal({ salto, isSubmitting, onCancel, 
           <button
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
+            className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
             Corregir
           </button>
           <button

@@ -1,9 +1,10 @@
 import { ArrowLeft, X } from 'lucide-react';
 
-// La barra negra de arriba de los módulos: "Volver" a la izquierda (solo en PC, donde el módulo ocupa toda la pantalla), el título y,
-// a la derecha, las acciones propias del módulo y la X, que cierra el módulo entero.
-//   onVolver: sube un nivel dentro del módulo; sin él, Volver cierra (igual que la X). Sin onClose (página del almacén) no hay ni Volver ni X.
-export default function EncabezadoModulo({ Icono, titulo, onClose, onVolver = onClose, acciones, className = '' }) {
+// La barra negra de arriba de los módulos: el título y, a la derecha, las acciones propias del módulo y la X, que cierra el módulo entero.
+//   onVolver (opcional): un "Volver" a la izquierda (solo en PC) para subir un nivel dentro del módulo; sin él no hay Volver, porque la X ya cierra. Sin onClose (página) no hay X.
+export default function EncabezadoModulo({ Icono, titulo, onClose, onVolver, acciones, className = '', enPagina = false }) {
+  // Como página dentro del marco, el título y el menú los pone el encabezado de la app.
+  if (enPagina) return null;
   return (
     <div className={`bg-black px-4 sm:px-6 py-3.5 border-b-2 border-red-600 flex items-center gap-3 shrink-0 sticky top-0 z-10 ${className}`}>
       {onVolver && (

@@ -61,7 +61,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
         type="button"
         onClick={verValores}
         disabled={buscando}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-60"
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-60"
       >
         {buscando ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Radio className="w-3.5 h-3.5" aria-hidden="true" />}
         {buscando ? 'Consultando SmartOLT...' : 'Ver valores'}
@@ -114,7 +114,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
                     <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{onu.zona || onu.nombre || 'Servicio'}</span>
                     <span className="shrink-0 text-xs font-black text-zinc-600 dark:text-zinc-300">{valorSenal(onu.senal1310) !== null ? `${valorSenal(onu.senal1310)} dBm` : 'sin señal'}</span>
                   </span>
-                  {onu.direccion && <span className="block mt-0.5 text-[11px] leading-snug font-medium text-zinc-500 dark:text-zinc-400">{onu.direccion}</span>}
+                  {onu.direccion && <span className="block mt-0.5 text-[11px] leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>}
                 </button>
               ))}
             </div>

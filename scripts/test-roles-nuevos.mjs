@@ -156,7 +156,7 @@ check('almacén: botón Actualizar', /onClick=\{actualizar\}/.test(almacenApp), 
 
 // --- Aislamiento: la app de oficina y técnicos no se toca ---
 const root = leer('../src/Root.jsx');
-check('Root manda cada rol de solo lectura a su pantalla', /\[ROLES\.ALMACEN\]: AlmacenApp, \[ROLES\.PROMOTORA\]: PromotoraApp, \[ROLES\.FINANZAS\]: FinanzasApp/.test(root) && /<App auth=\{auth\} \/>/.test(root), true);
+check('Root manda cada rol de solo lectura a su pantalla', /\[ROLES\.ALMACEN\]: AlmacenApp, \[ROLES\.PROMOTORA\]: PromotoraApp, \[ROLES\.FINANZAS\]: FinanzasApp/.test(root) && /<App auth=\{auth\} /.test(root), true);
 check('las pantallas de Almacén y Promotora no importan hooks de edición', ['AlmacenApp', 'PromotoraApp'].some((f) => /useTickets'|usePushToken|useUsers/.test(leer(`../src/components/${f}.jsx`))), false);
 const reglas = leer('../firestore.rules');
 check('las reglas no dan escritura a los roles nuevos', /allow (create|update|delete|write)[^;]*(isAlmacenRole|isPromotoraRole)/.test(reglas), false);

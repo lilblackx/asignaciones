@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import { COLORES_CONECTOR_EXTERNO, COLORES_CONECTOR_INTERNO, ETIQUETA_COLOR, MAX_CONECTORES_POR_COLOR } from '../../utils/tipoVisita';
 
 const ESTILO_COLOR = {
-  VERDE: { punto: 'bg-emerald-500', activo: 'bg-emerald-600 border-emerald-600 text-white' },
+  VERDE: { punto: 'bg-emerald-500', activo: 'bg-emerald-700 border-emerald-700 text-white' },
   AZUL: { punto: 'bg-blue-500', activo: 'bg-blue-600 border-blue-600 text-white' },
 };
 
@@ -24,7 +24,7 @@ function GrupoConector({ id, etiqueta, ayuda, colores, valor, onChange }) {
               aria-pressed={activo}
               onClick={() => onChange(activo ? '' : color)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
-                activo ? ESTILO_COLOR[color].activo : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-amber-500'
+                activo ? ESTILO_COLOR[color].activo : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-amber-500'
               }`}
             >
               <span className={`w-3.5 h-3.5 rounded-full ${ESTILO_COLOR[color].punto} ${activo ? 'ring-2 ring-white' : ''}`} aria-hidden="true" />
@@ -61,7 +61,7 @@ export default function ConectoresRecableado({ colorExterno, colorInterno, onExt
 function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
   const n = /^\d{1,2}$/.test(String(valor).trim()) ? parseInt(valor, 10) : 0;
   const poner = (x) => onChange(String(Math.min(MAX_CONECTORES_POR_COLOR, Math.max(0, x))));
-  const boton = 'w-11 h-11 shrink-0 rounded-xl border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 text-lg font-black hover:border-amber-500 disabled:opacity-40 disabled:hover:border-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500';
+  const boton = 'w-11 h-11 shrink-0 rounded-xl border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 text-lg font-black hover:border-amber-500 disabled:opacity-40 disabled:hover:border-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500';
   return (
     <div className="flex-1 min-w-[9.5rem] space-y-1.5">
       <label htmlFor={id} className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
@@ -78,7 +78,7 @@ function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
           value={valor}
           aria-invalid={!!error}
           onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
-          className={`w-full min-w-0 text-center bg-white dark:bg-zinc-950 border-2 ${error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'} px-2 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-base font-black text-zinc-900 dark:text-white`}
+          className={`w-full min-w-0 text-center bg-white dark:bg-zinc-950 border-2 ${error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700'} px-2 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-base font-black text-zinc-900 dark:text-white`}
         />
         <button type="button" aria-label={`Agregar un conector ${etiqueta.toLowerCase()}`} disabled={n >= MAX_CONECTORES_POR_COLOR} onClick={() => poner(n + 1)} className={boton}>+</button>
       </div>
@@ -126,10 +126,10 @@ export function CantidadesConectorVisita({ interno, verde, azul, onVerde, onAzul
         CONECTORES USADOS{' '}
         <span className="font-normal text-red-500">{interno ? '(obligatorio: al menos 1 en total)' : '(obligatorio)'}</span>
       </p>
-      <p className="text-[10px] text-zinc-400 ml-1">{interno ? 'Escribe cuántos usaste de cada color; deja en 0 el que no usaste.' : 'El conector externo es solo verde: escribe cuántos usaste.'}</p>
+      <p className="text-[10px] text-zinc-400 ml-1">{interno ? 'Escribe cuántos usaste de cada color; deja en 0 el que no usaste.' : 'El conector externo es solo verde: escribe cuántos usaste. Si también cambiaste un conector interno azul, escribe cuántos; si no, déjalo en 0.'}</p>
       <div role="group" aria-labelledby="pf-cantidad-conectores-etiqueta" className="flex flex-wrap gap-3">
-        <CampoCantidad id="pf-cant-verde" etiqueta={interno ? 'Verdes' : 'Conectores verdes'} color="VERDE" valor={verde} onChange={onVerde} error={error?.campo === 'verde' ? mensaje : ''} />
-        {interno && <CampoCantidad id="pf-cant-azul" etiqueta="Azules" color="AZUL" valor={azul} onChange={onAzul} error={error?.campo === 'azul' ? mensaje : ''} />}
+        <CampoCantidad id="pf-cant-verde" etiqueta={interno ? 'Verdes' : 'Externos verdes'} color="VERDE" valor={verde} onChange={onVerde} error={error?.campo === 'verde' ? mensaje : ''} />
+        <CampoCantidad id="pf-cant-azul" etiqueta={interno ? 'Azules' : 'Internos azules (opcional)'} color="AZUL" valor={azul} onChange={onAzul} error={error?.campo === 'azul' ? mensaje : ''} />
       </div>
       {mensaje && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{mensaje}</p>}
     </div>

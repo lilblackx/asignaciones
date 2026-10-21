@@ -49,7 +49,7 @@ export default function MenuExportar({ formatos, onElegir, ocupado, extra = '', 
                 <Icono className="w-5 h-5 shrink-0 text-red-600" aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block text-sm font-bold text-zinc-900 dark:text-white">{etiqueta}</span>
-                  <span className="block text-[11px] text-zinc-500">{detalle}</span>
+                  <span className="block text-[11px] text-zinc-600 dark:text-zinc-500">{detalle}</span>
                 </span>
               </button>
             );

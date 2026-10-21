@@ -9,7 +9,7 @@ import DetalleTecnico from './DetalleTecnico';
 import PanelPago from './PanelPago';
 import PanelAdelanto from './PanelAdelanto';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
-import { BOTON_FILA, TITULO_SECCION } from './estilos';
+import { BOTON_FILA, TARJETA, TITULO_SECCION } from './estilos';
 import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
 import { saldoAdelanto } from '../../utils/adelantos';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
@@ -18,7 +18,7 @@ import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 // La pantalla de pago a técnicos: arriba las cifras y los avisos, y debajo la lista de técnicos a la izquierda y todo lo del técnico elegido a la derecha (en el celular, la lista y,
 // al elegir uno, su pantalla con un botón para volver). "Pagar" y "Adelanto" abren su formulario en esa misma pantalla, no en una ventana.
 // `adelantos`: los adelantos; `onPagar(fila, { datosPago, notificar, nota })`, `onAdelanto(tecnico, entrada, { notificar })` y `onAnularAdelanto(adelanto)` devuelven true si se guardó.
-export default function TecnicosFinanzas({ filas, items, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto }) {
+export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto }) {
   const grande = useEsPantallaGrande();
   const [elegido, setElegido] = useState(null);
   const [modo, setModo] = useState('detalle');
@@ -50,12 +50,20 @@ export default function TecnicosFinanzas({ filas, items, sinTipo = [], onTipoMud
   const confirmarAnular = async () => { await onAnular(anulando); setAnulando(null); };
   const confirmarAnularAdelanto = async () => { await onAnularAdelanto(anulandoAdelanto); setAnulandoAdelanto(null); };
 
-  const alerta = 'rounded-lg border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-base text-amber-900 dark:text-amber-100 space-y-3';
+  const alerta = 'rounded-lg border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
 
   return (
     <div className="space-y-5">
       {!enDetalleMovil && <AvisoHistorial {...historial} />}
       {!enDetalleMovil && <ResumenCifras items={cifrasPagos(tecnicos, sumaPagado(Object.values(pagadasPorTecnico)), tasa)} />}
+
+      {!enDetalleMovil && esperandoRevision > 0 && (
+        <div className={alerta}>
+          <p className="flex items-start gap-2"><TriangleAlert className="w-6 h-6 shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{esperandoRevision === 1 ? '1 orden espera' : `${esperandoRevision} órdenes esperan`} la revisión de un administrador y todavía no se {esperandoRevision === 1 ? 'puede' : 'pueden'} pagar. Aquí solo aparece lo que ya aprobó.</span>
+          </p>
+        </div>
+      )}
 
       {!enDetalleMovil && ordenesSinTecnico.length > 0 && (
         <div className={alerta}>
@@ -102,14 +110,14 @@ export default function TecnicosFinanzas({ filas, items, sinTipo = [], onTipoMud
       {!enDetalleMovil && <h2 className={TITULO_SECCION}>Técnicos · {etiquetaRango(rango)}</h2>}
 
       {tecnicos.length === 0 ? (
-        <p className="text-lg text-zinc-700 dark:text-zinc-200 text-center py-10">Ninguna orden pagable en este periodo.</p>
+        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ninguna orden pagable en este periodo.</p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(20rem,26rem)_1fr] items-start">
           <div className={actual ? 'hidden lg:block lg:sticky lg:top-20' : ''}>
             <ListaTecnicos filas={tecnicos} elegido={actual?.tecnico} tasa={tasa} onElegir={elegir} />
           </div>
           {actual && (
-            <div ref={zonaDetalle} className="min-w-0 scroll-mt-4" key={`${actual.tecnico}-${modo}`}>
+            <div ref={zonaDetalle} className={`min-w-0 scroll-mt-4 ${TARJETA} p-4 sm:p-5`} key={`${actual.tecnico}-${modo}`}>
               {modo === 'pagar' ? (
                 <PanelPago fila={actual} rango={rango} tasa={tasa} ocupado={ocupado} onConfirmar={(opciones) => onPagar(actual, opciones)} onVolver={() => setModo('detalle')} />
               ) : modo === 'adelanto' ? (
@@ -122,6 +130,8 @@ export default function TecnicosFinanzas({ filas, items, sinTipo = [], onTipoMud
                   rango={rango}
                   pagos={registrados.filter((p) => p.tecnico === actual.tecnico)}
                   adelantos={adelantosVisibles.filter((a) => a.tecnico === actual.tecnico)}
+                  ajustes={ajustes.filter((a) => a.tecnico === actual.tecnico && saldoAdelanto(a) > 0)}
+                  garantiasPendientes={garantiasPendientes}
                   pagado={pagadasPorTecnico[actual.tecnico]}
                   ocupado={ocupado}
                   onPagar={() => setModo('pagar')}
@@ -137,7 +147,7 @@ export default function TecnicosFinanzas({ filas, items, sinTipo = [], onTipoMud
         </div>
       )}
 
-      {detalleOrden && <DetalleOrdenFinanzas item={detalleOrden} tarifas={tarifas} tasa={tasa} onClose={() => setDetalleOrden(null)} />}
+      {detalleOrden && <DetalleOrdenFinanzas item={detalleOrden} tarifas={tarifas} tasa={tasa} ajustes={ajustesTodos} onClose={() => setDetalleOrden(null)} />}
       {anulandoAdelanto && (
         <ConfirmModal
           color="red"

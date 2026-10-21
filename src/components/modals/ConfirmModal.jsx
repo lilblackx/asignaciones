@@ -68,7 +68,7 @@ export default function ConfirmModal({
             <Icon className={`w-10 h-10 ${theme.iconColor}`} />
           </div>
           <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">{title}</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-4">{description}</p>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">{description}</p>
           {children && <div className="w-full mb-2">{children}</div>}
           {dateInput !== undefined && setDateInput && (
             <div className="w-full space-y-1 text-left">
@@ -78,7 +78,7 @@ export default function ConfirmModal({
           )}
         </div>
         <div className="p-6 bg-zinc-50 dark:bg-zinc-950 flex gap-3 border-t border-zinc-200 dark:border-zinc-800">
-          <button onClick={onCancel} disabled={isProcessing} className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
+          <button onClick={onCancel} disabled={isProcessing} className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
             {cancelLabel}
           </button>
           <button

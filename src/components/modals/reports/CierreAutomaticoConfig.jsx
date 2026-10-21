@@ -99,12 +99,12 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
           <h3 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
             <Clock className="w-5 h-5 text-blue-600 shrink-0" aria-hidden="true" /> Cierre automático
             {!loading && (
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                 {guardado.activo ? 'Activo' : 'Desactivado'}
               </span>
             )}
           </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
             {guardado.activo
               ? <>Se ejecuta <strong>{resumenDias(guardado.dias)}</strong> a las <strong>{formatoHora12(guardado.hora)}</strong> (hora de Venezuela).</>
               : 'Ejecuta el cierre solo, a la hora y los días que elijas.'}
@@ -129,7 +129,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
       {isAdmin && (
         <div className="mt-4 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label htmlFor="cierre-hora" className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">Hora</label>
+            <label htmlFor="cierre-hora" className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Hora</label>
             <CampoHora id="cierre-hora" ariaLabel="Hora del cierre" valor={valores.hora} onChange={(v) => cambio({ hora: v })} />
           </div>
           <div role="group" aria-label="Días de la semana" className="flex flex-wrap gap-1.5">
@@ -142,7 +142,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
                   aria-pressed={activo}
                   aria-label={d.largo}
                   onClick={() => toggleDia(d.valor)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${activo ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${activo ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400'}`}
                 >
                   {d.corto}
                 </button>
@@ -158,7 +158,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
             >
               {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar cambios'}
             </button>
-            {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-zinc-500 hover:underline">Descartar</button>}
+            {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-zinc-600 dark:text-zinc-500 hover:underline">Descartar</button>}
             {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
             {mensaje && <p role="status" className={`text-xs font-bold ${mensaje.tipo === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{mensaje.texto}</p>}
           </div>
@@ -168,7 +168,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
               <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline">
                 Simular notificaciones (solo desarrollo)
               </button>
-              {mensajeSim && <p role="status" className="mt-1 text-[11px] text-zinc-500">{mensajeSim}</p>}
+              {mensajeSim && <p role="status" className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-500">{mensajeSim}</p>}
             </div>
           )}
         </div>
@@ -181,7 +181,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
       )}
 
       {ultima && (
-        <p className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400">
           <span className="font-bold">Último cierre automático:</span> {ultima}
         </p>
       )}

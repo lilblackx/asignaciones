@@ -60,17 +60,17 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
               autoFocus
               aria-invalid={!!error}
               placeholder="Ej. Falta un poste frente a la casa, la NAP está sin puertos..."
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 resize-none"
             />
             {error && <p role="alert" className="text-[11px] text-red-500 font-bold ml-1">{error}</p>}
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 ml-1">
               {esTecnico
                 ? 'La orden sale de tu lista y la oficina recibe un aviso. Cuando infraestructura termine, la oficina decide cómo sigue.'
                 : `La orden sale de la lista del técnico${ticket.tecnico ? ` (${ticket.tecnico})` : ''} y queda esperando en "En infraestructura". Tú decides cómo sigue.`}
             </p>
           </div>
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
+            <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
             <button type="button" onClick={confirmar} disabled={enviando || Boolean(cambio)} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-xl transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Escalando...' : 'Escalar a infraestructura'}</button>
           </div>
         </div>

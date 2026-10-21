@@ -17,7 +17,7 @@ export default function BarraFinanzas({ periodo, onPeriodo, personalizado, onPer
             type="button"
             aria-pressed={periodo === id}
             onClick={() => onPeriodo(id)}
-            className={`h-10 px-2 sm:px-4 rounded-lg text-sm sm:text-base font-semibold border-2 transition-colors ${periodo === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+            className={`h-9 px-1 sm:px-4 whitespace-nowrap rounded-lg text-xs sm:text-sm font-semibold border transition-colors ${periodo === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
           >
             {texto}
           </button>
@@ -46,11 +46,11 @@ export default function BarraFinanzas({ periodo, onPeriodo, personalizado, onPer
           type="button"
           onClick={onRecargar}
           disabled={cargando}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border-2 border-zinc-400 dark:border-zinc-600 bg-white dark:bg-zinc-950 text-base font-semibold text-zinc-800 dark:text-zinc-100 hover:border-red-600 disabled:opacity-60 transition-colors whitespace-nowrap"
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:border-red-600 disabled:opacity-60 transition-colors whitespace-nowrap"
         >
           <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" /> {cargando ? 'Actualizando...' : 'Actualizar'}
         </button>
-        <MenuExportar formatos={formatosExportar} onElegir={onExportar} ocupado={exportando} alinear="izquierda" extra="h-10! px-4! text-base! font-semibold! border-2 border-red-600 hover:border-red-700" />
+        <MenuExportar formatos={formatosExportar} onElegir={onExportar} ocupado={exportando} alinear="izquierda" extra="h-9! px-4! text-sm! font-semibold! border border-red-600 hover:border-red-700" />
       </div>
     </div>
   );

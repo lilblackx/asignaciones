@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { avisoDeAdelanto, avisoDeAnulacion, avisoDePago } from '../utils/finanzas';
+import { avisoDeAdelanto, avisoDeAjuste, avisoDeAnulacion, avisoDePago } from '../utils/finanzas';
 import { playAprobadoSound } from '../utils/notificationSound';
 
-// El técnico se entera, con la app abierta, de un pago o un adelanto que Finanzas le registró (con la app cerrada le llega la push): aviso en pantalla, en la campana y
+// El técnico se entera, con la app abierta, de un pago, un adelanto o un descuento o bono por una orden corregida que le registraron (con la app cerrada le llega la push): aviso en pantalla, en la campana y
 // con sonido, como el resto. Escucha solo lo suyo (las reglas se lo exigen) y solo avisa de lo que Finanzas marcó "Notificar al técnico"; lo que ya existía al abrir
 // la app es la base y no se avisa de nuevo.
 export function useAvisosPagos({ firebaseUser, tecnico, onNotify, setToastMsg }) {
@@ -48,6 +48,8 @@ export function useAvisosPagos({ firebaseUser, tecnico, onNotify, setToastMsg })
       escucharAnulaciones(),
       escuchar('pagosTecnicos', 'pagoTecnico', avisoDePago),
       escuchar('adelantosTecnicos', 'adelantoTecnico', avisoDeAdelanto),
+      // Un descuento o un bono por una orden que el administrador pasó de un técnico a otro (se avisa al aprobarla).
+      escuchar('ajustesTecnicos', 'ajusteTecnico', avisoDeAjuste),
     ];
     return () => bajas.forEach((baja) => baja());
   }, [firebaseUser, tecnico]);

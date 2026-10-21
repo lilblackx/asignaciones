@@ -3,7 +3,7 @@ import { conectorDeVisita } from '../../utils/tipoVisita';
 import { esInstalacion } from '../../utils/instalacion';
 import { normalizarConectoresInstalacion } from '../../utils/conectoresInstalacion';
 
-const ESTILO_COLOR = { VERDE: 'bg-emerald-600 text-white', AZUL: 'bg-blue-600 text-white' };
+const ESTILO_COLOR = { VERDE: 'bg-emerald-700 text-white', AZUL: 'bg-blue-600 text-white' };
 
 // Los conectores que se colocaron en una visita de conector: su tipo (externo o interno) y cuántos de cada color, en un bloque
 // propio, aparte del cobro de la visita (que sale en su recuadro, con el concepto y el selector de cobro).
@@ -43,6 +43,8 @@ export default function ConectorColocado({ ticket }) {
   if (esInstalacion(ticket?.tipoTrabajo)) return <ConectoresInstalacion ticket={ticket} />;
   const conector = conectorDeVisita(ticket);
   if (!conector) return null;
+  // Visita de conector externo con internos azules: el verde es externo y el azul, interno; van en filas separadas.
+  if (conector.tipo === 'Externo' && conector.cantidades.azul > 0) return <ConectoresInstalacion ticket={{ instalacion: { conectores: { externo: { verde: conector.cantidades.verde }, interno: { azul: conector.cantidades.azul } } } }} />;
   return (
     <section aria-label="Conectores colocados" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200">
       <h3 className="flex items-center gap-2 font-black tracking-wide">

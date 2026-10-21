@@ -7,9 +7,9 @@ const CAJA = 'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-
 function Contenido({ etiqueta, valor, detalle }) {
   return (
     <>
-      <div className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 leading-tight">{etiqueta}</div>
+      <div className="text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-500 leading-tight">{etiqueta}</div>
       <div className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white leading-tight mt-1 break-words"><NumeroContado valor={valor} /></div>
-      {detalle && <div className="text-[11px] text-zinc-500 mt-0.5 truncate">{detalle}</div>}
+      {detalle && <div className="text-[11px] text-zinc-600 dark:text-zinc-500 mt-0.5 truncate">{detalle}</div>}
     </>
   );
 }

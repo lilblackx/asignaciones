@@ -13,6 +13,7 @@ import { direccionCliente, nombrePersona } from '../utils/datosCliente';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
+import { errorGarantia } from '../utils/garantia';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { ConflictoOrdenError, verificarEstado } from '../utils/concurrencia';
 import { camposTiempos, conTiempos } from '../utils/tiemposOrden';
@@ -664,6 +665,12 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       setToastMsg({ type: 'error', text: MENSAJE_PROMOTOR_OBLIGATORIO });
       return false;
     }
+    // Garantía de otro técnico: con el check marcado hace falta la orden original, de un técnico distinto.
+    const errorDeGarantia = errorGarantia(formData.garantiaDe, { tecnico: formData.tecnico });
+    if (errorDeGarantia) {
+      setToastMsg({ type: 'error', text: errorDeGarantia });
+      return false;
+    }
     creandoRef.current = true;
     try {
       return await crearTicketSinGuardia(formData);
@@ -682,7 +689,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const codigoManual = (formData.codigo || '').trim();
     const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
     const tieneTecnico = Boolean(formData.tecnico && formData.tecnico.trim());
-    const { ventaTecnico, ...datosOrden } = formData;
+    const { ventaTecnico, garantiaDe, ...datosOrden } = formData;
     // La promotora de una instalación (sale de la plantilla): se guarda con una clave para que cada promotora vea las suyas.
     const datosPromotora = esInstalacion ? { promotora: nombrePromotora(formData.promotora), promotoraClave: claveNombre(formData.promotora) } : {};
     const armarTicket = (codigo) => ({
@@ -691,6 +698,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       direccion: direccionCliente(formData.direccion),
       ...datosPromotora,
       ...(ventaTecnico ? { ventaTecnico } : {}),
+      ...(garantiaDe?.id ? { garantiaDe } : {}),
       ubicacion: normalizarUbicacion(formData.ubicacion).valor || '',
       napCoordenadas: normalizarCoordenadasNap(formData.napCoordenadas).valor || '',
       falla: finalFalla,
@@ -763,6 +771,14 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
+    if (role !== 'TECNICO') {
+      const errorDeGarantia = errorGarantia(editingTicket.garantiaDe, { tecnico: editingTicket.tecnico });
+      if (errorDeGarantia) {
+        setToastMsg({ type: 'error', text: errorDeGarantia });
+        return false;
+      }
+    }
+
     const potencia = parsePotencia(editingTicket.potenciaDbm);
     if (potencia.error) {
       setToastMsg({ type: 'error', text: `Potencia óptica: ${potencia.error}` });
@@ -810,6 +826,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     const armarTicket = (codigo) => {
       const ticketToSave = { ...editingTicket, nombre: nombrePersona(editingTicket.nombre), direccion: direccionCliente(editingTicket.direccion), codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
+      // Sin el check de garantía (o sin original elegida) la orden no lleva ese campo.
+      if (!ticketToSave.garantiaDe?.id) delete ticketToSave.garantiaDe;
       // Fecha en que se finalizó (la usa el módulo de materiales para filtrar por período).
       if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') ticketToSave.finalizadoEn = Date.now();
       // Si la orden deja de estar pendiente, el viaje "en camino" / "en sitio" termina.
@@ -838,6 +856,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');
         if (esInstalacion(editingTicket.tipoTrabajo) && promotoraDeOrden(originalTicket) !== ticketToSave.promotora) cambios.push(`Promotor: ${ticketToSave.promotora || 'Vacío'}`);
         if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
+        if ((originalTicket.garantiaDe?.id || '') !== (ticketToSave.garantiaDe?.id || '')) cambios.push(ticketToSave.garantiaDe?.id ? `Garantía de otro técnico: ${ticketToSave.garantiaDe.codigo} (${ticketToSave.garantiaDe.tecnico})` : 'Garantía de otro técnico quitada');
         // Lo que cargó el técnico y la oficina corrigió (serial, VLAN, metraje, conectores, tipo de visita...).
         cambios.push(...cambiosDatosTecnico(originalTicket, ticketToSave));
         if ((originalTicket.ubicacion || '') !== ticketToSave.ubicacion) cambios.push('Ubicación modificada');

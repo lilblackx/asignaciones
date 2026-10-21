@@ -4,6 +4,7 @@ import { db, appId } from '../lib/firebase';
 import { armarPago, avisoDeAdelanto, avisoDeAnulacion, avisoDePago, tarifasCompletas } from '../utils/finanzas';
 import { armarAdelanto } from '../utils/adelantos';
 import { sendPush } from '../lib/notify';
+import { esperarConLimite } from '../utils/tiempoLimite';
 
 const datos = (nombre) => collection(db, 'artifacts', appId, 'public', 'data', nombre);
 const documento = (nombre, id) => doc(db, 'artifacts', appId, 'public', 'data', nombre, id);
@@ -21,6 +22,8 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
   const [registros, setRegistros] = useState([]);
   const [tiposMudanza, setTiposMudanza] = useState({});
   const [adelantos, setAdelantos] = useState([]);
+  const [ajustes, setAjustes] = useState([]);
+  const [revisionesLista, setRevisionesLista] = useState([]);
   const [pagos, setPagos] = useState([]);
   const [error, setError] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -33,6 +36,8 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       onSnapshot(documento('tarifasPago', 'actual'), (s) => setTarifasGuardadas(s.exists() ? s.data() : {}), alFallar('las tarifas')),
       onSnapshot(query(datos('pagosTecnicos'), orderBy('creadoEn', 'desc'), limit(MAX_PAGOS_VISIBLES)), (s) => setPagos(aLista(s)), alFallar('los pagos')),
       onSnapshot(query(datos('adelantosTecnicos'), orderBy('creadoEn', 'desc'), limit(MAX_ADELANTOS_VISIBLES)), (s) => setAdelantos(aLista(s)), alFallar('los adelantos')),
+      // Los descuentos y bonos por órdenes corregidas: se leen todos para ver los que todavía no entraron en ningún pago.
+      onSnapshot(datos('ajustesTecnicos'), (s) => setAjustes(aLista(s)), alFallar('los descuentos y bonos')),
     ];
     return () => bajas.forEach((baja) => baja());
   }, [firebaseUser]);
@@ -44,6 +49,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     const delPeriodo = (nombre) => query(datos(nombre), where('dia', '>=', desde), where('dia', '<=', hasta));
     const bajas = [
       onSnapshot(delPeriodo('ordenesPagadas'), (s) => setPagadas(aLista(s)), alFallar('las órdenes pagadas')),
+      onSnapshot(delPeriodo('revisionPagos'), (s) => setRevisionesLista(aLista(s)), alFallar('la revisión de pagos')),
       onSnapshot(query(datos('registroVnTa'), where('fecha', '>=', desde), where('fecha', '<=', hasta)), (s) => setRegistros(aLista(s)), alFallar('el registro de VN y TA')),
     ];
     return () => bajas.forEach((baja) => baja());
@@ -51,12 +57,18 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
 
   const tarifas = useMemo(() => tarifasCompletas(tarifasGuardadas), [tarifasGuardadas]);
   const idsPagadas = useMemo(() => new Set(pagadas.map((p) => p.id)), [pagadas]);
+  // La revisión del administrador de lo que se puede pagar: { [clave de la orden]: documento }.
+  const revisiones = useMemo(() => Object.fromEntries(revisionesLista.map((r) => [r.id, r])), [revisionesLista]);
 
   // Cada acción devuelve true si se guardó. Los errores salen como aviso, con el motivo cuando se sabe.
   const ejecutar = async (accion, exito, fallo) => {
     setOcupado(true);
     try {
-      await accion();
+      // Sin respuesta del servidor el botón no se queda esperando para siempre: se avisa y se libera.
+      if (!(await esperarConLimite(accion()))) {
+        setToastMsg({ type: 'error', duration: 9000, text: 'No hubo respuesta del servidor: el cambio queda en cola y se aplicará cuando vuelva la conexión. Revisa tu conexión antes de seguir.' });
+        return false;
+      }
       if (exito) setToastMsg({ type: 'success', text: exito });
       return true;
     } catch (e) {
@@ -106,6 +118,10 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
         const actual = adelantos.find((a) => a.id === id);
         lote.update(documento('adelantosTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto) });
       }
+      for (const { id, monto } of armado.ajustes) {
+        const actual = ajustes.find((a) => a.id === id);
+        lote.update(documento('ajustesTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto) });
+      }
       await lote.commit();
     }, `Pago registrado: ${fila.tecnico}.`, 'No se pudo registrar el pago. Alguna orden pudo haberse pagado ya: revisa e intenta de nuevo.');
     if (guardado && notificar) await avisarAlTecnico(fila.tecnico, avisoDePago(armado.pago), 'pagoTecnico');
@@ -146,8 +162,13 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       const actual = await getDoc(documento('adelantosTecnicos', id));
       if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)) });
     }
+    // Lo mismo con los descuentos y bonos por órdenes corregidas que entraron en ese pago.
+    for (const { id, monto } of pago.ajustes || []) {
+      const actual = await getDoc(documento('ajustesTecnicos', id));
+      if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)) });
+    }
     await lote.commit();
   }, 'Pago anulado: las órdenes vuelven a estar por pagar y los adelantos, por descontar.', 'No se pudo anular el pago.');
 
-  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas, registros, tiposMudanza, adelantos, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto };
+  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas, registros, tiposMudanza, adelantos, ajustes, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto };
 }

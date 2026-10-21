@@ -32,7 +32,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
         aria-checked={activa}
         onClick={() => onChange({ ...seleccion, modo })}
         className={`w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-xl border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-          activa ? 'border-sky-500 bg-white dark:bg-sky-950/40' : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 hover:border-sky-400'
+          activa ? 'border-sky-500 bg-white dark:bg-sky-950/40' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 hover:border-sky-400'
         }`}
       >
         <span className={`w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center ${activa ? 'bg-sky-600 border-sky-600 text-white' : 'border-zinc-400 dark:border-zinc-600'}`} aria-hidden="true">
@@ -40,7 +40,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
         </span>
         <span className="min-w-0">
           <span className="block text-xs font-black text-zinc-900 dark:text-white">{titulo}</span>
-          {detalle && <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{detalle}</span>}
+          {detalle && <span className="block text-[11px] text-zinc-600 dark:text-zinc-400">{detalle}</span>}
         </span>
       </button>
     );
@@ -67,7 +67,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
                   aria-checked={activa}
                   onClick={() => onChange({ ...seleccion, moneda: valor })}
                   className={`px-3 py-2 rounded-xl border-2 text-xs font-black transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-                    activa ? 'border-sky-500 bg-sky-600 text-white' : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
+                    activa ? 'border-sky-500 bg-sky-600 text-white' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
                   }`}
                 >
                   {texto}
@@ -87,7 +87,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
             onChange={(e) => onChange({ ...seleccion, otro: e.target.value.replace(/[^\d,]/g, '') })}
             aria-invalid={!!error}
             aria-describedby={error ? `${idBase}-error` : undefined}
-            className={`w-full bg-white dark:bg-zinc-950 border-2 px-3 py-2.5 rounded-xl outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm focus:ring-0 ${error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-sky-500'}`}
+            className={`w-full bg-white dark:bg-zinc-950 border-2 px-3 py-2.5 rounded-xl outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm focus:ring-0 ${error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-sky-500'}`}
           />
           {error && <p id={`${idBase}-error`} role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
         </div>

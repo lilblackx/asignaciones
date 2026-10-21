@@ -5,7 +5,7 @@ export default function TamanoLetra({ nivel, onNivel }) {
   return (
     <div role="group" aria-label="Tamaño de letra" className="inline-flex items-center gap-2">
       <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 hidden sm:inline">Tamaño de letra</span>
-      <span className="inline-flex rounded-lg border-2 border-zinc-400 dark:border-zinc-600 overflow-hidden">
+      <span className="inline-flex rounded-lg border border-zinc-400 dark:border-zinc-700 overflow-hidden">
         {NIVELES.map((n) => (
           <button
             key={n.id}

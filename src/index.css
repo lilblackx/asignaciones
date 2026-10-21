@@ -2,6 +2,12 @@
 @import "@fontsource-variable/inter/wght.css";
 @custom-variant dark (&:is(.dark *));
 
+/* El fondo de página de toda la app: un gris claro (más oscuro que las tarjetas blancas, para que éstas resalten) en el tema claro y el negro de siempre en el oscuro. */
+@utility bg-fondo {
+  background-color: var(--color-zinc-200);
+  &:is(.dark *) { background-color: var(--color-zinc-950); }
+}
+
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 

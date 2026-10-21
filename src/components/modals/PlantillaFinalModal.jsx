@@ -25,7 +25,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
         </div>
 
         <div className="p-4 overflow-y-auto space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Texto para copiar</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-500">Texto para copiar</p>
           <pre className="whitespace-pre-wrap break-words text-xs leading-relaxed font-mono text-zinc-800 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-md p-3">{texto}</pre>
         </div>
 
@@ -33,7 +33,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            className="px-4 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
           >
             Cerrar
           </button>
@@ -44,7 +44,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
             className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg shadow-md"
             iconoClase="w-3.5 h-3.5"
             tono="bg-red-600 hover:bg-red-700 text-white"
-            tonoCopiado="bg-emerald-600 text-white"
+            tonoCopiado="bg-emerald-700 text-white"
           >
             {copiado === 'plantilla' ? 'Copiada' : 'Copiar plantilla'}
           </BotonCopiar>

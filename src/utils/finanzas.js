@@ -3,6 +3,7 @@
 //   tarifasPago/actual          lo que se paga por cada concepto, en dólares
 //   pagosTecnicos/{pago}        un pago a un técnico por un periodo (con sus tarifas y cantidades de ese momento)
 //   ordenesPagadas/{orden}      cada orden incluida en un pago: así una orden no se paga dos veces
+//   ajustesTecnicos/{ajuste}    descuentos y bonos por una orden que el administrador pasó de un técnico a otro (utils/ajustes): entran en el próximo pago
 //
 // Qué se le paga al técnico (lo mismo que la columna "pagadas a técnico" del Registro de estadísticas):
 //   INSTALACION  instalación finalizada
@@ -23,6 +24,7 @@ import { fechaDeHoja, ordenesDeHoja, tipoDeAveria, tipoDeVisita } from './report
 import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO } from './tipoVisita.js';
 import { TRABAJOS_VNTA } from './registroVnTa.js';
 import { adelantosConSaldo, repartirAdelantos, saldoAdelanto } from './adelantos.js';
+import { bonosConSaldo, descuentosConSaldo } from './ajustes.js';
 import { MONEDA_BS } from './datosPago.js';
 
 export const CONCEPTOS_PAGO = [
@@ -143,7 +145,8 @@ const vacio = () => Object.fromEntries(CONCEPTOS_PAGO.map(({ id }) => [id, 0]));
 
 // Lo que se le debe a cada técnico: las órdenes pagables que todavía no están en ningún pago (`pagadas`: ids de ordenesPagadas).
 // [{ tecnico, cantidades, total, pendientes: [item], pagadas: n }] de más a menos por pagar. El total son dólares.
-export function resumenPagos(items, tarifas, pagadas, adelantos = []) {
+// `adelantos`: los adelantos; `ajustes`: los descuentos y bonos por órdenes corregidas (un bono se suma al pago; un descuento se resta, igual que un adelanto).
+export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = []) {
   const ya = pagadas instanceof Set ? pagadas : new Set(pagadas);
   const mapa = new Map();
   for (const item of items) {
@@ -154,19 +157,36 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = []) {
     fila.total += tarifas[item.concepto] || 0;
     fila.pendientes.push(item);
   }
-  // Un técnico con adelantos por descontar tiene tarjeta aunque no tenga órdenes por pagar.
-  for (const a of adelantos) {
+  // Un técnico con adelantos, descuentos o bonos por aplicar tiene tarjeta aunque no tenga órdenes por pagar.
+  for (const a of [...adelantos, ...ajustes]) {
     if (saldoAdelanto(a) > 0 && !mapa.has(a.tecnico)) mapa.set(a.tecnico, { tecnico: a.tecnico, cantidades: vacio(), total: 0, pendientes: [], pagadas: 0 });
   }
+  const suma = (lista) => redondear(lista.reduce((s, a) => s + saldoAdelanto(a), 0));
+  const marca = (a) => Number(a.pagadoEn) || Number(a.creadoEn) || 0;
   return [...mapa.values()]
     .map((f) => {
       const total = redondear(f.total);
-      const lista = adelantosConSaldo(adelantos, f.tecnico);
-      const { descuento, partes } = repartirAdelantos(lista, total);
-      // adelantos: lo que tiene por descontar; descuento: lo que se descuenta de este pago (nunca más que el total); neto: lo que se le paga.
-      return { ...f, total, adelantos: redondear(lista.reduce((s, a) => s + saldoAdelanto(a), 0)), descuento, partes, neto: redondear(total - descuento) };
+      const delAdelanto = adelantosConSaldo(adelantos, f.tecnico);
+      const descuentos = descuentosConSaldo(ajustes, f.tecnico);
+      const bonos = bonosConSaldo(ajustes, f.tecnico);
+      const montoBonos = suma(bonos);
+      // Lo que se resta (adelantos y descuentos por órdenes, del más viejo al más nuevo) sale de las órdenes más los bonos, y nunca es más que eso: lo que sobra queda como saldo.
+      const { descuento, partes: todas } = repartirAdelantos([...delAdelanto, ...descuentos].sort((a, b) => marca(a) - marca(b)), redondear(total + montoBonos));
+      const idsDescuentos = new Set(descuentos.map((a) => a.id));
+      // adelantos y descuentosOrden: lo que tiene por descontar de cada clase; bonos: lo que se le suma; descuento: lo que se resta de este pago; neto: lo que se le paga.
+      return {
+        ...f,
+        total,
+        adelantos: suma(delAdelanto),
+        descuentosOrden: suma(descuentos),
+        bonos: montoBonos,
+        descuento,
+        partes: todas.filter((p) => !idsDescuentos.has(p.id)),
+        partesAjustes: [...todas.filter((p) => idsDescuentos.has(p.id)).map((p) => ({ ...p, tipo: 'DESCUENTO' })), ...bonos.map((b) => ({ id: b.id, monto: saldoAdelanto(b), tipo: 'BONO' }))],
+        neto: redondear(total + montoBonos - descuento),
+      };
     })
-    .sort((a, b) => b.total - a.total || b.pendientes.length - a.pendientes.length || a.tecnico.localeCompare(b.tecnico));
+    .sort((a, b) => (b.total + b.bonos) - (a.total + a.bonos) || b.pendientes.length - a.pendientes.length || a.tecnico.localeCompare(b.tecnico));
 }
 
 // Las órdenes que ya están en un pago del periodo (`pagadas`: documentos de ordenesPagadas), para verlas en el reporte de pagos como se veían antes de pagar:
@@ -183,7 +203,12 @@ export function ordenesYaPagadas(pagadas, items) {
     .sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
 }
 
-// Lo que falta pagar: el total de las órdenes menos los adelantos que se descuentan.
+// ¿Tiene algo por pagar? Órdenes o un bono por una orden corregida.
+export const tienePorPagar = (fila) => fila.pendientes.length > 0 || (fila.bonos ?? 0) > 0;
+// Cómo se ve su tarjeta: por pagar, con algo por descontar (adelantos o descuentos por órdenes corregidas) o al día.
+export const estadoDeFila = (fila) => (tienePorPagar(fila) ? 'POR_PAGAR' : (fila.adelantos ?? 0) > 0 || (fila.descuentosOrden ?? 0) > 0 ? 'CON_ADELANTO' : 'PAGADO');
+
+// Lo que falta pagar: el total de las órdenes más los bonos, menos lo que se descuenta (adelantos y descuentos por órdenes corregidas).
 export const totalPendiente = (filas) => redondear(filas.reduce((s, f) => s + (f.neto ?? f.total), 0));
 
 // Si el técnico tiene órdenes pendientes pero alguna tarifa en 0, avisa (para no pagar de menos sin darse cuenta).
@@ -195,13 +220,16 @@ export const idDePago = (tecnico, ahora) => `${ahora}-${String(tecnico).toUpperC
 
 // El pago y sus órdenes, listos para guardar en un lote: { pagoId, pago, ordenes: [{ id, datos }] } o { error }.
 // `tasa`: bolívares por dólar (BCV) del momento del pago; se guarda para que el pago en Bs no cambie después.
-// `datos` (de parseDatosPago): moneda, forma, referencia y fecha y hora del pago; `notificar`: si se le avisa al técnico. Los adelantos que se descuentan (`fila.partes`) van en el pago y en `adelantos`.
+// `datos` (de parseDatosPago): moneda, forma, referencia y fecha y hora del pago; `notificar`: si se le avisa al técnico. Los adelantos que se descuentan (`fila.partes`) van en el pago y en `adelantos`;
+// los descuentos y bonos por órdenes corregidas (`fila.partesAjustes`), en `ajustes`. Se puede pagar un técnico que solo tiene un bono (sin órdenes).
 export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = null, datos = null, notificar = false }) {
+  const bonos = fila.bonos ?? 0;
   if (fila.tecnico === SIN_TECNICO) return { error: 'Estas órdenes no tienen técnico: no se pueden pagar.' };
-  if (fila.pendientes.length === 0) return { error: 'No hay órdenes por pagar.' };
+  if (fila.pendientes.length === 0 && !(bonos > 0)) return { error: 'No hay órdenes por pagar.' };
   const registros = fila.pendientes.filter((item) => item.registro).length;
-  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + fila.pendientes.length + registros > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
-  if (fila.total <= 0) return { error: 'Configura las tarifas antes de pagar: el total es 0.' };
+  const ajustes = fila.partesAjustes ?? [];
+  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + fila.pendientes.length + registros + ajustes.length + (fila.partes?.length ?? 0) > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
+  if (fila.pendientes.length > 0 && fila.total <= 0) return { error: 'Configura las tarifas antes de pagar: el total es 0.' };
   if (datos?.moneda === MONEDA_BS && !(tasa > 0)) return { error: 'No hay tasa BCV: elige dólares o actualiza la tasa.' };
   const descuento = fila.descuento ?? 0;
   const neto = fila.neto ?? fila.total;
@@ -216,7 +244,9 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
     total: fila.total,
     descuento,
     neto,
+    ...(bonos > 0 && { bonos }),
     ...(partes.length > 0 && { adelantos: partes.map(({ id, monto }) => ({ id, monto })) }),
+    ...(ajustes.length > 0 && { ajustes: ajustes.map(({ id, monto, tipo }) => ({ id, monto, tipo })) }),
     ...(datos && { moneda: datos.moneda, forma: datos.forma, banco: datos.banco || '', referencia: datos.referencia, pagadoEn: datos.pagadoEn, montoPagado: datos.moneda === MONEDA_BS ? aBs(neto, tasa) : neto, notificado: Boolean(notificar) }),
     cantidadOrdenes: fila.pendientes.length,
     nota: String(nota || '').replace(/\s+/g, ' ').trim().slice(0, 300),
@@ -231,7 +261,7 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
   }));
   // Las filas de VN y TA que entran en el pago se marcan con él (así la oficina ve que ya se pagaron y no las cambia).
   const registrosMarcados = fila.pendientes.filter((item) => item.registro).map((item) => ({ id: item.registro.id, datos: { pagoId, pagadoEn: ahora } }));
-  return { pagoId, pago, ordenes, registros: registrosMarcados, adelantos: partes };
+  return { pagoId, pago, ordenes, registros: registrosMarcados, adelantos: partes, ajustes };
 }
 
 // El desglose de lo que se paga, una fila por concepto con órdenes: [{ id, nombre, cantidad, precio, subtotal }] en dólares (los bolívares los pone la pantalla con la tasa).
@@ -263,8 +293,8 @@ export const dolares = (valor) => `${(Number(valor) || 0).toLocaleString('es-VE'
 const COLUMNAS_GRUPOS = [{ titulo: 'Instalaciones', derecha: true }, { titulo: 'Averías', derecha: true }, { titulo: 'Val. NAP', derecha: true }, { titulo: 'Trab. adicional', derecha: true }];
 const celdasGrupos = (cantidades) => { const g = gruposDelReporte(cantidades); return [g.instalaciones, g.averias, g.validacionesNap, g.adicionales].map(String); };
 
-export const columnasPagosTecnico = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total órdenes', derecha: true }, { titulo: 'Adelantos', derecha: true }, { titulo: 'Total por pagar', derecha: true }, { titulo: 'En Bs', derecha: true }];
-export const filaPagoTecnico = (f, tasa = null) => [f.tecnico, String(f.pendientes.length), ...celdasGrupos(f.cantidades), dolares(f.total), dolares(f.descuento || 0), dolares(f.neto ?? f.total), bolivares(aBs(f.neto ?? f.total, tasa))];
+export const columnasPagosTecnico = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total órdenes', derecha: true }, { titulo: 'Bonos', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Total por pagar', derecha: true }, { titulo: 'En Bs', derecha: true }];
+export const filaPagoTecnico = (f, tasa = null) => [f.tecnico, String(f.pendientes.length), ...celdasGrupos(f.cantidades), dolares(f.total), dolares(f.bonos || 0), dolares(f.descuento || 0), dolares(f.neto ?? f.total), bolivares(aBs(f.neto ?? f.total, tasa))];
 
 // Cómo se nombra el trabajo de una orden pagada: instalación, validación de NAP, trabajo adicional o avería (todo lo demás es avería).
 export const grupoDePago = (concepto) => ({ INSTALACION: 'Instalación', VALIDACION_NAP: 'Validación de NAP', TRABAJO_ADICIONAL: 'Trabajo adicional' })[concepto] || 'Avería';
@@ -289,7 +319,7 @@ export const NOTA_PAGOS = 'Se paga lo que el Registro de estadísticas cuenta co
 
 // `yaPagado`: { ordenes, monto } de lo que ya se pagó en el periodo.
 export function cifrasPagos(filas, yaPagado, tasa = null) {
-  const conPendientes = filas.filter((f) => f.pendientes.length > 0);
+  const conPendientes = filas.filter(tienePorPagar);
   return [
     { etiqueta: 'Total a pagar', valor: dolares(totalPendiente(filas)), detalle: tasa > 0 ? bolivares(aBs(totalPendiente(filas), tasa)) : 'con las tarifas de hoy' },
     { etiqueta: 'Técnicos por pagar', valor: conPendientes.length, detalle: `${textoOrdenes(conPendientes.reduce((s, f) => s + f.pendientes.length, 0))} por pagar` },
@@ -297,7 +327,7 @@ export function cifrasPagos(filas, yaPagado, tasa = null) {
   ];
 }
 
-export const columnasPagosRegistrados = () => [{ titulo: 'Fecha' }, { titulo: 'Técnico' }, { titulo: 'Periodo' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total', derecha: true }, { titulo: 'Adelantos', derecha: true }, { titulo: 'Neto', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Pago' }, { titulo: 'Estado' }, { titulo: 'Nota' }];
+export const columnasPagosRegistrados = () => [{ titulo: 'Fecha' }, { titulo: 'Técnico' }, { titulo: 'Periodo' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total', derecha: true }, { titulo: 'Bonos', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Pago' }, { titulo: 'Estado' }, { titulo: 'Nota' }];
 
 // "Pago móvil · Ref. 1234 · 21/10/2026 3:45 p. m. · Bs" ('—' en los pagos de antes, que no guardaron estos datos).
 export function textoDatosPago(p) {
@@ -308,7 +338,7 @@ export function textoDatosPago(p) {
 // `tasaHoy`: se usa solo si el pago no guardó la tasa de su momento (pagos hechos antes de mostrar bolívares).
 export const filaPagoRegistrado = (p, tasaHoy = null) => [
   diaDe(Number(p.creadoEn)).split('-').reverse().join('/'), p.tecnico, `${p.desde.split('-').reverse().join('/')} – ${p.hasta.split('-').reverse().join('/')}`,
-  String(p.cantidadOrdenes), dolares(p.total), dolares(p.descuento || 0), dolares(p.neto ?? p.total), bolivares(aBs(p.neto ?? p.total, p.tasa > 0 ? p.tasa : tasaHoy)), textoDatosPago(p), p.anulado ? 'Anulado' : 'Pagado', p.nota || '',
+  String(p.cantidadOrdenes), dolares(p.total), dolares(p.bonos || 0), dolares(p.descuento || 0), dolares(p.neto ?? p.total), bolivares(aBs(p.neto ?? p.total, p.tasa > 0 ? p.tasa : tasaHoy)), textoDatosPago(p), p.anulado ? 'Anulado' : 'Pagado', p.nota || '',
 ];
 // Los pagos hechos (no anulados primero) en el periodo.
 export const pagosDelPeriodo = (pagos, rango) => pagos.filter((p) => enRango(diaDe(Number(p.creadoEn)), rango)).sort((a, b) => Number(b.creadoEn) - Number(a.creadoEn));
@@ -322,11 +352,12 @@ export function resumenPagado(pagos, rango, { tecnico, tasa = null } = {}) {
   const vigentes = pagosDelPeriodo(pagos, rango).filter((p) => !p.anulado && (!tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()));
   const mapa = new Map();
   for (const p of vigentes) {
-    if (!mapa.has(p.tecnico)) mapa.set(p.tecnico, { tecnico: p.tecnico, pagos: 0, ordenes: 0, total: 0, descuento: 0, neto: 0, cantidades: vacio(), ultimo: 0, bs: 0 });
+    if (!mapa.has(p.tecnico)) mapa.set(p.tecnico, { tecnico: p.tecnico, pagos: 0, ordenes: 0, total: 0, bonos: 0, descuento: 0, neto: 0, cantidades: vacio(), ultimo: 0, bs: 0 });
     const f = mapa.get(p.tecnico);
     f.pagos += 1;
     f.ordenes += Number(p.cantidadOrdenes) || 0;
     f.total = redondear(f.total + (Number(p.total) || 0));
+    f.bonos = redondear(f.bonos + (Number(p.bonos) || 0));
     f.descuento = redondear(f.descuento + (Number(p.descuento) || 0));
     f.neto = redondear(f.neto + (Number(p.neto ?? p.total) || 0));
     f.bs = redondear(f.bs + (aBs(p.total, p.tasa > 0 ? p.tasa : tasa) || 0));
@@ -361,8 +392,8 @@ export function textoGrupos(cantidades) {
   return [texto(instalaciones, 'instalación', 'instalaciones'), texto(averias, 'avería', 'averías'), texto(validacionesNap, 'validación de NAP', 'validaciones de NAP'), texto(adicionales, 'trabajo adicional', 'trabajos adicionales')].filter(Boolean).join(' · ');
 }
 
-export const columnasResumenPagado = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes pagadas', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total pagado', derecha: true }, { titulo: 'Adelantos', derecha: true }, { titulo: 'Neto pagado', derecha: true }, { titulo: 'Total en Bs', derecha: true }];
-export const filaResumenPagado = (f) => [f.tecnico, String(f.ordenes), ...celdasGrupos(f.cantidades), dolares(f.total), dolares(f.descuento || 0), dolares(f.neto ?? f.total), bolivares(f.bs || null)];
+export const columnasResumenPagado = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes pagadas', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total pagado', derecha: true }, { titulo: 'Bonos', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto pagado', derecha: true }, { titulo: 'Total en Bs', derecha: true }];
+export const filaResumenPagado = (f) => [f.tecnico, String(f.ordenes), ...celdasGrupos(f.cantidades), dolares(f.total), dolares(f.bonos || 0), dolares(f.descuento || 0), dolares(f.neto ?? f.total), bolivares(f.bs || null)];
 
 // "Se pagó 245,00 $ por 15 órdenes a REINEL BRAVO".
 export const frasePagado = (f) => `Se pagó ${dolares(f.total)} por ${textoOrdenes(f.ordenes)} a ${f.tecnico}`;
@@ -386,6 +417,11 @@ export const avisoDeAnulacion = (pago) => ({
   title: 'Pago anulado',
   body: `Se anuló el pago de ${pago.moneda === MONEDA_BS && pago.montoPagado > 0 ? bolivares(pago.montoPagado) : dolares(pago.neto ?? pago.total)} (${textoOrdenes(pago.cantidadOrdenes)}). Esas órdenes vuelven a estar por pagar.`,
 });
+
+// El aviso de un descuento o un bono por una garantía de otro técnico (solo se avisa al aprobar la garantía).
+export const avisoDeAjuste = (a) => (a.tipo === 'BONO'
+  ? { title: 'Pago por garantía', body: `Se te suman ${dolares(a.monto)} por la garantía ${a.codigo || 's/c'} de la orden ${a.codigoOrigen || 's/c'} (de ${a.de}). Entran en tu próximo pago.` }
+  : { title: 'Descuento por garantía', body: `Se te descuentan ${dolares(a.monto)} de la orden ${a.codigoOrigen || 's/c'} por la garantía ${a.codigo || 's/c'} (hecha por ${a.a}). Se restan de tu próximo pago.` });
 
 // El aviso de un adelanto registrado.
 export const avisoDeAdelanto = (adelanto) => ({

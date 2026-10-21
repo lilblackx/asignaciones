@@ -9,7 +9,7 @@ import { BOTON, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECT
 import CampoFecha from '../CampoFecha';
 import CampoHora from '../CampoHora';
 import { aBs, bolivares, dolares, textoOrdenes } from '../../utils/finanzas';
-import { MAX_REFERENCIA, MONEDA_BS, MONEDA_USD, exigeBanco, exigeReferencia, fechaHoraDeMarca, formasDeMoneda, parseDatosPago } from '../../utils/datosPago';
+import { MAX_REFERENCIA, MONEDA_BS, MONEDA_USD, esZelle, exigeBanco, exigeReferencia, fechaHoraDeMarca, formasDeMoneda, parseDatosPago } from '../../utils/datosPago';
 import { etiquetaRango } from '../../utils/periodoReporte';
 import { stripEmojis } from '../../utils/sanitizeInput';
 
@@ -40,16 +40,16 @@ export default function PanelPago({ fila, rango, tasa, ocupado, onConfirmar, onV
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Volver al detalle</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Registrar el pago a {fila.tecnico}</h2>
+          <h2 className="text-base font-bold text-zinc-900 dark:text-white">Registrar el pago a {fila.tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.POR_PAGAR.clase}`}>Paso 2 de 2</span>
         </div>
-        <p className={`${TEXTO_SUAVE} mt-1`}>{etiquetaRango(rango)} · {textoOrdenes(fila.pendientes.length)}{descuento > 0 ? ` · adelantos descontados ${dolares(descuento)}` : ''}</p>
+        <p className={`${TEXTO_SUAVE} mt-1`}>{[etiquetaRango(rango), fila.pendientes.length > 0 && textoOrdenes(fila.pendientes.length), fila.bonos > 0 && `garantías ${dolares(fila.bonos)}`, descuento > 0 && `descuentos ${dolares(descuento)}`].filter(Boolean).join(' · ')}</p>
       </div>
 
-      <div className="border-y-2 border-zinc-300 dark:border-zinc-700 py-4">
+      <div className="border-y border-zinc-400 dark:border-zinc-700 py-4">
         <p className={ETIQUETA}>Total pendiente por pagar</p>
-        <p className="text-2xl font-extrabold tabular-nums text-zinc-900 dark:text-white leading-tight">{dolares(neto)}</p>
-        {tasa > 0 && <p className="text-base font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
+        <p className="text-xl font-extrabold tabular-nums text-zinc-900 dark:text-white leading-tight">{dolares(neto)}</p>
+        {tasa > 0 && <p className="text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2 max-w-4xl">
@@ -64,36 +64,36 @@ export default function PanelPago({ fila, rango, tasa, ocupado, onConfirmar, onV
                   aria-pressed={form.moneda === id}
                   disabled={id === MONEDA_BS && !(tasa > 0)}
                   onClick={() => cambiarMoneda(id)}
-                  className={`flex-1 h-10 rounded-lg text-base font-semibold border-2 transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
+                  className={`flex-1 h-9 rounded-lg text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
                 >{etiqueta}</button>
               ))}
             </div>
-            <Colapsable>{!(tasa > 0) && <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">No hay tasa BCV: solo se puede pagar en dólares hasta que se actualice.</p>}</Colapsable>
-            <Colapsable>{error?.campo === 'moneda' && <p role="alert" className="text-sm text-red-600 dark:text-red-400 font-bold mt-1">{error.texto}</p>}</Colapsable>
+            <Colapsable>{!(tasa > 0) && <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">No hay tasa BCV: solo se puede pagar en dólares hasta que se actualice.</p>}</Colapsable>
+            <Colapsable>{error?.campo === 'moneda' && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{error.texto}</p>}</Colapsable>
           </div>
 
-          <div className="border-2 border-zinc-300 dark:border-zinc-700 rounded-lg px-4 py-3">
+          <div className="border border-zinc-400 dark:border-zinc-700 rounded-lg px-4 py-3">
             <p className={ETIQUETA}>Monto a entregar</p>
-            <p className="text-xl font-bold tabular-nums text-zinc-900 dark:text-white"><NumeroPulso valor={entregar} /></p>
+            <p className="text-lg font-bold tabular-nums text-zinc-900 dark:text-white"><NumeroPulso valor={entregar} /></p>
             {form.moneda === MONEDA_BS && tasa > 0 && <p className={`${TEXTO_SUAVE} tabular-nums`}>{dolares(neto)} a {tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs por dólar</p>}
           </div>
 
           <div>
             <label htmlFor="pago-forma" className={ETIQUETA}>Forma de pago</label>
             <div className="mt-1">
-              <SelectMenu id="pago-forma" ariaLabel="Forma de pago" className={SELECTOR} value={form.forma} onChange={(v) => cambiar('forma', v)} items={[{ value: '', label: 'Elige la forma de pago' }, ...formasDeMoneda(form.moneda).map((f) => ({ value: f, label: f }))]} />
+              <SelectMenu id="pago-forma" ariaLabel="Forma de pago" className={SELECTOR} value={form.forma} onChange={(v) => setForm((f) => ({ ...f, forma: v, banco: esZelle(f.forma) === esZelle(v) ? f.banco : '' }))} items={[{ value: '', label: 'Elige la forma de pago' }, ...formasDeMoneda(form.moneda).map((f) => ({ value: f, label: f }))]} />
             </div>
-            <Colapsable>{texto('forma') && <p role="alert" className="text-sm text-red-600 dark:text-red-400 font-bold mt-1">{texto('forma')}</p>}</Colapsable>
+            <Colapsable>{texto('forma') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('forma')}</p>}</Colapsable>
           </div>
 
-          <Colapsable>{form.forma && form.forma !== 'Efectivo' && <CampoBanco id="pago-banco" value={form.banco} onChange={(v) => cambiar('banco', v)} opcional={!exigeBanco(form.forma)} error={texto('banco')} />}</Colapsable>
+          <Colapsable>{form.forma && form.forma !== 'Efectivo' && <CampoBanco key={esZelle(form.forma) ? 'eeuu' : 'venezuela'} id="pago-banco" forma={form.forma} value={form.banco} onChange={(v) => cambiar('banco', v)} opcional={!exigeBanco(form.forma)} error={texto('banco')} />}</Colapsable>
         </div>
 
         <div className="space-y-5">
           <div>
             <label htmlFor="pago-referencia" className={ETIQUETA}>Referencia {form.forma && !exigeReferencia(form.forma) && <span className="font-normal">(no aplica en efectivo)</span>}</label>
             <input id="pago-referencia" value={form.referencia} onChange={(e) => cambiar('referencia', stripEmojis(e.target.value))} maxLength={MAX_REFERENCIA} autoComplete="off" aria-invalid={error?.campo === 'referencia'} className={`${CAMPO} mt-1`} />
-            <Colapsable>{texto('referencia') && <p role="alert" className="text-sm text-red-600 dark:text-red-400 font-bold mt-1">{texto('referencia')}</p>}</Colapsable>
+            <Colapsable>{texto('referencia') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('referencia')}</p>}</Colapsable>
           </div>
 
           <div>
@@ -102,16 +102,16 @@ export default function PanelPago({ fila, rango, tasa, ocupado, onConfirmar, onV
           </div>
           <div>
             <label htmlFor="pago-hora" className={ETIQUETA}>Hora</label>
-            <div className="mt-1"><CampoHora id="pago-hora" ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR} claseBoton="h-10 px-4 text-base" /></div>
+            <div className="mt-1"><CampoHora id="pago-hora" ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR} claseBoton="px-4 text-sm" /></div>
           </div>
-          <Colapsable>{texto('fecha') && <p role="alert" className="text-sm text-red-600 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
+          <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
 
           <div>
             <label htmlFor="pago-nota" className={ETIQUETA}>Nota <span className="font-normal">(opcional)</span></label>
             <input id="pago-nota" value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={300} autoComplete="off" className={`${CAMPO} mt-1`} />
           </div>
 
-          <label htmlFor="pago-notificar" className="flex items-center gap-3 text-base font-bold text-zinc-900 dark:text-zinc-100 cursor-pointer">
+          <label htmlFor="pago-notificar" className="flex items-center gap-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 cursor-pointer">
             <input id="pago-notificar" type="checkbox" checked={notificar} onChange={(e) => setNotificar(e.target.checked)} className="w-5 h-5 accent-red-600" />
             Notificar al técnico
           </label>

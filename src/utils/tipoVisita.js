@@ -2,8 +2,9 @@
 //
 // - Conector externo / interno: visita para cambiar un conector. Generan un cobro al cliente
 //   (se calcula al finalizar con la tasa del momento) y el externo pide NAP y puerto. El técnico
-//   indica CUÁNTOS conectores usó de cada color: el externo es siempre verde (al menos 1); el interno,
-//   verdes y/o azules (al menos 1 en total). Se guarda en `conectoresUsados: { verde, azul }`; las
+//   indica CUÁNTOS conectores usó de cada color: el externo es siempre verde (al menos 1) y puede añadir
+//   conectores internos azules (opcional); el interno, verdes y/o azules (al menos 1 en total). Se guarda
+//   en `conectoresUsados: { verde, azul }` (en el externo, el azul es el interno); las
 //   visitas anteriores solo tienen el color (`conectorExterno` / `conectorInterno`) y cuentan como 1.
 // - Recableado: se registran los metros de cable usados (obligatorio) y, opcionalmente, los
 //   conectores colocados: un conector externo (solo verde) y/o uno interno (verde o azul).
@@ -105,12 +106,12 @@ const entero = (v) => (Number.isInteger(v) && v >= 0 ? v : 0);
 
 // Conectores de una visita de conector por color: { verde, azul }. Si la visita guardó las cantidades se usan
 // esas; las visitas anteriores solo tienen el color y cuentan como 1 conector de ese color. En cualquier otro
-// tipo de visita no aplica ({ verde: 0, azul: 0 }); el externo nunca tiene azules.
+// tipo de visita no aplica ({ verde: 0, azul: 0 }); en el externo, el azul es un conector interno opcional.
 export function cantidadesConector(t) {
   const externo = t?.tipoVisita === TIPO_CONECTOR_EXTERNO;
   if (!externo && t?.tipoVisita !== TIPO_CONECTOR_INTERNO) return { verde: 0, azul: 0 };
   const c = t.conectoresUsados;
-  if (c && typeof c === 'object') return { verde: entero(c.verde), azul: externo ? 0 : entero(c.azul) };
+  if (c && typeof c === 'object') return { verde: entero(c.verde), azul: entero(c.azul) };
   const color = externo ? colorConectorExterno(t.conectorExterno) : colorConectorInterno(t.conectorInterno);
   return { verde: color === COLOR_VERDE ? 1 : 0, azul: color === COLOR_AZUL ? 1 : 0 };
 }
@@ -124,7 +125,7 @@ export function textoCantidades({ verde = 0, azul = 0 } = {}) {
 }
 
 // Cantidades escritas por el técnico (texto) -> { valor: { verde, azul } } o { error, campo }.
-// Un campo vacío cuenta como 0. Externo: verdes, al menos 1. Interno: verdes y/o azules, al menos 1 en total.
+// Un campo vacío cuenta como 0. Externo: verdes, al menos 1 (azules internos opcionales). Interno: verdes y/o azules, al menos 1 en total.
 export function parseCantidadesConector(tipoVisita, { verde, azul } = {}) {
   const leer = (raw, nombre) => {
     const txt = String(raw ?? '').trim();
@@ -137,12 +138,12 @@ export function parseCantidadesConector(tipoVisita, { verde, azul } = {}) {
   if (!esVisitaConector(tipoVisita)) return { valor: null };
   const v = leer(verde, 'verdes');
   if (v.error) return { error: v.error, campo: 'verde' };
-  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
-    if (v.valor < 1) return { error: 'Indica cuántos conectores verdes usaste.', campo: 'verde' };
-    return { valor: { verde: v.valor, azul: 0 } };
-  }
   const a = leer(azul, 'azules');
   if (a.error) return { error: a.error, campo: 'azul' };
+  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
+    if (v.valor < 1) return { error: 'Indica cuántos conectores verdes usaste.', campo: 'verde' };
+    return { valor: { verde: v.valor, azul: a.valor } };
+  }
   if (v.valor + a.valor < 1) return { error: 'Indica cuántos conectores usaste: verdes, azules o ambos.', campo: 'verde' };
   return { valor: { verde: v.valor, azul: a.valor } };
 }
@@ -163,7 +164,8 @@ export function datosConectores(tipoVisita, { metros, conectorExterno, conectorI
     return { ...vacios, metrosCable: metros ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
   }
   if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
-    return { ...vacios, conectorExterno: COLOR_VERDE, conectoresUsados: { verde: entero(conectores?.verde), azul: 0 } };
+    const azul = entero(conectores?.azul);
+    return { ...vacios, conectorExterno: COLOR_VERDE, conectorInterno: azul > 0 ? COLOR_AZUL : '', conectoresUsados: { verde: entero(conectores?.verde), azul } };
   }
   if (tipoVisita === TIPO_CONECTOR_INTERNO) {
     const verde = entero(conectores?.verde);
@@ -179,6 +181,10 @@ export function datosConectores(tipoVisita, { metros, conectorExterno, conectorI
 export function textoConectorVisita(t) {
   if (!esVisitaConector(t?.tipoVisita)) return '';
   if (t.conectoresUsados && typeof t.conectoresUsados === 'object') {
+    const { verde, azul } = cantidadesConector(t);
+    if (t.tipoVisita === TIPO_CONECTOR_EXTERNO && azul > 0) {
+      return `Conectores: ${verde} externo${verde === 1 ? '' : 's'} verde${verde === 1 ? '' : 's'}, ${azul} interno${azul === 1 ? '' : 's'} azul${azul === 1 ? '' : 'es'}`;
+    }
     const texto = textoCantidades(cantidadesConector(t));
     return texto ? `Conectores: ${texto}` : '';
   }

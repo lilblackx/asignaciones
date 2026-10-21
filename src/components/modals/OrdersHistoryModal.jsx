@@ -4,7 +4,7 @@ import { TIPOS_TRABAJO } from '../../constants';
 import { motivoCancelacion } from '../../utils/cancelacion';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
-import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
+import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import HistorialTimeline from '../HistorialTimeline';
 import CampoFecha from '../CampoFecha';
@@ -24,13 +24,13 @@ function parseFecha(fecha) {
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-const selectClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 pl-2 pr-7 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500';
-const fechaClass = 'w-full h-9 flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500 hover:border-zinc-400 transition-colors';
+const selectClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 pl-2 pr-7 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500';
+const fechaClass = 'w-full h-9 flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 px-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500 hover:border-zinc-400 transition-colors';
 
 // `puedeVerPlantilla` (solo ADMIN y usuarios con permiso de cierre, los que llegan a este historial) muestra en cada orden con
 // plantilla (de cualquier trabajo y estado) el botón "Ver plantilla"; `plantillaDe(orden)` arma el texto (vacío si no hay) y
 // `onCopy(texto, mensaje)` copia y avisa con el toast.
-export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose }) {
+export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose, enPagina = false }) {
   const [search, setSearch] = useState('');
   const [estado, setEstado] = useState('');
   const [tipo, setTipo] = useState('');
@@ -117,11 +117,11 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   return (
     <>
     {/* Con la plantilla abierta, Escape cierra solo la plantilla y no el historial. */}
-    <Modal onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={History} titulo="HISTORIAL DE ÓRDENES" onClose={onClose} />
+    <Modal enPagina={enPagina} onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={History} titulo="HISTORIAL DE ÓRDENES" onClose={onClose} enPagina={enPagina} />
 
-        <div className={`px-6 py-4 shrink-0 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>
+        <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
             <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
@@ -134,7 +134,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={fechaClass} />
             <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={fechaClass} />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
             <span>
               {filtered.length} {filtered.length === 1 ? 'orden' : 'órdenes'}
             </span>
@@ -154,7 +154,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                 onClick={() => exportResumenTecnicosToCsv(filtered, describirFiltros())}
                 disabled={filtered.length === 0}
                 title="Un renglón por técnico: órdenes, finalizadas, canceladas y potencia promedio"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Download className="w-3.5 h-3.5" aria-hidden="true" /> Resumen por técnico
               </button>
@@ -170,7 +170,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           )}
         </div>
 
-        <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950 space-y-3 ${CENTRADO_AMPLIO}`}>
+        <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-fondo space-y-3 ${CENTRADO_AMPLIO}`}>
           {shown.map(o => {
             const isOpen = expandedKey === o._key;
             return (
@@ -180,10 +180,10 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-red-600 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
                       <span className={`px-2 py-0.5 text-[9px] font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
-                      <span className="text-[10px] font-bold text-zinc-500">{o.fecha}</span>
+                      <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500">{o.fecha}</span>
                     </div>
                     <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight mt-1 truncate">{o.nombre}</h5>
-                    <p className="text-xs text-zinc-500 mt-0.5">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-0.5">
                       <span className="font-bold text-red-600 dark:text-red-400">{o.tipoTrabajo}</span>
                       {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
                     </p>
@@ -215,7 +215,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                           <button
                             type="button"
                             onClick={() => setPlantillaAbierta(o)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                           >
                             <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
                           </button>
@@ -236,13 +236,13 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           })}
 
           {filtered.length === 0 && (
-            <div className="text-center text-zinc-500 py-10 text-sm">No se encontraron órdenes.</div>
+            <div className="text-center text-zinc-600 dark:text-zinc-500 py-10 text-sm">No se encontraron órdenes.</div>
           )}
 
         </div>
 
         {totalPages > 1 && (
-          <div className="px-6 py-3 shrink-0 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
+          <div className="px-6 py-3 shrink-0 border-t border-zinc-300 dark:border-zinc-800 bg-fondo flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
             <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Anterior
             </button>

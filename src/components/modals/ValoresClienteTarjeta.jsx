@@ -8,7 +8,7 @@ function Fila({ id, etiqueta, valor, copiado, onCopiar }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2 border-b border-zinc-200 dark:border-zinc-800 last:border-b-0">
       <div className="min-w-0">
-        <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">{etiqueta}</div>
+        <div className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">{etiqueta}</div>
         <div className="text-sm font-black text-zinc-900 dark:text-white font-mono break-words">
           {textoDbm(valor)}
           {calidad && <span className={`ml-2 font-sans text-xs ${calidad.clase}`}>{calidad.texto}</span>}
@@ -48,7 +48,7 @@ export default function ValoresClienteTarjeta({ valores, onCopy }) {
       </div>
       <Fila id="olt" etiqueta="OLT Rx · Potencia (1310 nm)" valor={valores.olt1310Dbm} copiado={copiado} onCopiar={copiar} />
       <Fila id="onu" etiqueta="ONU Rx · Señal (1490 nm)" valor={valores.onu1490Dbm} copiado={copiado} onCopiar={copiar} />
-      <p className="mt-2 text-[10px] text-zinc-500 dark:text-zinc-400">Medidos por la oficina al revisar la orden.</p>
+      <p className="mt-2 text-[10px] text-zinc-600 dark:text-zinc-400">Medidos por la oficina al revisar la orden.</p>
     </section>
   );
 }

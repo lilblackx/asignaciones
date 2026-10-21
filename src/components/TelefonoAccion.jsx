@@ -95,7 +95,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl p-3 space-y-2"
           >
-            <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">{texto} a:</p>
+            <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400 px-1">{texto} a:</p>
             {opciones.map((o, i) => (
               <a
                 key={o.numero}
@@ -111,7 +111,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
             <button
               type="button"
               onClick={() => setAbierto(false)}
-              className="w-full py-2 rounded-lg text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="w-full py-2 rounded-lg text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
               Cancelar
             </button>

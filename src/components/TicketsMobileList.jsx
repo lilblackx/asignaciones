@@ -10,6 +10,7 @@ import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
+import InsigniaGarantia from './InsigniaGarantia';
 import BotonVerDetalle from './BotonVerDetalle';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
 import { ESTADO_EN_SITIO, estadoViaje } from '../utils/enCamino';
@@ -47,12 +48,12 @@ export default function TicketsMobileList({
 }) {
   if (filteredTickets.length === 0) {
     return (
-      <div className="lg:hidden bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border border-zinc-300 dark:border-zinc-800 px-4 py-12 text-center text-zinc-500 dark:text-zinc-400 font-medium transition-colors">
+      <div className="lg:hidden bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border border-zinc-300 dark:border-zinc-800 px-4 py-12 text-center text-zinc-600 dark:text-zinc-400 font-medium transition-colors">
         {isTecnico && !hasAnyTickets ? (
           <div className="flex flex-col items-center gap-2">
-            <Wrench className="w-6 h-6 text-zinc-400 dark:text-zinc-600" aria-hidden="true" />
+            <Wrench className="w-6 h-6 text-zinc-500 dark:text-zinc-600" aria-hidden="true" />
             <span>No tienes asignaciones en este momento.</span>
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">Cuando te asignen una orden, aparecerá aquí.</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-500">Cuando te asignen una orden, aparecerá aquí.</span>
           </div>
         ) : isTecnico ? (
           'No tienes asignaciones que coincidan con los filtros actuales.'
@@ -100,7 +101,7 @@ export default function TicketsMobileList({
                 <h3 className="font-black text-zinc-900 dark:text-white leading-tight min-w-0 break-words">{ticket.nombre}</h3>
                 {canEditTickets && onVerDetalle && <BotonVerDetalle ticket={ticket} onClick={onVerDetalle} />}
               </div>
-              <p className="text-sm text-zinc-500 font-medium">
+              <p className="text-sm text-zinc-600 dark:text-zinc-500 font-medium">
                 C.I: {ticket.cedula && !isTecnico ? (
                   <a
                     href={buildSmartOltUrl(ticket.cedula, ticket.tipoDocumento)}
@@ -155,6 +156,7 @@ export default function TicketsMobileList({
                 <div className="flex flex-wrap items-center gap-1 mb-0.5">
                   <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
                   <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
+                      {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                 </div>
                 {/* Sin falla, la orden guarda el tipo de trabajo como falla: no se repite. */}
                 {ticket.falla && ticket.falla !== ticket.tipoTrabajo && (
@@ -198,8 +200,8 @@ export default function TicketsMobileList({
                 >
                   <span className={`p-1.5 rounded-full transition-colors ${
                     envio.cambioTrasEnvio ? 'bg-amber-500 text-black'
-                      : envio.enviado ? 'bg-emerald-600 text-white'
-                        : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
+                      : envio.enviado ? 'bg-emerald-700 text-white'
+                        : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
                   }`}>
                     {envio.cambioTrasEnvio ? <TriangleAlert className="w-3.5 h-3.5" aria-hidden="true" /> : envio.enviado ? <CheckCheck className="w-3.5 h-3.5" aria-hidden="true" /> : <Send className="w-3.5 h-3.5" aria-hidden="true" />}
                   </span>
@@ -279,7 +281,7 @@ export default function TicketsMobileList({
                     {ticket.estado !== 'CANCELADO' && <button onClick={() => onCancelar(ticket)} className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1 text-red-600 dark:text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-[13px] transition-colors"><Ban className="w-4 h-4" /> Cancelar</button>}
                   </>
                 ) : (
-                  <div className="flex-1 py-3 text-center text-xs text-zinc-500 font-medium">Solo visualización</div>
+                  <div className="flex-1 py-3 text-center text-xs text-zinc-600 dark:text-zinc-500 font-medium">Solo visualización</div>
                 )}
               </div>
             )}

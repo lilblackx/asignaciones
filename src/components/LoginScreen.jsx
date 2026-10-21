@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AlertCircle, Eye, EyeOff, Loader2, Lock, Moon, Sun, User } from 'lucide-react';
 import { stripEmojis } from '../utils/sanitizeInput';
+import PieVersion from './PieVersion';
 
-const inputClass = 'w-full h-12 bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white pl-11 rounded-xl focus:border-red-600 focus:ring-4 focus:ring-red-600/15 outline-none transition-colors';
+const inputClass = 'w-full h-12 bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-11 rounded-xl focus:border-red-600 focus:ring-4 focus:ring-red-600/15 outline-none transition-colors';
 
 export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setLoginData, loginError, handleLogin }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,7 +18,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="relative min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center p-4 font-sans transition-colors duration-200 overflow-hidden">
+      <div className="relative min-h-screen bg-fondo flex items-center justify-center p-4 font-sans transition-colors duration-200 overflow-hidden">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-red-600/15 to-transparent dark:from-red-600/25" aria-hidden="true" />
         <div className="absolute top-4 right-4 z-10">
           <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" className="p-2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">
@@ -61,6 +62,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
             </button>
           </form>
         </div>
+        <PieVersion className="absolute bottom-0 inset-x-0" />
       </div>
     </div>
   );

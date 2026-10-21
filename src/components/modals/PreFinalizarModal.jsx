@@ -206,7 +206,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               <span className="line-clamp-2">{ticket.direccion}</span>
             </div>
             {ticket.cedula && (
-              <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
                 <Tag className="w-3 h-3 text-zinc-400 shrink-0" />
                 <span>C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</span>
                 {ticket.telefono && <span className="ml-2">Telf: {ticket.telefono}</span>}
@@ -260,9 +260,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                     onChange={(e) => { setMetros(e.target.value.replace(/\D/g, '').slice(0, 4)); if (metrosError) setMetrosError(''); }}
                     aria-invalid={!!metrosError}
                     aria-describedby={metrosError ? 'pf-metros-error' : undefined}
-                    className={`w-full min-w-0 bg-white dark:bg-zinc-950 border pl-3 pr-9 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+                    className={`w-full min-w-0 bg-white dark:bg-zinc-950 border pl-3 pr-9 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
                 </div>
                 {metrosError && <p id="pf-metros-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
               </div>
@@ -341,7 +341,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                 placeholder="Ej. NAP 08 - Puerto 3"
                 value={nap}
                 onChange={(e) => setNap(stripEmojis(e.target.value))}
-                className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+                className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
               />
             </div>
           )}
@@ -369,7 +369,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onChange={(e) => setPotencia(e.target.value.replace(/[^0-9.,-]/g, ''))}
               aria-invalid={!!potenciaParseada.error}
               aria-describedby="pf-potencia-hint"
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
             />
             <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
@@ -404,7 +404,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               value={observacion}
               onChange={(e) => { setObservacion(stripEmojis(e.target.value)); if (obsError) setObsError(''); }}
               aria-invalid={!!obsError}
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors resize-none ${obsError ? 'border-red-500 focus:border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors resize-none ${obsError ? 'border-red-500 focus:border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
             />
             {obsError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{obsError}</p>}
           </div>
@@ -421,7 +421,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
+              className="flex-1 py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>

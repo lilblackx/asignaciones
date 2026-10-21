@@ -16,12 +16,19 @@ export const formasDeMoneda = (moneda) => FORMAS_PAGO_TECNICO[moneda] || [];
 // El efectivo no tiene referencia; todo lo demás sí.
 export const exigeReferencia = (forma) => forma !== 'Efectivo';
 
-// El banco desde el que se hizo el pago: se escribe (con estas sugerencias, que son las más comunes) y es obligatorio salvo en efectivo y en "Otro".
-export const BANCOS_SUGERIDOS = [
+// El banco desde el que se hizo el pago: se elige de una lista (o se escribe otro). Pago móvil y Transferencia son de bancos venezolanos y es obligatorio; Zelle no se hace
+// desde bancos venezolanos sino de EE. UU., y el banco es opcional; en efectivo no hay banco.
+export const BANCOS_VENEZOLANOS = [
   'Banesco', 'Mercantil', 'Banco de Venezuela', 'Banco Nacional de Crédito (BNC)', 'BBVA Provincial', 'Bancaribe', 'Banco del Tesoro', 'Bancamiga', 'Banplus',
-  'Banco Exterior', 'Banco Occidental de Descuento (BOD)', 'Banco Venezolano de Crédito', 'Banco Activo', 'Bank of America', 'Chase', 'Wells Fargo', 'Zinli', 'Binance',
+  'Banco Exterior', 'Banco Occidental de Descuento (BOD)', 'Banco Venezolano de Crédito', 'Banco Activo',
 ];
-export const exigeBanco = (forma) => ['Pago móvil', 'Transferencia', 'Zelle'].includes(forma);
+export const BANCOS_EEUU = [
+  'Bank of America', 'Chase', 'Wells Fargo', 'Citibank', 'U.S. Bank', 'Capital One', 'PNC Bank', 'TD Bank', 'Truist', 'Navy Federal Credit Union',
+];
+export const esZelle = (forma) => forma === 'Zelle';
+// La lista de bancos que corresponde a la forma de pago.
+export const bancosDeForma = (forma) => (esZelle(forma) ? BANCOS_EEUU : BANCOS_VENEZOLANOS);
+export const exigeBanco = (forma) => ['Pago móvil', 'Transferencia'].includes(forma);
 export const MAX_BANCO = 40;
 export const MAX_REFERENCIA = 40;
 export const MAX_NOTA = 300;

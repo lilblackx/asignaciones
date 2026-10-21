@@ -39,7 +39,7 @@ function Dato({ etiqueta, children }) {
   if (children === undefined || children === null || children === '' || children === false) return null;
   return (
     <div className="py-2 border-b border-zinc-200 dark:border-zinc-800 last:border-b-0 min-w-0">
-      <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">{etiqueta}</div>
+      <div className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">{etiqueta}</div>
       <div className="text-sm font-bold text-zinc-900 dark:text-white break-words">{children}</div>
     </div>
   );

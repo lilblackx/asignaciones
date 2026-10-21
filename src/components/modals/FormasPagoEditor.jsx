@@ -4,8 +4,8 @@ import { CAMPOS_POR_TIPO, FORMAS_PAGO_INICIALES, TIPOS_AGREGABLES, TITULO_POR_TI
 import { ICONO_POR_TIPO } from './formasPagoIconos';
 import Spinner from '../Spinner';
 
-const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
-const LABEL_CLASS = 'text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1 uppercase';
+const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
+const LABEL_CLASS = 'text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1 uppercase';
 
 // Sin nada guardado todavía (el documento no existe) se precarga con los datos de
 // la empresa para que el ADMIN solo revise y guarde. Si ya hay un documento, manda
@@ -39,7 +39,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {formas.length === 0 && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center py-2">No hay formas de pago. Agrega una con los botones de abajo.</p>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center py-2">No hay formas de pago. Agrega una con los botones de abajo.</p>
       )}
 
       {formas.map((forma, i) => {
@@ -56,7 +56,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
                 onClick={() => quitar(i)}
                 aria-label={`Quitar ${titulo} ${forma.banco || i + 1}`}
                 title="Quitar"
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <Trash2 className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -84,7 +84,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
             key={tipo}
             type="button"
             onClick={() => agregar(tipo)}
-            className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl font-bold text-xs border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-600 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl font-bold text-xs border-2 border-dashed border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-600 transition-colors"
           >
             <Plus className="w-4 h-4 shrink-0" aria-hidden="true" /> {etiqueta}
           </button>

@@ -3,7 +3,7 @@ import { formatCedula, getEstadoColor } from '../../../utils/ticketDisplay';
 export default function ArchivedSearchResults({ archivedSearchResults, hasMoreReports, isLoadingReports, onLoadMoreReports }) {
   return (
     <div>
-      <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Resultados de Búsqueda ({archivedSearchResults.length})</h3>
+      <h3 className="text-sm font-bold text-zinc-600 dark:text-zinc-400 mb-2 uppercase tracking-wider">Resultados de Búsqueda ({archivedSearchResults.length})</h3>
       {hasMoreReports && (
         <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-4">
           Esta búsqueda solo cubre el historial ya cargado. Hay reportes más antiguos sin cargar —{' '}
@@ -38,7 +38,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
                 <td className="px-4 py-3 font-black text-red-600 dark:text-red-400 align-middle">{ticket.codigo}</td>
                 <td className="px-4 py-3 align-middle">
                   <div className="font-bold text-zinc-900 dark:text-white leading-tight">{ticket.nombre}</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</div>
+                  <div className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-1">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</div>
                 </td>
                 <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 leading-snug align-middle">{ticket.direccion}</td>
                 <td className="px-4 py-3 align-middle">
@@ -53,7 +53,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
               </tr>
             ))}
             {archivedSearchResults.length === 0 && (
-              <tr><td colSpan="6" className="px-4 py-8 text-center text-zinc-500">No se encontraron resultados en el archivo.</td></tr>
+              <tr><td colSpan="6" className="px-4 py-8 text-center text-zinc-600 dark:text-zinc-500">No se encontraron resultados en el archivo.</td></tr>
             )}
           </tbody>
         </table>
@@ -63,7 +63,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
         {archivedSearchResults.map((ticket, i) => (
           <div key={`${ticket.id}-${i}`} className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex flex-col gap-2 relative">
             <div className="absolute top-4 right-4 text-right">
-              <div className="text-[10px] font-black text-zinc-500">{ticket._reportFecha}</div>
+              <div className="text-[10px] font-black text-zinc-600 dark:text-zinc-500">{ticket._reportFecha}</div>
               <div className={`text-[8px] font-bold mt-0.5 px-1 py-0.5 rounded w-max ml-auto ${ticket._reportTipo === 'CANCELADOS' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                 {ticket._reportTipo === 'CANCELADOS' ? 'CANCELADO' : 'FINALIZADO'}
               </div>
@@ -71,7 +71,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
             <div className="pr-20">
               <span className="font-black text-red-600 dark:text-red-400 text-sm block mb-1">{ticket.codigo}</span>
               <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight">{ticket.nombre}</h5>
-              <p className="text-xs text-zinc-500">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-500">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</p>
             </div>
             <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-snug"><span className="font-semibold text-zinc-800 dark:text-zinc-100">Dirección:</span> {ticket.direccion}</p>
             <div className="border-t border-zinc-100 dark:border-zinc-800/80 pt-2 flex flex-col gap-1 text-xs">
@@ -81,7 +81,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
           </div>
         ))}
         {archivedSearchResults.length === 0 && (
-          <div className="text-center text-zinc-500 py-8 text-sm">No se encontraron resultados.</div>
+          <div className="text-center text-zinc-600 dark:text-zinc-500 py-8 text-sm">No se encontraron resultados.</div>
         )}
       </div>
     </div>

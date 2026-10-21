@@ -2,7 +2,7 @@ import { BarChart, Search, X } from 'lucide-react';
 import ReportDetailsView from './reports/ReportDetailsView';
 import ArchivedSearchResults from './reports/ArchivedSearchResults';
 import ReportsHistoryView from './reports/ReportsHistoryView';
-import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
+import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 
 export default function ReportsModal({
@@ -19,8 +19,7 @@ export default function ReportsModal({
   onRequestCierre,
   isAdmin,
   usuario,
-  onClose
-}) {
+  onClose, enPagina = false }) {
   const closeModal = () => {
     setSelectedReportForDetails(null);
     setReportSearchTerm('');
@@ -28,8 +27,8 @@ export default function ReportsModal({
   };
 
   return (
-    <Modal onClose={closeModal} onVolver={selectedReportForDetails ? () => setSelectedReportForDetails(null) : undefined} zIndexClass="z-[60]" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+    <Modal enPagina={enPagina} onClose={closeModal} onVolver={selectedReportForDetails ? () => setSelectedReportForDetails(null) : undefined} zIndexClass="z-[60]" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
         {selectedReportForDetails ? (
           <ReportDetailsView
             report={selectedReportForDetails}
@@ -39,9 +38,9 @@ export default function ReportsModal({
           />
         ) : (
           <>
-            <EncabezadoModulo Icono={BarChart} titulo="CIERRE DIARIO" onClose={closeModal} />
+            <EncabezadoModulo Icono={BarChart} titulo="CIERRE DIARIO" onClose={closeModal} enPagina={enPagina} />
 
-            <div className={`p-6 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950 ${CENTRADO_AMPLIO}`}>
+            <div className={`p-6 overflow-y-auto flex-1 bg-fondo ${CENTRADO_AMPLIO}`}>
                   <div className="relative mb-6">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-400 w-5 h-5" aria-hidden="true" />
                     <label htmlFor="report-search" className="sr-only">Buscar en el archivo</label>

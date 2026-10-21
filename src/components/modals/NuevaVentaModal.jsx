@@ -14,7 +14,7 @@ import PromotorField from './PromotorField';
 import { CedulaField } from './TicketFormFields';
 import Spinner from '../Spinner';
 
-const ETIQUETA = 'text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1';
+const ETIQUETA = 'text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 const CAMPO = 'w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-2 rounded text-sm';
 const TIPOS_ITEMS = [{ value: '', label: 'Seleccione...' }, ...(TIPOS_POR_TRABAJO[TIPO_VENTA] || []).map((t) => ({ value: t, label: t }))];
 // "GERARDO MOLERO" -> "Gerardo Molero" (los técnicos se guardan en mayúsculas).
@@ -124,7 +124,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
                 <Star className="w-3 h-3 shrink-0 fill-current" aria-hidden="true" /> Venta de: {nombreBonito(tecnico)}
               </p>
             ) : instalador && (
-              <p role="status" className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-1">
+              <p role="status" className="text-[11px] text-zinc-600 dark:text-zinc-400 ml-1">
                 {tecnicos === 'error' ? 'No se pudieron leer los técnicos. Cierra y vuelve a abrir esta ventana.'
                   : esperandoTecnicos ? 'Buscando al instalador entre los técnicos...'
                     : 'No coincide con un técnico registrado: la oficina asignará el técnico.'}
@@ -162,7 +162,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
                   chevronClassName="w-3.5 h-3.5 right-2"
                 />
               ) : (
-                <input id="nv-promotora" readOnly type="text" value={form.promotora} className={`${CAMPO} bg-zinc-100 dark:bg-zinc-900/60 text-zinc-500 dark:text-zinc-400 cursor-default`} />
+                <input id="nv-promotora" readOnly type="text" value={form.promotora} className={`${CAMPO} bg-zinc-100 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 cursor-default`} />
               )}
             </div>
           )}
@@ -187,7 +187,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           </div>
 
           <div className="col-span-2 pt-1 flex gap-2 justify-end">
-            <button type="button" onClick={onClose} disabled={guardando} className="px-4 py-2 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-xs transition-colors">Cancelar</button>
+            <button type="button" onClick={onClose} disabled={guardando} className="px-4 py-2 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-xs transition-colors">Cancelar</button>
             <button type="submit" disabled={guardando || esperandoTecnicos || (Boolean(instalador) && tecnicos === 'error')} className={`px-4 py-2 text-white font-bold rounded-lg text-xs shadow-md transition-colors ${guardando || esperandoTecnicos ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} disabled:opacity-60 disabled:cursor-not-allowed`}>{guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>

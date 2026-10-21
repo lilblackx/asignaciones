@@ -11,8 +11,8 @@ import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
-const ETIQUETA = 'text-sm font-semibold text-zinc-600 dark:text-zinc-300';
-const VALOR = 'text-base text-zinc-900 dark:text-zinc-50 mt-0.5 break-words';
+const ETIQUETA = 'text-xs font-semibold text-zinc-600 dark:text-zinc-300';
+const VALOR = 'text-sm text-zinc-900 dark:text-zinc-50 mt-0.5 break-words';
 
 function Dato({ etiqueta, children }) {
   return (
@@ -33,18 +33,23 @@ function textoCobro(orden) {
 }
 
 // `item`: { orden, concepto, tecnico } de ordenesPagables; `tarifas`: el tabulador de precios.
-export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose }) {
+export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose, ajustes = [] }) {
   const { orden, concepto, registro } = item;
   // Una orden ya pagada muestra lo que se le pagó; una por pagar, el precio de hoy.
   const precio = item.pagada ? item.monto : tarifas[concepto] || 0;
   const terminada = culminadaEn(orden) || Number(orden.finalizadoEn) || 0;
   const trabajo = [orden.tipoTrabajo, orden.falla].filter(Boolean).join(' · ');
 
+  // Garantías de otro técnico ligadas a esta orden: lo que se le descuenta (si es la original) o lo que se le paga (si es la garantía).
+  const delDescuento = ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave);
+  const dePago = ajustes.filter((a) => a.tipo === 'BONO' && a.clave === item.clave);
+  const garantiaDe = orden.garantiaDe?.id ? orden.garantiaDe : null;
+
   const pie = <button type="button" onClick={onClose} className={BOTON}>Cerrar</button>;
 
   return (
-    <VentanaFinanzas titulo={orden.codigo || 'S/C'} estado={{ texto: registro ? 'Registro' : item.pagada ? 'Pagada' : 'Por pagar', clase: item.pagada ? 'bg-emerald-600 text-white' : 'bg-amber-400 text-black' }} onClose={onClose} pie={pie} zIndexClass="z-[70]">
-          <p className="text-xl font-bold text-zinc-900 dark:text-white break-words -mb-1">{orden.nombre || 'Sin nombre'}</p>
+    <VentanaFinanzas titulo={orden.codigo || 'S/C'} estado={{ texto: registro ? 'Registro' : item.pagada ? 'Pagada' : 'Por pagar', clase: item.pagada ? 'bg-emerald-700 text-white' : 'bg-amber-400 text-black' }} onClose={onClose} pie={pie} zIndexClass="z-[70]">
+          <p className="text-lg font-bold text-zinc-900 dark:text-white break-words -mb-1">{orden.nombre || 'Sin nombre'}</p>
           {registro ? (
             <div className="grid grid-cols-2 gap-4">
               <Dato etiqueta="Trabajo realizado">{TRABAJOS_VNTA[registro.trabajo]?.nombre}</Dato>
@@ -68,13 +73,26 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           <div className="flex items-center justify-between gap-3 rounded-md bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
             <div className="min-w-0">
               <p className={ETIQUETA}>{item.pagada ? 'Se le pagó al técnico como' : 'Se le paga al técnico como'}</p>
-              <p className="text-lg font-bold text-zinc-900 dark:text-white">{grupoDePago(concepto)}{TIPO_DE_AVERIA[concepto] ? ` · ${TIPO_DE_AVERIA[concepto]}` : ''}</p>
+              <p className="text-base font-bold text-zinc-900 dark:text-white">{grupoDePago(concepto)}{TIPO_DE_AVERIA[concepto] ? ` · ${TIPO_DE_AVERIA[concepto]}` : ''}</p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-2xl font-bold text-zinc-900 dark:text-white tabular-nums whitespace-nowrap leading-tight">{dolares(precio)}</p>
-              {tasa > 0 && <p className="text-lg font-bold text-zinc-700 dark:text-zinc-200 tabular-nums whitespace-nowrap">{bolivares(aBs(precio, tasa))}</p>}
+              <p className="text-xl font-bold text-zinc-900 dark:text-white tabular-nums whitespace-nowrap leading-tight">{dolares(precio)}</p>
+              {tasa > 0 && <p className="text-base font-bold text-zinc-700 dark:text-zinc-200 tabular-nums whitespace-nowrap">{bolivares(aBs(precio, tasa))}</p>}
             </div>
           </div>
+
+          {garantiaDe && (
+            <div className="rounded-md border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-100">
+              <p className="font-bold">Garantía de otro técnico</p>
+              <p>De la orden {garantiaDe.codigo || 's/c'} ({garantiaDe.tecnico}).{dePago.length > 0 ? ` Se le paga ${dolares(dePago[0].monto)} al técnico de esta garantía, descontados de la orden original; esta orden no se paga como orden.` : ''}</p>
+            </div>
+          )}
+          {delDescuento.map((a) => (
+            <div key={a.id} className="rounded-md border border-sky-500 bg-sky-50 dark:bg-sky-950/30 px-3 py-2.5 text-sm text-sky-900 dark:text-sky-100">
+              <p className="font-bold">Descuento por garantía: − {dolares(a.monto)}</p>
+              <p>Por la garantía {a.codigo || 's/c'} hecha por {a.a}. A esta orden le quedan {dolares(Math.max(0, precio - a.monto))} de los {dolares(precio)}.{Number(a.aplicado) > 0 ? ` Ya se descontó ${dolares(a.aplicado)} en un pago.` : ''}</p>
+            </div>
+          ))}
 
           {orden.observacion && <Dato etiqueta="Observación">{orden.observacion}</Dato>}
     </VentanaFinanzas>
