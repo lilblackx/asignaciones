@@ -1,4 +1,4 @@
-import { UserRound } from 'lucide-react';
+import { RefreshCw, UserRound } from 'lucide-react';
 import { PERIODOS } from '../../utils/periodoReporte';
 import SelectMenu from '../SelectMenu';
 import MenuExportar from '../modals/reports/MenuExportar';
@@ -10,7 +10,7 @@ const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 da
 const SELECTOR = 'w-full h-10 bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-lg pl-3 pr-9 text-xs font-bold text-zinc-700 dark:text-zinc-200 focus:ring-0 outline-none transition-colors aria-expanded:border-red-600';
 const FECHA = 'bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 h-10 px-2.5 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-600 [color-scheme:light] dark:[color-scheme:dark]';
 
-export default function BarraFinanzas({ periodo, onPeriodo, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, formatosExportar, onExportar, exportando }) {
+export default function BarraFinanzas({ periodo, onPeriodo, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar, onExportar, exportando }) {
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
       <div role="group" aria-label="Periodo" className="flex flex-wrap gap-1.5">
@@ -45,6 +45,14 @@ export default function BarraFinanzas({ periodo, onPeriodo, personalizado, onPer
       </div>
 
       <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onRecargar}
+          disabled={cargando}
+          className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-60 transition-colors whitespace-nowrap"
+        >
+          <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" /> {cargando ? 'Actualizando...' : 'Actualizar'}
+        </button>
         <MenuExportar formatos={formatosExportar} onElegir={onExportar} ocupado={exportando} alinear="izquierda" extra="h-10 border-2 border-red-600 hover:border-red-700" />
       </div>
     </div>
