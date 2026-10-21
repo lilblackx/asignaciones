@@ -35,6 +35,8 @@ function textoCobro(orden) {
 // `item`: { orden, concepto, tecnico } de ordenesPagables; `tarifas`: el tabulador de precios.
 export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose }) {
   const { orden, concepto, registro } = item;
+  // Una orden ya pagada muestra lo que se le pagó; una por pagar, el precio de hoy.
+  const precio = item.pagada ? item.monto : tarifas[concepto] || 0;
   const terminada = culminadaEn(orden) || Number(orden.finalizadoEn) || 0;
   const trabajo = [orden.tipoTrabajo, orden.falla].filter(Boolean).join(' · ');
 
@@ -77,12 +79,12 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
 
           <div className="flex items-center justify-between gap-3 rounded-md bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
             <div className="min-w-0">
-              <p className={ETIQUETA}>Se le paga al técnico como</p>
+              <p className={ETIQUETA}>{item.pagada ? 'Se le pagó al técnico como' : 'Se le paga al técnico como'}</p>
               <p className="text-sm font-bold text-zinc-900 dark:text-white">{grupoDePago(concepto)}{TIPO_DE_AVERIA[concepto] ? ` · ${TIPO_DE_AVERIA[concepto]}` : ''}</p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-xl font-black text-zinc-900 dark:text-white tabular-nums whitespace-nowrap leading-tight">{dolares(tarifas[concepto] || 0)}</p>
-              {tasa > 0 && <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">{bolivares(aBs(tarifas[concepto] || 0, tasa))}</p>}
+              <p className="text-xl font-black text-zinc-900 dark:text-white tabular-nums whitespace-nowrap leading-tight">{dolares(precio)}</p>
+              {tasa > 0 && <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">{bolivares(aBs(precio, tasa))}</p>}
             </div>
           </div>
 

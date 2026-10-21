@@ -2,6 +2,7 @@
 import { diaDe } from './totalesMes.js';
 import { enRango } from './periodoReporte.js';
 import { grupoDeTrabajo } from './tiposDeTrabajo.js';
+import { napSinPuerto } from './codigoNap.js';
 
 // El día (Caracas) al que cuenta una orden: cuando se cerró o, si sigue abierta, cuando se creó. Sin fecha conocida, no cuenta en ningún periodo.
 // `_cierreEn` lo agrega todasLasOrdenes a las órdenes archivadas: cuándo se hizo el cierre que las guardó.
@@ -41,7 +42,8 @@ export function estadisticasOperativas(ordenes, rango, tecnico) {
 
   const napsPor = new Map();
   for (const t of lista) {
-    const nap = (t.nap || '').trim();
+    // La NAP sin el puerto: varios puertos de la misma caja cuentan como una sola NAP.
+    const nap = napSinPuerto(t.nap);
     if (!nap) continue;
     napsPor.set(nap, (napsPor.get(nap) || 0) + 1);
   }

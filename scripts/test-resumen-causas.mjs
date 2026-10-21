@@ -20,6 +20,7 @@ const averia = (id, extra) => ({ id, codigo: `AS${id}`, tipoTrabajo: 'AVERÍA', 
 
 // --- Causas de avería ---
 check('la falla se normaliza y sin falla (o con el tipo guardado como falla) es SIN ESPECIFICAR', [nombreDeFalla({ falla: ' los ' }), nombreDeFalla({ falla: '' }), nombreDeFalla({ falla: 'AVERÍA' })], ['LOS', 'SIN ESPECIFICAR', 'SIN ESPECIFICAR']);
+check('la misma NAP con distintos puertos cuenta como una sola, y sin código se quita el puerto y el "NAP" de adelante', [napDeOrden({ nap: 'NAP O02D10 - Puerto 3' }), napDeOrden({ nap: 'NAP O02D10 - Puerto 7' }), napDeOrden({ nap: 'O02D10' }), napDeOrden({ nap: 'NAP EDIF MIRANDA - Puerto 2' }), napDeOrden({ nap: 'EDIF MIRANDA' }), napDeOrden({ nap: 'asdkjhfg125 - Puerto 4' }), napDeOrden({ nap: 'Puerto 4' })], ['O02D10', 'O02D10', 'O02D10', 'EDIF MIRANDA', 'EDIF MIRANDA', 'ASDKJHFG125', 'PUERTO 4']);
 check('la NAP se normaliza al código, o al texto escrito, o es null', [napDeOrden({ nap: 'nap n10d14 - puerto 2' }), napDeOrden({ nap: 'caja rara' }), napDeOrden({ nap: '  ' })], ['N10D14', 'CAJA RARA', null]);
 
 const ordenes = [

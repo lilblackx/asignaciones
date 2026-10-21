@@ -7,7 +7,7 @@ import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
 import { rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
-import { mudanzasSinTipo, ordenesPagables, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { mudanzasSinTipo, ordenesPagables, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
 import { exportarDocumento } from '../utils/exportarDocumento';
@@ -62,6 +62,10 @@ export default function FinanzasApp({ auth }) {
       return totalesPagados(finanzas.pagadas.filter((p) => !tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()), tasaDe);
     },
     [finanzas.pagadas, finanzas.pagos, tecnico, tasa],
+  );
+  const yaPagadas = useMemo(
+    () => ordenesYaPagadas(finanzas.pagadas.filter((p) => !tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()), items),
+    [finanzas.pagadas, items, tecnico],
   );
   const pagado = useMemo(() => resumenPagado(finanzas.pagos, rango, { tecnico, tasa }), [finanzas.pagos, rango, tecnico, tasa]);
 
@@ -152,7 +156,7 @@ export default function FinanzasApp({ auth }) {
                 />
               )}
               {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}
-              {seccion === 'REPORTE' && <ResumenPagado resumen={pagado} rango={rango} />}
+              {seccion === 'REPORTE' && <ResumenPagado resumen={pagado} rango={rango} ordenesPagadas={yaPagadas} tarifas={finanzas.tarifas} tasa={tasa} />}
               </div>
             </>
           )}

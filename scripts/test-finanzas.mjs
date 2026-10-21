@@ -2,7 +2,7 @@
 // por técnico con las tarifas, que una orden ya pagada no se cobre dos veces y cómo se arma un pago. No necesita el emulador.
 // Uso: `npm run test:finanzas`.
 import {
-  CONCEPTOS_PAGO, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
+  CONCEPTOS_PAGO, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
 } from '../src/utils/finanzas.js';
 import { ROLES, etiquetaRol } from '../src/constants.js';
 
@@ -200,6 +200,18 @@ check('el pago, las órdenes y las filas marcadas caben en un lote de 500', arma
 check('el límite de escrituras es 499', MAX_ESCRITURAS_POR_PAGO, 499);
 check('el grupo, el detalle y las cantidades de VN y TA', [grupoDePago('VALIDACION_NAP'), grupoDePago('TRABAJO_ADICIONAL'), gruposDelReporte({ INSTALACION: 1, AVERIA: 2, VALIDACION_NAP: 3, TRABAJO_ADICIONAL: 4 }), textoGrupos({ AVERIA: 1, VALIDACION_NAP: 2, TRABAJO_ADICIONAL: 1 })], ['Validación de NAP', 'Trabajo adicional', { instalaciones: 1, averias: 2, validacionesNap: 3, adicionales: 4 }, '1 avería · 2 validaciones de NAP · 1 trabajo adicional']);
 check('un pago registrado con las filas de VN y TA suma sus cantidades', resumenPagado([{ tecnico: 'GERARDO', desde: '2026-10-01', hasta: '2026-10-31', creadoEn: DIA(20), total: 8, cantidadOrdenes: 2, cantidades: { VALIDACION_NAP: 1, TRABAJO_ADICIONAL: 1 } }], rango).porTecnico[0].cantidades, { INSTALACION: 0, AVERIA: 0, MUDANZA_INTERNA: 0, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 1, TRABAJO_ADICIONAL: 1, RECABLEADO: 0, LOW_SIGNAL: 0, CAMBIO_EQUIPO: 0 });
+
+// --- El reporte de pagos muestra las órdenes ya pagadas, como se veían antes de pagar ---
+const itemsPagados = ordenesPagables([averiaCobrada, lowSignal], rango);
+const docsPagados = [
+  { id: claveOrden(averiaCobrada), pagoId: 'p1', tecnico: 'GERARDO', concepto: 'AVERIA', monto: 3.5, dia: '2026-10-14', codigo: averiaCobrada.codigo },
+  { id: 'orden-de-otro-dia', pagoId: 'p1', tecnico: 'GERARDO', concepto: 'INSTALACION', monto: 20, dia: '2026-10-02', codigo: 'IO77' },
+];
+const yaPagadasDelReporte = ordenesYaPagadas(docsPagados, itemsPagados);
+check('las ya pagadas salen ordenadas por día, con la marca de pagada y el monto que se pagó', yaPagadasDelReporte.map((i) => [i.orden.codigo, i.concepto, i.monto, i.pagada, i.dia]), [['IO77', 'INSTALACION', 20, true, '2026-10-02'], [averiaCobrada.codigo, 'AVERIA', 3.5, true, '2026-10-14']]);
+check('con la orden cargada trae el cliente y el detalle; sin ella solo lo que guardó el pago', yaPagadasDelReporte.map((i) => [i.conDetalle, i.orden.nombre]), [[false, ''], [true, averiaCobrada.nombre]]);
+check('una orden pagada con un precio que ya cambió conserva lo que se pagó', ordenesYaPagadas([{ ...docsPagados[0], monto: 9 }], itemsPagados)[0].monto, 9);
+check('sin pagos no hay órdenes', ordenesYaPagadas([], itemsPagados), []);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

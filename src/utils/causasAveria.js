@@ -2,7 +2,7 @@
 // (vivas y ya archivadas en los cierres cargados). Cada avería cuenta en el día en que se reportó (se creó la orden).
 import { diaDe, mesDe } from './totalesMes.js';
 import { enRango } from './periodoReporte.js';
-import { extraerCodigoNap } from './codigoNap.js';
+import { napSinPuerto } from './codigoNap.js';
 import { duracionAtencion, porcentaje } from './gestionTecnicos.js';
 
 // Una NAP con averías de tantos clientes distintos en el periodo apunta a un problema de la NAP, no de cada cliente.
@@ -21,8 +21,7 @@ export function nombreDeFalla(t) {
 
 // El código de la NAP normalizado (N10D14), o el texto que escribieron en mayúsculas; null si no hay.
 export function napDeOrden(t) {
-  const texto = String(t.nap || '').trim();
-  return texto ? (extraerCodigoNap(texto) || texto.toUpperCase()) : null;
+  return napSinPuerto(t.nap);
 }
 
 const media = (lista) => (lista.length ? lista.reduce((s, n) => s + n, 0) / lista.length : null);

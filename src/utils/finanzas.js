@@ -151,6 +151,20 @@ export function resumenPagos(items, tarifas, pagadas) {
     .sort((a, b) => b.total - a.total || b.pendientes.length - a.pendientes.length || a.tecnico.localeCompare(b.tecnico));
 }
 
+// Las órdenes que ya están en un pago del periodo (`pagadas`: documentos de ordenesPagadas), para verlas en el reporte de pagos como se veían antes de pagar:
+// [{ orden, clave, concepto, tecnico, dia, monto, pagada: true, conDetalle }]. De `items` (ordenesPagables) salen el cliente y el detalle; si una orden pagada no
+// está ahí (su día cae fuera de lo cargado) se arma solo con lo que guardó el pago (código, día, concepto y monto) y no tiene detalle. El monto es el que se pagó.
+export function ordenesYaPagadas(pagadas, items) {
+  const porClave = new Map(items.map((item) => [item.clave, item]));
+  return pagadas
+    .map((p) => {
+      const item = porClave.get(p.id);
+      const base = item || { orden: { codigo: p.codigo, nombre: '' }, clave: p.id, dia: p.dia };
+      return { ...base, tecnico: p.tecnico, concepto: p.concepto, monto: redondear(p.monto), pagada: true, conDetalle: Boolean(item) };
+    })
+    .sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
+}
+
 export const totalPendiente = (filas) => redondear(filas.reduce((s, f) => s + f.total, 0));
 
 // Si el técnico tiene órdenes pendientes pero alguna tarifa en 0, avisa (para no pagar de menos sin darse cuenta).
