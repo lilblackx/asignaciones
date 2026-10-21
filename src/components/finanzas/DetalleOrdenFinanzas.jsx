@@ -22,7 +22,7 @@ function Dato({ etiqueta, children }) {
 }
 
 // Qué tipo de avería fue, porque el precio cambia según el tipo (ver el tabulador de precios).
-const TIPO_DE_AVERIA = { VISITA: 'Visita', RECABLEADO: 'Recableado' };
+const TIPO_DE_AVERIA = { VISITA: 'Visita', RECABLEADO: 'Recableado', LOW_SIGNAL: 'Low signal', CAMBIO_EQUIPO: 'Cambio de equipo' };
 
 function textoCobro(orden) {
   if (estaExonerado(orden)) return 'Exonerado';

@@ -872,7 +872,7 @@ await check('Registro de técnicos: ALMACEN y PROMOTORA no leen ni escriben; nad
 const asFinanzas = () => testEnv.authenticatedContext('finanzas-uid').firestore();
 const asFinanzasOff = () => testEnv.authenticatedContext('finanzas-off-uid').firestore();
 const fin = (db, nombre) => datos(db).collection(nombre);
-const tarifas = (extra = {}) => ({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5, RECABLEADO: 8, por: 'fina', en: 1, ...extra });
+const tarifas = (extra = {}) => ({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10, por: 'fina', en: 1, ...extra });
 const pagoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', desde: '2026-10-01', hasta: '2026-10-15', cantidades: { INSTALACION: 1, VISITA: 0, AVERIA: 1 }, tarifas: { INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }, total: 23.5, cantidadOrdenes: 2, nota: '', por: 'fina', creadoEn: 1, anulado: false, ...extra });
 const ordenPagada = (pagoId, extra = {}) => ({ pagoId, tecnico: 'GERARDO MOLERO', concepto: 'AVERIA', monto: 3.5, dia: '2026-10-14', codigo: 'AS1', ...extra });
 // Un pago con sus órdenes en un solo lote, como lo guarda la app.
@@ -921,7 +921,7 @@ await check('Tarifas: FINANZAS y ADMIN las fijan en el documento "actual"', asyn
   await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').get());
   await assertSucceeds(fin(asAdmin(), 'tarifasPago').doc('actual').set(tarifas({ por: 'admin', AVERIA: 4 })));
   // Un cliente que todavía no manda el recableado (la versión anterior de la app) sigue pudiendo guardar.
-  const { RECABLEADO, ...sinRecableado } = tarifas();
+  const { RECABLEADO, LOW_SIGNAL, CAMBIO_EQUIPO, ...sinRecableado } = tarifas();
   await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').set(sinRecableado));
   await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas()));
 });
@@ -930,6 +930,8 @@ await check('Tarifas: sin números negativos, sin campos de más, sin otro docum
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ AVERIA: 'cinco' })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ RECABLEADO: -2 })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ RECABLEADO: 'ocho' })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ LOW_SIGNAL: -1 })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ CAMBIO_EQUIPO: 'diez' })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ extra: 1 })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('otro').set(tarifas()));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ por: 'otro' })));
@@ -957,6 +959,9 @@ await check('Pagar: el pago guarda la tasa BCV de su momento (número positivo)'
   await assertSucceeds(guardarPago(asFinanzas(), 'p-tasa', pagoDe({ cantidadOrdenes: 1, total: 8, tasa: 569.6 }), [['orden-tasa', ordenPagada('p-tasa', { concepto: 'AVERIA', monto: 8 })]]));
   await assertFails(guardarPago(asFinanzas(), 'p-tasa-mala', pagoDe({ tasa: -1 }), [['orden-tasa-1', ordenPagada('p-tasa-mala')]]));
   await assertFails(guardarPago(asFinanzas(), 'p-tasa-texto', pagoDe({ tasa: '569' }), [['orden-tasa-2', ordenPagada('p-tasa-texto')]]));
+});
+await check('Pagar: low signal y cambio de equipo se guardan con su concepto', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-ls', pagoDe({ cantidadOrdenes: 2, total: 13 }), [['orden-ls', ordenPagada('p-ls', { concepto: 'LOW_SIGNAL', monto: 3 })], ['orden-ce', ordenPagada('p-ls', { concepto: 'CAMBIO_EQUIPO', monto: 10 })]]));
 });
 await check('Pagar: un recableado se guarda con su concepto', async () => {
   await assertSucceeds(guardarPago(asFinanzas(), 'p-rec', pagoDe({ cantidadOrdenes: 1, total: 8 }), [['orden-recableado', ordenPagada('p-rec', { concepto: 'RECABLEADO', monto: 8 })]]));

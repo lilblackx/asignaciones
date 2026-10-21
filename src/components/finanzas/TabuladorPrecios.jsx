@@ -33,7 +33,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
 
       <div className="p-3 space-y-3">
         <p className="text-xs text-zinc-500 dark:text-zinc-400">Lo que se le paga al técnico por cada orden de ese tipo, en dólares, con su equivalente en bolívares a la tasa BCV de hoy. Un pago ya registrado conserva los precios y la tasa de ese momento.</p>
-        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 gap-3">
           {CONCEPTOS_PAGO.map(({ id, nombre }) => (
             <div key={id} className="min-w-0">
               <label htmlFor={`tarifa-${id}`} className={ETIQUETA}>{nombre}</label>

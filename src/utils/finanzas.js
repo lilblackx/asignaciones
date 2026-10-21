@@ -9,17 +9,22 @@
 //   VISITA       visita (mudanza, retiro de equipo) exonerada o cobrada; la garantía no se paga
 //   AVERIA       avería exonerada o cobrada (low signal siempre cuenta); la garantía no se paga
 //   RECABLEADO   visita o avería pagada cuyo tipo de visita fue un recableado: lleva su propia tarifa en lugar de la de visita o avería
+//   LOW_SIGNAL   trabajo de low signal (siempre exonerado): su propia tarifa
+//   CAMBIO_EQUIPO  cambio de equipo (el trabajo, o una visita cuyo tipo fue cambio de equipo): su propia tarifa
+// Para mostrar, todo lo que no es instalación se agrupa como avería (ver gruposDelReporte); los precios sí se distinguen.
 // Las canceladas, las sin cobro registrado, las validaciones de NAP y lo escalado a infraestructura no entran.
 import { diaDe } from './totalesMes.js';
 import { enRango } from './periodoReporte.js';
 import { fechaDeHoja, ordenesDeHoja, tipoDeAveria, tipoDeVisita } from './reporteMensual.js';
-import { TIPO_RECABLEADO } from './tipoVisita.js';
+import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO } from './tipoVisita.js';
 
 export const CONCEPTOS_PAGO = [
   { id: 'INSTALACION', nombre: 'Instalación', singular: 'instalación', plural: 'instalaciones' },
   { id: 'VISITA', nombre: 'Visita pagada', singular: 'visita', plural: 'visitas' },
   { id: 'AVERIA', nombre: 'Avería pagada', singular: 'avería', plural: 'averías' },
   { id: 'RECABLEADO', nombre: 'Recableado', singular: 'recableado', plural: 'recableados' },
+  { id: 'LOW_SIGNAL', nombre: 'Low signal', singular: 'low signal', plural: 'low signal' },
+  { id: 'CAMBIO_EQUIPO', nombre: 'Cambio de equipo', singular: 'cambio de equipo', plural: 'cambios de equipo' },
 ];
 
 // "1 orden" / "5 órdenes".
@@ -59,6 +64,9 @@ export function conceptoDePago(t, hoja) {
   const pagada = hoja === 'VISITAS' ? ['EX', 'AC'].includes(tipoDeVisita(t)) : hoja === 'AVERIAS' ? ['EX', 'AC'].includes(tipoDeAveria(t)) : false;
   if (!pagada) return null;
   if (t.tipoVisita === TIPO_RECABLEADO) return 'RECABLEADO';
+  const trabajo = String(t.tipoTrabajo || '').trim().toUpperCase();
+  if (trabajo === 'LOW SIGNAL') return 'LOW_SIGNAL';
+  if (trabajo === 'CAMBIO DE EQUIPO' || t.tipoVisita === TIPO_CAMBIO_EQUIPO) return 'CAMBIO_EQUIPO';
   return hoja === 'VISITAS' ? 'VISITA' : 'AVERIA';
 }
 
@@ -228,7 +236,7 @@ export const cifrasResumenPagado = (r) => [
 // En el reporte de lo pagado solo hay dos grupos: instalaciones y averías. Todo lo que no es instalación (visitas, averías y recableados) cuenta como avería.
 export const gruposDelReporte = (cantidades) => ({
   instalaciones: Number(cantidades?.INSTALACION) || 0,
-  averias: (Number(cantidades?.VISITA) || 0) + (Number(cantidades?.AVERIA) || 0) + (Number(cantidades?.RECABLEADO) || 0),
+  averias: CONCEPTOS_PAGO.filter(({ id }) => id !== 'INSTALACION').reduce((suma, { id }) => suma + (Number(cantidades?.[id]) || 0), 0),
 });
 
 // "6 instalaciones · 18 averías" (solo los grupos que tienen órdenes).

@@ -98,7 +98,7 @@ for (const { id, ...datos } of ordenes) await base.collection('tickets').doc(id)
 
 // --- Tarifas y un pago ya hecho (con la misma lógica de la app) ---
 const POR = 'finanzas';
-const tarifas = tarifasCompletas({ INSTALACION: 25, VISITA: 5, AVERIA: 4, RECABLEADO: 8 });
+const tarifas = tarifasCompletas({ INSTALACION: 25, VISITA: 5, AVERIA: 4, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10 });
 await base.collection('tarifasPago').doc('actual').set({ ...tarifas, por: POR, en: ahora - 7 * DIA });
 const rangoPagado = { desde: diaDe(ahora - 6 * DIA), hasta: diaDe(ahora - 4 * DIA) };
 const filaPagada = resumenPagos(ordenesPagables(ordenes, rangoPagado, { tecnico: TECNICOS[0] }), tarifas, new Set()).find((f) => f.tecnico === TECNICOS[0]);

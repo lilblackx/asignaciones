@@ -336,9 +336,11 @@ service cloud.firestore {
       }
       allow read: if llevaFinanzas(appId);
       allow create, update: if llevaFinanzas(appId) && docId == 'actual'
-        && request.resource.data.keys().hasOnly(['INSTALACION', 'VISITA', 'AVERIA', 'RECABLEADO', 'por', 'en'])
+        && request.resource.data.keys().hasOnly(['INSTALACION', 'VISITA', 'AVERIA', 'RECABLEADO', 'LOW_SIGNAL', 'CAMBIO_EQUIPO', 'por', 'en'])
         && tarifaValida('INSTALACION') && tarifaValida('VISITA') && tarifaValida('AVERIA')
         && (!('RECABLEADO' in request.resource.data) || tarifaValida('RECABLEADO'))
+        && (!('LOW_SIGNAL' in request.resource.data) || tarifaValida('LOW_SIGNAL'))
+        && (!('CAMBIO_EQUIPO' in request.resource.data) || tarifaValida('CAMBIO_EQUIPO'))
         && request.resource.data.por == usuarioFinanzas(appId)
         && request.resource.data.en is int;
       allow delete: if false;
@@ -380,7 +382,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['pagoId', 'tecnico', 'concepto', 'monto', 'dia', 'codigo'])
         && request.resource.data.pagoId is string && request.resource.data.pagoId.size() > 0
         && existsAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosTecnicos/$(request.resource.data.pagoId))
-        && request.resource.data.concepto in ['INSTALACION', 'VISITA', 'AVERIA', 'RECABLEADO']
+        && request.resource.data.concepto in ['INSTALACION', 'VISITA', 'AVERIA', 'RECABLEADO', 'LOW_SIGNAL', 'CAMBIO_EQUIPO']
         && request.resource.data.tecnico is string && request.resource.data.tecnico.size() > 0
         && (request.resource.data.monto is int || request.resource.data.monto is float) && request.resource.data.monto >= 0
         && request.resource.data.dia is string && request.resource.data.dia.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
