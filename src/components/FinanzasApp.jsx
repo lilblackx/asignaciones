@@ -112,21 +112,22 @@ export default function FinanzasApp({ auth }) {
             ))}
           </div>
 
-          {cargado && (
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-zinc-600 dark:text-zinc-400">
-              <span role="status">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
-              <button
-                type="button"
-                onClick={actualizar}
-                disabled={actualizando}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-60 transition-colors"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
-              </button>
-            </div>
-          )}
-
-          <TasaBcv tasa={bcv.tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={bcv.actualizar} />
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+            <TasaBcv tasa={bcv.tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={bcv.actualizar} />
+            {cargado && (
+              <div className="flex items-center gap-x-3 sm:ml-auto text-xs text-zinc-600 dark:text-zinc-400">
+                <span role="status" className="whitespace-nowrap">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
+                <button
+                  type="button"
+                  onClick={actualizar}
+                  disabled={actualizando}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-60 transition-colors whitespace-nowrap"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar órdenes'}
+                </button>
+              </div>
+            )}
+          </div>
 
           {error && !actualizadoEn ? (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
