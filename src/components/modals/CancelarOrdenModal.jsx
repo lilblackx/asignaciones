@@ -37,6 +37,7 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
               <span className="text-xs font-bold text-red-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
+            <AvisoCambioDeOrden texto={cambio} encabezado />
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
             <X className="w-4 h-4" />
@@ -44,7 +45,6 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
         </div>
 
         <div className="p-4 space-y-4">
-          <AvisoCambioDeOrden texto={cambio} />
           <div className="space-y-1">
             <label htmlFor="motivo-cancelar-orden" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
               <Ban className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA CANCELACIÓN <span className="font-normal">(obligatorio)</span>

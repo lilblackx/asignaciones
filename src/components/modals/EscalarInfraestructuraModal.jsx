@@ -38,6 +38,7 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
               <span className="text-xs font-bold text-orange-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
+            <AvisoCambioDeOrden texto={cambio} encabezado />
             {!cambio && <AvisoRevision nombres={otrosRevisando} encabezado />}
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
@@ -46,7 +47,6 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
         </div>
 
         <div className="p-4 space-y-4">
-          <AvisoCambioDeOrden texto={cambio} />
           <div className="space-y-1">
             <label htmlFor="motivo-infraestructura" className="text-xs font-bold text-orange-700 dark:text-orange-400 ml-1 flex items-center gap-1">
               <HardHat className="w-3.5 h-3.5" aria-hidden="true" /> ¿QUÉ HACE FALTA DE INFRAESTRUCTURA? <span className="font-normal">(obligatorio)</span>
