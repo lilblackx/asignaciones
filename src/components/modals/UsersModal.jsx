@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Ban, Check, CheckCircle2, KeyRound, Pencil, ShieldCheck, User, UserPlus, X } from 'lucide-react';
+import { Ban, Check, CheckCircle2, KeyRound, Pencil, ShieldCheck, SlidersHorizontal, User, UserPlus, X } from 'lucide-react';
 import { ROLES, etiquetaRol } from '../../constants';
 import { errorNombresPromotora } from '../../utils/promotora';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../../utils/passwordPolicy';
@@ -8,6 +8,7 @@ import Modal, { PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import SelectMenu from '../SelectMenu';
+import Colapsable from '../Colapsable';
 import Spinner from '../Spinner';
 
 const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
@@ -17,17 +18,19 @@ const ROL_NUEVO_ITEMS = [
   { value: ROLES.ALMACEN, label: 'ALMACÉN (solo ve Materiales)' },
   { value: ROLES.PROMOTORA, label: 'VENTAS (ve sus instalaciones, o todas con "Ver todas")' },
   { value: ROLES.FINANZAS, label: 'FINANZAS (cobros, pago a técnicos y reportes; no toca las órdenes)' },
+  // Rol INFRAESTRUCTURA apagado por ahora (junto con su módulo): descomentar esta línea y agregar ROLES.INFRAESTRUCTURA a ROL_ITEMS para volver a ofrecerlo.
+  // { value: ROLES.INFRAESTRUCTURA, label: 'INFRAESTRUCTURA (ve las instalaciones con su NAP y puerto)' },
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];
 const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
 
-const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS];
+const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA];
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const claseRol = (rol) => (rol === ROLES.ADMIN
   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
   : rol === ROLES.TECNICO
     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-    : [ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS].includes(rol)
+    : [ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA].includes(rol)
       ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
       : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300');
 
@@ -41,6 +44,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
   const [verTodasDraft, setVerTodasDraft] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState('TODOS');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [promError, setPromError] = useState('');
 
   const cancelRoleEdit = () => {
@@ -219,30 +223,47 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 <UserPlus className="w-3.5 h-3.5" aria-hidden="true" /> Nuevo usuario
               </button>
             </div>
-            <div className="relative">
-              <input
-                type="search"
-                aria-label="Buscar usuario"
-                placeholder="Buscar por nombre o usuario"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 pl-4 pr-10 py-2.5 rounded-xl text-sm outline-none focus:border-red-600"
-              />
-              <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
+            <div className="flex gap-2">
+              <div className="relative flex-1 min-w-0">
+                <input
+                  type="search"
+                  aria-label="Buscar usuario"
+                  placeholder="Buscar por nombre o usuario"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 pl-4 pr-10 py-2.5 rounded-xl text-sm outline-none focus:border-red-600"
+                />
+                <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
+              </div>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                aria-expanded={filtersOpen}
+                aria-label="Filtros"
+                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${filtersOpen ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
+              >
+                <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
+                <span className="hidden sm:inline">Filtros</span>
+                {(filtroRol !== 'TODOS' ? 1 : 0) > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{(filtroRol !== 'TODOS' ? 1 : 0)}</span>}
+              </button>
             </div>
-            <div role="group" aria-label="Filtrar por rol" className="flex flex-wrap gap-2">
-              {filtros.map((f) => (
-                <button
-                  key={f.value}
-                  type="button"
-                  aria-pressed={filtroRol === f.value}
-                  onClick={() => setFiltroRol(f.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-colors ${filtroRol === f.value ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'}`}
-                >
-                  {f.label} <span className="opacity-80">({f.n})</span>
-                </button>
-              ))}
-            </div>
+            <Colapsable>{filtersOpen && (
+              <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
+              <div role="group" aria-label="Filtrar por rol" className="flex flex-wrap gap-2">
+                {filtros.map((f) => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    aria-pressed={filtroRol === f.value}
+                    onClick={() => setFiltroRol(f.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-colors ${filtroRol === f.value ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'}`}
+                  >
+                    {f.label} <span className="opacity-80">({f.n})</span>
+                  </button>
+                ))}
+              </div>
+              </div>
+            )}</Colapsable>
 
             <ul className="space-y-3">
               {visibles.map(u => (

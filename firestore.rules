@@ -38,6 +38,11 @@ service cloud.firestore {
       return isActiveUser(appId) && get(profilePath(appId)).data.role == 'PROMOTORA';
     }
 
+    // INFRAESTRUCTURA solo lee: las instalaciones y los reportes de cierre donde quedan las ya archivadas (nada más).
+    function isInfraestructuraRole(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'INFRAESTRUCTURA';
+    }
+
     // FINANZAS lee las órdenes, los técnicos y los reportes (sin escribir nada de eso) y lleva sus propias colecciones: la conciliación de
     // cobros, las tarifas y los pagos a técnicos (más abajo). El ADMIN también las escribe.
     function isFinanzasRole(appId) {
@@ -156,6 +161,8 @@ service cloud.firestore {
         || (isPromotoraRole(appId) && resource.data.tipoTrabajo == 'INSTALACIÓN' && (promotoraVeTodas(appId) || resource.data.get('promotoraClave', '') in promotoraClaves(appId)))
         // Ventas (el PROMOTOR con "ve todas") también sigue las averías de tipo LOS: solo esas, y solo ellas.
         || (isPromotoraRole(appId) && promotoraVeTodas(appId) && resource.data.tipoTrabajo == 'AVERÍA' && resource.data.get('falla', '') == 'LOS')
+        // INFRAESTRUCTURA ve las instalaciones ya finalizadas (con su NAP y puerto); la consulta debe pedir tipoTrabajo y estado.
+        || (isInfraestructuraRole(appId) && resource.data.tipoTrabajo == 'INSTALACIÓN' && resource.data.estado == 'FINALIZADO')
         || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
 
       // Crear órdenes es acción de ADMIN/USUARIO; TECNICO no tiene esa UI. Una PROMOTORA con permiso (puedeCrearVentas, lo
@@ -284,7 +291,9 @@ service cloud.firestore {
 
     match /artifacts/{appId}/public/data/reports/{docId} {
       // ALMACEN lee los reportes para sumar el material de las órdenes ya archivadas; FINANZAS, para los cobros y pagos de las ya archivadas.
-      allow read: if canCerrar(appId) || isAlmacenRole(appId) || isFinanzasRole(appId);
+      allow read: if canCerrar(appId) || isAlmacenRole(appId) || isFinanzasRole(appId)
+        // INFRAESTRUCTURA lee solo los reportes de cierre (donde están las instalaciones archivadas); la consulta debe pedir tipoReporte.
+        || (isInfraestructuraRole(appId) && resource.data.get('tipoReporte', '') == 'CIERRE');
       allow write: if canCerrar(appId);
     }
 

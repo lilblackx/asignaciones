@@ -64,6 +64,10 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('tickets').doc('instalacion-4').set({ codigo: 'IO4', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Orden vieja sin promotora', cedula: '4', tecnico: '' });
   await base.collection('tickets').doc('instalacion-5').set({ codigo: 'IO5', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Otra promotora', cedula: '5', tecnico: '', promotora: 'Maria', promotoraClave: 'maria' });
   await base.collection('reports').doc('reporte-1').set({ total: 1, tipoReporte: 'CIERRE', createdAt: 1 });
+  await base.collection('reports').doc('reporte-cancelados').set({ total: 1, tipoReporte: 'CANCELADOS', createdAt: 2 });
+  await base.collection('users').doc('infra-uid').set({ role: 'INFRAESTRUCTURA', disabled: false, username: 'infra' });
+  await base.collection('users').doc('infra-off-uid').set({ role: 'INFRAESTRUCTURA', disabled: true, username: 'infra-off' });
+  await base.collection('tickets').doc('instalacion-final').set({ codigo: 'IO9', tipoTrabajo: 'INSTALACIÓN', estado: 'FINALIZADO', nombre: 'Cliente instalado', cedula: '9', tecnico: 'GERARDO MOLERO', nap: 'NAP O02D10 - Puerto 3' });
   await base.collection('historialInstalaciones').doc('hist-1').set({ codigo: 'IO0', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Sariana', promotoraClave: 'sariana' });
   await base.collection('historialInstalaciones').doc('hist-otra').set({ codigo: 'IO9', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Maria', promotoraClave: 'maria' });
 
@@ -533,6 +537,38 @@ await check('ALMACEN NO puede escribir órdenes, reportes ni técnicos', async (
 await check('ALMACEN NO lee usuarios ni el historial de instalaciones', async () => {
   await assertFails(datos(asAlmacen()).collection('users').get());
   await assertFails(datos(asAlmacen()).collection('historialInstalaciones').get());
+});
+
+// --- INFRAESTRUCTURA: solo lee las instalaciones finalizadas y los reportes de cierre ---
+const asInfra = () => testEnv.authenticatedContext('infra-uid').firestore();
+const instalacionesInfra = (db) => datos(db).collection('tickets').where('tipoTrabajo', '==', 'INSTALACIÓN').where('estado', '==', 'FINALIZADO');
+await check('INFRAESTRUCTURA lee las instalaciones finalizadas y los reportes de cierre', async () => {
+  await assertSucceeds(instalacionesInfra(asInfra()).get());
+  await assertSucceeds(ticketPath(asInfra(), 'instalacion-final').get());
+  await assertSucceeds(datos(asInfra()).collection('reports').where('tipoReporte', '==', 'CIERRE').where('createdAt', '>=', 0).orderBy('createdAt', 'desc').get());
+});
+await check('INFRAESTRUCTURA NO lee averías ni instalaciones sin finalizar, ni todas las órdenes de golpe', async () => {
+  await assertFails(ticketPath(asInfra(), 'averia-los').get());
+  await assertFails(ticketPath(asInfra(), 'instalacion-1').get());
+  await assertFails(datos(asInfra()).collection('tickets').get());
+  await assertFails(ticketsInst(asInfra()).get());
+});
+await check('INFRAESTRUCTURA NO lee los reportes de cancelados ni técnicos, usuarios, historial ni Finanzas', async () => {
+  await assertFails(datos(asInfra()).collection('reports').doc('reporte-cancelados').get());
+  await assertFails(datos(asInfra()).collection('reports').get());
+  await assertFails(datos(asInfra()).collection('technicians').get());
+  await assertFails(datos(asInfra()).collection('users').get());
+  await assertFails(datos(asInfra()).collection('historialInstalaciones').get());
+  await assertFails(datos(asInfra()).collection('pagosTecnicos').get());
+});
+await check('INFRAESTRUCTURA NO puede escribir nada', async () => {
+  await assertFails(ticketPath(asInfra(), 'instalacion-final').update({ observacion: 'x' }));
+  await assertFails(datos(asInfra()).collection('tickets').doc('nueva').set({ codigo: 'X', tipoTrabajo: 'INSTALACIÓN' }));
+  await assertFails(datos(asInfra()).collection('reports').doc('reporte-1').update({ total: 9 }));
+  await assertFails(ticketPath(asInfra(), 'instalacion-final').delete());
+});
+await check('INFRAESTRUCTURA desactivado no lee nada', async () => {
+  await assertFails(instalacionesInfra(testEnv.authenticatedContext('infra-off-uid').firestore()).get());
 });
 
 const asPromotora2 = () => testEnv.authenticatedContext('promotora2-uid').firestore();

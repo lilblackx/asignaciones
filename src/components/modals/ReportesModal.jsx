@@ -228,7 +228,7 @@ export default function ReportesModal({
           </nav>
           )}
 
-          <main className={`flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 pb-6 lg:pt-1 ${CENTRADO_AMPLIO}`}>
+          <main className={`flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 pb-6 ${enPagina ? '' : 'lg:pt-1'} ${CENTRADO_AMPLIO}`}>
             <FiltrosReporte
               soloAcciones={reporte.sinFiltros}
               periodo={periodo}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search } from 'lucide-react';
+import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
@@ -227,6 +227,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
   useEffect(() => { onCargar(); }, [onCargar]);
   const [filtro, setFiltro] = useState('TODOS');
   const [texto, setTexto] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [encontrados, setEncontrados] = useState([]);
   const [buscando, setBuscando] = useState(false);
   const [buscado, setBuscado] = useState('');
@@ -303,26 +304,43 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               </button>
             </div>
 
-            <label className="relative block">
-              <span className="sr-only">Buscar por código, cliente, serial o técnico</span>
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
-              <input
-                type="search"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                placeholder="Código, cliente, serial o técnico"
-                className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-red-600"
-              />
-              <BotonLimpiarBusqueda valor={texto} onLimpiar={() => setTexto('')} />
-            </label>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
-              {FILTROS.map((f) => (
-                <button key={f.clave} type="button" onClick={() => setFiltro(f.clave)} aria-pressed={filtro === f.clave}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${filtro === f.clave ? 'bg-red-600 border-red-600 text-white' : 'border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-red-600'}`}>
-                  {f.etiqueta}
-                </button>
-              ))}
+            <div className="flex gap-2">
+              <label className="relative block flex-1 min-w-0">
+                <span className="sr-only">Buscar por código, cliente, serial o técnico</span>
+                <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={texto}
+                  onChange={(e) => setTexto(e.target.value)}
+                  placeholder="Código, cliente, serial o técnico"
+                  className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-red-600"
+                />
+                <BotonLimpiarBusqueda valor={texto} onLimpiar={() => setTexto('')} />
+              </label>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                aria-expanded={filtersOpen}
+                aria-label="Filtros"
+                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${filtersOpen ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
+              >
+                <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
+                <span className="hidden sm:inline">Filtros</span>
+                {(filtro !== 'TODOS' ? 1 : 0) > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{(filtro !== 'TODOS' ? 1 : 0)}</span>}
+              </button>
             </div>
+            <Colapsable>{filtersOpen && (
+              <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
+                {FILTROS.map((f) => (
+                  <button key={f.clave} type="button" onClick={() => setFiltro(f.clave)} aria-pressed={filtro === f.clave}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${filtro === f.clave ? 'bg-red-600 border-red-600 text-white' : 'border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-red-600'}`}>
+                    {f.etiqueta}
+                  </button>
+                ))}
+              </div>
+              </div>
+            )}</Colapsable>
 
             {visibles.length === 0 ? (
               <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-4">

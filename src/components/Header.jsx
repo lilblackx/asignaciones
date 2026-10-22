@@ -55,8 +55,8 @@ export default function Header({
   };
 
   return (
-    <header className="bg-black text-white shadow-md sticky top-0 z-10 border-b-2 border-red-600">
-      <div className="px-4 py-2 min-h-[60px] flex justify-between items-center max-w-[1400px] mx-auto w-full">
+    <header className="bg-black/80 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b-2 border-red-600 lg:h-[62px]">
+      <div className="px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
           {isAdmin && (
             <button onClick={onOpenSidebar} aria-label="Abrir menú" title="Menú" className="relative p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">

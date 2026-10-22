@@ -1,4 +1,5 @@
-import { Calendar, Download, Eye, FileText } from 'lucide-react';
+import { Calendar, Eye, FileText } from 'lucide-react';
+import BotonExportar from '../../BotonExportar';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import CierreAutomaticoConfig from './CierreAutomaticoConfig';
 import Spinner from '../../Spinner';
@@ -76,14 +77,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                 >
                   <Eye className="w-4 h-4 text-zinc-600 dark:text-zinc-500" /> Ver Órdenes
                 </button>
-                <button
-                  onClick={() => exportReportToCsv(rep)}
-                  title="Descargar CSV"
-                  aria-label="Descargar CSV"
-                  className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-lg border border-emerald-200 dark:border-emerald-900/50 transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
+                <BotonExportar onClick={() => exportReportToCsv(rep)} title="Descargar CSV" ariaLabel="Descargar CSV" />
               </div>
             </div>
           ))}

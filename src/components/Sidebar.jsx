@@ -9,7 +9,7 @@ const guardarColapsado = (valor) => { try { localStorage.setItem(CLAVE_COLAPSADO
 // El menú lateral del administrador: todos los módulos de la app agrupados por tema. En pantallas grandes queda fijo a la izquierda (expandido o compacto, solo íconos, y recuerda
 // cuál dejaste); en el celular es un panel que se abre con el botón ☰ del encabezado. Los de la oficina abren su ventana; Finanzas y Ventas abren su pantalla completa; Almacén es la
 // misma pantalla de Materiales. "Envíos al inventario" solo sale para quien tiene ese acceso (`veInventario`).
-//   acciones: { inicio, modulo(id) }: `inicio` vuelve a la oficina y `modulo(id)` abre el módulo (CIERRE, REPORTES, HISTORIAL, REVISION, FINANZAS, TASA, TECNICOS, USUARIOS, ALMACEN, INVENTARIO o PROMOTORA) como página dentro del marco.
+//   acciones: { inicio, modulo(id) }: `inicio` vuelve a la oficina y `modulo(id)` abre el módulo (CIERRE, REPORTES, HISTORIAL, REVISION, FINANZAS, TASA, TECNICOS, USUARIOS, ALMACEN, INFRAESTRUCTURA, INVENTARIO o PROMOTORA) como página dentro del marco.
 //   nombre, rol, isDarkMode, onCambiarTema, onSalir: el pie del menú (quién está conectado, el tema y cerrar sesión).
 //   activo: el módulo que está a la vista ('oficina', 'revision', 'finanzas', 'almacen' o 'ventas'); los demás son ventanas que se abren encima.
 export default function Sidebar({ acciones, veInventario = false, alertasInventario = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
@@ -43,6 +43,8 @@ export default function Sidebar({ acciones, veInventario = false, alertasInventa
     { titulo: 'Inventario y ventas', items: [
       { id: 'almacen', Icono: Cable, nombre: 'Almacén', accion: () => acciones.modulo('ALMACEN') },
       ...(veInventario ? [{ id: 'inventario', Icono: PackageCheck, nombre: 'Envíos al inventario', alertas: alertasInventario, accion: () => acciones.modulo('INVENTARIO') }] : []),
+      // Módulo Infraestructura apagado por ahora (la pantalla, el rol, las reglas y el Worker siguen en el código, sin desplegar). Para volver a mostrarlo: importar Network de lucide-react y descomentar:
+      // { id: 'infraestructura', Icono: Network, nombre: 'Infraestructura', accion: () => acciones.modulo('INFRAESTRUCTURA') },
       { id: 'ventas', Icono: TrendingUp, nombre: 'Ventas', accion: () => acciones.modulo('PROMOTORA') },
     ] },
   ];
@@ -51,7 +53,7 @@ export default function Sidebar({ acciones, veInventario = false, alertasInventa
 
   return (
     <>
-      {abierto && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={onCerrar} aria-hidden="true" />}
+      {abierto && <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={onCerrar} aria-hidden="true" />}
       <aside
         aria-label="Módulos"
         className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-0 lg:h-screen lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-black text-white border-r border-zinc-800 overflow-hidden`}

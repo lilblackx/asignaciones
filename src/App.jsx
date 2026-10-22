@@ -90,7 +90,7 @@ const EMPTY_FORM = () => ({
 });
 
 // Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).
-const ACTIVO_EN_MENU = { FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
+const ACTIVO_EN_MENU = { FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
 
 // `auth`: la sesión (useAuth) la resuelve Root, que decide qué pantalla corresponde al rol.
 // `moduloActivo` / `onAbrirModulo(id)`: el administrador abre cada módulo desde el menú lateral y se ve como página dentro del marco, a la derecha del menú (los demás roles los abren como ventana); Root guarda cuál está abierto
@@ -642,7 +642,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           />
         )}
 
-        {isAdmin && (moduloActivo === 'FINANZAS' || moduloActivo === 'PROMOTORA') && (
+        {isAdmin && (moduloActivo === 'FINANZAS' || moduloActivo === 'PROMOTORA' || moduloActivo === 'INFRAESTRUCTURA') && (
           <div className="flex-1 min-w-0">{renderModulo(moduloActivo, { onAbrirMenu: () => setIsSidebarOpen(true) })}</div>
         )}
 

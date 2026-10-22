@@ -2,6 +2,7 @@
 // cancelaron. Lo ya cerrado sale del documento del mes (estadisticasMensuales, lo suma el cierre del día en el Worker); lo de hoy
 // que todavía no se cerró, de las órdenes en vivo que la pantalla ya tiene. Así no hace falta leer todo el historial.
 import { esAveriaLos, esInstalacionDeLista } from './estadoInstalacion.js';
+import { fechaDeOrden } from './fechaOrden.js';
 
 const ZONA_HORARIA = 'America/Caracas';
 
@@ -45,10 +46,10 @@ export function mesesDeTotales(ahora = Date.now(), maximo = 6) {
 const CERO = { enProceso: 0, finalizadas: 0, canceladas: 0 };
 
 // Lo mismo que incrementosMensuales, para un cierre que archiva a la vez las órdenes finalizadas y las canceladas (cada una con su estado).
-export function incrementosDeCierre(ordenes, ahoraMs = Date.now()) {
+export function incrementosDeCierre(ordenes, ahoraMs = Date.now(), diaCierreMs = ahoraMs) {
   const porMes = {};
   for (const estado of ['FINALIZADO', 'CANCELADO']) {
-    for (const [mes, campos] of Object.entries(incrementosMensuales(ordenes.filter((t) => t.estado === estado), estado, ahoraMs))) porMes[mes] = { ...porMes[mes], ...campos };
+    for (const [mes, campos] of Object.entries(incrementosMensuales(ordenes.filter((t) => t.estado === estado), estado, ahoraMs, diaCierreMs))) porMes[mes] = { ...porMes[mes], ...campos };
   }
   return porMes;
 }
@@ -76,18 +77,17 @@ export function totalesDelMes(contador, vivas, mes, ahora = Date.now()) {
 }
 
 // --- El cierre manual (desde la app) suma lo mismo que el automático (cf-worker/src/index.js, incrementosMensuales) ---
-const VENTANA_FINALIZACION_MS = 40 * 24 * 60 * 60 * 1000;
 
 // { '2026-10': { instalacionesFinalizadas: 3, losResueltas: 1 }, ... } de las órdenes que se archivan con este estado. Cada una cuenta en
-// el mes en que se finalizó; sin una fecha de finalización creíble (las canceladas no la tienen), en el mes del cierre.
-export function incrementosMensuales(ordenes, estado, ahoraMs = Date.now()) {
+// el mes en que se finalizó; sin una fecha de finalización creíble (las canceladas no la tienen), en el mes del día que se cierra (`diaCierreMs`: un
+// instante de ese día, que no es el de ahora cuando el cierre se hace a mano al día siguiente, p. ej. el 1 de octubre para el 30 de septiembre).
+export function incrementosMensuales(ordenes, estado, ahoraMs = Date.now(), diaCierreMs = ahoraMs) {
   const porMes = {};
   for (const t of ordenes) {
     const esLos = esAveriaLos(t);
     if (!esLos && !esInstalacionDeLista(t)) continue;
     const campo = estado === 'FINALIZADO' ? (esLos ? 'losResueltas' : 'instalacionesFinalizadas') : (esLos ? 'losCanceladas' : 'instalacionesCanceladas');
-    const fin = Number(t.finalizadoEn);
-    const mes = mesDe(fin > ahoraMs - VENTANA_FINALIZACION_MS && fin <= ahoraMs ? fin : ahoraMs);
+    const mes = mesDe(fechaDeOrden(t, { estado, diaCierreMs, ahoraMs }));
     porMes[mes] = { ...porMes[mes], [campo]: (porMes[mes]?.[campo] || 0) + 1 };
   }
   return porMes;

@@ -11,8 +11,8 @@ const hora = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Carac
 // Una barra de 24 horas con los tramos en que el técnico estuvo activo ese día.
 function BarraDia({ dia, tramos }) {
   return (
-    <div className="relative h-3.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden" role="img" aria-label={`Activo: ${tramos.map(([i, f]) => `${hora(i)} a ${hora(f)}`).join(', ')}`}>
-      {HORAS_EJE.slice(1, -1).map((h) => <span key={h} className="absolute inset-y-0 w-px bg-zinc-300/70 dark:bg-zinc-700" style={{ left: `${(h / 24) * 100}%` }} aria-hidden="true" />)}
+    <div className="relative h-3.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden" role="img" aria-label={`Activo: ${tramos.map(([i, f]) => `${hora(i)} a ${hora(f)}`).join(', ')}`}>
+      {HORAS_EJE.slice(1, -1).map((h) => <span key={h} className="absolute inset-y-0 w-px bg-zinc-400/60 dark:bg-zinc-700" style={{ left: `${(h / 24) * 100}%` }} aria-hidden="true" />)}
       {tramos.map(([ini, fin]) => (
         <span
           key={ini}

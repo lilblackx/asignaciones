@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, History, Search } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, FileText, History, Search, SlidersHorizontal } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../../constants';
 import { motivoCancelacion } from '../../utils/cancelacion';
+import { fechaDeOrden } from '../../utils/fechaOrden';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
@@ -11,6 +12,8 @@ import CampoFecha from '../CampoFecha';
 import SelectMenu from '../SelectMenu';
 import PlantillaFinalModal from './PlantillaFinalModal';
 import Colapsable from '../Colapsable';
+import BotonExportar from '../BotonExportar';
+import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 
 const PAGE_SIZE = 25;
 const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'];
@@ -21,6 +24,10 @@ function parseFecha(fecha) {
   if (!d || !m || !y) return 0;
   return new Date(y, m - 1, d).getTime();
 }
+
+// La fecha con la que se filtra Desde/Hasta: la misma de todos los módulos (utils/fechaOrden): la de finalización o cancelación; una orden abierta,
+// la de creación. Las archivadas sin esa fecha usan el día del cierre que las guardó.
+const fechaDeFiltro = (t, cierreMs = 0, archivadoMs = 0) => fechaDeOrden(t, { diaCierreMs: cierreMs, ...(archivadoMs ? { ahoraMs: archivadoMs } : {}) }) || parseFecha(t.fecha);
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
@@ -40,13 +47,14 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   const [page, setPage] = useState(0);
   const [expandedKey, setExpandedKey] = useState(null);
   const [plantillaAbierta, setPlantillaAbierta] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const allOrders = useMemo(() => {
     const seen = new Set();
     const list = [];
     tickets.forEach(t => {
       seen.add(t.id);
-      list.push({ ...t, _key: `act-${t.id}`, _origen: 'Activa', _ts: t.createdAt || parseFecha(t.fecha) });
+      list.push({ ...t, _key: `act-${t.id}`, _origen: 'Activa', _ts: t.createdAt || parseFecha(t.fecha), _tsFiltro: fechaDeFiltro(t) });
     });
     reports.forEach(rep => {
       (rep.ticketsDetalle || []).forEach(t => {
@@ -56,7 +64,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           ...t,
           _key: `${rep.id}-${t.id}`,
           _origen: `${rep.tipoReporte === 'CANCELADOS' || (rep.canceladas !== undefined && t.estado === 'CANCELADO') ? 'Cancelados' : 'Cierre'} ${rep.fechaCierre}`,
-          _ts: t.createdAt || parseFecha(t.fecha)
+          _ts: t.createdAt || parseFecha(t.fecha),
+          _tsFiltro: fechaDeFiltro(t, parseFecha(rep.fechaCierre) + 12 * 3600000, rep.createdAt)
         });
       });
     });
@@ -77,8 +86,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
       if (estado && o.estado !== estado) return false;
       if (tipo && o.tipoTrabajo !== tipo) return false;
       if (tecnico && o.tecnico !== tecnico) return false;
-      if (from !== null && o._ts < from) return false;
-      if (to !== null && o._ts > to) return false;
+      if (from !== null && o._tsFiltro < from) return false;
+      if (to !== null && o._tsFiltro > to) return false;
       if (term) {
         const haystack = norm([o.codigo, o.nombre, o.cedula, o.direccion, o.tecnico, o.telefono, o.falla].join(' '));
         if (!haystack.includes(term)) return false;
@@ -88,6 +97,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   }, [allOrders, search, estado, tipo, tecnico, desde, hasta]);
 
   const hasFilters = search || estado || tipo || tecnico || desde || hasta;
+  const activeFiltersCount = [estado, tipo, tecnico, desde, hasta].filter(Boolean).length;
   const describirFiltros = () => [
     search && `búsqueda "${search.trim()}"`,
     estado && `estado ${estado}`,
@@ -122,43 +132,57 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         <EncabezadoModulo Icono={History} titulo="HISTORIAL DE ÓRDENES" onClose={onClose} enPagina={enPagina} />
 
         <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
-            <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
-            <input id="history-search" type="text" value={search} onChange={withReset(setSearch)} placeholder="Buscar por código, nombre, cédula, dirección, teléfono o técnico..." className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl focus:border-red-500 outline-none text-sm" />
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+              <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
+              <input id="history-search" type="search" value={search} onChange={withReset(setSearch)} placeholder="Buscar por código, nombre, cédula, dirección, teléfono o técnico..." className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none" />
+              <BotonLimpiarBusqueda valor={search} onLimpiar={() => { setSearch(''); setPage(0); setExpandedKey(null); }} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              aria-expanded={filtersOpen}
+              aria-label="Filtros"
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${filtersOpen ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
+            >
+              <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
+              <span className="hidden sm:inline">Filtros</span>
+              {activeFiltersCount > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{activeFiltersCount}</span>}
+            </button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 [&>*]:min-w-0">
-            <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
-            <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
-            <SelectMenu ariaLabel="Técnico" value={tecnico} onChange={withResetValue(setTecnico)} items={tecnicoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
-            <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={fechaClass} />
-            <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={fechaClass} />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+
+          <Colapsable>{filtersOpen && (
+            <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 [&>*]:min-w-0">
+                <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
+                <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
+                <SelectMenu ariaLabel="Técnico" value={tecnico} onChange={withResetValue(setTecnico)} items={tecnicoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
+                <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={fechaClass} />
+                <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={fechaClass} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+                <BotonExportar
+                  onClick={() => exportOrdersToCsv(filtered, describirFiltros())}
+                  disabled={filtered.length === 0}
+                  title="Descarga las órdenes que ves con los filtros aplicados"
+                  etiqueta="Exportar CSV"
+                />
+                <BotonExportar
+                  onClick={() => exportResumenTecnicosToCsv(filtered, describirFiltros())}
+                  disabled={filtered.length === 0}
+                  title="Un renglón por técnico: órdenes, finalizadas, canceladas y potencia promedio"
+                  etiqueta="Resumen por técnico"
+                />
+              </div>
+            </div>
+          )}</Colapsable>
+
+          <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
             <span>
               {filtered.length} {filtered.length === 1 ? 'orden' : 'órdenes'}
             </span>
-            <div className="flex flex-wrap items-center gap-2">
-              {hasFilters && <button type="button" onClick={clearFilters} className="font-bold underline hover:text-zinc-800 dark:hover:text-zinc-200">Limpiar filtros</button>}
-              <button
-                type="button"
-                onClick={() => exportOrdersToCsv(filtered, describirFiltros())}
-                disabled={filtered.length === 0}
-                title="Descarga las órdenes que ves con los filtros aplicados"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar CSV
-              </button>
-              <button
-                type="button"
-                onClick={() => exportResumenTecnicosToCsv(filtered, describirFiltros())}
-                disabled={filtered.length === 0}
-                title="Un renglón por técnico: órdenes, finalizadas, canceladas y potencia promedio"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" aria-hidden="true" /> Resumen por técnico
-              </button>
-            </div>
+            {hasFilters && <button type="button" onClick={clearFilters} className="font-bold underline hover:text-zinc-800 dark:hover:text-zinc-200">Limpiar filtros</button>}
           </div>
           {hasMoreReports && (
             <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">

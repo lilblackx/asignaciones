@@ -50,7 +50,7 @@ export default function BarraFinanzas({ periodo, onPeriodo, personalizado, onPer
         >
           <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" /> {cargando ? 'Actualizando...' : 'Actualizar'}
         </button>
-        <MenuExportar formatos={formatosExportar} onElegir={onExportar} ocupado={exportando} alinear="izquierda" extra="h-9! px-4! text-sm! font-semibold! border border-red-600 hover:border-red-700" />
+        <MenuExportar formatos={formatosExportar} onElegir={onExportar} ocupado={exportando} alinear="izquierda" extra="h-9! px-4! text-sm!" />
       </div>
     </div>
   );

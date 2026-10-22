@@ -8,7 +8,7 @@ const inputClase = 'bg-white dark:bg-zinc-950 border border-zinc-400 dark:border
 // La barra de arriba, igual para todos los reportes: periodo, técnico y, a la derecha, actualizar y exportar si el reporte los tiene.
 export default function FiltrosReporte({ soloAcciones = false, periodo, onPeriodo, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar = [], onExportar, exportando = null }) {
   return (
-    <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 mb-4 bg-zinc-200/95 dark:bg-zinc-950/95 backdrop-blur border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap items-end gap-x-4 gap-y-3">
+    <div className="sticky [@media(max-height:600px)]:static top-0 z-10 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 mb-4 bg-zinc-200 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap items-end gap-x-4 gap-y-3">
       {!soloAcciones && <div role="group" aria-label="Periodo" className="flex rounded-lg border border-zinc-400 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900">
         {PERIODOS.map(([id, etiqueta]) => (
           <button

@@ -8,12 +8,13 @@ import App from './App.jsx';
 const AlmacenApp = lazy(() => import('./components/AlmacenApp'));
 const PromotoraApp = lazy(() => import('./components/PromotoraApp'));
 const FinanzasApp = lazy(() => import('./components/FinanzasApp'));
+const InfraestructuraApp = lazy(() => import('./components/InfraestructuraApp'));
 
-const PANTALLAS = { [ROLES.ALMACEN]: AlmacenApp, [ROLES.PROMOTORA]: PromotoraApp, [ROLES.FINANZAS]: FinanzasApp };
+const PANTALLAS = { [ROLES.ALMACEN]: AlmacenApp, [ROLES.PROMOTORA]: PromotoraApp, [ROLES.FINANZAS]: FinanzasApp, [ROLES.INFRAESTRUCTURA]: InfraestructuraApp };
 
 // Los módulos que el ADMINISTRADOR abre desde el menú lateral de la oficina: se ven dentro del marco, a la derecha del menú (la oficina sigue montada, oculta, con su estado). Almacén no
 // está aquí: App lo pinta con el módulo de Materiales que ya tiene cargado.
-const MODULOS_ADMIN = { FINANZAS: FinanzasApp, PROMOTORA: PromotoraApp };
+const MODULOS_ADMIN = { FINANZAS: FinanzasApp, PROMOTORA: PromotoraApp, INFRAESTRUCTURA: InfraestructuraApp };
 
 export default function Root() {
   const auth = useAuth();

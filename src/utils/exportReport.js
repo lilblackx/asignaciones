@@ -112,6 +112,30 @@ export function exportOrdersToCsv(orders, filtros) {
   descargarCsv(`historial_ordenes_${fechaArchivoHoy()}.csv`, filas);
 }
 
+// Las instalaciones realizadas del módulo de Infraestructura (filas de utils/infraestructura) tal como quedaron filtradas en pantalla.
+export function exportInstalacionesToCsv(filas, filtros) {
+  const columnas = [
+    ['Fecha', f => (f.fecha ? new Date(f.fecha).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '')],
+    ['Código', f => f.codigo],
+    ['Cliente', f => f.cliente],
+    ['Dirección', f => f.direccion],
+    ['Técnico', f => f.tecnico],
+    ['NAP', f => f.nap],
+    ['Puerto', f => f.puerto],
+    ['Puertos disponibles', f => f.puertosDisponibles],
+  ];
+  const lineas = [
+    'Instalaciones realizadas',
+    `Generado: ${new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}`,
+    `Filtros: ${filtros || 'ninguno'}`,
+    `Total: ${filas.length}`,
+    '',
+    columnas.map(([label]) => csvField(label)).join(';'),
+    ...filas.map(f => filaDe(columnas, f)),
+  ];
+  descargarCsv(`instalaciones_${fechaArchivoHoy()}.csv`, lineas);
+}
+
 // Un renglón por técnico sobre las órdenes indicadas.
 export function exportResumenTecnicosToCsv(orders, filtros) {
   const porTecnico = new Map();

@@ -1,6 +1,8 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, Download, Megaphone, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, LayoutGrid, List, Megaphone, Search, SlidersHorizontal } from 'lucide-react';
 import { etiquetaRol } from '../constants';
+import BotonExportar from './BotonExportar';
+import ListaInstalaciones from './ListaInstalaciones';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import { useToast } from '../hooks/useToast';
 import { useTema } from '../hooks/useTema';
@@ -11,7 +13,7 @@ import { useInstalacionesPromotora } from '../hooks/useInstalacionesPromotora';
 import { useHistorialInstalaciones } from '../hooks/useHistorialInstalaciones';
 import { useCrearVenta } from '../hooks/useCrearVenta';
 import { DIRECCION_POR_DEFECTO, FILTROS_FECHA, OPCIONES_ORDEN_DIRECCION, ORDEN_ESTADOS_PROMOTORA, ORDEN_POR_DEFECTO, RETENCION_DIAS_HISTORIAL, RETENCION_DIAS_HISTORIAL_VENTAS, algunaOrdenSalio, atrasoOrden, categoriaOrden, claveFiltroFecha, enRangoFecha, etiquetaFiltroEstado, fechaOrden, ordenarOrdenes, resumenPorPromotor, textoPlantillaFinal, unirInstalaciones } from '../utils/estadoInstalacion';
-import { mesDe, mesesDeTotales, totalesDelMes } from '../utils/totalesMes';
+import { etiquetaMes, mesDe, mesesDeTotales, totalesDelMes } from '../utils/totalesMes';
 import { claveNombre } from '../utils/promotora';
 import { csvDeOrdenes, descargarCsv, nombreArchivoExportacion } from '../utils/exportarOrdenes';
 import Toast from './Toast';
@@ -30,6 +32,7 @@ import Colapsable from './Colapsable';
 
 const NuevaVentaModal = lazy(() => import('./modals/NuevaVentaModal'));
 
+const nombreMes = (m) => etiquetaMes(m).replace(/^./, (c) => c.toUpperCase());
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 // El número va en un recuadro al lado de la etiqueta, como las insignias del resto de la app ("SIN TÉCNICO 3").
 function Contador({ n, tono }) {
@@ -64,6 +67,8 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
   // Solo ventas (ve todas) trabaja con instalaciones y averías LOS: elige ver las dos juntas, solo instalaciones o solo LOS.
   const [categoria, setCategoria] = usePreferencia(`categoria:${currentUser}`, 'TODO', (v) => ['TODO', 'INSTALACION', 'LOS'].includes(v));
   const vista = verTodasInstalaciones ? categoria : 'INSTALACION';
+  // Cómo se ven las órdenes: tarjetas o lista (se recuerda en este equipo, por usuario).
+  const [formato, setFormato] = usePreferencia(`formatoOrdenes:${currentUser}`, 'TARJETAS', (v) => ['TARJETAS', 'LISTA'].includes(v));
   const [busqueda, setBusqueda] = useState('');
   const [fecha, setFecha] = useState('TODAS');
   // Un día elegido en el calendario del filtro de fecha: la fecha del calendario (AAAA-MM-DD); solo filtra cuando se eligió.
@@ -89,6 +94,15 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
     if (masVieja > inicioDelDia) cargarMasCerradas();
   }, [claveFecha, hayMasCerradas, cargandoMas, historial, cargarMasCerradas]);
 
+  // Ventas: las cerradas llegan por páginas, pero el número de "Finalizadas" del mes sale de los totales de todo el mes. Para que lo que se ve
+  // alcance a lo que se cuenta, se siguen leyendo páginas hasta cubrir el inicio del mes elegido (o hasta donde llega el historial, 30 días).
+  useEffect(() => {
+    if (!verTodasInstalaciones || !hayMasCerradas || cargandoMas) return;
+    const inicioDelMes = Date.parse(`${mes}-01T00:00:00-04:00`);
+    const masVieja = historial.reduce((min, h) => Math.min(min, h.archivadoEn || Infinity), Infinity);
+    if (masVieja > inicioDelMes) cargarMasCerradas();
+  }, [verTodasInstalaciones, mes, hayMasCerradas, cargandoMas, historial, cargarMasCerradas]);
+
   // Instalación finalizada cuya plantilla se está viendo (se guarda la orden; el texto se arma al mostrarla).
   const [plantillaDe, setPlantillaDe] = useState(null);
 
@@ -112,7 +126,16 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
   const { contador, cargado: totalesCargados, error: errorTotales } = useEstadisticasMes(firebaseUser, verTodasInstalaciones, mes);
   const totales = useMemo(() => (totalesCargados || errorTotales ? totalesDelMes(contador, tickets, mes, ahora) : null), [contador, totalesCargados, errorTotales, tickets, mes, ahora]);
 
-  const todas = useMemo(() => unirInstalaciones(tickets, historial, ahora), [tickets, historial, ahora]);
+  const todasLasOrdenes = useMemo(() => unirInstalaciones(tickets, historial, ahora), [tickets, historial, ahora]);
+  // Ventas: la lista es la del mes elegido arriba, para que sus números sean comparables con los totales del mes: lo cerrado en ese mes y,
+  // solo en el mes actual, lo que sigue abierto. Al buscar se ve todo lo cargado, para no perder una orden del mes pasado.
+  const mesActual = mesDe(ahora);
+  const todas = useMemo(() => (!verTodasInstalaciones || busqueda.trim()
+    ? todasLasOrdenes
+    : todasLasOrdenes.filter((o) => {
+      const cerrada = o.origen === 'historial' || o.estado === 'FINALIZADO' || o.estado === 'CANCELADO';
+      return cerrada ? mesDe(fechaOrden(o)) === mes : mes === mesActual;
+    })), [todasLasOrdenes, verTodasInstalaciones, busqueda, mes, mesActual]);
   const cuantasPorCategoria = useMemo(() => todas.reduce((acc, o) => ({ ...acc, [categoriaOrden(o)]: (acc[categoriaOrden(o)] || 0) + 1 }), {}), [todas]);
   // Lo que se ve según el selector de arriba; los demás filtros, el conteo y el buscador trabajan sobre esto.
   const ordenes = useMemo(() => (vista === 'TODO' ? todas : todas.filter((o) => categoriaOrden(o) === vista)), [todas, vista]);
@@ -231,6 +254,23 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
             </div>
           )}
 
+          {verTodasInstalaciones && (
+            <div role="group" aria-label="Ver solo finalizadas o canceladas" className="flex flex-wrap gap-2">
+              {[['INSTALADA', 'Finalizadas'], ['CANCELADA', 'Canceladas']].map(([clave, texto]) => (
+                <button
+                  key={clave}
+                  type="button"
+                  aria-pressed={filtro === clave}
+                  onClick={() => setFiltro(filtro === clave ? 'TODAS' : clave)}
+                  className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${filtro === clave ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'}`}
+                >
+                  <span>{texto}</span>
+                  <Contador n={conteo[clave] || 0} tono={filtro === clave ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
+                </button>
+              ))}
+            </div>
+          )}
+
           <Colapsable>{verFiltros && (
             <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-4">
               <div className="space-y-1.5">
@@ -276,15 +316,12 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   >
                     Resumen por promotor <ChevronDown className={`w-3.5 h-3.5 transition-transform ${verResumen ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </button>
-                  <button
-                    type="button"
+                  <BotonExportar
                     onClick={exportar}
                     disabled={visibles.length === 0}
                     title="Bajar a Excel (CSV) lo que se ve ahora"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700"
-                  >
-                    <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar a Excel ({visibles.length})
-                  </button>
+                    etiqueta={`Exportar a Excel (${visibles.length})`}
+                  />
                 </div>
               )}
               <Colapsable>{verTodasInstalaciones && verResumen && <ResumenPromotores filas={filasPromotor} vista={vista} elegida={promotorActivo} onElegir={elegirPromotor} />}</Colapsable>
@@ -294,9 +331,25 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
               {visibles.length} de {ordenes.length} {vista === 'LOS' ? 'averías LOS' : vista === 'TODO' ? 'órdenes' : 'instalaciones'}
+              {verTodasInstalaciones && !busqueda.trim() && ` de ${nombreMes(mes)}`}
               {hayMasCerradas && <span className="text-zinc-600 dark:text-zinc-400"> · faltan cerradas por cargar</span>}
               {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-600 dark:text-red-400 hover:underline">Limpiar filtros</button>}
             </p>
+            <div role="group" aria-label="Cómo ver las órdenes" className="ml-auto flex gap-0.5 p-0.5 rounded-lg bg-zinc-300 dark:bg-zinc-900">
+              {[['TARJETAS', 'Tarjetas', LayoutGrid], ['LISTA', 'Lista', List]].map(([clave, texto, Icono]) => (
+                <button
+                  key={clave}
+                  type="button"
+                  aria-pressed={formato === clave}
+                  aria-label={texto}
+                  title={texto}
+                  onClick={() => setFormato(clave)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${formato === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                >
+                  <Icono className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">{texto}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {sinNombre ? (
@@ -307,6 +360,8 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
             <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando instalaciones...</p>
           ) : visibles.length === 0 ? (
             <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con los filtros.'}</p>
+          ) : formato === 'LISTA' ? (
+            <ListaInstalaciones key={`${categoria}-${vista}-lista`} className="lg:animate-fade-in" ordenes={visibles} onVerPlantilla={setPlantillaDe} onCopiarPlantilla={copiarDeTarjeta} mostrarTipo={verTodasInstalaciones} ahora={ahora} />
           ) : (
             <ul key={`${categoria}-${vista}`} className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 lg:animate-fade-in">
               {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} onCopiarPlantilla={copiarDeTarjeta} onCopy={copiar} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}

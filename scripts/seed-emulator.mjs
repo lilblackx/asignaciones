@@ -61,6 +61,7 @@ await upsertUser({ username: 'tecnico1', password: 'Tecnico1234', nombre: 'Gerar
 await upsertUser({ username: 'tecnico2', password: 'Tecnico1234', nombre: 'Reinel Bravo', role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO' });
 await upsertUser({ username: 'almacen', password: 'Almacen1234', nombre: 'Almacén Demo', role: 'ALMACEN' });
 await upsertUser({ username: 'finanzas', password: 'Finanzas1234', nombre: 'Finanzas Demo', role: 'FINANZAS' });
+await upsertUser({ username: 'infra', password: 'Infra1234', nombre: 'Infraestructura Demo', role: 'INFRAESTRUCTURA' });
 await upsertUser({ username: 'promotora', password: 'Promotora1234', nombre: 'Promotora Demo', role: 'PROMOTORA', promotoraNombres: ['Sariana'] });
 await upsertUser({ username: 'promotora2', password: 'Promotora1234', nombre: 'Promotor Demo', role: 'PROMOTORA', promotoraNombres: ['Alexis Añez'] });
 

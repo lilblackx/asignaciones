@@ -1,4 +1,5 @@
-import { Download, FileText, MessageSquareText, Wrench } from 'lucide-react';
+import { FileText, MessageSquareText, Wrench } from 'lucide-react';
+import BotonExportar from '../../BotonExportar';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import { formatCedula } from '../../../utils/ticketDisplay';
 import { motivoCancelacion } from '../../../utils/cancelacion';
@@ -24,13 +25,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
         onClose={onClose}
         onVolver={onBack}
         acciones={(
-          <button
-            onClick={() => exportReportToCsv(report)}
-            title="Descargar CSV"
-            className="flex items-center gap-1.5 text-xs font-bold bg-emerald-700 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">CSV</span>
-          </button>
+          <BotonExportar onClick={() => exportReportToCsv(report)} title="Descargar CSV" etiqueta="CSV" etiquetaSoloPc />
         )}
       />
 

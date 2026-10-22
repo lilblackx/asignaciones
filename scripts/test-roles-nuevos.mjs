@@ -44,7 +44,7 @@ check('todos los estados tienen lugar en el orden', [...ORDEN_ESTADOS_PROMOTORA]
 const completa = { ...base, id: 'x', cedula: '12.345.678', tipoDocumento: 'V', direccion: 'Calle 1', tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO', createdAt: 100, finalizadoEn: 200,
   serial: 'SECRETO', vlan: '1700', cobroBs: '400', telefono: '0414-1', observacion: 'interna', plantillaOriginal: 'IO-0\n*Instalador:* \n*Serial:*', instalacion: { serial: 'ABC123' } };
 const resumen = resumenInstalacion(completa, 999);
-check('el resumen solo lleva lo que ve la promotora', Object.keys(resumen).sort(), ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'motivoCancelacion', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
+check('el resumen solo lleva lo que ve la promotora', Object.keys(resumen).sort(), ['archivadoEn', 'canceladaEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'motivoCancelacion', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
 check('el resumen de una cancelada lleva el motivo; el de una finalizada va vacío', [resumenInstalacion({ ...completa, estado: 'CANCELADO', motivoCancelacion: ' No hay  cobertura ' }, 1).motivoCancelacion, resumen.motivoCancelacion], ['No hay cobertura', '']);
 check('con sus valores', [resumen.codigo, resumen.nombre, resumen.cedula, resumen.estado, resumen.creadaEn, resumen.finalizadoEn, resumen.archivadoEn], ['IO1', 'Ana', '12.345.678', 'FINALIZADO', 100, 200, 999]);
 check('sin datos técnicos sueltos, de cobro ni de contacto (solo la plantilla final)', JSON.stringify({ ...resumen, plantillaFinal: '' }).match(/SECRETO|1700|400|0414|interna|ABC123/), null);
@@ -156,7 +156,7 @@ check('almacén: botón Actualizar', /onClick=\{actualizar\}/.test(almacenApp), 
 
 // --- Aislamiento: la app de oficina y técnicos no se toca ---
 const root = leer('../src/Root.jsx');
-check('Root manda cada rol de solo lectura a su pantalla', /\[ROLES\.ALMACEN\]: AlmacenApp, \[ROLES\.PROMOTORA\]: PromotoraApp, \[ROLES\.FINANZAS\]: FinanzasApp/.test(root) && /<App auth=\{auth\} /.test(root), true);
+check('Root manda cada rol de solo lectura a su pantalla', /\[ROLES\.ALMACEN\]: AlmacenApp, \[ROLES\.PROMOTORA\]: PromotoraApp, \[ROLES\.FINANZAS\]: FinanzasApp, \[ROLES\.INFRAESTRUCTURA\]: InfraestructuraApp/.test(root) && /<App auth=\{auth\} /.test(root), true);
 check('las pantallas de Almacén y Promotora no importan hooks de edición', ['AlmacenApp', 'PromotoraApp'].some((f) => /useTickets'|usePushToken|useUsers/.test(leer(`../src/components/${f}.jsx`))), false);
 const reglas = leer('../firestore.rules');
 check('las reglas no dan escritura a los roles nuevos', /allow (create|update|delete|write)[^;]*(isAlmacenRole|isPromotoraRole)/.test(reglas), false);
@@ -164,7 +164,7 @@ check('las reglas no dan escritura a los roles nuevos', /allow (create|update|de
 check('FINANZAS solo escribe en las colecciones de Finanzas', /allow (create|update|delete|write)[^;]*isFinanzasRole/.test(reglas), false);
 check('las colecciones de Finanzas se escriben con llevaFinanzas', ['tarifasPago', 'pagosTecnicos', 'ordenesPagadas'].every((c) => new RegExp(`match /artifacts/\\{appId\\}/public/data/${c}/[^}]*\\}[\\s\\S]*?allow (create|update|delete)[^;]*llevaFinanzas`).test(reglas)), true);
 const worker = leer('../cf-worker/src/index.js');
-check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS'\]/.test(worker), true);
+check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS', 'INFRAESTRUCTURA'\]/.test(worker), true);
 check('Finanzas tiene su pantalla y no importa hooks de la oficina', /FinanzasApp/.test(root) && !/useTickets'|usePushToken|useUsers/.test(leer('../src/components/FinanzasApp.jsx')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');

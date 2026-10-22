@@ -244,7 +244,7 @@ check('el resumen lleva lo que ve la promotora', [dePrueba?.codigo, dePrueba?.no
 check('y las fechas: creada, finalizada y archivada', [dePrueba?.creadaEn, dePrueba?.finalizadoEn, dePrueba?.archivadoEn],
   [{ integerValue: '1000' }, { integerValue: '2000' }, { integerValue: String(AHORA) }]);
 check('el resumen NO lleva datos técnicos ni de cobro', Object.keys(dePrueba || {}).sort(),
-  ['archivadoEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'motivoCancelacion', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
+  ['archivadoEn', 'canceladaEn', 'cedula', 'codigo', 'creadaEn', 'direccion', 'estado', 'falla', 'finalizadoEn', 'motivoCancelacion', 'nombre', 'plantillaFinal', 'promotora', 'promotoraClave', 'tecnico', 'tipoDocumento', 'tipoTrabajo']);
 check('el motivo de la cancelación pasa limpio al historial de ventas; el de una finalizada va vacío', [historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields.motivoCancelacion, dePrueba?.motivoCancelacion], [{ stringValue: 'El cliente / ya no quiere el servicio' }, { stringValue: '' }]);
 check('la promotora sale de la plantilla si la orden no la guardó', [dePrueba?.promotora, dePrueba?.promotoraClave], [{ stringValue: 'Alexis Añez' }, { stringValue: 'alexis anez' }]);
 const canceladaDoc = historial.find((w) => w.update.name.endsWith('/t-cancel'))?.update.fields;

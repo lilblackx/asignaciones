@@ -5,7 +5,8 @@ import { mesDe } from '../utils/totalesMes';
 
 // Los totales ya cerrados de un mes (un documento, lo suma el cierre del día en el Worker): una lectura por mes consultado. Se guarda una
 // copia en el equipo: el del mes en curso cambia una vez al día (al cerrar), así que una hora basta; uno ya pasado no cambia (un día).
-const CLAVE_COPIA = 'asignaciones:estadisticasMes:v1:';
+// El número cambia cuando se corrigen los totales guardados (v2: recálculo del 22/10/2026), para que ningún equipo siga mostrando una copia vieja.
+const CLAVE_COPIA = 'asignaciones:estadisticasMes:v2:';
 const VIGENCIA_ACTUAL_MS = 60 * 60 * 1000;
 const VIGENCIA_PASADO_MS = 24 * 60 * 60 * 1000;
 
