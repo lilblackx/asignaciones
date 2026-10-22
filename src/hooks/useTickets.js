@@ -29,7 +29,7 @@ import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalac
 import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
 import { payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorTipoEquipoNuevo, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
@@ -943,7 +943,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
   // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
-  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, montoBs, instalacion } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, tipoEquipoNuevo, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacionTecnico || '').trim()) {
@@ -969,6 +969,12 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const errorSerialEquipo = serialEquipoParseado?.error || (serialEquipoParseado ? errorSerialCaja(serialEquipo) : '');
     if (errorSerialEquipo) {
       setToastMsg({ type: 'error', text: errorSerialEquipo });
+      return false;
+    }
+    // Cambio de equipo: el tipo del equipo nuevo (MRTV, MTV, MR o SM) también es obligatorio.
+    const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipoNuevo);
+    if (errorTipoEquipo) {
+      setToastMsg({ type: 'error', text: errorTipoEquipo });
       return false;
     }
 
@@ -1006,7 +1012,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     // El serial del equipo nuevo solo se escribe en un cambio de equipo, o para borrar uno anterior.
     const camposSerialEquipo = tipoVisita !== undefined && (esCambioEquipo(tipoVisita) || ticket.serialEquipo)
-      ? datosSerialEquipo(tipoVisita, serialEquipo)
+      ? datosSerialEquipo(tipoVisita, serialEquipo, tipoEquipoNuevo)
       : {};
 
     let detalle = 'Marcado como PRE-FINALIZADO';
@@ -1020,7 +1026,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
       const conector = textoConectorVisita({ tipoVisita, ...camposConectores });
       if (conector) detalle += ` | ${conector}`;
-      if (serialEquipoParseado) detalle += ` | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
+      if (serialEquipoParseado) detalle += ` | Equipo nuevo: ${tipoEquipoNuevo} | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
     }
     if (avisaCobroAlPreFinalizar(tipoVisita)) detalle += detalleCobro(montoBs, COBRO_VISITA, false);
 

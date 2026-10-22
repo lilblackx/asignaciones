@@ -25,6 +25,7 @@ export function datosAutorizacion(ticket) {
     if (texto) lista.push({ clave, etiqueta, valor: texto, ...extra });
   };
 
+  if (esCambioEquipo(t.tipoVisita)) agregar(equipo, 'tipoEquipoNuevo', 'Tipo de equipo nuevo', t.tipoEquipoNuevo);
   if (esCambioEquipo(t.tipoVisita)) agregar(equipo, 'serialEquipo', 'Serial del equipo nuevo', t.serialEquipo);
   agregar(equipo, 'serial', 'Serial', inst.serial);
   agregar(equipo, 'vlan', 'VLAN', inst.vlan);

@@ -149,7 +149,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
 
           {tipoVisita === TIPO_CAMBIO_EQUIPO && (
             <div className="col-span-2">
-              <SerialEquipoCampo serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} verificar={avisoSerial} aviso={avisoSerial ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
+              <SerialEquipoCampo serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} tipoEquipo={form.tipoEquipoNuevo} onTipoEquipo={(v) => onChange({ tipoEquipoNuevo: v })} errorTipo={errores.tipoEquipoNuevo} verificar={avisoSerial} aviso={avisoSerial ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
             </div>
           )}
 

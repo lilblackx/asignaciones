@@ -10,10 +10,11 @@
 //   conectores colocados: un conector externo (solo verde) y/o uno interno (verde o azul).
 //   No genera cobro.
 // - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
-//   `serialEquipo`.
+//   `serialEquipo`, junto con el tipo del equipo nuevo (MRTV, MTV, MR o SM; obligatorio) en `tipoEquipoNuevo`.
 // - Drop atenuado: solo se registra el tipo de visita, sin datos extra.
 
 import { parseSerial } from './instalacion.js';
+import { TIPOS_DE_EQUIPO } from '../constants.js';
 
 export const TIPO_CONECTOR_EXTERNO = 'CONECTOR_EXTERNO';
 export const TIPO_CONECTOR_INTERNO = 'CONECTOR_INTERNO';
@@ -51,10 +52,17 @@ export function parseSerialEquipo(raw) {
   return serial;
 }
 
-// Serial tal como se guarda en la orden: solo en un cambio de equipo; en cualquier otro tipo queda
-// vacío ('' y no omitir el campo es lo que permite borrar un serial anterior).
-export const datosSerialEquipo = (tipoVisita, serial) => ({
+// Tipo del equipo nuevo (MRTV, MTV, MR o SM, los mismos de las instalaciones): obligatorio en un cambio de equipo.
+// '' si no hace falta o está bien; si no, el mensaje. `exigir` false: una orden vieja que se arregló sin el tipo no obliga a ponerlo al editarla.
+export const errorTipoEquipoNuevo = (tipoVisita, tipo, exigir = true) => (
+  exigir && esCambioEquipo(tipoVisita) && !TIPOS_DE_EQUIPO.includes(tipo) ? 'Elige el tipo del equipo nuevo.' : ''
+);
+
+// Serial y tipo del equipo nuevo tal como se guardan en la orden: solo en un cambio de equipo; en cualquier otro tipo quedan
+// vacíos ('' y no omitir el campo es lo que permite borrar uno anterior).
+export const datosSerialEquipo = (tipoVisita, serial, tipoEquipo = '') => ({
   serialEquipo: esCambioEquipo(tipoVisita) ? (parseSerial(serial).valor ?? '') : '',
+  tipoEquipoNuevo: esCambioEquipo(tipoVisita) && TIPOS_DE_EQUIPO.includes(tipoEquipo) ? tipoEquipo : '',
 });
 
 export const esVisitaConector = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_CONECTOR_INTERNO;

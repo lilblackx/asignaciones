@@ -282,7 +282,9 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             <div className="col-span-2 sm:col-span-5 space-y-0.5">
               <label htmlFor="tk-plantilla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
               <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs font-mono" placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
-              {!formData.plantillaOriginal?.trim() && <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>}
+              {!formData.plantillaOriginal?.trim() && (esInstalacion
+                ? <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>
+                : <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">Sin la plantilla de la promotora, la plantilla de esta orden se arma con el formato de la app.</p>)}
             </div>
           )}
 

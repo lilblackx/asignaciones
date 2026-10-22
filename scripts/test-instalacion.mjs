@@ -204,13 +204,14 @@ check('si la plantilla no trae esas líneas no se agrega ninguna',
   generarMensajeWhatsAppInstalacion({ ...orden, plantillaOriginal: sinEtiquetas, instalacion: datos.datos }),
   generarMensajeWhatsAppInstalacion({ ...orden, plantillaOriginal: sinEtiquetas }));
 
-// Sin la plantilla de la promotora pegada no hay plantilla que copiar (instalaciones y reconexiones): la app nunca
-// arma una por su cuenta (se evitan errores con las plantillas) y el botón de copiar queda deshabilitado.
-check('instalación o reconexión sin plantilla pegada: no hay plantilla (botón deshabilitado)',
+// Una instalación sin la plantilla de la promotora pegada no tiene plantilla que copiar: la app nunca arma una por su cuenta (se evitan
+// errores con las plantillas) y el botón de copiar queda deshabilitado. Una reconexión sin ella sí se copia, en el formato de la app.
+check('instalación sin plantilla pegada: no hay plantilla (botón deshabilitado)',
   [
     { tipoTrabajo: 'INSTALACIÓN' }, { tipoTrabajo: 'INSTALACIÓN', plantillaOriginal: '' }, { tipoTrabajo: 'INSTALACIÓN', plantillaOriginal: '  \n ' }, { tipoTrabajo: 'instalacion', plantillaOriginal: null },
-    { tipoTrabajo: 'RECONEXIÓN' }, { tipoTrabajo: 'RECONEXIÓN', plantillaOriginal: '  ' },
-  ].map(ordenSinPlantilla), [true, true, true, true, true, true]);
+  ].map(ordenSinPlantilla), [true, true, true, true]);
+check('reconexión sin la plantilla de la promotora: se puede copiar (sale en el formato de la app)',
+  [{ tipoTrabajo: 'RECONEXIÓN' }, { tipoTrabajo: 'RECONEXIÓN', plantillaOriginal: '  ' }, { tipoTrabajo: 'reconexion' }].map(ordenSinPlantilla), [false, false, false]);
 check('instalación o reconexión con la plantilla pegada: se puede copiar', [{ tipoTrabajo: 'INSTALACIÓN', plantillaOriginal: PLANTILLA }, { tipoTrabajo: 'RECONEXIÓN', plantillaOriginal: PLANTILLA }].map(ordenSinPlantilla), [false, false]);
 check('los demás tipos de orden no dependen de la plantilla de la promotora',
   ['AVERÍA', 'MUDANZA', 'GARANTIA', 'VALIDACION NAP', ''].map(tipoTrabajo => ordenSinPlantilla({ tipoTrabajo })), [false, false, false, false, false]);

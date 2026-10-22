@@ -340,7 +340,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           )}
           {faltabaPlantilla && (
             <div className="col-span-2 space-y-1">
-              <label htmlFor="ed-plantilla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)</span></label>
+              <label htmlFor="ed-plantilla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
               <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-2 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs font-mono text-zinc-900 dark:text-white shadow-sm transition-colors" placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
             </div>
           )}

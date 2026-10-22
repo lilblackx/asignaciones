@@ -188,7 +188,7 @@ service cloud.firestore {
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones'])
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'tipoEquipoNuevo', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones'])
           // Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, agregar
           // 'infraestructura' a la lista de arriba y esta condición (el técnico solo deja la orden esperando, a su nombre y con motivo):
           // && (

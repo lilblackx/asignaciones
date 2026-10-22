@@ -41,6 +41,7 @@ const COLUMNAS = [
   ['Potencia (dBm)', t => decimalEs(t.potenciaDbm)],
   ['ONU Rx 1490 nm (dBm)', t => decimalEs(t.potencia1490Dbm)],
   ['Tipo de visita', t => etiquetaTipoVisita(t.tipoVisita)],
+  ['Tipo equipo nuevo', t => t.tipoEquipoNuevo],
   ['Serial equipo nuevo', t => t.serialEquipo],
   // Recableado: los metros de la visita; instalación: el metraje registrado al instalar.
   ['Metros de cable', t => t.metrosCable ?? t.instalacion?.metraje ?? ''],

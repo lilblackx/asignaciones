@@ -145,7 +145,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     if (ticket.tipoTrabajo?.toUpperCase().includes('INSTAL')) return generarMensajeWhatsAppInstalacion(ticketConOperador);
     // Reconexión creada con la plantilla de la promotora: el mensaje sale de esa
     // misma plantilla (con el correlativo y el técnico). Sin plantilla pegada
-    // (carga manual) se mantiene el mensaje de siempre.
+    // (carga manual) sale en el formato de la app (el mismo de las averías).
     if (tipoUsaPlantillaPromotora(ticket.tipoTrabajo) && ticket.plantillaOriginal?.trim()) return generarMensajeDesdePlantilla(ticketConOperador);
     return generarMensajeWhatsApp(ticketConOperador, tasaConfig);
   };
@@ -182,7 +182,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   };
 
   const handleCopyWhatsApp = conAviso(async (ticket) => {
-    // Una instalación o reconexión sin la plantilla de la promotora pegada no tiene plantilla que copiar.
+    // Una instalación sin la plantilla de la promotora pegada no tiene plantilla que copiar (una reconexión sí: sale en el formato de la app).
     if (ordenSinPlantilla(ticket)) {
       setToastMsg({ type: 'error', text: TEXTO_SIN_PLANTILLA, duration: 8000 });
       return false;

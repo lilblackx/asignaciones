@@ -302,8 +302,8 @@ await check('TECNICO puede registrar el color del conector de una visita de cone
 });
 
 await check('TECNICO puede registrar un cambio de equipo con el serial del equipo nuevo', async () => {
-  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'HWTC1A2B3C4D' }));
-  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', serialEquipo: '' }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'HWTC1A2B3C4D', tipoEquipoNuevo: 'MRTV' }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', serialEquipo: '', tipoEquipoNuevo: '' }));
 });
 
 await check('TECNICO puede marcar "en camino", "llegué" y cancelarlo en su orden', async () => {

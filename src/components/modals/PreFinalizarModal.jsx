@@ -12,7 +12,7 @@ import { devolucionPendiente, reporteTecnicoInicial } from '../../utils/devoluci
 import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
+import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { consultaCobroDe } from '../../utils/consultaCobro';
 import ConsultaCobroRecableado from './ConsultaCobroRecableado';
@@ -71,6 +71,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   // Cambio de equipo: serial del equipo nuevo (obligatorio).
   const [serialEquipo, setSerialEquipo] = useState(ticket?.serialEquipo || '');
   const [serialEquipoError, setSerialEquipoError] = useState('');
+  const [tipoEquipo, setTipoEquipo] = useState(ticket?.tipoEquipoNuevo || '');
+  const [tipoEquipoError, setTipoEquipoError] = useState('');
   const [metrosError, setMetrosError] = useState('');
   const [cantidadError, setCantidadError] = useState({ campo: '', mensaje: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,6 +114,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const serialEquipoLeido = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
     const errorFormatoEquipo = serialEquipoLeido && !serialEquipoLeido.error ? errorSerialCaja(serialEquipo) : '';
     const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
+    const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipo);
     const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
     const errorFormatoSerial = instalacionLeida && !instalacionLeida.errores.serial ? errorSerialCaja(serial) : '';
     const instalacion = errorFormatoSerial ? { ...instalacionLeida, errores: { ...instalacionLeida.errores, serial: errorFormatoSerial }, error: true } : instalacionLeida;
@@ -123,6 +126,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     setMetrosError(metrosParseados?.error || '');
     setCantidadError({ campo: cantidades.campo || '', mensaje: errorCantidad });
     setSerialEquipoError(serialEquipoParseado?.error || '');
+    setTipoEquipoError(errorTipoEquipo);
     setInstalacionErrores(instalacion?.errores || {});
     setConectoresInstError({ campo: conectoresInst?.campo || '', mensaje: conectoresInst?.error || '' });
     setNapError(faltaNap ? 'Indica la nomenclatura real de la NAP (no vale "SN").' : '');
@@ -132,6 +136,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     // El campo queda arriba y el botón abajo: el cursor va al primer campo con problema, en el orden del formulario.
     if (metrosParseados?.error) document.getElementById('pf-metros')?.focus();
     else if (errorCantidad) document.getElementById(cantidades.campo === 'azul' ? 'pf-cant-azul' : 'pf-cant-verde')?.focus();
+    else if (errorTipoEquipo) document.getElementById('pf-tipo-equipo')?.focus();
     else if (serialEquipoParseado?.error) document.getElementById('pf-serial-equipo')?.focus();
     else if (instalacion?.errores.serial) document.getElementById('pf-serial')?.focus();
     else if (instalacion?.errores.vlan) document.getElementById('pf-vlan')?.focus();
@@ -143,7 +148,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     else if (conectoresInst?.error) document.getElementById({ externoVerde: 'pf-cant-ext-verde', internoVerde: 'pf-cant-int-verde', internoAzul: 'pf-cant-int-azul' }[conectoresInst.campo])?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || metrosParseados?.error || errorCantidad || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
+    if (faltaObs || metrosParseados?.error || errorCantidad || errorTipoEquipo || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
     // Con todo en orden no se guarda todavía: primero se pide confirmar (ver ConfirmPreFinalizarModal).
     setPorConfirmar({
       nap: conectorExterno ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : nap,
@@ -153,6 +158,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
       potencia1490Dbm: parsePotencia(potencia1490).valor ?? null,
       tipoVisita,
       serialEquipo: serialEquipoParseado?.valor ?? '',
+      tipoEquipoNuevo: cambioEquipo ? tipoEquipo : '',
       ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno, conectores: cantidades.valor }),
     });
   };
@@ -232,6 +238,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                 setMetrosError('');
                 setCantidadError({ campo: '', mensaje: '' });
                 setSerialEquipoError('');
+                setTipoEquipoError('');
                 // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
                 if (v === TIPO_CONECTOR_EXTERNO && !puerto) {
                   const sep = separarNapPuerto(nap);
@@ -277,6 +284,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onSerial={(v) => { setSerialEquipo(v); if (serialEquipoError) setSerialEquipoError(''); }}
               error={serialEquipoError}
               verificar
+              tipoEquipo={tipoEquipo}
+              onTipoEquipo={(v) => { setTipoEquipo(v); if (tipoEquipoError) setTipoEquipoError(''); }}
+              errorTipo={tipoEquipoError}
             />
           )}
 

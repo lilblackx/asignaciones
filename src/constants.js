@@ -80,7 +80,7 @@ export const TIPOS_TRABAJO = ['INSTALACIÓN', 'AVERÍA', 'RECONEXIÓN', 'VALIDAC
 // Opciones del campo TIPO, dependientes del TRABAJO seleccionado. Los tipos de
 // trabajo que no aparecen aquí no tienen sub-tipo definido todavía.
 // Los equipos que manejamos: los de las instalaciones y los del cambio de equipo son los mismos.
-const TIPOS_DE_EQUIPO = ['MRTV', 'MTV', 'MR', 'SM'];
+export const TIPOS_DE_EQUIPO = ['MRTV', 'MTV', 'MR', 'SM'];
 
 export const TIPOS_POR_TRABAJO = {
   'INSTALACIÓN': TIPOS_DE_EQUIPO,
