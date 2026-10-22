@@ -42,5 +42,8 @@ ui-debug.log
 *.sln
 *.sw?
 
+# Respaldos de Firestore (datos de clientes)
+respaldos/
+
 # Clave API de Tomodat (secreto)
 tomodat api key.txt
