@@ -9,9 +9,9 @@ import DetalleOrdenFinanzas from '../finanzas/DetalleOrdenFinanzas';
 import FilaRevision from './FilaRevision';
 import ResumenCifras from '../finanzas/ResumenCifras';
 import { BOTON, CHIP, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../finanzas/estilos';
-import { FECHA_CORTE, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoPagable } from '../../utils/finanzas';
+import { corteTodaviaNoLlega, textoFechaCorte, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoPagable } from '../../utils/finanzas';
 import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, garantiasPorResolver, itemsParaRevisar, resumenRevision, revisar } from '../../utils/revisionPagos';
-import { PERIODOS, diaLegible, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
+import { PERIODOS, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
 import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { diaDe } from '../../utils/totalesMes';
 import { useRevisionPagos } from '../../hooks/useRevisionPagos';
@@ -113,7 +113,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
         {!enPagina && <EncabezadoModulo Icono={ClipboardCheck} titulo="Revisión de órdenes" onClose={onClose} />}
 
         <div className={enPagina ? 'flex-1 min-w-0 bg-fondo px-3 sm:px-4 py-4 space-y-4 text-sm max-w-[1400px] mx-auto w-full' : `flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm ${CENTRADO_AMPLIO}`}>
-          <p className={TEXTO_SUAVE}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{FECHA_CORTE ? ` Cuenta desde el ${diaLegible(FECHA_CORTE)}.` : ''}</p>
+          <p className={TEXTO_SUAVE}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{corteTodaviaNoLlega() ? ` Comienza a contar a partir del ${textoFechaCorte()}.` : ''}</p>
           <AvisoHistorial hasMoreReports={hasMoreReports} isLoadingReports={isLoadingReports} onLoadMoreReports={onLoadMoreReports} />
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
@@ -152,11 +152,11 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
             )}
           </div>
 
-          <h2 className={TITULO_SECCION}>{filtroEstado === 'TODAS' ? 'Todas las órdenes' : filtroEstado === 'PENDIENTE' ? 'Pendientes de revisión' : `${ETIQUETA_REVISION[filtroEstado]}s`} · {etiquetaRango(rangoRevision)}</h2>
+          <h2 className={TITULO_SECCION}>{filtroEstado === 'TODAS' ? 'Todas las órdenes' : filtroEstado === 'PENDIENTE' ? 'Pendientes de revisión' : `${ETIQUETA_REVISION[filtroEstado]}s`} · {etiquetaRango(rango)}</h2>
           {datos.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">No se pudieron leer algunos datos de la revisión. Recarga la página.</p>}
 
           {secciones.length === 0 ? (
-            <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar en este periodo.' : 'No hay órdenes con ese estado en este periodo.'}</p>
+            <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{rangoRevision.desde > rangoRevision.hasta ? `Este periodo es anterior al corte: se cuenta a partir del ${textoFechaCorte()}.` : filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar en este periodo.' : 'No hay órdenes con ese estado en este periodo.'}</p>
           ) : secciones.map(([nombre, lista]) => {
             const pendientes = lista.filter((i) => i.estadoRevision === 'PENDIENTE');
             return (

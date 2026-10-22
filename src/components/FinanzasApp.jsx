@@ -6,9 +6,9 @@ import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
 import { useFinanzas } from '../hooks/useFinanzas';
 import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
-import { diaLegible, rangoDe } from '../utils/periodoReporte';
+import { rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
-import { FECHA_CORTE, rangoPagable, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { corteTodaviaNoLlega, textoFechaCorte, rangoPagable, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
 import { itemsParaRevisar, paraFinanzas, revisar } from '../utils/revisionPagos';
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
@@ -190,9 +190,9 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
               {errorExportar && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg px-4 py-3">{errorExportar}</p>}
               {finanzas.error && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg px-4 py-3">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
 
-              {seccion === 'PAGOS' && FECHA_CORTE && rango.desde < FECHA_CORTE && (
+              {seccion === 'PAGOS' && corteTodaviaNoLlega() && (
                 <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 rounded-lg px-4 py-3">
-                  Finanzas cuenta lo que se debe a los técnicos desde el {diaLegible(FECHA_CORTE)}: lo anterior de este periodo no se muestra.
+                  Comienza a contar a partir del {textoFechaCorte()}: lo anterior de este periodo no se muestra.
                 </p>
               )}
               <div key={seccion} className="lg:animate-fade-in space-y-4">

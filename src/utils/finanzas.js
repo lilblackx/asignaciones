@@ -42,9 +42,20 @@ export const CONCEPTOS_PAGO = [
 // "1 orden" / "5 órdenes".
 export const textoOrdenes = (n) => `${n} ${n === 1 ? 'orden' : 'órdenes'}`;
 export const MAX_TARIFA = 100000;
-// Finanzas cuenta lo que se le debe a los técnicos a partir de este día (lunes 26/10/2026): lo anterior no se muestra ni se paga aquí, aunque el periodo elegido lo
-// incluya. Para probar con otra fecha en local: VITE_FINANZAS_CORTE=AAAA-MM-DD en .env.local.
-export const FECHA_CORTE = import.meta.env?.VITE_FINANZAS_CORTE || '';
+// Finanzas y Revisión de órdenes cuentan lo que se le debe a los técnicos a partir de este día (lunes 26/10/2026): lo anterior no se muestra ni se paga aquí, aunque el periodo
+// elegido lo incluya. Para probar con otra fecha en local: VITE_FINANZAS_CORTE=AAAA-MM-DD en .env.development.local (con VITE_FINANZAS_CORTE= vacío no hay corte).
+export const FECHA_CORTE = import.meta.env?.VITE_FINANZAS_CORTE ?? '2026-10-26';
+
+// Los avisos del corte ("Comienza a contar a partir del lunes...") solo se muestran mientras el corte no ha llegado: desde ese día se quitan solos, sin cambiar ni desplegar nada.
+// El recorte de lo anterior sigue valiendo; solo se calla el aviso. `ahoraMs` es el instante a comparar (por defecto, ahora), en el día de Caracas.
+export const corteTodaviaNoLlega = (ahoraMs = Date.now(), corte = FECHA_CORTE) => Boolean(corte) && diaDe(ahoraMs) < corte;
+
+// "lunes 26/10/2026" del día de corte (vacío si no hay corte).
+export const textoFechaCorte = (corte = FECHA_CORTE) => {
+  if (!corte) return '';
+  const dia = new Date(`${corte}T12:00:00-04:00`).toLocaleDateString('es-VE', { weekday: 'long', timeZone: 'America/Caracas' });
+  return `${dia} ${corte.split('-').reverse().join('/')}`;
+};
 
 // El periodo elegido sin los días anteriores a la fecha de corte; si todo el periodo es anterior, queda vacío (desde mayor que hasta).
 export const rangoPagable = (rango, corte = FECHA_CORTE) => ({ desde: corte && rango.desde < corte ? corte : rango.desde, hasta: rango.hasta });

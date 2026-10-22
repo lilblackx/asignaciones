@@ -1,6 +1,7 @@
 import SelectMenu from './SelectMenu';
 
 // El campo de hora de la app (el reloj del navegador se ve distinto en cada equipo): tres controles con el estilo de la app, la hora (1 a 12), los minutos (00 a 59) y a. m. o p. m.
+// En pantallas angostas los selectores se reparten el ancho y a. m. / p. m. pasa a la línea de abajo si no cabe; desde `sm` miden lo de siempre.
 // `valor`/`onChange("HH:MM")`: la hora en formato de 24 horas, como la guarda la app ('' si no hay: se muestra 12:00 a. m. hasta que se elija).
 const dos = (n) => String(n).padStart(2, '0');
 const HORAS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: dos(i + 1) }));
@@ -21,10 +22,10 @@ export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', cla
   };
 
   return (
-    <div role="group" aria-label={ariaLabel} className="flex items-center gap-2">
-      <div className="w-24 shrink-0"><SelectMenu id={id} ariaLabel={`${ariaLabel}: hora`} disabled={disabled} className={claseSelector} value={String(hora12)} onChange={(v) => cambiar(Number(v), minuto, pm)} items={HORAS} /></div>
+    <div role="group" aria-label={ariaLabel} className="flex flex-wrap items-center gap-2">
+      <div className="flex-1 min-w-[4.75rem] sm:flex-none sm:w-24"><SelectMenu id={id} ariaLabel={`${ariaLabel}: hora`} disabled={disabled} className={claseSelector} value={String(hora12)} onChange={(v) => cambiar(Number(v), minuto, pm)} items={HORAS} /></div>
       <span className="font-black text-zinc-700 dark:text-zinc-200" aria-hidden="true">:</span>
-      <div className="w-24 shrink-0"><SelectMenu ariaLabel={`${ariaLabel}: minutos`} disabled={disabled} className={claseSelector} value={String(minuto)} onChange={(v) => cambiar(hora12, Number(v), pm)} items={MINUTOS} /></div>
+      <div className="flex-1 min-w-[4.75rem] sm:flex-none sm:w-24"><SelectMenu ariaLabel={`${ariaLabel}: minutos`} disabled={disabled} className={claseSelector} value={String(minuto)} onChange={(v) => cambiar(hora12, Number(v), pm)} items={MINUTOS} /></div>
       <div className={`inline-flex ${alto} rounded-lg border-2 border-zinc-400 dark:border-zinc-700 overflow-hidden shrink-0`}>
         {[['a. m.', false], ['p. m.', true]].map(([texto, esPm]) => (
           <button

@@ -97,22 +97,14 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
   return (
     <div className="mb-8 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /> Cierre automático
-            {!loading && (
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
-                {guardado.activo ? 'Activo' : 'Desactivado'}
-              </span>
-            )}
-          </h3>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-            {guardado.activo
-              ? <>Se ejecuta <strong>{resumenDias(guardado.dias)}</strong> a las <strong>{formatoHora12(guardado.hora)}</strong> (hora de Venezuela).</>
-              : 'Ejecuta el cierre solo, a la hora y los días que elijas.'}
-            {' '}Hace lo mismo que el botón y avisa por notificación a los administradores y usuarios con permiso de cierre.
-          </p>
-        </div>
+        <h3 className="min-w-0 text-base font-bold text-zinc-900 dark:text-white flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="flex items-center gap-2"><Clock className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /> Cierre automático</span>
+          {!loading && (
+            <span className={`shrink-0 whitespace-nowrap text-[10px] font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+              {guardado.activo ? 'Activo' : 'Desactivado'}
+            </span>
+          )}
+        </h3>
         {isAdmin && (
           <button
             type="button"
@@ -127,6 +119,12 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
           </button>
         )}
       </div>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+        {guardado.activo
+          ? <>Se ejecuta <strong>{resumenDias(guardado.dias)}</strong> a las <strong>{formatoHora12(guardado.hora)}</strong> (hora de Venezuela).</>
+          : 'Ejecuta el cierre solo, a la hora y los días que elijas.'}
+        {' '}Hace lo mismo que el botón y avisa por notificación a los administradores y usuarios con permiso de cierre.
+      </p>
 
       {isAdmin && (
         <div className="mt-4 space-y-3">
