@@ -29,7 +29,7 @@ import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalac
 import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
 import { payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorTipoEquipoNuevo, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
@@ -948,6 +948,13 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     if (!(observacionTecnico || '').trim()) {
       setToastMsg({ type: 'error', text: 'Debes describir el trabajo realizado antes de pre-finalizar.' });
+      return false;
+    }
+
+    // El tipo de visita es obligatorio (menos en instalaciones) y, con conector externo o drop atenuado, también la NAP y el puerto.
+    const errorVisita = errorTipoVisita(ticket.tipoTrabajo, tipoVisita) || errorNapPuertoVisita(tipoVisita, nap);
+    if (errorVisita) {
+      setToastMsg({ type: 'error', text: errorVisita });
       return false;
     }
 

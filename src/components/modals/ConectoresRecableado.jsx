@@ -63,7 +63,7 @@ function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
   const poner = (x) => onChange(String(Math.min(MAX_CONECTORES_POR_COLOR, Math.max(0, x))));
   const boton = 'w-11 h-11 shrink-0 rounded-xl border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 text-lg font-black hover:border-amber-500 disabled:opacity-40 disabled:hover:border-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500';
   return (
-    <div className="flex-1 min-w-[9.5rem] space-y-1.5">
+    <div className="flex-1 min-w-[9.5rem] flex flex-col justify-between gap-1.5">
       <label htmlFor={id} className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
         <span className={`w-3.5 h-3.5 rounded-full ${ESTILO_COLOR[color].punto}`} aria-hidden="true" /> {etiqueta}
       </label>

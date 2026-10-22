@@ -13,7 +13,8 @@
 //   `serialEquipo`, junto con el tipo del equipo nuevo (MRTV, MTV, MR o SM; obligatorio) en `tipoEquipoNuevo`.
 // - Drop atenuado: solo se registra el tipo de visita, sin datos extra.
 
-import { parseSerial } from './instalacion.js';
+import { esInstalacion, parseSerial } from './instalacion.js';
+import { napSinDato, separarNapPuerto } from './napPuerto.js';
 import { TIPOS_DE_EQUIPO } from '../constants.js';
 
 export const TIPO_CONECTOR_EXTERNO = 'CONECTOR_EXTERNO';
@@ -38,6 +39,26 @@ export const TIPOS_VISITA = [
   { value: TIPO_CAMBIO_EQUIPO, label: ETIQUETA_TIPO_VISITA[TIPO_CAMBIO_EQUIPO] },
   { value: TIPO_DROP_ATENUADO, label: ETIQUETA_TIPO_VISITA[TIPO_DROP_ATENUADO] },
 ];
+
+// El tipo de visita es obligatorio al pre-finalizar cualquier orden que no sea una instalación (que no lo lleva): el técnico escoge uno de los cinco tipos, sin opción "Ninguno".
+// '' si está bien; si no, el mensaje.
+export const errorTipoVisita = (tipoTrabajo, tipoVisita) => (
+  esInstalacion(tipoTrabajo) || TIPOS_VISITA.some((t) => t.value && t.value === tipoVisita) ? '' : 'Elige el tipo de visita.'
+);
+
+// Solo estas visitas piden la NAP y el puerto, en dos campos y obligatorios (con el conector externo y el drop atenuado se llega a la caja del cliente); en el resto
+// de visitas (conector interno, recableado, cambio de equipo) no se piden y la orden conserva la NAP que ya traía. Las instalaciones los piden aparte.
+export const pideNapPuertoVisita = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_DROP_ATENUADO;
+
+// '' si la visita no los pide o `nap` (el texto de la orden, "NAP 08 - Puerto 3") trae una NAP real y el puerto; si no, el mensaje.
+export function errorNapPuertoVisita(tipoVisita, nap) {
+  if (!pideNapPuertoVisita(tipoVisita)) return '';
+  const { nap: caja, puerto } = separarNapPuerto(nap);
+  return napSinDato(caja) || !puerto ? 'Indica la NAP y el puerto.' : '';
+}
+
+// Las opciones que ve el técnico al pre-finalizar: los cinco tipos, sin "Ninguno" (la oficina sí puede dejar uno sin tipo al corregir una orden vieja).
+export const TIPOS_VISITA_OBLIGATORIO = TIPOS_VISITA.filter((t) => t.value);
 
 // --- Cambio de equipo ---------------------------------------------------------------------
 

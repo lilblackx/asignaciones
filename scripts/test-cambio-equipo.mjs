@@ -1,9 +1,10 @@
 // Prueba el tipo de visita "Cambio de equipo" (serial del equipo nuevo, obligatorio) y "Drop atenuado"
 // (src/utils/tipoVisita.js). No necesita el emulador. Uso: `npm run test:equipo`.
 import {
-  ETIQUETA_TIPO_VISITA, TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_RECABLEADO,
-  datosSerialEquipo, errorTipoEquipoNuevo, esCambioEquipo, etiquetaTipoVisita, llevaConectores, parseSerialEquipo,
+  ETIQUETA_TIPO_VISITA, TIPOS_VISITA, TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_DROP_ATENUADO, TIPO_RECABLEADO,
+  datosSerialEquipo, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, etiquetaTipoVisita, llevaConectores, parseSerialEquipo, pideNapPuertoVisita,
 } from '../src/utils/tipoVisita.js';
+import { readFileSync } from 'node:fs';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -40,6 +41,32 @@ check('un tipo que no está en la lista no vale', [errorTipoEquipoNuevo(TIPO_CAM
 check('en otro tipo de visita no se pide', [TIPO_DROP_ATENUADO, TIPO_RECABLEADO, ''].map((t) => errorTipoEquipoNuevo(t, '')), ['', '', '']);
 check('una orden vieja sin tipo se puede editar sin obligar a ponerlo (exigir = false)', errorTipoEquipoNuevo(TIPO_CAMBIO_EQUIPO, '', false), '');
 check('un tipo inválido no se guarda', datosSerialEquipo(TIPO_CAMBIO_EQUIPO, 'HWTC1A2B3C4D', 'ROUTER'), { serialEquipo: 'HWTC1A2B3C4D', tipoEquipoNuevo: '' });
+
+// --- El tipo de visita es obligatorio al pre-finalizar (menos en instalaciones) ---
+const FALTA = 'Elige el tipo de visita.';
+check('sin tipo de visita no se puede pre-finalizar una avería ni una mudanza', [errorTipoVisita('AVERÍA', ''), errorTipoVisita('AVERÍA', undefined), errorTipoVisita('MUDANZA', '')], [FALTA, FALTA, FALTA]);
+check('con cualquiera de los cinco tipos sí', [TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO].map((t) => errorTipoVisita('AVERÍA', t)), ['', '', '', '', '']);
+check('un valor inventado no vale', errorTipoVisita('AVERÍA', 'OTRA_COSA'), FALTA);
+check('las instalaciones no llevan tipo de visita: no se les pide', [errorTipoVisita('INSTALACIÓN', ''), errorTipoVisita('Instalacion', undefined)], ['', '']);
+check('el técnico ve los cinco tipos, sin "Ninguno"', TIPOS_VISITA_OBLIGATORIO.map((t) => t.value), ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO']);
+check('la oficina conserva "Ninguno" al corregir una orden vieja', TIPOS_VISITA[0], { value: '', label: 'Ninguno' });
+
+// --- NAP y puerto solo donde hacen falta ---
+check('piden NAP y puerto el conector externo y el drop atenuado, y ningún otro', [TIPO_CONECTOR_EXTERNO, TIPO_DROP_ATENUADO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO, ''].map(pideNapPuertoVisita), [true, true, false, false, false, false]);
+const SIN_NAP = 'Indica la NAP y el puerto.';
+check('drop atenuado sin NAP, sin puerto o con "SN" no pasa', [errorNapPuertoVisita(TIPO_DROP_ATENUADO, ''), errorNapPuertoVisita(TIPO_DROP_ATENUADO, 'NAP M10A02'), errorNapPuertoVisita(TIPO_DROP_ATENUADO, 'SN - Puerto 5'), errorNapPuertoVisita(TIPO_DROP_ATENUADO, ' - Puerto 5')], [SIN_NAP, SIN_NAP, SIN_NAP, SIN_NAP]);
+check('drop atenuado y conector externo con NAP real y puerto pasan', [errorNapPuertoVisita(TIPO_DROP_ATENUADO, 'NAP M10A02 - Puerto 5'), errorNapPuertoVisita(TIPO_CONECTOR_EXTERNO, 'DM-SN-01 - Puerto 12')], ['', '']);
+check('un conector interno, recableado o cambio de equipo no piden NAP ni puerto', [TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO].map((t) => errorNapPuertoVisita(t, '')), ['', '', '']);
+
+// --- Lo que vigila el código del formulario y del guardado ---
+const modal = readFileSync(new URL('../src/components/modals/PreFinalizarModal.jsx', import.meta.url), 'utf8');
+check('el formulario pone los dos campos separados solo en las visitas que lo piden, ya no hay campo suelto y el tipo es obligatorio',
+  [/\) : visitaConNapPuerto \? \(\s+<NapPuertoCampos/.test(modal), !modal.includes('NAP / CAJA / PUERTO'), /items=\{TIPOS_VISITA_OBLIGATORIO\}/.test(modal), /TIPO DE VISITA <span[^>]*>\(obligatorio\)/.test(modal)], [true, true, true, true]);
+const hook = readFileSync(new URL('../src/hooks/useTickets.js', import.meta.url), 'utf8');
+check('al guardar también se exige el tipo de visita y la NAP con el puerto', /errorTipoVisita\(ticket\.tipoTrabajo, tipoVisita\) \|\| errorNapPuertoVisita\(tipoVisita, nap\)/.test(hook), true);
+const contadores = readFileSync(new URL('../src/components/modals/ConectoresRecableado.jsx', import.meta.url), 'utf8');
+check('los contadores de conectores se alinean abajo aunque una etiqueta ocupe dos líneas', /min-w-\[9\.5rem\] flex flex-col justify-between/.test(contadores), true);
+
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);
