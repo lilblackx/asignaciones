@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Banknote } from 'lucide-react';
+import { Banknote, RefreshCw } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { useTema } from '../hooks/useTema';
 import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
@@ -18,6 +18,8 @@ import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
 import PieVersion from './PieVersion';
 import BarraFinanzas from './finanzas/BarraFinanzas';
+import AccionesEncabezado from './AccionesEncabezado';
+import MenuExportar from './modals/reports/MenuExportar';
 import TasaBcv from './finanzas/TasaBcv';
 import TecnicosFinanzas from './finanzas/TecnicosFinanzas';
 import TamanoLetra from './finanzas/TamanoLetra';
@@ -116,7 +118,25 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
     <div className={isDarkMode ? 'dark' : ''}>
       <div className="min-h-screen bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
-        <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Finanzas" icono={Banknote} nombre={currentUserName || currentUser} rol={role} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
+        <EncabezadoSimple onAbrirMenu={onAbrirMenu} contexto={cargado ? (error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`) : ''} titulo="Finanzas" icono={Banknote} nombre={currentUserName || currentUser} rol={role} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
+
+        {cargado && seccion !== 'PRECIOS' && (
+          <AccionesEncabezado
+            encabezado={(
+              <>
+                <button
+                  type="button"
+                  onClick={actualizar}
+                  disabled={actualizando}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white disabled:opacity-60 transition-colors whitespace-nowrap"
+                >
+                  <RefreshCw className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
+                </button>
+                <MenuExportar formatos={['pdf', 'docx', 'csv']} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs! bg-zinc-800! border-zinc-700! text-white! hover:bg-zinc-700!" />
+              </>
+            )}
+          />
+        )}
 
         <main className="p-4 sm:p-6 w-full flex-1 space-y-3 text-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -140,7 +160,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
             <TasaBcv tasa={bcv.tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={bcv.actualizar} />
             {cargado && (
-              <span role="status" className="sm:ml-auto text-xs text-zinc-600 dark:text-zinc-300">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
+              <span role="status" className="sm:ml-auto lg:hidden text-xs text-zinc-600 dark:text-zinc-300">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
             )}
           </div>
 

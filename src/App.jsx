@@ -600,7 +600,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   };
 
   const encabezadoMarco = { nombre: currentUserName || currentUser, rol: role, isDarkMode, setIsDarkMode, handleLogout, onAbrirMenu: () => setIsSidebarOpen(true) };
-  const enMarco = (titulo, Icono, hijo) => (isAdmin ? <PaginaMarco titulo={titulo} Icono={Icono} encabezado={encabezadoMarco}>{hijo}</PaginaMarco> : hijo);
+  const enMarco = (titulo, Icono, hijo, contexto = '') => (isAdmin ? <PaginaMarco titulo={titulo} Icono={Icono} contexto={contexto} encabezado={encabezadoMarco}>{hijo}</PaginaMarco> : hijo);
 
   if (!authReady) {
     return <LoadingScreen isDarkMode={isDarkMode} connectionError={connectionError} />;
@@ -648,9 +648,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
         {abierta('ALMACEN', false) && enMarco('Almacén', Cable, (
           <Suspense fallback={null}>
-            <div className="p-3 sm:p-4">
-              <MaterialesModal enPagina tickets={tickets} reports={reports} technicians={technicians} hasMoreReports={hasMoreReports} isLoadingReports={isLoadingReports} onLoadMore={loadMoreReports} />
-            </div>
+            <MaterialesModal enPagina tickets={tickets} reports={reports} technicians={technicians} hasMoreReports={hasMoreReports} isLoadingReports={isLoadingReports} onLoadMore={loadMoreReports} />
           </Suspense>
         ))}
 
@@ -908,7 +906,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             enPagina={isAdmin}
             onClose={cerrarVentana(setIsReportModalOpen)}
           />
-        ))}
+        ), reports[0]?.fechaCierre ? `Último cierre: ${reports[0].fechaCierre}` : 'Todavía no hay cierres')}
 
         {abierta('REPORTES', isReportesOpen) && enMarco('Reportes', ClipboardList, (
           <ReportesModal

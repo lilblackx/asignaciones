@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, Home, LogOut, Moon, PackageCheck, PanelLeftClose, PanelLeftOpen, ShieldCheck, Sun, TrendingUp, User, Users, Wallet, X } from 'lucide-react';
+import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, Home, LogOut, Moon, Network, PackageCheck, PanelLeftClose, PanelLeftOpen, ShieldCheck, Sun, TrendingUp, User, Users, Wallet, X } from 'lucide-react';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 
@@ -43,8 +43,7 @@ export default function Sidebar({ acciones, veInventario = false, alertasInventa
     { titulo: 'Inventario y ventas', items: [
       { id: 'almacen', Icono: Cable, nombre: 'Almacén', accion: () => acciones.modulo('ALMACEN') },
       ...(veInventario ? [{ id: 'inventario', Icono: PackageCheck, nombre: 'Envíos al inventario', alertas: alertasInventario, accion: () => acciones.modulo('INVENTARIO') }] : []),
-      // Módulo Infraestructura apagado por ahora (la pantalla, el rol, las reglas y el Worker siguen en el código, sin desplegar). Para volver a mostrarlo: importar Network de lucide-react y descomentar:
-      // { id: 'infraestructura', Icono: Network, nombre: 'Infraestructura', accion: () => acciones.modulo('INFRAESTRUCTURA') },
+      { id: 'infraestructura', Icono: Network, nombre: 'Infraestructura', accion: () => acciones.modulo('INFRAESTRUCTURA') },
       { id: 'ventas', Icono: TrendingUp, nombre: 'Ventas', accion: () => acciones.modulo('PROMOTORA') },
     ] },
   ];

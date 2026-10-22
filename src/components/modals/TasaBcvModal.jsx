@@ -5,6 +5,7 @@ import EncabezadoModulo from '../EncabezadoModulo';
 import FormasPagoEditor from './FormasPagoEditor';
 import { diasDesactualizada } from '../../utils/tasa';
 import Spinner from '../Spinner';
+import Boton from '../Boton';
 
 // Convierte una tasa/monto (número) a los dígitos que representarían sus centavos,
 // para poder editarlos como una calculadora: cada dígito que se escribe entra por la derecha.
@@ -75,7 +76,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
       <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={Coins} titulo="TASA Y PAGOS" onClose={onClose} enPagina={enPagina} />
+        <EncabezadoModulo Icono={Coins} titulo="Tasa y pagos" onClose={onClose} enPagina={enPagina} />
 
         <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex border-b border-zinc-200 dark:border-zinc-800">
           {PESTANAS.map(p => (
@@ -131,14 +132,9 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-md text-white ${isRefreshing ? 'bg-zinc-400 cursor-not-allowed' : 'bg-zinc-800 hover:bg-zinc-700'}`}
-            >
+            <Boton variante="secundario" tamano="grande" className="w-full" type="button" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} /> {isRefreshing ? 'Actualizando...' : 'Actualizar automático'}
-            </button>
+            </Boton>
 
             <form onSubmit={handleManualSubmit} className="border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-4">
               <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400 block ml-1">AJUSTE MANUAL</label>
@@ -166,7 +162,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
                   className={NUMBER_INPUT_CLASS}
                 />
               </div>
-              <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar manual'}</button>
+              <Boton variante="principal" tamano="grande" className="w-full" type="submit" disabled={isSaving}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar manual'}</Boton>
             </form>
           </div>
         )}

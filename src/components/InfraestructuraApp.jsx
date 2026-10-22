@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { FileText, Network, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import { FileText, Network, RefreshCw, Search } from 'lucide-react';
 import { etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
-import CampoFecha from './CampoFecha';
 import Colapsable from './Colapsable';
 import { useToast } from '../hooks/useToast';
 import { useTema } from '../hooks/useTema';
@@ -17,10 +16,14 @@ import Toast from './Toast';
 import PlantillaFinalModal from './modals/PlantillaFinalModal';
 import EncabezadoSimple from './EncabezadoSimple';
 import PieVersion from './PieVersion';
+import BotonFiltros from './BotonFiltros';
+import { BUSCADOR } from './estilos';
+import Chip from './Chip';
+import Boton from './Boton';
+import RangoFechas from './RangoFechas';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '—');
 const dato = (valor) => valor || '—';
-const CLASE_FECHA = 'w-full h-9 flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:border-zinc-500 rounded-lg px-3 text-xs font-bold text-zinc-800 dark:text-zinc-100 focus:border-red-600 outline-none transition-colors';
 const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
 
 // Pantalla de INFRAESTRUCTURA: las instalaciones realizadas, con la NAP y el puerto donde quedó conectado cada cliente nuevo. Solo lectura.
@@ -58,28 +61,15 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
     : PERIODOS_INFRAESTRUCTURA.find((p) => p.valor === periodo)?.etiqueta || '';
 
   const botonPlantilla = (f, clase) => (
-    <button
-      type="button"
-      onClick={() => setPlantillaDe(f)}
-      disabled={!f.plantilla}
-      title={f.plantilla ? `Ver la plantilla final de ${f.codigo}` : 'Esta orden no tiene plantilla final'}
-      aria-label={`Ver plantilla final de ${f.codigo}`}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-zinc-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ${clase}`}
-    >
-      <FileText className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> Plantilla
-    </button>
+    <Boton variante="secundario" tamano="normal" icono={FileText} className={clase} type="button" onClick={() => setPlantillaDe(f)} disabled={!f.plantilla} title={f.plantilla ? `Ver la plantilla final de ${f.codigo}` : 'Esta orden no tiene plantilla final'} aria-label={`Ver plantilla final de ${f.codigo}`}>
+      Plantilla
+    </Boton>
   );
 
   const chip = ({ valor, etiqueta }) => (
-    <button
-      key={valor}
-      type="button"
-      aria-pressed={periodo === valor}
-      onClick={() => setPeriodo(valor)}
-      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${periodo === valor ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'}`}
-    >
+    <Chip activo={periodo === valor} tamano="compacto" key={valor} type="button" onClick={() => setPeriodo(valor)}>
       {etiqueta}
-    </button>
+    </Chip>
   );
 
   return (
@@ -104,21 +94,11 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                     placeholder="Cliente, código o NAP"
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+                    className={BUSCADOR}
                   />
                   <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setFiltersOpen(!filtersOpen)}
-                  aria-expanded={filtersOpen}
-                  aria-label="Filtros"
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${filtersOpen ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
-                >
-                  <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
-                  <span className="hidden sm:inline">Filtros</span>
-                  {filtrosActivos > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{filtrosActivos}</span>}
-                </button>
+                <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={filtrosActivos} />
                 <BotonExportar
                   grande
                   onClick={() => exportInstalacionesToCsv(filas, `${etiquetaPeriodo}${busqueda.trim() ? ` · "${busqueda.trim()}"` : ''}`)}
@@ -135,16 +115,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex flex-wrap gap-2" role="group" aria-label="Período">{[...PERIODOS_INFRAESTRUCTURA, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(chip)}</div>
                   {periodo === PERIODO_RANGO && (
-                    <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto sm:items-center">
-                      <div className="min-w-0 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                        <span className={ETIQUETA}>Desde</span>
-                        <CampoFecha ariaLabel="Desde" valor={rango.desde} min={limites.min} max={rango.hasta} onChange={(v) => v && setRango((r) => ({ ...r, desde: v }))} flotante clase={CLASE_FECHA} ancho="w-full sm:w-40" />
-                      </div>
-                      <div className="min-w-0 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                        <span className={ETIQUETA}>Hasta</span>
-                        <CampoFecha ariaLabel="Hasta" valor={rango.hasta} min={rango.desde} max={limites.max} onChange={(v) => v && setRango((r) => ({ ...r, hasta: v }))} flotante derecha clase={CLASE_FECHA} ancho="w-full sm:w-40" />
-                      </div>
-                    </div>
+                    <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} minimo={limites.min} maximo={limites.max} />
                   )}
                   </div>
                 </div>
@@ -152,14 +123,9 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 ml-auto" aria-live="polite">{filas.length} {filas.length === 1 ? 'instalación' : 'instalaciones'}</p>
-                <button
-                  type="button"
-                  onClick={actualizar}
-                  disabled={actualizando}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-zinc-500 disabled:opacity-60 transition-colors"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
-                </button>
+                <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando}>
+                  {actualizando ? 'Actualizando...' : 'Actualizar'}
+                </Boton>
               </div>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 -mt-1">{error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</p>
 
@@ -183,7 +149,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                         </div>
                         {f.direccion && <p className="text-xs text-zinc-700 dark:text-zinc-300 break-words">{f.direccion}</p>}
                         <p className="text-xs text-zinc-600 dark:text-zinc-400">Técnico: {dato(f.tecnico)} · Puertos libres: {dato(f.puertosDisponibles)}</p>
-                        {botonPlantilla(f, 'w-full py-2')}
+                        {botonPlantilla(f, 'w-full')}
                       </li>
                     ))}
                   </ul>
@@ -207,7 +173,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                             <td className="px-3 py-2.5 whitespace-nowrap font-black">{dato(f.nap)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-black">{dato(f.puerto)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap">{dato(f.puertosDisponibles)}</td>
-                            <td className="px-3 py-2.5">{botonPlantilla(f, 'px-2.5 py-1.5')}</td>
+                            <td className="px-3 py-2.5">{botonPlantilla(f, '')}</td>
                           </tr>
                         ))}
                       </tbody>

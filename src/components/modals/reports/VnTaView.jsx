@@ -6,8 +6,9 @@ import Cifras from './Cifras';
 import TablaReporte from './TablaReporte';
 import Spinner from '../../Spinner';
 import CampoFecha from '../../CampoFecha';
+import { CAMPO } from '../../estilos';
+import Boton from '../../Boton';
 
-const CAMPO = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600';
 const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
 
 // La hoja de VN y TA: la única del Registro de estadísticas que se llena a mano (ver utils/registroVnTa). Arriba el formulario para agregar una fila
@@ -64,13 +65,13 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         <span title="Finanzas ya la pagó: no se puede editar ni borrar" className="px-2 py-1 rounded bg-emerald-700 text-white text-[11px] font-bold">Pagada</span>
       ) : borrandoId === r.id ? (
         <>
-          <button type="button" onClick={() => borrar(r.id)} className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold">Sí, borrar</button>
-          <button type="button" onClick={() => setBorrandoId(null)} className="px-2 py-1 rounded border border-zinc-400 dark:border-zinc-700 text-[11px] font-bold">No</button>
+          <Boton variante="principal" tamano="compacto" type="button" onClick={() => borrar(r.id)}>Sí, borrar</Boton>
+          <Boton variante="secundario" tamano="compacto" type="button" onClick={() => setBorrandoId(null)}>No</Boton>
         </>
       ) : (
         <>
-          <button type="button" onClick={() => editar(r)} aria-label={`Editar ${r.codigo}`} title="Editar" className="p-1.5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"><Pencil className="w-3.5 h-3.5" aria-hidden="true" /></button>
-          {puedeBorrar(r) && <button type="button" onClick={() => setBorrandoId(r.id)} aria-label={`Borrar ${r.codigo}`} title="Borrar" className="p-1.5 rounded bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50"><Trash2 className="w-3.5 h-3.5" aria-hidden="true" /></button>}
+          <Boton variante="secundario" tamano="compacto" className="px-2" type="button" onClick={() => editar(r)} aria-label={`Editar ${r.codigo}`} title="Editar"><Pencil className="w-3.5 h-3.5" aria-hidden="true" /></Boton>
+          {puedeBorrar(r) && <Boton variante="peligro" tamano="compacto" className="px-2" type="button" onClick={() => setBorrandoId(r.id)} aria-label={`Borrar ${r.codigo}`} title="Borrar"><Trash2 className="w-3.5 h-3.5" aria-hidden="true" /></Boton>}
         </>
       )}
     </span>,
@@ -105,10 +106,10 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         </div>
         {errorForm && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-2">{errorForm}</p>}
         <div className="flex flex-wrap items-center gap-2 mt-3">
-          <button type="submit" disabled={guardando} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold disabled:opacity-60">
+          <Boton variante="principal" tamano="normal" type="submit" disabled={guardando}>
             {guardando ? <Spinner /> : <Plus className="w-4 h-4" aria-hidden="true" />}{editandoId ? 'Guardar cambios' : 'Agregar'}
-          </button>
-          {editandoId && <button type="button" onClick={limpiar} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-zinc-400 dark:border-zinc-700 text-xs font-bold"><X className="w-4 h-4" aria-hidden="true" /> Cancelar</button>}
+          </Boton>
+          {editandoId && <Boton variante="secundario" tamano="normal" type="button" onClick={limpiar}><X className="w-4 h-4" aria-hidden="true" /> Cancelar</Boton>}
           {!editandoId && <p className="text-[11px] text-zinc-600 dark:text-zinc-500">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
         </div>
       </form>}

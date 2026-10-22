@@ -1,8 +1,10 @@
 import { Calendar, Eye, FileText } from 'lucide-react';
 import BotonExportar from '../../BotonExportar';
+import AccionesEncabezado from '../../AccionesEncabezado';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import CierreAutomaticoConfig from './CierreAutomaticoConfig';
 import Spinner from '../../Spinner';
+import Boton from '../../Boton';
 
 function todayIsoDate() {
   const d = new Date();
@@ -15,18 +17,22 @@ function todayIsoDate() {
 export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onRequestCierre, onViewReport, isAdmin, usuario }) {
   return (
     <>
-      <div className="mb-4 p-6 bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900/50 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="mb-4 p-6 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div>
           <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" /> Cierre de Jornada
+            <FileText className="w-5 h-5 text-red-500" /> Cierre de Jornada
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
             Esta acción archiva todas las órdenes con estado <strong>FINALIZADO</strong> y <strong>CANCELADO</strong> en el historial de reportes y limpia la tabla principal.
           </p>
         </div>
-        <button onClick={() => onRequestCierre(todayIsoDate())} className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-black uppercase rounded-xl hover:bg-blue-700 transition-colors shadow-md shrink-0">
-          Ejecutar Cierre
-        </button>
+        {/* En PC el botón está en el encabezado; aquí queda en pantallas angostas. */}
+        <AccionesEncabezado
+          className="w-full sm:w-auto shrink-0"
+          encabezado={<Boton variante="principal" onClick={() => onRequestCierre(todayIsoDate())}>Ejecutar cierre</Boton>}
+        >
+          <Boton variante="principal" tamano="grande" onClick={() => onRequestCierre(todayIsoDate())} className="w-full sm:w-auto">Ejecutar cierre</Boton>
+        </AccionesEncabezado>
       </div>
 
       <CierreAutomaticoConfig isAdmin={isAdmin} usuario={usuario} />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, ClipboardList, History, Landmark, LogOut, Menu, MoreVertical, Moon, PackageCheck, Plus, Sun } from 'lucide-react';
+import { BarChart, ClipboardList, History, Home, Landmark, LogOut, Menu, MoreVertical, Moon, PackageCheck, Plus, Sun } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
 
@@ -74,6 +74,12 @@ export default function Header({
               ASIGNACIONES
             </button>
           </h1>
+          {/* El administrador en PC no ve "ASIGNACIONES" (está en el menú lateral): el encabezado lleva el nombre de la pantalla, como los demás módulos. */}
+          {isAdmin && (
+            <h1 className="hidden lg:flex items-center gap-2 text-xl font-black tracking-wide min-w-0">
+              <Home className="w-5 h-5 shrink-0 text-red-500" aria-hidden="true" /> <span className="truncate">Panel principal</span>
+            </h1>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-3">
           {/* El administrador tiene su nombre, el tema y cerrar sesión en el pie del menú lateral. */}

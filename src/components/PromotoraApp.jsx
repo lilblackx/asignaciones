@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, LayoutGrid, List, Megaphone, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, LayoutGrid, List, Megaphone, Search } from 'lucide-react';
 import { etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import ListaInstalaciones from './ListaInstalaciones';
@@ -29,6 +29,10 @@ import PlantillaFinalModal from './modals/PlantillaFinalModal';
 import { promotoraDeOrden } from '../utils/whatsapp';
 import Spinner from './Spinner';
 import Colapsable from './Colapsable';
+import BotonFiltros from './BotonFiltros';
+import { BUSCADOR } from './estilos';
+import Chip from './Chip';
+import Boton from './Boton';
 
 const NuevaVentaModal = lazy(() => import('./modals/NuevaVentaModal'));
 
@@ -178,16 +182,10 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
   const elegirPromotor = (clave) => setPromotor(promotorActivo === clave ? 'TODOS' : clave);
 
   const chip = (clave, texto, n) => (
-    <button
-      key={clave}
-      type="button"
-      aria-pressed={filtro === clave}
-      onClick={() => setFiltro(clave)}
-      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${filtro === clave ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500'}`}
-    >
+    <Chip activo={filtro === clave} tamano="compacto" key={clave} type="button" onClick={() => setFiltro(clave)}>
       <span>{texto}</span>
       <Contador n={n} tono={filtro === clave ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
-    </button>
+    </Chip>
   );
 
   // Los desplegables son el menú propio de la app (SelectMenu), como en la pantalla de la oficina.
@@ -217,20 +215,11 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                 placeholder={verTodasInstalaciones ? 'Buscar nombre, cédula, código o promotor' : 'Buscar nombre, cédula o código'}
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+                className={BUSCADOR}
               />
               <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
             </div>
-            <button
-              type="button"
-              aria-expanded={verFiltros}
-              onClick={() => setVerFiltros((v) => !v)}
-              className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${verFiltros ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
-            >
-              <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${verFiltros ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
-              <span className="hidden sm:inline">Filtros</span>
-              {filtrosActivos > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{filtrosActivos}</span>}
-            </button>
+            <BotonFiltros abierto={verFiltros} onClick={() => setVerFiltros((v) => !v)} cuenta={filtrosActivos} />
           </div>
 
           {verTodasInstalaciones && (
@@ -257,16 +246,10 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           {verTodasInstalaciones && (
             <div role="group" aria-label="Ver solo finalizadas o canceladas" className="flex flex-wrap gap-2">
               {[['INSTALADA', 'Finalizadas'], ['CANCELADA', 'Canceladas']].map(([clave, texto]) => (
-                <button
-                  key={clave}
-                  type="button"
-                  aria-pressed={filtro === clave}
-                  onClick={() => setFiltro(filtro === clave ? 'TODAS' : clave)}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${filtro === clave ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'}`}
-                >
+                <Chip activo={filtro === clave} tamano="compacto" key={clave} type="button" onClick={() => setFiltro(filtro === clave ? 'TODAS' : clave)}>
                   <span>{texto}</span>
                   <Contador n={conteo[clave] || 0} tono={filtro === clave ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
-                </button>
+                </Chip>
               ))}
             </div>
           )}
@@ -279,15 +262,10 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   {chip('TODAS', 'Todas', base.length)}
                   {ORDEN_ESTADOS_PROMOTORA.filter((c) => conteo[c]).map((c) => chip(c, etiquetaFiltroEstado(c, vista), conteo[c]))}
                   {(atrasadas > 0 || soloAtrasadas) && (
-                    <button
-                      type="button"
-                      aria-pressed={soloAtrasadas}
-                      onClick={() => setSoloAtrasadas((v) => !v)}
-                      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-colors ${soloAtrasadas ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500'}`}
-                    >
+                    <Chip activo={soloAtrasadas} tamano="compacto" type="button" onClick={() => setSoloAtrasadas((v) => !v)}>
                       <span>Atrasadas</span>
                       <Contador n={atrasadas} tono={soloAtrasadas ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
-                    </button>
+                    </Chip>
                   )}
                 </div>
               </div>
@@ -308,14 +286,9 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
 
               {verTodasInstalaciones && (
                 <div className="flex flex-wrap gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                  <button
-                    type="button"
-                    aria-expanded={verResumen}
-                    onClick={() => setVerResumen((v) => !v)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600"
-                  >
+                  <Boton variante="secundario" tamano="normal" type="button" aria-expanded={verResumen} onClick={() => setVerResumen((v) => !v)}>
                     Resumen por promotor <ChevronDown className={`w-3.5 h-3.5 transition-transform ${verResumen ? 'rotate-180' : ''}`} aria-hidden="true" />
-                  </button>
+                  </Boton>
                   <BotonExportar
                     onClick={exportar}
                     disabled={visibles.length === 0}
@@ -370,14 +343,9 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
 
           {hayMasCerradas && cargado && (
             <div className="flex flex-col items-center gap-1.5 pt-1">
-              <button
-                type="button"
-                onClick={cargarMasCerradas}
-                disabled={cargandoMas}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 disabled:hover:border-zinc-300 dark:disabled:hover:border-zinc-700 transition-colors"
-              >
+              <Boton variante="secundario" tamano="normal" type="button" onClick={cargarMasCerradas} disabled={cargandoMas}>
                 {cargandoMas && <Spinner />}{cargandoMas ? 'Cargando...' : 'Cargar más cerradas'}
-              </button>
+              </Boton>
               <p className="text-[10px] text-zinc-400 text-center">Se muestran las cerradas más recientes; los números y filtros son de lo cargado.</p>
             </div>
           )}

@@ -128,7 +128,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
     <Modal onClose={confirmando ? () => {} : onClose} zIndexClass="z-50">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-3xl max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-blue-500 flex justify-between items-center sticky top-0 z-10">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded tracking-wide">
                 {finalizando ? 'REVISAR ANTES DE FINALIZAR' : 'REVISAR ANTES DE APROBAR'}
@@ -136,6 +136,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
               <span className="text-xs font-bold text-blue-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate max-w-[260px] sm:max-w-md">{ticket.nombre}</h2>
+            {!cambio && <AvisoRevision nombres={otrosRevisando} encabezado />}
           </div>
           <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
             <X className="w-4 h-4" />
@@ -149,7 +150,6 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           </p>
 
           <AvisoCambioDeOrden texto={cambio} />
-          {!cambio && <AvisoRevision nombres={otrosRevisando} />}
 
           {faltantes.length > 0 && (
             <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-800 dark:text-red-300">

@@ -5,11 +5,10 @@ import EncabezadoModulo from '../EncabezadoModulo';
 import SelectMenu from '../SelectMenu';
 import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
-import CampoFecha from '../CampoFecha';
 import DetalleOrdenFinanzas from '../finanzas/DetalleOrdenFinanzas';
 import FilaRevision from './FilaRevision';
 import ResumenCifras from '../finanzas/ResumenCifras';
-import { BOTON, CHIP, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION, CAMPO_FECHA } from '../finanzas/estilos';
+import { BOTON, CHIP, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../finanzas/estilos';
 import { FECHA_CORTE, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoPagable } from '../../utils/finanzas';
 import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, garantiasPorResolver, itemsParaRevisar, resumenRevision, revisar } from '../../utils/revisionPagos';
 import { PERIODOS, diaLegible, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
@@ -17,6 +16,9 @@ import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { diaDe } from '../../utils/totalesMes';
 import { useRevisionPagos } from '../../hooks/useRevisionPagos';
 import { useTasaDolar } from '../../hooks/useTasaDolar';
+import Chip from '../Chip';
+import Boton from '../Boton';
+import RangoFechas from '../RangoFechas';
 
 // `enPagina`: el mismo contenido como página dentro del marco del administrador (sin ventana ni barra negra propia: el título y el menú los pone la pantalla que la contiene).
 // Revisión de órdenes (solo ADMIN): la barrera entre las órdenes y Finanzas. Aquí un administrador revisa lo que se va a pagar y solo lo que aprueba llega a Finanzas. Lo ya pagado no
@@ -108,7 +110,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   return marco(
     <>
       <div className={enPagina ? 'w-full flex flex-col' : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
-        {!enPagina && <EncabezadoModulo Icono={ClipboardCheck} titulo="REVISIÓN DE ÓRDENES" onClose={onClose} />}
+        {!enPagina && <EncabezadoModulo Icono={ClipboardCheck} titulo="Revisión de órdenes" onClose={onClose} />}
 
         <div className={enPagina ? 'flex-1 min-w-0 bg-fondo px-3 sm:px-4 py-4 space-y-4 text-sm max-w-[1400px] mx-auto w-full' : `flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm ${CENTRADO_AMPLIO}`}>
           <p className={TEXTO_SUAVE}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{FECHA_CORTE ? ` Cuenta desde el ${diaLegible(FECHA_CORTE)}.` : ''}</p>
@@ -117,14 +119,11 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
             <div role="group" aria-label="Periodo" className="grid grid-cols-4 gap-2 w-full sm:flex sm:w-auto">
               {PERIODOS.map(([id, texto]) => (
-                <button key={id} type="button" aria-pressed={periodo === id} onClick={() => setPeriodo(id)} className={`h-9 px-1 sm:px-4 whitespace-nowrap rounded-lg text-xs sm:text-sm font-semibold border transition-colors ${periodo === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>{texto}</button>
+                <Chip activo={periodo === id} tamano="angosto" key={id} type="button" onClick={() => setPeriodo(id)}>{texto}</Chip>
               ))}
             </div>
             {periodo === 'RANGO' && (
-              <>
-                <div className="flex items-center gap-2"><span className={ETIQUETA}>Desde</span><CampoFecha ariaLabel="Desde" valor={personalizado.desde} max={personalizado.hasta} onChange={(v) => v && setPersonalizado({ ...personalizado, desde: v })} flotante grande clase={CAMPO_FECHA} ancho="w-48" /></div>
-                <div className="flex items-center gap-2"><span className={ETIQUETA}>Hasta</span><CampoFecha ariaLabel="Hasta" valor={personalizado.hasta} min={personalizado.desde} max={hoy} onChange={(v) => v && setPersonalizado({ ...personalizado, hasta: v })} flotante grande clase={CAMPO_FECHA} ancho="w-48" /></div>
-              </>
+              <RangoFechas desde={personalizado.desde} hasta={personalizado.hasta} onDesde={(v) => setPersonalizado({ ...personalizado, desde: v })} onHasta={(v) => setPersonalizado({ ...personalizado, hasta: v })} maximo={hoy} grande />
             )}
             <div className="w-full sm:w-60 min-w-0">
               <SelectMenu id="revision-tecnico" ariaLabel="Técnico" className={SELECTOR} value={tecnico} onChange={setTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...nombresTecnicos.map((t) => ({ value: t, label: t }))]} />
@@ -149,7 +148,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className={TEXTO_SUAVE}>Pulsa una cifra para ver esas órdenes; vuelve a pulsarla para verlas todas.</p>
             {resumen.PENDIENTE.cantidad > 0 && (
-              <button type="button" onClick={() => prepararAprobacion(delTecnico, 'todas las pendientes')} disabled={datos.ocupado} className={`${BOTON} !bg-red-600 !border-red-600 !text-white`}>Aprobar todas las pendientes ({resumen.PENDIENTE.cantidad})</button>
+              <Boton variante="principal" tamano="normal" type="button" onClick={() => prepararAprobacion(delTecnico, 'todas las pendientes')} disabled={datos.ocupado}>Aprobar todas las pendientes ({resumen.PENDIENTE.cantidad})</Boton>
             )}
           </div>
 

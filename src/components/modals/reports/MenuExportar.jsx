@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Download, FileSpreadsheet, FileText, FileType, Loader2 } from 'lucide-react';
-import { CLASE_EXPORTAR, MEDIDA_EXPORTAR } from '../../BotonExportar';
+import { claseBoton } from '../../estilos';
 
 const OPCIONES = {
   pdf: { etiqueta: 'PDF', detalle: 'Para presentar o imprimir', Icono: FileText },
@@ -29,7 +29,7 @@ export default function MenuExportar({ formatos, onElegir, ocupado, extra = '', 
         disabled={Boolean(ocupado)}
         aria-haspopup="menu"
         aria-expanded={abierto}
-        className={`${CLASE_EXPORTAR} ${MEDIDA_EXPORTAR} ${extra}`}
+        className={`${claseBoton('secundario', 'normal')} ${extra}`}
       >
         {ocupado ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Download className="w-3.5 h-3.5" aria-hidden="true" />}
         {ocupado ? 'Generando...' : 'Exportar'}

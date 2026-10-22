@@ -47,6 +47,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               <span className="text-xs font-bold text-orange-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
+            <AvisoRevision nombres={otrosRevisando} encabezado />
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
             <X className="w-4 h-4" />
@@ -58,7 +59,6 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
             <p className="text-sm text-zinc-600 dark:text-zinc-300">Esta orden ya no está esperando a infraestructura.</p>
           ) : (
             <>
-              <AvisoRevision nombres={otrosRevisando} />
               <div className="rounded-xl border border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30 p-3 space-y-1 text-xs text-orange-900 dark:text-orange-200">
                 {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></p>}
                 <p className="flex items-start gap-1.5"><HardHat className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" /><span className="min-w-0 break-words">Escalada por {textoOrigen(infra)}{infra.por ? ` (${infra.por})` : ''}: <span className="font-black">{infra.motivo}</span></span></p>

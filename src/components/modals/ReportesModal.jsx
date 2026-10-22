@@ -167,7 +167,7 @@ export default function ReportesModal({
   return (
     <Modal enPagina={enPagina} onClose={detalleAbierto ? () => {} : onClose} zIndexClass="z-[60]" completa>
       <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={ClipboardList} titulo="REPORTES" onClose={onClose} enPagina={enPagina} />
+        <EncabezadoModulo Icono={ClipboardList} titulo="Reportes" onClose={onClose} enPagina={enPagina} />
 
         <div className={`flex flex-col ${enPagina ? '' : 'lg:flex-row'} flex-1 min-h-0`}>
           {/* Ventana en pantallas angostas: un selector con los reportes. */}

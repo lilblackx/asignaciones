@@ -10,6 +10,8 @@ import { parseMontoAjuste } from '../../utils/ajustes';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
 import { diaLegible } from '../../utils/periodoReporte';
 import { stripEmojis } from '../../utils/sanitizeInput';
+import Boton from '../Boton';
+import Chip from '../Chip';
 
 // Una orden en la revisión de pagos: lo que se paga por ella, su estado y las acciones del administrador (aprobar, retener, excluir, corregir o volver a pendiente). Retener y excluir
 // piden un motivo y corregir deja elegir otro técnico y otro concepto: esos formularios se despliegan debajo de la fila. Una garantía de otro técnico (o cualquier orden, si la oficina olvidó marcarla) se
@@ -130,7 +132,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
             {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-1">{error}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => confirmar(abierto)} disabled={ocupado} className={`${BOTON} !bg-red-600 !border-red-600 !text-white`}>{abierto === 'RETENER' ? 'Retener' : 'Excluir'}</button>
+            <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar(abierto)} disabled={ocupado}>{abierto === 'RETENER' ? 'Retener' : 'Excluir'}</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>
           </div>
         </div>
@@ -151,7 +153,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           </div>
           {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => confirmar('CORREGIR')} disabled={ocupado} className={`${BOTON} !bg-red-600 !border-red-600 !text-white`}>Guardar corrección</button>
+            <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar('CORREGIR')} disabled={ocupado}>Guardar corrección</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>
           </div>
         </div>
@@ -167,7 +169,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           </p>
           <div role="radiogroup" aria-label="Decisión de la garantía" className="flex flex-wrap gap-2">
             {[['DESCONTAR', 'Descontar de la orden original'], ['SIN', 'Sin descuento']].map(([id, texto]) => (
-              <button key={id} type="button" role="radio" aria-checked={garantia.modo === id} onClick={() => { setGarantia((g) => ({ ...g, modo: id })); setError(''); }} className={`h-9 px-3 rounded-lg border text-sm font-bold transition-colors ${garantia.modo === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>{texto}</button>
+              <Chip activo={garantia.modo === id} key={id} type="button" role="radio" aria-checked={garantia.modo === id} onClick={() => { setGarantia((g) => ({ ...g, modo: id })); setError(''); }}>{texto}</Chip>
             ))}
           </div>
           {garantia.modo === 'DESCONTAR' && (
@@ -203,7 +205,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           )}
           {error && <p role="alert" className="text-sm font-bold text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={guardarGarantia} disabled={ocupado} className={`${BOTON} !bg-red-600 !border-red-600 !text-white`}>Guardar decisión</button>
+            <Boton variante="principal" tamano="normal" type="button" onClick={guardarGarantia} disabled={ocupado}>Guardar decisión</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>
           </div>
         </div>

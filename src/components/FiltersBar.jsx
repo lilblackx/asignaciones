@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { ArrowDownAZ, Filter, Search, SlidersHorizontal, Wrench, X } from 'lucide-react';
+import { ArrowDownAZ, Filter, Search, Wrench, X } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../constants';
 import SelectMenu from './SelectMenu';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import Colapsable from './Colapsable';
+import BotonFiltros from './BotonFiltros';
+import { BUSCADOR } from './estilos';
 
 export default function FiltersBar({
   searchTerm, setSearchTerm,
@@ -63,22 +65,13 @@ export default function FiltersBar({
             id="ticket-search"
             type="search"
             placeholder="Buscar por nombre, código o cédula..."
-            className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 pl-9 pr-10 py-2.5 rounded-xl text-sm focus:ring-0 focus:border-red-600 outline-none"
+            className={BUSCADOR}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <BotonLimpiarBusqueda valor={searchTerm} onLimpiar={() => setSearchTerm('')} />
         </div>
-        <button
-          type="button"
-          onClick={() => setFiltersOpen(!filtersOpen)}
-          aria-expanded={filtersOpen}
-          className={`shrink-0 inline-flex items-center gap-1.5 px-3 rounded-xl border-2 text-xs font-bold transition-colors bg-white dark:bg-zinc-900 ${filtersOpen ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-400'}`}
-        >
-          <SlidersHorizontal className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'lg:rotate-90' : ''}`} aria-hidden="true" />
-          <span className="hidden sm:inline">Filtros</span>
-          {activeFiltersCount > 0 && <span className="rounded-full bg-red-600 text-white text-[10px] leading-none px-1.5 py-1">{activeFiltersCount}</span>}
-        </button>
+        <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={activeFiltersCount} />
       </div>
 
       <Colapsable>{filtersOpen && (

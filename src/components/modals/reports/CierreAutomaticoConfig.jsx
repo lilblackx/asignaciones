@@ -4,6 +4,8 @@ import { useCierreAutomatico } from '../../../hooks/useCierreAutomatico';
 import { diaDe } from '../../../utils/totalesMes';
 import Spinner from '../../Spinner';
 import CampoHora from '../../CampoHora';
+import Boton from '../../Boton';
+import Chip from '../../Chip';
 
 // Lunes a domingo (0 = domingo, como Date.getDay y el Worker).
 const DIAS = [
@@ -97,7 +99,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600 shrink-0" aria-hidden="true" /> Cierre automático
+            <Clock className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /> Cierre automático
             {!loading && (
               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                 {guardado.activo ? 'Activo' : 'Desactivado'}
@@ -119,7 +121,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
             aria-label="Cierre automático"
             disabled={loading}
             onClick={() => cambio({ activo: !valores.activo })}
-            className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${valores.activo ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+            className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${valores.activo ? 'bg-red-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${valores.activo ? 'translate-x-5' : ''}`} />
           </button>
@@ -136,28 +138,16 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
             {DIAS.map(d => {
               const activo = valores.dias.includes(d.valor);
               return (
-                <button
-                  key={d.valor}
-                  type="button"
-                  aria-pressed={activo}
-                  aria-label={d.largo}
-                  onClick={() => toggleDia(d.valor)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${activo ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400'}`}
-                >
+                <Chip activo={activo} tamano="compacto" key={d.valor} type="button" aria-label={d.largo} onClick={() => toggleDia(d.valor)}>
                   {d.corto}
-                </button>
+                </Chip>
               );
             })}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={onGuardar}
-              disabled={!draft || !!error || guardando}
-              className="px-4 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <Boton variante="principal" onClick={onGuardar} disabled={!draft || !!error || guardando}>
               {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar cambios'}
-            </button>
+            </Boton>
             {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-zinc-600 dark:text-zinc-500 hover:underline">Descartar</button>}
             {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
             {mensaje && <p role="status" className={`text-xs font-bold ${mensaje.tipo === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{mensaje.texto}</p>}
@@ -175,7 +165,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
       )}
 
       {hoyCerradoAMano && (
-        <p role="status" className="mt-4 text-xs font-bold text-blue-700 dark:text-blue-300">
+        <p role="status" className="mt-4 text-xs font-bold text-zinc-700 dark:text-zinc-300">
           Hoy ya se hizo el cierre manual: el automático no se ejecuta hoy.
         </p>
       )}
