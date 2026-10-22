@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { ArrowDownAZ, Ban, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 // Para reactivar la columna ENVIADO: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
@@ -20,6 +21,7 @@ import { estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
+import { useDeslizarPreFinalizadas } from '../hooks/useDeslizarPreFinalizadas';
 
 const COLUMNAS = 8;
 // Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
@@ -57,6 +59,9 @@ export default function TicketsTable({
   onLlegue,
   onCancelarViaje
 }) {
+  // Una orden que el técnico pre-finaliza sube a su lugar deslizándose (solo en PC).
+  const cuerpo = useRef(null);
+  useDeslizarPreFinalizadas(cuerpo, filteredTickets);
   // Con orden "más recientes" o por fecha las órdenes de un mismo día quedan
   // juntas: se agrupan bajo un encabezado. Con otros órdenes la fecha va en la fila.
   const agrupado = sortBy === 'DEFECTO' || sortBy === 'FECHA';
@@ -86,7 +91,7 @@ export default function TicketsTable({
             <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody ref={cuerpo}>
           {filteredTickets.map((ticket, index) => {
             const tipoEstilo = getTipoTrabajoEstilo(ticket.tipoTrabajo);
             // const envio = getEnvioInfo(ticket); // solo la usa la celda ENVIADO, desactivada
@@ -106,7 +111,7 @@ export default function TicketsTable({
                   </td>
                 </tr>
               ),
-              <tr key={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
+              <tr key={ticket.id} data-fila={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
                 <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
