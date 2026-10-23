@@ -10,7 +10,8 @@
 //   No genera cobro.
 // - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
 //   `serialEquipo`.
-// - Drop atenuado: solo se registra el tipo de visita, sin datos extra.
+// - Drop atenuado, configuración de router y fuente averiada: solo se registra el tipo de visita,
+//   sin datos extra.
 
 import { parseSerial } from './instalacion.js';
 
@@ -19,6 +20,8 @@ export const TIPO_CONECTOR_INTERNO = 'CONECTOR_INTERNO';
 export const TIPO_RECABLEADO = 'RECABLEADO';
 export const TIPO_CAMBIO_EQUIPO = 'CAMBIO_EQUIPO';
 export const TIPO_DROP_ATENUADO = 'DROP_ATENUADO';
+export const TIPO_CONFIG_ROUTER = 'CONFIG_ROUTER';
+export const TIPO_FUENTE_AVERIADA = 'FUENTE_AVERIADA';
 
 export const ETIQUETA_TIPO_VISITA = {
   [TIPO_CONECTOR_EXTERNO]: 'Conector externo',
@@ -26,6 +29,8 @@ export const ETIQUETA_TIPO_VISITA = {
   [TIPO_RECABLEADO]: 'Recableado',
   [TIPO_CAMBIO_EQUIPO]: 'Cambio de equipo',
   [TIPO_DROP_ATENUADO]: 'Drop atenuado',
+  [TIPO_CONFIG_ROUTER]: 'Configuración de router',
+  [TIPO_FUENTE_AVERIADA]: 'Fuente averiada',
 };
 
 export const TIPOS_VISITA = [
@@ -35,6 +40,8 @@ export const TIPOS_VISITA = [
   { value: TIPO_RECABLEADO, label: ETIQUETA_TIPO_VISITA[TIPO_RECABLEADO] },
   { value: TIPO_CAMBIO_EQUIPO, label: ETIQUETA_TIPO_VISITA[TIPO_CAMBIO_EQUIPO] },
   { value: TIPO_DROP_ATENUADO, label: ETIQUETA_TIPO_VISITA[TIPO_DROP_ATENUADO] },
+  { value: TIPO_CONFIG_ROUTER, label: ETIQUETA_TIPO_VISITA[TIPO_CONFIG_ROUTER] },
+  { value: TIPO_FUENTE_AVERIADA, label: ETIQUETA_TIPO_VISITA[TIPO_FUENTE_AVERIADA] },
 ];
 
 // --- Cambio de equipo ---------------------------------------------------------------------

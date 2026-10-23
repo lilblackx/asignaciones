@@ -26,13 +26,12 @@ import NapPuertoCampos from './NapPuertoCampos';
 import Spinner from '../Spinner';
 
 export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
-  // La NAP y el puerto van en dos campos con conector externo y en las instalaciones.
-  const conDosCampos = ticket?.tipoVisita === 'CONECTOR_EXTERNO' || trabajoEsInstalacion(ticket?.tipoTrabajo);
-  const separado = conDosCampos ? separarNapPuerto(ticket?.nap) : null;
-  const napInicial = separado ? separado.nap : (ticket?.nap || '');
-  // En esos casos una NAP "SN" (o vacía) no sirve: el técnico debe escribir la real.
-  const [nap, setNap] = useState(conDosCampos && napSinDato(napInicial) ? '' : napInicial);
-  const [puerto, setPuerto] = useState(separado ? separado.puerto : '');
+  // La NAP y el puerto van siempre en dos campos; son obligatorios con conector externo, recableado y en las instalaciones.
+  const pideNapPuertoInicial = ticket?.tipoVisita === TIPO_CONECTOR_EXTERNO || ticket?.tipoVisita === TIPO_RECABLEADO || trabajoEsInstalacion(ticket?.tipoTrabajo);
+  const separado = separarNapPuerto(ticket?.nap);
+  // Donde son obligatorios una NAP "SN" (o vacía) no sirve: el técnico debe escribir la real.
+  const [nap, setNap] = useState(pideNapPuertoInicial && napSinDato(separado.nap) ? '' : separado.nap);
+  const [puerto, setPuerto] = useState(separado.puerto);
   // Instalación: lo que la plantilla de la promotora trae vacío (ver utils/instalacion).
   const [serial, setSerial] = useState(ticket?.instalacion?.serial || '');
   const [vlan, setVlan] = useState(ticket?.instalacion?.vlan || '');
@@ -85,6 +84,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const tipoVisita = esInstalacion ? '' : tipoVisitaElegido;
   const conectorExterno = tipoVisita === TIPO_CONECTOR_EXTERNO;
   const recableado = tipoVisita === TIPO_RECABLEADO;
+  const pideNap = conectorExterno || recableado || esInstalacion;
   // Lo que se resume en la confirmación para que el técnico vea qué está enviando: "Recableado: 250 m".
   const etiquetaVisita = tipoVisita ? `${etiquetaTipoVisita(tipoVisita)}${recableado && metros ? `: ${metros} m` : ''}` : '';
   const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
@@ -116,10 +116,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const errorFormatoSerial = instalacionLeida && !instalacionLeida.errores.serial ? errorSerialCaja(serial) : '';
     const instalacion = errorFormatoSerial ? { ...instalacionLeida, errores: { ...instalacionLeida.errores, serial: errorFormatoSerial }, error: true } : instalacionLeida;
     const conectoresInst = esInstalacion ? parseConectoresInstalacion({ externoVerde: instExternoVerde, internoVerde: instInternoVerde, internoAzul: instInternoAzul }) : null;
-    // Con conector externo y en las instalaciones la NAP real y el puerto son obligatorios.
-    const pideNapPuerto = conectorExterno || esInstalacion;
-    const faltaNap = pideNapPuerto && napSinDato(nap);
-    const faltaPuerto = pideNapPuerto && !puerto.trim();
+    // Con conector externo, recableado y en las instalaciones la NAP real y el puerto son obligatorios.
+    const faltaNap = pideNap && napSinDato(nap);
+    const faltaPuerto = pideNap && !puerto.trim();
     setMetrosError(metrosParseados?.error || '');
     setCantidadError({ campo: cantidades.campo || '', mensaje: errorCantidad });
     setSerialEquipoError(serialEquipoParseado?.error || '');
@@ -146,7 +145,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     if (faltaObs || metrosParseados?.error || errorCantidad || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
     // Con todo en orden no se guarda todavía: primero se pide confirmar (ver ConfirmPreFinalizarModal).
     setPorConfirmar({
-      nap: conectorExterno ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : nap,
+      nap: conectorExterno || recableado ? unirNapPuerto(nap, puerto) : napConPuerto(nap, puerto),
       ...(instalacion ? { instalacion: { ...instalacion.datos, conectores: conectoresInst.valor } } : {}),
       observacionTecnico: observacion,
       potenciaDbm: potenciaParseada.valor ?? null,
@@ -233,11 +232,13 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                 setCantidadError({ campo: '', mensaje: '' });
                 setSerialEquipoError('');
                 // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
-                if (v === TIPO_CONECTOR_EXTERNO && !puerto) {
+                if (!puerto) {
                   const sep = separarNapPuerto(nap);
-                  setNap(napSinDato(sep.nap) ? '' : sep.nap);
+                  setNap(sep.nap);
                   setPuerto(sep.puerto);
                 }
+                // Con conector externo o recableado la NAP real es obligatoria: un "SN" se vacía para que la escriba.
+                if ((v === TIPO_CONECTOR_EXTERNO || v === TIPO_RECABLEADO) && napSinDato(separarNapPuerto(nap).nap)) setNap('');
               }}
               items={TIPOS_VISITA}
             />
@@ -320,7 +321,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               error={conectoresInstError}
             />
             </>
-          ) : conectorExterno ? (
+          ) : (
             <NapPuertoCampos
               nap={nap}
               onNap={(v) => { setNap(v); if (napError) setNapError(''); }}
@@ -328,22 +329,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               puerto={puerto}
               onPuerto={(v) => { setPuerto(v); if (puertoError) setPuertoError(''); }}
               puertoError={puertoError}
+              obligatorio={pideNap}
             />
-          ) : (
-            <div className="space-y-1">
-              <label htmlFor="pf-nap" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-                NAP / CAJA / PUERTO <span className="font-normal text-zinc-400">(opcional)</span>
-              </label>
-              <input
-                id="pf-nap"
-                type="text"
-                maxLength="50"
-                placeholder="Ej. NAP 08 - Puerto 3"
-                value={nap}
-                onChange={(e) => setNap(stripEmojis(e.target.value))}
-                className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
-              />
-            </div>
           )}
 
           {llevaCobro({ tipoTrabajo: ticket.tipoTrabajo }) && (

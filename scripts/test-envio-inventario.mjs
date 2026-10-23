@@ -37,6 +37,8 @@ check('visita de conector: avería con las cantidades por color y su motivo', [p
 check('lo que no es de estos tipos, o no está aprobado, no envía nada', [
   { ...base, tipoTrabajo: 'VISITA', tipoVisita: 'DROP_ATENUADO' }, { ...instalacion, estado: 'PRE-FINALIZADO' }, { ...cambio, estado: 'PENDIENTE' }, { ...base, tipoTrabajo: 'AVERÍA' }, null,
 ].map(payloadEnvioInventario), [null, null, null, null, null]);
+check('configuración de router y fuente averiada, ya finalizadas, no envían nada al inventario',
+  ['CONFIG_ROUTER', 'FUENTE_AVERIADA'].map((tipoVisita) => payloadEnvioInventario({ ...base, tipoTrabajo: 'VISITA', tipoVisita })), [null, null]);
 check('orden sin código: sale "S/C" en el motivo', payloadEnvioInventario({ ...recableado, codigo: '' }).motivo, 'Recableado - Orden #S/C');
 check('instalación anterior (sin serial ni conectores): se envía con serial vacío y conectores en 0', (({ serial, apc, upc }) => [serial, apc, upc])(payloadEnvioInventario({ ...instalacion, instalacion: { metraje: 80 } })), ['', 0, 0]);
 

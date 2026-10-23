@@ -2,7 +2,8 @@
 // (src/utils/tipoVisita.js). No necesita el emulador. Uso: `npm run test:equipo`.
 import {
   ETIQUETA_TIPO_VISITA, TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_RECABLEADO,
-  datosSerialEquipo, esCambioEquipo, etiquetaTipoVisita, llevaConectores, parseSerialEquipo,
+  TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA,
+  datosSerialEquipo, esCambioEquipo, etiquetaTipoVisita, generaCobro, llevaConectores, parseSerialEquipo,
 } from '../src/utils/tipoVisita.js';
 
 let failures = 0;
@@ -17,6 +18,9 @@ function check(name, actual, esperado) {
 check('las dos opciones nuevas están en la lista, con su nombre',
   TIPOS_VISITA.filter(t => [TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO].includes(t.value)).map(t => t.label), ['Cambio de equipo', 'Drop atenuado']);
 check('etiqueta de cada una', [etiquetaTipoVisita(TIPO_CAMBIO_EQUIPO), etiquetaTipoVisita(TIPO_DROP_ATENUADO)], ['Cambio de equipo', 'Drop atenuado']);
+check('configuración de router y fuente averiada: en la lista, con etiqueta, sin serial ni conectores ni cobro',
+  [TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA].map(v => [TIPOS_VISITA.find(t => t.value === v)?.label, etiquetaTipoVisita(v), esCambioEquipo(v), llevaConectores(v), generaCobro(v)]),
+  [['Configuración de router', 'Configuración de router', false, false, false], ['Fuente averiada', 'Fuente averiada', false, false, false]]);
 check('todas las opciones con valor tienen etiqueta', TIPOS_VISITA.filter(t => t.value).every(t => ETIQUETA_TIPO_VISITA[t.value] === t.label), true);
 check('solo el cambio de equipo pide serial', [TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_RECABLEADO, ''].map(esCambioEquipo), [true, false, false, false]);
 check('ninguna de las dos lleva conectores', [TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO].map(llevaConectores), [false, false]);

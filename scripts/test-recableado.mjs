@@ -15,7 +15,7 @@ function check(name, actual, esperado) {
 
 // --- Tipo de visita ---
 check('el selector ofrece Ninguno, conector externo, conector interno, recableado, cambio de equipo y drop atenuado',
-  TIPOS_VISITA.map(t => t.value), ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO']);
+  TIPOS_VISITA.map(t => t.value), ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA']);
 check('solo las visitas de conector generan cobro',
   ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(generaCobro), [false, true, true, false]);
 check('etiqueta del recableado', etiquetaTipoVisita('RECABLEADO'), 'Recableado');
@@ -67,7 +67,7 @@ check('interno sin ninguno: error', [cant('CONECTOR_INTERNO', '', ''), cant('CON
 check('el tope es de 10 por color', [MAX_CONECTORES_POR_COLOR, cant('CONECTOR_INTERNO', '11', '1'), cant('CONECTOR_INTERNO', '1', '11'), cant('CONECTOR_EXTERNO', '11', '')],
   [10, ['Máximo 10 conectores verdes.', 'verde'], ['Máximo 10 conectores azules.', 'azul'], ['Máximo 10 conectores verdes.', 'verde']]);
 check('solo números enteros', [cant('CONECTOR_INTERNO', '1.5', ''), cant('CONECTOR_INTERNO', '-1', ''), cant('CONECTOR_INTERNO', 'a', ''), cant('CONECTOR_INTERNO', '1', '2,5')].map(r => r[1]), ['verde', 'verde', 'verde', 'azul']);
-check('los demás tipos de visita no piden cantidades', ['', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO'].map(t => parseCantidadesConector(t, { verde: '', azul: '' })), [1, 2, 3, 4].map(() => ({ valor: null })));
+check('los demás tipos de visita no piden cantidades', ['', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA'].map(t => parseCantidadesConector(t, { verde: '', azul: '' })), [1, 2, 3, 4, 5, 6].map(() => ({ valor: null })));
 check('segunda comprobación al guardar (cantidades ya numéricas)',
   [['CONECTOR_EXTERNO', { verde: 2 }], ['CONECTOR_EXTERNO', undefined], ['CONECTOR_INTERNO', { verde: 0, azul: 0 }], ['CONECTOR_INTERNO', { verde: 1, azul: 1 }], ['CONECTOR_INTERNO', { verde: 11, azul: 0 }], ['CONECTOR_INTERNO', { verde: 1.5, azul: 0 }], ['RECABLEADO', undefined]].map(([t, c]) => errorCantidadesConector(t, c)),
   ['', 'Indica cuántos conectores verdes usaste.', 'Indica cuántos conectores usaste: verdes, azules o ambos.', '', 'Máximo 10 conectores verdes.', 'Escribe la cantidad de conectores verdes como un número entero. Ejemplo: 2', '']);
