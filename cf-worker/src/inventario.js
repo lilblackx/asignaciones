@@ -22,6 +22,7 @@
 // Sin los secretos configurados el envío está apagado: no escribe nada ni genera alertas.
 import { ACCION_AVERIA, ACCION_INSTALACION, ESTADOS_CON_ALERTA, ESTADO_ENVIADO, ESTADO_PENDIENTE, TEXTO_ESTADO_ENVIO, payloadEnvioInventario } from '../../src/utils/envioInventario.js';
 import { veEnviosInventario } from '../../src/utils/accesoInventario.js';
+import { serialParaOlt } from '../../src/utils/serialOlt.js';
 import { camposAObjeto } from './materiales-api.js';
 
 const SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword';
@@ -295,7 +296,8 @@ async function conTecnicoInventario(env, deps, accessToken, p) {
 //   { payload } | { omitir: true } (la orden ya no tiene nada que enviar) | { archivada: true } (no hay de dónde sacarlo)
 async function payloadAEnviar(env, deps, accessToken, ticketId, existente, usarGuardado) {
   const orden = await payloadDeOrden(env, deps, accessToken, ticketId);
-  if (orden.archivada) return usarGuardado && existente?.accion ? { payload: await conTecnicoInventario(env, deps, accessToken, existente) } : { archivada: true };
+  // El envío guardado puede traer un serial de antes de una corrección de serialParaOlt (p. ej. TPLH... sin la G): se vuelve a convertir.
+  if (orden.archivada) return usarGuardado && existente?.accion ? { payload: await conTecnicoInventario(env, deps, accessToken, { ...existente, serial: serialParaOlt(existente.serial) }) } : { archivada: true };
   return orden.payload ? { payload: await conTecnicoInventario(env, deps, accessToken, orden.payload) } : { omitir: true };
 }
 
