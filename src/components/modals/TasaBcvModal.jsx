@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { AlertTriangle, Coins, RefreshCw } from 'lucide-react';
-import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from '../Modal';
+import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import FormasPagoEditor from './FormasPagoEditor';
 import { diasDesactualizada } from '../../utils/tasa';
 import Spinner from '../Spinner';
+import Boton from '../Boton';
 
 // Convierte una tasa/monto (número) a los dígitos que representarían sus centavos,
 // para poder editarlos como una calculadora: cada dígito que se escribe entra por la derecha.
@@ -28,14 +29,14 @@ function digitsToNumber(digits) {
   return num / 100;
 }
 
-const NUMBER_INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm text-right font-mono';
+const NUMBER_INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm text-right font-mono';
 
 const PESTANAS = [
   { id: 'tasa', etiqueta: 'Tasa BCV' },
   { id: 'formas', etiqueta: 'Formas de pago' },
 ];
 
-export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onActualizarManual, formasPago, onGuardarFormasPago, onClose }) {
+export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onActualizarManual, formasPago, onGuardarFormasPago, onClose, enPagina = false }) {
   const [pestana, setPestana] = useState('tasa');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,9 +74,9 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
   };
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={Coins} titulo="TASA Y PAGOS" onClose={onClose} />
+    <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={Coins} titulo="Tasa y pagos" onClose={onClose} enPagina={enPagina} />
 
         <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex border-b border-zinc-200 dark:border-zinc-800">
           {PESTANAS.map(p => (
@@ -87,7 +88,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               aria-selected={pestana === p.id}
               aria-controls={`panel-${p.id}`}
               onClick={() => setPestana(p.id)}
-              className={`flex-1 px-3 py-3 text-xs font-black uppercase tracking-wide border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
+              className={`flex-1 px-3 py-3 text-xs font-black uppercase tracking-wide border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               {p.etiqueta}
             </button>
@@ -108,19 +109,19 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
             )}
             <div className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-500 dark:text-zinc-400 font-bold">Tasa actual</span>
+                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Tasa actual</span>
                 <span className="font-black text-zinc-900 dark:text-white">{tasaConfig?.tasa ? tasaConfig.tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Sin configurar'}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-500 dark:text-zinc-400 font-bold">Monto base (EUR)</span>
+                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Monto base (EUR)</span>
                 <span className="font-black text-zinc-900 dark:text-white">{tasaConfig?.montoBaseEUR ? tasaConfig.montoBaseEUR.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-500 dark:text-zinc-400 font-bold">Cobro resultante</span>
+                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Cobro resultante</span>
                 <span className="font-black text-red-600 dark:text-red-400">{montoBsActual ? `${montoBsActual} Bs` : '—'}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-500 dark:text-zinc-400 font-bold">Fuente</span>
+                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Fuente</span>
                 <span className="font-black text-zinc-900 dark:text-white uppercase">{tasaConfig?.fuente || '—'}</span>
               </div>
               {tasaConfig?.actualizadoEn && (
@@ -131,19 +132,14 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-md text-white ${isRefreshing ? 'bg-zinc-400 cursor-not-allowed' : 'bg-zinc-800 hover:bg-zinc-700'}`}
-            >
+            <Boton variante="secundario" tamano="grande" className="w-full" type="button" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} /> {isRefreshing ? 'Actualizando...' : 'Actualizar automático'}
-            </button>
+            </Boton>
 
             <form onSubmit={handleManualSubmit} className="border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-4">
               <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400 block ml-1">AJUSTE MANUAL</label>
               <div className="space-y-2">
-                <label htmlFor="tasa-manual" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">TASA (Bs por EUR)</label>
+                <label htmlFor="tasa-manual" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">TASA (Bs por EUR)</label>
                 <input
                   id="tasa-manual"
                   required
@@ -155,7 +151,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="monto-manual" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1">MONTO BASE (EUR)</label>
+                <label htmlFor="monto-manual" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">MONTO BASE (EUR)</label>
                 <input
                   id="monto-manual"
                   required
@@ -166,7 +162,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
                   className={NUMBER_INPUT_CLASS}
                 />
               </div>
-              <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar manual'}</button>
+              <Boton variante="principal" tamano="grande" className="w-full" type="submit" disabled={isSaving}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar manual'}</Boton>
             </form>
           </div>
         )}

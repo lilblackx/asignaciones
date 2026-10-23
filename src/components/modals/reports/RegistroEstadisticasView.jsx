@@ -25,7 +25,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
   return (
     <div>
       <AvisoHistorial {...historial} />
-      <div role="tablist" aria-label="Hoja del registro" className="inline-flex flex-wrap rounded-lg border border-zinc-300 dark:border-zinc-700 overflow-hidden mb-4">
+      <div role="tablist" aria-label="Hoja del registro" className="inline-flex flex-wrap rounded-lg border border-zinc-400 dark:border-zinc-700 overflow-hidden mb-4">
         {HOJAS.map(({ id, nombre }) => (
           <button
             key={id}
@@ -40,10 +40,11 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
         ))}
       </div>
 
+      <div key={hojaId} className="lg:animate-fade-in">
       {manual ? <VnTaView {...vnta} tecnico={tecnico} /> : (
       <>
       <Cifras items={hoja.cifras.map((c) => (c.id ? { ...c, detalle: c.detalle ? `${c.detalle} · ver detalle` : 'ver detalle', onClick: () => setDetalle({ tipo: 'CIFRA', id: c.id }) } : c))} />
-      <p className="text-[11px] text-zinc-500 -mt-1 mb-4">{hoja.nota}</p>
+      <p className="text-[11px] text-zinc-600 dark:text-zinc-500 -mt-1 mb-4">{hoja.nota}</p>
       {hoja.aviso && <p role="status" className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-4">{hoja.aviso}</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">
@@ -76,6 +77,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
       />
       </>
       )}
+      </div>
       {detalle?.tipo === 'CIFRA' && hoja && (() => {
         const cifra = hoja.cifras.find((c) => c.id === detalle.id);
         const ordenes = ordenesDeCifra(hoja.hoja, detalle.id, hoja.lista);

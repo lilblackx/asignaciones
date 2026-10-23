@@ -3,7 +3,7 @@ import { Check, Copy } from 'lucide-react';
 // Botón de copiar de toda la app: el ícono de copiar pasa a un visto (verde) cuando `copiado` es verdadero.
 // `className` es lo que no cambia (tamaño y forma); `tono`, los colores de reposo y `tonoCopiado`, los del visto.
 // Con `children` lleva texto junto al ícono ("Copiar todo"). Úsalo con useCopiado (hooks/useCopiado).
-export default function BotonCopiar({ copiado, onClick, etiqueta, titulo, className = '', tono = '', tonoCopiado = 'bg-emerald-600 text-white', iconoClase = 'w-4 h-4', children }) {
+export default function BotonCopiar({ copiado, onClick, etiqueta, titulo, className = '', tono = '', tonoCopiado = 'bg-emerald-700 text-white', iconoClase = 'w-4 h-4', children }) {
   return (
     <button
       type="button"

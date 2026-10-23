@@ -12,7 +12,8 @@ import ResumenEjecutivoView from './reports/ResumenEjecutivoView';
 import CausasAveriaView from './reports/CausasAveriaView';
 import TendenciaMensualView from './reports/TendenciaMensualView';
 import FiltrosReporte from './reports/FiltrosReporte';
-import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
+import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
+import SelectMenu from '../SelectMenu';
 import EncabezadoModulo from '../EncabezadoModulo';
 import { csvActivacionTecnicos } from '../../utils/logTecnico';
 import { VENTANAS_MESES, csvTendencia, mesesDeLaTendencia, tendenciaMensual } from '../../utils/tendenciaMensual';
@@ -117,8 +118,7 @@ export default function ReportesModal({
   nombreUsuario,
   esAdmin = false,
   firebaseUser,
-  onClose
-}) {
+  onClose, enPagina = false }) {
   const [reporteId, setReporteId] = useState(REPORTES[0].id);
   // El periodo y el técnico valen para todos los reportes: al cambiar de reporte se conservan.
   const [periodo, setPeriodo] = useState('7_DIAS');
@@ -165,13 +165,13 @@ export default function ReportesModal({
   };
 
   return (
-    <Modal onClose={detalleAbierto ? () => {} : onClose} zIndexClass="z-[60]" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={ClipboardList} titulo="REPORTES" onClose={onClose} />
+    <Modal enPagina={enPagina} onClose={detalleAbierto ? () => {} : onClose} zIndexClass="z-[60]" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={ClipboardList} titulo="Reportes" onClose={onClose} enPagina={enPagina} />
 
-        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-          {/* Pantallas angostas: un selector con los reportes. */}
-          <div className="lg:hidden shrink-0 px-4 sm:px-6 py-3 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+        <div className={`flex flex-col ${enPagina ? '' : 'lg:flex-row'} flex-1 min-h-0`}>
+          {/* Ventana en pantallas angostas: un selector con los reportes. */}
+          <div className={`${enPagina ? 'hidden' : 'lg:hidden'} shrink-0 px-4 sm:px-6 py-3 bg-fondo border-b border-zinc-200 dark:border-zinc-800`}>
             <label htmlFor="reporte-elegido" className="sr-only">Reporte</label>
             <select
               id="reporte-elegido"
@@ -187,11 +187,29 @@ export default function ReportesModal({
             </select>
           </div>
 
+          {/* Como página dentro del marco el menú lateral de la app ya ocupa la izquierda: el reporte se elige en un dropdown arriba (no un segundo menú lateral). */}
+          {enPagina && (
+            <div className="shrink-0 px-4 sm:px-6 lg:px-[max(1.5rem,calc((100%-80rem)/2))] pt-3">
+              <label htmlFor="reporte-pagina" className="block text-[10px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-500 mb-1 ml-1">Reporte</label>
+              <div className="w-full sm:w-80">
+                <SelectMenu
+                  id="reporte-pagina"
+                  ariaLabel="Reporte"
+                  icon={REPORTES.find((r) => r.id === reporteId)?.Icono}
+                  value={reporteId}
+                  onChange={setReporteId}
+                  items={GRUPOS.map((g) => ({ group: g.titulo, options: g.reportes.map((r) => ({ value: r.id, label: r.nombre })) }))}
+                />
+              </div>
+            </div>
+          )}
+
           {/* PC: la lista de reportes a la izquierda. */}
-          <nav aria-label="Reportes" className="hidden lg:flex flex-col gap-5 w-64 shrink-0 overflow-y-auto p-4 bg-zinc-100 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800">
+          {!enPagina && (
+          <nav aria-label="Reportes" className="hidden lg:flex flex-col gap-5 w-64 shrink-0 overflow-y-auto p-4 bg-zinc-200 dark:bg-zinc-900 border-r border-zinc-300 dark:border-zinc-800">
             {GRUPOS.map((g) => (
               <div key={g.titulo}>
-                <div className="px-2 mb-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-500">{g.titulo}</div>
+                <div className="px-2 mb-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-500">{g.titulo}</div>
                 <ul className="flex flex-col gap-1">
                   {g.reportes.map(({ id, nombre, Icono }) => (
                     <li key={id}>
@@ -208,8 +226,9 @@ export default function ReportesModal({
               </div>
             ))}
           </nav>
+          )}
 
-          <main className={`flex-1 min-w-0 overflow-y-auto bg-zinc-50 dark:bg-zinc-950 px-4 sm:px-6 pb-6 lg:pt-1 ${CENTRADO_AMPLIO}`}>
+          <main className={`flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 pb-6 ${enPagina ? '' : 'lg:pt-1'} ${CENTRADO_AMPLIO}`}>
             <FiltrosReporte
               soloAcciones={reporte.sinFiltros}
               periodo={periodo}

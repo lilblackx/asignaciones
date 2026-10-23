@@ -19,6 +19,6 @@ export const ESTILO_ESTADO_PROMOTORA_SOLIDO = {
   EN_CAMINO: 'bg-sky-600 text-white',
   EN_SITIO: 'bg-teal-600 text-white',
   EN_REVISION: 'bg-amber-400 text-black',
-  INSTALADA: 'bg-emerald-600 text-white',
+  INSTALADA: 'bg-emerald-700 text-white',
   CANCELADA: 'bg-red-600 text-white',
 };

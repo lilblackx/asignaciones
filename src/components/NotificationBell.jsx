@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { contarPendientes } from '../hooks/useInsigniaApp';
 import { usePresencia } from '../hooks/usePresencia';
 import NumeroPulso from './NumeroPulso';
-import { Ban, Banknote, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, HardHat, MapPin, Star, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
+import { Ban, Banknote, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, HandCoins, HardHat, MapPin, Star, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
 
 function tiempoRelativo(timestamp) {
   const diffMs = Date.now() - timestamp;
@@ -23,6 +23,9 @@ function iconoPara(type) {
   if (type === 'devuelto') return <Undo2 className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
   if (type === 'encamino') return <Car className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'llegada') return <MapPin className="w-4 h-4 text-teal-500 shrink-0" aria-hidden="true" />;
+  if (type === 'pagoTecnico') return <Banknote className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
+  if (type === 'ajusteTecnico') return <HandCoins className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
+  if (type === 'adelantoTecnico') return <HandCoins className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'consultaCobro') return <Banknote className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
   if (type === 'respuestaCobro') return <Banknote className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'infraestructura') return <HardHat className="w-4 h-4 text-orange-500 shrink-0" aria-hidden="true" />;
@@ -102,7 +105,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-xs text-zinc-500 flex flex-col items-center gap-2">
+              <div className="px-4 py-8 text-center text-xs text-zinc-600 dark:text-zinc-500 flex flex-col items-center gap-2">
                 <CheckCheck className="w-5 h-5 text-zinc-600" aria-hidden="true" />
                 Sin notificaciones todavía.
               </div>
@@ -118,10 +121,10 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
                   {iconoPara(n.type)}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-zinc-200 leading-snug">{n.text}</p>
-                    <span className="text-[10px] text-zinc-500 font-medium">{tiempoRelativo(n.timestamp)}</span>
+                    <span className="text-[10px] text-zinc-600 dark:text-zinc-500 font-medium">{tiempoRelativo(n.timestamp)}</span>
                   </div>
                   {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1 group-hover:hidden" aria-hidden="true" />}
-                  <X className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5 hidden group-hover:block" aria-hidden="true" />
+                  <X className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-500 shrink-0 mt-0.5 hidden group-hover:block" aria-hidden="true" />
                 </button>
               ))
             )}

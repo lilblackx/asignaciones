@@ -20,6 +20,7 @@ const averia = (id, extra) => ({ id, codigo: `AS${id}`, tipoTrabajo: 'AVERÍA', 
 
 // --- Causas de avería ---
 check('la falla se normaliza y sin falla (o con el tipo guardado como falla) es SIN ESPECIFICAR', [nombreDeFalla({ falla: ' los ' }), nombreDeFalla({ falla: '' }), nombreDeFalla({ falla: 'AVERÍA' })], ['LOS', 'SIN ESPECIFICAR', 'SIN ESPECIFICAR']);
+check('la misma NAP con distintos puertos cuenta como una sola, y sin código se quita el puerto y el "NAP" de adelante', [napDeOrden({ nap: 'NAP O02D10 - Puerto 3' }), napDeOrden({ nap: 'NAP O02D10 - Puerto 7' }), napDeOrden({ nap: 'O02D10' }), napDeOrden({ nap: 'NAP EDIF MIRANDA - Puerto 2' }), napDeOrden({ nap: 'EDIF MIRANDA' }), napDeOrden({ nap: 'asdkjhfg125 - Puerto 4' }), napDeOrden({ nap: 'Puerto 4' })], ['O02D10', 'O02D10', 'O02D10', 'EDIF MIRANDA', 'EDIF MIRANDA', 'ASDKJHFG125', 'PUERTO 4']);
 check('la NAP se normaliza al código, o al texto escrito, o es null', [napDeOrden({ nap: 'nap n10d14 - puerto 2' }), napDeOrden({ nap: 'caja rara' }), napDeOrden({ nap: '  ' })], ['N10D14', 'CAJA RARA', null]);
 
 const ordenes = [
@@ -54,6 +55,24 @@ check('alerta de las pendientes de más de 3 días con la más antigua', textos.
 check('alerta de reincidencia alta (25% > umbral)', textos.some((t) => t.includes('reincidió')), true);
 check('alerta de caída de finalizadas entre los dos últimos meses completos (40 → 25)', textos.some((t) => t.includes('bajaron de 40 a 25')), true);
 check('las alertas van primero y los avisos ok al final', r.hallazgos.findIndex((h) => h.nivel === 'ok') === -1 || r.hallazgos.findIndex((h) => h.nivel === 'ok') > r.hallazgos.findLastIndex((h) => h.nivel === 'aviso'), true);
+
+// --- Cada punto de atención trae las órdenes que lo forman ---
+const HORAS = 3600000;
+const baseDetalle = Date.UTC(2026, 9, 15, 16);
+const ordenDetalle = (i, extra) => ({ id: i, codigo: `AS${i}`, nombre: `Cliente ${i}`, tecnico: 'GERARDO', tipoTrabajo: 'AVERÍA', estado: 'FINALIZADO', createdAt: baseDetalle, finalizadoEn: baseDetalle + i * 30 * HORAS, historialEdiciones: [], cedula: `1000${i}`, ...extra });
+const ordenesDetalle = [ordenDetalle(1), ordenDetalle(2, { historialEdiciones: [{ tipo: 'devuelto', detalle: 'Devuelta al técnico' }, { tipo: 'devuelto', detalle: 'Devuelta al técnico' }], potenciaDbm: -35 }), ordenDetalle(3), ordenDetalle(4), ordenDetalle(5, { estado: 'CANCELADO', finalizadoEn: undefined, canceladaEn: baseDetalle + HORAS, motivoCancelacion: 'Cliente ausente' })];
+const rangoDetalle = { desde: '2026-10-01', hasta: '2026-10-31' };
+const conDetalle = hallazgos({
+  atencion: { total: { cantidad: 4, pctMeta: 25 } }, pendientesViejas: [], causas: { napsSospechosas: [] }, ordenes: ordenesDetalle, rango: rangoDetalle, tecnico: '',
+  cal: { total: { pctReincidencia: null, pctDebil: 25, pctDevueltas: 25 }, filas: [], reincidencias: [] },
+  filasMes: [{ mes: '2026-09', etiqueta: 'sep 26', finalizadas: 10, pctCancelacion: 4 }, { mes: '2026-10', etiqueta: 'oct 26', finalizadas: 3, pctCancelacion: 16, enCurso: true }],
+});
+const por = (inicio) => conDetalle.find((h) => h.texto.startsWith(inicio));
+check('la meta de 48 h: las órdenes que se pasaron, de la más lenta, con lo que tardaron', por('Solo el 25%').ordenes.map((x) => [x.orden.codigo, x.dato]), [['AS4', '5 d 0 h'], ['AS3', '3 d 18 h'], ['AS2', '2 d 12 h']]);
+check('devueltas: las órdenes devueltas y cuántas veces', por('La oficina devolvió').ordenes.map((x) => [x.orden.codigo, x.dato]), [['AS2', '2 veces']]);
+check('señal débil: las órdenes con potencia bajo el mínimo y su potencia', por('El 25% de las mediciones').ordenes.map((x) => [x.orden.codigo, x.dato]), [['AS2', '-35 dBm']]);
+check('cancelación: las canceladas del mes con su motivo', por('La tasa de cancelación').ordenes.map((x) => [x.orden.codigo, x.dato]), [['AS5', 'Cliente ausente']]);
+check('un punto de atención sin órdenes no lleva detalle', hallazgos({ atencion: { total: { cantidad: 0 } }, cal: { total: { pctReincidencia: null, pctDebil: null, pctDevueltas: null }, filas: [], reincidencias: [] }, pendientesViejas: [], filasMes: [], causas: { napsSospechosas: [] } }).every((h) => h.ordenes === undefined), true);
 
 const sinProblemas = hallazgos({
   atencion: { total: { cantidad: 10, pctMeta: 95 } },

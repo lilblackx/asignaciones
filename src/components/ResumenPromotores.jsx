@@ -5,16 +5,16 @@ import { etiquetaFiltroEstado } from '../utils/estadoInstalacion';
 export default function ResumenPromotores({ filas, vista, elegida, onElegir }) {
   const instaladas = etiquetaFiltroEstado('INSTALADA', vista);
   const total = filas.reduce((acc, f) => ({ instaladas: acc.instaladas + f.instaladas, enRevision: acc.enRevision + f.enRevision, enCurso: acc.enCurso + f.enCurso, canceladas: acc.canceladas + f.canceladas, total: acc.total + f.total }), { instaladas: 0, enRevision: 0, enCurso: 0, canceladas: 0, total: 0 });
-  const encabezado = 'px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400';
+  const encabezado = 'px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
   const celda = 'px-2 py-2 text-right tabular-nums';
 
-  if (filas.length === 0) return <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-3">No hay órdenes para resumir.</p>;
+  if (filas.length === 0) return <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-3">No hay órdenes para resumir.</p>;
   return (
     <div className="overflow-x-auto rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-zinc-200 dark:border-zinc-800">
-            <th scope="col" className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Promotor</th>
+            <th scope="col" className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Promotor</th>
             <th scope="col" className={encabezado}>{instaladas}</th>
             <th scope="col" className={encabezado}>En revisión</th>
             <th scope="col" className={encabezado}>En curso</th>
@@ -37,7 +37,7 @@ export default function ResumenPromotores({ filas, vista, elegida, onElegir }) {
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t-2 border-zinc-300 dark:border-zinc-700 font-black text-zinc-900 dark:text-white">
+          <tr className="border-t-2 border-zinc-400 dark:border-zinc-700 font-black text-zinc-900 dark:text-white">
             <th scope="row" className="px-3 py-2 text-left">Total</th>
             <td className={celda}>{total.instaladas}</td>
             <td className={celda}>{total.enRevision}</td>

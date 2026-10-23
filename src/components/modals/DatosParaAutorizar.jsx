@@ -12,7 +12,7 @@ function Fila({ dato, ticket, copiado, onCopiar }) {
   return (
     <div className="flex items-start justify-between gap-2 py-1.5">
       <div className="min-w-0">
-        <span className="text-[10px] font-bold tracking-wide text-zinc-500 dark:text-zinc-400 block uppercase">{dato.etiqueta}</span>
+        <span className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400 block uppercase">{dato.etiqueta}</span>
         {dato.tipo === 'cedula' ? (
           <a
             href={buildSmartOltUrl(ticket.cedula, ticket.tipoDocumento)}
@@ -65,7 +65,7 @@ export default function DatosParaAutorizar({ ticket, onCopy }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 text-[11px] font-black tracking-wide text-zinc-500 dark:text-zinc-400 uppercase">Para autorizar en SmartOLT</p>
+        <p className="min-w-0 text-[11px] font-black tracking-wide text-zinc-600 dark:text-zinc-400 uppercase">Para autorizar en SmartOLT</p>
         <BotonCopiar
           copiado={copiado === 'todo'}
           onClick={() => copiar('todo', texto, 'Datos copiados.')}

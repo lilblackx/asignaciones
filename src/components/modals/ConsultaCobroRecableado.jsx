@@ -59,7 +59,7 @@ export default function ConsultaCobroRecableado({ ticket, metros, onConsultar })
         <Banknote className="w-3.5 h-3.5" aria-hidden="true" />
         {enviando && <Spinner />}{enviando ? 'Enviando...' : esperando ? 'Volver a avisar a la oficina' : 'Consultar cobro a la oficina'}
       </button>
-      {!esperando && <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">{metrosEscritos.error ? 'Escribe los metros de cable para poder consultar el cobro.' : 'La oficina te responde cuánto se cobra por este recableado.'}</p>}
+      {!esperando && <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">{metrosEscritos.error ? 'Escribe los metros de cable para poder consultar el cobro.' : 'La oficina te responde cuánto se cobra por este recableado.'}</p>}
     </div>
   );
 }

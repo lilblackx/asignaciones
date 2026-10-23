@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search } from 'lucide-react';
-import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO } from './Modal';
+import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import { ESTADOS_CON_ALERTA, TEXTO_ESTADO_ENVIO } from '../utils/envioInventario';
 import Spinner from './Spinner';
+import BotonFiltros from './BotonFiltros';
+import { BUSCADOR } from './estilos';
+import ChipFiltro from './Chip';
+import Boton from './Boton';
 
 const ETIQUETA_ESTADO = {
   SERIAL_NO_ENCONTRADO: 'Serial no existe',
@@ -22,7 +26,7 @@ const ETIQUETA_ESTADO = {
   DESCARTADO: 'Descartada',
 };
 const ESTILO_ESTADO = {
-  ENVIADO: 'bg-emerald-600 text-white',
+  ENVIADO: 'bg-emerald-700 text-white',
   PENDIENTE: 'bg-amber-500 text-black',
   DESCARTADO: 'bg-zinc-400 dark:bg-zinc-600 text-white',
 };
@@ -58,7 +62,7 @@ function Chip({ estado }) {
 
 function Detalle({ envio }) {
   return (
-    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+    <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
       {ETIQUETA_ACCION[envio.accion] || 'Orden'}{envio.tecnico || envio.tecnicoOrden ? ` · ${envio.tecnico || envio.tecnicoOrden}` : ''} · {fechaHora(envio.actualizadoEn)}
     </p>
   );
@@ -67,7 +71,7 @@ function Detalle({ envio }) {
 function Serial({ serial }) {
   if (!serial) return null;
   return (
-    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+    <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
       Serial: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{serial}</span>
     </p>
   );
@@ -107,22 +111,22 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar }) {
       <Serial serial={envio.serial} />
       {motivo && <p className="text-xs text-red-700 dark:text-red-300 leading-snug">{motivo}</p>}
       <div className="flex flex-wrap gap-2 pt-1">
-        <button type="button" onClick={reintentar} disabled={ocupado} className="flex-1 min-w-[8rem] inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-xs font-black hover:opacity-90 disabled:opacity-50">
+        <Boton variante="principal" tamano="grande" className="flex-1 min-w-[8rem]" type="button" onClick={reintentar} disabled={ocupado}>
           <RefreshCw className={`w-3.5 h-3.5 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reintentar'}
-        </button>
+        </Boton>
         {confirmando ? (
           <div className="flex-1 min-w-[8rem] flex gap-2">
-            <button type="button" onClick={descartar} disabled={ocupado} className="flex-1 px-3 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-black disabled:opacity-50">Sí, descartar</button>
-            <button type="button" onClick={() => setConfirmando(false)} disabled={ocupado} className="px-3 py-2.5 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200">No</button>
+            <Boton variante="principal" tamano="grande" className="flex-1" type="button" onClick={descartar} disabled={ocupado}>Sí, descartar</Boton>
+            <Boton variante="secundario" tamano="grande" type="button" onClick={() => setConfirmando(false)} disabled={ocupado}>No</Boton>
           </div>
         ) : (
-          <button type="button" onClick={() => setConfirmando(true)} disabled={ocupado} className="flex-1 min-w-[8rem] px-3 py-2.5 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
+          <Boton variante="secundario" tamano="grande" className="flex-1 min-w-[8rem]" type="button" onClick={() => setConfirmando(true)} disabled={ocupado}>
             Descartar
-          </button>
+          </Boton>
         )}
-        <button type="button" onClick={reenviarAviso} disabled={ocupado || avisando} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
+        <Boton variante="secundario" tamano="compacto" className="w-full" type="button" onClick={reenviarAviso} disabled={ocupado || avisando}>
           <Bell className="w-3.5 h-3.5" aria-hidden="true" /> {avisando ? 'Reenviando aviso...' : 'Reenviar aviso a la app del almacén'}
-        </button>
+        </Boton>
       </div>
     </li>
   );
@@ -190,18 +194,18 @@ function FilaReciente({ envio, onReintentar, onReenviarAviso }) {
               {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
             </dl>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={copiar} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600">
+              <Boton variante="secundario" tamano="compacto" type="button" onClick={copiar}>
                 <ClipboardCopy className="w-3 h-3" aria-hidden="true" /> {copiado ? 'Copiado' : 'Copiar resumen'}
-              </button>
+              </Boton>
               {ESTADOS_CON_ALERTA.includes(envio.estado) && (
-                <button type="button" onClick={reenviarAviso} disabled={avisando} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
+                <Boton variante="secundario" tamano="compacto" type="button" onClick={reenviarAviso} disabled={avisando}>
                   <Bell className="w-3 h-3" aria-hidden="true" /> {avisando ? 'Reenviando aviso...' : 'Reenviar aviso'}
-                </button>
+                </Boton>
               )}
               {envio.estado === 'DESCARTADO' && (
-                <button type="button" onClick={reintentar} disabled={ocupado} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[11px] font-black hover:opacity-90 disabled:opacity-50">
+                <Boton variante="principal" tamano="compacto" type="button" onClick={reintentar} disabled={ocupado}>
                   <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reabrir y reintentar'}
-                </button>
+                </Boton>
               )}
             </div>
           </div>
@@ -223,10 +227,11 @@ const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u03
 // Módulo "Envíos al inventario" (solo para los usuarios de utils/accesoInventario): arriba, las órdenes aprobadas que no se
 // pudieron descontar del inventario del almacén, con "Reintentar" (por ejemplo, después de que el almacén ingresó el serial)
 // y "Descartar" (se da por resuelta sin enviar; queda guardada); abajo, la actividad reciente de los envíos.
-export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReenviarAviso, onReintentarTodas, onBuscar, onDescartar, onClose }) {
+export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReenviarAviso, onReintentarTodas, onBuscar, onDescartar, onClose, enPagina = false }) {
   useEffect(() => { onCargar(); }, [onCargar]);
   const [filtro, setFiltro] = useState('TODOS');
   const [texto, setTexto] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [encontrados, setEncontrados] = useState([]);
   const [buscando, setBuscando] = useState(false);
   const [buscado, setBuscado] = useState('');
@@ -254,11 +259,11 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
   const puedeBuscar = Boolean(consulta) && buscado !== texto.trim();
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-50" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={PackageCheck} titulo="ENVÍOS AL INVENTARIO" onClose={onClose} />
+    <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-50" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={PackageCheck} titulo="Envíos al inventario" onClose={onClose} enPagina={enPagina} />
         <div className={`p-4 space-y-5 ${CENTRADO_ESTRECHO}`}>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-snug">
             Cada orden aprobada que instala un equipo o usa material se descuenta del inventario del almacén. Aquí ves lo que no se pudo enviar y lo que se envió.
           </p>
 
@@ -273,21 +278,21 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Se reintentan solas cada 15 minutos.</p>
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">Se reintentan solas cada 15 minutos.</p>
             </section>
           )}
 
           <section aria-labelledby="envios-por-revisar" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-por-revisar" className="text-[10px] font-bold tracking-wide text-zinc-500 dark:text-zinc-400 uppercase">Por revisar ({envios.length})</h3>
+              <h3 id="envios-por-revisar" className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400 uppercase">Por revisar ({envios.length})</h3>
               {porReintentar.length > 1 && (
-                <button type="button" onClick={reintentarTodas} disabled={reintentandoTodas} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[11px] font-black hover:opacity-90 disabled:opacity-50">
+                <Boton variante="principal" tamano="compacto" type="button" onClick={reintentarTodas} disabled={reintentandoTodas}>
                   <RefreshCw className={`w-3 h-3 ${reintentandoTodas ? 'animate-spin' : ''}`} aria-hidden="true" /> {reintentandoTodas ? 'Enviando...' : `Reintentar todas (${porReintentar.length})`}
-                </button>
+                </Boton>
               )}
             </div>
             {envios.length === 0 ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700">No hay órdenes pendientes de revisar.</p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-4 rounded-xl border border-dashed border-zinc-400 dark:border-zinc-700">No hay órdenes pendientes de revisar.</p>
             ) : (
               <ul className="space-y-2.5">
                 {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} onDescartar={onDescartar} />)}
@@ -297,35 +302,41 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
 
           <section aria-labelledby="envios-recientes" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-recientes" className="text-[10px] font-bold tracking-wide text-zinc-500 dark:text-zinc-400 uppercase">Actividad reciente</h3>
-              <button type="button" onClick={onActualizar} disabled={cargando} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 disabled:opacity-50">
+              <h3 id="envios-recientes" className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400 uppercase">Actividad reciente</h3>
+              <Boton variante="secundario" tamano="compacto" type="button" onClick={onActualizar} disabled={cargando}>
                 <RefreshCw className={`w-3 h-3 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar
-              </button>
+              </Boton>
             </div>
 
-            <label className="relative block">
-              <span className="sr-only">Buscar por código, cliente, serial o técnico</span>
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
-              <input
-                type="search"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                placeholder="Código, cliente, serial o técnico"
-                className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-red-600"
-              />
-              <BotonLimpiarBusqueda valor={texto} onLimpiar={() => setTexto('')} />
-            </label>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
-              {FILTROS.map((f) => (
-                <button key={f.clave} type="button" onClick={() => setFiltro(f.clave)} aria-pressed={filtro === f.clave}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${filtro === f.clave ? 'bg-red-600 border-red-600 text-white' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-red-600'}`}>
-                  {f.etiqueta}
-                </button>
-              ))}
+            <div className="flex gap-2">
+              <label className="relative block flex-1 min-w-0">
+                <span className="sr-only">Buscar por código, cliente, serial o técnico</span>
+                <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={texto}
+                  onChange={(e) => setTexto(e.target.value)}
+                  placeholder="Código, cliente, serial o técnico"
+                  className={BUSCADOR}
+                />
+                <BotonLimpiarBusqueda valor={texto} onLimpiar={() => setTexto('')} />
+              </label>
+              <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={(filtro !== 'TODOS' ? 1 : 0)} />
             </div>
+            <Colapsable>{filtersOpen && (
+              <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
+                {FILTROS.map((f) => (
+                  <ChipFiltro activo={filtro === f.clave} tamano="compacto" key={f.clave} type="button" onClick={() => setFiltro(f.clave)}>
+                    {f.etiqueta}
+                  </ChipFiltro>
+                ))}
+              </div>
+              </div>
+            )}</Colapsable>
 
             {visibles.length === 0 ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-4">
                 {recientes.length === 0 && !consulta && filtro === 'TODOS' ? 'Todavía no hay envíos registrados.' : 'Ningún envío coincide con lo cargado.'}
               </p>
             ) : (
@@ -335,14 +346,14 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
             )}
 
             {puedeBuscar && (
-              <button type="button" onClick={buscarEnHistorial} disabled={buscando} className="w-full px-3 py-2.5 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
+              <Boton variante="secundario" tamano="grande" className="w-full" type="button" onClick={buscarEnHistorial} disabled={buscando}>
                 {buscando ? 'Buscando...' : `Buscar "${texto.trim()}" como código o serial en todo el historial`}
-              </button>
+              </Boton>
             )}
             {hayMas && (
-              <button type="button" onClick={onCargarMas} disabled={cargando} className="w-full px-3 py-2.5 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50">
+              <Boton variante="secundario" tamano="grande" className="w-full" type="button" onClick={onCargarMas} disabled={cargando}>
                 {cargando && <Spinner />}{cargando ? 'Cargando...' : 'Cargar más'}
-              </button>
+              </Boton>
             )}
           </section>
         </div>

@@ -5,15 +5,19 @@ import { stripEmojis } from '../../../utils/sanitizeInput';
 import Cifras from './Cifras';
 import TablaReporte from './TablaReporte';
 import Spinner from '../../Spinner';
+import CampoFecha from '../../CampoFecha';
+import { CAMPO } from '../../estilos';
+import Boton from '../../Boton';
 
-const CAMPO = 'w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600';
-const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400';
+const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
 
 // La hoja de VN y TA: la única del Registro de estadísticas que se llena a mano (ver utils/registroVnTa). Arriba el formulario para agregar una fila
 // (o corregir una), debajo las cifras y la lista del periodo con sus botones de editar y borrar.
 //   registros: las filas del periodo (useRegistroVnTa), ya filtradas aquí por el técnico elegido arriba
 //   puedeBorrar(registro): true si el usuario puede borrarla (un administrador o quien la registró)
 //   soloLectura: sin formulario ni botones (Finanzas la ve pero no la llena)
+// El técnico es el que apoyó el trabajo y es a quien Finanzas le paga (cada tipo con su precio); sin técnico lo hizo infraestructura sola y no se paga a nadie.
+// Una fila que Finanzas ya pagó (pagoId) no se edita ni se borra: ya cuenta ese técnico y esa fecha.
 export default function VnTaView({ registros, cargando, error, agregar, actualizar, eliminar, tecnicos, hoy, tecnico, puedeBorrar, soloLectura = false }) {
   const vacio = { trabajo: 'VN', tecnico: '', fecha: hoy, observacion: '' };
   const [form, setForm] = useState(vacio);
@@ -57,15 +61,17 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
   const filas = visibles.map((r) => soloLectura ? filaVnTa(r) : [
     ...filaVnTa(r),
     <span key={r.id} className="inline-flex items-center gap-1 whitespace-nowrap">
-      {borrandoId === r.id ? (
+      {r.pagoId ? (
+        <span title="Finanzas ya la pagó: no se puede editar ni borrar" className="px-2 py-1 rounded bg-emerald-700 text-white text-[11px] font-bold">Pagada</span>
+      ) : borrandoId === r.id ? (
         <>
-          <button type="button" onClick={() => borrar(r.id)} className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold">Sí, borrar</button>
-          <button type="button" onClick={() => setBorrandoId(null)} className="px-2 py-1 rounded border border-zinc-300 dark:border-zinc-700 text-[11px] font-bold">No</button>
+          <Boton variante="principal" tamano="compacto" type="button" onClick={() => borrar(r.id)}>Sí, borrar</Boton>
+          <Boton variante="secundario" tamano="compacto" type="button" onClick={() => setBorrandoId(null)}>No</Boton>
         </>
       ) : (
         <>
-          <button type="button" onClick={() => editar(r)} aria-label={`Editar ${r.codigo}`} title="Editar" className="p-1.5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"><Pencil className="w-3.5 h-3.5" aria-hidden="true" /></button>
-          {puedeBorrar(r) && <button type="button" onClick={() => setBorrandoId(r.id)} aria-label={`Borrar ${r.codigo}`} title="Borrar" className="p-1.5 rounded bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50"><Trash2 className="w-3.5 h-3.5" aria-hidden="true" /></button>}
+          <Boton variante="secundario" tamano="compacto" className="px-2" type="button" onClick={() => editar(r)} aria-label={`Editar ${r.codigo}`} title="Editar"><Pencil className="w-3.5 h-3.5" aria-hidden="true" /></Boton>
+          {puedeBorrar(r) && <Boton variante="peligro" tamano="compacto" className="px-2" type="button" onClick={() => setBorrandoId(r.id)} aria-label={`Borrar ${r.codigo}`} title="Borrar"><Trash2 className="w-3.5 h-3.5" aria-hidden="true" /></Boton>}
         </>
       )}
     </span>,
@@ -83,7 +89,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="vnta-tecnico" className={ETIQUETA}>Técnico <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-tecnico" className={ETIQUETA}>Técnico que apoyó <span className="font-normal normal-case">(opcional)</span></label>
             <select id="vnta-tecnico" value={form.tecnico} onChange={(e) => cambiar('tecnico', e.target.value)} className={CAMPO}>
               <option value="">Sin técnico</option>
               {tecnicos.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
@@ -91,7 +97,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
           </div>
           <div className="space-y-1">
             <label htmlFor="vnta-fecha" className={ETIQUETA}>Fecha</label>
-            <input id="vnta-fecha" type="date" value={form.fecha} onChange={(e) => cambiar('fecha', e.target.value)} className={CAMPO} />
+            <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase="w-full h-10 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-lg px-3 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600" />
           </div>
           <div className="space-y-1 sm:col-span-2 lg:col-span-4">
             <label htmlFor="vnta-observacion" className={ETIQUETA}>Observación <span className="font-normal normal-case">(opcional)</span></label>
@@ -100,17 +106,17 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         </div>
         {errorForm && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-2">{errorForm}</p>}
         <div className="flex flex-wrap items-center gap-2 mt-3">
-          <button type="submit" disabled={guardando} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold disabled:opacity-60">
+          <Boton variante="principal" tamano="normal" type="submit" disabled={guardando}>
             {guardando ? <Spinner /> : <Plus className="w-4 h-4" aria-hidden="true" />}{editandoId ? 'Guardar cambios' : 'Agregar'}
-          </button>
-          {editandoId && <button type="button" onClick={limpiar} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-xs font-bold"><X className="w-4 h-4" aria-hidden="true" /> Cancelar</button>}
-          {!editandoId && <p className="text-[11px] text-zinc-500">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador.</p>}
+          </Boton>
+          {editandoId && <Boton variante="secundario" tamano="normal" type="button" onClick={limpiar}><X className="w-4 h-4" aria-hidden="true" /> Cancelar</Boton>}
+          {!editandoId && <p className="text-[11px] text-zinc-600 dark:text-zinc-500">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
         </div>
       </form>}
 
       {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{error}</p>}
       <Cifras items={cifrasVnTa(estadistica)} />
-      <p className="text-[11px] text-zinc-500 -mt-1 mb-4">{NOTA_VNTA}</p>
+      <p className="text-[11px] text-zinc-600 dark:text-zinc-500 -mt-1 mb-4">{NOTA_VNTA}</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">
         <TablaReporte titulo="Estadística de VN y TA" columnas={columnasEstadisticaVnTa()} filas={filasEstadisticaVnTa(estadistica)} />
@@ -123,7 +129,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         filas={filas}
         vacio="Ningún registro de VN o TA en este periodo."
       />
-      <p className="text-[11px] text-zinc-500 -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
+      <p className="text-[11px] text-zinc-600 dark:text-zinc-500 -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
     </div>
   );
 }

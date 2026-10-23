@@ -137,7 +137,9 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
     const ticketRef = (id) => doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id.toString());
     const ids = seleccionados.map(t => t.id);
     // Los totales del mes de ventas se suman en el mismo lote: o se archivó y se contó, o ninguna de las dos (ver totalesMes).
-    const totales = Object.entries(incrementosDeCierre(seleccionados, newReport.createdAt));
+    // Una orden sin fecha de finalización cuenta en el mes del día que se cierra (el elegido), no en el de hoy: un cierre del 30/09 hecho el 01/10 es de septiembre.
+    const diaCierreMs = dateInput ? Math.min(Date.parse(`${dateInput}T12:00:00-04:00`), newReport.createdAt) : newReport.createdAt;
+    const totales = Object.entries(incrementosDeCierre(seleccionados, newReport.createdAt, Number.isFinite(diaCierreMs) ? diaCierreMs : newReport.createdAt));
     const enElPrimero = MAX_ESCRITURAS_LOTE - 1 - totales.length;
     const primerLote = writeBatch(db);
     primerLote.set(doc(db, 'artifacts', appId, 'public', 'data', 'reports', reportId), newReport);

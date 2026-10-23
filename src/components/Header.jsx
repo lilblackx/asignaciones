@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, Cable, ClipboardList, Coins, History, Landmark, LogOut, MoreVertical, Moon, PackageCheck, Plus, ShieldCheck, Sun, Users } from 'lucide-react';
+import { BarChart, ClipboardList, History, Home, Landmark, LogOut, Menu, MoreVertical, Moon, PackageCheck, Plus, Sun } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
 
@@ -13,15 +13,12 @@ export default function Header({
   onOpenReports,
   onOpenReportes,
   onOpenHistory,
-  onOpenTechnicians,
-  onOpenUsers,
-  onOpenTasa,
-  onOpenMateriales,
   veInventario = false,
   alertasInventario = 0,
   onOpenInventario,
   onOpenFormasPago,
   onOpenCreate,
+  onOpenSidebar,
   canCerrar,
   handleLogout,
   preFinalizadoCount = 0,
@@ -32,7 +29,7 @@ export default function Header({
 }) {
   const isAdmin = role === ROLES.ADMIN;
   const isTecnico = role === ROLES.TECNICO;
-  const showMenu = isAdmin || canCerrar || veInventario;
+  const showMenu = !isAdmin && (canCerrar || veInventario);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -58,10 +55,16 @@ export default function Header({
   };
 
   return (
-    <header className="bg-black text-white shadow-md sticky top-0 z-10 border-b-2 border-red-600">
-      <div className="px-4 py-3 flex justify-between items-center max-w-[1400px] mx-auto w-full">
+    <header className="bg-black/80 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b-2 border-red-600 lg:h-[62px]">
+      <div className="px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
-          <h1 className="text-sm min-[400px]:text-base sm:text-xl font-black tracking-wide">
+          {isAdmin && (
+            <button onClick={onOpenSidebar} aria-label="Abrir menú" title="Menú" className="relative p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
+              <Menu className="w-4 h-4" aria-hidden="true" />
+              {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black" aria-hidden="true" />}
+            </button>
+          )}
+          <h1 className={`text-sm min-[400px]:text-base sm:text-xl font-black tracking-wide ${isAdmin ? 'lg:hidden' : ''}`}>
             <button
               type="button"
               onClick={onGoHome}
@@ -71,16 +74,27 @@ export default function Header({
               ASIGNACIONES
             </button>
           </h1>
+          {/* El administrador en PC no ve "ASIGNACIONES" (está en el menú lateral): el encabezado lleva el nombre de la pantalla, como los demás módulos. */}
+          {isAdmin && (
+            <h1 className="hidden lg:flex items-center gap-2 text-xl font-black tracking-wide min-w-0">
+              <Home className="w-5 h-5 shrink-0 text-red-500" aria-hidden="true" /> <span className="truncate">Panel principal</span>
+            </h1>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-3">
-          <div className="hidden sm:flex flex-col items-end leading-tight">
-            <span className="text-sm font-bold leading-none text-red-500">{currentUserName || currentUser}</span>
-            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">{role}</span>
-          </div>
+          {/* El administrador tiene su nombre, el tema y cerrar sesión en el pie del menú lateral. */}
+          {!isAdmin && (
+            <div className="hidden sm:flex flex-col items-end leading-tight">
+              <span className="text-sm font-bold leading-none text-red-500">{currentUserName || currentUser}</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{role}</span>
+            </div>
+          )}
 
-          <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
-            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          {!isAdmin && (
+            <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          )}
 
           {(canEditTickets || isTecnico) && notifications && (
             <NotificationBell
@@ -110,7 +124,8 @@ export default function Header({
           )}
 
           {/* Un solo menú desplegable (mismo en mobile y desktop) para no saturar
-              la barra de íconos sueltos: Reportes + herramientas de ADMIN. */}
+              la barra de íconos sueltos: Cierre, Reportes e Historial de quien puede cerrar. El administrador
+              tiene todo en el menú lateral. */}
           {showMenu && (
             <div className="relative" ref={menuRef}>
               <button
@@ -125,7 +140,7 @@ export default function Header({
               </button>
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-20">
-                  {(isAdmin || canCerrar) && (
+                  {canCerrar && (
                     <>
                       <button onClick={runAndClose(onOpenReports)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors">
                         <BarChart className="w-4 h-4"aria-hidden="true" /> Cierre
@@ -135,22 +150,6 @@ export default function Header({
                       </button>
                       <button onClick={runAndClose(onOpenHistory)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
                         <History className="w-4 h-4"aria-hidden="true" /> Historial
-                      </button>
-                    </>
-                  )}
-                  {isAdmin && (
-                    <>
-                      <button onClick={runAndClose(onOpenTechnicians)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
-                        <Users className="w-4 h-4" aria-hidden="true" /> Técnicos
-                      </button>
-                      <button onClick={runAndClose(onOpenUsers)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
-                        <ShieldCheck className="w-4 h-4" aria-hidden="true" /> Usuarios
-                      </button>
-                      <button onClick={runAndClose(onOpenTasa)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
-                        <Coins className="w-4 h-4"aria-hidden="true" /> Tasa y pagos
-                      </button>
-                      <button onClick={runAndClose(onOpenMateriales)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
-                        <Cable className="w-4 h-4" aria-hidden="true" /> Materiales
                       </button>
                     </>
                   )}
@@ -171,11 +170,15 @@ export default function Header({
             </button>
           )}
 
-          <div className="w-px h-8 bg-zinc-800 hidden sm:block mx-1"></div>
+          {!isAdmin && (
+            <>
+              <div className="w-px h-8 bg-zinc-800 hidden sm:block mx-1"></div>
 
-          <button onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg flex items-center transition-colors border border-zinc-700">
-            <LogOut className="w-4 h-4" />
-          </button>
+              <button onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg flex items-center transition-colors border border-zinc-700">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

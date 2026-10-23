@@ -17,7 +17,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
     <div className="flex items-start gap-2.5">
       <Icon className="w-4 h-4 mt-0.5 text-zinc-400 shrink-0" aria-hidden="true" />
       <div className="min-w-0">
-        <p className="text-[10px] font-bold tracking-wide text-zinc-500 dark:text-zinc-400">{etiqueta}</p>
+        <p className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400">{etiqueta}</p>
         <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{valor}</p>
       </div>
     </div>
@@ -51,7 +51,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
         aria-labelledby="cobro-titulo"
         className="w-full max-w-2xl h-[calc(100dvh-2rem)] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border-2 border-emerald-500 flex flex-col"
       >
-        <div className="bg-emerald-600 text-white px-5 py-4 flex items-center gap-3">
+        <div className="bg-emerald-700 text-white px-5 py-4 flex items-center gap-3">
           <IconoEstado className="w-7 h-7 shrink-0" aria-hidden="true" />
           <div className="min-w-0">
             <h2 id="cobro-titulo" className="text-lg sm:text-xl font-black leading-tight">{preFinalizada ? 'Orden pre-finalizada' : 'Orden finalizada'}</h2>
@@ -79,7 +79,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
               onClick={() => copiar('monto', textoMonto(ticket.cobroBs, moneda), 'Monto copiado.')}
               className="mt-3 ml-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1 border"
               tono="bg-white dark:bg-zinc-900 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
-              tonoCopiado="bg-emerald-600 border-emerald-600 text-white"
+              tonoCopiado="bg-emerald-700 border-emerald-700 text-white"
               iconoClase="w-3.5 h-3.5"
             >
               Copiar monto
@@ -101,7 +101,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
             <Colapsable>
               {pagosAbierto && (
                 formas.length === 0 ? (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Aún no se han cargado las formas de pago. Avisa al administrador.</p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">Aún no se han cargado las formas de pago. Avisa al administrador.</p>
                 ) : (
                   <div className="space-y-3">
                     {ticket.cobroBs && (
@@ -110,7 +110,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
                         onClick={() => copiar('mensaje', textoCobroParaCliente(ticket.cobroBs, formas, moneda), 'Monto y formas de pago copiados.')}
                         className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-md"
                         tono="bg-emerald-700 hover:bg-emerald-800 text-white"
-                        tonoCopiado="bg-emerald-600 text-white"
+                        tonoCopiado="bg-emerald-700 text-white"
                       >
                         Copiar monto y formas de pago
                       </BotonCopiar>
@@ -141,7 +141,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-colors"
+            className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-md transition-colors"
           >
             {restantes > 0 ? `Entendido (${restantes} más por ver)` : 'Entendido'}
           </button>

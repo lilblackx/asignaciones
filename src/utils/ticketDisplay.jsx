@@ -75,7 +75,7 @@ export const getEnvioInfo = (ticket) => {
 
 export const getFechaStyles =(fechaStr, estado) => {
   if (estado === 'FINALIZADO' || estado === 'CANCELADO') {
-    return "text-zinc-500 dark:text-zinc-400 font-medium";
+    return "text-zinc-600 dark:text-zinc-400 font-medium";
   }
   try {
     const [day, month, year] = fechaStr.split('/');
@@ -91,7 +91,7 @@ export const getFechaStyles =(fechaStr, estado) => {
   } catch {
     // fechaStr malformado (ticket viejo/manual): no resaltar como atrasado.
   }
-  return "text-zinc-500 dark:text-zinc-400 font-medium";
+  return "text-zinc-600 dark:text-zinc-400 font-medium";
 };
 
 export const getCreadoColor = (creado) => {

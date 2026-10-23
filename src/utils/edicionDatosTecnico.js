@@ -3,7 +3,7 @@
 //   - Instalación: serial, VLAN, NAP y puerto, metraje del drop, posteadura, puertos disponibles y conectores usados
 //     (se guardan en `ticket.instalacion`; la NAP y el puerto también van juntos en `ticket.nap`).
 //   - Otras órdenes: el tipo de visita y sus datos (metros y conectores del recableado, cantidades de una visita de conector,
-//     serial del equipo nuevo de un cambio de equipo).
+//     tipo y serial del equipo nuevo de un cambio de equipo).
 // El formulario trabaja con texto, como se escribe (ver formularioDatosTecnico); validarDatosTecnico lo convierte a lo que se guarda.
 //
 // Qué se exige: lo que se escribe debe ser válido y lo que la orden ya tenía no se puede dejar vacío. Lo que la orden nunca
@@ -13,7 +13,7 @@ import { napSinDato, separarNapPuerto } from './napPuerto.js';
 import { esInstalacion, limpiarPostes, napConPuerto, validarInstalacion } from './instalacion.js';
 import { errorConectoresInstalacion, normalizarConectoresInstalacion, parseConectoresInstalacion, textoConectoresInstalacion } from './conectoresInstalacion.js';
 import {
-  TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, esCambioEquipo, etiquetaTipoVisita,
+  TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, errorTipoEquipoNuevo, esCambioEquipo, etiquetaTipoVisita,
   llevaConectores, parseCantidadesConector, parseMetros, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from './tipoVisita.js';
 
@@ -50,6 +50,7 @@ export function formularioDatosTecnico(ticket) {
     cantVerde: numero(cantidades.verde),
     cantAzul: numero(cantidades.azul),
     serialEquipo: texto(ticket?.serialEquipo),
+    tipoEquipoNuevo: texto(ticket?.tipoEquipoNuevo),
   };
 }
 
@@ -106,7 +107,7 @@ function validarInstalacionEditada(ticket, f) {
 }
 
 const ORDEN_VISITA = [
-  { clave: 'metros', id: 'pf-metros' }, { clave: 'cantidades', id: (e) => ID_CONECTOR_VISITA[e.campo === 'azul' ? 'azul' : 'verde'] }, { clave: 'serialEquipo', id: 'pf-serial-equipo' },
+  { clave: 'metros', id: 'pf-metros' }, { clave: 'cantidades', id: (e) => ID_CONECTOR_VISITA[e.campo === 'azul' ? 'azul' : 'verde'] }, { clave: 'tipoEquipoNuevo', id: 'pf-tipo-equipo' }, { clave: 'serialEquipo', id: 'pf-serial-equipo' },
 ];
 
 function validarVisitaEditada(ticket, f) {
@@ -118,6 +119,9 @@ function validarVisitaEditada(ticket, f) {
   if (cantidades.error) errores.cantidades = { campo: cantidades.campo, mensaje: cantidades.error };
   const serialEquipo = esCambioEquipo(tipo) ? parseSerialEquipo(f.serialEquipo) : null;
   if (serialEquipo?.error) errores.serialEquipo = serialEquipo.error;
+  // El tipo del equipo nuevo es obligatorio, salvo en una orden vieja que ya era cambio de equipo y se arregló sin él (no se bloquea editarla por otra cosa).
+  const errorTipoEquipo = errorTipoEquipoNuevo(tipo, f.tipoEquipoNuevo, !(ticket?.tipoVisita === TIPO_CAMBIO_EQUIPO && !ticket?.tipoEquipoNuevo));
+  if (errorTipoEquipo) errores.tipoEquipoNuevo = errorTipoEquipo;
 
   // Igual que al pre-finalizar: los campos de metros, conectores y serial solo se escriben si el tipo los lleva o si hay
   // que borrar los de un tipo anterior; las demás órdenes no suman campos vacíos.
@@ -126,7 +130,7 @@ function validarVisitaEditada(ticket, f) {
   return resultado(errores, ORDEN_VISITA, {
     tipoVisita: tipo,
     ...(conConectores ? datosConectores(tipo, { metros: metros?.valor, conectorExterno: f.colorExterno, conectorInterno: f.colorInterno, conectores: cantidades.valor }) : {}),
-    ...(conSerial ? datosSerialEquipo(tipo, f.serialEquipo) : {}),
+    ...(conSerial ? datosSerialEquipo(tipo, f.serialEquipo, f.tipoEquipoNuevo) : {}),
   });
 }
 
@@ -158,6 +162,7 @@ export function cambiosDatosTecnico(antes, despues) {
   const conectorAntes = textoConectorVisita(antes);
   const conectorDespues = textoConectorVisita(despues);
   si(conectorAntes !== conectorDespues && conectorDespues !== '', conectorDespues);
+  si(texto(antes?.tipoEquipoNuevo) !== texto(despues?.tipoEquipoNuevo), `Tipo de equipo nuevo: ${despues?.tipoEquipoNuevo || 'Vacío'}`);
   si(texto(antes?.serialEquipo) !== texto(despues?.serialEquipo), `Serial del equipo nuevo: ${despues?.serialEquipo || 'Vacío'}`);
   return cambios;
 }

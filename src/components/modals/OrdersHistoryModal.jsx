@@ -1,15 +1,21 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, History, Search } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, FileText, History, Search } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../../constants';
 import { motivoCancelacion } from '../../utils/cancelacion';
+import { fechaDeOrden } from '../../utils/fechaOrden';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
-import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
+import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import HistorialTimeline from '../HistorialTimeline';
+import CampoFecha from '../CampoFecha';
 import SelectMenu from '../SelectMenu';
 import PlantillaFinalModal from './PlantillaFinalModal';
 import Colapsable from '../Colapsable';
+import BotonExportar from '../BotonExportar';
+import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
+import BotonFiltros from '../BotonFiltros';
+import { BUSCADOR, CAMPO_FECHA, SELECTOR } from '../estilos';
 
 const PAGE_SIZE = 25;
 const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'];
@@ -21,15 +27,17 @@ function parseFecha(fecha) {
   return new Date(y, m - 1, d).getTime();
 }
 
+// La fecha con la que se filtra Desde/Hasta: la misma de todos los módulos (utils/fechaOrden): la de finalización o cancelación; una orden abierta,
+// la de creación. Las archivadas sin esa fecha usan el día del cierre que las guardó.
+const fechaDeFiltro = (t, cierreMs = 0, archivadoMs = 0) => fechaDeOrden(t, { diaCierreMs: cierreMs, ...(archivadoMs ? { ahoraMs: archivadoMs } : {}) }) || parseFecha(t.fecha);
+
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-const selectClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 pl-2 pr-7 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500';
-const inputClass = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-2 py-2 rounded-lg text-xs text-zinc-900 dark:text-white outline-none focus:border-red-500 [color-scheme:light] dark:[color-scheme:dark]';
 
 // `puedeVerPlantilla` (solo ADMIN y usuarios con permiso de cierre, los que llegan a este historial) muestra en cada orden con
 // plantilla (de cualquier trabajo y estado) el botón "Ver plantilla"; `plantillaDe(orden)` arma el texto (vacío si no hay) y
 // `onCopy(texto, mensaje)` copia y avisa con el toast.
-export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose }) {
+export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose, enPagina = false }) {
   const [search, setSearch] = useState('');
   const [estado, setEstado] = useState('');
   const [tipo, setTipo] = useState('');
@@ -39,13 +47,14 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   const [page, setPage] = useState(0);
   const [expandedKey, setExpandedKey] = useState(null);
   const [plantillaAbierta, setPlantillaAbierta] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const allOrders = useMemo(() => {
     const seen = new Set();
     const list = [];
     tickets.forEach(t => {
       seen.add(t.id);
-      list.push({ ...t, _key: `act-${t.id}`, _origen: 'Activa', _ts: t.createdAt || parseFecha(t.fecha) });
+      list.push({ ...t, _key: `act-${t.id}`, _origen: 'Activa', _ts: t.createdAt || parseFecha(t.fecha), _tsFiltro: fechaDeFiltro(t) });
     });
     reports.forEach(rep => {
       (rep.ticketsDetalle || []).forEach(t => {
@@ -55,7 +64,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           ...t,
           _key: `${rep.id}-${t.id}`,
           _origen: `${rep.tipoReporte === 'CANCELADOS' || (rep.canceladas !== undefined && t.estado === 'CANCELADO') ? 'Cancelados' : 'Cierre'} ${rep.fechaCierre}`,
-          _ts: t.createdAt || parseFecha(t.fecha)
+          _ts: t.createdAt || parseFecha(t.fecha),
+          _tsFiltro: fechaDeFiltro(t, parseFecha(rep.fechaCierre) + 12 * 3600000, rep.createdAt)
         });
       });
     });
@@ -76,8 +86,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
       if (estado && o.estado !== estado) return false;
       if (tipo && o.tipoTrabajo !== tipo) return false;
       if (tecnico && o.tecnico !== tecnico) return false;
-      if (from !== null && o._ts < from) return false;
-      if (to !== null && o._ts > to) return false;
+      if (from !== null && o._tsFiltro < from) return false;
+      if (to !== null && o._tsFiltro > to) return false;
       if (term) {
         const haystack = norm([o.codigo, o.nombre, o.cedula, o.direccion, o.tecnico, o.telefono, o.falla].join(' '));
         if (!haystack.includes(term)) return false;
@@ -87,6 +97,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   }, [allOrders, search, estado, tipo, tecnico, desde, hasta]);
 
   const hasFilters = search || estado || tipo || tecnico || desde || hasta;
+  const activeFiltersCount = [estado, tipo, tecnico, desde, hasta].filter(Boolean).length;
   const describirFiltros = () => [
     search && `búsqueda "${search.trim()}"`,
     estado && `estado ${estado}`,
@@ -116,48 +127,52 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   return (
     <>
     {/* Con la plantilla abierta, Escape cierra solo la plantilla y no el historial. */}
-    <Modal onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
-        <EncabezadoModulo Icono={History} titulo="HISTORIAL DE ÓRDENES" onClose={onClose} />
+    <Modal enPagina={enPagina} onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+        <EncabezadoModulo Icono={History} titulo="Historial de órdenes" onClose={onClose} enPagina={enPagina} />
 
-        <div className={`px-6 py-4 shrink-0 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
-            <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
-            <input id="history-search" type="text" value={search} onChange={withReset(setSearch)} placeholder="Buscar por código, nombre, cédula, dirección, teléfono o técnico..." className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl focus:border-red-500 outline-none text-sm" />
+        <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+              <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
+              <input id="history-search" type="search" value={search} onChange={withReset(setSearch)} placeholder="Buscar por código, nombre, cédula, dirección, teléfono o técnico..." className={BUSCADOR} />
+              <BotonLimpiarBusqueda valor={search} onLimpiar={() => { setSearch(''); setPage(0); setExpandedKey(null); }} />
+            </div>
+            <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={activeFiltersCount} />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 [&>*]:min-w-0">
-            <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
-            <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
-            <SelectMenu ariaLabel="Técnico" value={tecnico} onChange={withResetValue(setTecnico)} items={tecnicoItems} className={selectClass} chevronClassName="w-3 h-3 right-2" />
-            <input type="date" aria-label="Desde" title="Desde" value={desde} onChange={withReset(setDesde)} className={inputClass} />
-            <input type="date" aria-label="Hasta" title="Hasta" value={hasta} onChange={withReset(setHasta)} className={inputClass} />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+
+          <Colapsable>{filtersOpen && (
+            <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 [&>*]:min-w-0">
+                <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={SELECTOR} />
+                <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={SELECTOR} />
+                <SelectMenu ariaLabel="Técnico" value={tecnico} onChange={withResetValue(setTecnico)} items={tecnicoItems} className={SELECTOR} />
+                <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={CAMPO_FECHA} />
+                <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={CAMPO_FECHA} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+                <BotonExportar
+                  onClick={() => exportOrdersToCsv(filtered, describirFiltros())}
+                  disabled={filtered.length === 0}
+                  title="Descarga las órdenes que ves con los filtros aplicados"
+                  etiqueta="Exportar CSV"
+                />
+                <BotonExportar
+                  onClick={() => exportResumenTecnicosToCsv(filtered, describirFiltros())}
+                  disabled={filtered.length === 0}
+                  title="Un renglón por técnico: órdenes, finalizadas, canceladas y potencia promedio"
+                  etiqueta="Resumen por técnico"
+                />
+              </div>
+            </div>
+          )}</Colapsable>
+
+          <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
             <span>
               {filtered.length} {filtered.length === 1 ? 'orden' : 'órdenes'}
             </span>
-            <div className="flex flex-wrap items-center gap-2">
-              {hasFilters && <button type="button" onClick={clearFilters} className="font-bold underline hover:text-zinc-800 dark:hover:text-zinc-200">Limpiar filtros</button>}
-              <button
-                type="button"
-                onClick={() => exportOrdersToCsv(filtered, describirFiltros())}
-                disabled={filtered.length === 0}
-                title="Descarga las órdenes que ves con los filtros aplicados"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar CSV
-              </button>
-              <button
-                type="button"
-                onClick={() => exportResumenTecnicosToCsv(filtered, describirFiltros())}
-                disabled={filtered.length === 0}
-                title="Un renglón por técnico: órdenes, finalizadas, canceladas y potencia promedio"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" aria-hidden="true" /> Resumen por técnico
-              </button>
-            </div>
+            {hasFilters && <button type="button" onClick={clearFilters} className="font-bold underline hover:text-zinc-800 dark:hover:text-zinc-200">Limpiar filtros</button>}
           </div>
           {hasMoreReports && (
             <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
@@ -169,7 +184,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           )}
         </div>
 
-        <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-zinc-50 dark:bg-zinc-950 space-y-3 ${CENTRADO_AMPLIO}`}>
+        <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-fondo space-y-3 ${CENTRADO_AMPLIO}`}>
           {shown.map(o => {
             const isOpen = expandedKey === o._key;
             return (
@@ -179,10 +194,10 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-red-600 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
                       <span className={`px-2 py-0.5 text-[9px] font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
-                      <span className="text-[10px] font-bold text-zinc-500">{o.fecha}</span>
+                      <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500">{o.fecha}</span>
                     </div>
                     <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight mt-1 truncate">{o.nombre}</h5>
-                    <p className="text-xs text-zinc-500 mt-0.5">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-0.5">
                       <span className="font-bold text-red-600 dark:text-red-400">{o.tipoTrabajo}</span>
                       {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
                     </p>
@@ -214,7 +229,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                           <button
                             type="button"
                             onClick={() => setPlantillaAbierta(o)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                           >
                             <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
                           </button>
@@ -235,13 +250,13 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           })}
 
           {filtered.length === 0 && (
-            <div className="text-center text-zinc-500 py-10 text-sm">No se encontraron órdenes.</div>
+            <div className="text-center text-zinc-600 dark:text-zinc-500 py-10 text-sm">No se encontraron órdenes.</div>
           )}
 
         </div>
 
         {totalPages > 1 && (
-          <div className="px-6 py-3 shrink-0 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
+          <div className="px-6 py-3 shrink-0 border-t border-zinc-300 dark:border-zinc-800 bg-fondo flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
             <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Anterior
             </button>

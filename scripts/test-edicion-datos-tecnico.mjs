@@ -102,6 +102,16 @@ r = validarDatosTecnico(recableado, { ...fr, tipoVisita: 'DROP_ATENUADO' });
 check('pasar de recableado a drop atenuado borra los metros y los conectores', [r.error, r.datos.tipoVisita, r.datos.metrosCable, r.datos.conectorExterno, r.datos.conectorInterno, r.datos.conectoresUsados], [false, 'DROP_ATENUADO', null, '', '', null]);
 r = validarDatosTecnico(cambioEquipo, { ...fc, tipoVisita: '' });
 check('pasar de cambio de equipo a ninguno borra el serial', [r.error, r.datos.tipoVisita, r.datos.serialEquipo], [false, '', '']);
+// Tipo del equipo nuevo (MRTV, MTV, MR o SM): obligatorio al convertir una orden en cambio de equipo; la orden vieja sin tipo se puede seguir editando.
+r = validarDatosTecnico(visita, { ...formularioDatosTecnico(visita), tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'ZTEG00112233' });
+check('pasar una orden a cambio de equipo exige el tipo del equipo nuevo', [r.error, r.errores.tipoEquipoNuevo, r.primerCampo], [true, 'Elige el tipo del equipo nuevo.', 'pf-tipo-equipo']);
+r = validarDatosTecnico(visita, { ...formularioDatosTecnico(visita), tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'ZTEG00112233', tipoEquipoNuevo: 'SM' });
+check('con el tipo elegido se guarda junto al serial', [r.error, r.datos.serialEquipo, r.datos.tipoEquipoNuevo], [false, 'ZTEG00112233', 'SM']);
+r = validarDatosTecnico(cambioEquipo, formularioDatosTecnico(cambioEquipo));
+check('una orden vieja de cambio de equipo sin tipo se edita sin obligar a ponerlo', [r.error, r.datos?.tipoEquipoNuevo], [false, '']);
+r = validarDatosTecnico({ ...cambioEquipo, tipoEquipoNuevo: 'MR' }, { ...formularioDatosTecnico({ ...cambioEquipo, tipoEquipoNuevo: 'MR' }), tipoEquipoNuevo: '' });
+check('si la orden ya tenía el tipo, no se puede dejar vacío', [r.error, r.errores.tipoEquipoNuevo], [true, 'Elige el tipo del equipo nuevo.']);
+check('el historial dice el tipo nuevo del equipo', cambiosDatosTecnico({ ...cambioEquipo, tipoEquipoNuevo: 'MR' }, { ...cambioEquipo, tipoEquipoNuevo: 'SM' }), ['Tipo de equipo nuevo: SM']);
 r = validarDatosTecnico(visita, { ...formularioDatosTecnico(visita), tipoVisita: 'DROP_ATENUADO' });
 check('una orden sin datos de visita no suma campos vacíos al elegir un tipo sin datos', Object.keys(r.datos), ['tipoVisita']);
 

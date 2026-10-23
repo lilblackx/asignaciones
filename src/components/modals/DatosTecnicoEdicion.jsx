@@ -7,16 +7,16 @@ import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEAD
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
 
-const claseEtiqueta = 'text-[10px] font-bold text-zinc-500 dark:text-zinc-400 ml-1';
+const claseEtiqueta = 'text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 const claseInput = (error, correcto = false) =>
-  `w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-lg focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-red-600'}`;
+  `w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-lg focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`;
 
 function Campo({ id, etiqueta, error, ayuda, className = 'col-span-1', children }) {
   return (
     <div className={`${className} space-y-1`}>
       <label htmlFor={id} className={claseEtiqueta}>{etiqueta}</label>
       {children}
-      {error ? <p id={`${id}-error`} role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">{ayuda}</p>}
+      {error ? <p id={`${id}-error`} role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">{ayuda}</p>}
     </div>
   );
 }
@@ -29,7 +29,7 @@ function AvisoSerialOlt({ serial, soloEnvio = false }) {
   if (evaluacion.estado === 'vacio') return null;
   const olt = serialParaOlt(serial);
   const envio = esSerialOlt(olt) ? `Se enviará al almacén como: ${olt}` : '';
-  if (soloEnvio) return envio ? <p role="status" className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold ml-1">{envio}</p> : null;
+  if (soloEnvio) return envio ? <p role="status" className="text-[10px] text-zinc-600 dark:text-zinc-400 font-bold ml-1">{envio}</p> : null;
   const color = evaluacion.estado === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
   return <p role="status" className={`text-[10px] ${color} font-bold ml-1`}>{evaluacion.mensaje} {envio}</p>;
 }
@@ -93,7 +93,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               <div key={i} className="flex items-center gap-2">
                 <input id={`ed-poste-${i + 1}`} type="text" autoComplete="off" maxLength={MAX_LARGO_POSTE} placeholder={i === 0 ? 'Ej. DM SN N01B01' : `Poste ${i + 1}`} aria-label={`Poste ${i + 1}`} aria-invalid={i === 0 && !!errores.posteadura} value={poste} onChange={(e) => cambiarPoste(i, stripEmojis(e.target.value))} className={`flex-1 ${claseInput(i === 0 && errores.posteadura)}`} />
                 {form.postes.length > 1 && (
-                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                     <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 )}
@@ -116,7 +116,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               <CampoConectores id="ed-cant-int-verde" etiqueta="Int. verdes" valor={form.intVerde} onChange={(v) => onChange({ intVerde: v })} error={errores.conectores?.campo === 'internoVerde' ? conectoresError : ''} />
               <CampoConectores id="ed-cant-int-azul" etiqueta="Int. azules" valor={form.intAzul} onChange={(v) => onChange({ intAzul: v })} error={errores.conectores?.campo === 'internoAzul' ? conectoresError : ''} />
             </div>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 ml-1">El externo es solo verde; el interno, verde o azul.</p>
+            <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">El externo es solo verde; el interno, verde o azul.</p>
             {conectoresError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{conectoresError}</p>}
           </div>
         </>
@@ -130,7 +130,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               value={tipoVisita}
               onChange={(v) => onChange({ tipoVisita: v })}
               items={TIPOS_VISITA}
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
               chevronClassName="w-3.5 h-3.5 right-2"
             />
           </div>
@@ -140,7 +140,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               <Campo id="pf-metros" etiqueta="METROS DE CABLE" error={errores.metros} className="col-span-2">
                 <div className="relative">
                   <input id="pf-metros" type="text" inputMode="numeric" placeholder="Ej. 35" value={form.metros} onChange={(e) => onChange({ metros: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.metros} aria-describedby={errores.metros ? 'pf-metros-error' : undefined} className={`w-full pr-8 ${claseInput(errores.metros)}`} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
                 </div>
               </Campo>
               <ConectoresRecableado colorExterno={form.colorExterno} colorInterno={form.colorInterno} onExterno={(v) => onChange({ colorExterno: v })} onInterno={(v) => onChange({ colorInterno: v })} />
@@ -149,7 +149,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
 
           {tipoVisita === TIPO_CAMBIO_EQUIPO && (
             <div className="col-span-2">
-              <SerialEquipoCampo serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} verificar={avisoSerial} aviso={avisoSerial ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
+              <SerialEquipoCampo serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} tipoEquipo={form.tipoEquipoNuevo} onTipoEquipo={(v) => onChange({ tipoEquipoNuevo: v })} errorTipo={errores.tipoEquipoNuevo} verificar={avisoSerial} aviso={avisoSerial ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
             </div>
           )}
 

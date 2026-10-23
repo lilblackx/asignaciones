@@ -38,7 +38,10 @@ for (const r of reportes) {
   for (const estado of ['FINALIZADO', 'CANCELADO']) {
     const nuevas = (r.ticketsDetalle || []).filter((t) => t.id && !vistas.has(`${estado}:${t.id}`) && (t.estado ? t.estado === estado : estado === (r.tipoReporte === 'CANCELADOS' ? 'CANCELADO' : 'FINALIZADO')));
     nuevas.forEach((t) => vistas.add(`${estado}:${t.id}`));
-    for (const [mes, campos] of Object.entries(incrementosMensuales(nuevas, estado, r.createdAt))) {
+    // Sin fecha de finalización creíble, la orden cuenta en el mes del día de cierre que dice el reporte (no el de la hora en que se hizo).
+    const [d, m, a] = String(r.fechaCierre || '').split('/').map(Number);
+    const diaCierre = d && m && a ? Math.min(Date.parse(`${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T12:00:00-04:00`), r.createdAt) : r.createdAt;
+    for (const [mes, campos] of Object.entries(incrementosMensuales(nuevas, estado, r.createdAt, diaCierre))) {
       for (const [campo, n] of Object.entries(campos)) totales[mes] = { ...totales[mes], [campo]: (totales[mes]?.[campo] || 0) + n };
     }
   }

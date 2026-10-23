@@ -206,7 +206,7 @@ async function handleResetPassword(request, env, headers, callerUid) {
 // Alta de usuario hecha por un ADMIN: crea la cuenta de Auth y su perfil. Va por
 // el Worker para poder cerrar el registro público de Firebase Auth (con el registro
 // abierto, cualquiera con la apiKey pública podía crearse una cuenta).
-const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS'];
+const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS', 'INFRAESTRUCTURA'];
 const USERNAME_VALIDO = /^[a-z0-9._-]{1,40}$/;
 
 async function crearCuentaAuth(env, accessToken, email, password) {
@@ -542,7 +542,7 @@ function resumenInstalacionFirestore(t, ahoraMs) {
     promotora: { stringValue: promotora }, promotoraClave: { stringValue: claveNombre(promotora) },
     // La plantilla final se guarda en la orden al finalizarla (la app la arma); aquí solo se copia, sin repetir esa lógica.
     plantillaFinal: { stringValue: f.estado?.stringValue === 'FINALIZADO' && !esAveriaLosFirestore(f) ? (f.plantillaFinal?.stringValue || '') : '' },
-    creadaEn: numero('createdAt'), finalizadoEn: numero('finalizadoEn'), archivadoEn: { integerValue: String(ahoraMs) },
+    creadaEn: numero('createdAt'), finalizadoEn: numero('finalizadoEn'), canceladaEn: numero('canceladaEn'), archivadoEn: { integerValue: String(ahoraMs) },
     // Por qué se canceló (solo en las canceladas; igual que en resumenInstalacion de src/utils/estadoInstalacion.js): ventas lo ve en la tarjeta.
     motivoCancelacion: { stringValue: f.estado?.stringValue === 'CANCELADO' ? String(f.motivoCancelacion?.stringValue || '').replace(/\|/g, '/').replace(/\s+/g, ' ').trim() : '' },
   };
@@ -577,21 +577,22 @@ async function limpiarHistorialInstalaciones(env, accessToken, ahoraMs) {
 // la tienen), en el mes del cierre. Lo mismo calcula scripts/calcular-totales-mensuales.mjs para los cierres de antes de que existiera.
 const VENTANA_FINALIZACION_MS = 40 * 24 * 60 * 60 * 1000;
 
-export function mesDeCierre(f, ahoraMs) {
-  const fin = Number(f?.finalizadoEn?.integerValue);
-  const ms = fin > ahoraMs - VENTANA_FINALIZACION_MS && fin <= ahoraMs ? fin : ahoraMs;
+// La misma regla que fechaDeOrden de src/utils/fechaOrden.js: la fecha de finalización (o de cancelación, si se canceló), y sin una creíble, el día de cierre.
+export function mesDeCierre(f, ahoraMs, diaCierreMs = ahoraMs, estado = 'FINALIZADO') {
+  const fin = Number((estado === 'CANCELADO' ? f?.canceladaEn : f?.finalizadoEn)?.integerValue);
+  const ms = fin > ahoraMs - VENTANA_FINALIZACION_MS && fin <= ahoraMs ? fin : diaCierreMs;
   return fechaCaracas(ms).fecha.slice(0, 7);
 }
 
 // { '2026-10': { instalacionesFinalizadas: 3, losResueltas: 1 }, ... } de las órdenes que se archivan con este estado.
-export function incrementosMensuales(tickets, estado, ahoraMs) {
+export function incrementosMensuales(tickets, estado, ahoraMs, diaCierreMs = ahoraMs) {
   const porMes = {};
   for (const t of tickets) {
     const f = t.fields;
     const esLos = esAveriaLosFirestore(f);
     if (f?.tipoTrabajo?.stringValue !== TIPO_INSTALACION && !esLos) continue;
     const campo = estado === 'FINALIZADO' ? (esLos ? 'losResueltas' : 'instalacionesFinalizadas') : (esLos ? 'losCanceladas' : 'instalacionesCanceladas');
-    const mes = mesDeCierre(f, ahoraMs);
+    const mes = mesDeCierre(f, ahoraMs, diaCierreMs, estado);
     porMes[mes] = { ...porMes[mes], [campo]: (porMes[mes]?.[campo] || 0) + 1 };
   }
   return porMes;
@@ -607,10 +608,10 @@ function escriturasMensuales(env, porMes) {
 }
 
 // Los totales del mes de un cierre que archiva a la vez las finalizadas y las canceladas (como incrementosDeCierre de totalesMes.js).
-function incrementosDeCierre(finalizadas, canceladas, ahoraMs) {
+function incrementosDeCierre(finalizadas, canceladas, ahoraMs, diaCierreMs = ahoraMs) {
   const porMes = {};
   for (const [tickets, estado] of [[finalizadas, 'FINALIZADO'], [canceladas, 'CANCELADO']]) {
-    for (const [mes, campos] of Object.entries(incrementosMensuales(tickets, estado, ahoraMs))) porMes[mes] = { ...porMes[mes], ...campos };
+    for (const [mes, campos] of Object.entries(incrementosMensuales(tickets, estado, ahoraMs, diaCierreMs))) porMes[mes] = { ...porMes[mes], ...campos };
   }
   return porMes;
 }
@@ -651,7 +652,8 @@ async function archivarCierre(env, accessToken, ahoraMs, fecha) {
   const borrados = tickets.map((t) => ({ delete: t.name }));
   const reportName = `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${rutaDatos(env)}/reports/${reportId}`;
   // Los totales del mes van con el reporte y los primeros borrados: o se archivó y se contó, o ninguna de las dos.
-  const totales = escriturasMensuales(env, incrementosDeCierre(finalizadas, canceladas, ahoraMs));
+  // Sin fecha de finalización, cada orden cuenta en el mes del día que se cierra (`fecha`), no en el del instante en que corre el cierre.
+  const totales = escriturasMensuales(env, incrementosDeCierre(finalizadas, canceladas, ahoraMs, Math.min(Date.parse(`${fecha}T12:00:00${OFFSET_ZONA}`), ahoraMs)));
   const enElPrimero = MAX_ESCRITURAS_COMMIT - 1 - totales.length;
   await commitFirestore(env, accessToken, [
     { update: { name: reportName, fields: reporte }, currentDocument: { exists: false } },
@@ -820,9 +822,12 @@ export default {
       // aprobadores lo hace también el TECNICO al pre-finalizar.
       const rol = await rolActivo(env, accessToken, payload.sub);
       // Una PROMOTORA solo avisa a la oficina de una venta nueva, y solo si el administrador le dio el permiso de crear ventas.
+      // FINANZAS solo le avisa a un técnico que se le registró un pago o un adelanto.
       const permitido = rol === 'PROMOTORA'
         ? target.type === 'oficina' && tipo === 'nuevaVenta' && (await getUserDoc(env, accessToken, payload.sub))?.fields?.puedeCrearVentas?.booleanValue === true
-        : target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
+        : rol === 'FINANZAS'
+          ? target.type === 'tecnico' && ['pagoTecnico', 'adelantoTecnico'].includes(tipo)
+          : target.type === 'tecnico' ? ['ADMIN', 'USUARIO'].includes(rol) : Boolean(rol);
       if (!permitido) return new Response('Sin permiso para enviar esta notificación.', { status: 403, headers });
 
       const destinos = await resolveTokens(env, accessToken, target);

@@ -12,7 +12,7 @@ export default function CobrosView({ ordenes, rango, tecnico, getTecnicoColor, h
     <div>
       <AvisoHistorial {...historial} />
       <Cifras items={cifrasCobros(resumen)} />
-      <p className="text-[11px] text-zinc-500 -mt-1 mb-4">{NOTA_COBROS}</p>
+      <p className="text-[11px] text-zinc-600 dark:text-zinc-500 -mt-1 mb-4">{NOTA_COBROS}</p>
 
       <TablaReporte titulo="Resultado del cobro" columnas={columnasResultado()} filas={filasResultado(resumen)} vacio="Ninguna orden con cobro en este periodo." />
       <TablaReporte titulo="Monto cobrado" nota="Suma de las órdenes cobradas, separada por moneda." columnas={columnasMonto()} filas={filasMonto(resumen)} />

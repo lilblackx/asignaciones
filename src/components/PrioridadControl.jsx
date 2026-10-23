@@ -14,7 +14,7 @@ export function BotonPrioridad({ activa, codigo, onClick }) {
       className={`inline-flex items-center justify-center p-1 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
         activa
           ? 'bg-red-600 text-white hover:bg-red-500'
-          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-red-100 dark:hover:bg-red-900/40 hover:text-red-600 dark:hover:text-red-400'
+          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-red-100 dark:hover:bg-red-900/40 hover:text-red-600 dark:hover:text-red-400'
       }`}
     >
       <Flag className={`w-3.5 h-3.5 ${activa ? 'fill-current' : ''}`} aria-hidden="true" />

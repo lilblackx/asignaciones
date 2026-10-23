@@ -1,13 +1,16 @@
 // Estadísticas operativas de las órdenes de un periodo: finalizadas por técnico, NAPs con más fallas y clientes con varias órdenes.
 import { diaDe } from './totalesMes.js';
+import { fechaDeOrden } from './fechaOrden.js';
 import { enRango } from './periodoReporte.js';
 import { grupoDeTrabajo } from './tiposDeTrabajo.js';
+import { napSinPuerto } from './codigoNap.js';
 
 // El día (Caracas) al que cuenta una orden: cuando se cerró o, si sigue abierta, cuando se creó. Sin fecha conocida, no cuenta en ningún periodo.
 // `_cierreEn` lo agrega todasLasOrdenes a las órdenes archivadas: cuándo se hizo el cierre que las guardó.
 export function diaDeOrden(t) {
   const cerrada = t._cierreEn || t.estado === 'FINALIZADO' || t.estado === 'CANCELADO';
-  const ms = (cerrada ? (t.finalizadoEn || t.archivadoEn || t._cierreEn || t.createdAt) : t.createdAt) || 0;
+  // La misma fecha de todos los módulos (utils/fechaOrden); las archivadas sin ella cuentan el día del cierre que las guardó.
+  const ms = (cerrada && t.estado !== 'FINALIZADO' && t.estado !== 'CANCELADO' ? (t.finalizadoEn || t.archivadoEn || t._cierreEn || t.createdAt) : fechaDeOrden(t, { diaCierreMs: t._cierreEn || 0, ...(t._cierreEn ? { ahoraMs: t._cierreEn } : {}) })) || 0;
   return ms ? diaDe(ms) : null;
 }
 
@@ -41,7 +44,8 @@ export function estadisticasOperativas(ordenes, rango, tecnico) {
 
   const napsPor = new Map();
   for (const t of lista) {
-    const nap = (t.nap || '').trim();
+    // La NAP sin el puerto: varios puertos de la misma caja cuentan como una sola NAP.
+    const nap = napSinPuerto(t.nap);
     if (!nap) continue;
     napsPor.set(nap, (napsPor.get(nap) || 0) + 1);
   }

@@ -18,7 +18,7 @@ export default function FormasPagoModal({ formasPago, onCopy, onClose }) {
         </div>
         <div className="p-6 space-y-4">
           {formas.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-6">Aún no se han cargado las formas de pago. Avisa al administrador.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-6">Aún no se han cargado las formas de pago. Avisa al administrador.</p>
           ) : (
             <FormasPagoLista formas={formas} onCopy={onCopy} />
           )}

@@ -1,4 +1,4 @@
-import { AUTH_EMAIL_DOMAIN } from '../constants';
+import { AUTH_EMAIL_DOMAIN } from '../constants.js';
 
 // Lista blanca: solo letras/números ASCII, punto, guion y guion bajo.
 // Corta cualquier símbolo raro (comillas, ; -- etc.) o emoji antes de que

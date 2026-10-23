@@ -7,18 +7,22 @@ import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils
 import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
+import CampoFecha from '../CampoFecha';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
 import { ClienteSmartOltIcono, ClienteSmartOltMensaje } from './ClienteSmartOltField';
 import { useClienteSmartOlt } from '../../hooks/useClienteSmartOlt';
+import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import NapCoordenadasField from './NapCoordenadasField';
 import TelefonosField from './TelefonosField';
 import PromotorField from './PromotorField';
-import { CedulaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
+import { CedulaField, GarantiaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import Spinner from '../Spinner';
 
 export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Las órdenes entre las que se busca la original de una garantía (vivas y de los cierres cargados).
+  const ordenesGarantia = useMemo(() => todasLasOrdenes(tickets, reports), [tickets, reports]);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
   const [verificandoCodigo, setVerificandoCodigo] = useState(false);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
@@ -173,16 +177,16 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
           <div className="col-span-1 space-y-0.5">
-            <label htmlFor="tk-fecha" className="text-[10px] font-bold text-zinc-500 ml-1">FECHA</label>
-            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className="w-full bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded text-[11px] tracking-tight text-zinc-500 dark:text-zinc-400 cursor-default" />
+            <label htmlFor="tk-fecha" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">FECHA</label>
+            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className="w-full bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded text-[11px] tracking-tight text-zinc-600 dark:text-zinc-400 cursor-default" />
           </div>
           <div className="col-span-1 space-y-0.5">
-            <label htmlFor="tk-codigo" className="text-[10px] font-bold text-zinc-500 ml-1">CÓDIGO</label>
+            <label htmlFor="tk-codigo" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">CÓDIGO</label>
             <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder="Auto" value={formData.codigo} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs uppercase placeholder:normal-case placeholder:text-zinc-400" />
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-fecha-prog" className="text-[10px] font-bold text-zinc-500 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
-            <input id="tk-fecha-prog" type="date" name="fechaProgramada" value={formData.fechaProgramada} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded text-xs [color-scheme:light] dark:[color-scheme:dark]" />
+            <label htmlFor="tk-fecha-prog" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
+            <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 rounded text-xs" />
           </div>
           <CedulaField
             variant="create"
@@ -226,7 +230,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           )}
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-nombre" className="text-[10px] font-bold text-zinc-500 ml-1">NOMBRE<span className="text-red-600"> *</span></label>
+            <label htmlFor="tk-nombre" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">NOMBRE<span className="text-red-600"> *</span></label>
             <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
@@ -264,11 +268,23 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             />
           )}
 
+          <GarantiaField
+            wrapperClassName="col-span-2 sm:col-span-5"
+            idPrefix="tk"
+            value={formData.garantiaDe}
+            onChange={(value) => handleCreateChange({ target: { name: 'garantiaDe', value, type: 'garantia' } })}
+            ordenes={ordenesGarantia}
+            tecnico={formData.tecnico}
+            cedula={formData.cedula}
+          />
+
           {tipoUsaPlantillaPromotora(formData.tipoTrabajo) && (
             <div className="col-span-2 sm:col-span-5 space-y-0.5">
-              <label htmlFor="tk-plantilla" className="text-[10px] font-bold text-zinc-500 ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
+              <label htmlFor="tk-plantilla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
               <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs font-mono" placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
-              {!formData.plantillaOriginal?.trim() && <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>}
+              {!formData.plantillaOriginal?.trim() && (esInstalacion
+                ? <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>
+                : <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">Sin la plantilla de la promotora, la plantilla de esta orden se arma con el formato de la app.</p>)}
             </div>
           )}
 
@@ -278,14 +294,14 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               value={formData.promotora || ''}
               onChange={handleCreateChange}
               wrapperClassName="col-span-2 sm:col-span-5 space-y-0.5"
-              labelClassName="text-[10px] font-bold text-zinc-500 ml-1"
+              labelClassName="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1"
               inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs"
               ayuda="(se llena con la plantilla)"
             />
           )}
 
           <div className="col-span-1 sm:col-span-2 space-y-0.5">
-            <label htmlFor="tk-falla" className="text-[10px] font-bold text-zinc-500 ml-1">TIPO{opcionesTipo.length > 0 && <span className="text-red-600"> *</span>}</label>
+            <label htmlFor="tk-falla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">TIPO{opcionesTipo.length > 0 && <span className="text-red-600"> *</span>}</label>
             <SelectMenu
               id="tk-falla"
               ariaLabel="Tipo"
@@ -299,12 +315,12 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             {mostrarFaltaTipo && <p role="alert" className="text-[10px] font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
           </div>
           <div className="col-span-1 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-direccion" className="text-[10px] font-bold text-zinc-500 ml-1">DIRECCIÓN<span className="text-red-600"> *</span></label>
+            <label htmlFor="tk-direccion" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">DIRECCIÓN<span className="text-red-600"> *</span></label>
             <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-telefono" className="text-[10px] font-bold text-zinc-500 ml-1">TELÉFONO<span className="text-red-600"> *</span></label>
+            <label htmlFor="tk-telefono" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">TELÉFONO<span className="text-red-600"> *</span></label>
             <TelefonosField
               id="tk-telefono"
               required
@@ -314,7 +330,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             />
           </div>
           <div className="col-span-2 sm:col-span-2 space-y-0.5">
-            <label htmlFor="tk-nap" className="text-[10px] font-bold text-zinc-500 ml-1">NAP</label>
+            <label htmlFor="tk-nap" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">NAP</label>
             <input id="tk-nap" type="text" maxLength="50" name="nap" value={formData.nap} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
@@ -330,7 +346,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           />
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-ubicacion" className="text-[10px] font-bold text-zinc-500 ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, opcional)</span></label>
+            <label htmlFor="tk-ubicacion" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, opcional)</span></label>
             <input id="tk-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={formData.ubicacion} onChange={handleCreateChange} aria-invalid={!!ubicacionParseada.error} className={`w-full bg-white dark:bg-zinc-950 border px-2 py-1.5 rounded text-xs ${ubicacionParseada.error ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-700'}`} />
             {ubicacionParseada.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
@@ -346,7 +362,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           />
 
           <div className="col-span-2 sm:col-span-5 pt-1 flex gap-2 justify-end mt-1">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-xs transition-colors">Cancelar</button>
+            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-xs transition-colors">Cancelar</button>
             <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`px-4 py-1.5 text-white font-bold rounded-lg text-xs shadow-md transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
@@ -378,7 +394,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
                 <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-500" />
               </div>
               <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">¿Cédula duplicada?</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-4">
+              <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">
                 Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> — {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. ¿Crear esta de todas formas?
               </p>
             </div>
@@ -386,7 +402,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               <button
                 onClick={() => setShowDuplicateConfirm(false)}
                 disabled={isSubmitting}
-                className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
+                className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
                 Cancelar
               </button>
               <button

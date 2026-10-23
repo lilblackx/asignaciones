@@ -38,7 +38,7 @@ export function ClienteSmartOltIcono({ cliente }) {
         disabled={buscando}
         title="Buscar cliente en SmartOLT"
         aria-label="Buscar cliente en SmartOLT"
-        className={`${BOTON} border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 disabled:opacity-50`}
+        className={`${BOTON} border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 disabled:opacity-50`}
       >
         <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
       </button>
@@ -79,7 +79,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
                   </span>
                 </span>
                 {onu.direccion && (
-                  <span className="block mt-0.5 text-[11px] leading-snug font-medium text-zinc-500 dark:text-zinc-400">{onu.direccion}</span>
+                  <span className="block mt-0.5 text-[11px] leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>
                 )}
               </button>
             ))}

@@ -12,7 +12,7 @@ import { devolucionPendiente, reporteTecnicoInicial } from '../../utils/devoluci
 import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
+import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { consultaCobroDe } from '../../utils/consultaCobro';
 import ConsultaCobroRecableado from './ConsultaCobroRecableado';
@@ -26,10 +26,9 @@ import NapPuertoCampos from './NapPuertoCampos';
 import Spinner from '../Spinner';
 
 export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
-  // La NAP y el puerto van siempre en dos campos; son obligatorios con conector externo, recableado y en las instalaciones.
-  const pideNapPuertoInicial = ticket?.tipoVisita === TIPO_CONECTOR_EXTERNO || ticket?.tipoVisita === TIPO_RECABLEADO || trabajoEsInstalacion(ticket?.tipoTrabajo);
+  // La NAP y el puerto van en dos campos y son obligatorios con conector externo, drop atenuado y en las instalaciones (ver pideNapPuertoVisita); ahí una NAP "SN" (o vacía) no sirve: el técnico debe escribir la real.
+  const pideNapPuertoInicial = pideNapPuertoVisita(ticket?.tipoVisita) || trabajoEsInstalacion(ticket?.tipoTrabajo);
   const separado = separarNapPuerto(ticket?.nap);
-  // Donde son obligatorios una NAP "SN" (o vacía) no sirve: el técnico debe escribir la real.
   const [nap, setNap] = useState(pideNapPuertoInicial && napSinDato(separado.nap) ? '' : separado.nap);
   const [puerto, setPuerto] = useState(separado.puerto);
   // Instalación: lo que la plantilla de la promotora trae vacío (ver utils/instalacion).
@@ -70,6 +69,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   // Cambio de equipo: serial del equipo nuevo (obligatorio).
   const [serialEquipo, setSerialEquipo] = useState(ticket?.serialEquipo || '');
   const [serialEquipoError, setSerialEquipoError] = useState('');
+  const [tipoEquipo, setTipoEquipo] = useState(ticket?.tipoEquipoNuevo || '');
+  const [tipoEquipoError, setTipoEquipoError] = useState('');
+  const [tipoVisitaError, setTipoVisitaError] = useState('');
   const [metrosError, setMetrosError] = useState('');
   const [cantidadError, setCantidadError] = useState({ campo: '', mensaje: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,9 +84,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   // En una instalación no aplica el tipo de visita (conectores, recableado): se oculta y no se guarda.
   const esInstalacion = trabajoEsInstalacion(ticket.tipoTrabajo);
   const tipoVisita = esInstalacion ? '' : tipoVisitaElegido;
-  const conectorExterno = tipoVisita === TIPO_CONECTOR_EXTERNO;
+  const visitaConNapPuerto = pideNapPuertoVisita(tipoVisita);
   const recableado = tipoVisita === TIPO_RECABLEADO;
-  const pideNap = conectorExterno || recableado || esInstalacion;
   // Lo que se resume en la confirmación para que el técnico vea qué está enviando: "Recableado: 250 m".
   const etiquetaVisita = tipoVisita ? `${etiquetaTipoVisita(tipoVisita)}${recableado && metros ? `: ${metros} m` : ''}` : '';
   const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
@@ -112,16 +113,21 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const serialEquipoLeido = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
     const errorFormatoEquipo = serialEquipoLeido && !serialEquipoLeido.error ? errorSerialCaja(serialEquipo) : '';
     const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
+    const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipo);
     const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
     const errorFormatoSerial = instalacionLeida && !instalacionLeida.errores.serial ? errorSerialCaja(serial) : '';
     const instalacion = errorFormatoSerial ? { ...instalacionLeida, errores: { ...instalacionLeida.errores, serial: errorFormatoSerial }, error: true } : instalacionLeida;
     const conectoresInst = esInstalacion ? parseConectoresInstalacion({ externoVerde: instExternoVerde, internoVerde: instInternoVerde, internoAzul: instInternoAzul }) : null;
-    // Con conector externo, recableado y en las instalaciones la NAP real y el puerto son obligatorios.
-    const faltaNap = pideNap && napSinDato(nap);
-    const faltaPuerto = pideNap && !puerto.trim();
+    // Con conector externo y en las instalaciones la NAP real y el puerto son obligatorios.
+    const pideNapPuerto = visitaConNapPuerto || esInstalacion;
+    const faltaNap = pideNapPuerto && napSinDato(nap);
+    const faltaPuerto = pideNapPuerto && !puerto.trim();
+    const errorVisita = errorTipoVisita(ticket.tipoTrabajo, tipoVisita);
+    setTipoVisitaError(errorVisita);
     setMetrosError(metrosParseados?.error || '');
     setCantidadError({ campo: cantidades.campo || '', mensaje: errorCantidad });
     setSerialEquipoError(serialEquipoParseado?.error || '');
+    setTipoEquipoError(errorTipoEquipo);
     setInstalacionErrores(instalacion?.errores || {});
     setConectoresInstError({ campo: conectoresInst?.campo || '', mensaje: conectoresInst?.error || '' });
     setNapError(faltaNap ? 'Indica la nomenclatura real de la NAP (no vale "SN").' : '');
@@ -131,6 +137,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     // El campo queda arriba y el botón abajo: el cursor va al primer campo con problema, en el orden del formulario.
     if (metrosParseados?.error) document.getElementById('pf-metros')?.focus();
     else if (errorCantidad) document.getElementById(cantidades.campo === 'azul' ? 'pf-cant-azul' : 'pf-cant-verde')?.focus();
+    else if (errorVisita) document.getElementById('pf-tipo-visita')?.focus();
+    else if (errorTipoEquipo) document.getElementById('pf-tipo-equipo')?.focus();
     else if (serialEquipoParseado?.error) document.getElementById('pf-serial-equipo')?.focus();
     else if (instalacion?.errores.serial) document.getElementById('pf-serial')?.focus();
     else if (instalacion?.errores.vlan) document.getElementById('pf-vlan')?.focus();
@@ -142,16 +150,18 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     else if (conectoresInst?.error) document.getElementById({ externoVerde: 'pf-cant-ext-verde', internoVerde: 'pf-cant-int-verde', internoAzul: 'pf-cant-int-azul' }[conectoresInst.campo])?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || metrosParseados?.error || errorCantidad || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
+    if (faltaObs || errorVisita || metrosParseados?.error || errorCantidad || errorTipoEquipo || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
     // Con todo en orden no se guarda todavía: primero se pide confirmar (ver ConfirmPreFinalizarModal).
     setPorConfirmar({
-      nap: conectorExterno || recableado ? unirNapPuerto(nap, puerto) : napConPuerto(nap, puerto),
+      // Solo estas visitas piden NAP y puerto; en las demás la orden conserva la NAP que ya traía.
+      nap: visitaConNapPuerto ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : (ticket?.nap || ''),
       ...(instalacion ? { instalacion: { ...instalacion.datos, conectores: conectoresInst.valor } } : {}),
       observacionTecnico: observacion,
       potenciaDbm: potenciaParseada.valor ?? null,
       potencia1490Dbm: parsePotencia(potencia1490).valor ?? null,
       tipoVisita,
       serialEquipo: serialEquipoParseado?.valor ?? '',
+      tipoEquipoNuevo: cambioEquipo ? tipoEquipo : '',
       ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno, conectores: cantidades.valor }),
     });
   };
@@ -205,7 +215,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               <span className="line-clamp-2">{ticket.direccion}</span>
             </div>
             {ticket.cedula && (
-              <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
                 <Tag className="w-3 h-3 text-zinc-400 shrink-0" />
                 <span>C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</span>
                 {ticket.telefono && <span className="ml-2">Telf: {ticket.telefono}</span>}
@@ -217,31 +227,35 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
           {!esInstalacion && (
           <div className="space-y-1">
             <label htmlFor="pf-tipo-visita" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-              TIPO DE VISITA <span className="font-normal text-zinc-400">(opcional)</span>
+              TIPO DE VISITA <span className="font-normal text-red-500">(obligatorio)</span>
             </label>
             <SelectMenu
               id="pf-tipo-visita"
               ariaLabel="Tipo de visita"
               icon={Plug}
               value={tipoVisita}
+              displayLabel={tipoVisita ? undefined : 'Elige el tipo de visita'}
               onChange={(v) => {
                 setTipoVisita(v);
+                setTipoVisitaError('');
                 setNapError('');
                 setPuertoError('');
                 setMetrosError('');
                 setCantidadError({ campo: '', mensaje: '' });
                 setSerialEquipoError('');
+                setTipoEquipoError('');
                 // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
-                if (!puerto) {
+                if (pideNapPuertoVisita(v) && !puerto) {
                   const sep = separarNapPuerto(nap);
                   setNap(sep.nap);
                   setPuerto(sep.puerto);
                 }
-                // Con conector externo o recableado la NAP real es obligatoria: un "SN" se vacía para que la escriba.
-                if ((v === TIPO_CONECTOR_EXTERNO || v === TIPO_RECABLEADO) && napSinDato(separarNapPuerto(nap).nap)) setNap('');
+                // Donde la NAP real es obligatoria un "SN" se vacía para que la escriba.
+                if (pideNapPuertoVisita(v) && napSinDato(separarNapPuerto(nap).nap)) setNap('');
               }}
-              items={TIPOS_VISITA}
+              items={TIPOS_VISITA_OBLIGATORIO}
             />
+            {tipoVisitaError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{tipoVisitaError}</p>}
           </div>
           )}
 
@@ -261,9 +275,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                     onChange={(e) => { setMetros(e.target.value.replace(/\D/g, '').slice(0, 4)); if (metrosError) setMetrosError(''); }}
                     aria-invalid={!!metrosError}
                     aria-describedby={metrosError ? 'pf-metros-error' : undefined}
-                    className={`w-full min-w-0 bg-white dark:bg-zinc-950 border pl-3 pr-9 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+                    className={`w-full min-w-0 bg-white dark:bg-zinc-950 border pl-3 pr-9 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-500 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
                 </div>
                 {metrosError && <p id="pf-metros-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
               </div>
@@ -278,6 +292,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onSerial={(v) => { setSerialEquipo(v); if (serialEquipoError) setSerialEquipoError(''); }}
               error={serialEquipoError}
               verificar
+              tipoEquipo={tipoEquipo}
+              onTipoEquipo={(v) => { setTipoEquipo(v); if (tipoEquipoError) setTipoEquipoError(''); }}
+              errorTipo={tipoEquipoError}
             />
           )}
 
@@ -321,7 +338,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               error={conectoresInstError}
             />
             </>
-          ) : (
+          ) : visitaConNapPuerto ? (
             <NapPuertoCampos
               nap={nap}
               onNap={(v) => { setNap(v); if (napError) setNapError(''); }}
@@ -329,9 +346,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               puerto={puerto}
               onPuerto={(v) => { setPuerto(v); if (puertoError) setPuertoError(''); }}
               puertoError={puertoError}
-              obligatorio={pideNap}
             />
-          )}
+          ) : null}
 
           {llevaCobro({ tipoTrabajo: ticket.tipoTrabajo }) && (
             <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
@@ -356,7 +372,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onChange={(e) => setPotencia(e.target.value.replace(/[^0-9.,-]/g, ''))}
               aria-invalid={!!potenciaParseada.error}
               aria-describedby="pf-potencia-hint"
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
             />
             <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
@@ -391,7 +407,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               value={observacion}
               onChange={(e) => { setObservacion(stripEmojis(e.target.value)); if (obsError) setObsError(''); }}
               aria-invalid={!!obsError}
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors resize-none ${obsError ? 'border-red-500 focus:border-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:border-amber-500'}`}
+              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors resize-none ${obsError ? 'border-red-500 focus:border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
             />
             {obsError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{obsError}</p>}
           </div>
@@ -408,7 +424,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
+              className="flex-1 py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>

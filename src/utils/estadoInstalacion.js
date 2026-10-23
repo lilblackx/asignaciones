@@ -5,6 +5,7 @@ import { categoriaProgramada } from './programada.js';
 import { prioritariasPrimero } from './prioridad.js';
 import { claveNombre } from './promotora.js';
 import { motivoCancelacion } from './cancelacion.js';
+import { fechaDeOrden } from './fechaOrden.js';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from './whatsapp.js';
 
 export const TIPO_INSTALACION = 'INSTALACIÓN';
@@ -106,6 +107,7 @@ export function resumenInstalacion(t, ahoraMs = Date.now()) {
     falla: esAveriaLos(t) ? FALLA_LOS : '',
     creadaEn: t.createdAt || null,
     finalizadoEn: t.finalizadoEn || null,
+    canceladaEn: t.canceladaEn || null,
     // Por qué se canceló (solo en las canceladas): ventas lo ve en la tarjeta, también cuando la orden ya salió de la lista.
     motivoCancelacion: motivoCancelacion(t),
     promotora,
@@ -147,7 +149,9 @@ export const algunaOrdenSalio = (antes, tickets) => {
 // que muestra la tarjeta.
 export function fechaOrden(t) {
   const cerrada = t?.origen === 'historial' || t?.estado === 'FINALIZADO' || t?.estado === 'CANCELADO';
-  return (cerrada ? (t.finalizadoEn || t.archivadoEn) : t?.createdAt) || 0;
+  // Cerrada: su fecha de finalización o de cancelación (la misma regla de todos los módulos, ver fechaOrden.js); la del historial que no trae estado, cuando se archivó.
+  if (cerrada && t.estado !== 'FINALIZADO' && t.estado !== 'CANCELADO') return t.finalizadoEn || t.archivadoEn || 0;
+  return fechaDeOrden(t);
 }
 
 export const FILTROS_FECHA = [

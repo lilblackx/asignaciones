@@ -16,7 +16,7 @@ export default function CausasAveriaView({ ordenes, rango, tecnico, historial })
     <div>
       <AvisoHistorial {...historial} />
       <Cifras items={cifrasCausas(causas)} />
-      <ListaHallazgos items={causas.napsSospechosas.map((n) => ({ nivel: 'aviso', texto: textoNapSospechosa(n) }))} />
+      <ListaHallazgos items={causas.napsSospechosas.map((n) => ({ nivel: 'aviso', texto: textoNapSospechosa(n), ordenes: n.ordenes, datoTitulo: 'Falla' }))} />
       <BarrasReporte
         titulo="Averías por tipo de falla"
         subtitulo="Cada avería cuenta en el día en que se reportó"

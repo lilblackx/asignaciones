@@ -31,7 +31,7 @@ const REPETIDAS = /^(Marcado como PRE-FINALIZADO|Devuelta al técnico|Valores de
 function LineaDetalle({ texto }) {
   const m = texto.match(/^([^:]{1,26}):\s+(.+)$/);
   if (!m) return <>{texto}</>;
-  return <><span className="font-semibold text-zinc-500 dark:text-zinc-400">{m[1]}:</span> {m[2]}</>;
+  return <><span className="font-semibold text-zinc-600 dark:text-zinc-400">{m[1]}:</span> {m[2]}</>;
 }
 
 // Línea de tiempo vertical de una orden, del evento más reciente al más antiguo.
@@ -42,7 +42,8 @@ export default function HistorialTimeline({ ticket, compact = false }) {
   return (
     <ol className={`relative space-y-3 ${compact ? 'max-h-64 overflow-y-auto pr-1' : ''}`} aria-label="Historial de la orden">
       {eventos.map((ev, i) => {
-        const { icono: Icono, titulo, color } = TIPOS[ev.tipo] || TIPOS.edicion;
+        const { icono: Icono, titulo: tituloDelTipo, color } = TIPOS[ev.tipo] || TIPOS.edicion;
+        const titulo = ev.titulo || tituloDelTipo;
         const esUltimo = i === eventos.length - 1;
         return (
           <li key={ev.clave} className="relative flex gap-3">
@@ -52,7 +53,7 @@ export default function HistorialTimeline({ ticket, compact = false }) {
             </span>
             <div className="min-w-0 flex-1 pb-0.5">
               <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">{titulo}</p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-tight">
                 {ev.fecha}{ev.operador && <> · <span className="font-semibold text-zinc-600 dark:text-zinc-300">{ev.operador}</span></>}
               </p>
               {ev.lineas.filter(linea => !REPETIDAS.test(linea)).map((linea, j) => (

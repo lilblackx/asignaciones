@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, FileSpreadsheet, FileText, FileType, Loader2 } from 'lucide-react';
+import { ChevronDown, Download, FileSpreadsheet, FileText, FileType, Loader2 } from 'lucide-react';
+import { claseBoton } from '../../estilos';
 
 const OPCIONES = {
   pdf: { etiqueta: 'PDF', detalle: 'Para presentar o imprimir', Icono: FileText },
@@ -28,9 +29,9 @@ export default function MenuExportar({ formatos, onElegir, ocupado, extra = '', 
         disabled={Boolean(ocupado)}
         aria-haspopup="menu"
         aria-expanded={abierto}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold disabled:opacity-70 ${extra}`}
+        className={`${claseBoton('secundario', 'normal')} ${extra}`}
       >
-        {ocupado ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : null}
+        {ocupado ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Download className="w-3.5 h-3.5" aria-hidden="true" />}
         {ocupado ? 'Generando...' : 'Exportar'}
         {!ocupado && <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
       </button>
@@ -49,7 +50,7 @@ export default function MenuExportar({ formatos, onElegir, ocupado, extra = '', 
                 <Icono className="w-5 h-5 shrink-0 text-red-600" aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block text-sm font-bold text-zinc-900 dark:text-white">{etiqueta}</span>
-                  <span className="block text-[11px] text-zinc-500">{detalle}</span>
+                  <span className="block text-[11px] text-zinc-600 dark:text-zinc-500">{detalle}</span>
                 </span>
               </button>
             );

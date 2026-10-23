@@ -153,7 +153,7 @@ export function productividad(ordenes, eventos, rango, ahora, { tecnico } = {}) 
     .sort((a, b) => b.finalizadas - a.finalizadas || a.tecnico.localeCompare(b.tecnico));
 }
 
-const tuvoDevolucion = (t) => (t.historialEdiciones || []).some((e) => clasificarEvento(e) === 'devuelto');
+export const tuvoDevolucion = (t) => (t.historialEdiciones || []).some((e) => clasificarEvento(e) === 'devuelto');
 
 // Calidad del trabajo de las órdenes finalizadas en el rango, por técnico:
 //   reincidencia: el cliente abrió una avería dentro de VENTANA_REINCIDENCIA_DIAS después de finalizar;

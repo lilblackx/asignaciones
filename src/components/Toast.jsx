@@ -45,6 +45,7 @@ export default function Toast({ toastMsg: entrante, onClose }) {
   const isConsultaCobro = toastMsg.type === 'consultaCobro';
   const isRespuestaCobro = toastMsg.type === 'respuestaCobro';
   const isInfraestructura = toastMsg.type === 'infraestructura';
+  const isPago = toastMsg.type === 'pagoTecnico' || toastMsg.type === 'adelantoTecnico' || toastMsg.type === 'ajusteTecnico';
   const accion = toastMsg.action;
 
   return (
@@ -55,14 +56,15 @@ export default function Toast({ toastMsg: entrante, onClose }) {
           : isEnCamino ? 'bg-sky-600 text-white'
           : isLlegada ? 'bg-teal-600 text-white'
           : isRespuestaCobro ? 'bg-sky-600 text-white'
+          : isPago ? 'bg-emerald-700 text-white'
           : isInfraestructura ? 'bg-orange-600 text-white'
           : isPreFinalizado || isAviso || isConsultaCobro || isNuevaVenta ? 'bg-amber-500 text-black'
             : isTecnicoStatus ? 'bg-purple-600 text-white'
               : isAprobado ? 'bg-blue-600 text-white'
-                : isNuevaAsignacion ? 'bg-emerald-600 text-white'
+                : isNuevaAsignacion ? 'bg-emerald-700 text-white'
                   : 'bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 border border-zinc-700 dark:border-zinc-200 text-white'
       }`}>
-        {isConsultaCobro || isRespuestaCobro ? <Banknote className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+        {isConsultaCobro || isRespuestaCobro || isPago ? <Banknote className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isPrioridad ? <Flag className="w-4 h-4 shrink-0 mt-0.5 fill-current" aria-hidden="true" />
           : isInfraestructura ? <HardHat className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           : isDevuelto ? <Undo2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />

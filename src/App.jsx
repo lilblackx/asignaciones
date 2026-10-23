@@ -13,6 +13,7 @@ import { crearConAviso } from './utils/errores';
 import { usePushToken } from './hooks/usePushToken';
 import { useToast } from './hooks/useToast';
 import { useNotifications } from './hooks/useNotifications';
+import { useAvisosPagos } from './hooks/useAvisosPagos';
 import { useTechnicians } from './hooks/useTechnicians';
 import { useLogTecnicos } from './hooks/useLogTecnicos';
 import { useTotalesMensuales } from './hooks/useTotalesMensuales';
@@ -43,6 +44,11 @@ import LoadingScreen from './components/LoadingScreen';
 import LoginScreen from './components/LoginScreen';
 import Toast from './components/Toast';
 import Header from './components/Header';
+import { useTema } from './hooks/useTema';
+import Sidebar from './components/Sidebar';
+import PieVersion from './components/PieVersion';
+import PaginaMarco from './components/PaginaMarco';
+import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, PackageCheck, ShieldCheck, Users } from 'lucide-react';
 import { aplanarArchivados } from './utils/reincidencia';
 import { construirNapsConocidas } from './utils/napsConocidas';
 import FiltersBar from './components/FiltersBar';
@@ -58,6 +64,7 @@ const UsersModal = lazy(() => import('./components/modals/UsersModal'));
 const ConfirmModal = lazy(() => import('./components/modals/ConfirmModal'));
 const ReportsModal = lazy(() => import('./components/modals/ReportsModal'));
 const ReportesModal = lazy(() => import('./components/modals/ReportesModal'));
+const RevisionPagosModal = lazy(() => import('./components/revision/RevisionPagosModal'));
 const OrdersHistoryModal = lazy(() => import('./components/modals/OrdersHistoryModal'));
 const WhatsAppMessageModal = lazy(() => import('./components/modals/WhatsAppMessageModal'));
 const TasaBcvModal = lazy(() => import('./components/modals/TasaBcvModal'));
@@ -79,11 +86,16 @@ const EMPTY_FORM = () => ({
   fechaProgramada: '',
   codigo: '', nombre: '', cedula: '', tipoDocumento: 'V', direccion: '', telefono: '', nap: '', napCoordenadas: '', ubicacion: '',
   tipoTrabajo: 'AVERÍA', falla: '', tecnico: '', observacion: '', observacionInterna: false, estado: 'PENDIENTE',
-  plantillaOriginal: '', ventaTecnico: '', promotora: ''
+  plantillaOriginal: '', ventaTecnico: '', promotora: '', garantiaDe: null
 });
 
+// Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).
+const ACTIVO_EN_MENU = { FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
+
 // `auth`: la sesión (useAuth) la resuelve Root, que decide qué pantalla corresponde al rol.
-export default function App({ auth }) {
+// `moduloActivo` / `onAbrirModulo(id)`: el administrador abre cada módulo desde el menú lateral y se ve como página dentro del marco, a la derecha del menú (los demás roles los abren como ventana); Root guarda cuál está abierto
+// y `renderModulo(id, { onAbrirMenu })` pinta Finanzas y Ventas. La oficina sigue montada (oculta) para conservar su estado.
+export default function App({ auth, moduloActivo = null, onAbrirModulo, renderModulo }) {
   const { firebaseUser, uid, currentUser, currentUserName, role, tecnicoAsociado, isTecnico, canCerrar, authReady, connectionError, loginData, setLoginData, loginError, handleLogin, handleLogout } = auth;
   const push = usePushToken(uid);
   const { toastMsg, setToastMsg } = useToast();
@@ -92,7 +104,7 @@ export default function App({ auth }) {
   const ahora = useAhora();
   const notifications = useNotifications(currentUser);
 
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useTema(currentUser);
   const isAdmin = role === ROLES.ADMIN;
   const canEditTickets = role === ROLES.ADMIN || role === ROLES.USUARIO;
 
@@ -102,6 +114,8 @@ export default function App({ auth }) {
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
   const filasCambiadas = useFilasCambiadas(tickets, ticketsCargados);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
+  // El técnico se entera de un pago o un adelanto que Finanzas le registra, también con la app abierta.
+  useAvisosPagos({ firebaseUser, tecnico: isTecnico ? tecnicoAsociado : null, onNotify: notifications.addNotification, setToastMsg });
   // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
   const verInventario = veEnviosInventario(currentUser);
   const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
@@ -131,7 +145,7 @@ export default function App({ auth }) {
     if (ticket.tipoTrabajo?.toUpperCase().includes('INSTAL')) return generarMensajeWhatsAppInstalacion(ticketConOperador);
     // Reconexión creada con la plantilla de la promotora: el mensaje sale de esa
     // misma plantilla (con el correlativo y el técnico). Sin plantilla pegada
-    // (carga manual) se mantiene el mensaje de siempre.
+    // (carga manual) sale en el formato de la app (el mismo de las averías).
     if (tipoUsaPlantillaPromotora(ticket.tipoTrabajo) && ticket.plantillaOriginal?.trim()) return generarMensajeDesdePlantilla(ticketConOperador);
     return generarMensajeWhatsApp(ticketConOperador, tasaConfig);
   };
@@ -168,7 +182,7 @@ export default function App({ auth }) {
   };
 
   const handleCopyWhatsApp = conAviso(async (ticket) => {
-    // Una instalación o reconexión sin la plantilla de la promotora pegada no tiene plantilla que copiar.
+    // Una instalación sin la plantilla de la promotora pegada no tiene plantilla que copiar (una reconexión sí: sale en el formato de la app).
     if (ordenSinPlantilla(ticket)) {
       setToastMsg({ type: 'error', text: TEXTO_SIN_PLANTILLA, duration: 8000 });
       return false;
@@ -222,7 +236,7 @@ export default function App({ auth }) {
     ? ticketsParaVer.some(t => (t.estado === 'PENDIENTE' && !esProgramadaFutura(t)) || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
     : tickets.length > 0;
 
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, ahora });
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, ahora });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.
@@ -257,7 +271,6 @@ export default function App({ auth }) {
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isTasaModalOpen, setIsTasaModalOpen] = useState(false);
   const [isFormasPagoOpen, setIsFormasPagoOpen] = useState(false);
-  const [isMaterialesOpen, setIsMaterialesOpen] = useState(false);
   const [isInventarioOpen, setIsInventarioOpen] = useState(false);
   const [newTech, setNewTech] = useState({ name: '', color: null });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -275,13 +288,14 @@ export default function App({ auth }) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isReportesOpen, setIsReportesOpen] = useState(false);
-  const logTecnicos = useLogTecnicos(firebaseUser, isReportesOpen);
-  const totalesMensuales = useTotalesMensuales(firebaseUser, isReportesOpen);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const logTecnicos = useLogTecnicos(firebaseUser, isReportesOpen || moduloActivo === 'REPORTES');
+  const totalesMensuales = useTotalesMensuales(firebaseUser, isReportesOpen || moduloActivo === 'REPORTES');
   const [selectedReportForDetails, setSelectedReportForDetails] = useState(null);
 
   useEffect(() => {
-    if (isReportModalOpen || isHistoryModalOpen || isReportesOpen) refreshReports();
-  }, [isReportModalOpen, isHistoryModalOpen, isReportesOpen, refreshReports]);
+    if (isReportModalOpen || isHistoryModalOpen || isReportesOpen || ['CIERRE', 'HISTORIAL', 'REPORTES', 'REVISION'].includes(moduloActivo)) refreshReports();
+  }, [isReportModalOpen, isHistoryModalOpen, isReportesOpen, moduloActivo, refreshReports]);
 
   const [isCierreConfirmOpen, setIsCierreConfirmOpen] = useState(false);
   const [cierreDateInput, setCierreDateInput] = useState('');
@@ -317,7 +331,13 @@ export default function App({ auth }) {
     setIsLogoutConfirmOpen(false);
   };
 
+  // El administrador ve cada módulo como página dentro del marco (`moduloActivo`); los demás roles lo ven como ventana (su propio estado).
+  const abierta = (id, estado) => (isAdmin ? moduloActivo === id : estado);
+  const abrirVentana = (id, poner) => () => (isAdmin ? onAbrirModulo(id) : poner(true));
+  const cerrarVentana = (poner) => () => (isAdmin ? onAbrirModulo(null) : poner(false));
+
   const handleOpenNotification = (n) => {
+    onAbrirModulo?.(null);
     const ticket = n.ticketId ? tickets.find(t => t.id === n.ticketId) : null;
     switch (n.type) {
       case 'prefinalizado':
@@ -346,6 +366,10 @@ export default function App({ auth }) {
         else handleGoHome();
         break;
       case 'desasignada':
+      case 'pagoTecnico':
+      case 'adelantoTecnico':
+      case 'ajusteTecnico':
+        // Un pago o un adelanto no es una orden: el técnico vuelve a su lista.
         handleGoHome();
         break;
       case 'aprobado':
@@ -370,13 +394,13 @@ export default function App({ auth }) {
         else handleGoHome();
         break;
       case 'tecnicoStatus':
-        if (isAdmin) setIsAddTechModalOpen(true);
+        if (isAdmin) abrirVentana('TECNICOS', setIsAddTechModalOpen)();
         break;
       case 'cierreAutomatico':
-        if (canCerrar) setIsReportModalOpen(true);
+        if (canCerrar) abrirVentana('CIERRE', setIsReportModalOpen)();
         break;
       case 'inventario':
-        if (verInventario) setIsInventarioOpen(true);
+        if (verInventario) abrirVentana('INVENTARIO', setIsInventarioOpen)();
         break;
       default:
         break;
@@ -413,7 +437,8 @@ export default function App({ auth }) {
 
   const handleCreateChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : stripEmojis(value) }));
+    // Un campo con más de un dato (la garantía) llega como objeto: no es texto que limpiar.
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : (typeof value === 'string' ? stripEmojis(value) : value) }));
   };
 
   // Si createTicket falla, conAviso muestra el error y esta función se corta ahí:
@@ -442,7 +467,7 @@ export default function App({ auth }) {
 
   const handleEditChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setEditingTicket(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : stripEmojis(value) }));
+    setEditingTicket(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : (typeof value === 'string' ? stripEmojis(value) : value) }));
   };
 
   // `datosTecnico`: lo corregido de lo que cargó el técnico (ya validado por el modal); se guarda junto con el resto.
@@ -574,6 +599,9 @@ export default function App({ auth }) {
     if (newReport) setSelectedReportForDetails(newReport);
   };
 
+  const encabezadoMarco = { nombre: currentUserName || currentUser, rol: role, isDarkMode, setIsDarkMode, handleLogout, onAbrirMenu: () => setIsSidebarOpen(true) };
+  const enMarco = (titulo, Icono, hijo, contexto = '') => (isAdmin ? <PaginaMarco titulo={titulo} Icono={Icono} contexto={contexto} encabezado={encabezadoMarco}>{hijo}</PaginaMarco> : hijo);
+
   if (!authReady) {
     return <LoadingScreen isDarkMode={isDarkMode} connectionError={connectionError} />;
   }
@@ -593,10 +621,56 @@ export default function App({ auth }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-screen bg-fondo text-zinc-900 dark:text-zinc-100 flex font-sans transition-colors duration-200">
 
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
 
+        {/* El administrador tiene todos los módulos en un menú lateral (fijo en PC, panel con ☰ en el celular); los demás roles no lo ven. */}
+        {isAdmin && (
+          <Sidebar
+            abierto={isSidebarOpen}
+            activo={ACTIVO_EN_MENU[moduloActivo] || 'oficina'}
+            nombre={currentUserName || currentUser}
+            rol={role}
+            isDarkMode={isDarkMode}
+            onCambiarTema={() => setIsDarkMode(!isDarkMode)}
+            onSalir={() => setIsLogoutConfirmOpen(true)}
+            onCerrar={() => setIsSidebarOpen(false)}
+            veInventario={verInventario}
+            alertasInventario={enviosInventario.length}
+            acciones={{ inicio: () => { onAbrirModulo(null); handleGoHome(); }, modulo: onAbrirModulo }}
+          />
+        )}
+
+        {isAdmin && (moduloActivo === 'FINANZAS' || moduloActivo === 'PROMOTORA' || moduloActivo === 'INFRAESTRUCTURA') && (
+          <div className="flex-1 min-w-0">{renderModulo(moduloActivo, { onAbrirMenu: () => setIsSidebarOpen(true) })}</div>
+        )}
+
+        {abierta('ALMACEN', false) && enMarco('Almacén', Cable, (
+          <Suspense fallback={null}>
+            <MaterialesModal enPagina tickets={tickets} reports={reports} technicians={technicians} hasMoreReports={hasMoreReports} isLoadingReports={isLoadingReports} onLoadMore={loadMoreReports} />
+          </Suspense>
+        ))}
+
+        {abierta('REVISION', false) && enMarco('Revisión de órdenes', ClipboardCheck, (
+          <Suspense fallback={null}>
+            <RevisionPagosModal
+              enPagina
+              technicians={technicians}
+              tickets={tickets}
+              reports={reports}
+              hasMoreReports={hasMoreReports}
+              isLoadingReports={isLoadingReports}
+              onLoadMoreReports={loadMoreReports}
+              onActualizar={refreshReports}
+              usuario={currentUser}
+              firebaseUser={firebaseUser}
+              setToastMsg={setToastMsg}
+            />
+          </Suspense>
+        ))}
+
+        <div className={`flex-1 min-w-0 flex-col ${isAdmin && moduloActivo ? 'hidden' : 'flex'}`}>
         <Header
           currentUser={currentUser}
           currentUserName={currentUserName}
@@ -608,10 +682,7 @@ export default function App({ auth }) {
           onOpenReports={() => setIsReportModalOpen(true)}
           onOpenReportes={() => setIsReportesOpen(true)}
           onOpenHistory={() => setIsHistoryModalOpen(true)}
-          onOpenTechnicians={() => setIsAddTechModalOpen(true)}
-          onOpenUsers={() => setIsUsersModalOpen(true)}
-          onOpenTasa={() => setIsTasaModalOpen(true)}
-          onOpenMateriales={() => setIsMaterialesOpen(true)}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
           veInventario={verInventario}
           alertasInventario={enviosInventario.length}
           onOpenInventario={() => setIsInventarioOpen(true)}
@@ -621,11 +692,12 @@ export default function App({ auth }) {
           preFinalizadoCount={preFinalizadoCount}
           onOpenPreFinalizados={handleOpenPreFinalizados}
           onOpenNotification={handleOpenNotification}
-          onGoHome={handleGoHome}          notifications={notifications}
+          onGoHome={handleGoHome}
+          notifications={notifications}
         />
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
-          {verInventario && <AvisoInventario cantidad={enviosInventario.length} pendientes={enviosPendientes.length} onAbrir={() => setIsInventarioOpen(true)} />}
+          {verInventario && <AvisoInventario cantidad={enviosInventario.length} pendientes={enviosPendientes.length} onAbrir={abrirVentana('INVENTARIO', setIsInventarioOpen)} />}
           {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} onActivar={push.activar} avisarFallo={isTecnico} />}
           <FiltersBar
             searchTerm={searchTerm}
@@ -649,7 +721,7 @@ export default function App({ auth }) {
           <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-3 font-medium flex flex-col items-start gap-1 sm:flex-row sm:justify-between sm:items-center lg:pr-2">
             <span className="whitespace-nowrap">{visibleTickets.length} de {filteredTickets.length} registros</span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {canEditTickets && !tasaLoading && <TasaIndicador tasaConfig={tasaConfig} onClick={isAdmin ? () => setIsTasaModalOpen(true) : undefined} />}
+              {canEditTickets && !tasaLoading && <TasaIndicador tasaConfig={tasaConfig} onClick={isAdmin ? abrirVentana('TASA', setIsTasaModalOpen) : undefined} />}
             </div>
           </div>
 
@@ -713,11 +785,13 @@ export default function App({ auth }) {
 
           {hasMore && (
             <div className="flex justify-center mt-4">
-              <button onClick={loadMore} className="px-6 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-sm">
+              <button onClick={loadMore} className="px-6 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-sm">
                 Cargar más ({filteredTickets.length - visibleTickets.length} restantes)
               </button>
             </div>
           )}
+        </div>
+        <PieVersion />
         </div>
 
         <Suspense fallback={
@@ -745,6 +819,8 @@ export default function App({ auth }) {
             editingTicket={editingTicket}
             handleEditChange={handleEditChange}
             handleEditSubmit={handleEditSubmit}
+            tickets={tickets}
+            reports={reports}
             verificarCodigoManual={verificarCodigoManual}
             technicians={technicians}
             isTecnico={isTecnico}
@@ -755,7 +831,7 @@ export default function App({ auth }) {
           />
         )}
 
-        {isAddTechModalOpen && (
+        {abierta('TECNICOS', isAddTechModalOpen) && enMarco('Técnicos', Users, (
           <TechniciansModal
             technicians={technicians}
             newTech={newTech}
@@ -769,11 +845,12 @@ export default function App({ auth }) {
             ordenTurno={ordenTurno}
             tecnicoSugerido={tecnicoSugerido}
             onGuardarOrden={guardarOrdenSeguro}
-            onClose={() => setIsAddTechModalOpen(false)}
+            enPagina={isAdmin}
+            onClose={cerrarVentana(setIsAddTechModalOpen)}
           />
-        )}
+        ))}
 
-        {isUsersModalOpen && (
+        {abierta('USUARIOS', isUsersModalOpen) && enMarco('Usuarios', ShieldCheck, (
           <UsersModal
             users={users}
             createUser={handleCreateUser}
@@ -785,9 +862,10 @@ export default function App({ auth }) {
             adminResetPassword={adminResetPassword}
             currentUsername={currentUser}
             technicians={technicians}
-            onClose={() => setIsUsersModalOpen(false)}
+            enPagina={isAdmin}
+            onClose={cerrarVentana(setIsUsersModalOpen)}
           />
-        )}
+        ))}
 
         {finalizarTarget && (
           <AprobarFinalizarModal
@@ -810,7 +888,7 @@ export default function App({ auth }) {
           />
         )}
 
-        {isReportModalOpen && (
+        {abierta('CIERRE', isReportModalOpen) && enMarco('Cierre diario', BarChart, (
           <ReportsModal
             reports={reports}
             hasMoreReports={hasMoreReports}
@@ -825,11 +903,12 @@ export default function App({ auth }) {
             onRequestCierre={handleRequestCierre}
             isAdmin={isAdmin}
             usuario={currentUser}
-            onClose={() => setIsReportModalOpen(false)}
+            enPagina={isAdmin}
+            onClose={cerrarVentana(setIsReportModalOpen)}
           />
-        )}
+        ), reports[0]?.fechaCierre ? `Último cierre: ${reports[0].fechaCierre}` : 'Todavía no hay cierres')}
 
-        {isReportesOpen && (
+        {abierta('REPORTES', isReportesOpen) && enMarco('Reportes', ClipboardList, (
           <ReportesModal
             technicians={technicians}
             tickets={tickets}
@@ -844,11 +923,12 @@ export default function App({ auth }) {
             nombreUsuario={currentUserName || currentUser}
             esAdmin={isAdmin}
             firebaseUser={firebaseUser}
-            onClose={() => setIsReportesOpen(false)}
+            enPagina={isAdmin}
+            onClose={cerrarVentana(setIsReportesOpen)}
           />
-        )}
+        ))}
 
-        {isHistoryModalOpen && (
+        {abierta('HISTORIAL', isHistoryModalOpen) && enMarco('Historial de órdenes', History, (
           <OrdersHistoryModal
             tickets={tickets}
             reports={reports}
@@ -859,9 +939,10 @@ export default function App({ auth }) {
             puedeVerPlantilla={canCerrar}
             plantillaDe={plantillaDeHistorial}
             onCopy={copyToClipboard}
-            onClose={() => setIsHistoryModalOpen(false)}
+            enPagina={isAdmin}
+            onClose={cerrarVentana(setIsHistoryModalOpen)}
           />
-        )}
+        ))}
 
         {isCierreConfirmOpen && (
           <ConfirmModal
@@ -988,18 +1069,19 @@ export default function App({ auth }) {
           />
         )}
 
-        {isTasaModalOpen && (
+        {abierta('TASA', isTasaModalOpen) && enMarco('Tasa y pagos', Coins, (
           <TasaBcvModal
             tasaConfig={tasaConfig}
             onActualizarAutomatica={handleActualizarTasaAutomatica}
             onActualizarManual={handleActualizarTasaManual}
             formasPago={formasPago}
             onGuardarFormasPago={handleGuardarFormasPago}
-            onClose={() => setIsTasaModalOpen(false)}
+            enPagina={isAdmin}
+            onClose={cerrarVentana(setIsTasaModalOpen)}
           />
-        )}
+        ))}
 
-        {verInventario && isInventarioOpen && (
+        {verInventario && abierta('INVENTARIO', isInventarioOpen) && enMarco('Envíos al inventario', PackageCheck, (
           <EnviosInventarioModal
             envios={enviosInventario}
             pendientes={enviosPendientes}
@@ -1014,21 +1096,11 @@ export default function App({ auth }) {
             onReintentarTodas={reintentarTodasEnvios}
             onBuscar={buscarEnvios}
             onDescartar={descartarEnvio}
-            onClose={() => setIsInventarioOpen(false)}
+            enPagina={isAdmin}
+            onClose={cerrarVentana(setIsInventarioOpen)}
           />
-        )}
+        ))}
 
-        {isAdmin && isMaterialesOpen && (
-          <MaterialesModal
-            tickets={tickets}
-            reports={reports}
-            technicians={technicians}
-            hasMoreReports={hasMoreReports}
-            isLoadingReports={isLoadingReports}
-            onLoadMore={loadMoreReports}
-            onClose={() => setIsMaterialesOpen(false)}
-          />
-        )}
 
         {isFormasPagoOpen && (
           <FormasPagoModal

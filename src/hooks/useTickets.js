@@ -13,6 +13,7 @@ import { direccionCliente, nombrePersona } from '../utils/datosCliente';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
+import { errorGarantia } from '../utils/garantia';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { ConflictoOrdenError, verificarEstado } from '../utils/concurrencia';
 import { camposTiempos, conTiempos } from '../utils/tiemposOrden';
@@ -28,7 +29,8 @@ import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalac
 import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
 import { payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { lineaTecnico } from '../utils/historial';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -613,7 +615,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           historialEdiciones: [...(t.historialEdiciones || []), {
             fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
             operador: currentUserRef.current || 'OPERADOR',
-            detalle: `Cód: ${codigo} | Venta cargada por ${t.creadoNombre || t.creado || 'la promotora'}, asignada a ${t.tecnico}`,
+            detalle: `Cód: ${codigo} | ${lineaTecnico('', t.tecnico)} | Venta cargada por ${t.creadoNombre || t.creado || 'la promotora'} con el técnico de su plantilla`,
           }],
         };
       }, t);
@@ -663,6 +665,12 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       setToastMsg({ type: 'error', text: MENSAJE_PROMOTOR_OBLIGATORIO });
       return false;
     }
+    // Garantía de otro técnico: con el check marcado hace falta la orden original, de un técnico distinto.
+    const errorDeGarantia = errorGarantia(formData.garantiaDe, { tecnico: formData.tecnico });
+    if (errorDeGarantia) {
+      setToastMsg({ type: 'error', text: errorDeGarantia });
+      return false;
+    }
     creandoRef.current = true;
     try {
       return await crearTicketSinGuardia(formData);
@@ -681,7 +689,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const codigoManual = (formData.codigo || '').trim();
     const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
     const tieneTecnico = Boolean(formData.tecnico && formData.tecnico.trim());
-    const { ventaTecnico, ...datosOrden } = formData;
+    const { ventaTecnico, garantiaDe, ...datosOrden } = formData;
     // La promotora de una instalación (sale de la plantilla): se guarda con una clave para que cada promotora vea las suyas.
     const datosPromotora = esInstalacion ? { promotora: nombrePromotora(formData.promotora), promotoraClave: claveNombre(formData.promotora) } : {};
     const armarTicket = (codigo) => ({
@@ -690,6 +698,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       direccion: direccionCliente(formData.direccion),
       ...datosPromotora,
       ...(ventaTecnico ? { ventaTecnico } : {}),
+      ...(garantiaDe?.id ? { garantiaDe } : {}),
       ubicacion: normalizarUbicacion(formData.ubicacion).valor || '',
       napCoordenadas: normalizarCoordenadasNap(formData.napCoordenadas).valor || '',
       falla: finalFalla,
@@ -698,7 +707,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       // El nombre real de quien la crea: la plantilla lo muestra como operador, también a quienes no pueden leer la lista de usuarios.
       creadoNombre: currentUserName || currentUser,
       createdAt: Date.now(),
-      historialEdiciones: [],
+      // Si ya nace con técnico, queda anotado quién se la asignó y cuándo.
+      historialEdiciones: tieneTecnico ? [{ fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }), operador: currentUser || 'OPERADOR', detalle: lineaTecnico('', formData.tecnico.trim()) }] : [],
       isAsignado: false,
     });
     const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', newId);
@@ -761,6 +771,14 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
+    if (role !== 'TECNICO') {
+      const errorDeGarantia = errorGarantia(editingTicket.garantiaDe, { tecnico: editingTicket.tecnico });
+      if (errorDeGarantia) {
+        setToastMsg({ type: 'error', text: errorDeGarantia });
+        return false;
+      }
+    }
+
     const potencia = parsePotencia(editingTicket.potenciaDbm);
     if (potencia.error) {
       setToastMsg({ type: 'error', text: `Potencia óptica: ${potencia.error}` });
@@ -808,6 +826,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     const armarTicket = (codigo) => {
       const ticketToSave = { ...editingTicket, nombre: nombrePersona(editingTicket.nombre), direccion: direccionCliente(editingTicket.direccion), codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
+      // Sin el check de garantía (o sin original elegida) la orden no lleva ese campo.
+      if (!ticketToSave.garantiaDe?.id) delete ticketToSave.garantiaDe;
       // Fecha en que se finalizó (la usa el módulo de materiales para filtrar por período).
       if (editingTicket.estado === 'FINALIZADO' && originalTicket?.estado !== 'FINALIZADO') ticketToSave.finalizadoEn = Date.now();
       // Si la orden deja de estar pendiente, el viaje "en camino" / "en sitio" termina.
@@ -827,7 +847,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
         if (ticketToSave.estado === ESTADO_CANCELADO && (originalTicket.motivoCancelacion || '') !== (ticketToSave.motivoCancelacion || '')) cambios.push(lineaMotivoCancelacion(motivoCancelacion(ticketToSave)));
-        if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(`Técnico: ${editingTicket.tecnico || 'Sin asignar'}`);
+        if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(lineaTecnico(originalTicket.tecnico, editingTicket.tecnico));
         if (originalTicket.tipoTrabajo !== editingTicket.tipoTrabajo) cambios.push(`Trabajo: ${editingTicket.tipoTrabajo}`);
         if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
         if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);
@@ -836,6 +856,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');
         if (esInstalacion(editingTicket.tipoTrabajo) && promotoraDeOrden(originalTicket) !== ticketToSave.promotora) cambios.push(`Promotor: ${ticketToSave.promotora || 'Vacío'}`);
         if (originalTicket.nap !== editingTicket.nap) cambios.push(`NAP: ${editingTicket.nap || 'Vacío'}`);
+        if ((originalTicket.garantiaDe?.id || '') !== (ticketToSave.garantiaDe?.id || '')) cambios.push(ticketToSave.garantiaDe?.id ? `Garantía de otro técnico: ${ticketToSave.garantiaDe.codigo} (${ticketToSave.garantiaDe.tecnico})` : 'Garantía de otro técnico quitada');
         // Lo que cargó el técnico y la oficina corrigió (serial, VLAN, metraje, conectores, tipo de visita...).
         cambios.push(...cambiosDatosTecnico(originalTicket, ticketToSave));
         if ((originalTicket.ubicacion || '') !== ticketToSave.ubicacion) cambios.push('Ubicación modificada');
@@ -922,11 +943,18 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
   // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
-  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, montoBs, instalacion } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, tipoEquipoNuevo, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacionTecnico || '').trim()) {
       setToastMsg({ type: 'error', text: 'Debes describir el trabajo realizado antes de pre-finalizar.' });
+      return false;
+    }
+
+    // El tipo de visita es obligatorio (menos en instalaciones) y, con conector externo o drop atenuado, también la NAP y el puerto.
+    const errorVisita = errorTipoVisita(ticket.tipoTrabajo, tipoVisita) || errorNapPuertoVisita(tipoVisita, nap);
+    if (errorVisita) {
+      setToastMsg({ type: 'error', text: errorVisita });
       return false;
     }
 
@@ -948,6 +976,12 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const errorSerialEquipo = serialEquipoParseado?.error || (serialEquipoParseado ? errorSerialCaja(serialEquipo) : '');
     if (errorSerialEquipo) {
       setToastMsg({ type: 'error', text: errorSerialEquipo });
+      return false;
+    }
+    // Cambio de equipo: el tipo del equipo nuevo (MRTV, MTV, MR o SM) también es obligatorio.
+    const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipoNuevo);
+    if (errorTipoEquipo) {
+      setToastMsg({ type: 'error', text: errorTipoEquipo });
       return false;
     }
 
@@ -985,7 +1019,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     // El serial del equipo nuevo solo se escribe en un cambio de equipo, o para borrar uno anterior.
     const camposSerialEquipo = tipoVisita !== undefined && (esCambioEquipo(tipoVisita) || ticket.serialEquipo)
-      ? datosSerialEquipo(tipoVisita, serialEquipo)
+      ? datosSerialEquipo(tipoVisita, serialEquipo, tipoEquipoNuevo)
       : {};
 
     let detalle = 'Marcado como PRE-FINALIZADO';
@@ -999,7 +1033,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
       const conector = textoConectorVisita({ tipoVisita, ...camposConectores });
       if (conector) detalle += ` | ${conector}`;
-      if (serialEquipoParseado) detalle += ` | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
+      if (serialEquipoParseado) detalle += ` | Equipo nuevo: ${tipoEquipoNuevo} | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
     }
     if (avisaCobroAlPreFinalizar(tipoVisita)) detalle += detalleCobro(montoBs, COBRO_VISITA, false);
 

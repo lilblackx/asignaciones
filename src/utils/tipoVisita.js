@@ -2,18 +2,21 @@
 //
 // - Conector externo / interno: visita para cambiar un conector. Generan un cobro al cliente
 //   (se calcula al finalizar con la tasa del momento) y el externo pide NAP y puerto. El técnico
-//   indica CUÁNTOS conectores usó de cada color: el externo es siempre verde (al menos 1); el interno,
-//   verdes y/o azules (al menos 1 en total). Se guarda en `conectoresUsados: { verde, azul }`; las
+//   indica CUÁNTOS conectores usó de cada color: el externo es siempre verde (al menos 1) y puede añadir
+//   conectores internos azules (opcional); el interno, verdes y/o azules (al menos 1 en total). Se guarda
+//   en `conectoresUsados: { verde, azul }` (en el externo, el azul es el interno); las
 //   visitas anteriores solo tienen el color (`conectorExterno` / `conectorInterno`) y cuentan como 1.
 // - Recableado: se registran los metros de cable usados (obligatorio) y, opcionalmente, los
 //   conectores colocados: un conector externo (solo verde) y/o uno interno (verde o azul).
 //   No genera cobro.
 // - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
-//   `serialEquipo`.
+//   `serialEquipo`, junto con el tipo del equipo nuevo (MRTV, MTV, MR o SM; obligatorio) en `tipoEquipoNuevo`.
 // - Drop atenuado, configuración de router y fuente averiada: solo se registra el tipo de visita,
 //   sin datos extra.
 
-import { parseSerial } from './instalacion.js';
+import { esInstalacion, parseSerial } from './instalacion.js';
+import { napSinDato, separarNapPuerto } from './napPuerto.js';
+import { TIPOS_DE_EQUIPO } from '../constants.js';
 
 export const TIPO_CONECTOR_EXTERNO = 'CONECTOR_EXTERNO';
 export const TIPO_CONECTOR_INTERNO = 'CONECTOR_INTERNO';
@@ -44,6 +47,26 @@ export const TIPOS_VISITA = [
   { value: TIPO_FUENTE_AVERIADA, label: ETIQUETA_TIPO_VISITA[TIPO_FUENTE_AVERIADA] },
 ];
 
+// El tipo de visita es obligatorio al pre-finalizar cualquier orden que no sea una instalación (que no lo lleva): el técnico escoge uno de los tipos, sin opción "Ninguno".
+// '' si está bien; si no, el mensaje.
+export const errorTipoVisita = (tipoTrabajo, tipoVisita) => (
+  esInstalacion(tipoTrabajo) || TIPOS_VISITA.some((t) => t.value && t.value === tipoVisita) ? '' : 'Elige el tipo de visita.'
+);
+
+// Solo estas visitas piden la NAP y el puerto, en dos campos y obligatorios (con el conector externo, el drop atenuado y el recableado se llega a la caja del cliente); en el resto
+// de visitas (conector interno, cambio de equipo, configuración de router, fuente averiada) no se piden y la orden conserva la NAP que ya traía. Las instalaciones los piden aparte.
+export const pideNapPuertoVisita = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_DROP_ATENUADO || tipoVisita === TIPO_RECABLEADO;
+
+// '' si la visita no los pide o `nap` (el texto de la orden, "NAP 08 - Puerto 3") trae una NAP real y el puerto; si no, el mensaje.
+export function errorNapPuertoVisita(tipoVisita, nap) {
+  if (!pideNapPuertoVisita(tipoVisita)) return '';
+  const { nap: caja, puerto } = separarNapPuerto(nap);
+  return napSinDato(caja) || !puerto ? 'Indica la NAP y el puerto.' : '';
+}
+
+// Las opciones que ve el técnico al pre-finalizar: los tipos, sin "Ninguno" (la oficina sí puede dejar uno sin tipo al corregir una orden vieja).
+export const TIPOS_VISITA_OBLIGATORIO = TIPOS_VISITA.filter((t) => t.value);
+
 // --- Cambio de equipo ---------------------------------------------------------------------
 
 export const esCambioEquipo = (tipoVisita) => tipoVisita === TIPO_CAMBIO_EQUIPO;
@@ -57,10 +80,17 @@ export function parseSerialEquipo(raw) {
   return serial;
 }
 
-// Serial tal como se guarda en la orden: solo en un cambio de equipo; en cualquier otro tipo queda
-// vacío ('' y no omitir el campo es lo que permite borrar un serial anterior).
-export const datosSerialEquipo = (tipoVisita, serial) => ({
+// Tipo del equipo nuevo (MRTV, MTV, MR o SM, los mismos de las instalaciones): obligatorio en un cambio de equipo.
+// '' si no hace falta o está bien; si no, el mensaje. `exigir` false: una orden vieja que se arregló sin el tipo no obliga a ponerlo al editarla.
+export const errorTipoEquipoNuevo = (tipoVisita, tipo, exigir = true) => (
+  exigir && esCambioEquipo(tipoVisita) && !TIPOS_DE_EQUIPO.includes(tipo) ? 'Elige el tipo del equipo nuevo.' : ''
+);
+
+// Serial y tipo del equipo nuevo tal como se guardan en la orden: solo en un cambio de equipo; en cualquier otro tipo quedan
+// vacíos ('' y no omitir el campo es lo que permite borrar uno anterior).
+export const datosSerialEquipo = (tipoVisita, serial, tipoEquipo = '') => ({
   serialEquipo: esCambioEquipo(tipoVisita) ? (parseSerial(serial).valor ?? '') : '',
+  tipoEquipoNuevo: esCambioEquipo(tipoVisita) && TIPOS_DE_EQUIPO.includes(tipoEquipo) ? tipoEquipo : '',
 });
 
 export const esVisitaConector = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_CONECTOR_INTERNO;
@@ -112,12 +142,12 @@ const entero = (v) => (Number.isInteger(v) && v >= 0 ? v : 0);
 
 // Conectores de una visita de conector por color: { verde, azul }. Si la visita guardó las cantidades se usan
 // esas; las visitas anteriores solo tienen el color y cuentan como 1 conector de ese color. En cualquier otro
-// tipo de visita no aplica ({ verde: 0, azul: 0 }); el externo nunca tiene azules.
+// tipo de visita no aplica ({ verde: 0, azul: 0 }); en el externo, el azul es un conector interno opcional.
 export function cantidadesConector(t) {
   const externo = t?.tipoVisita === TIPO_CONECTOR_EXTERNO;
   if (!externo && t?.tipoVisita !== TIPO_CONECTOR_INTERNO) return { verde: 0, azul: 0 };
   const c = t.conectoresUsados;
-  if (c && typeof c === 'object') return { verde: entero(c.verde), azul: externo ? 0 : entero(c.azul) };
+  if (c && typeof c === 'object') return { verde: entero(c.verde), azul: entero(c.azul) };
   const color = externo ? colorConectorExterno(t.conectorExterno) : colorConectorInterno(t.conectorInterno);
   return { verde: color === COLOR_VERDE ? 1 : 0, azul: color === COLOR_AZUL ? 1 : 0 };
 }
@@ -131,7 +161,7 @@ export function textoCantidades({ verde = 0, azul = 0 } = {}) {
 }
 
 // Cantidades escritas por el técnico (texto) -> { valor: { verde, azul } } o { error, campo }.
-// Un campo vacío cuenta como 0. Externo: verdes, al menos 1. Interno: verdes y/o azules, al menos 1 en total.
+// Un campo vacío cuenta como 0. Externo: verdes, al menos 1 (azules internos opcionales). Interno: verdes y/o azules, al menos 1 en total.
 export function parseCantidadesConector(tipoVisita, { verde, azul } = {}) {
   const leer = (raw, nombre) => {
     const txt = String(raw ?? '').trim();
@@ -144,12 +174,12 @@ export function parseCantidadesConector(tipoVisita, { verde, azul } = {}) {
   if (!esVisitaConector(tipoVisita)) return { valor: null };
   const v = leer(verde, 'verdes');
   if (v.error) return { error: v.error, campo: 'verde' };
-  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
-    if (v.valor < 1) return { error: 'Indica cuántos conectores verdes usaste.', campo: 'verde' };
-    return { valor: { verde: v.valor, azul: 0 } };
-  }
   const a = leer(azul, 'azules');
   if (a.error) return { error: a.error, campo: 'azul' };
+  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
+    if (v.valor < 1) return { error: 'Indica cuántos conectores verdes usaste.', campo: 'verde' };
+    return { valor: { verde: v.valor, azul: a.valor } };
+  }
   if (v.valor + a.valor < 1) return { error: 'Indica cuántos conectores usaste: verdes, azules o ambos.', campo: 'verde' };
   return { valor: { verde: v.valor, azul: a.valor } };
 }
@@ -170,7 +200,8 @@ export function datosConectores(tipoVisita, { metros, conectorExterno, conectorI
     return { ...vacios, metrosCable: metros ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
   }
   if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
-    return { ...vacios, conectorExterno: COLOR_VERDE, conectoresUsados: { verde: entero(conectores?.verde), azul: 0 } };
+    const azul = entero(conectores?.azul);
+    return { ...vacios, conectorExterno: COLOR_VERDE, conectorInterno: azul > 0 ? COLOR_AZUL : '', conectoresUsados: { verde: entero(conectores?.verde), azul } };
   }
   if (tipoVisita === TIPO_CONECTOR_INTERNO) {
     const verde = entero(conectores?.verde);
@@ -186,6 +217,10 @@ export function datosConectores(tipoVisita, { metros, conectorExterno, conectorI
 export function textoConectorVisita(t) {
   if (!esVisitaConector(t?.tipoVisita)) return '';
   if (t.conectoresUsados && typeof t.conectoresUsados === 'object') {
+    const { verde, azul } = cantidadesConector(t);
+    if (t.tipoVisita === TIPO_CONECTOR_EXTERNO && azul > 0) {
+      return `Conectores: ${verde} externo${verde === 1 ? '' : 's'} verde${verde === 1 ? '' : 's'}, ${azul} interno${azul === 1 ? '' : 's'} azul${azul === 1 ? '' : 'es'}`;
+    }
     const texto = textoCantidades(cantidadesConector(t));
     return texto ? `Conectores: ${texto}` : '';
   }

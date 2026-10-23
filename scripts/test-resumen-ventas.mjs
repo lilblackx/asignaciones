@@ -25,11 +25,14 @@ const orden = (t) => {
 };
 
 // --- Fecha de la orden y filtro por fecha ---
+// Fechas reales (la regla única de utils/fechaOrden descarta las futuras y las de más de 40 días antes de archivarse).
+const HACE = (ms) => Date.now() - ms;
 check('una orden abierta se fecha por cuando se creó; una cerrada, por cuando se cerró', [
-  fechaOrden({ estado: 'PENDIENTE', createdAt: 5, finalizadoEn: 9 }),
-  fechaOrden({ estado: 'FINALIZADO', createdAt: 5, finalizadoEn: 9 }),
-  fechaOrden({ origen: 'historial', estado: 'FINALIZADO', archivadoEn: 7 }),
-], [5, 9, 7]);
+  fechaOrden({ estado: 'PENDIENTE', createdAt: HACE(5000), finalizadoEn: HACE(1000) }),
+  fechaOrden({ estado: 'FINALIZADO', createdAt: HACE(5000), finalizadoEn: HACE(1000) }),
+  fechaOrden({ origen: 'historial', estado: 'FINALIZADO', archivadoEn: HACE(2000) }),
+  fechaOrden({ origen: 'historial', estado: 'CANCELADO', archivadoEn: HACE(2000), canceladaEn: HACE(3000) }),
+].map((ms, i) => [HACE(5000), HACE(1000), HACE(2000), HACE(3000)][i] - ms < 5), [true, true, true, true]);
 check('hoy: desde la medianoche', [enRangoFecha(inicioHoy, 'HOY', AHORA), enRangoFecha(inicioHoy - 1, 'HOY', AHORA)], [true, false]);
 check('ayer: solo el día anterior', [enRangoFecha(inicioHoy - 1, 'AYER', AHORA), enRangoFecha(inicioHoy - DIA, 'AYER', AHORA), enRangoFecha(inicioHoy, 'AYER', AHORA), enRangoFecha(inicioHoy - DIA - 1, 'AYER', AHORA)], [true, true, false, false]);
 check('últimos 7 días: hoy y los 6 anteriores', [enRangoFecha(inicioHoy - 6 * DIA, '7_DIAS', AHORA), enRangoFecha(inicioHoy - 6 * DIA - 1, '7_DIAS', AHORA)], [true, false]);
@@ -187,6 +190,18 @@ check('un cierre con finalizadas y canceladas en un solo reporte suma cada una e
 // El cierre automático (Worker) y el manual (app) deben contar igual: mismas órdenes, mismos totales.
 const aFirestore = (t) => ({ fields: Object.fromEntries(Object.entries(t).map(([k, v]) => [k, typeof v === 'number' ? { integerValue: String(v) } : { stringValue: v }])) });
 for (const estado of ['FINALIZADO', 'CANCELADO']) check(`el cierre manual y el automático cuentan igual (${estado})`, incrementosMensuales(paraCerrar, estado, cierreFin), incrementosWorker(paraCerrar.map(aFirestore), estado, cierreFin));
+// Un cierre del 30/09 hecho a mano el 01/10: las órdenes sin fecha de finalización cuentan en septiembre (el día que se cierra), no en octubre (la hora en que se hizo).
+const cierreDel30 = Date.parse('2026-09-30T12:00:00-04:00');
+const hechoEl1 = Date.parse('2026-10-01T09:00:00-04:00');
+check('sin fecha de finalización, la orden cuenta en el mes del día que se cierra (cierre del 30/09 hecho el 01/10)', incrementosMensuales([tFin({})], 'FINALIZADO', hechoEl1, cierreDel30), { '2026-09': { instalacionesFinalizadas: 1 } });
+check('sin indicar el día de cierre, cuenta en el mes de la hora del cierre (como antes)', incrementosMensuales([tFin({})], 'FINALIZADO', hechoEl1), { '2026-10': { instalacionesFinalizadas: 1 } });
+check('con fecha de finalización creíble, el día de cierre no cambia el mes', incrementosMensuales([tFin({ finalizadoEn: Date.parse('2026-10-01T08:00:00-04:00') })], 'FINALIZADO', hechoEl1, cierreDel30), { '2026-10': { instalacionesFinalizadas: 1 } });
+// Una cancelada cuenta en el mes en que se canceló (canceladaEn), igual que una finalizada en el mes en que se finalizó.
+const cancelada = (extra) => tFin({ estado: 'CANCELADO', ...extra });
+check('una cancelada con canceladaEn cuenta en ese mes, no en el del cierre', incrementosMensuales([cancelada({ canceladaEn: Date.parse('2026-09-30T20:00:00-04:00') })], 'CANCELADO', hechoEl1, hechoEl1), { '2026-09': { instalacionesCanceladas: 1 } });
+check('el cierre manual y el automático cuentan igual con canceladaEn', incrementosMensuales([cancelada({ canceladaEn: Date.parse('2026-09-30T20:00:00-04:00') })], 'CANCELADO', hechoEl1, hechoEl1), incrementosWorker([cancelada({ canceladaEn: Date.parse('2026-09-30T20:00:00-04:00') })].map(aFirestore), 'CANCELADO', hechoEl1, hechoEl1));
+check('una finalizada no usa canceladaEn ni una cancelada usa finalizadoEn', incrementosMensuales([tFin({ canceladaEn: Date.parse('2026-09-30T20:00:00-04:00') })], 'FINALIZADO', hechoEl1, hechoEl1), { '2026-10': { instalacionesFinalizadas: 1 } });
+check('el cierre manual y el automático cuentan igual con un día de cierre anterior', incrementosMensuales([tFin({})], 'CANCELADO', hechoEl1, cierreDel30), incrementosWorker([tFin({})].map(aFirestore), 'CANCELADO', hechoEl1, cierreDel30));
 
 // --- Costo de Firebase y límites ---
 const hook = leer('../src/hooks/useHistorialInstalaciones.js');

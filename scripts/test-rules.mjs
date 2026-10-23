@@ -64,6 +64,10 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('tickets').doc('instalacion-4').set({ codigo: 'IO4', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Orden vieja sin promotora', cedula: '4', tecnico: '' });
   await base.collection('tickets').doc('instalacion-5').set({ codigo: 'IO5', tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE', nombre: 'Otra promotora', cedula: '5', tecnico: '', promotora: 'Maria', promotoraClave: 'maria' });
   await base.collection('reports').doc('reporte-1').set({ total: 1, tipoReporte: 'CIERRE', createdAt: 1 });
+  await base.collection('reports').doc('reporte-cancelados').set({ total: 1, tipoReporte: 'CANCELADOS', createdAt: 2 });
+  await base.collection('users').doc('infra-uid').set({ role: 'INFRAESTRUCTURA', disabled: false, username: 'infra' });
+  await base.collection('users').doc('infra-off-uid').set({ role: 'INFRAESTRUCTURA', disabled: true, username: 'infra-off' });
+  await base.collection('tickets').doc('instalacion-final').set({ codigo: 'IO9', tipoTrabajo: 'INSTALACIÓN', estado: 'FINALIZADO', nombre: 'Cliente instalado', cedula: '9', tecnico: 'GERARDO MOLERO', nap: 'NAP O02D10 - Puerto 3' });
   await base.collection('historialInstalaciones').doc('hist-1').set({ codigo: 'IO0', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Sariana', promotoraClave: 'sariana' });
   await base.collection('historialInstalaciones').doc('hist-otra').set({ codigo: 'IO9', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Maria', promotoraClave: 'maria' });
 
@@ -298,8 +302,8 @@ await check('TECNICO puede registrar el color del conector de una visita de cone
 });
 
 await check('TECNICO puede registrar un cambio de equipo con el serial del equipo nuevo', async () => {
-  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'HWTC1A2B3C4D' }));
-  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', serialEquipo: '' }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'HWTC1A2B3C4D', tipoEquipoNuevo: 'MRTV' }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', serialEquipo: '', tipoEquipoNuevo: '' }));
 });
 
 await check('TECNICO puede marcar "en camino", "llegué" y cancelarlo en su orden', async () => {
@@ -533,6 +537,38 @@ await check('ALMACEN NO puede escribir órdenes, reportes ni técnicos', async (
 await check('ALMACEN NO lee usuarios ni el historial de instalaciones', async () => {
   await assertFails(datos(asAlmacen()).collection('users').get());
   await assertFails(datos(asAlmacen()).collection('historialInstalaciones').get());
+});
+
+// --- INFRAESTRUCTURA: solo lee las instalaciones finalizadas y los reportes de cierre ---
+const asInfra = () => testEnv.authenticatedContext('infra-uid').firestore();
+const instalacionesInfra = (db) => datos(db).collection('tickets').where('tipoTrabajo', '==', 'INSTALACIÓN').where('estado', '==', 'FINALIZADO');
+await check('INFRAESTRUCTURA lee las instalaciones finalizadas y los reportes de cierre', async () => {
+  await assertSucceeds(instalacionesInfra(asInfra()).get());
+  await assertSucceeds(ticketPath(asInfra(), 'instalacion-final').get());
+  await assertSucceeds(datos(asInfra()).collection('reports').where('tipoReporte', '==', 'CIERRE').where('createdAt', '>=', 0).orderBy('createdAt', 'desc').get());
+});
+await check('INFRAESTRUCTURA NO lee averías ni instalaciones sin finalizar, ni todas las órdenes de golpe', async () => {
+  await assertFails(ticketPath(asInfra(), 'averia-los').get());
+  await assertFails(ticketPath(asInfra(), 'instalacion-1').get());
+  await assertFails(datos(asInfra()).collection('tickets').get());
+  await assertFails(ticketsInst(asInfra()).get());
+});
+await check('INFRAESTRUCTURA NO lee los reportes de cancelados ni técnicos, usuarios, historial ni Finanzas', async () => {
+  await assertFails(datos(asInfra()).collection('reports').doc('reporte-cancelados').get());
+  await assertFails(datos(asInfra()).collection('reports').get());
+  await assertFails(datos(asInfra()).collection('technicians').get());
+  await assertFails(datos(asInfra()).collection('users').get());
+  await assertFails(datos(asInfra()).collection('historialInstalaciones').get());
+  await assertFails(datos(asInfra()).collection('pagosTecnicos').get());
+});
+await check('INFRAESTRUCTURA NO puede escribir nada', async () => {
+  await assertFails(ticketPath(asInfra(), 'instalacion-final').update({ observacion: 'x' }));
+  await assertFails(datos(asInfra()).collection('tickets').doc('nueva').set({ codigo: 'X', tipoTrabajo: 'INSTALACIÓN' }));
+  await assertFails(datos(asInfra()).collection('reports').doc('reporte-1').update({ total: 9 }));
+  await assertFails(ticketPath(asInfra(), 'instalacion-final').delete());
+});
+await check('INFRAESTRUCTURA desactivado no lee nada', async () => {
+  await assertFails(instalacionesInfra(testEnv.authenticatedContext('infra-off-uid').firestore()).get());
 });
 
 const asPromotora2 = () => testEnv.authenticatedContext('promotora2-uid').firestore();
@@ -872,8 +908,8 @@ await check('Registro de técnicos: ALMACEN y PROMOTORA no leen ni escriben; nad
 const asFinanzas = () => testEnv.authenticatedContext('finanzas-uid').firestore();
 const asFinanzasOff = () => testEnv.authenticatedContext('finanzas-off-uid').firestore();
 const fin = (db, nombre) => datos(db).collection(nombre);
-const tarifas = (extra = {}) => ({ INSTALACION: 20, VISITA: 5, AVERIA: 3.5, RECABLEADO: 8, por: 'fina', en: 1, ...extra });
-const pagoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', desde: '2026-10-01', hasta: '2026-10-15', cantidades: { INSTALACION: 1, VISITA: 0, AVERIA: 1 }, tarifas: { INSTALACION: 20, VISITA: 5, AVERIA: 3.5 }, total: 23.5, cantidadOrdenes: 2, nota: '', por: 'fina', creadoEn: 1, anulado: false, ...extra });
+const tarifas = (extra = {}) => ({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, MUDANZA_EXTERNA: 8, VALIDACION_NAP: 2, TRABAJO_ADICIONAL: 6, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10, por: 'fina', en: 1, ...extra });
+const pagoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', desde: '2026-10-01', hasta: '2026-10-15', cantidades: { INSTALACION: 1, AVERIA: 1, MUDANZA_INTERNA: 0 }, tarifas: { INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5 }, total: 23.5, cantidadOrdenes: 2, nota: '', por: 'fina', creadoEn: 1, anulado: false, ...extra });
 const ordenPagada = (pagoId, extra = {}) => ({ pagoId, tecnico: 'GERARDO MOLERO', concepto: 'AVERIA', monto: 3.5, dia: '2026-10-14', codigo: 'AS1', ...extra });
 // Un pago con sus órdenes en un solo lote, como lo guarda la app.
 const guardarPago = (db, pagoId, pago, ordenes) => {
@@ -899,9 +935,9 @@ await check('FINANZAS NO lee usuarios ni el historial de instalaciones', async (
   await assertFails(fin(asFinanzas(), 'users').get());
   await assertFails(fin(asFinanzas(), 'historialInstalaciones').get());
 });
-await check('FINANZAS NO lee ni escribe el registro de VN y TA', async () => {
+await check('FINANZAS lee el registro de VN y TA, pero no crea filas ni contadores', async () => {
   const fila = { codigo: 'VAN01', trabajo: 'VN', tecnico: '', fecha: '2026-10-14', observacion: '', operador: 'Fina', creadoPor: 'fina', creadoEn: 1, actualizadoEn: 1 };
-  await assertFails(fin(asFinanzas(), 'registroVnTa').get());
+  await assertSucceeds(fin(asFinanzas(), 'registroVnTa').get());
   await assertFails(fin(asFinanzas(), 'registroVnTa').doc('fila-fin').set(fila));
   await assertFails(fin(asFinanzas(), 'counters').doc('VNTA_VAN_2026-10').set({ ultimo: 1, actualizadoEn: 1 }));
 });
@@ -921,7 +957,7 @@ await check('Tarifas: FINANZAS y ADMIN las fijan en el documento "actual"', asyn
   await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').get());
   await assertSucceeds(fin(asAdmin(), 'tarifasPago').doc('actual').set(tarifas({ por: 'admin', AVERIA: 4 })));
   // Un cliente que todavía no manda el recableado (la versión anterior de la app) sigue pudiendo guardar.
-  const { RECABLEADO, ...sinRecableado } = tarifas();
+  const { RECABLEADO, LOW_SIGNAL, CAMBIO_EQUIPO, ...sinRecableado } = tarifas();
   await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').set(sinRecableado));
   await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas()));
 });
@@ -930,6 +966,8 @@ await check('Tarifas: sin números negativos, sin campos de más, sin otro docum
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ AVERIA: 'cinco' })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ RECABLEADO: -2 })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ RECABLEADO: 'ocho' })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ LOW_SIGNAL: -1 })));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ CAMBIO_EQUIPO: 'diez' })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ extra: 1 })));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('otro').set(tarifas()));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ por: 'otro' })));
@@ -953,6 +991,34 @@ await check('Pagar: el pago va a nombre de quien lo hace y con datos válidos', 
   await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe({ extra: 1 }), [['orden-e', ordenPagada('p-4')]]));
   await assertFails(guardarPago(asFinanzas(), 'p-4', pagoDe(), [['orden-e', ordenPagada('p-4', { concepto: 'OTRO' })]]));
 });
+await check('Pagar: el pago guarda la tasa BCV de su momento (número positivo)', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-tasa', pagoDe({ cantidadOrdenes: 1, total: 8, tasa: 569.6 }), [['orden-tasa', ordenPagada('p-tasa', { concepto: 'AVERIA', monto: 8 })]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-tasa-mala', pagoDe({ tasa: -1 }), [['orden-tasa-1', ordenPagada('p-tasa-mala')]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-tasa-texto', pagoDe({ tasa: '569' }), [['orden-tasa-2', ordenPagada('p-tasa-texto')]]));
+});
+await check('Pagar: low signal y cambio de equipo se guardan con su concepto', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-ls', pagoDe({ cantidadOrdenes: 2, total: 13 }), [['orden-ls', ordenPagada('p-ls', { concepto: 'LOW_SIGNAL', monto: 3 })], ['orden-ce', ordenPagada('p-ls', { concepto: 'CAMBIO_EQUIPO', monto: 10 })]]));
+});
+await check('Pagar: una validación de NAP y un trabajo adicional se guardan con su concepto', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-vnta', pagoDe({ cantidadOrdenes: 2, total: 8 }), [['vnta_fila-1', ordenPagada('p-vnta', { concepto: 'VALIDACION_NAP', monto: 2, codigo: 'VAN01' })], ['vnta_fila-2', ordenPagada('p-vnta', { concepto: 'TRABAJO_ADICIONAL', monto: 6, codigo: 'TA01' })]]));
+  await assertFails(guardarPago(asFinanzas(), 'p-vnta-mal', pagoDe(), [['vnta_fila-3', ordenPagada('p-vnta-mal', { concepto: 'OTRO_CONCEPTO' })]]));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ VALIDACION_NAP: -1 })));
+});
+await check('Pagar: una mudanza interna y una externa se guardan con su concepto', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-mud', pagoDe({ cantidadOrdenes: 2, total: 13 }), [['orden-mi', ordenPagada('p-mud', { concepto: 'MUDANZA_INTERNA', monto: 5 })], ['orden-me', ordenPagada('p-mud', { concepto: 'MUDANZA_EXTERNA', monto: 8 })]]));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ MUDANZA_EXTERNA: -1 })));
+});
+await check('Tipo de mudanza de un cierre: Finanzas lo elige a su nombre, solo interna o externa, y no se borra', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').set({ tipo: 'EXTERNA', por: 'fina', en: 1 }));
+  await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').set({ tipo: 'INTERNA', por: 'fina', en: 2 }));
+  await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').get());
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('x').set({ tipo: 'OTRA', por: 'fina', en: 1 }));
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('x').set({ tipo: 'INTERNA', por: 'otro', en: 1 }));
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('x').set({ tipo: 'INTERNA', por: 'fina', en: 1, extra: 1 }));
+  await assertFails(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').delete());
+  await assertFails(fin(asUsuario(), 'tiposMudanza').doc('y').set({ tipo: 'INTERNA', por: 'usuario', en: 1 }));
+  await assertFails(fin(asUsuario(), 'tiposMudanza').get());
+});
 await check('Pagar: un recableado se guarda con su concepto', async () => {
   await assertSucceeds(guardarPago(asFinanzas(), 'p-rec', pagoDe({ cantidadOrdenes: 1, total: 8 }), [['orden-recableado', ordenPagada('p-rec', { concepto: 'RECABLEADO', monto: 8 })]]));
 });
@@ -975,6 +1041,182 @@ await check('Anular: no se anula dos veces, no se cambia otro campo del pago ni 
   await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-5').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 6 }));
   await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-5').delete());
   await assertFails(fin(asFinanzas(), 'ordenesPagadas').doc('orden-a').update({ monto: 1 }));
+});
+
+// --- Pago con moneda, forma, referencia, adelantos y aviso al técnico ---
+const pagoConDatos = (extra = {}) => pagoDe({ descuento: 20, neto: 3.5, adelantos: [{ id: 'adel-1', monto: 20 }], moneda: 'BS', forma: 'Pago móvil', banco: 'Banesco', referencia: '123', pagadoEn: 5, montoPagado: 3091.9, notificado: true, tasa: 883.4, ...extra });
+await check('Pagar: el pago con moneda, forma, referencia, fecha, adelantos y aviso se guarda', async () => {
+  await assertSucceeds(guardarPago(asFinanzas(), 'p-datos', pagoConDatos(), [['orden-datos-a', ordenPagada('p-datos', { concepto: 'INSTALACION', monto: 20 })], ['orden-datos-b', ordenPagada('p-datos')]]));
+});
+await check('Pagar: moneda inventada, descuento o neto mayores que el total, forma vacía o aviso que no es sí o no se rechazan', async () => {
+  const intentos = [{ moneda: 'EUR' }, { descuento: 99 }, { neto: 99 }, { forma: '' }, { notificado: 'si' }, { pagadoEn: 'ayer' }, { referencia: 'x'.repeat(41) }, { banco: 'x'.repeat(41) }, { banco: 5 }, { montoPagado: -1 }, { extra: 1 }];
+  for (const [i, extra] of intentos.entries()) await assertFails(guardarPago(asFinanzas(), `p-mal-${i}`, pagoConDatos(extra), [[`orden-mal-${i}`, ordenPagada(`p-mal-${i}`)]]));
+});
+
+// Adelantos a los técnicos
+const adelantoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', monto: 50, aplicado: 0, forma: 'Zelle', banco: 'Chase', referencia: 'ZL-9', pagadoEn: 5, nota: '', por: 'fina', creadoEn: 6, anulado: false, notificado: true, ...extra });
+await check('Adelanto: Finanzas lo registra a su nombre, en dólares, sin descontar nada todavía', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').set(adelantoDe()));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').set(adelantoDe({ forma: 'Efectivo', referencia: '' })));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-pm').set(adelantoDe({ forma: 'Pago móvil' })));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-tr').set(adelantoDe({ forma: 'Transferencia' })));
+});
+await check('Adelanto: sin monto, con una forma inventada, ya descontado, a nombre de otro, con campos de más o ya anulado no se guarda', async () => {
+  const intentos = [{ monto: 0 }, { monto: -5 }, { monto: 'cinco' }, { forma: 'Bitcoin' }, { aplicado: 10 }, { por: 'otro' }, { extra: 1 }, { anulado: true }, { tecnico: '' }, { referencia: 'x'.repeat(41) }, { banco: 'x'.repeat(41) }, { banco: 7 }];
+  for (const [i, extra] of intentos.entries()) await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc(`adel-mal-${i}`).set(adelantoDe(extra)));
+  await assertFails(fin(asUsuario(), 'adelantosTecnicos').doc('adel-usuario').set(adelantoDe({ por: 'usuario' })));
+});
+await check('Adelanto: al pagar se descuenta (solo cambia aplicado, sin pasar del monto), al anular el pago se devuelve', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 20 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 60 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: -1 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 30, monto: 99 }));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
+});
+await check('Adelanto: se anula solo si no se descontó nada, a nombre de quien lo hace, y no se borra', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 10 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 9 }));
+  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ aplicado: 5 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').delete());
+});
+await check('Cada técnico lee solo sus pagos y sus adelantos (para ver el aviso con la app abierta); no escribe ni lee los de otro', async () => {
+  const propios = (db, nombre) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection(nombre).where('tecnico', '==', 'GERARDO MOLERO').get();
+  await assertSucceeds(propios(asTecnico(), 'pagosTecnicos'));
+  await assertSucceeds(propios(asTecnico(), 'adelantosTecnicos'));
+  await assertFails(fin(asTecnico(), 'adelantosTecnicos').get());
+  await assertFails(fin(asTecnico(), 'pagosTecnicos').get());
+  await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-3').set(adelantoDe({ por: 'tecnico' })));
+  await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
+  await assertFails(fin(asOtroTecnico(), 'adelantosTecnicos').doc('adel-1').get());
+});
+
+// Revisión de pagos (la barrera antes de Finanzas): solo el ADMIN escribe; Finanzas la lee
+const revisionDe = (extra = {}) => ({ estado: 'APROBADA', motivo: '', firma: 'abc123', dia: '2026-10-27', codigo: 'IO1', tecnico: 'GERARDO MOLERO', concepto: 'INSTALACION', tecnicoCorregido: '', conceptoCorregido: '', por: 'admin', en: 10, historial: [{ estado: 'APROBADA', por: 'admin', en: 10 }], ...extra });
+await check('Revisión: el administrador aprueba a su nombre y Finanzas la lee', async () => {
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-1').set(revisionDe()));
+  await assertSucceeds(fin(asFinanzas(), 'revisionPagos').doc('rev-1').get());
+  await assertSucceeds(fin(asFinanzas(), 'revisionPagos').get());
+});
+await check('Revisión: retener y excluir piden motivo; aprobar no', async () => {
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-2').set(revisionDe({ estado: 'RETENIDA', motivo: '' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-3').set(revisionDe({ estado: 'EXCLUIDA', motivo: '' })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-2').set(revisionDe({ estado: 'RETENIDA', motivo: 'Falta confirmar el cobro' })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-3').set(revisionDe({ estado: 'EXCLUIDA', motivo: 'Orden de prueba' })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-4').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', conceptoCorregido: 'MUDANZA_EXTERNA' })));
+});
+await check('Revisión: ni Finanzas, ni la oficina ni el técnico la escriben; el ADMIN no firma a nombre de otro ni inventa estados, conceptos o campos', async () => {
+  await assertFails(fin(asFinanzas(), 'revisionPagos').doc('rev-x').set(revisionDe({ por: 'fina' })));
+  await assertFails(fin(asUsuario(), 'revisionPagos').doc('rev-x').set(revisionDe({ por: 'usuario' })));
+  await assertFails(fin(asTecnico(), 'revisionPagos').doc('rev-x').set(revisionDe()));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ por: 'otro' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ estado: 'PAGADA' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ conceptoCorregido: 'REGALO' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ extra: 1 })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ dia: 'ayer' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-x').set(revisionDe({ historial: 'nada' })));
+});
+await check('Revisión: la oficina y el técnico no la leen; el ADMIN puede deshacer borrándola y Finanzas no', async () => {
+  await assertFails(fin(asUsuario(), 'revisionPagos').get());
+  await assertFails(fin(asTecnico(), 'revisionPagos').get());
+  await assertFails(fin(asFinanzas(), 'revisionPagos').doc('rev-1').delete());
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-1').delete());
+});
+
+// Descuentos y bonos por una orden pasada de un técnico a otro (los crea el ADMIN al aprobar; Finanzas solo mueve `aplicado`)
+const ajusteDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', tipo: 'DESCUENTO', monto: 6, aplicado: 0, clave: 'o1', codigo: 'IO2', claveOrigen: 'o0', codigoOrigen: 'IO1', de: 'GERARDO MOLERO', a: 'REINEL BRAVO', por: 'admin', creadoEn: 20, notificado: true, ...extra });
+const bonoDe = (extra = {}) => ajusteDe({ tecnico: 'REINEL BRAVO', tipo: 'BONO', ...extra });
+await check('Ajustes: el administrador crea el descuento al técnico de antes y el bono al nuevo, a su nombre', async () => {
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('desc_o1').set(ajusteDe()));
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').set(bonoDe()));
+  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').get());
+});
+await check('Ajustes: no se inventan: el descuento es de quien perdió la orden y el bono de quien la recibió, con monto positivo y sin nada aplicado', async () => {
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x1').set(ajusteDe({ tecnico: 'REINEL BRAVO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x2').set(bonoDe({ tecnico: 'GERARDO MOLERO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x3').set(ajusteDe({ monto: 0 })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x4').set(ajusteDe({ monto: -3 })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x5').set(ajusteDe({ aplicado: 2 })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x6').set(ajusteDe({ tipo: 'REGALO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x7').set(ajusteDe({ a: 'GERARDO MOLERO' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x8').set(ajusteDe({ por: 'otro' })));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('x9').set(ajusteDe({ extra: 1 })));
+});
+await check('Ajustes: Finanzas, la oficina y el técnico no los crean ni los borran', async () => {
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('y1').set(ajusteDe({ por: 'fina' })));
+  await assertFails(fin(asUsuario(), 'ajustesTecnicos').doc('y2').set(ajusteDe({ por: 'usuario' })));
+  await assertFails(fin(asTecnico(), 'ajustesTecnicos').doc('y3').set(ajusteDe()));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').delete());
+  await assertFails(fin(asTecnico(), 'ajustesTecnicos').doc('desc_o1').delete());
+});
+await check('Ajustes: el técnico lee solo los suyos; la oficina no los lee', async () => {
+  await assertSucceeds(fin(asTecnico(), 'ajustesTecnicos').doc('desc_o1').get());
+  await assertFails(fin(asTecnico(), 'ajustesTecnicos').doc('bono_o1').get());
+  await assertFails(fin(asOtroTecnico(), 'ajustesTecnicos').doc('desc_o1').get());
+  await assertFails(fin(asUsuario(), 'ajustesTecnicos').get());
+});
+await check('Ajustes: Finanzas solo mueve `aplicado` (sin pasar de monto) y el ADMIN no lo toca ni lo borra una vez aplicado', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 6 }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ aplicado: 7 }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ monto: 1 }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ aplicado: -1 }));
+  await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').delete());
+  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 0 }));
+});
+await check('Ajustes: el ADMIN vuelve a guardar o borra los que no se han aplicado', async () => {
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').set(bonoDe({ monto: 8 })));
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').delete());
+  await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('desc_o1').delete());
+});
+await check('Revisión: el descuento es un número no negativo', async () => {
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-d1').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', descuento: 6 })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-d2').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', descuento: -1 })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-d3').set(revisionDe({ estado: 'PENDIENTE', tecnicoCorregido: 'REINEL BRAVO', descuento: 'seis' })));
+});
+await check('Revisión: la decisión de la garantía lleva la orden original o el motivo de no descontar', async () => {
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-g1').set(revisionDe({ estado: 'PENDIENTE', descuento: 6, descuentoDe: { id: 'o0', codigo: 'IO1', tecnico: 'GERARDO MOLERO' } })));
+  await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-g2').set(revisionDe({ estado: 'APROBADA', garantiaSinDescuento: 'Garantía de la empresa' })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-g3').set(revisionDe({ descuentoDe: { id: '', codigo: 'IO1', tecnico: 'X' } })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-g4').set(revisionDe({ descuentoDe: { id: 'o0', codigo: 'IO1', tecnico: 'X', extra: 1 } })));
+  await assertFails(fin(asAdmin(), 'revisionPagos').doc('rev-g5').set(revisionDe({ garantiaSinDescuento: '' })));
+  await assertFails(fin(asFinanzas(), 'revisionPagos').doc('rev-g6').set(revisionDe({ por: 'fina', descuento: 6 })));
+});
+await check('Pagos: se paga un bono solo (sin órdenes) y el neto puede pasar del total si hay bono', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'pagosTecnicos').doc('p-bono').set(pagoDe({ total: 0, cantidadOrdenes: 0, bonos: 6, neto: 6, cantidades: {}, tarifas: {}, ajustes: [{ id: 'bono_o1', monto: 6, tipo: 'BONO' }] })));
+  await assertSucceeds(fin(asFinanzas(), 'pagosTecnicos').doc('p-bono2').set(pagoDe({ bonos: 6, neto: 29.5, ajustes: [{ id: 'bono_o1', monto: 6, tipo: 'BONO' }] })));
+  await assertSucceeds(fin(asFinanzas(), 'pagosTecnicos').doc('p-desc').set(pagoDe({ descuento: 6, neto: 17.5, ajustes: [{ id: 'desc_o1', monto: 6, tipo: 'DESCUENTO' }] })));
+});
+await check('Pagos: sin órdenes ni bono no se paga, y el neto no pasa de total más bono', async () => {
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x1').set(pagoDe({ total: 0, cantidadOrdenes: 0, neto: 0 })));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x2').set(pagoDe({ neto: 30 })));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x3').set(pagoDe({ bonos: 6, neto: 40 })));
+  await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-x4').set(pagoDe({ bonos: -2 })));
+});
+
+// Finanzas marca las filas de VN y TA que paga; mientras están pagadas la oficina no las edita ni las borra
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  const col = ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('registroVnTa');
+  await col.doc('pagable-1').set(filaDe('admin', { codigo: 'VAN07', tecnico: 'GERARDO MOLERO' }));
+  await col.doc('pagable-2').set(filaDe('usuario', { codigo: 'TA07', trabajo: 'TA', tecnico: 'GERARDO MOLERO' }));
+});
+await check('FINANZAS marca la fila con el pago (solo pagoId y pagadoEn) y la desmarca al anular', async () => {
+  await assertSucceeds(filaVnTa(asFinanzas(), 'pagable-1').update({ pagoId: 'p-vnta', pagadoEn: 10 }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').update({ pagoId: 'p-vnta', pagadoEn: 10, tecnico: 'OTRO' }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').update({ fecha: '2026-10-12' }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').update({ pagoId: 5, pagadoEn: 10 }));
+  await assertFails(filaVnTa(asFinanzas(), 'pagable-2').delete());
+});
+await check('la oficina no edita ni borra una fila pagada, ni se marca sola como pagada', async () => {
+  await assertFails(filaVnTa(asAdmin(), 'pagable-1').update({ tecnico: 'OTRO', fecha: '2026-10-11', observacion: 'x', actualizadoEn: 2 }));
+  await assertFails(filaVnTa(asAdmin(), 'pagable-1').delete());
+  await assertFails(filaVnTa(asUsuario(), 'pagable-2').update({ pagoId: 'inventado', pagadoEn: 1 }));
+  await assertFails(filaVnTa(asUsuario(), 'nueva-pagada').set(filaDe('usuario', { codigo: 'VAN08', pagoId: 'p', pagadoEn: 1 })));
+});
+await check('al anular el pago la fila vuelve a ser de la oficina', async () => {
+  await assertSucceeds(filaVnTa(asFinanzas(), 'pagable-1').update({ pagoId: '', pagadoEn: 0 }));
+  await assertSucceeds(filaVnTa(asAdmin(), 'pagable-1').update({ tecnico: 'OTRO', observacion: 'corregida', actualizadoEn: 3, fecha: '2026-10-11', codigo: 'VAN07', trabajo: 'VN', operador: 'Renny Cova', creadoPor: 'admin', creadoEn: 1000 }));
+  await assertSucceeds(filaVnTa(asAdmin(), 'pagable-1').delete());
 });
 
 await testEnv.cleanup();

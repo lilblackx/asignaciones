@@ -2,7 +2,7 @@
 // (vivas y ya archivadas en los cierres cargados). Cada avería cuenta en el día en que se reportó (se creó la orden).
 import { diaDe, mesDe } from './totalesMes.js';
 import { enRango } from './periodoReporte.js';
-import { extraerCodigoNap } from './codigoNap.js';
+import { napSinPuerto } from './codigoNap.js';
 import { duracionAtencion, porcentaje } from './gestionTecnicos.js';
 
 // Una NAP con averías de tantos clientes distintos en el periodo apunta a un problema de la NAP, no de cada cliente.
@@ -21,8 +21,7 @@ export function nombreDeFalla(t) {
 
 // El código de la NAP normalizado (N10D14), o el texto que escribieron en mayúsculas; null si no hay.
 export function napDeOrden(t) {
-  const texto = String(t.nap || '').trim();
-  return texto ? (extraerCodigoNap(texto) || texto.toUpperCase()) : null;
+  return napSinPuerto(t.nap);
 }
 
 const media = (lista) => (lista.length ? lista.reduce((s, n) => s + n, 0) / lista.length : null);
@@ -50,12 +49,13 @@ export function causasDeAveria(ordenes, rango, { tecnico } = {}) {
   for (const t of delPeriodo) {
     const nap = napDeOrden(t);
     if (!nap) continue;
-    if (!naps.has(nap)) naps.set(nap, { nap, total: 0, clientes: new Set(), fallas: new Map(), ultima: 0 });
+    if (!naps.has(nap)) naps.set(nap, { nap, total: 0, clientes: new Set(), fallas: new Map(), ultima: 0, ordenes: [] });
     const n = naps.get(nap);
     n.total += 1;
     n.clientes.add(soloDigitos(t.cedula) || `orden-${t.id ?? t.codigo}`);
     n.fallas.set(nombreDeFalla(t), (n.fallas.get(nombreDeFalla(t)) || 0) + 1);
     n.ultima = Math.max(n.ultima, Number(t.createdAt));
+    n.ordenes.push({ orden: t, dato: nombreDeFalla(t) });
   }
   const porNap = [...naps.values()]
     .map((n) => ({
@@ -64,6 +64,7 @@ export function causasDeAveria(ordenes, rango, { tecnico } = {}) {
       clientes: n.clientes.size,
       principales: [...n.fallas.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([nombre]) => nombre),
       ultima: n.ultima,
+      ordenes: n.ordenes,
       sospechosa: n.clientes.size >= CLIENTES_NAP_SOSPECHOSA,
     }))
     .sort((a, b) => b.total - a.total || a.nap.localeCompare(b.nap))

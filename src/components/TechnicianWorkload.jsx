@@ -53,7 +53,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold rounded leading-none bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/40 dark:hover:bg-amber-500/25 transition-colors cursor-pointer"
         >
           SIN TÉCNICO
-          <span className="bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={sinTecnico} /></span>
+          <span className="bg-white/60 dark:bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={sinTecnico} /></span>
         </button>
       )}
       {[
@@ -71,7 +71,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
         >
           <Icono className="w-3 h-3" aria-hidden="true" />
           {etiqueta}
-          <span className="bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={cantidad} /></span>
+          <span className="bg-white/60 dark:bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={cantidad} /></span>
         </button>
       ))}
       {counts.map(({ id, name, activo, count }) => {
@@ -81,7 +81,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           <>
             {dot}
             {name}
-            {count > 0 && <span className="bg-black/15 dark:bg-white/15 rounded px-1.5 py-0.5"><NumeroPulso valor={count} /></span>}
+            {count > 0 && <span className="bg-white/60 dark:bg-white/15 rounded px-1.5 py-0.5"><NumeroPulso valor={count} /></span>}
           </>
         );
         return canToggle ? (

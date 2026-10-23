@@ -13,7 +13,7 @@ export default function ConfirmSinCoordenadasModal({ nap, isSubmitting, onCancel
             <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-500" />
           </div>
           <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">Faltan las coordenadas de la NAP</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm">
             La NAP <strong>{nap}</strong> no tiene coordenadas, así que la plantilla saldrá sin su ubicación. ¿{textoConfirmar} así?
           </p>
         </div>
@@ -21,7 +21,7 @@ export default function ConfirmSinCoordenadasModal({ nap, isSubmitting, onCancel
           <button
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
+            className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
             Volver
           </button>
           <button

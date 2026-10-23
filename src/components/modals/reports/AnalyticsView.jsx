@@ -44,7 +44,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
                 type="button"
                 aria-pressed={tipoProductividad === clave}
                 onClick={() => setTipoProductividad(clave)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
               >
                 {texto}
               </button>
@@ -52,7 +52,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
           </div>
         </div>
         {porTecnico.length === 0 ? (
-          <p className="text-xs text-zinc-500 text-center py-6">{tipoProductividad === 'TODO' ? 'Aún no hay órdenes finalizadas.' : `Aún no hay ${NOMBRE_DEL_TIPO[tipoProductividad]} finalizadas.`}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-500 text-center py-6">{tipoProductividad === 'TODO' ? 'Aún no hay órdenes finalizadas.' : `Aún no hay ${NOMBRE_DEL_TIPO[tipoProductividad]} finalizadas.`}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {porTecnico.map(({ name, count }) => (
@@ -73,7 +73,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
           <MapPinned className="w-4 h-4 text-blue-500" /> Fallas más Frecuentes por NAP
         </h3>
         {porNap.length === 0 ? (
-          <p className="text-xs text-zinc-500 text-center py-6">Sin datos de NAP registrados.</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-500 text-center py-6">Sin datos de NAP registrados.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {porNap.map(({ nap, count }) => (
@@ -94,14 +94,14 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
           <Repeat className="w-4 h-4 text-red-500" /> Clientes Reincidentes
         </h3>
         {reincidentes.length === 0 ? (
-          <p className="text-xs text-zinc-500 text-center py-6">Ningún cliente tiene más de una orden registrada.</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-500 text-center py-6">Ningún cliente tiene más de una orden registrada.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {reincidentes.map(({ cedula, nombre, count }) => (
               <div key={cedula} className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-lg px-3 py-2">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-zinc-900 dark:text-white truncate">{nombre}</div>
-                  <div className="text-[10px] text-zinc-500">C.I: {cedula}</div>
+                  <div className="text-[10px] text-zinc-600 dark:text-zinc-500">C.I: {cedula}</div>
                 </div>
                 <span className="text-xs font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-1 rounded shrink-0 ml-2">{count} órdenes</span>
               </div>

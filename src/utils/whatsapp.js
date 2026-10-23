@@ -480,11 +480,11 @@ export function generarMensajeDesdePlantilla(ticket) {
   return aplicarCorrelativoYTecnico(ticket.plantillaOriginal, ticket.codigo, ticket.tecnico, ticket.ubicacion, ticket.napCoordenadas, instalacionParaLaPlantilla(ticket));
 }
 
-// Las órdenes que nacen de una plantilla de la promotora (instalaciones y reconexiones) solo tienen plantilla que
-// copiar si se pegó la de la promotora al crear la orden (o después, al editarla): la app nunca arma una por su
-// cuenta, para no mandar una plantilla distinta a la de la promotora. Sin ella, el botón de copiar está deshabilitado.
+// Una instalación solo tiene plantilla que copiar si se pegó la de la promotora al crear la orden (o después, al editarla): la app
+// nunca arma una por su cuenta, para no mandar una plantilla distinta a la de la promotora. Sin ella, el botón de copiar está deshabilitado.
+// Una reconexión sin la plantilla de la promotora sí se puede copiar: sale en el formato de la app (generarMensajeWhatsApp, el de las averías).
 export const ordenSinPlantilla = (ticket) =>
-  tipoUsaPlantillaPromotora(ticket?.tipoTrabajo) && !String(ticket?.plantillaOriginal || '').trim();
+  String(ticket?.tipoTrabajo || '').toUpperCase().includes('INSTAL') && !String(ticket?.plantillaOriginal || '').trim();
 
 export const TEXTO_SIN_PLANTILLA = 'Esta orden no tiene la plantilla de la promotora: pégala desde Editar para poder copiarla.';
 

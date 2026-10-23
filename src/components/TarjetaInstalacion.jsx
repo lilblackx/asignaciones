@@ -14,9 +14,9 @@ import { useCopiado } from '../hooks/useCopiado';
 // (ver estilosInstalacion) y la etiqueta de tipo de la tabla (ticketDisplay); esquinas secas y sin sombra, sin íconos delante de los datos.
 
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
-const ETIQUETA = 'text-[10px] font-semibold uppercase tracking-wide text-zinc-500';
+const ETIQUETA = 'text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-500';
 const VALOR = 'text-sm text-zinc-900 dark:text-zinc-100 mt-0.5 break-words';
-const BOTON = 'inline-flex items-center gap-1 text-[11px] font-bold rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
+const BOTON = 'inline-flex items-center gap-1 text-[11px] font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
 
 // `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
 export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlantilla, onCopy, mostrarTipo = false, ahora }) {
@@ -79,7 +79,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
               />
             )}
           </div>
-          {cedula && <p className="text-xs tabular-nums text-zinc-500 mt-0.5">{cedula}</p>}
+          {cedula && <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-500 mt-0.5">{cedula}</p>}
         </div>
 
         <div>
@@ -97,8 +97,8 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
             {orden.tecnico
               ? <p className={VALOR}>{orden.tecnico}</p>
               : programada
-                ? <p className="mt-0.5 text-xs font-black uppercase text-zinc-500">Por asignar</p>
-                : <p className="mt-0.5 text-xs font-black uppercase text-amber-600 dark:text-amber-400">Sin técnico</p>}
+                ? <p className="mt-0.5 text-xs font-black uppercase text-zinc-600 dark:text-zinc-500">Por asignar</p>
+                : <p className="mt-0.5 text-xs font-black uppercase text-amber-700 dark:text-amber-400">Sin técnico</p>}
           </div>
         </div>
       </div>

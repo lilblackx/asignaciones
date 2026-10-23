@@ -47,6 +47,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               <span className="text-xs font-bold text-orange-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
+            <AvisoRevision nombres={otrosRevisando} encabezado />
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
             <X className="w-4 h-4" />
@@ -58,7 +59,6 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
             <p className="text-sm text-zinc-600 dark:text-zinc-300">Esta orden ya no está esperando a infraestructura.</p>
           ) : (
             <>
-              <AvisoRevision nombres={otrosRevisando} />
               <div className="rounded-xl border border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30 p-3 space-y-1 text-xs text-orange-900 dark:text-orange-200">
                 {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></p>}
                 <p className="flex items-start gap-1.5"><HardHat className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" /><span className="min-w-0 break-words">Escalada por {textoOrigen(infra)}{infra.por ? ` (${infra.por})` : ''}: <span className="font-black">{infra.motivo}</span></span></p>
@@ -67,7 +67,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               <fieldset className="space-y-2">
                 <legend className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1 mb-1">¿CÓMO SIGUE?</legend>
                 {OPCIONES.map(({ resultado: valor, titulo, detalle, Icono }) => (
-                  <label key={valor} className={`flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition-colors ${resultado === valor ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
+                  <label key={valor} className={`flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition-colors ${resultado === valor ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/30' : 'border-zinc-400 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
                     <input type="radio" name="resultado-infraestructura" value={valor} checked={resultado === valor} onChange={() => setResultado(valor)} className="mt-0.5 accent-orange-600" />
                     <span className="min-w-0">
                       <span className="flex items-center gap-1.5 text-sm font-black text-zinc-900 dark:text-white"><Icono className="w-4 h-4 shrink-0" aria-hidden="true" />{titulo}</span>
@@ -78,7 +78,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               </fieldset>
 
               <div className="space-y-1">
-                <label htmlFor="nota-infraestructura" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA PARA EL TÉCNICO <span className="font-normal text-zinc-500">(opcional)</span></label>
+                <label htmlFor="nota-infraestructura" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA PARA EL TÉCNICO <span className="font-normal text-zinc-600 dark:text-zinc-500">(opcional)</span></label>
                 <textarea
                   id="nota-infraestructura"
                   value={nota}
@@ -86,12 +86,12 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
                   rows={2}
                   maxLength={MAX_LARGO_MOTIVO}
                   placeholder="Ej. Poste instalado, ya puedes tender el cable."
-                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl p-3 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                 />
               </div>
 
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
+                <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
                 <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-xl transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Guardando...' : resultado === RESULTADO_CERRADA ? 'Cerrar como TA' : 'Devolver al técnico'}</button>
               </div>
             </>

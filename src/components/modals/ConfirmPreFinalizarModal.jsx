@@ -16,8 +16,8 @@ export default function ConfirmPreFinalizarModal({ ticket, visita, isSubmitting,
           <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">
             {ticket.codigo || 'S/C'}{ticket.nombre ? ` — ${ticket.nombre}` : ''}
           </p>
-          {visita && <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{visita}</p>}
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-3">
+          {visita && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{visita}</p>}
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-3">
             Pasa a revisión de la oficina y ya no podrás cambiarla. Si te equivocaste, solo la oficina puede devolvértela.
           </p>
         </div>
@@ -26,7 +26,7 @@ export default function ConfirmPreFinalizarModal({ ticket, visita, isSubmitting,
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex-1 min-h-[48px] py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
+            className="flex-1 min-h-[48px] py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
             Volver
           </button>
           <button
