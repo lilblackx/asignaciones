@@ -254,6 +254,15 @@ inventario = {};
 await enviar('inst1');
 ordenes = {};
 check('si la orden ya se archivó, reintentar usa lo que quedó guardado del envío', [(await reintentar('inst1')).json.estado, envio('inst1').serial], ['SERIAL_NO_ENCONTRADO', 'HWTC1A2B3C4D']);
+// Un envío guardado con un serial TP-Link sin la G (TPLH...), de una orden ya archivada: al reintentar se envía con TPLG y se encuentra
+reiniciar();
+inventario = {};
+await enviar('inst1');
+envios.inst1.serial = { stringValue: 'TPLHBDAA8C10' }; // como lo dejó una versión anterior del Worker, que no corregía la G
+inventario = { TPLGBDAA8C10: { id: 'inv-tp', campos: { serial: 'TPLGBDAA8C10', estado: 'Con Técnico' } } };
+ordenes = {};
+r = await reintentar('inst1');
+check('orden archivada con el serial TPLH... guardado: reintentar lo envía como TPLG... y lo encuentra', [r.json.estado, envio('inst1').serial], ['ENVIADO', 'TPLGBDAA8C10']);
 reiniciar();
 inventario = {};
 await enviar('inst1');

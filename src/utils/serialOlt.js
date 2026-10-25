@@ -4,16 +4,18 @@
 //   - En texto: GPONBTPTDD9BA416 (BT-PON) = GPON + BTPTDD9BA416 -> se quita el "GPON".
 //   - En hexadecimal (TP-Link): GOPN54504C47BDAA8DE0 = GOPN + 54504C47 ("TPLG" en ASCII hexadecimal) + BDAA8DE0 -> TPLGBDAA8DE0.
 // Las cajas de V-SOL ya traen el PON S/N (VSOL00E65D25) en su etiqueta: no se calcula desde la MAC (no coincide).
+// Los equipos TP-Link (MR) siempre empiezan con "TPLG" (el fabricante en hexadecimal es 54504C47): si el técnico escribió "TPL" sin la G
+// (TPLBDAA8C10) o con otra letra en su lugar (TPLHBDAA8C10, la H queda pegada a la G en el teclado), se envía con la G (TPLGBDAA8C10).
 // Solo se convierte al enviar al almacén (utils/envioInventario); lo que escribió el técnico se guarda y se muestra tal cual.
 
 const FORMATO_CAJA_TEXTO = /^G(?:PO|OP)N([A-Z]{4}[0-9A-F]{8})$/;
 const FORMATO_CAJA_HEX = /^G(?:PO|OP)N([0-9A-F]{8})([0-9A-F]{8})$/;
 const FORMATO_OLT = /^[A-Z]{4}[0-9A-F]{8}$/;
+const FORMATO_TPLINK = /^TPL[A-Z]?([0-9A-F]{8})$/;
 
 const limpio = (serial) => String(serial ?? '').replace(/\s+/g, '').toUpperCase();
 
-// El serial como lo ve la OLT. Si no viene en uno de esos formatos de caja, queda como está.
-export function serialParaOlt(serial) {
+function desdeCaja(serial) {
   const texto = limpio(serial);
   const enTexto = FORMATO_CAJA_TEXTO.exec(texto);
   if (enTexto) return enTexto[1];
@@ -21,6 +23,13 @@ export function serialParaOlt(serial) {
   if (!enHex) return texto;
   const fabricante = enHex[1].match(/../g).map((par) => String.fromCharCode(parseInt(par, 16))).join('');
   return /^[A-Z]{4}$/.test(fabricante) ? fabricante + enHex[2] : texto;
+}
+
+// El serial como lo ve la OLT. Si no viene en uno de esos formatos de caja, queda como está (salvo el TP-Link sin su G).
+export function serialParaOlt(serial) {
+  const olt = desdeCaja(serial);
+  const tplink = FORMATO_TPLINK.exec(olt);
+  return tplink ? `TPLG${tplink[1]}` : olt;
 }
 
 // ¿Tiene la forma de un serial de OLT (4 letras + 8 caracteres hexadecimales)? Una MAC (B46415E65D24) o el S/N de fábrica
