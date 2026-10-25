@@ -1,20 +1,38 @@
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAmmrgV6NUnNGW_PGvVfWdH16_x7ahXW4Y",
-  authDomain: "seguimientons-f2026.firebaseapp.com",
-  projectId: "seguimientons-f2026",
-  storageBucket: "seguimientons-f2026.firebasestorage.app",
-  messagingSenderId: "947672124619",
-  appId: "1:947672124619:web:dfcb2c93ce29a774441f4e"
-};
+import { clearIndexedDbPersistence, connectFirestoreEmulator, getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, terminate } from 'firebase/firestore';
+import { firebaseConfig } from './firebaseConfig';
+import { olvidarReportesLocales } from './reportesLocales';
 
 export { firebaseConfig };
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Caché de Firestore en el dispositivo (IndexedDB): al reabrir la app solo se descargan los cambios y no toda la colección
+// de órdenes otra vez (menos lecturas de Firestore). Sin `window` (fuera de una página) se queda con el getFirestore de siempre.
+// Al llegar al tope Firestore borra los documentos que menos se usan; reportesLocales.js detecta esos huecos y vuelve a leer.
+const TOPE_CACHE_BYTES = 100 * 1024 * 1024;
+const crearDb = () => {
+  if (typeof window === 'undefined') return getFirestore(app);
+  try {
+    return initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager(), cacheSizeBytes: TOPE_CACHE_BYTES }) });
+  } catch (error) {
+    console.error('No se pudo activar la caché local de Firestore:', error);
+    return getFirestore(app);
+  }
+};
+export const db = crearDb();
+
+// Al cerrar sesión se borra la caché del dispositivo, para que quien use el equipo después no tenga datos de la cuenta anterior.
+// Deja Firestore apagado: la página se recarga después.
+export const borrarCacheLocal = async () => {
+  olvidarReportesLocales();
+  try {
+    await terminate(db);
+    await clearIndexedDbPersistence(db);
+  } catch (error) {
+    console.error('No se pudo borrar la caché local de Firestore:', error);
+  }
+};
 
 // Clave pública del Web Push certificate (Firebase Console > Project Settings >
 // Cloud Messaging > Web configuration > Generate key pair). No es secreta —

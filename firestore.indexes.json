@@ -4,8 +4,56 @@
       "collectionGroup": "reports",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "tipoReporte", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "tipoReporte",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "pagosTecnicos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tecnico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "adelantosTecnicos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tecnico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ajustesTecnicos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tecnico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "ASCENDING"
+        }
       ]
     }
   ],

@@ -9,9 +9,22 @@ import { readFileSync } from 'node:fs'
 const version = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')).version
 const commit = (() => { try { return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch { return '' } })()
 
+// Identificador de esta compilación. Va dentro de la app (__APP_BUILD__) y en /version.json: la app compara los dos cada minuto
+// y solo pide el Service Worker cuando difieren (ver main.jsx).
+const build = `${Date.now().toString(36)}-${commit}`
+
+// Escribe version.json junto a los demás archivos de la compilación.
+const versionJson = () => ({
+  name: 'version-json',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ v: build }) })
+  },
+})
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(version),
+    __APP_BUILD__: JSON.stringify(build),
     __APP_COMPILACION__: JSON.stringify(new Date().toISOString().slice(0, 10)),
     __APP_COMMIT__: JSON.stringify(commit),
   },
@@ -34,6 +47,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    versionJson(),
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',

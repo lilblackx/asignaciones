@@ -2,7 +2,7 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 import { initializeApp } from 'firebase/app';
 import { getMessaging, onBackgroundMessage } from 'firebase/messaging/sw';
-import { firebaseConfig } from './lib/firebase';
+import { firebaseConfig } from './lib/firebaseConfig';
 
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();

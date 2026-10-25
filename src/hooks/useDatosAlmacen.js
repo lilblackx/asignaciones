@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collection, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
+import { collection, doc, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
+import { leerReportesIncremental } from '../lib/reportesLocales';
 
 const TAMANO_PAGINA = 30;
 // Si la pestaña estuvo oculta más de esto, al volver se actualiza sola.
@@ -29,6 +30,17 @@ async function leerReportes(condiciones = [], paginacion = []) {
   }
 }
 
+// La primera página de reportes: de los que ya están en el dispositivo solo se baja lo que salió después (ver reportesLocales.js).
+// Sin condiciones se pide la página (con límite); con una condición ('createdAt' mayor que...) son solo los nuevos, sin límite.
+const primeraPaginaDeReportes = (uid) => leerReportesIncremental({
+  uid,
+  nombre: 'almacen',
+  limite: TAMANO_PAGINA,
+  referencia: (id) => doc(datos('reports'), id),
+  consulta: (condiciones) => query(datos('reports'), where('tipoReporte', '==', 'CIERRE'), ...condiciones, orderBy('createdAt', 'desc'), limit(TAMANO_PAGINA)),
+  leerServidor: (condiciones) => leerReportes(condiciones, condiciones.length ? [] : [limit(TAMANO_PAGINA)]),
+});
+
 // Datos del módulo de Materiales para el ALMACÉN, pensados para gastar pocas lecturas de Firestore:
 //  - sin listeners en vivo (cada cambio de cualquier orden costaría una lectura): se lee al abrir, con el botón
 //    "Actualizar" y al volver a la pestaña tras un rato;
@@ -51,12 +63,12 @@ export function useDatosAlmacen(firebaseUser) {
       try {
         const [[ordenes, tecnicos], reportes] = await Promise.all([
           leerOrdenesYTecnicos(),
-          leerReportes([], [limit(TAMANO_PAGINA)]),
+          primeraPaginaDeReportes(firebaseUser.uid),
         ]);
         if (cancelado) return;
-        reportesRef.current = aLista(reportes);
-        ultimoReporte.current = reportes.docs[reportes.docs.length - 1] || null;
-        setHayMasReportes(reportes.docs.length === TAMANO_PAGINA);
+        reportesRef.current = reportes.map((d) => ({ id: d.id, ...d.data() }));
+        ultimoReporte.current = reportes[reportes.length - 1] || null;
+        setHayMasReportes(reportes.length === TAMANO_PAGINA);
         setDatos({ tickets: aLista(ordenes), technicians: aLista(tecnicos), reports: reportesRef.current, cargado: true, error: false, actualizadoEn: Date.now() });
       } catch (error) {
         console.error('No se pudieron cargar los datos del almacén:', error);

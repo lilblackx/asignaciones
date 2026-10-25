@@ -4,6 +4,9 @@ import { db, appId } from '../lib/firebase';
 import { avisoDeAdelanto, avisoDeAjuste, avisoDeAnulacion, avisoDePago } from '../utils/finanzas';
 import { playAprobadoSound } from '../utils/notificationSound';
 
+// Cuántos días hacia atrás se escuchan los pagos, adelantos y ajustes del técnico (un pago anulado después de ese plazo ya no se le avisa).
+const DIAS_DE_AVISOS = 30;
+
 // El técnico se entera, con la app abierta, de un pago, un adelanto o un descuento o bono por una orden corregida que le registraron (con la app cerrada le llega la push): aviso en pantalla, en la campana y
 // con sonido, como el resto. Escucha solo lo suyo (las reglas se lo exigen) y solo avisa de lo que Finanzas marcó "Notificar al técnico"; lo que ya existía al abrir
 // la app es la base y no se avisa de nuevo.
@@ -20,7 +23,10 @@ export function useAvisosPagos({ firebaseUser, tecnico, onNotify, setToastMsg })
 
   useEffect(() => {
     if (!firebaseUser || !tecnico) return undefined;
-    const datos = (nombre) => query(collection(db, 'artifacts', appId, 'public', 'data', nombre), where('tecnico', '==', tecnico));
+    // Solo lo reciente: los avisos son de lo que se registra ahora, y bajar todo el historial del técnico en cada apertura gasta descargas sin servir de nada.
+    // Pide el índice (tecnico + creadoEn) de cada colección en firestore.indexes.json.
+    const desde = new Date().setHours(0, 0, 0, 0) - DIAS_DE_AVISOS * 24 * 60 * 60 * 1000;
+    const datos = (nombre) => query(collection(db, 'artifacts', appId, 'public', 'data', nombre), where('tecnico', '==', tecnico), where('creadoEn', '>=', desde));
     const escuchar = (nombre, tipo, aviso) => {
       let base = true;
       return onSnapshot(datos(nombre), (snap) => {

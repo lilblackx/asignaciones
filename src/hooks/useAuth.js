@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db, appId } from '../lib/firebase';
+import { auth, db, appId, borrarCacheLocal } from '../lib/firebase';
 import { usernameToAuthEmail } from '../utils/authEmail';
 
 const GENERIC_LOGIN_ERROR = 'Usuario o clave incorrectos.';
@@ -89,6 +89,8 @@ export function useAuth() {
   const handleLogout = async () => {
     await signOut(auth);
     setLoginData({ usuario: '', clave: '' });
+    await borrarCacheLocal();
+    window.location.reload();
   };
 
   return {
