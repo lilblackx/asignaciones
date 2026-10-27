@@ -53,9 +53,9 @@ export default function Toast({ toastMsg: entrante, onClose }) {
       <div className={`px-5 py-3 rounded-2xl shadow-xl flex items-start gap-2.5 font-bold text-sm ${
         isError || isDevuelto || isCancelada || isDesasignada ? 'bg-red-600 text-white'
           : isPrioridad ? 'bg-red-700 text-white ring-2 ring-white/70'
-          : isEnCamino ? 'bg-sky-600 text-white'
-          : isLlegada ? 'bg-teal-600 text-white'
-          : isRespuestaCobro ? 'bg-sky-600 text-white'
+          : isEnCamino ? 'bg-sky-700 text-white'
+          : isLlegada ? 'bg-teal-700 text-white'
+          : isRespuestaCobro ? 'bg-sky-700 text-white'
           : isPago ? 'bg-emerald-700 text-white'
           : isInfraestructura ? 'bg-orange-600 text-white'
           : isPreFinalizado || isAviso || isConsultaCobro || isNuevaVenta ? 'bg-amber-500 text-black'

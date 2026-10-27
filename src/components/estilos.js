@@ -20,7 +20,7 @@ export const ESTADO = {
   POR_PAGAR: { texto: 'Por pagar', clase: 'bg-amber-400 text-black' },
   PAGADO: { texto: 'Al día', clase: 'bg-emerald-700 text-white' },
   ANULADO: { texto: 'Anulado', clase: 'bg-red-600 text-white' },
-  CON_ADELANTO: { texto: 'Con adelanto', clase: 'bg-sky-600 text-white' },
+  CON_ADELANTO: { texto: 'Con adelanto', clase: 'bg-sky-700 text-white' },
 };
 export const CAMPO_FECHA = 'w-full h-9 flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 hover:border-zinc-500 rounded-lg px-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-red-600 outline-none transition-colors';
 

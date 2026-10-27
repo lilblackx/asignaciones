@@ -35,7 +35,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
           activa ? 'border-sky-500 bg-white dark:bg-sky-950/40' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 hover:border-sky-400'
         }`}
       >
-        <span className={`w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center ${activa ? 'bg-sky-600 border-sky-600 text-white' : 'border-zinc-400 dark:border-zinc-600'}`} aria-hidden="true">
+        <span className={`w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center ${activa ? 'bg-sky-700 border-sky-600 text-white' : 'border-zinc-400 dark:border-zinc-600'}`} aria-hidden="true">
           {activa && <Check className="w-3.5 h-3.5" />}
         </span>
         <span className="min-w-0">
@@ -67,7 +67,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
                   aria-checked={activa}
                   onClick={() => onChange({ ...seleccion, moneda: valor })}
                   className={`px-3 py-2 rounded-xl border-2 text-xs font-black transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-                    activa ? 'border-sky-500 bg-sky-600 text-white' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
+                    activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
                   }`}
                 >
                   {texto}

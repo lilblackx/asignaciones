@@ -88,7 +88,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               aria-selected={pestana === p.id}
               aria-controls={`panel-${p.id}`}
               onClick={() => setPestana(p.id)}
-              className={`flex-1 px-3 py-3 text-xs font-black border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-600 dark:text-red-400' : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
+              className={`flex-1 px-3 py-3 text-xs font-black border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               {p.etiqueta}
             </button>

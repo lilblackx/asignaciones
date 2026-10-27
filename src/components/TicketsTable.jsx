@@ -222,7 +222,7 @@ export default function TicketsTable({
                         envio.cambioTrasEnvio
                           ? 'bg-amber-500 text-black hover:bg-amber-400'
                           : envio.enviado
-                            ? 'bg-emerald-700 text-white hover:bg-emerald-500'
+                            ? 'bg-emerald-700 text-white hover:bg-emerald-600'
                             : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-700 disabled:hover:bg-zinc-200 dark:disabled:hover:bg-zinc-800'
                       }`}
                     >
@@ -262,7 +262,7 @@ export default function TicketsTable({
                         {canEditTickets ? (
                           <>
                             {ticket.estado === 'PENDIENTE' && !enInfraestructura(ticket) && (
-                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-600 hover:bg-emerald-500 rounded transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-700 hover:bg-emerald-600 rounded transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
                             )}
                             {ticket.estado === 'PRE-FINALIZADO' && (
                               <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>

@@ -218,7 +218,7 @@ export default function TicketsMobileList({
 
           {isTecnico ? (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
-                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                   <ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}
                 </button>
                 {ticket.estado === 'PENDIENTE' ? (
@@ -226,7 +226,7 @@ export default function TicketsMobileList({
                     <CheckCircle2 className="w-4 h-4" /> Pre-finalizar
                   </button>
                 ) : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? (
-                  <div className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                  <div className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-400 font-bold text-sm">
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : null}
@@ -241,7 +241,7 @@ export default function TicketsMobileList({
               </div>
             ) : (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
-                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : undefined} className="flex-1 min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1 text-green-700 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"><ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}</button>
+                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : undefined} className="flex-1 min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"><ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}</button>
                 {canEditTickets ? (
                   <>
                     {ticket.estado === 'PENDIENTE' && !enInfraestructura(ticket) && (

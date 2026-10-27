@@ -10,7 +10,7 @@ export function EtiquetaViaje({ ticket, ahora, className = '' }) {
   const desde = enSitio ? ticket.enCamino.llegoEn : ticket.enCamino.desde;
   return (
     <span
-      className={`inline-flex flex-wrap items-center justify-center gap-x-1 text-[11px] max-lg:text-xs font-black tracking-wide px-1.5 py-0.5 rounded text-white leading-tight text-center ${enSitio ? 'bg-teal-600' : 'bg-sky-600'} ${className}`}
+      className={`inline-flex flex-wrap items-center justify-center gap-x-1 text-[11px] max-lg:text-xs font-black tracking-wide px-1.5 py-0.5 rounded text-white leading-tight text-center ${enSitio ? 'bg-teal-700' : 'bg-sky-700'} ${className}`}
       title={`${ticket.tecnico} ${enSitio ? 'llegó al sitio' : 'va en camino'} (${tiempoTranscurrido(desde, ahora)})`}
     >
       {/* Si no cabe en una línea, se parte entre la etiqueta y la hora, nunca en medio de una de las dos. */}
@@ -47,7 +47,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
         aria-label={`Avisar que vas en camino a la orden ${orden}`}
         className={compact
           ? 'inline-flex items-center gap-1 self-start text-[11px] max-lg:text-xs font-bold px-2 py-1 rounded bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors disabled:opacity-60'
-          : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-black text-base transition-colors disabled:opacity-60'}
+          : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-700 hover:bg-sky-600 active:bg-sky-700 text-white font-black text-base transition-colors disabled:opacity-60'}
       >
         <Car className={compact ? 'w-3.5 h-3.5' : 'w-5 h-5'} aria-hidden="true" /> Estoy en camino
       </button>
@@ -79,7 +79,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
             onClick={ejecutar(onLlegue)}
             disabled={ocupado}
             aria-label={`Avisar que llegaste a la orden ${orden}`}
-            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-black transition-colors disabled:opacity-60 ${boton}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-700 hover:bg-teal-600 text-white font-black transition-colors disabled:opacity-60 ${boton}`}
           >
             <MapPin className={icono} aria-hidden="true" /> Llegué
           </button>

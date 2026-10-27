@@ -20,7 +20,7 @@ import Chip from '../Chip';
 const CHIP_ESTADO = {
   PENDIENTE: 'bg-amber-400 text-black',
   APROBADA: 'bg-emerald-700 text-white',
-  RETENIDA: 'bg-sky-600 text-white',
+  RETENIDA: 'bg-sky-700 text-white',
   EXCLUIDA: 'bg-red-600 text-white',
 };
 
