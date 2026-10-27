@@ -379,7 +379,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     <div className="col-span-full space-y-3">
                       {roleEditId === u.id && roleDraft === ROLES.PROMOTORA && (
                     <div className="rounded-lg border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-3 space-y-2.5">
-                      <label className="flex items-center gap-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                      <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
                         <input type="checkbox" checked={verTodasDraft} onChange={(e) => { setVerTodasDraft(e.target.checked); setPromError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                         Ver todas las instalaciones
                       </label>
@@ -503,11 +503,11 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
               {newUser.role === ROLES.PROMOTORA && (
                 <div className="space-y-3 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
-                  <label className="flex items-center gap-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
                     <input type="checkbox" checked={newUser.verTodasInstalaciones} onChange={(e) => { setNewUser({ ...newUser, verTodasInstalaciones: e.target.checked }); setUserError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                     Ver todas las instalaciones
                   </label>
-                  <label className="flex items-center gap-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
                     <input type="checkbox" checked={newUser.puedeCrearVentas} onChange={(e) => setNewUser({ ...newUser, puedeCrearVentas: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                     Puede crear ventas
                   </label>

@@ -10,26 +10,26 @@ const STYLES = {
   create: {
     label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
     labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
-    labelObsInterna: 'flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
+    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
     selectTipoDoc: 'w-16 shrink-0 appearance-none bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 pl-1 pr-5 py-1.5 rounded text-xs text-center',
     inputCedula: 'w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs',
     selectTecnico: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 pl-2 pr-7 py-1.5 rounded text-xs uppercase',
     selectTipoTrabajo: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 pl-2 pr-7 py-1.5 rounded text-xs font-bold',
     textarea: 'w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs',
     hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
-    checkbox: 'w-3 h-3 accent-red-600',
+    checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
   edit: {
     label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
     labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
-    labelObsInterna: 'flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
+    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
     selectTipoDoc: 'w-14 shrink-0 appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-1 pr-5 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-center text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
     inputCedula: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
     selectTecnico: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none uppercase text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
     selectTipoTrabajo: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
     textarea: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors',
     hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
-    checkbox: 'w-3 h-3 accent-red-600',
+    checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
 };
 
@@ -168,8 +168,8 @@ export function GarantiaField({ wrapperClassName, idPrefix, value, onChange, ord
   const marcada = Boolean(value);
   return (
     <div className={`${wrapperClassName} rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-2`}>
-      <label htmlFor={`${idPrefix}-garantia`} className="flex items-center gap-2 text-[11px] max-lg:text-xs font-bold text-zinc-800 dark:text-zinc-100 cursor-pointer">
-        <input id={`${idPrefix}-garantia`} type="checkbox" checked={marcada} disabled={disabled} onChange={(e) => onChange(e.target.checked ? { id: '' } : null)} className="w-3.5 h-3.5 accent-red-600" />
+      <label htmlFor={`${idPrefix}-garantia`} className="flex items-center gap-2 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-800 dark:text-zinc-100 cursor-pointer">
+        <input id={`${idPrefix}-garantia`} type="checkbox" checked={marcada} disabled={disabled} onChange={(e) => onChange(e.target.checked ? { id: '' } : null)} className="w-3.5 h-3.5 max-lg:w-4 max-lg:h-4 accent-red-600" />
         Garantía de otro técnico
       </label>
       {marcada && (

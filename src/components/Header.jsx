@@ -56,7 +56,7 @@ export default function Header({
 
   return (
     <header className="bg-black/80 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b-4 border-red-600 lg:h-[62px]">
-      <div className="px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
+      <div className="px-3 min-[360px]:px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
           {isAdmin && (
             <button onClick={onOpenSidebar} aria-label="Abrir menú" title="Menú" className="relative inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
@@ -64,7 +64,7 @@ export default function Header({
               {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black" aria-hidden="true" />}
             </button>
           )}
-          <h1 className={`text-sm min-[400px]:text-base sm:text-xl font-black tracking-wide ${isAdmin ? 'lg:hidden' : ''}`}>
+          <h1 className={`text-xs min-[360px]:text-sm min-[400px]:text-base sm:text-xl font-black tracking-wide ${isAdmin ? 'lg:hidden' : ''}`}>
             <button
               type="button"
               onClick={onGoHome}
@@ -81,7 +81,7 @@ export default function Header({
             </h1>
           )}
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-1 min-[360px]:gap-1.5 sm:gap-3">
           {/* El administrador tiene su nombre, el tema y cerrar sesión en el pie del menú lateral. */}
           {!isAdmin && (
             <div className="hidden sm:flex flex-col items-end leading-tight">
