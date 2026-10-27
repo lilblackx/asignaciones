@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, ClipboardList, History, Home, Landmark, LogOut, Menu, MoreVertical, Moon, PackageCheck, Plus, Sun } from 'lucide-react';
+import { BarChart, ClipboardList, History, Landmark, LogOut, Menu, MoreVertical, Moon, PackageCheck, Plus, Sun } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
 
@@ -55,11 +55,11 @@ export default function Header({
   };
 
   return (
-    <header className="bg-black/80 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b-2 border-red-600 lg:h-[62px]">
+    <header className="bg-black/80 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b-4 border-red-600 lg:h-[62px]">
       <div className="px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <button onClick={onOpenSidebar} aria-label="Abrir menú" title="Menú" className="relative p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
+            <button onClick={onOpenSidebar} aria-label="Abrir menú" title="Menú" className="relative inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
               <Menu className="w-4 h-4" aria-hidden="true" />
               {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black" aria-hidden="true" />}
             </button>
@@ -69,15 +69,15 @@ export default function Header({
               type="button"
               onClick={onGoHome}
               title="Volver al dashboard principal"
-              className="uppercase hover:text-red-500 focus-visible:text-red-500 transition-colors"
+              className="uppercase max-lg:inline-flex max-lg:items-center max-lg:min-h-11 hover:text-red-500 focus-visible:text-red-500 transition-colors"
             >
               ASIGNACIONES
             </button>
           </h1>
           {/* El administrador en PC no ve "ASIGNACIONES" (está en el menú lateral): el encabezado lleva el nombre de la pantalla, como los demás módulos. */}
           {isAdmin && (
-            <h1 className="hidden lg:flex items-center gap-2 text-xl font-black tracking-wide min-w-0">
-              <Home className="w-5 h-5 shrink-0 text-red-500" aria-hidden="true" /> <span className="truncate">Panel principal</span>
+            <h1 className="hidden lg:flex items-center gap-2 text-2xl font-black tracking-tight min-w-0">
+              <span className="truncate">Panel principal</span>
             </h1>
           )}
         </div>
@@ -86,7 +86,7 @@ export default function Header({
           {!isAdmin && (
             <div className="hidden sm:flex flex-col items-end leading-tight">
               <span className="text-sm font-bold leading-none text-red-500">{currentUserName || currentUser}</span>
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{role}</span>
+              <span className="text-[11px] max-lg:text-xs font-bold text-zinc-400 uppercase tracking-wider">{role}</span>
             </div>
           )}
 
@@ -156,7 +156,7 @@ export default function Header({
                   {veInventario && (
                     <button onClick={runAndClose(onOpenInventario)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors border-t border-zinc-800">
                       <PackageCheck className="w-4 h-4" aria-hidden="true" /> Envíos al inventario
-                      {alertasInventario > 0 && <span className="ml-auto min-w-[1.25rem] text-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black">{alertasInventario}</span>}
+                      {alertasInventario > 0 && <span className="ml-auto min-w-[1.25rem] text-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] max-lg:text-xs font-black">{alertasInventario}</span>}
                     </button>
                   )}
                 </div>
@@ -165,7 +165,7 @@ export default function Header({
           )}
 
           {canEditTickets && (
-            <button onClick={onOpenCreate} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold transition-colors">
+            <button onClick={onOpenCreate} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 max-lg:min-w-11 max-lg:min-h-11 max-lg:justify-center rounded-lg flex items-center gap-1 text-sm font-bold transition-colors">
               <Plus className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Nuevo</span>
             </button>
           )}
