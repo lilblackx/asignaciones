@@ -37,7 +37,8 @@ import { useCompletarPromotoras } from './hooks/useCompletarPromotoras';
 import { esProgramadaFutura } from './utils/programada';
 import { esVentaDelTecnico } from './utils/tecnicoVenta';
 import { useOperadorEnOrdenes } from './hooks/useOperadorEnOrdenes';
-import { TEXTO_SIN_PLANTILLA, generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, ordenSinPlantilla, tipoUsaPlantillaPromotora } from './utils/whatsapp';
+import { TEXTO_SIN_PLANTILLA, generarMensajeClienteOrden, generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, ordenSinPlantilla, tipoUsaPlantillaPromotora } from './utils/whatsapp';
+import { esCodigoSinNumero } from './utils/correlativo';
 import { stripEmojis } from './utils/sanitizeInput';
 
 import LoadingScreen from './components/LoadingScreen';
@@ -135,6 +136,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
       return false;
     }
   };
+
+  // El mensaje para el cliente (el de "Orden creada"): sale al crear la orden y al tocar su número en la lista.
+  const copiarMensajeCliente = (ticket) => copyToClipboard(generarMensajeClienteOrden(ticket), 'Mensaje para el cliente copiado.', 'success', 'No se pudo copiar el mensaje.');
 
   // El ticket guarda el username del creador (ticket.creado); para la plantilla
   // de WhatsApp se muestra el nombre real de esa persona, no su usuario.
@@ -459,9 +463,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
       }
       if (ordenSinPlantilla(nuevoTicket)) {
         setToastMsg({ type: 'aviso', duration: 9000, text: 'Orden creada sin la plantilla de la promotora: no se podrá copiar la plantilla hasta que la pegues desde Editar.' });
-      } else {
-        setWhatsappMessage(buildWhatsAppMessage(nuevoTicket));
       }
+      // Una instalación sin técnico aún no tiene número ("IS"): el mensaje al cliente sale cuando lo tenga.
+      if (!esCodigoSinNumero(nuevoTicket.codigo)) setWhatsappMessage(generarMensajeClienteOrden(nuevoTicket));
     }
   }, 'No se pudo crear la orden.');
 
@@ -737,6 +741,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onEdit={abrirEdicion}
               onCancelar={setCancelarTarget}
               onCopyWhatsApp={handleCopyWhatsApp}
+              onCopiarMensajeCliente={canEditTickets ? copiarMensajeCliente : undefined}
               onPegarUbicacion={handlePegarUbicacion}
               onVerDetalle={setDetalleTarget}
               onPreFinalizar={setPreFinalizarTarget}
@@ -766,6 +771,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onEdit={abrirEdicion}
               onCancelar={setCancelarTarget}
               onCopyWhatsApp={handleCopyWhatsApp}
+              onCopiarMensajeCliente={canEditTickets ? copiarMensajeCliente : undefined}
               onPegarUbicacion={handlePegarUbicacion}
               onVerDetalle={setDetalleTarget}
               onVerHistorial={setHistorialTarget}
@@ -987,7 +993,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {whatsappMessage && (
           <WhatsAppMessageModal
             mensaje={whatsappMessage}
-            onCopy={() => copyToClipboard(whatsappMessage)}
+            onCopy={() => copyToClipboard(whatsappMessage, 'Mensaje para el cliente copiado.', 'success', 'No se pudo copiar el mensaje.')}
             onClose={() => setWhatsappMessage(null)}
           />
         )}

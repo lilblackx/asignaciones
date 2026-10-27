@@ -257,7 +257,7 @@ check('plantilla real completa', `${PLANTILLA_REAL}
 });
 
 // ============ El operador de la plantilla de avería: el nombre real, no el usuario ============
-import { generarMensajeWhatsApp } from '../src/utils/whatsapp.js';
+import { generarMensajeClienteOrden, generarMensajeWhatsApp } from '../src/utils/whatsapp.js';
 const operadorDe = (t) => generarMensajeWhatsApp({ falla: 'Sin señal', ...t }, null).split('\n').find((l) => l.startsWith('Operador:'));
 const igual = (nombre, actual, esperado) => {
   if (actual === esperado) console.log(`PASS  ${nombre}`);
@@ -267,6 +267,13 @@ igual('con el nombre real guardado en la orden sale ese nombre', operadorDe({ cr
 igual('en una orden vieja (sin nombre) sale el usuario, como siempre', operadorDe({ creado: 'lfernandez' }), 'Operador: lfernandez');
 igual('el nombre real manda sobre el usuario que haya puesto la pantalla', operadorDe({ creado: 'Otro Nombre', creadoNombre: 'Luis Fernandez' }), 'Operador: Luis Fernandez');
 igual('sin ninguno queda vacío', operadorDe({}), 'Operador: ');
+
+// --- Mensaje al cliente al crear la orden: lleva el número de orden y el resto del texto no cambia ---
+const paraCliente = generarMensajeClienteOrden({ codigo: 'AA86', tipoTrabajo: 'AVERIA' });
+igual('mensaje al cliente: lleva el número de orden', paraCliente.split('\n')[0], '¡Perfecto! Hemos generado la orden de visita en este momento. El número de orden de trabajo es AA86.');
+igual('mensaje al cliente: avisa de la notificación del técnico', paraCliente.includes('Recibirá una notificación directa del técnico cuando se esté acercando a su dirección.'), true);
+igual('mensaje al cliente: cierra con la despedida', paraCliente.endsWith('Quedamos atentos para cualquier consulta adicional.'), true);
+igual('mensaje al cliente: no es la plantilla interna', paraCliente.includes('Operador:'), false);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

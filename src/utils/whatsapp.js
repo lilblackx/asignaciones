@@ -495,6 +495,15 @@ export function generarMensajeWhatsAppInstalacion(ticket) {
   return aplicarCorrelativoYTecnico(ticket.plantillaOriginal, ticket.codigo, ticket.tecnico, ticket.ubicacion, ticket.napCoordenadas, instalacionParaLaPlantilla(ticket));
 }
 
+// El mensaje para el cliente al crear la orden: le avisa que la visita quedó coordinada y le da su número de orden.
+export const generarMensajeClienteOrden = (ticket) => [
+  `¡Perfecto! Hemos generado la orden de visita en este momento. El número de orden de trabajo es ${ticket.codigo}.`,
+  '',
+  'El técnico se dirigirá a su domicilio según la planificación de su jornada y la zona en la que se encuentre. Recibirá una notificación directa del técnico cuando se esté acercando a su dirección.',
+  '',
+  'Quedamos atentos para cualquier consulta adicional.',
+].join('\n');
+
 // La promotora de una orden: la que se guardó en ella o, en las órdenes anteriores a que se guardara, la que dice su
 // plantilla. '' si no hay.
 export const promotoraDeOrden = (t) => nombrePromotora(t?.promotora) || parseInstalacionTemplate(t?.plantillaOriginal).promotora || '';
