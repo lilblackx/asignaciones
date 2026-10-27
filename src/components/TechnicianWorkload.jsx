@@ -75,8 +75,7 @@ export default function TechnicianWorkload({ tickets, technicians, canEditTicket
         </button>
       ))}
       {counts.map(({ id, name, activo, count }) => {
-        // Todas las píldoras iguales y sin el color del técnico: el estado se dice con el punto verde (activo) o con un anillo gris, borde
-        // punteado y la palabra "inactivo", para que no dependa solo del color.
+        // El estado va con punto verde o anillo gris, borde punteado y la palabra "inactivo": no depende solo del color.
         const pillClass = `inline-flex items-center gap-2 px-2.5 py-1.5 text-[11px] max-lg:text-xs font-bold rounded-md leading-none border ${activo ? 'border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100' : 'border-dashed border-zinc-400 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400'}`;
         const dot = <span className={`w-2 h-2 rounded-full shrink-0 ${activo ? 'bg-emerald-500' : 'border-2 border-zinc-500'}`} aria-hidden="true" />;
         const label = (

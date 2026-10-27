@@ -120,8 +120,7 @@ function VentanaModal({ onClose, onVolver, zIndexClass = 'z-50', completa = fals
     };
   }, []);
 
-  // La ventana se nombra con su propio título (el primer h1, h2 o h3 del contenido, aunque cambie de nivel), para que un lector de
-  // pantalla diga de qué ventana se trata.
+  // Nombra la ventana con su primer h1, h2 o h3, aunque cambie de nivel, para los lectores de pantalla.
   useEffect(() => {
     const panel = panelRef.current;
     if (!panel) return undefined;
