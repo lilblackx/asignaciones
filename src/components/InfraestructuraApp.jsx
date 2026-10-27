@@ -22,12 +22,12 @@ import Chip from './Chip';
 import Boton from './Boton';
 import RangoFechas from './RangoFechas';
 
-const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '—');
-const dato = (valor) => valor || '—';
+const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
+const dato = (valor) => valor || '-';
 // La salida suave de una fila solo en la tabla (pantalla mediana o grande) y sin "reducir movimiento"; en el celular la fila se va al instante.
 const filasAnimadas = () => window.matchMedia('(min-width: 768px) and (prefers-reduced-motion: no-preference)').matches;
 const SIN = (obj, id) => { const copia = { ...obj }; delete copia[id]; return copia; };
-const ETIQUETA = 'text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
+const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
 
 // Pantalla de INFRAESTRUCTURA: las instalaciones realizadas, con la NAP y el puerto donde quedó conectado cada cliente nuevo. Solo lee las órdenes; lo único que escribe es el check de "ya la anoté".
 // `onAbrirMenu`: cuando un administrador está aquí dentro del menú lateral, el botón ☰ que lo abre en el celular.
@@ -104,7 +104,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
   const checkAnotada = (f, conTexto) => {
     const marca = marcas[f.id];
     return (
-      <label className={`inline-flex items-center gap-2.5 cursor-pointer ${conTexto ? 'min-h-[44px] w-full text-sm font-bold' : 'p-1'}`}>
+      <label className={`inline-flex items-center gap-2.5 cursor-pointer ${conTexto ? 'min-h-[44px] w-full text-sm font-bold' : 'p-1 max-lg:p-2.5'}`}>
         <input type="checkbox" checked={Boolean(marca)} onChange={(e) => alMarcar(f, e.target.checked)} aria-label={`Ya anoté la instalación ${f.codigo}`} className={`w-6 h-6 shrink-0 accent-red-600 cursor-pointer ${recien[f.id] ? 'animate-pulso-numero' : ''}`} />
         {conTexto && <span>{marca ? <>Anotada{marca.por ? ` por ${marca.por}` : ''}<span className="block text-xs font-normal text-zinc-600 dark:text-zinc-400">{fechaHora(marca.en)}</span></> : 'Ya la anoté'}</span>}
       </label>
@@ -210,7 +210,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   {/* Escritorio: tabla. */}
                   <div className="hidden md:block rounded-xl border-2 border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                         <tr>
                           {['Fecha', 'Código', 'Cliente', 'Dirección', 'Técnico', 'NAP', 'Puerto', 'Puertos libres', 'Plantilla', 'Anotada'].map((c) => <th key={c} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}
                         </tr>
@@ -227,7 +227,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                             <td className="px-3 py-2.5 whitespace-nowrap font-black">{dato(f.puerto)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap">{dato(f.puertosDisponibles)}</td>
                             <td className="px-3 py-2.5">{botonPlantilla(f, '')}</td>
-                            <td className="px-3 py-2.5 text-center" title={marcas[f.id] ? `Anotada por ${marcas[f.id].por || '—'} · ${fechaHora(marcas[f.id].en)}` : 'Marca cuando la hayas anotado'}>{checkAnotada(f, false)}</td>
+                            <td className="px-3 py-2.5 text-center" title={marcas[f.id] ? `Anotada por ${marcas[f.id].por || '-'} · ${fechaHora(marcas[f.id].en)}` : 'Marca cuando la hayas anotado'}>{checkAnotada(f, false)}</td>
                           </tr>
                         ))}
                       </tbody>

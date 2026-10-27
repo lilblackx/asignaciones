@@ -9,6 +9,9 @@
 }
 
 @theme {
+  /* Esquinas más rectas (como el login): tarjetas, ventanas y botones grandes dejan de ser "burbujas" de 12 y 16 px. */
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 
   /* Transiciones de entrada: cortas (120-200 ms), sin fill-mode para no dejar transform residual sobre el elemento. */
@@ -200,4 +203,22 @@ input[type="search"]::-webkit-search-decoration {
 @keyframes contenido-sale {
   from { max-height: 8rem; }
   to { max-height: 0; padding-block: 0; margin: 0; }
+}
+
+/* Celular: lo que se toca mide al menos 44 x 44 px. Va en la capa base para que una clase de Tailwind lo pueda cambiar.
+   Excepciones: lo marcado con data-sin-minimo (el calendario, donde 7 columnas tienen que caber), las casillas y los interruptores. */
+@layer base {
+  @media (max-width: 1023.98px) {
+    :where(button, [role="button"], select, textarea, summary, input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="file"])):not(.sr-only, [role="switch"], [data-sin-minimo], [data-sin-minimo] *) {
+      min-height: 2.75rem;
+    }
+    :where(button, [role="button"]):not(.sr-only, [role="switch"], [data-sin-minimo], [data-sin-minimo] *) {
+      min-width: 2.75rem;
+    }
+    /* Los días del calendario no pueden ensancharse (son 7 columnas), pero sí alargarse. */
+    [data-sin-minimo] :where(button) { min-height: 2.75rem; }
+    /* Los interruptores y las casillas conservan su aspecto; el área que responde al dedo se agranda por fuera. */
+    [role="switch"], input[type="checkbox"], input[type="radio"] { position: relative; }
+    [role="switch"]::after, input[type="checkbox"]::after, input[type="radio"]::after { content: ""; position: absolute; inset: -0.75rem; }
+  }
 }

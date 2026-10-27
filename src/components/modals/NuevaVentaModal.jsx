@@ -100,19 +100,19 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
 
           <CedulaField variant="edit" wrapperClassName="col-span-2 space-y-0.5" idPrefix="nv" tipoDocumento={form.tipoDocumento} cedula={form.cedula} onChange={cambiar} />
           {duplicada && (
-            <div role="status" className="col-span-2 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded-lg px-2.5 py-2 text-[11px] text-amber-800 dark:text-amber-300">
+            <div role="status" className="col-span-2 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded-lg px-2.5 py-2 text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
-              <span>Ya hay una orden <strong>{duplicada.estado}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> — {duplicada.nombre}. Puedes seguir si es otra venta.</span>
+              <span>Ya hay una orden <strong>{duplicada.estado}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</span>
             </div>
           )}
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-nombre" className={ETIQUETA_ORDEN}>NOMBRE<span className="text-red-600"> *</span></label>
+            <label htmlFor="nv-nombre" className={ETIQUETA_ORDEN}>NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
             <input id="nv-nombre" required type="text" maxLength="100" name="nombre" value={form.nombre} onChange={cambiar} className={CAMPO_ORDEN} />
           </div>
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-telefono" className={ETIQUETA_ORDEN}>TELÉFONO<span className="text-red-600"> *</span></label>
+            <label htmlFor="nv-telefono" className={ETIQUETA_ORDEN}>TELÉFONO<span className="text-red-600 dark:text-red-400"> *</span></label>
             <TelefonosField id="nv-telefono" required value={form.telefono} onChange={(v) => poner('telefono', v)} inputClassName={CAMPO_ORDEN} />
           </div>
 
@@ -120,11 +120,11 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
             <label htmlFor="nv-instalador" className={ETIQUETA_ORDEN}>INSTALADOR <span className="font-normal normal-case text-zinc-400">(de la plantilla; define el técnico)</span></label>
             <input id="nv-instalador" readOnly type="text" value={instalador} placeholder="Sin instalador" className={`${CAMPO_ORDEN} bg-zinc-100 dark:bg-zinc-900/60 text-zinc-700 dark:text-zinc-300 cursor-default`} />
             {tecnico ? (
-              <p role="status" className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 ml-1">
+              <p role="status" className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-300 ml-1">
                 <Star className="w-3 h-3 shrink-0 fill-current" aria-hidden="true" /> Venta de: {nombreBonito(tecnico)}
               </p>
             ) : instalador && (
-              <p role="status" className="text-[11px] text-zinc-600 dark:text-zinc-400 ml-1">
+              <p role="status" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">
                 {tecnicos === 'error' ? 'No se pudieron leer los técnicos. Cierra y vuelve a abrir esta ventana.'
                   : esperandoTecnicos ? 'Buscando al instalador entre los técnicos...'
                     : 'No coincide con un técnico registrado: la oficina asignará el técnico.'}
@@ -133,7 +133,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           </div>
 
           <div className="col-span-2 sm:col-span-1 space-y-0.5">
-            <label htmlFor="nv-falla" className={ETIQUETA_ORDEN}>TIPO<span className="text-red-600"> *</span></label>
+            <label htmlFor="nv-falla" className={ETIQUETA_ORDEN}>TIPO<span className="text-red-600 dark:text-red-400"> *</span></label>
             <SelectMenu
               id="nv-falla"
               ariaLabel="Tipo de instalación"
@@ -143,7 +143,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
               className={`${SELECTOR_ORDEN} ${faltaTipo ? '!border-red-600' : ''}`}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
-            {faltaTipo && <p role="alert" className="text-[10px] font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
+            {faltaTipo && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
           </div>
 
           {verTodas ? (
@@ -168,7 +168,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           )}
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-direccion" className={ETIQUETA_ORDEN}>DIRECCIÓN<span className="text-red-600"> *</span></label>
+            <label htmlFor="nv-direccion" className={ETIQUETA_ORDEN}>DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
             <input id="nv-direccion" required type="text" maxLength="200" name="direccion" value={form.direccion} onChange={cambiar} className={CAMPO_ORDEN} />
           </div>
 
@@ -182,8 +182,8 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           <div className="col-span-2 space-y-0.5">
             <label htmlFor="nv-ubicacion" className={ETIQUETA_ORDEN}>UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps, opcional)</span></label>
             <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error} className={`${CAMPO_ORDEN} ${ubicacion.error ? 'border-red-500' : ''}`} />
-            {ubicacion.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{ubicacion.error}</p>}
-            {ubicacion.valor && <a href={ubicacion.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
+            {ubicacion.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacion.error}</p>}
+            {ubicacion.valor && <a href={ubicacion.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
 
           <div className="col-span-2 sticky bottom-0 -mx-4 -mb-4 mt-1 px-4 py-3 flex gap-2 justify-end rounded-b-2xl bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">

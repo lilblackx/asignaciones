@@ -69,11 +69,11 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
         aria-label={`Notificaciones${contador > 0 ? ` (${contador} pendientes)` : ''}`}
         aria-expanded={isOpen}
         title="Notificaciones"
-        className="relative p-2 rounded-lg transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700"
+        className="relative inline-flex items-center justify-center p-2 max-lg:min-w-11 max-lg:min-h-11 rounded-lg transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700"
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
         {contador > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-0.5 flex items-center justify-center leading-none">
+          <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[11px] max-lg:text-xs font-black rounded-full min-w-[16px] h-4 px-0.5 flex items-center justify-center leading-none">
             <NumeroPulso valor={contador > 9 ? '9+' : contador} />
           </span>
         )}
@@ -105,7 +105,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-xs text-zinc-600 dark:text-zinc-500 flex flex-col items-center gap-2">
+              <div className="px-4 py-8 text-center text-xs text-zinc-600 dark:text-zinc-400 flex flex-col items-center gap-2">
                 <CheckCheck className="w-5 h-5 text-zinc-600" aria-hidden="true" />
                 Sin notificaciones todavía.
               </div>
@@ -121,10 +121,10 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
                   {iconoPara(n.type)}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-zinc-200 leading-snug">{n.text}</p>
-                    <span className="text-[10px] text-zinc-600 dark:text-zinc-500 font-medium">{tiempoRelativo(n.timestamp)}</span>
+                    <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-medium">{tiempoRelativo(n.timestamp)}</span>
                   </div>
                   {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1 group-hover:hidden" aria-hidden="true" />}
-                  <X className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-500 shrink-0 mt-0.5 hidden group-hover:block" aria-hidden="true" />
+                  <X className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400 shrink-0 mt-0.5 hidden group-hover:block" aria-hidden="true" />
                 </button>
               ))
             )}

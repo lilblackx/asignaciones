@@ -63,7 +63,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
         {...(externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         aria-label={aria(nombre)}
         title={titulo}
-        className={className}
+        className={`${className} max-lg:min-h-11`}
       >
         {contenido}
       </a>
@@ -78,7 +78,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
         aria-haspopup="dialog"
         aria-label={`${aria(nombre)}: elegir número`}
         title={`${titulo}: elegir número`}
-        className={className}
+        className={`${className} max-lg:min-h-11`}
       >
         {contenido}
       </button>
@@ -111,7 +111,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
             <button
               type="button"
               onClick={() => setAbierto(false)}
-              className="w-full py-2 rounded-lg text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="w-full py-2 max-lg:min-h-11 rounded-lg text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
               Cancelar
             </button>

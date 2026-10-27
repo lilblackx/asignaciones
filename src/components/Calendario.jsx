@@ -33,8 +33,8 @@ export default function Calendario({ valor, min, max, hoy: hoyElegido, onElegir,
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 text-center">
-        {DIAS_SEMANA.map((d, i) => <span key={i} className={`py-1 ${grande ? 'text-base text-zinc-700 dark:text-zinc-200' : 'text-[10px] text-zinc-600 dark:text-zinc-400'} font-bold uppercase`} aria-hidden="true">{d}</span>)}
+      <div data-sin-minimo className="grid grid-cols-7 gap-0.5 text-center">
+        {DIAS_SEMANA.map((d, i) => <span key={i} className={`py-1 ${grande ? 'text-base text-zinc-700 dark:text-zinc-200' : 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400'} font-bold uppercase`} aria-hidden="true">{d}</span>)}
         {casillasDelMes(vista.anio, vista.mes).map((iso, i) => {
           if (!iso) return <span key={`hueco-${i}`} />;
           const elegido = iso === valor;

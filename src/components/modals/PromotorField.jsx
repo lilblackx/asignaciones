@@ -13,7 +13,7 @@ export default function PromotorField({ id, value, onChange, wrapperClassName, l
   return (
     <div className={wrapperClassName}>
       <label htmlFor={id} className={labelClassName}>
-        PROMOTOR<span className="text-red-600"> *</span> <span className="font-normal normal-case text-zinc-400">{ayuda}</span>
+        PROMOTOR<span className="text-red-600 dark:text-red-400"> *</span> <span className="font-normal normal-case text-zinc-400">{ayuda}</span>
       </label>
       <input ref={ref} id={id} required type="text" maxLength="100" name="promotora" value={value} onChange={onChange} className={inputClassName} />
     </div>

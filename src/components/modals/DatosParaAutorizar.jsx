@@ -12,14 +12,14 @@ function Fila({ dato, ticket, copiado, onCopiar }) {
   return (
     <div className="flex items-start justify-between gap-2 py-1.5">
       <div className="min-w-0">
-        <span className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400 block uppercase">{dato.etiqueta}</span>
+        <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 block">{dato.etiqueta}</span>
         {dato.tipo === 'cedula' ? (
           <a
             href={buildSmartOltUrl(ticket.cedula, ticket.tipoDocumento)}
             target="_blank"
             rel="noopener noreferrer"
             title="Buscar cliente en SmartOLT"
-            className="inline-flex items-center gap-1 text-sm text-blue-700 dark:text-blue-400 font-bold hover:underline"
+            className="inline-flex items-center gap-1 max-lg:min-h-11 text-sm text-blue-700 dark:text-blue-400 font-bold hover:underline"
           >
             {dato.valor}
             <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
@@ -65,7 +65,7 @@ export default function DatosParaAutorizar({ ticket, onCopy }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 text-[11px] font-black tracking-wide text-zinc-600 dark:text-zinc-400 uppercase">Para autorizar en SmartOLT</p>
+        <p className="min-w-0 text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400">Para autorizar en SmartOLT</p>
         <BotonCopiar
           copiado={copiado === 'todo'}
           onClick={() => copiar('todo', texto, 'Datos copiados.')}
@@ -105,7 +105,7 @@ export default function DatosParaAutorizar({ ticket, onCopy }) {
             <FileText className="w-4 h-4 shrink-0" aria-hidden="true" /> Ver plantilla completa de la promotora
           </summary>
           <div className="px-3 pb-3 space-y-2">
-            <pre className="whitespace-pre-wrap break-words text-[11px] leading-snug font-mono text-zinc-700 dark:text-zinc-300 max-h-56 overflow-y-auto">{ticket.plantillaOriginal}</pre>
+            <pre className="whitespace-pre-wrap break-words text-[11px] max-lg:text-xs leading-snug font-mono text-zinc-700 dark:text-zinc-300 max-h-56 overflow-y-auto">{ticket.plantillaOriginal}</pre>
             <BotonCopiar
               copiado={copiado === 'plantilla'}
               onClick={() => copiar('plantilla', ticket.plantillaOriginal, 'Plantilla copiada.')}

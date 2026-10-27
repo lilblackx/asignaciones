@@ -157,13 +157,13 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
         <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center">
           <div>
             <h2 className="text-sm font-black text-white">{isTecnico ? 'DETALLES / PRE-FINALIZAR' : 'EDITAR ORDEN'}</h2>
-            <p className="text-[10px] font-medium text-red-400">Cliente: {editingTicket.nombre}</p>
+            <p className="text-[11px] max-lg:text-xs font-medium text-red-400">Cliente: {editingTicket.nombre}</p>
           </div>
           <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
         </div>
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-nombre" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">NOMBRE<span className="text-red-600"> *</span></label>
+            <label htmlFor="ed-nombre" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
             <input id="ed-nombre" disabled={isTecnico} required type="text" maxLength="100" name="nombre" value={editingTicket.nombre || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <CedulaField
@@ -176,15 +176,15 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             disabled={isTecnico}
           />
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-direccion" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">DIRECCIÓN<span className="text-red-600"> *</span></label>
+            <label htmlFor="ed-direccion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
             <input id="ed-direccion" disabled={isTecnico} required type="text" maxLength="200" name="direccion" value={editingTicket.direccion || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <div className="col-span-1 space-y-1">
-            <label htmlFor="ed-fechaprog" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">F. PROG (Opcional)</label>
+            <label htmlFor="ed-fechaprog" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">F. PROG (Opcional)</label>
             <CampoFecha id="ed-fechaprog" ariaLabel="Fecha programada" vacio="Sin fecha" disabled={isTecnico} valor={editingTicket.fechaProgramada || ''} onChange={(v) => handleEditChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-1 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-2 rounded-lg focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <div className="col-span-1 space-y-1">
-            <label htmlFor="ed-codigo" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO<span className="text-red-600"> *</span></label>
+            <label htmlFor="ed-codigo" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO<span className="text-red-600 dark:text-red-400"> *</span></label>
             <input id="ed-codigo" disabled={isTecnico} required type="text" maxLength="7" name="codigo" value={editingTicket.codigo} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none uppercase text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <TipoTrabajoField
@@ -196,7 +196,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             disabled={isTecnico}
           />
           <div className="col-span-1 space-y-1">
-            <label htmlFor="ed-falla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">TIPO</label>
+            <label htmlFor="ed-falla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">TIPO</label>
             <SelectMenu
               id="ed-falla"
               ariaLabel="Tipo"
@@ -209,7 +209,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             />
           </div>
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-estado" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">ESTADO</label>
+            <label htmlFor="ed-estado" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">ESTADO</label>
             <SelectMenu
               id="ed-estado"
               ariaLabel="Estado"
@@ -220,12 +220,12 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               chevronClassName="w-3.5 h-3.5 right-2"
             />
-            {isTecnico && <p className="text-[9px] text-zinc-400 ml-1">Usa el botón "Pre-finalizar" de la lista para cambiar el estado.</p>}
-            {!isTecnico && editingTicket.estado !== 'FINALIZADO' && <p className="text-[9px] text-zinc-400 ml-1">Para finalizar usa "Finalizar" o "Aprobar" en la lista: ahí se elige el cobro resultante.</p>}
+            {isTecnico && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Usa el botón "Pre-finalizar" de la lista para cambiar el estado.</p>}
+            {!isTecnico && editingTicket.estado !== 'FINALIZADO' && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Para finalizar usa "Finalizar" o "Aprobar" en la lista: ahí se elige el cobro resultante.</p>}
           </div>
           {!isTecnico && editingTicket.estado === 'CANCELADO' && (
             <div className="col-span-2 space-y-1">
-              <label htmlFor="ed-motivo-cancelacion" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">
+              <label htmlFor="ed-motivo-cancelacion" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">
                 MOTIVO DE LA CANCELACIÓN {cancelaAhora(ordenAlAbrir, editingTicket) && <span className="font-normal">(obligatorio)</span>}
               </label>
               <textarea
@@ -239,8 +239,8 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
                 placeholder="Ej. El cliente ya no quiere el servicio, no hay cobertura en la zona..."
                 className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-lg p-2 focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm resize-none"
               />
-              {errorMotivo && <p role="alert" className="text-[11px] text-red-500 font-bold ml-1">{errorMotivo}</p>}
-              <p className="text-[9px] text-zinc-400 ml-1">Se ve en la lista, el historial, ventas y los reportes.</p>
+              {errorMotivo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{errorMotivo}</p>}
+              <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Se ve en la lista, el historial, ventas y los reportes.</p>
             </div>
           )}
           <TecnicoField
@@ -272,12 +272,12 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
 
           {mostrarSugerencia && (
             <TurnoSugeridoBanner
-              wrapperClassName="col-span-2 flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-[11px] text-zinc-700 dark:text-zinc-200"
+              wrapperClassName="col-span-2 flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200"
               turnoSugerido={turnoSugerido}
             />
           )}
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-telefono" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">TELÉFONO<span className="text-red-600"> *</span></label>
+            <label htmlFor="ed-telefono" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">TELÉFONO<span className="text-red-600 dark:text-red-400"> *</span></label>
             <TelefonosField
               id="ed-telefono"
               required
@@ -290,7 +290,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           <ContactoCliente telefono={editingTicket.telefono} nombre={editingTicket.nombre} className="col-span-2" />
           {!napEnSeccion && (
             <div className="col-span-2 space-y-1">
-              <label htmlFor="ed-nap" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">NAP</label>
+              <label htmlFor="ed-nap" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NAP</label>
               <input id="ed-nap" type="text" maxLength="50" name="nap" value={editingTicket.nap || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors" />
             </div>
           )}
@@ -305,16 +305,16 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             napsConocidas={napsConocidas}
           />
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-ubicacion" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN (Google Maps)</label>
+            <label htmlFor="ed-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN (Google Maps)</label>
             <input id="ed-ubicacion" disabled={isTecnico} type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={editingTicket.ubicacion || ''} onChange={handleEditChange} aria-invalid={!!ubicacionParseada.error} className={`w-full bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-lg focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${ubicacionParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`} />
-            {ubicacionParseada.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
-            {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Cómo llegar</a>}
+            {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
+            {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Cómo llegar</a>}
           </div>
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-potencia" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">POTENCIA ÓPTICA (dBm)</label>
+            <label htmlFor="ed-potencia" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">POTENCIA ÓPTICA (dBm)</label>
             <input id="ed-potencia" type="text" inputMode="decimal" maxLength="7" name="potenciaDbm" placeholder="Ej. -19.5" value={editingTicket.potenciaDbm ?? ''} onChange={(e) => handleEditChange({ target: { name: 'potenciaDbm', value: e.target.value.replace(/[^0-9.,-]/g, ''), type: 'text' } })} aria-invalid={!!potenciaParseada.error} aria-describedby="ed-potencia-hint" className={`w-full bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-lg focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`} />
             {(potenciaParseada.error || potenciaEval) && (
-              <p id="ed-potencia-hint" className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
+              <p id="ed-potencia-hint" className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
             )}
           </div>
           {conDatosTecnico && (
@@ -333,14 +333,14 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               value={editingTicket.promotora ?? promotoraDeOrden(editingTicket)}
               onChange={handleEditChange}
               wrapperClassName="col-span-2 space-y-1"
-              labelClassName="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1"
+              labelClassName="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1"
               inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
               ayuda="(con él lo ve el promotor)"
             />
           )}
           {faltabaPlantilla && (
             <div className="col-span-2 space-y-1">
-              <label htmlFor="ed-plantilla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
+              <label htmlFor="ed-plantilla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
               <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-2 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs font-mono text-zinc-900 dark:text-white shadow-sm transition-colors" placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
             </div>
           )}
@@ -349,7 +349,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             <>
               {editingTicket.observacion?.trim() && (
                 <div className="col-span-2 space-y-1">
-                  <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1 block">NOTA DE LA OFICINA</span>
+                  <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1 block">NOTA DE LA OFICINA</span>
                   <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{editingTicket.observacion}</p>
                 </div>
               )}
@@ -358,11 +358,11 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
                 <div className="col-span-2 space-y-1">
                   {editingTicket.observacionTecnico?.trim() && (
                     <>
-                      <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1 block">TU REPORTE ANTERIOR</span>
+                      <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1 block">TU REPORTE ANTERIOR</span>
                       <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{editingTicket.observacionTecnico}</p>
                     </>
                   )}
-                  <p className="text-[9px] text-zinc-400 ml-1">La oficina te devolvió la orden: escribe tu nuevo reporte con el botón "Pre-finalizar" de la lista.</p>
+                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">La oficina te devolvió la orden: escribe tu nuevo reporte con el botón "Pre-finalizar" de la lista.</p>
                 </div>
               ) : (
                 <ObservacionTecnicoField wrapperClassName="col-span-2 space-y-1" idPrefix="ed" value={editingTicket.observacionTecnico || ''} onChange={handleEditChange} />

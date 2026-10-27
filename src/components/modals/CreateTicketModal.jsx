@@ -177,15 +177,15 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
           <div className="col-span-1 space-y-0.5">
-            <label htmlFor="tk-fecha" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">FECHA</label>
-            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className="w-full bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded text-[11px] tracking-tight text-zinc-600 dark:text-zinc-400 cursor-default" />
+            <label htmlFor="tk-fecha" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA</label>
+            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className="w-full bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded text-[11px] max-lg:text-xs tracking-tight text-zinc-600 dark:text-zinc-400 cursor-default" />
           </div>
           <div className="col-span-1 space-y-0.5">
-            <label htmlFor="tk-codigo" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">CÓDIGO</label>
+            <label htmlFor="tk-codigo" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO</label>
             <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder="Auto" value={formData.codigo} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs uppercase placeholder:normal-case placeholder:text-zinc-400" />
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-fecha-prog" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
+            <label htmlFor="tk-fecha-prog" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
             <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 rounded text-xs" />
           </div>
           <CedulaField
@@ -203,14 +203,14 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               Firestore trae el ticket recién creado (misma cédula, PENDIENTE)
               antes de que este modal termine de cerrarse, y se compara consigo mismo. */}
           {ticketDuplicado && !isSubmitting && (
-            <div className="col-span-2 sm:col-span-5 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded px-2.5 py-2 text-[11px] text-amber-800 dark:text-amber-300">
+            <div className="col-span-2 sm:col-span-5 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span>Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> — {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. Puedes seguir creando igual si es una avería distinta.</span>
+              <span>Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. Puedes seguir creando igual si es una avería distinta.</span>
             </div>
           )}
 
           {reincidencias.length > 0 && !isSubmitting && (
-            <div role="status" className={`col-span-2 sm:col-span-5 flex items-start gap-2 rounded px-2.5 py-2 text-[11px] border ${reincidenciaMuyReciente ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-800 dark:text-red-300' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-800 text-orange-800 dark:text-orange-300'}`}>
+            <div role="status" className={`col-span-2 sm:col-span-5 flex items-start gap-2 rounded px-2.5 py-2 text-[11px] max-lg:text-xs border ${reincidenciaMuyReciente ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-800 dark:text-red-300' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-800 text-orange-800 dark:text-orange-300'}`}>
               <Repeat className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <p>
@@ -230,7 +230,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           )}
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-nombre" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">NOMBRE<span className="text-red-600"> *</span></label>
+            <label htmlFor="tk-nombre" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
             <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
@@ -255,7 +255,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           />
 
           {esInstalacion && esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
-            <div className="col-span-2 sm:col-span-5 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded px-2.5 py-2 text-[11px] text-emerald-800 dark:text-emerald-300">
+            <div className="col-span-2 sm:col-span-5 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-emerald-800 dark:text-emerald-300">
               <Star className="w-3.5 h-3.5 shrink-0 fill-current" aria-hidden="true" />
               <span>Venta de <strong>{formData.tecnico}</strong>: se asigna directo y no consume el turno{turnoSugerido ? <> (el turno sugerido sigue siendo <strong>{turnoSugerido}</strong>)</> : null}.</span>
             </div>
@@ -263,7 +263,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           {esInstalacion && turnoSugerido && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
             <TurnoSugeridoBanner
-              wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-[11px] text-zinc-700 dark:text-zinc-200"
+              wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200"
               turnoSugerido={turnoSugerido}
             />
           )}
@@ -280,11 +280,11 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           {tipoUsaPlantillaPromotora(formData.tipoTrabajo) && (
             <div className="col-span-2 sm:col-span-5 space-y-0.5">
-              <label htmlFor="tk-plantilla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
+              <label htmlFor="tk-plantilla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
               <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs font-mono" placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
               {!formData.plantillaOriginal?.trim() && (esInstalacion
-                ? <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>
-                : <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">Sin la plantilla de la promotora, la plantilla de esta orden se arma con el formato de la app.</p>)}
+                ? <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>
+                : <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Sin la plantilla de la promotora, la plantilla de esta orden se arma con el formato de la app.</p>)}
             </div>
           )}
 
@@ -294,14 +294,14 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               value={formData.promotora || ''}
               onChange={handleCreateChange}
               wrapperClassName="col-span-2 sm:col-span-5 space-y-0.5"
-              labelClassName="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1"
+              labelClassName="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1"
               inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs"
               ayuda="(se llena con la plantilla)"
             />
           )}
 
           <div className="col-span-1 sm:col-span-2 space-y-0.5">
-            <label htmlFor="tk-falla" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">TIPO{opcionesTipo.length > 0 && <span className="text-red-600"> *</span>}</label>
+            <label htmlFor="tk-falla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">TIPO{opcionesTipo.length > 0 && <span className="text-red-600 dark:text-red-400"> *</span>}</label>
             <SelectMenu
               id="tk-falla"
               ariaLabel="Tipo"
@@ -312,15 +312,15 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               className={`w-full bg-white dark:bg-zinc-950 border ${mostrarFaltaTipo ? 'border-red-600' : 'border-zinc-200 dark:border-zinc-700'} pl-2 pr-7 py-1.5 rounded text-xs disabled:opacity-60 disabled:cursor-not-allowed`}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
-            {mostrarFaltaTipo && <p role="alert" className="text-[10px] font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
+            {mostrarFaltaTipo && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
           </div>
           <div className="col-span-1 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-direccion" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">DIRECCIÓN<span className="text-red-600"> *</span></label>
+            <label htmlFor="tk-direccion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
             <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-telefono" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">TELÉFONO<span className="text-red-600"> *</span></label>
+            <label htmlFor="tk-telefono" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">TELÉFONO<span className="text-red-600 dark:text-red-400"> *</span></label>
             <TelefonosField
               id="tk-telefono"
               required
@@ -330,7 +330,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             />
           </div>
           <div className="col-span-2 sm:col-span-2 space-y-0.5">
-            <label htmlFor="tk-nap" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">NAP</label>
+            <label htmlFor="tk-nap" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NAP</label>
             <input id="tk-nap" type="text" maxLength="50" name="nap" value={formData.nap} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
           </div>
 
@@ -346,10 +346,10 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           />
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-ubicacion" className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500 ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, opcional)</span></label>
+            <label htmlFor="tk-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, opcional)</span></label>
             <input id="tk-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={formData.ubicacion} onChange={handleCreateChange} aria-invalid={!!ubicacionParseada.error} className={`w-full bg-white dark:bg-zinc-950 border px-2 py-1.5 rounded text-xs ${ubicacionParseada.error ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-700'}`} />
-            {ubicacionParseada.error && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
-            {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
+            {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
+            {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
 
           <ObservacionField
@@ -395,7 +395,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               </div>
               <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">¿Cédula duplicada?</h2>
               <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">
-                Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> — {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. ¿Crear esta de todas formas?
+                Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. ¿Crear esta de todas formas?
               </p>
             </div>
             <div className="p-6 bg-zinc-50 dark:bg-zinc-950 flex gap-3 border-t border-zinc-200 dark:border-zinc-800">

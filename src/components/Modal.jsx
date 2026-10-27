@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { salidaAnimada } from '../hooks/usePresencia';
 import '../utils/sacudidaErrores';
 
@@ -71,6 +71,7 @@ function VentanaModal({ onClose, onVolver, zIndexClass = 'z-50', completa = fals
   const panelRef = useRef(null);
   const onCloseRef = useRef(onClose);
   const onVolverRef = useRef(onVolver);
+  const idVentana = useId();
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -118,6 +119,23 @@ function VentanaModal({ onClose, onVolver, zIndexClass = 'z-50', completa = fals
       if (overlay?.isConnected && performance.now() - montadoEn > MINIMO_PARA_ANIMAR_MS && salidaAnimada()) animarSalida(overlay);
     };
   }, []);
+
+  // La ventana se nombra con su propio título (el primer h1, h2 o h3 del contenido, aunque cambie de nivel), para que un lector de
+  // pantalla diga de qué ventana se trata.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return undefined;
+    const nombrar = () => {
+      const titulo = panel.querySelector('h1, h2, h3');
+      if (!titulo) return;
+      if (!titulo.id) titulo.id = `titulo-${idVentana}`;
+      if (panel.getAttribute('aria-labelledby') !== titulo.id) panel.setAttribute('aria-labelledby', titulo.id);
+    };
+    nombrar();
+    const observador = new MutationObserver(nombrar);
+    observador.observe(panel, { childList: true, subtree: true });
+    return () => observador.disconnect();
+  }, [idVentana]);
 
   // Runs once per mount: initial focus + key handling. Reading onClose via a ref
   // avoids re-binding (and re-stealing focus) whenever the parent re-renders

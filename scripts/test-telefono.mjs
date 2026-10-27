@@ -41,7 +41,7 @@ check('un número incompleto sigue siendo inválido', errorTelefono(limpiarTelef
 // --- Los formularios y el guardado lo exigen (se leen del código, como el orden de la instalación) ---
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), 'utf8');
 const campo = (codigo, id) => codigo.match(new RegExp(`<TelefonosField[^>]*id="${id}"[\\s\\S]*?/>`))?.[0] || '';
-const etiqueta = (codigo, id) => codigo.match(new RegExp(`htmlFor="${id}"[^>]*>([^<]*)<span className="text-red-600"> \\*</span>`))?.[1];
+const etiqueta = (codigo, id) => codigo.match(new RegExp(`htmlFor="${id}"[^>]*>([^<]*)<span className="text-red-600 dark:text-red-400"> \\*</span>`))?.[1];
 
 const crear = leer('../src/components/modals/CreateTicketModal.jsx');
 check('crear orden: el campo teléfono es obligatorio', /\srequired[\s/>]/.test(campo(crear, 'tk-telefono')), true);

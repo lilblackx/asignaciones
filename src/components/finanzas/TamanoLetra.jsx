@@ -14,7 +14,7 @@ export default function TamanoLetra({ nivel, onNivel }) {
             aria-label={`Letra ${n.texto.toLowerCase()}`}
             title={n.texto}
             onClick={() => onNivel(n.id)}
-            className={`h-9 min-w-10 px-2.5 font-bold transition-colors ${n.muestra} ${nivel === n.id ? 'bg-red-600 text-white' : 'bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+            className={`h-9 min-w-10 max-lg:min-w-11 px-2.5 font-bold transition-colors ${n.muestra} ${nivel === n.id ? 'bg-red-600 text-white' : 'bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
           >A</button>
         ))}
       </span>

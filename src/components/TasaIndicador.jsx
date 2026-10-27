@@ -3,9 +3,9 @@ import { getEstadoTasa, montoBsDe } from '../utils/tasa';
 
 const CLASES_NIVEL = {
   ok: 'text-zinc-600 dark:text-zinc-400',
-  aviso: 'text-amber-600 dark:text-amber-400 font-bold',
-  alerta: 'text-red-600 dark:text-red-400 font-bold',
-  sin: 'text-red-600 dark:text-red-400 font-bold',
+  aviso: 'text-amber-700 dark:text-amber-400 font-bold',
+  alerta: 'text-red-700 dark:text-red-400 font-bold',
+  sin: 'text-red-700 dark:text-red-400 font-bold',
 };
 
 // Tasa BCV a la vista: la plantilla de WhatsApp calcula el monto en Bs con ella,
@@ -34,7 +34,7 @@ export default function TasaIndicador({ tasaConfig, onClick }) {
   const clases = `inline-flex items-center gap-1 ${CLASES_NIVEL[nivel]}`;
 
   return onClick ? (
-    <button type="button" onClick={onClick} title="Abrir configuración de la tasa" className={`${clases} hover:underline`}>{contenido}</button>
+    <button type="button" onClick={onClick} title="Abrir configuración de la tasa" className={`${clases} max-lg:min-h-11 hover:underline`}>{contenido}</button>
   ) : (
     <span className={clases}>{contenido}</span>
   );
