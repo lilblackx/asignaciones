@@ -58,7 +58,7 @@ export default function InstallGate({ children }) {
         </div>
         <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">Instala la app para continuar</h2>
         <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">
-          En el teléfono, las notificaciones de nuevas órdenes y cambios de estado solo llegan con la app instalada en la pantalla de inicio — así funcionan con la pantalla bloqueada.
+          En el teléfono, las notificaciones de nuevas órdenes y cambios de estado solo llegan con la app instalada en la pantalla de inicio - así funcionan con la pantalla bloqueada.
         </p>
 
         {isIos() ? (
@@ -83,7 +83,7 @@ export default function InstallGate({ children }) {
 
         <button
           onClick={() => setStandalone(isStandalone())}
-          className="mt-4 text-xs font-bold text-zinc-600 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline"
+          className="mt-4 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 underline"
         >
           Ya la instalé, continuar
         </button>

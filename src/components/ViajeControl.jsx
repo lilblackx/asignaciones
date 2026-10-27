@@ -10,7 +10,7 @@ export function EtiquetaViaje({ ticket, ahora, className = '' }) {
   const desde = enSitio ? ticket.enCamino.llegoEn : ticket.enCamino.desde;
   return (
     <span
-      className={`inline-flex flex-wrap items-center justify-center gap-x-1 text-[9px] font-black tracking-wide px-1.5 py-0.5 rounded text-white leading-tight text-center ${enSitio ? 'bg-teal-600' : 'bg-sky-600'} ${className}`}
+      className={`inline-flex flex-wrap items-center justify-center gap-x-1 text-[11px] max-lg:text-xs font-black tracking-wide px-1.5 py-0.5 rounded text-white leading-tight text-center ${enSitio ? 'bg-teal-600' : 'bg-sky-600'} ${className}`}
       title={`${ticket.tecnico} ${enSitio ? 'llegó al sitio' : 'va en camino'} (${tiempoTranscurrido(desde, ahora)})`}
     >
       {/* Si no cabe en una línea, se parte entre la etiqueta y la hora, nunca en medio de una de las dos. */}
@@ -46,7 +46,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
         disabled={ocupado}
         aria-label={`Avisar que vas en camino a la orden ${orden}`}
         className={compact
-          ? 'inline-flex items-center gap-1 self-start text-[10px] font-bold px-2 py-1 rounded bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors disabled:opacity-60'
+          ? 'inline-flex items-center gap-1 self-start text-[11px] max-lg:text-xs font-bold px-2 py-1 rounded bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors disabled:opacity-60'
           : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-black text-base transition-colors disabled:opacity-60'}
       >
         <Car className={compact ? 'w-3.5 h-3.5' : 'w-5 h-5'} aria-hidden="true" /> Estoy en camino
@@ -60,14 +60,14 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
     ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-300'
     : 'bg-sky-50 dark:bg-sky-900/20 border-sky-300 dark:border-sky-700 text-sky-800 dark:text-sky-300';
   const Icono = enSitio ? MapPin : Car;
-  const boton = compact ? 'px-2 py-1 text-[10px]' : 'px-3 py-2 text-sm';
+  const boton = compact ? 'px-2 py-1 text-[11px] max-lg:text-xs' : 'px-3 py-2 text-sm';
   const icono = compact ? 'w-3 h-3' : 'w-4 h-4';
 
   return (
     <div className={`border rounded-xl ${compact ? 'px-2 py-1.5' : 'p-3'} flex flex-col gap-2 ${tono}`} role="status">
       <div className="flex items-center gap-2 font-black leading-tight">
         <Icono className={compact ? 'w-3.5 h-3.5 shrink-0' : 'w-5 h-5 shrink-0'} aria-hidden="true" />
-        <span className={compact ? 'text-[10px]' : 'text-sm'}>
+        <span className={compact ? 'text-[11px] max-lg:text-xs' : 'text-sm'}>
           {enSitio ? 'EN SITIO' : 'EN CAMINO'}
           <span className="font-bold opacity-80"> · {enSitio ? 'llegaste' : 'saliste'} {tiempoTranscurrido(desde, ahora)}</span>
         </span>

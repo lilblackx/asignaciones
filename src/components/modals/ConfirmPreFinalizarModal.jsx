@@ -14,7 +14,7 @@ export default function ConfirmPreFinalizarModal({ ticket, visita, isSubmitting,
           </div>
           <h2 id="confirmar-prefinalizar-titulo" className="text-xl font-black text-zinc-900 dark:text-white mb-2">¿Pre-finalizar esta orden?</h2>
           <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">
-            {ticket.codigo || 'S/C'}{ticket.nombre ? ` — ${ticket.nombre}` : ''}
+            {ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}
           </p>
           {visita && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{visita}</p>}
           <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-3">

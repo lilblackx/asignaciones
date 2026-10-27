@@ -11,7 +11,7 @@ export default function ConsultaCobroAviso({ ticket, compact = false, onResponde
   const respuesta = respuestaVigente(ticket);
   const pendiente = consultaPendiente(ticket);
   const icono = compact ? 'w-3 h-3' : 'w-4 h-4';
-  const base = `rounded-lg border flex items-start gap-2 ${compact ? 'p-1.5 text-[10px]' : 'p-2.5 text-xs'} ${className}`;
+  const base = `rounded-lg border flex items-start gap-2 ${compact ? 'p-1.5 text-[11px] max-lg:text-xs' : 'p-2.5 text-xs'} ${className}`;
 
   if (respuesta) {
     return (
@@ -35,7 +35,7 @@ export default function ConsultaCobroAviso({ ticket, compact = false, onResponde
           <button
             type="button"
             onClick={() => onResponder(ticket)}
-            className={`mt-1.5 inline-flex items-center justify-center gap-1 rounded-md bg-amber-500 hover:bg-amber-400 text-black font-black transition-colors ${compact ? 'px-2 py-1 text-[10px]' : 'px-3 py-2 text-xs min-h-[40px]'}`}
+            className={`mt-1.5 inline-flex items-center justify-center gap-1 rounded-md bg-amber-500 hover:bg-amber-400 text-black font-black transition-colors ${compact ? 'px-2 py-1 text-[11px] max-lg:text-xs' : 'px-3 py-2 text-xs min-h-[40px]'}`}
           >
             <Banknote className={icono} aria-hidden="true" /> Responder cobro
           </button>

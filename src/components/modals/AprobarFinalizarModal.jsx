@@ -129,7 +129,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         <div className="bg-black px-4 py-3.5 border-b-2 border-blue-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded tracking-wide">
+              <span className="bg-blue-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">
                 {finalizando ? 'REVISAR ANTES DE FINALIZAR' : 'REVISAR ANTES DE APROBAR'}
               </span>
               <span className="text-xs font-bold text-blue-400">{ticket.codigo || 'S/C'}</span>
@@ -144,7 +144,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         </div>
 
         <div className="p-4 sm:p-5 space-y-4">
-          <p className="flex items-center gap-2 text-[11px] text-blue-800 dark:text-blue-300 font-medium">
+          <p className="flex items-center gap-2 text-[11px] max-lg:text-xs text-blue-800 dark:text-blue-300 font-medium">
             <Eye className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             {finalizando ? 'Solo lectura. El técnico aún no pre-finalizó esta orden: verifica los datos antes de finalizarla.' : 'Solo lectura. Verifica los datos que cargó el técnico antes de aprobar.'}
           </p>
@@ -157,7 +157,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           )}
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-700 dark:text-zinc-300">
-            <span className="inline-flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" aria-hidden="true" /><span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-zinc-600 dark:text-zinc-400">— {ticket.falla}</span>}</span>
+            <span className="inline-flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" aria-hidden="true" /><span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-zinc-600 dark:text-zinc-400">- {ticket.falla}</span>}</span>
             {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></span>}
             {ticket.creado && <span className="text-zinc-600 dark:text-zinc-400">Creado por: {ticket.creado}</span>}
           </div>
@@ -170,7 +170,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
               {partesRecableado(ticket).length > 0
                 ? partesRecableado(ticket).map((parte) => <p key={parte} className="font-bold ml-6">{parte}</p>)
                 : <p className="ml-6 italic">Sin datos del recableado.</p>}
-              {ticket.metrosCable != null && !ticket.conectorExterno && !ticket.conectorInterno && <p className="ml-6 text-[11px] opacity-80">Sin conectores registrados.</p>}
+              {ticket.metrosCable != null && !ticket.conectorExterno && !ticket.conectorInterno && <p className="ml-6 text-[11px] max-lg:text-xs opacity-80">Sin conectores registrados.</p>}
             </div>
           )}
 
@@ -185,7 +185,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                 </h3>
                 <p className="ml-6 mt-1"><span className="opacity-70">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
                 {consultaCobroDe(ticket) && (
-                  <p className="ml-6 mt-1 text-[11px] font-bold">
+                  <p className="ml-6 mt-1 text-[11px] max-lg:text-xs font-bold">
                     {respuestaVigente(ticket)
                       ? (cobroPrecargado(ticket)
                         ? `El técnico consultó este cobro (${respuestaVigente(ticket).metros} m) y ya viene elegido: ${textoRespuesta(respuestaVigente(ticket))}. Cámbialo si hace falta.`
@@ -193,7 +193,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                       : `El técnico consultó el cobro (${ticket.consultaCobro.metros} m) y no se ha respondido.`}
                   </p>
                 )}
-                {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <p className="ml-6 mt-1 text-[11px] opacity-80">El técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</p>}
+                {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <p className="ml-6 mt-1 text-[11px] max-lg:text-xs opacity-80">El técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</p>}
               </div>
               <CobroSelector
                 idBase="cobro-aprobar"
@@ -232,7 +232,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                 )}
               </div>
               {ticket.potencia1490Dbm != null && (
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
+                <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
               )}
             </div>
           )}
@@ -271,8 +271,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                   placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
                   className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
                 />
-                {motivoError && <p className="text-[11px] text-red-500 font-bold ml-1">{motivoError}</p>}
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 ml-1">
+                {motivoError && <p className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{motivoError}</p>}
+                <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">
                   La orden vuelve a PENDIENTE y el técnico recibe una notificación con este motivo.
                 </p>
               </div>
@@ -342,7 +342,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         onCancel={() => setConfirmando(null)}
         onConfirm={ejecutarCierre}
       >
-        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` — ${ticket.nombre}` : ''}</p>
+        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
       </ConfirmModal>
     )}
     {confirmando === 'devolver' && (
@@ -357,7 +357,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         onCancel={() => setConfirmando(null)}
         onConfirm={ejecutarDevolucion}
       >
-        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` — ${ticket.nombre}` : ''}</p>
+        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
         <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">Motivo: {motivo.trim()}</p>
       </ConfirmModal>
     )}

@@ -38,7 +38,7 @@ export function ClienteSmartOltIcono({ cliente }) {
         disabled={buscando}
         title="Buscar cliente en SmartOLT"
         aria-label="Buscar cliente en SmartOLT"
-        className={`${BOTON} border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 disabled:opacity-50`}
+        className={`${BOTON} border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 disabled:opacity-50`}
       >
         <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
       </button>
@@ -52,11 +52,11 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
   if (!cliente.visible || !estado || !['vacio', 'error', 'opciones'].includes(estado.tipo)) return null;
   return (
     <div className={wrapperClassName}>
-      {estado.tipo === 'vacio' && <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT.</p>}
-      {estado.tipo === 'error' && <p role="alert" className="text-[10px] font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Llena los datos a mano.</p>}
+      {estado.tipo === 'vacio' && <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT.</p>}
+      {estado.tipo === 'error' && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Llena los datos a mano.</p>}
       {estado.tipo === 'opciones' && (
         <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="mt-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-2">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+          <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
             Esta cédula tiene {estado.opciones.length} servicios. Elige cuál es:
           </p>
@@ -70,7 +70,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
               >
                 <span className="flex items-center gap-2">
                   {onu.zona && (
-                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 group-hover:bg-white dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                    <span className="shrink-0 text-[11px] max-lg:text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 group-hover:bg-white dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                       {onu.zona}
                     </span>
                   )}
@@ -79,7 +79,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
                   </span>
                 </span>
                 {onu.direccion && (
-                  <span className="block mt-0.5 text-[11px] leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>
+                  <span className="block mt-0.5 text-[11px] max-lg:text-xs leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>
                 )}
               </button>
             ))}

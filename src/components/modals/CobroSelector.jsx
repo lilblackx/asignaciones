@@ -40,7 +40,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
         </span>
         <span className="min-w-0">
           <span className="block text-xs font-black text-zinc-900 dark:text-white">{titulo}</span>
-          {detalle && <span className="block text-[11px] text-zinc-600 dark:text-zinc-400">{detalle}</span>}
+          {detalle && <span className="block text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">{detalle}</span>}
         </span>
       </button>
     );
@@ -75,7 +75,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
               );
             })}
           </div>
-          <label htmlFor={`${idBase}-otro`} className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ml-1">MONTO A COBRAR ({moneda === MONEDA_USD ? '$' : 'Bs'})</label>
+          <label htmlFor={`${idBase}-otro`} className="text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">MONTO A COBRAR ({moneda === MONEDA_USD ? '$' : 'Bs'})</label>
           <input
             id={`${idBase}-otro`}
             ref={inputRef}
@@ -89,7 +89,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
             aria-describedby={error ? `${idBase}-error` : undefined}
             className={`w-full bg-white dark:bg-zinc-950 border-2 px-3 py-2.5 rounded-xl outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm focus:ring-0 ${error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-sky-500'}`}
           />
-          {error && <p id={`${idBase}-error`} role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
+          {error && <p id={`${idBase}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
         </div>
       )}
     </div>

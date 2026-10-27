@@ -32,7 +32,7 @@ const ESTILO_ESTADO = {
 };
 const ESTILO_ALERTA = 'bg-red-600 text-white';
 const ETIQUETA_ACCION = { instalacion_nueva: 'Instalación', cambio_equipo: 'Cambio de equipo', averia: 'Material de avería' };
-const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '—');
+const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 
 // Aviso en la pantalla principal, solo para los usuarios del módulo: hay órdenes aprobadas que no se pudieron descontar del
 // inventario del almacén.
@@ -57,12 +57,12 @@ export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
 }
 
 function Chip({ estado }) {
-  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${ESTILO_ESTADO[estado] || ESTILO_ALERTA}`}>{ETIQUETA_ESTADO[estado] || estado}</span>;
+  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] max-lg:text-xs font-black ${ESTILO_ESTADO[estado] || ESTILO_ALERTA}`}>{ETIQUETA_ESTADO[estado] || estado}</span>;
 }
 
 function Detalle({ envio }) {
   return (
-    <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
       {ETIQUETA_ACCION[envio.accion] || 'Orden'}{envio.tecnico || envio.tecnicoOrden ? ` · ${envio.tecnico || envio.tecnicoOrden}` : ''} · {fechaHora(envio.actualizadoEn)}
     </p>
   );
@@ -71,7 +71,7 @@ function Detalle({ envio }) {
 function Serial({ serial }) {
   if (!serial) return null;
   return (
-    <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
       Serial: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{serial}</span>
     </p>
   );
@@ -103,7 +103,7 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar }) {
     <li className="bg-white dark:bg-zinc-900 border-2 border-red-200 dark:border-red-900/50 rounded-xl p-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-black text-zinc-900 dark:text-white break-words">{envio.codigo || 'S/C'}{envio.cliente ? ` — ${envio.cliente}` : ''}</p>
+          <p className="text-sm font-black text-zinc-900 dark:text-white break-words">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
           <Detalle envio={envio} />
         </div>
         <Chip estado={envio.estado} />
@@ -137,7 +137,7 @@ const unidad = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 // Lo que se envió de una orden, en líneas (lo mismo que se copia).
 function lineasEnvio(e) {
   const lineas = [
-    `${e.codigo || 'S/C'}${e.cliente ? ` — ${e.cliente}` : ''}`,
+    `${e.codigo || 'S/C'}${e.cliente ? ` - ${e.cliente}` : ''}`,
     `${ETIQUETA_ACCION[e.accion] || 'Orden'}${e.tecnico || e.tecnicoOrden ? ` · ${e.tecnico || e.tecnicoOrden}` : ''}`,
     `Estado: ${ETIQUETA_ESTADO[e.estado] || e.estado}${e.intentos ? ` (${unidad(e.intentos, 'intento', 'intentos')})` : ''}`,
   ];
@@ -178,7 +178,7 @@ function FilaReciente({ envio, onReintentar, onReenviarAviso }) {
     <li>
       <button type="button" onClick={() => setAbierta((v) => !v)} aria-expanded={abierta} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
         <div className="min-w-0">
-          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` — ${envio.cliente}` : ''}</p>
+          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
           <Detalle envio={envio} />
           <Serial serial={envio.serial} />
         </div>
@@ -190,7 +190,7 @@ function FilaReciente({ envio, onReintentar, onReenviarAviso }) {
       <Colapsable>
         {abierta && (
           <div className="px-3 pb-3 space-y-2">
-            <dl className="rounded-lg bg-zinc-100 dark:bg-zinc-800/60 p-2.5 text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
+            <dl className="rounded-lg bg-zinc-100 dark:bg-zinc-800/60 p-2.5 text-[11px] max-lg:text-xs leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
               {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
             </dl>
             <div className="flex flex-wrap gap-2">
@@ -269,22 +269,22 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
 
           {pendientes.length > 0 && (
             <section aria-labelledby="envios-pendientes" className="space-y-2">
-              <h3 id="envios-pendientes" className="text-[10px] font-bold tracking-wide text-amber-700 dark:text-amber-400 uppercase">Esperando para enviarse ({pendientes.length})</h3>
+              <h3 id="envios-pendientes" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400">Esperando para enviarse ({pendientes.length})</h3>
               <ul className="border border-amber-300 dark:border-amber-900/60 rounded-xl divide-y divide-amber-200 dark:divide-amber-900/40 bg-amber-50 dark:bg-amber-950/20">
                 {pendientes.map((e) => (
                   <li key={e.id} className="px-3 py-2">
-                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{e.codigo || 'S/C'}{e.cliente ? ` — ${e.cliente}` : ''}</p>
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-300">{unidad(e.intentos, 'intento', 'intentos')} · {e.mensaje || 'No se pudo llegar al inventario.'}</p>
+                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{e.codigo || 'S/C'}{e.cliente ? ` - ${e.cliente}` : ''}</p>
+                    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-300">{unidad(e.intentos, 'intento', 'intentos')} · {e.mensaje || 'No se pudo llegar al inventario.'}</p>
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">Se reintentan solas cada 15 minutos.</p>
+              <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">Se reintentan solas cada 15 minutos.</p>
             </section>
           )}
 
           <section aria-labelledby="envios-por-revisar" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-por-revisar" className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400 uppercase">Por revisar ({envios.length})</h3>
+              <h3 id="envios-por-revisar" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Por revisar ({envios.length})</h3>
               {porReintentar.length > 1 && (
                 <Boton variante="principal" tamano="compacto" type="button" onClick={reintentarTodas} disabled={reintentandoTodas}>
                   <RefreshCw className={`w-3 h-3 ${reintentandoTodas ? 'animate-spin' : ''}`} aria-hidden="true" /> {reintentandoTodas ? 'Enviando...' : `Reintentar todas (${porReintentar.length})`}
@@ -302,7 +302,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
 
           <section aria-labelledby="envios-recientes" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-recientes" className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400 uppercase">Actividad reciente</h3>
+              <h3 id="envios-recientes" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Actividad reciente</h3>
               <Boton variante="secundario" tamano="compacto" type="button" onClick={onActualizar} disabled={cargando}>
                 <RefreshCw className={`w-3 h-3 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar
               </Boton>

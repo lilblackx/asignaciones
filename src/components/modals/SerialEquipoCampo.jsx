@@ -24,7 +24,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
             TIPO DE EQUIPO NUEVO <span className="font-normal text-red-500">(obligatorio)</span>
           </label>
           <SelectMenu id="pf-tipo-equipo" ariaLabel="Tipo de equipo nuevo" value={tipoEquipo} onChange={onTipoEquipo} items={ITEMS_TIPO} />
-          {errorTipo && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errorTipo}</p>}
+          {errorTipo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errorTipo}</p>}
         </div>
       )}
       <div className="space-y-1">
@@ -47,8 +47,8 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
         className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error || rojo ? 'border-red-500' : verde ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
       />
       {error || rojo
-        ? <p id="pf-serial-equipo-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>
-        : verde && <p id="pf-serial-equipo-error" role="status" className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacion.mensaje}</p>}
+        ? <p id="pf-serial-equipo-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>
+        : verde && <p id="pf-serial-equipo-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacion.mensaje}</p>}
       {aviso}
       </div>
     </div>

@@ -7,7 +7,7 @@ import { DURACION_PLIEGUE_MS, salidaAnimada } from '../../hooks/usePresencia';
 // "×" dentro del input (a la derecha) y "+ Agregar" como enlace bajo la lista:
 // así cada número ocupa una sola fila, sin una columna de botones al lado.
 const botonQuitar = 'absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors';
-const botonAgregar = 'inline-flex items-center gap-1 ml-1 text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed';
+const botonAgregar = 'inline-flex items-center gap-1 ml-1 text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed';
 
 // Cada fila lleva una clave propia para que, al quitar una, se pliegue esa y no se reacomode el resto.
 let ultimaClave = 0;
@@ -146,7 +146,7 @@ export default function TelefonosField({ id, value, onChange, disabled = false, 
                     </button>
                   )}
                 </div>
-                {error && <p id={`${id}-error-${i}`} className="text-[10px] font-medium text-red-600 dark:text-red-400 ml-1 mt-0.5">{error}</p>}
+                {error && <p id={`${id}-error-${i}`} className="text-[11px] max-lg:text-xs font-medium text-red-600 dark:text-red-400 ml-1 mt-0.5">{error}</p>}
               </div>
             )}
           </Colapsable>

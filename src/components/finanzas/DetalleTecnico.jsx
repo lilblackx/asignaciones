@@ -90,7 +90,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
                 <span className="hidden lg:block text-right text-sm font-bold tabular-nums text-zinc-900 dark:text-white">{d.cantidad}</span>
                 <span className="hidden lg:block text-right text-sm tabular-nums text-zinc-900 dark:text-white">{dolares(d.precio)}</span>
                 <span className="hidden lg:block text-right text-sm font-bold tabular-nums text-zinc-900 dark:text-white">{dolares(d.subtotal)}</span>
-                <span className="hidden lg:block text-right text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{montoBs(d.subtotal, tasa) || '—'}</span>
+                <span className="hidden lg:block text-right text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{montoBs(d.subtotal, tasa) || '-'}</span>
                 <Monto usd={d.subtotal} tasa={tasa} className="lg:hidden" />
               </li>
             ))}

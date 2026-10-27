@@ -15,7 +15,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 shrink-0">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-wide text-red-500">{titulo}</p>
+            <p className="text-[11px] max-lg:text-xs font-black uppercase tracking-wide text-red-500">{titulo}</p>
             <h2 className="mt-1 flex items-baseline gap-2 min-w-0">
               <span className="text-lg font-black text-white tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
               {orden.nombre && <span className="text-sm font-bold text-zinc-300 truncate">{orden.nombre}</span>}
@@ -25,7 +25,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
         </div>
 
         <div className="p-4 overflow-y-auto space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-500">Texto para copiar</p>
+          <p className="text-[11px] max-lg:text-xs font-semibold text-zinc-600 dark:text-zinc-400">Texto para copiar</p>
           <pre className="whitespace-pre-wrap break-words text-xs leading-relaxed font-mono text-zinc-800 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-md p-3">{texto}</pre>
         </div>
 

@@ -53,7 +53,7 @@ export default function HistorialTimeline({ ticket, compact = false }) {
             </span>
             <div className="min-w-0 flex-1 pb-0.5">
               <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">{titulo}</p>
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-tight">
+              <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 leading-tight">
                 {ev.fecha}{ev.operador && <> · <span className="font-semibold text-zinc-600 dark:text-zinc-300">{ev.operador}</span></>}
               </p>
               {ev.lineas.filter(linea => !REPETIDAS.test(linea)).map((linea, j) => (

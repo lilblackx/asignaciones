@@ -197,7 +197,7 @@ export default function SelectMenu({
             {items.map(it =>
               it.group ? (
                 <li key={it.group} role="presentation">
-                  <div className="px-3 pt-2 pb-1 mt-1 border-t border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-500">
+                  <div className="px-3 pt-2 pb-1 mt-1 border-t border-zinc-100 dark:border-zinc-800 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">
                     {it.group}
                   </div>
                   <ul role="group" aria-label={it.group}>

@@ -23,7 +23,7 @@ export default function ListaHallazgos({ titulo = 'Puntos de atención', items }
             <>
               <Icono className={`w-4 h-4 shrink-0 mt-px ${alerta ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`} aria-hidden="true" />
               <span className="flex-1 min-w-0 text-zinc-800 dark:text-zinc-200"><span className="font-bold">{alerta ? 'Atención: ' : 'Bien: '}</span>{item.texto}</span>
-              {item.ordenes?.length > 0 && <span className="shrink-0 inline-flex items-center gap-0.5 text-[11px] font-bold text-zinc-600 dark:text-zinc-300">{item.ordenes.length} {item.ordenes.length === 1 ? 'orden' : 'órdenes'}<ChevronRight className="w-3.5 h-3.5" aria-hidden="true" /></span>}
+              {item.ordenes?.length > 0 && <span className="shrink-0 inline-flex items-center gap-0.5 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-300">{item.ordenes.length} {item.ordenes.length === 1 ? 'orden' : 'órdenes'}<ChevronRight className="w-3.5 h-3.5" aria-hidden="true" /></span>}
             </>
           );
           return (

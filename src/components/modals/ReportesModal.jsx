@@ -190,7 +190,7 @@ export default function ReportesModal({
           {/* Como página dentro del marco el menú lateral de la app ya ocupa la izquierda: el reporte se elige en un dropdown arriba (no un segundo menú lateral). */}
           {enPagina && (
             <div className="shrink-0 px-4 sm:px-6 lg:px-[max(1.5rem,calc((100%-80rem)/2))] pt-3">
-              <label htmlFor="reporte-pagina" className="block text-[10px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-500 mb-1 ml-1">Reporte</label>
+              <label htmlFor="reporte-pagina" className="block text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400 mb-1 ml-1">Reporte</label>
               <div className="w-full sm:w-80">
                 <SelectMenu
                   id="reporte-pagina"
@@ -209,7 +209,7 @@ export default function ReportesModal({
           <nav aria-label="Reportes" className="hidden lg:flex flex-col gap-5 w-64 shrink-0 overflow-y-auto p-4 bg-zinc-200 dark:bg-zinc-900 border-r border-zinc-300 dark:border-zinc-800">
             {GRUPOS.map((g) => (
               <div key={g.titulo}>
-                <div className="px-2 mb-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-500">{g.titulo}</div>
+                <div className="px-2 mb-1.5 text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400">{g.titulo}</div>
                 <ul className="flex flex-col gap-1">
                   {g.reportes.map(({ id, nombre, Icono }) => (
                     <li key={id}>

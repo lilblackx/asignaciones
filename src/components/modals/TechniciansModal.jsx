@@ -143,7 +143,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   const cargandoInv = tecnicosInventario === null && !errorInventario;
                   return (
                     <li key={t.id} className={`grid ${columnas} gap-x-3 gap-y-2 px-4 py-3 items-center`}>
-                      <span className={`order-1 inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500'}`}>
+                      <span className={`order-1 inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ring-2 ring-white dark:ring-zinc-950 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
                         <span className="truncate">{t.name}</span>
                       </span>
@@ -167,7 +167,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                             onChange={(v) => vincular(t, v)}
                             items={itemsInventario(opciones, elegido, noEstaEnLista, cargandoInv)}
                           />
-                          <span className={`inline-block text-[10px] font-black px-1.5 py-0.5 rounded ${elegido && !noEstaEnLista && !inactivoAlla ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+                          <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${elegido && !noEstaEnLista && !inactivoAlla ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}`}>
                             {!elegido ? 'Sin elegir' : noEstaEnLista ? 'No está en el inventario' : inactivoAlla ? 'Inactivo en el inventario' : 'Elegido'}
                           </span>
                         </div>
@@ -176,7 +176,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                     </li>
                   );
                 })}
-                {technicians.length === 0 && <li className={`${TEXTO_SUAVE} text-center py-6`}>No hay técnicos.</li>}
+                {technicians.length === 0 && <li className={`${TEXTO_SUAVE} text-center py-6`}>Aún no hay técnicos. Agrega el primero en Nuevo técnico.</li>}
               </ul>
             </section>
 
@@ -197,8 +197,8 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       const activo = tech ? tech.activo !== false : false;
                       return (
                         <li key={nombre} className="flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-1.5">
-                          <span className="text-[11px] font-black text-zinc-500 w-5 text-center shrink-0">{i + 1}</span>
-                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-md text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500'}`}>{nombre}</span>
+                          <span className="text-[11px] max-lg:text-xs font-black text-zinc-500 w-5 text-center shrink-0">{i + 1}</span>
+                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-md text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}>{nombre}</span>
                           <Boton variante="discreto" tamano="compacto" icono={ArrowUp} onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="w-8 !px-0" />
                           <Boton variante="discreto" tamano="compacto" icono={ArrowDown} onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="w-8 !px-0" />
                         </li>

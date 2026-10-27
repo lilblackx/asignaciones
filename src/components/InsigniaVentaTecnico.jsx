@@ -8,7 +8,7 @@ export default function InsigniaVentaTecnico({ ticket, paraTecnico = false }) {
   if (!esInstalacion(ticket?.tipoTrabajo) || !esVentaDelTecnico(ticket.ventaTecnico, ticket.tecnico)) return null;
   const ayuda = paraTecnico ? 'Esta venta la trajiste tú.' : `Venta traída por ${ticket.tecnico}.`;
   return (
-    <span title={ayuda} aria-label={ayuda} className="inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+    <span title={ayuda} aria-label={ayuda} className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
       <Star className="w-2.5 h-2.5 fill-current" aria-hidden="true" /> {paraTecnico ? 'Tu venta' : 'Venta'}
     </span>
   );

@@ -441,8 +441,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 </li>
               ))}
             </ul>
-            {users.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-500 py-6">No hay usuarios.</p>}
-            {users.length > 0 && visibles.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-500 py-6">Ningún usuario coincide con la búsqueda.</p>}
+            {users.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-400 py-6">Aún no hay usuarios. Crea el primero con Nuevo usuario.</p>}
+            {users.length > 0 && visibles.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-400 py-6">Ningún usuario coincide con la búsqueda. Prueba con otro nombre o quita los filtros.</p>}
           </section>
 
           {/* Nuevo usuario */}
@@ -461,7 +461,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 <div className="space-y-2 min-w-0">
                   <label htmlFor="user-clave" className={ETIQUETA}>CLAVE</label>
                   <input id="user-clave" required type="password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-500 ml-1">{PASSWORD_POLICY_HINT}</p>
+                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">{PASSWORD_POLICY_HINT}</p>
                   {passwordError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
                 <div className="space-y-2 min-w-0">
@@ -497,7 +497,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     className={SELECT_FORM_CLASS}
                     chevronClassName="w-4 h-4 right-3"
                   />
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-500 ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
+                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
                 </div>
               )}
 
@@ -522,7 +522,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       placeholder="Ej. Sariana"
                       className={SELECT_FORM_CLASS}
                     />
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-500 ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
+                    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
                   </div>
                 </div>
               )}

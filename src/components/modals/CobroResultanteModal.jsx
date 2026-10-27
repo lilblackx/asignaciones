@@ -17,7 +17,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
     <div className="flex items-start gap-2.5">
       <Icon className="w-4 h-4 mt-0.5 text-zinc-400 shrink-0" aria-hidden="true" />
       <div className="min-w-0">
-        <p className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400">{etiqueta}</p>
+        <p className="text-[11px] max-lg:text-xs font-bold tracking-wide text-zinc-600 dark:text-zinc-400">{etiqueta}</p>
         <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{valor}</p>
       </div>
     </div>
@@ -55,7 +55,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           <IconoEstado className="w-7 h-7 shrink-0" aria-hidden="true" />
           <div className="min-w-0">
             <h2 id="cobro-titulo" className="text-lg sm:text-xl font-black leading-tight">{preFinalizada ? 'Orden pre-finalizada' : 'Orden finalizada'}</h2>
-            <p className="text-xs font-bold opacity-90 truncate">{ticket.codigo || 'S/C'}{ticket.nombre ? ` — ${ticket.nombre}` : ''}</p>
+            <p className="text-xs font-bold opacity-90 truncate">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
           </div>
         </div>
 
@@ -93,7 +93,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
               type="button"
               onClick={() => setPagosAbierto((a) => !a)}
               aria-expanded={pagosAbierto}
-              className="w-full flex items-center justify-between gap-2 text-xs font-black text-red-600 dark:text-red-400 uppercase tracking-wide focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+              className="w-full flex items-center justify-between gap-2 text-xs font-black text-red-600 dark:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
             >
               <span className="flex items-center gap-1.5"><Landmark className="w-4 h-4" aria-hidden="true" /> Formas de pago</span>
               <ChevronDown className={`w-4 h-4 transition-transform ${pagosAbierto ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -132,7 +132,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
         <div className="px-5 py-4 space-y-3">
           <Dato icon={User} etiqueta="CLIENTE" valor={ticket.nombre} />
           <Dato icon={Tag} etiqueta="CÉDULA" valor={ticket.cedula ? formatCedula(ticket.cedula, ticket.tipoDocumento) : ''} />
-          <Dato icon={Wrench} etiqueta="TRABAJO" valor={[ticket.tipoTrabajo, ticket.falla].filter(Boolean).join(' — ')} />
+          <Dato icon={Wrench} etiqueta="TRABAJO" valor={[ticket.tipoTrabajo, ticket.falla].filter(Boolean).join(' - ')} />
           <Dato icon={MapPin} etiqueta="DIRECCIÓN" valor={ticket.direccion} />
           <Dato icon={Tag} etiqueta="NAP / CAJA / PUERTO" valor={ticket.nap} />
         </div>

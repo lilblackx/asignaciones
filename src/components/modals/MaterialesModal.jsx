@@ -12,7 +12,7 @@ import Boton from '../Boton';
 import { TARJETA } from '../estilos';
 
 const numero = (n) => Number(n).toLocaleString('es-VE');
-const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—');
+const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-');
 
 const PUNTO = { VERDE: 'bg-emerald-500', AZUL: 'bg-blue-500' };
 const PLURAL_COLOR = { VERDE: 'verdes', AZUL: 'azules' };
@@ -25,7 +25,7 @@ const textoConectores = (cantidad, color) =>
 // Cantidad de conectores de un color: el color se lee en el texto, no solo en el punto.
 function ChipConector({ color, cantidad }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-bold ${cantidad > 0 ? 'border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100' : 'border-zinc-300 dark:border-zinc-800 text-zinc-600 dark:text-zinc-600'}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] max-lg:text-xs font-bold ${cantidad > 0 ? 'border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100' : 'border-zinc-300 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'}`}>
       <span className={`w-2.5 h-2.5 rounded-full ${PUNTO[color]} ${cantidad > 0 ? '' : 'opacity-40'}`} aria-hidden="true" />
       Conector {ETIQUETA_COLOR[color].toLowerCase()}: <span className="font-black">{cantidad}</span>
     </span>
@@ -44,9 +44,9 @@ function Conectores({ fila }) {
 function Dato({ etiqueta, valor, detalle }) {
   return (
     <div className={`min-w-0 ${TARJETA} p-3`}>
-      <p className="text-[10px] font-bold tracking-wide text-zinc-600 dark:text-zinc-400 uppercase">{etiqueta}</p>
+      <p className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">{etiqueta}</p>
       <p className="text-2xl font-black text-zinc-900 dark:text-white leading-tight">{valor}</p>
-      {detalle && <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-snug mt-0.5">{detalle}</p>}
+      {detalle && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 leading-snug mt-0.5">{detalle}</p>}
     </div>
   );
 }
@@ -58,9 +58,9 @@ function FilaTecnico({ fila, abierto, onToggle }) {
     <div className="min-w-0 flex-1 space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-black text-zinc-900 dark:text-white truncate">{fila.tecnico}</span>
-        <span className={`shrink-0 text-lg font-black ${conDatos ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-600'}`}>{numero(fila.metros)} <span className="text-xs">m</span></span>
+        <span className={`shrink-0 text-lg font-black ${conDatos ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>{numero(fila.metros)} <span className="text-xs">m</span></span>
       </div>
-      <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
         {fila.ordenes} recableado{fila.ordenes === 1 ? '' : 's'} · {fila.instalaciones} instalaci{fila.instalaciones === 1 ? 'ón' : 'ones'} · {fila.visitas} visita{fila.visitas === 1 ? '' : 's'} de conector · {fila.cambiosEquipo} cambio{fila.cambiosEquipo === 1 ? '' : 's'} de equipo · {totalConectores(fila)} conector{totalConectores(fila) === 1 ? '' : 'es'}
       </p>
       {conDatos && <Conectores fila={fila} />}
@@ -82,8 +82,8 @@ function FilaTecnico({ fila, abierto, onToggle }) {
             {fila.detalle.map((o) => (
               <li key={o.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-bold text-zinc-800 dark:text-zinc-100 truncate">{o.codigo || 'S/C'}{o.nombre ? ` — ${o.nombre}` : ''}</p>
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                  <p className="font-bold text-zinc-800 dark:text-zinc-100 truncate">{o.codigo || 'S/C'}{o.nombre ? ` - ${o.nombre}` : ''}</p>
+                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
                     {fechaCorta(o.fecha)}
                     {o.clase === 'INSTALACION' && ' · Instalación'}
                     {o.clase === 'CAMBIO_EQUIPO' && ' · Cambio de equipo'}
@@ -93,7 +93,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
                     {totalConectores(o) === 0 && o.clase !== 'INSTALACION' && o.clase !== 'CAMBIO_EQUIPO' && ' · sin conectores'}
                   </p>
                   {o.serial && (
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
                       {o.clase === 'CAMBIO_EQUIPO' ? 'Serial del equipo nuevo' : 'Serial'}: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{o.serial}</span>
                     </p>
                   )}
@@ -152,16 +152,16 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
           </div>
 
           {porAprobarTotal > 0 && (
-            <p role="status" className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-2">
+            <p role="status" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-2">
               {textoPorAprobar} espera{porAprobarTotal === 1 ? '' : 'n'} aprobación y todavía no se suma{porAprobarTotal === 1 ? '' : 'n'}.
             </p>
           )}
 
           {filas.length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-8">No hay recableados, instalaciones, visitas de conector ni cambios de equipo aprobados en este período.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-8">No hay recableados, instalaciones, visitas de conector ni cambios de equipo aprobados en este período. Se suman cuando la oficina aprueba la orden; prueba con un rango más amplio.</p>
           ) : (
             <section aria-labelledby="materiales-por-tecnico" className="space-y-2">
-              <h3 id="materiales-por-tecnico" className="text-sm font-black uppercase tracking-wide text-zinc-800 dark:text-zinc-200">Por técnico</h3>
+              <h3 id="materiales-por-tecnico" className="text-sm font-black text-zinc-800 dark:text-zinc-200">Por técnico</h3>
               <ul className="grid gap-2.5 lg:grid-cols-2 xl:grid-cols-3 items-start">
                 {filas.map((fila) => (
                   <FilaTecnico key={fila.tecnico} fila={fila} abierto={abierto === fila.tecnico} onToggle={() => setAbierto(abierto === fila.tecnico ? null : fila.tecnico)} />
@@ -170,7 +170,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
             </section>
           )}
 
-          <div className="text-[10px] text-zinc-600 dark:text-zinc-400 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 flex flex-wrap items-center justify-between gap-2">
             <span>Incluye las órdenes activas y {reports.length} reporte{reports.length === 1 ? '' : 's'} de cierre cargado{reports.length === 1 ? '' : 's'}.</span>
             {hasMoreReports && (
               <Boton variante="secundario" tamano="compacto" type="button" onClick={onLoadMore} disabled={isLoadingReports}>

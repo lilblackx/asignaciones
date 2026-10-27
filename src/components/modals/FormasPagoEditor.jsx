@@ -5,7 +5,7 @@ import { ICONO_POR_TIPO } from './formasPagoIconos';
 import Spinner from '../Spinner';
 
 const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
-const LABEL_CLASS = 'text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1 uppercase';
+const LABEL_CLASS = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 
 // Sin nada guardado todavía (el documento no existe) se precarga con los datos de
 // la empresa para que el ADMIN solo revise y guarde. Si ya hay un documento, manda
@@ -48,7 +48,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
         return (
           <div key={i} role="group" aria-label={`${titulo} ${i + 1}`} className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-[11px] font-black text-red-600 dark:text-red-400 uppercase tracking-wide">
+              <span className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black text-red-600 dark:text-red-400">
                 <Icono className="w-4 h-4" aria-hidden="true" /> {titulo}
               </span>
               <button
@@ -56,7 +56,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
                 onClick={() => quitar(i)}
                 aria-label={`Quitar ${titulo} ${forma.banco || i + 1}`}
                 title="Quitar"
-                className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <Trash2 className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -92,12 +92,12 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
       </div>
 
       {formasPago?.actualizadoEn && (
-        <div className="flex justify-between text-[10px] text-zinc-400">
+        <div className="flex justify-between text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
           <span>Última actualización{formasPago.actualizadoPor ? ` por ${formasPago.actualizadoPor}` : ''}</span>
           <span>{new Date(formasPago.actualizadoEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}</span>
         </div>
       )}
-      {!formasPago && <p className="text-[10px] text-amber-700 dark:text-amber-400 font-bold ml-1">Aún sin guardar: los técnicos no verán estos datos hasta que pulses Guardar.</p>}
+      {!formasPago && <p className="text-[11px] max-lg:text-xs text-amber-700 dark:text-amber-400 font-bold ml-1">Aún sin guardar: los técnicos no verán estos datos hasta que pulses Guardar.</p>}
 
       <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar formas de pago'}</button>
     </form>

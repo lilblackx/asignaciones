@@ -77,28 +77,28 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
               ? <p><span className="font-bold">ONU Rx · Señal (1490 nm):</span> {valorSenal(estado.onu.senal1490)} dBm<Calidad valor={valorSenal(estado.onu.senal1490)} /></p>
               : <p role="alert" className="font-bold text-amber-800 dark:text-amber-300">ONU Rx 1490 nm: SmartOLT no la reportó</p>}
             {estado.conservada
-              ? <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">No se cambió la potencia del campo porque ya tiene un valor escrito.{valorSenal(estado.onu.senal1490) !== null && ' La señal de 1490 nm sí queda capturada con la orden.'} Para usar la de SmartOLT, borra el campo y consulta de nuevo.</p>
-              : <p className="text-[10px] opacity-80">{nota ?? (estado.valor === null ? 'La señal de 1490 nm queda capturada con la orden. Escribe la potencia de 1310 nm a mano.' : valorSenal(estado.onu.senal1490) !== null ? 'Ambas señales quedan capturadas con la orden (la de 1310 nm en el campo de potencia).' : 'La señal de 1310 nm queda capturada en el campo de potencia.') + ' Es la última medición de SmartOLT; puedes corregirla.'}</p>}
+              ? <p className="text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300">No se cambió la potencia del campo porque ya tiene un valor escrito.{valorSenal(estado.onu.senal1490) !== null && ' La señal de 1490 nm sí queda capturada con la orden.'} Para usar la de SmartOLT, borra el campo y consulta de nuevo.</p>
+              : <p className="text-[11px] max-lg:text-xs opacity-80">{nota ?? (estado.valor === null ? 'La señal de 1490 nm queda capturada con la orden. Escribe la potencia de 1310 nm a mano.' : valorSenal(estado.onu.senal1490) !== null ? 'Ambas señales quedan capturadas con la orden (la de 1310 nm en el campo de potencia).' : 'La señal de 1310 nm queda capturada en el campo de potencia.') + ' Es la última medición de SmartOLT; puedes corregirla.'}</p>}
           </div>
         )}
         {estado?.tipo === 'fueraDeLinea' && (
-          <div role="alert" className="rounded-xl border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-[11px] text-amber-900 dark:text-amber-200 space-y-0.5">
+          <div role="alert" className="rounded-xl border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-[11px] max-lg:text-xs text-amber-900 dark:text-amber-200 space-y-0.5">
             <p className="font-bold">La ONU está fuera de línea en SmartOLT ({estado.onu.estado}). No se capturó la potencia.</p>
             <p>SmartOLT solo guarda la última señal de cuando estuvo en línea{valorSenal(estado.onu.senal1310) !== null ? ` (${valorSenal(estado.onu.senal1310)} dBm)` : ''}, que no es la actual. Escribe la potencia a mano o vuelve a consultar cuando la ONU esté en línea.</p>
           </div>
         )}
         {estado?.tipo === 'sinSenal' && (
-          <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 ml-1">SmartOLT no tiene una señal registrada para esta ONU (¿apagada o sin sincronizar?). Escríbela a mano.</p>
+          <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">SmartOLT no tiene una señal registrada para esta ONU (¿apagada o sin sincronizar?). Escríbela a mano.</p>
         )}
         {estado?.tipo === 'vacio' && (
-          <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT. Escribe la potencia a mano.</p>
+          <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT. Escribe la potencia a mano.</p>
         )}
         {estado?.tipo === 'error' && (
-          <p role="alert" className="text-[11px] font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Escribe la potencia a mano.</p>
+          <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Escribe la potencia a mano.</p>
         )}
         {estado?.tipo === 'opciones' && (
           <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-2">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+            <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
               Esta cédula tiene {estado.opciones.length} servicios. Elige cuál es:
             </p>
@@ -114,7 +114,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
                     <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{onu.zona || onu.nombre || 'Servicio'}</span>
                     <span className="shrink-0 text-xs font-black text-zinc-600 dark:text-zinc-300">{valorSenal(onu.senal1310) !== null ? `${valorSenal(onu.senal1310)} dBm` : 'sin señal'}</span>
                   </span>
-                  {onu.direccion && <span className="block mt-0.5 text-[11px] leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>}
+                  {onu.direccion && <span className="block mt-0.5 text-[11px] max-lg:text-xs leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>}
                 </button>
               ))}
             </div>

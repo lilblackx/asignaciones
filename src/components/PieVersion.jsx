@@ -3,7 +3,7 @@ const DETALLE = `Versión ${__APP_VERSION__} · compilada el ${__APP_COMPILACION
 
 export default function PieVersion({ className = '' }) {
   return (
-    <p title={DETALLE} className={`h-10 flex items-center justify-center text-[11px] font-medium text-zinc-600 dark:text-zinc-500 select-none ${className}`}>
+    <p title={DETALLE} className={`h-10 flex items-center justify-center text-[11px] max-lg:text-xs font-medium text-zinc-600 dark:text-zinc-400 select-none ${className}`}>
       Asignaciones · v{__APP_VERSION__}
     </p>
   );

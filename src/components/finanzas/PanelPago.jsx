@@ -25,7 +25,7 @@ export default function PanelPago({ fila, rango, tasa, ocupado, onConfirmar, onV
   const descuento = fila.descuento ?? 0;
   const cambiar = (campo, valor) => { setForm((f) => ({ ...f, [campo]: valor })); setError(null); };
   const cambiarMoneda = (moneda) => setForm((f) => ({ ...f, moneda, forma: formasDeMoneda(moneda).includes(f.forma) ? f.forma : '' }));
-  const entregar = form.moneda === MONEDA_BS ? (tasa > 0 ? bolivares(aBs(neto, tasa)) : '—') : dolares(neto);
+  const entregar = form.moneda === MONEDA_BS ? (tasa > 0 ? bolivares(aBs(neto, tasa)) : '-') : dolares(neto);
 
   const confirmar = async () => {
     const r = parseDatosPago(form);

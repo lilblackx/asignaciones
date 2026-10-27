@@ -7,7 +7,7 @@ export default function AvisoCambioDeOrden({ texto, encabezado = false, classNam
   if (!texto) return null;
   if (encabezado) {
     return (
-      <p role="alert" className={`mt-1 flex items-start gap-1 text-[11px] leading-snug text-red-300 ${className}`}>
+      <p role="alert" className={`mt-1 flex items-start gap-1 text-[11px] max-lg:text-xs leading-snug text-red-300 ${className}`}>
         <TriangleAlert className="w-3 h-3 shrink-0 mt-px" aria-hidden="true" />
         <span><span className="font-bold">Esta orden cambió mientras la tenías abierta.</span> {texto}</span>
       </p>

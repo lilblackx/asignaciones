@@ -92,7 +92,7 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
               </span>
               <span className="min-w-0">
                 <span className="block font-bold text-zinc-800 dark:text-zinc-100">{o.etiqueta}</span>
-                {o.ayuda && <span className="block text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">{o.ayuda}</span>}
+                {o.ayuda && <span className="block text-[11px] max-lg:text-xs leading-snug text-zinc-600 dark:text-zinc-400">{o.ayuda}</span>}
               </span>
             </label>
           ))}
@@ -105,7 +105,7 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
               className="w-full text-left rounded-lg px-2.5 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <span className="block font-bold text-zinc-800 dark:text-zinc-100">{a.etiqueta}</span>
-              {a.detalle && <span className="block text-[11px] leading-snug text-zinc-600 dark:text-zinc-400 break-words">{a.detalle}</span>}
+              {a.detalle && <span className="block text-[11px] max-lg:text-xs leading-snug text-zinc-600 dark:text-zinc-400 break-words">{a.detalle}</span>}
             </button>
           ))}
         </div>,

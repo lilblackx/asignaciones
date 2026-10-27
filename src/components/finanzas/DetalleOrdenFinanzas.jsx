@@ -18,7 +18,7 @@ function Dato({ etiqueta, children }) {
   return (
     <div className="min-w-0">
       <p className={ETIQUETA}>{etiqueta}</p>
-      <p className={VALOR}>{children || '—'}</p>
+      <p className={VALOR}>{children || '-'}</p>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEAD
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
 
-const claseEtiqueta = 'text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1';
+const claseEtiqueta = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 const claseInput = (error, correcto = false) =>
   `w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-lg focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`;
 
@@ -16,7 +16,7 @@ function Campo({ id, etiqueta, error, ayuda, className = 'col-span-1', children 
     <div className={`${className} space-y-1`}>
       <label htmlFor={id} className={claseEtiqueta}>{etiqueta}</label>
       {children}
-      {error ? <p id={`${id}-error`} role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">{ayuda}</p>}
+      {error ? <p id={`${id}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">{ayuda}</p>}
     </div>
   );
 }
@@ -29,9 +29,9 @@ function AvisoSerialOlt({ serial, soloEnvio = false }) {
   if (evaluacion.estado === 'vacio') return null;
   const olt = serialParaOlt(serial);
   const envio = esSerialOlt(olt) ? `Se enviará al almacén como: ${olt}` : '';
-  if (soloEnvio) return envio ? <p role="status" className="text-[10px] text-zinc-600 dark:text-zinc-400 font-bold ml-1">{envio}</p> : null;
+  if (soloEnvio) return envio ? <p role="status" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold ml-1">{envio}</p> : null;
   const color = evaluacion.estado === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
-  return <p role="status" className={`text-[10px] ${color} font-bold ml-1`}>{evaluacion.mensaje} {envio}</p>;
+  return <p role="status" className={`text-[11px] max-lg:text-xs ${color} font-bold ml-1`}>{evaluacion.mensaje} {envio}</p>;
 }
 
 const soloDigitos = (v, largo) => v.replace(/\D/g, '').slice(0, largo);
@@ -58,8 +58,8 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
   return (
     <section aria-label="Datos que cargó el técnico" className="col-span-2 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 p-3 grid grid-cols-2 gap-3">
       <div className="col-span-2">
-        <h3 className="text-[11px] font-black tracking-wide text-amber-800 dark:text-amber-300">DATOS QUE CARGÓ EL TÉCNICO</h3>
-        <p className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-0.5">
+        <h3 className="text-[11px] max-lg:text-xs font-black tracking-wide text-amber-800 dark:text-amber-300">DATOS QUE CARGÓ EL TÉCNICO</h3>
+        <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
           Corrige lo que el técnico escribió.{instalacion ? ' La plantilla de la orden se actualiza con estos datos.' : ''}
           {finalizada ? ' Si la orden ya se envió al inventario del almacén, el cambio no se reenvía: solo se corrige aquí.' : ''}
         </p>
@@ -77,8 +77,8 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             <label htmlFor="ed-metraje" className={`${claseEtiqueta} col-start-2 row-start-1`}>METRAJE DEL DROP (m)</label>
             <input id="ed-vlan" type="text" inputMode="numeric" autoComplete="off" maxLength="4" placeholder="Ej. 100" value={form.vlan} onChange={(e) => onChange({ vlan: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.vlan} aria-describedby={errores.vlan ? 'ed-vlan-error' : undefined} className={`${claseInput(errores.vlan)} col-start-1 row-start-2`} />
             <input id="ed-metraje" type="text" inputMode="numeric" autoComplete="off" maxLength={MAX_LARGO_METRAJE} placeholder="Ej. 120" value={form.metraje} onChange={(e) => onChange({ metraje: soloDigitos(e.target.value, MAX_LARGO_METRAJE) })} aria-invalid={!!errores.metraje} aria-describedby={errores.metraje ? 'ed-metraje-error' : undefined} className={`${claseInput(errores.metraje)} col-start-2 row-start-2`} />
-            {errores.vlan && <p id="ed-vlan-error" role="alert" className="col-start-1 row-start-3 self-start text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
-            {errores.metraje && <p id="ed-metraje-error" role="alert" className="col-start-2 row-start-3 self-start text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
+            {errores.vlan && <p id="ed-vlan-error" role="alert" className="col-start-1 row-start-3 self-start text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
+            {errores.metraje && <p id="ed-metraje-error" role="alert" className="col-start-2 row-start-3 self-start text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
           </div>
           <Campo id="ed-nap" etiqueta="NAP" error={errores.nap}>
             <input id="ed-nap" type="text" maxLength="40" placeholder="Ej. NAP 08" value={form.nap} onChange={(e) => onChange({ nap: stripEmojis(e.target.value) })} aria-invalid={!!errores.nap} aria-describedby={errores.nap ? 'ed-nap-error' : undefined} className={claseInput(errores.nap)} />
@@ -99,10 +99,10 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
                 )}
               </div>
             ))}
-            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-400 dark:border-zinc-600 text-[11px] font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
+            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-400 dark:border-zinc-600 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
               <Plus className="w-3 h-3" aria-hidden="true" /> Agregar otro poste
             </button>
-            {errores.posteadura && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
+            {errores.posteadura && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
           </div>
 
           <Campo id="ed-puertos-disponibles" etiqueta="PUERTOS DISPONIBLES" error={errores.puertosDisponibles} ayuda="Los que quedan libres en la NAP (0 si ninguno)." className="col-span-2">
@@ -116,8 +116,8 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               <CampoConectores id="ed-cant-int-verde" etiqueta="Int. verdes" valor={form.intVerde} onChange={(v) => onChange({ intVerde: v })} error={errores.conectores?.campo === 'internoVerde' ? conectoresError : ''} />
               <CampoConectores id="ed-cant-int-azul" etiqueta="Int. azules" valor={form.intAzul} onChange={(v) => onChange({ intAzul: v })} error={errores.conectores?.campo === 'internoAzul' ? conectoresError : ''} />
             </div>
-            <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">El externo es solo verde; el interno, verde o azul.</p>
-            {conectoresError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{conectoresError}</p>}
+            <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">El externo es solo verde; el interno, verde o azul.</p>
+            {conectoresError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{conectoresError}</p>}
           </div>
         </>
       ) : (

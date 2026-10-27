@@ -180,7 +180,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
         <div className="bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded tracking-wide">
+              <span className="bg-amber-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">
                 PRE-FINALIZAR
               </span>
               <span className="text-xs font-bold text-amber-400">
@@ -215,7 +215,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               <span className="line-clamp-2">{ticket.direccion}</span>
             </div>
             {ticket.cedula && (
-              <div className="flex items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+              <div className="flex items-center gap-2 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
                 <Tag className="w-3 h-3 text-zinc-400 shrink-0" />
                 <span>C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</span>
                 {ticket.telefono && <span className="ml-2">Telf: {ticket.telefono}</span>}
@@ -255,7 +255,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               }}
               items={TIPOS_VISITA_OBLIGATORIO}
             />
-            {tipoVisitaError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{tipoVisitaError}</p>}
+            {tipoVisitaError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{tipoVisitaError}</p>}
           </div>
           )}
 
@@ -279,7 +279,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
                 </div>
-                {metrosError && <p id="pf-metros-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
+                {metrosError && <p id="pf-metros-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
               </div>
               {onConsultarCobro && <ConsultaCobroRecableado ticket={ticket} metros={metros} onConsultar={(valor) => onConsultarCobro(ticket, valor)} />}
               <ConectoresRecableado colorExterno={colorExterno} colorInterno={colorInterno} onExterno={setColorExterno} onInterno={setColorInterno} />
@@ -374,7 +374,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               aria-describedby="pf-potencia-hint"
               className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
             />
-            <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[10px] font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
+            <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
             </p>
             {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={capturarSenal} />}
@@ -409,7 +409,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               aria-invalid={!!obsError}
               className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors resize-none ${obsError ? 'border-red-500 focus:border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
             />
-            {obsError && <p role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{obsError}</p>}
+            {obsError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{obsError}</p>}
           </div>
 
           <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">

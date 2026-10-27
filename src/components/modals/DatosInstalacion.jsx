@@ -24,7 +24,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
 
   return (
     <div className="space-y-4">
-      <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">Estos datos se escriben en la plantilla de la orden, que luego puedes copiar completa.</p>
+      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Estos datos se escriben en la plantilla de la orden, que luego puedes copiar completa.</p>
 
       <div className="space-y-1">
         <label htmlFor="pf-serial" className={claseEtiqueta}>
@@ -46,8 +46,8 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           className={claseInput(errores.serial || serialRojo, serialVerde)}
         />
         {errores.serial || serialRojo
-          ? <p id="pf-serial-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.serial || evaluacionSerial.mensaje}</p>
-          : serialVerde && <p id="pf-serial-error" role="status" className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacionSerial.mensaje}</p>}
+          ? <p id="pf-serial-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.serial || evaluacionSerial.mensaje}</p>
+          : serialVerde && <p id="pf-serial-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacionSerial.mensaje}</p>}
       </div>
 
       <div className="space-y-1">
@@ -67,7 +67,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           aria-describedby={errores.vlan ? 'pf-vlan-error' : undefined}
           className={claseInput(errores.vlan)}
         />
-        {errores.vlan && <p id="pf-vlan-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
+        {errores.vlan && <p id="pf-vlan-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
       </div>
 
       <NapPuertoCampos nap={nap} onNap={onNap} napError={errores.nap} puerto={puerto} onPuerto={onPuerto} puertoError={errores.puerto} />
@@ -92,7 +92,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           />
           <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400" aria-hidden="true">m</span>
         </div>
-        {errores.metraje && <p id="pf-metraje-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
+        {errores.metraje && <p id="pf-metraje-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
       </div>
 
       <div className="space-y-1.5" role="group" aria-labelledby="pf-postes-etiqueta" aria-describedby={errores.posteadura ? 'pf-postes-error' : undefined}>
@@ -133,7 +133,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
         >
           <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Agregar otro poste
         </button>
-        {errores.posteadura && <p id="pf-postes-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
+        {errores.posteadura && <p id="pf-postes-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
       </div>
 
       <div className="space-y-1">
@@ -153,8 +153,8 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           className={claseInput(errores.puertosDisponibles)}
         />
         {errores.puertosDisponibles
-          ? <p id="pf-puertos-disponibles-error" role="alert" className="text-[10px] text-red-600 dark:text-red-400 font-bold ml-1">{errores.puertosDisponibles}</p>
-          : <p className="text-[10px] text-zinc-600 dark:text-zinc-400 ml-1">Los que quedan libres en la NAP (si no queda ninguno, escribe 0).</p>}
+          ? <p id="pf-puertos-disponibles-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.puertosDisponibles}</p>
+          : <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Los que quedan libres en la NAP (si no queda ninguno, escribe 0).</p>}
       </div>
     </div>
   );

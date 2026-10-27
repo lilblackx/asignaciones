@@ -14,9 +14,9 @@ import { useCopiado } from '../hooks/useCopiado';
 // (ver estilosInstalacion) y la etiqueta de tipo de la tabla (ticketDisplay); esquinas secas y sin sombra, sin íconos delante de los datos.
 
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
-const ETIQUETA = 'text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-500';
+const ETIQUETA = 'text-[11px] max-lg:text-xs font-semibold text-zinc-600 dark:text-zinc-400';
 const VALOR = 'text-sm text-zinc-900 dark:text-zinc-100 mt-0.5 break-words';
-const BOTON = 'inline-flex items-center gap-1 text-[11px] font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
+const BOTON = 'inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
 
 // `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
 export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlantilla, onCopy, mostrarTipo = false, ahora }) {
@@ -37,27 +37,27 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
     <li className="h-full flex flex-col min-w-0 rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="bg-black px-3 py-2 flex items-center gap-2">
         <span className="text-lg font-black text-white tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
-        {mostrarTipo && <span className={`text-[10px] font-black px-2 py-1 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
-        <span className={`ml-auto shrink-0 text-[10px] font-black uppercase tracking-wide rounded px-2 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
+        {mostrarTipo && <span className={`text-[11px] max-lg:text-xs font-black px-2 py-1 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
+        <span className={`ml-auto shrink-0 text-[11px] max-lg:text-xs font-black uppercase tracking-wide rounded px-2 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
       </div>
 
       {atraso && (
-        <div className={`w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide ${atraso.nivel === 'urgente' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'}`}>
+        <div className={`w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black uppercase tracking-wide ${atraso.nivel === 'urgente' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'}`}>
           <AlarmClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>{atraso.que} · {atraso.dias === 1 ? '1 día' : `${atraso.dias} días`}</span>
         </div>
       )}
 
       {programada && (
-        <div className="w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+        <div className="w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black uppercase tracking-wide bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
           <CalendarClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>Programada para el {programada}</span>
         </div>
       )}
 
       {motivo && (
-        <div className="w-full px-3 py-1.5 bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200 text-[11px] leading-snug">
-          <p className="font-black uppercase tracking-wide">Motivo de la cancelación</p>
+        <div className="w-full px-3 py-1.5 bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200 text-[11px] max-lg:text-xs leading-snug">
+          <p className="font-black">Motivo de la cancelación</p>
           <p className="break-words whitespace-pre-wrap">{motivo}</p>
         </div>
       )}
@@ -79,25 +79,25 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
               />
             )}
           </div>
-          {cedula && <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-500 mt-0.5">{cedula}</p>}
+          {cedula && <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-0.5">{cedula}</p>}
         </div>
 
         <div>
           <p className={ETIQUETA}>Dirección</p>
-          <p className={`${VALOR} line-clamp-2`}>{orden.direccion || '—'}</p>
+          <p className={`${VALOR} line-clamp-2`}>{orden.direccion || '-'}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-auto">
           <div className="min-w-0">
             <p className={ETIQUETA}>Promotor</p>
-            <p className={VALOR}>{promotor || '—'}</p>
+            <p className={VALOR}>{promotor || '-'}</p>
           </div>
           <div className="min-w-0">
             <p className={ETIQUETA}>Técnico</p>
             {orden.tecnico
               ? <p className={VALOR}>{orden.tecnico}</p>
               : programada
-                ? <p className="mt-0.5 text-xs font-black uppercase text-zinc-600 dark:text-zinc-500">Por asignar</p>
+                ? <p className="mt-0.5 text-xs font-black uppercase text-zinc-600 dark:text-zinc-400">Por asignar</p>
                 : <p className="mt-0.5 text-xs font-black uppercase text-amber-700 dark:text-amber-400">Sin técnico</p>}
           </div>
         </div>

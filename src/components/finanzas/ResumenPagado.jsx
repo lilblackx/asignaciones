@@ -19,7 +19,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
 
       <h2 className={TITULO_SECCION}>Pagado a cada técnico · {etiquetaRango(rango)}</h2>
       {resumen.porTecnico.length === 0 ? (
-        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ningún pago registrado en este periodo.</p>
+        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ningún pago registrado en este periodo. Amplía el rango de fechas para ver pagos anteriores.</p>
       ) : (
         <ul className={`${TARJETA} px-4 divide-y divide-zinc-200 dark:divide-zinc-800`}>
           {resumen.porTecnico.map((f) => {
@@ -34,7 +34,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                       <span className={`${CHIP} ${ESTADO.PAGADO.clase}`}>Pagado</span>
                     </div>
                     <p className="text-sm text-zinc-800 dark:text-zinc-100 mt-1">{frasePagado(f)}</p>
-                    <p className={TEXTO_SUAVE}>{textoGrupos(f.cantidades) || '—'} · {f.pagos === 1 ? '1 pago' : `${f.pagos} pagos`} · último {diaLegible(diaDe(f.ultimo))}</p>
+                    <p className={TEXTO_SUAVE}>{textoGrupos(f.cantidades) || '-'} · {f.pagos === 1 ? '1 pago' : `${f.pagos} pagos`} · último {diaLegible(diaDe(f.ultimo))}</p>
                     {f.descuento > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-1">Adelantos descontados {dolares(f.descuento)} · neto entregado {dolares(f.neto)}</p>}
                   </div>
                   <div className="text-right shrink-0">

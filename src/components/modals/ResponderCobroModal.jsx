@@ -33,7 +33,7 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
         <div className="bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded tracking-wide">COBRO DEL RECABLEADO</span>
+              <span className="bg-amber-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">COBRO DEL RECABLEADO</span>
               <span className="text-xs font-bold text-amber-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
@@ -51,7 +51,7 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
               <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1 text-xs text-amber-900 dark:text-amber-200">
                 {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></p>}
                 <p className="flex items-center gap-1.5"><Cable className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Drop que va a usar: <span className="font-black text-sm">{consulta.metros} m</span></p>
-                {respuesta && <p className="pt-1 text-[11px]">Ya respondiste: <span className="font-black">{textoRespuesta(respuesta)}</span>. Puedes cambiarlo.</p>}
+                {respuesta && <p className="pt-1 text-[11px] max-lg:text-xs">Ya respondiste: <span className="font-black">{textoRespuesta(respuesta)}</span>. Puedes cambiarlo.</p>}
               </div>
               <CobroSelector
                 idBase="cobro-recableado"

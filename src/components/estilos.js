@@ -1,7 +1,7 @@
 // Los estilos comunes de toda la app: los de Finanzas y de Revisión de órdenes, que son los mismos del resto (tarjetas blancas con borde y sombra sobre el fondo gris, letra de 14 px, controles de 36 px con
 // borde fino, títulos en mayúsculas pequeñas). Quien necesite la letra más grande usa el selector "Tamaño de letra" de Finanzas, que agranda todo junto (todo está en rem).
 export const TARJETA = 'bg-white dark:bg-zinc-900 rounded-xl border border-zinc-300 dark:border-zinc-800 shadow-sm';
-export const ETIQUETA = 'text-[11px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
+export const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
 export const TEXTO_SUAVE = 'text-xs text-zinc-600 dark:text-zinc-400';
 export const TITULO_SECCION = 'text-sm font-black uppercase tracking-wide text-zinc-800 dark:text-zinc-200';
 
@@ -15,7 +15,7 @@ export const BOTON_GRANDE = 'inline-flex items-center justify-center gap-2 h-10 
 // Un botón pequeño dentro de una fila (Anular, Aprobar, Retener...).
 export const BOTON_FILA = 'inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50';
 
-export const CHIP = 'inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold';
+export const CHIP = 'inline-flex items-center rounded-md px-2 py-0.5 text-[11px] max-lg:text-xs font-bold';
 export const ESTADO = {
   POR_PAGAR: { texto: 'Por pagar', clase: 'bg-amber-400 text-black' },
   PAGADO: { texto: 'Al día', clase: 'bg-emerald-700 text-white' },
@@ -56,6 +56,6 @@ const TAMANOS_CHIP = { normal: 'px-3 text-sm', compacto: 'px-3 text-xs', angosto
 export const claseChip = (activo, tamano = 'normal') => `${BASE_CHIP} ${TAMANOS_CHIP[tamano]} ${activo ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'}`;
 
 // --- Formularios de órdenes (Editar orden, Nueva venta): campos compactos, de letra pequeña, con el borde y el color de siempre.
-export const ETIQUETA_ORDEN = 'text-[10px] font-bold text-zinc-600 dark:text-zinc-400 ml-1';
+export const ETIQUETA_ORDEN = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 export const CAMPO_ORDEN = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 export const SELECTOR_ORDEN = 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed';

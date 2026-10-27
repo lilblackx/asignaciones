@@ -37,10 +37,10 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
 
       <CierreAutomaticoConfig isAdmin={isAdmin} usuario={usuario} />
 
-      <h3 className="text-sm font-bold text-zinc-600 dark:text-zinc-400 mb-4 uppercase tracking-wider">Historial de Reportes</h3>
+      <h3 className="text-sm font-bold text-zinc-600 dark:text-zinc-400 mb-4">Historial de Reportes</h3>
 
       {reports.length === 0 ? (
-        <p className="text-center text-zinc-600 dark:text-zinc-500 py-10 font-medium">Aún no se han generado reportes de cierre de día.</p>
+        <p className="text-center text-zinc-600 dark:text-zinc-400 py-10 font-medium">Aún no se han generado reportes de cierre de día.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {reports.map((rep) => (
@@ -49,13 +49,13 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                 <div className="flex justify-between items-start mb-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
                   <div>
                     <h4 className="font-black text-zinc-900 dark:text-white flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-zinc-600 dark:text-zinc-500" /> {rep.fechaCierre}
-                      {rep.tipoReporte === 'CANCELADOS' && <span className="ml-1 text-[9px] bg-red-600 text-white px-2 py-0.5 rounded">CANCELADOS</span>}
-                      {(!rep.tipoReporte || rep.tipoReporte === 'CIERRE') && <span className="ml-1 text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded">CIERRE</span>}
+                      <Calendar className="w-4 h-4 text-zinc-600 dark:text-zinc-400" /> {rep.fechaCierre}
+                      {rep.tipoReporte === 'CANCELADOS' && <span className="ml-1 text-[11px] max-lg:text-xs bg-red-600 text-white px-2 py-0.5 rounded">CANCELADOS</span>}
+                      {(!rep.tipoReporte || rep.tipoReporte === 'CIERRE') && <span className="ml-1 text-[11px] max-lg:text-xs bg-blue-600 text-white px-2 py-0.5 rounded">CIERRE</span>}
                     </h4>
-                    <span className="text-[10px] text-zinc-600 dark:text-zinc-500 font-bold uppercase">{rep.horaCierre} - OP: {rep.operador}</span>
+                    <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold">{rep.horaCierre} - OP: {rep.operador}</span>
                     {rep.canceladas !== undefined && (
-                      <span className="block mt-1 text-[10px] font-bold">
+                      <span className="block mt-1 text-[11px] max-lg:text-xs font-bold">
                         <span className="text-emerald-600 dark:text-emerald-400">{rep.finalizadas} finalizadas</span>
                         <span className="text-zinc-400"> · </span>
                         <span className="text-red-600 dark:text-red-400">{rep.canceladas} canceladas</span>
@@ -81,7 +81,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                   onClick={() => onViewReport(rep)}
                   className="flex-1 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors border border-zinc-200 dark:border-zinc-700"
                 >
-                  <Eye className="w-4 h-4 text-zinc-600 dark:text-zinc-500" /> Ver Órdenes
+                  <Eye className="w-4 h-4 text-zinc-600 dark:text-zinc-400" /> Ver Órdenes
                 </button>
                 <BotonExportar onClick={() => exportReportToCsv(rep)} title="Descargar CSV" ariaLabel="Descargar CSV" />
               </div>

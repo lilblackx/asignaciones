@@ -110,7 +110,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
       {!enDetalleMovil && <h2 className={TITULO_SECCION}>Técnicos · {etiquetaRango(rango)}</h2>}
 
       {tecnicos.length === 0 ? (
-        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ninguna orden pagable en este periodo.</p>
+        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ninguna orden pagable en este periodo. Aquí solo aparecen las que Revisión de órdenes ya aprobó: amplía el rango de fechas o aprueba las pendientes en Revisión de órdenes.</p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(20rem,26rem)_1fr] items-start">
           <div className={actual ? 'hidden lg:block lg:sticky lg:top-20' : ''}>

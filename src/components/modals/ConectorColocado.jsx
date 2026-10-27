@@ -52,11 +52,11 @@ export default function ConectorColocado({ ticket }) {
       </h3>
       <div className="mt-2 ml-6 flex flex-wrap items-center gap-x-8 gap-y-2">
         <div>
-          <span className="block text-[10px] font-bold tracking-wide opacity-70">TIPO</span>
+          <span className="block text-[11px] max-lg:text-xs font-bold tracking-wide opacity-70">TIPO</span>
           <span className="text-sm font-black">{conector.tipo}</span>
         </div>
         <div>
-          <span className="block text-[10px] font-bold tracking-wide opacity-70">CANTIDAD</span>
+          <span className="block text-[11px] max-lg:text-xs font-bold tracking-wide opacity-70">CANTIDAD</span>
           {conector.cantidades.verde + conector.cantidades.azul > 0 ? (
             <span className="mt-0.5 flex flex-wrap items-center gap-2">
               {['VERDE', 'AZUL'].filter((c) => conector.cantidades[c.toLowerCase()] > 0).map((c) => (
