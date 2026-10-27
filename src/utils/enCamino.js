@@ -44,7 +44,7 @@ export function tiempoTranscurrido(desde, ahora = Date.now()) {
   return `hace ${h} h${resto ? ` ${resto} min` : ''}`;
 }
 
-const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}`;
+const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''}`;
 export const textoAvisoEnCamino = (t) => `${t.tecnico} va en camino a la orden ${etiquetaOrden(t)}.`;
 export const textoAvisoLlegada = (t) => `${t.tecnico} llegó al sitio de la orden ${etiquetaOrden(t)}.`;
 

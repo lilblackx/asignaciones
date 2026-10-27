@@ -35,7 +35,7 @@ check('de la más reciente a la más vieja', instalacionesRealizadas([orden('a',
 // --- NAP y puerto ---
 check('NAP y puerto del texto de la orden', [todas[0].nap, todas[0].puerto, todas[0].puertosDisponibles], ['NAP O02D10', '3', '5']);
 check('NAP y puerto sueltos de la instalación', [todas[1].nap, todas[1].puerto, todas[1].puertosDisponibles], ['N10D14', '7', '0']);
-check('sin NAP queda vacío (la pantalla muestra —)', [filaInstalacion(orden('9')).nap, filaInstalacion(orden('9')).puerto], ['', '']);
+check('sin NAP queda vacío (la pantalla muestra -)', [filaInstalacion(orden('9')).nap, filaInstalacion(orden('9')).puerto], ['', '']);
 check('la fecha de una archivada sin fecha propia es la del cierre', filaInstalacion({ ...orden('7'), finalizadoEn: undefined, _cierreEn: 5 }).fecha, 5);
 
 // --- Período ---

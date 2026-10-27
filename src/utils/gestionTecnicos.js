@@ -31,7 +31,7 @@ export function formatoTiempo(ms) {
 }
 
 export const porcentaje = (parte, total) => (total > 0 ? Math.round((parte / total) * 100) : null);
-export const textoPorcentaje = (valor) => (valor === null ? '—' : `${valor}%`);
+export const textoPorcentaje = (valor) => (valor === null ? '-' : `${valor}%`);
 
 // Las órdenes vivas y las archivadas en los cierres cargados, sin repetir ninguna (si una está en los dos lados, gana la viva).
 export function todasLasOrdenes(tickets, reports) {

@@ -43,7 +43,7 @@ const avisoCobro = (t) => {
 
 // Órdenes que el técnico todavía tiene por atender: solo de esas le avisa que se las quitaron o cancelaron.
 const esActiva = (t) => t?.estado === 'PENDIENTE' || t?.estado === 'PRE-FINALIZADO';
-const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}`;
+const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''}`;
 
 // Al finalizar una instalación se guarda su plantilla ya llena por el técnico (vacía si nunca tuvo plantilla).
 const plantillaFinalDe = (t) => {
@@ -250,8 +250,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       const conPrioridad = esPrioritaria(updated);
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
-        title: conPrioridad ? 'Nueva asignación — PRIORIDAD ALTA' : 'Nueva asignación',
-        body: `Te asignaron la orden ${updated.codigo || 'S/C'}${updated.nombre ? ` — ${updated.nombre}` : ''}.${conPrioridad ? ' Es PRIORIDAD ALTA: atiéndela primero.' : ''}`,
+        title: conPrioridad ? 'Nueva asignación - PRIORIDAD ALTA' : 'Nueva asignación',
+        body: `Te asignaron la orden ${updated.codigo || 'S/C'}${updated.nombre ? ` - ${updated.nombre}` : ''}.${conPrioridad ? ' Es PRIORIDAD ALTA: atiéndela primero.' : ''}`,
         tipo: conPrioridad ? 'prioridad' : 'nuevaAsignacion',
         ticketId,
       });
@@ -272,7 +272,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Ubicación disponible',
-        body: `La orden ${updated.codigo || 'S/C'}${updated.nombre ? ` — ${updated.nombre}` : ''} ya tiene ubicación.`,
+        body: `La orden ${updated.codigo || 'S/C'}${updated.nombre ? ` - ${updated.nombre}` : ''} ya tiene ubicación.`,
         tipo: 'nuevaAsignacion',
         ticketId,
       });
@@ -281,7 +281,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       avisarPush({
         target: { type: 'aprobadores' },
         title: 'Orden pre-finalizada',
-        body: `${updated.codigo || 'Orden'} (${updated.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA — revisar.`,
+        body: `${updated.codigo || 'Orden'} (${updated.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA - revisar.`,
         tipo: 'prefinalizado',
         ticketId,
       });
@@ -383,12 +383,12 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           );
           if (nuevas.length === 1) {
             const t = nuevas[0];
-            const texto = `${t.codigo || 'Orden'} (${t.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA — revisar.`;
+            const texto = `${t.codigo || 'Orden'} (${t.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA - revisar.`;
             setToastMsg({ type: 'prefinalizado', text: texto, duration: 7000 });
             onNotify?.({ type: 'prefinalizado', text: texto, ticketId: t.id });
             playPreFinalizadoSound();
           } else if (nuevas.length > 1) {
-            const texto = `${nuevas.length} órdenes marcadas PRE-FINALIZADO — revisar.`;
+            const texto = `${nuevas.length} órdenes marcadas PRE-FINALIZADO - revisar.`;
             setToastMsg({ type: 'prefinalizado', text: texto, duration: 7000 });
             onNotify?.({ type: 'prefinalizado', text: texto });
             playPreFinalizadoSound();
@@ -417,7 +417,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           if (nuevasAsignaciones.length === 1) {
             const t = nuevasAsignaciones[0];
             const prio = conPrioridadN > 0;
-            const texto = `Te asignaron una nueva orden${prio ? ' con PRIORIDAD ALTA' : ''}: ${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}.${prio ? ' Atiéndela primero.' : ''}`;
+            const texto = `Te asignaron una nueva orden${prio ? ' con PRIORIDAD ALTA' : ''}: ${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''}.${prio ? ' Atiéndela primero.' : ''}`;
             setToastMsg({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, duration: prio ? 9000 : 6000 });
             onNotify?.({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, ticketId: t.id });
             (prio ? playPrioridadSound : playNuevaAsignacionSound)();
@@ -450,7 +450,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           );
           if (conUbicacionNueva.length === 1) {
             const t = conUbicacionNueva[0];
-            const texto = `La orden ${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''} ya tiene ubicación.`;
+            const texto = `La orden ${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''} ya tiene ubicación.`;
             setToastMsg({ type: 'nuevaAsignacion', text: texto, duration: 6000 });
             onNotify?.({ type: 'nuevaAsignacion', text: texto, ticketId: t.id });
             playNuevaAsignacionSound();

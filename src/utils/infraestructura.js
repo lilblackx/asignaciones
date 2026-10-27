@@ -87,7 +87,7 @@ export function cambiosInfraestructura(tickets, previa) {
   };
 }
 
-const etiqueta = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''}`;
+const etiqueta = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''}`;
 
 export const textoEscaladaOficina = (t) => `${infraestructuraDe(t)?.por || t.tecnico || 'Un técnico'} escaló la orden ${etiqueta(t)} a infraestructura.`;
 export const textoEscaladaTecnico = (t) => `La orden ${etiqueta(t)} fue escalada a infraestructura. Ya no tienes que atenderla por ahora.`;

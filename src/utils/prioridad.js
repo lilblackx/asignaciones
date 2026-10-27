@@ -13,7 +13,7 @@ export const prioritariasPrimero = (lista) => [...lista.filter(esPrioritaria), .
 
 // Texto del aviso al técnico ("La orden AS184 — Ana Pérez es PRIORIDAD ALTA...").
 export const textoAvisoPrioridad = (t) =>
-  `La orden ${t.codigo || 'S/C'}${t.nombre ? ` — ${t.nombre}` : ''} es PRIORIDAD ALTA. Atiéndela primero.`;
+  `La orden ${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''} es PRIORIDAD ALTA. Atiéndela primero.`;
 
 // --- Detectar la prioridad que llegó mientras se miraba (o con la app cerrada) ---
 // id -> 1 si la orden tenía prioridad marcada, '' si no: el punto de partida para notar el cambio.

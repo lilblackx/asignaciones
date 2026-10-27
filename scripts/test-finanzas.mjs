@@ -144,7 +144,7 @@ check('sin pagos el resumen está vacío', resumenPagado([], rango), { total: 0,
 check('la API trae el promedio y la fecha', parseTasaDolar({ moneda: 'USD', promedio: 569.604, fechaActualizacion: '2026-10-20T11:00:00.000Z' }), { tasa: 569.6, fecha: Date.parse('2026-10-20T11:00:00.000Z') });
 check('sin promedio usa la venta; sin tasa usable no hay tasa', [parseTasaDolar({ venta: 570 })?.tasa, parseTasaDolar({ promedio: 0 }), parseTasaDolar({ promedio: 'x' }), parseTasaDolar(null)], [570, null, null, null]);
 check('dólares a bolívares', [aBs(245, 569.6), aBs(0.5, 569.6), aBs(10, null), aBs(10, 0)], [139552, 284.8, null, null]);
-check('el texto en bolívares lleva espacio fijo y dos decimales', [bolivares(139552), bolivares(null)], [`139.552,00${String.fromCharCode(160)}Bs`, '—']);
+check('el texto en bolívares lleva espacio fijo y dos decimales', [bolivares(139552), bolivares(null)], [`139.552,00${String.fromCharCode(160)}Bs`, '-']);
 const conTasa = armarPago({ ...gerardo }, rango, tarifasCompletas({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, LOW_SIGNAL: 3.5 }), { por: 'fina', ahora: dia(20), tasa: 569.604 });
 check('el pago guarda la tasa de su momento', [conTasa.pago.tasa, armarPago({ ...gerardo }, rango, tarifasCompletas({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, LOW_SIGNAL: 3.5 }), { por: 'fina', ahora: dia(20) }).pago.tasa], [569.6, undefined]);
 const pagosBs = [

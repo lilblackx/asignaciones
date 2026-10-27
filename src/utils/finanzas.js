@@ -294,7 +294,7 @@ export function parseTasaDolar(json) {
 export const aBs = (usd, tasa) => (tasa > 0 ? redondear((Number(usd) || 0) * tasa) : null);
 
 // "113.980,00 Bs" (con espacio sin salto); "—" si no hay monto.
-export const bolivares = (valor) => (valor == null ? '—' : `${valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${String.fromCharCode(160)}Bs`);
+export const bolivares = (valor) => (valor == null ? '-' : `${valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${String.fromCharCode(160)}Bs`);
 
 // --- Textos ---
 
@@ -342,7 +342,7 @@ export const columnasPagosRegistrados = () => [{ titulo: 'Fecha' }, { titulo: 'T
 
 // "Pago móvil · Ref. 1234 · 21/10/2026 3:45 p. m. · Bs" ('—' en los pagos de antes, que no guardaron estos datos).
 export function textoDatosPago(p) {
-  if (!p?.forma) return '—';
+  if (!p?.forma) return '-';
   const hora = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', day: '2-digit', month: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(Number(p.pagadoEn) || Number(p.creadoEn))).replace(',', '').replace(/\s+/g, ' ');
   return [p.forma, p.banco, p.referencia && `Ref. ${p.referencia}`, hora, p.moneda === MONEDA_BS ? 'Bs' : '$'].filter(Boolean).join(' · ');
 }

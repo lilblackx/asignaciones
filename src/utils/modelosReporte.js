@@ -34,7 +34,7 @@ export function cifrasEstadisticas({ finalizadas, totalOrdenes, porTecnico, rein
   return [
     { etiqueta: 'Órdenes', valor: totalOrdenes, detalle: 'incluye las canceladas' },
     { etiqueta: 'Finalizadas', valor: finalizadas, detalle: totalOrdenes ? `${Math.round((finalizadas / totalOrdenes) * 100)}% de las órdenes` : 'Sin órdenes' },
-    { etiqueta: 'Técnico líder', valor: porTecnico[0]?.name || '—', detalle: porTecnico[0] ? `${porTecnico[0].count} finalizadas` : 'Sin finalizadas' },
+    { etiqueta: 'Técnico líder', valor: porTecnico[0]?.name || '-', detalle: porTecnico[0] ? `${porTecnico[0].count} finalizadas` : 'Sin finalizadas' },
     { etiqueta: 'Clientes reincidentes', valor: reincidentes.length, detalle: 'con más de una orden' },
   ];
 }
@@ -43,8 +43,8 @@ export function cifrasTiempoAtencion(atencion, metaHoras) {
   const { total } = atencion;
   return [
     { etiqueta: 'Órdenes finalizadas', valor: atencion.finalizadas, detalle: 'en el periodo' },
-    { etiqueta: 'Tiempo promedio', valor: total.cantidad ? formatoTiempo(total.promedio) : '—', detalle: 'desde que se creó la orden' },
-    { etiqueta: 'Tiempo típico (mediana)', valor: total.cantidad ? formatoTiempo(total.mediana) : '—', detalle: total.cantidad ? `la más lenta: ${formatoTiempo(total.maximo)}` : 'Sin datos' },
+    { etiqueta: 'Tiempo promedio', valor: total.cantidad ? formatoTiempo(total.promedio) : '-', detalle: 'desde que se creó la orden' },
+    { etiqueta: 'Tiempo típico (mediana)', valor: total.cantidad ? formatoTiempo(total.mediana) : '-', detalle: total.cantidad ? `la más lenta: ${formatoTiempo(total.maximo)}` : 'Sin datos' },
     { etiqueta: `Resueltas en ${metaHoras} h o menos`, valor: textoPorcentaje(total.pctMeta), detalle: `${total.dentroMeta} de ${total.cantidad}` },
   ];
 }
@@ -56,8 +56,8 @@ export function cifrasProductividad(filas) {
   return [
     { etiqueta: 'Órdenes finalizadas', valor: finalizadas, detalle: `${filas.filter((f) => f.finalizadas > 0).length} técnicos` },
     { etiqueta: 'Tiempo activo total', valor: formatoDuracion(activoMs), detalle: 'según el registro de activación' },
-    { etiqueta: 'Finalizadas por hora activa', valor: activoMs >= 1800000 ? decimal(finalizadas / (activoMs / HORA_MS)) : '—', detalle: 'promedio de todos' },
-    { etiqueta: 'Mejor ritmo', valor: mejor ? mejor.tecnico : '—', detalle: mejor ? `${decimal(mejor.porHora)} por hora activa` : 'Sin datos suficientes' },
+    { etiqueta: 'Finalizadas por hora activa', valor: activoMs >= 1800000 ? decimal(finalizadas / (activoMs / HORA_MS)) : '-', detalle: 'promedio de todos' },
+    { etiqueta: 'Mejor ritmo', valor: mejor ? mejor.tecnico : '-', detalle: mejor ? `${decimal(mejor.porHora)} por hora activa` : 'Sin datos suficientes' },
   ];
 }
 
@@ -74,8 +74,8 @@ export function cifrasActivacion(a) {
   const lider = a.tecnicos[0];
   return [
     { etiqueta: 'Tiempo activo total', valor: formatoDuracion(a.total), detalle: `${a.tecnicos.length} ${a.tecnicos.length === 1 ? 'técnico' : 'técnicos'}` },
-    { etiqueta: 'Promedio por técnico y día', valor: a.diasConTecnico ? formatoDuracion(a.total / a.diasConTecnico) : '—', detalle: `${a.diasConTecnico} ${a.diasConTecnico === 1 ? 'jornada' : 'jornadas'}` },
-    { etiqueta: 'Más activo', valor: lider ? lider.nombre : '—', detalle: lider ? formatoDuracion(lider.total) : 'Sin actividad' },
+    { etiqueta: 'Promedio por técnico y día', valor: a.diasConTecnico ? formatoDuracion(a.total / a.diasConTecnico) : '-', detalle: `${a.diasConTecnico} ${a.diasConTecnico === 1 ? 'jornada' : 'jornadas'}` },
+    { etiqueta: 'Más activo', valor: lider ? lider.nombre : '-', detalle: lider ? formatoDuracion(lider.total) : 'Sin actividad' },
     { etiqueta: 'Movimientos', valor: a.movimientos.length, detalle: 'activar y desactivar' },
   ];
 }
@@ -109,7 +109,7 @@ export function documentoEstadisticas(ctx) {
     { tipo: 'cifras', items: cifrasEstadisticas(e) },
     ...(e.porTecnico.length ? [{ tipo: 'grafico', variante: 'barras', titulo: 'Órdenes finalizadas por técnico', series: [{ nombre: 'Finalizadas', color: AZUL }], categorias: tecnicoYTexto(e.porTecnico, (f) => f.count, (f) => String(f.count)) }] : []),
     { tipo: 'tabla', titulo: 'NAPs con más órdenes', columnas: [{ titulo: 'NAP' }, { titulo: 'Órdenes', derecha: true }], filas: e.porNap.map((f) => [f.nap, String(f.count)]), vacio: 'Sin datos de NAP registrados.' },
-    { tipo: 'tabla', titulo: 'Clientes con más de una orden', columnas: [{ titulo: 'Cliente' }, { titulo: 'Cédula' }, { titulo: 'Órdenes', derecha: true }], filas: e.reincidentes.map((f) => [f.nombre || '—', f.cedula, String(f.count)]), vacio: 'Ningún cliente tiene más de una orden.' },
+    { tipo: 'tabla', titulo: 'Clientes con más de una orden', columnas: [{ titulo: 'Cliente' }, { titulo: 'Cédula' }, { titulo: 'Órdenes', derecha: true }], filas: e.reincidentes.map((f) => [f.nombre || '-', f.cedula, String(f.count)]), vacio: 'Ningún cliente tiene más de una orden.' },
     { tipo: 'texto', texto: 'Solo cuenta el historial cargado (los cierres más recientes) y las órdenes activas del periodo.' },
   ]);
 }
@@ -138,7 +138,7 @@ export function documentoProductividad(ctx) {
     { tipo: 'cifras', items: cifrasProductividad(filas) },
     ...(filas.some((f) => f.finalizadas > 0) ? [{ tipo: 'grafico', variante: 'barras', titulo: 'Órdenes finalizadas por técnico', series: [{ nombre: 'Finalizadas', color: AZUL }], categorias: tecnicoYTexto(filas.filter((f) => f.finalizadas > 0), (f) => f.finalizadas, (f) => String(f.finalizadas)) }] : []),
     ...(conRitmo.length ? [{ tipo: 'grafico', variante: 'barras', titulo: 'Finalizadas por hora activa', series: [{ nombre: 'Por hora', color: NARANJA }], categorias: tecnicoYTexto([...conRitmo].sort((a, b) => b.porHora - a.porHora), (f) => Math.round(f.porHora * 100) / 100, (f) => decimal(f.porHora)) }] : []),
-    { tipo: 'tabla', titulo: 'Detalle por técnico', columnas: [{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Tiempo activo', derecha: true }, { titulo: 'Por hora activa', derecha: true }, { titulo: 'Atención media', derecha: true }], filas: filas.map((f) => [f.tecnico, String(f.finalizadas), f.activoMs > 0 ? formatoDuracion(f.activoMs) : '—', f.porHora === null ? '—' : decimal(f.porHora), f.atencionMedia === null ? '—' : formatoTiempo(f.atencionMedia)]), vacio: 'Sin órdenes finalizadas ni actividad registrada en este periodo.' },
+    { tipo: 'tabla', titulo: 'Detalle por técnico', columnas: [{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Tiempo activo', derecha: true }, { titulo: 'Por hora activa', derecha: true }, { titulo: 'Atención media', derecha: true }], filas: filas.map((f) => [f.tecnico, String(f.finalizadas), f.activoMs > 0 ? formatoDuracion(f.activoMs) : '-', f.porHora === null ? '-' : decimal(f.porHora), f.atencionMedia === null ? '-' : formatoTiempo(f.atencionMedia)]), vacio: 'Sin órdenes finalizadas ni actividad registrada en este periodo.' },
     { tipo: 'texto', texto: 'Las finalizadas por hora activa se calculan con el tiempo registrado entre activar y desactivar al técnico (solo desde su primer movimiento registrado; con menos de 30 minutos activo no se calcula).' },
   ]);
 }
@@ -150,7 +150,7 @@ export function documentoCalidad(ctx) {
   return encabezado('Calidad y reincidencias', rango, tecnico, ctx, [
     { tipo: 'cifras', items: cifrasCalidad(cal) },
     ...(porcentajes.length ? [{ tipo: 'grafico', variante: 'barras', titulo: 'Reincidencia por técnico (%)', series: [{ nombre: '% de reincidencia', color: NARANJA }], categorias: tecnicoYTexto(porcentajes, (f) => f.pctReincidencia, (f) => `${f.pctReincidencia}%`) }] : []),
-    { tipo: 'tabla', titulo: 'Calidad por técnico', nota: 'Menos es mejor en las tres columnas de porcentaje.', columnas: [{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Reincidencia', derecha: true }, { titulo: 'Señal débil', derecha: true }, { titulo: 'Devueltas', derecha: true }], filas: cal.filas.map((f) => [f.tecnico, String(f.finalizadas), `${textoPorcentaje(f.pctReincidencia)} (${f.reincidieron})`, f.conPotencia ? `${textoPorcentaje(f.pctDebil)} (${f.debiles}/${f.conPotencia})` : '—', `${textoPorcentaje(f.pctDevueltas)} (${f.devueltas})`]), vacio: 'Ninguna orden finalizada en este periodo.' },
+    { tipo: 'tabla', titulo: 'Calidad por técnico', nota: 'Menos es mejor en las tres columnas de porcentaje.', columnas: [{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Reincidencia', derecha: true }, { titulo: 'Señal débil', derecha: true }, { titulo: 'Devueltas', derecha: true }], filas: cal.filas.map((f) => [f.tecnico, String(f.finalizadas), `${textoPorcentaje(f.pctReincidencia)} (${f.reincidieron})`, f.conPotencia ? `${textoPorcentaje(f.pctDebil)} (${f.debiles}/${f.conPotencia})` : '-', `${textoPorcentaje(f.pctDevueltas)} (${f.devueltas})`]), vacio: 'Ninguna orden finalizada en este periodo.' },
     { tipo: 'tabla', titulo: 'Clientes que reincidieron', columnas: [{ titulo: 'Técnico' }, { titulo: 'Cliente' }, { titulo: 'Orden' }, { titulo: 'Nueva avería' }, { titulo: 'Después', derecha: true }], filas: cal.reincidencias.map((r) => [r.tecnico, r.cliente, r.codigo || '', r.siguiente || '', r.dias === 0 ? 'mismo día' : `${r.dias} d`]), vacio: 'Ningún cliente reincidió.' },
     { tipo: 'texto', texto: `Reincidencia: el mismo cliente abre una avería dentro de ${VENTANA_REINCIDENCIA_DIAS} días después de finalizar la orden (las más recientes aún pueden reincidir).` },
   ]);
@@ -191,8 +191,8 @@ export function cifrasCausas(c) {
   const top = c.porFalla[0];
   return [
     { etiqueta: 'Averías reportadas', valor: c.total, detalle: `${c.resueltas} resueltas en el periodo` },
-    { etiqueta: 'Falla más frecuente', valor: top ? top.nombre : '—', detalle: top ? `${top.total} averías (${top.pct}%)` : 'Sin averías' },
-    { etiqueta: 'Tiempo medio de resolución', valor: c.resolucionMedia === null ? '—' : formatoTiempo(c.resolucionMedia), detalle: 'de las averías resueltas' },
+    { etiqueta: 'Falla más frecuente', valor: top ? top.nombre : '-', detalle: top ? `${top.total} averías (${top.pct}%)` : 'Sin averías' },
+    { etiqueta: 'Tiempo medio de resolución', valor: c.resolucionMedia === null ? '-' : formatoTiempo(c.resolucionMedia), detalle: 'de las averías resueltas' },
     { etiqueta: 'NAPs afectadas', valor: c.napsAfectadas, detalle: `${c.napsSospechosas.length} con averías de varios clientes` },
   ];
 }
@@ -204,7 +204,7 @@ export const textoNapSospechosa = (n) => `La NAP ${n.nap} tuvo ${n.total} averí
 export function tablasCausas(c) {
   const evolucion = c.evolucion;
   return {
-    porFalla: { columnas: [{ titulo: 'Falla' }, { titulo: 'Averías', derecha: true }, { titulo: '% del total', derecha: true }, { titulo: 'Resueltas', derecha: true }, { titulo: 'Canceladas', derecha: true }, { titulo: 'Resolución media', derecha: true }], filas: c.porFalla.map((f) => [f.nombre, String(f.total), `${f.pct}%`, String(f.resueltas), String(f.canceladas), f.resolucionMedia === null ? '—' : formatoTiempo(f.resolucionMedia)]) },
+    porFalla: { columnas: [{ titulo: 'Falla' }, { titulo: 'Averías', derecha: true }, { titulo: '% del total', derecha: true }, { titulo: 'Resueltas', derecha: true }, { titulo: 'Canceladas', derecha: true }, { titulo: 'Resolución media', derecha: true }], filas: c.porFalla.map((f) => [f.nombre, String(f.total), `${f.pct}%`, String(f.resueltas), String(f.canceladas), f.resolucionMedia === null ? '-' : formatoTiempo(f.resolucionMedia)]) },
     evolucion: { columnas: [{ titulo: 'Mes' }, ...evolucion.fallas.map((f) => ({ titulo: f, derecha: true })), { titulo: 'Total', derecha: true }], filas: evolucion.filas.map((f) => [etiquetaMes(f.mes), ...f.valores.map(String), String(f.total)]) },
     porNap: { columnas: [{ titulo: 'NAP' }, { titulo: 'Averías', derecha: true }, { titulo: 'Clientes', derecha: true }, { titulo: 'Fallas principales' }, { titulo: 'Última avería', derecha: true }], filas: c.porNap.map((n) => [n.nap, String(n.total), String(n.clientes), n.principales.join(', '), fechaCorta(n.ultima)]) },
   };
@@ -234,7 +234,7 @@ export function documentoResumenEjecutivo(ctx) {
     { tipo: 'cifras', items: r.cifrasMes },
     { tipo: 'lista', titulo: 'Puntos de atención', items: r.hallazgos },
     { tipo: 'grafico', variante: 'columnas', titulo: 'Finalizadas por mes', subtitulo: 'Instalaciones y averías LOS terminadas (todo el negocio)', series: [{ nombre: 'Instalaciones', color: AZUL }, { nombre: 'Averías LOS', color: NARANJA }], categorias: r.filasMes.map((f) => ({ etiqueta: `${f.etiqueta}${f.enCurso ? '*' : ''}`, valores: [f.instalaciones.finalizadas, f.los.finalizadas] })) },
-    { tipo: 'tabla', titulo: 'Comparativo por técnico', nota: 'Del periodo elegido. Reincidencia, señal débil y devueltas: menos es mejor.', columnas: [{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Atención media', derecha: true }, { titulo: 'Por hora activa', derecha: true }, { titulo: 'Reincidencia', derecha: true }, { titulo: 'Señal débil', derecha: true }, { titulo: 'Devueltas', derecha: true }], filas: r.tecnicos.map((f) => [f.tecnico, String(f.finalizadas), f.atencionMedia === null ? '—' : formatoTiempo(f.atencionMedia), f.porHora === null ? '—' : decimalHora(f.porHora), textoPorcentaje(f.pctReincidencia), textoPorcentaje(f.pctDebil), textoPorcentaje(f.pctDevueltas)]), vacio: 'Sin órdenes finalizadas ni actividad en este periodo.' },
+    { tipo: 'tabla', titulo: 'Comparativo por técnico', nota: 'Del periodo elegido. Reincidencia, señal débil y devueltas: menos es mejor.', columnas: [{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Atención media', derecha: true }, { titulo: 'Por hora activa', derecha: true }, { titulo: 'Reincidencia', derecha: true }, { titulo: 'Señal débil', derecha: true }, { titulo: 'Devueltas', derecha: true }], filas: r.tecnicos.map((f) => [f.tecnico, String(f.finalizadas), f.atencionMedia === null ? '-' : formatoTiempo(f.atencionMedia), f.porHora === null ? '-' : decimalHora(f.porHora), textoPorcentaje(f.pctReincidencia), textoPorcentaje(f.pctDebil), textoPorcentaje(f.pctDevueltas)]), vacio: 'Sin órdenes finalizadas ni actividad en este periodo.' },
     { tipo: 'texto', texto: '* Mes en curso: incompleto, no es comparable con un mes terminado. Las alertas se activan con estos umbrales: menos de 80% de órdenes resueltas en 48 h, pendientes de más de 3 días, reincidencia mayor a 10%, señal débil mayor a 20%, devoluciones mayores a 15%, caída de finalizadas de 20% o más entre meses completos y aumento de 5 puntos en la tasa de cancelación.' },
   ]);
 }

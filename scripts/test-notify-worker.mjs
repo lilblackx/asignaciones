@@ -96,7 +96,7 @@ async function enviar(uid, cuerpo) {
 const aviso = {
   target: { type: 'tecnico', name: 'GERARDO MOLERO' },
   title: 'Nueva asignación',
-  body: 'Te asignaron la orden AS9 — Cliente Nuevo.',
+  body: 'Te asignaron la orden AS9 - Cliente Nuevo.',
   tipo: 'nuevaAsignacion',
   ticketId: 'abc123',
 };
@@ -117,7 +117,7 @@ let r = await enviar('admin-uid', aviso);
 check('responde 200 con 1 dispositivo enviado', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
 check('un solo envío a FCM', enviosFcm.length, 1);
 check('el mensaje lleva título, texto, tipo, id de la orden y tag', enviosFcm[0].data,
-  { title: 'Nueva asignación', body: 'Te asignaron la orden AS9 — Cliente Nuevo.', tag: 'nuevaAsignacion:abc123', ticketId: 'abc123', tipo: 'nuevaAsignacion' });
+  { title: 'Nueva asignación', body: 'Te asignaron la orden AS9 - Cliente Nuevo.', tag: 'nuevaAsignacion:abc123', ticketId: 'abc123', tipo: 'nuevaAsignacion' });
 check('prioridad alta para web y Android, con TTL corto',
   [enviosFcm[0].webpush, enviosFcm[0].android],
   [{ headers: { Urgency: 'high', TTL: '3600' } }, { priority: 'high', ttl: '3600s' }]);

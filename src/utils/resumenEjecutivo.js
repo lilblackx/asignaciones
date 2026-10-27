@@ -126,7 +126,7 @@ export function resumenEjecutivo({ ordenes, eventos, contadores, tickets, rango,
 
   const cifras = [
     { etiqueta: 'Órdenes finalizadas', valor: finalizadas, detalle: 'en el periodo' },
-    { etiqueta: 'Tiempo promedio de atención', valor: atencion.total.cantidad ? formatoTiempo(atencion.total.promedio) : '—', detalle: atencion.total.cantidad ? `${textoPorcentaje(atencion.total.pctMeta)} en ${META_HORAS_RESUMEN} h o menos` : 'Sin datos' },
+    { etiqueta: 'Tiempo promedio de atención', valor: atencion.total.cantidad ? formatoTiempo(atencion.total.promedio) : '-', detalle: atencion.total.cantidad ? `${textoPorcentaje(atencion.total.pctMeta)} en ${META_HORAS_RESUMEN} h o menos` : 'Sin datos' },
     { etiqueta: 'Reincidencia', valor: textoPorcentaje(cal.total.pctReincidencia), detalle: 'cliente con avería en 30 días' },
     { etiqueta: 'Tiempo activo de técnicos', valor: formatoDuracion(activoMs), detalle: 'según el registro de activación' },
   ];

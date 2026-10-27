@@ -55,7 +55,7 @@ check('solo la oficina (ADMIN y USUARIO) ve las pre-finalizadas arriba; el técn
 check('si se pide otro orden (técnico, tipo, programadas) manda ese orden', /!\['TECNICO', 'TIPO_TRABAJO', 'PROGRAMADA'\]\.includes\(sortBy\)\) \{\s+result = prioritariasPrimero\(result\);\s+if \(preFinalizadasArriba\)/.test(hook), true);
 
 // --- Aviso al técnico ---
-check('texto del aviso', textoAvisoPrioridad({ codigo: 'AS184', nombre: 'Ana Pérez' }), 'La orden AS184 — Ana Pérez es PRIORIDAD ALTA. Atiéndela primero.');
+check('texto del aviso', textoAvisoPrioridad({ codigo: 'AS184', nombre: 'Ana Pérez' }), 'La orden AS184 - Ana Pérez es PRIORIDAD ALTA. Atiéndela primero.');
 check('texto del aviso sin código ni nombre', textoAvisoPrioridad({}), 'La orden S/C es PRIORIDAD ALTA. Atiéndela primero.');
 
 // --- Detectar la prioridad que le marcaron ---

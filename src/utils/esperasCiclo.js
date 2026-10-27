@@ -87,10 +87,10 @@ export function colasDeLaOficina(ordenes, ahora, { tecnico } = {}) {
 }
 
 // --- Textos (los usan la pantalla, el PDF, el Word y el CSV) ---
-export const tiempoOGuion = (f) => (f.cantidad ? formatoTiempo(f.promedio) : '—');
+export const tiempoOGuion = (f) => (f.cantidad ? formatoTiempo(f.promedio) : '-');
 
 export const columnasTramo = (primera) => [{ titulo: primera }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Promedio', derecha: true }, { titulo: 'Mediana', derecha: true }, { titulo: 'Más lenta', derecha: true }];
-export const filaTramo = (f) => [f.nombre, String(f.cantidad), f.cantidad ? formatoTiempo(f.promedio) : '—', f.cantidad ? formatoTiempo(f.mediana) : '—', f.cantidad ? formatoTiempo(f.maximo) : '—'];
+export const filaTramo = (f) => [f.nombre, String(f.cantidad), f.cantidad ? formatoTiempo(f.promedio) : '-', f.cantidad ? formatoTiempo(f.mediana) : '-', f.cantidad ? formatoTiempo(f.maximo) : '-'];
 
 export const columnasPorTecnico = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes', derecha: true }, ...TRAMOS_TECNICO.map((t) => ({ titulo: t.nombre, derecha: true }))];
 export const filaPorTecnico = (f) => [f.nombre, String(f.cantidad), ...TRAMOS_TECNICO.map((t) => tiempoOGuion(f[t.id]))];
@@ -104,7 +104,7 @@ export const NOTA_HORAS = 'Las horas se guardan desde que se activó este report
 export function cifrasDeTramos(esperas, quien) {
   return esperas.tramos.filter((t) => t.quien === quien).map((t) => ({
     etiqueta: t.nombre,
-    valor: t.cantidad ? formatoTiempo(t.promedio) : '—',
+    valor: t.cantidad ? formatoTiempo(t.promedio) : '-',
     detalle: t.cantidad ? `promedio de ${t.cantidad} · mediana ${formatoTiempo(t.mediana)}` : 'Sin horas registradas',
   }));
 }
