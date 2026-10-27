@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Moon, Sun, User } from 'lucide-react';
+import { AlertCircle, Loader2, Moon, Sun } from 'lucide-react';
 import { stripEmojis } from '../utils/sanitizeInput';
 import PieVersion from './PieVersion';
 
-const inputClass = 'w-full h-12 bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-11 rounded-xl focus:border-red-600 focus:ring-4 focus:ring-red-600/15 outline-none transition-colors';
+// Campos de 48 px (el dedo) y borde que se distingue del fondo en los dos temas (3:1). Con el contorno quitado, el foco se ve por el borde rojo y el aro.
+const inputClass = 'w-full h-12 px-3 bg-white dark:bg-zinc-950 border-2 border-zinc-500 text-zinc-900 dark:text-white text-base rounded-md focus:border-red-600 focus-visible:ring-4 focus-visible:ring-red-600/30 outline-none';
+const labelClass = 'block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-1.5';
 
 export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setLoginData, loginError, handleLogin }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,51 +20,106 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="relative min-h-screen bg-fondo flex items-center justify-center p-4 font-sans transition-colors duration-200 overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-red-600/15 to-transparent dark:from-red-600/25" aria-hidden="true" />
-        <div className="absolute top-4 right-4 z-10">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" className="p-2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">
-            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
+      {/* En PC son dos mitades: la marca a la izquierda (siempre sobre negro, es el color de la marca) y el formulario a la derecha.
+          En celular la marca queda arriba del formulario. */}
+      <div className="relative min-h-dvh bg-fondo font-sans flex flex-col lg:flex-row">
+        <button
+          type="button"
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          aria-label="Cambiar tema"
+          className="absolute top-3 right-3 z-10 w-11 h-11 flex items-center justify-center rounded-md border border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+        >
+          {isDarkMode ? <Sun className="w-5 h-5" aria-hidden="true" /> : <Moon className="w-5 h-5" aria-hidden="true" />}
+        </button>
 
-        <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full border border-zinc-300 dark:border-zinc-800 overflow-hidden transition-colors duration-200">
-          <div className="bg-black px-6 pt-7 pb-5 border-b-2 border-red-600 text-center">
-            <img src="/icon-192x192.png" alt="Network Speed" width="88" height="88" className="mx-auto w-22 h-22 rounded-2xl ring-1 ring-white/10 shadow-lg shadow-red-600/20" />
-            <h1 className="mt-4 text-xl font-black text-white uppercase tracking-wide">Control de Asignaciones</h1>
-            <p className="mt-1 text-zinc-400 text-sm">Ingrese su usuario y clave para continuar.</p>
+        <header className="px-6 pt-20 sm:px-8 lg:w-1/2 lg:flex lg:flex-col lg:justify-between lg:px-16 lg:py-14 lg:bg-black lg:border-r-8 lg:border-red-600">
+          <div className="flex items-center gap-4 lg:hidden">
+            <img src="/icon-192x192.png" alt="Network Speed" width="64" height="64" className="w-16 h-16 rounded-xl" />
+            <p className="text-base font-bold text-zinc-800 dark:text-zinc-200">Network Speed Fibra</p>
           </div>
+          <div className="hidden lg:block" aria-hidden="true" />
+          {/* Solo PC: el ícono grande de la marca (512 px, con su textura de ondas de fibra) con los bordes difuminados para que se funda con el negro del panel, sin caja. */}
+          <div className="hidden lg:block -ml-6">
+            <img
+              src="/icon-512x512.png"
+              alt="Network Speed"
+              width="512"
+              height="512"
+              className="w-[min(36vw,52vh,520px)] h-auto"
+              style={{ WebkitMaskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)' }}
+            />
+          </div>
+          <div>
+            <h1 className="mt-6 lg:mt-0 text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.05] tracking-tight text-zinc-950 dark:text-white lg:text-white">
+              Control de<br />Asignaciones
+            </h1>
+            {/* La línea roja del encabezado de la app, gruesa. En PC es el borde entre las dos mitades. */}
+            <div className="mt-6 h-1.5 bg-red-600 lg:hidden" aria-hidden="true" />
+          </div>
+        </header>
 
-          <form onSubmit={onSubmit} className="p-6 sm:p-8 space-y-5">
-            <div>
-              <label htmlFor="login-usuario" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">Usuario</label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none" aria-hidden="true" />
-                <input id="login-usuario" type="text" required autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} className={`${inputClass} pr-4`} value={loginData.usuario} onChange={e => setLoginData({ ...loginData, usuario: stripEmojis(e.target.value) })} />
+        <main className="flex-1 flex flex-col lg:w-1/2 dark:lg:bg-zinc-900">
+          <div className="flex-1 w-full max-w-md mx-auto px-6 pt-8 pb-10 sm:px-8 lg:max-w-sm lg:px-0 lg:pt-0 lg:flex lg:flex-col lg:justify-center">
+            <form onSubmit={onSubmit} className="space-y-5">
+              <div>
+                <label htmlFor="login-usuario" className={labelClass}>Usuario</label>
+                <input
+                  id="login-usuario"
+                  type="text"
+                  required
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-describedby={loginError ? 'login-error' : undefined}
+                  className={inputClass}
+                  value={loginData.usuario}
+                  onChange={e => setLoginData({ ...loginData, usuario: stripEmojis(e.target.value) })}
+                />
               </div>
-            </div>
-            <div>
-              <label htmlFor="login-clave" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1">Clave de Acceso</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none" aria-hidden="true" />
-                <input id="login-clave" type={verClave ? 'text' : 'password'} required autoComplete="current-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} className={`${inputClass} pr-12`} value={loginData.clave} onChange={e => setLoginData({ ...loginData, clave: stripEmojis(e.target.value) })} placeholder="******" />
-                <button type="button" onClick={() => setVerClave(v => !v)} aria-label={verClave ? 'Ocultar clave' : 'Mostrar clave'} aria-pressed={verClave} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
-                  {verClave ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
-                </button>
+              <div>
+                <label htmlFor="login-clave" className={labelClass}>Clave</label>
+                <div className="relative">
+                  <input
+                    id="login-clave"
+                    type={verClave ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-describedby={loginError ? 'login-error' : undefined}
+                    className={`${inputClass} pr-24`}
+                    value={loginData.clave}
+                    onChange={e => setLoginData({ ...loginData, clave: stripEmojis(e.target.value) })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVerClave(v => !v)}
+                    aria-pressed={verClave}
+                    className="absolute inset-y-0 right-0 min-w-11 px-4 rounded-r-md text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  >
+                    {verClave ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
               </div>
-            </div>
-            {loginError && (
-              <div role="alert" className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm p-3 rounded-xl border border-red-300 dark:border-red-500/40 flex items-center gap-2 font-medium">
-                <AlertCircle className="w-4 h-4 shrink-0" /> {loginError}
-              </div>
-            )}
-            <button type="submit" disabled={isSubmitting} className={`w-full h-12 flex items-center justify-center gap-2 text-white font-bold rounded-xl shadow-md transition-colors ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>
-              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
-              {isSubmitting ? 'Ingresando...' : 'Ingresar al Sistema'}
-            </button>
-          </form>
-        </div>
-        <PieVersion className="absolute bottom-0 inset-x-0" />
+              {loginError && (
+                <div id="login-error" role="alert" className="flex items-start gap-2 p-3 rounded-md border-2 border-red-700 bg-red-50 dark:bg-red-950/40 text-sm font-medium text-red-800 dark:text-red-200">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" /> {loginError}
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full h-12 flex items-center justify-center gap-2 rounded-md bg-red-600 hover:bg-red-700 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white text-base font-black"
+              >
+                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+                {isSubmitting ? 'Entrando...' : 'Entrar'}
+              </button>
+            </form>
+          </div>
+          <PieVersion />
+        </main>
       </div>
     </div>
   );
