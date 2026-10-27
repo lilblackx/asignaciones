@@ -2,7 +2,6 @@ import { CheckCircle2, Loader2, Radio, Save } from 'lucide-react';
 import SenalSmartOlt from './SenalSmartOlt';
 import { calidadValor } from '../../utils/valoresCliente';
 import { parsePotencia } from '../../utils/potencia';
-import Spinner from '../Spinner';
 
 const NOTA_SMARTOLT = 'Los valores quedaron en los campos de abajo. Es la última medición de SmartOLT; puedes corregirlos y luego guardarlos.';
 
@@ -83,7 +82,7 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, olt, o
         className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black shadow-sm transition-colors disabled:opacity-60 ${guardados && !sucio ? 'bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
       >
         {guardando ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Save className="w-3.5 h-3.5" aria-hidden="true" />}
-        {guardando && <Spinner />}{guardando ? 'Guardando...' : guardados && !sucio ? 'Guardar valores de nuevo' : 'Guardar valores'}
+        {guardando ? 'Guardando...' : guardados && !sucio ? 'Guardar valores de nuevo' : 'Guardar valores'}
       </button>
     </section>
   );

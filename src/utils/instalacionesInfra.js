@@ -85,3 +85,22 @@ export function filtrarInstalaciones(filas, { periodo = '30', busqueda = '', des
     return palabras.every((p) => pajar.includes(p));
   });
 }
+
+// Las marcas de "ya la anoté" viven en un documento por mes ("AAAA-MM", hora local) según cuándo se hizo la instalación.
+export const mesDeMarcas = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+
+// Los meses que toca leer para cubrir los últimos DIAS_INFRAESTRUCTURA días (el actual y, casi siempre, el anterior).
+export const mesesDeMarcas = (ahora = Date.now()) => [...new Set([mesDeMarcas(desdePeriodo('30', ahora)), mesDeMarcas(ahora)])];
+
+export const FILTROS_ANOTADA = [
+  { valor: 'TODAS', etiqueta: 'Todas' },
+  { valor: 'POR_ANOTAR', etiqueta: 'Por anotar' },
+  { valor: 'ANOTADAS', etiqueta: 'Anotadas' },
+];
+
+// `marcas`: { idDeLaOrden: { por, en } }. Con "TODAS" no se filtra.
+export const filtrarPorAnotada = (filas, marcas = {}, modo = 'TODAS') => {
+  if (modo === 'POR_ANOTAR') return filas.filter((f) => !marcas[f.id]);
+  if (modo === 'ANOTADAS') return filas.filter((f) => marcas[f.id]);
+  return filas;
+};

@@ -130,6 +130,11 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+  /* La rueda de "trabajando" es un indicador de estado, no decoración: si dejara de girar parecería que la app se colgó. */
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
 /* Números del mismo ancho: cédulas, teléfonos, códigos y montos quedan alineados. */
@@ -181,4 +186,18 @@ input[type="search"]::-webkit-search-decoration {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: #dc2626;
+}
+
+/* Infraestructura: la fila que deja de cumplir el filtro (se marcó en "Por anotar" o se desmarcó en "Anotadas") se encoge y sale en vez de
+   desaparecer de golpe. Cada celda pierde su alto (texto, relleno y lo que lleva dentro) y la lista de abajo sube sin saltos. Solo en la tabla. */
+@media (prefers-reduced-motion: no-preference) {
+  tr.fila-saliendo > td { animation: celda-sale 0.3s ease-in forwards; }
+  tr.fila-saliendo > td > * { overflow: hidden; animation: contenido-sale 0.3s ease-in forwards; }
+}
+@keyframes celda-sale {
+  to { padding-block: 0; font-size: 0; line-height: 0; opacity: 0; }
+}
+@keyframes contenido-sale {
+  from { max-height: 8rem; }
+  to { max-height: 0; padding-block: 0; margin: 0; }
 }

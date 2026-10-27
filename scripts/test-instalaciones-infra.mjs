@@ -2,7 +2,7 @@
 // pantalla no use hooks de edición. No necesita el emulador. Uso: `npm run test:instalacionesinfra`.
 import { readFileSync } from 'node:fs';
 import { ROLES } from '../src/constants.js';
-import { desdePeriodo, filaInstalacion, filtrarInstalaciones, instalacionesRealizadas, limitesRango } from '../src/utils/instalacionesInfra.js';
+import { desdePeriodo, filaInstalacion, filtrarInstalaciones, filtrarPorAnotada, instalacionesRealizadas, limitesRango, mesDeMarcas, mesesDeMarcas } from '../src/utils/instalacionesInfra.js';
 
 let failures = 0;
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), 'utf8');
@@ -82,7 +82,23 @@ check('el hook no usa listeners en vivo', !/onSnapshot/.test(hook) && /getDocs/.
 check('el hook pide lo que exigen las reglas (tipo y estado de la orden; tipo de reporte)', /where\('tipoTrabajo', '==', 'INSTALACIÓN'\)/.test(hook) && /where\('estado', '==', 'FINALIZADO'\)/.test(hook) && /where\('tipoReporte', '==', 'CIERRE'\)/.test(hook), true);
 check('la pantalla no importa hooks de edición', /useTickets'|usePushToken|useUsers/.test(leer('../src/components/InfraestructuraApp.jsx')), false);
 check('Root manda el rol a su pantalla y el administrador la abre desde el menú', /\[ROLES\.INFRAESTRUCTURA\]: InfraestructuraApp/.test(leer('../src/Root.jsx')) && /INFRAESTRUCTURA: InfraestructuraApp/.test(leer('../src/Root.jsx')), true);
-check('las reglas no dan escritura al rol', /allow (create|update|delete|write)[^;]*isInfraestructuraRole/.test(leer('../firestore.rules')), false);
+// Lo único que escribe el rol es su marca de "ya la anoté" (infraAnotadas); en el resto de las reglas no tiene escritura.
+const reglasSinMarcas = leer('../firestore.rules').replace(/match \/artifacts\/\{appId\}\/public\/data\/infraAnotadas\/\{mes\} \{[\s\S]*?\r?\n    \}\r?\n/, '');
+check('las reglas no dan escritura al rol, salvo las marcas de anotadas', /allow (create|update|delete|write)[^;]*isInfraestructuraRole/.test(reglasSinMarcas), false);
+check('las marcas sí tienen su bloque de reglas', /infraAnotadas/.test(reglasSinMarcas), false);
+
+// --- Marcas de "ya la anoté" ---
+const filasM = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+const marcasM = { b: { por: 'infra', en: 1 } };
+check('Todas no filtra', filtrarPorAnotada(filasM, marcasM, 'TODAS').map((f) => f.id), ['a', 'b', 'c']);
+check('Por anotar deja las que no tienen marca', filtrarPorAnotada(filasM, marcasM, 'POR_ANOTAR').map((f) => f.id), ['a', 'c']);
+check('Anotadas deja las marcadas', filtrarPorAnotada(filasM, marcasM, 'ANOTADAS').map((f) => f.id), ['b']);
+check('sin marcas, todas están por anotar', filtrarPorAnotada(filasM, undefined, 'POR_ANOTAR').length, 3);
+check('el mes de la marca sale de la fecha de la instalación (hora local)', mesDeMarcas(new Date(2026, 9, 21, 15).getTime()), '2026-10');
+check('el mes de la marca de un 1 de enero', mesDeMarcas(new Date(2027, 0, 1, 0, 5).getTime()), '2027-01');
+check('se leen el mes actual y el de hace 30 días', mesesDeMarcas(new Date(2026, 9, 21, 15).getTime()), ['2026-09', '2026-10']);
+check('a mitad de mes basta un solo documento', mesesDeMarcas(new Date(2026, 9, 31, 15).getTime()), ['2026-10']);
+check('el hook lee las marcas en un documento por mes y escribe con merge', /getDoc\(doc\(datos\('infraAnotadas'\)/.test(hook) && /merge: true/.test(hook), true);
 check('el Worker acepta el rol al crear usuarios', /ROLES_VALIDOS = \[[^\]]*'INFRAESTRUCTURA'\]/.test(leer('../cf-worker/src/index.js')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');

@@ -116,11 +116,11 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       for (const { id, datos: d } of armado.registros) lote.update(documento('registroVnTa', id), d);
       for (const { id, monto } of armado.adelantos) {
         const actual = adelantos.find((a) => a.id === id);
-        lote.update(documento('adelantosTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto) });
+        lote.update(documento('adelantosTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto), pagoId: armado.pagoId });
       }
       for (const { id, monto } of armado.ajustes) {
         const actual = ajustes.find((a) => a.id === id);
-        lote.update(documento('ajustesTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto) });
+        lote.update(documento('ajustesTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto), pagoId: armado.pagoId });
       }
       await lote.commit();
     }, `Pago registrado: ${fila.tecnico}.`, 'No se pudo registrar el pago. Alguna orden pudo haberse pagado ya: revisa e intenta de nuevo.');
@@ -160,12 +160,12 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     // Lo que ese pago descontó vuelve al saldo de cada adelanto (se lee lo que tiene ahora: otro pago pudo descontar más después).
     for (const { id, monto } of pago.adelantos || []) {
       const actual = await getDoc(documento('adelantosTecnicos', id));
-      if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)) });
+      if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)), pagoId: pago.id });
     }
     // Lo mismo con los descuentos y bonos por órdenes corregidas que entraron en ese pago.
     for (const { id, monto } of pago.ajustes || []) {
       const actual = await getDoc(documento('ajustesTecnicos', id));
-      if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)) });
+      if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)), pagoId: pago.id });
     }
     await lote.commit();
   }, 'Pago anulado: las órdenes vuelven a estar por pagar y los adelantos, por descontar.', 'No se pudo anular el pago.');

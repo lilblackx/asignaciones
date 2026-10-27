@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collection, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, deleteField, doc, getDoc, getDocs, orderBy, query, setDoc, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { leerReportesIncremental } from '../lib/reportesLocales';
-import { DIAS_INFRAESTRUCTURA, instalacionesRealizadas } from '../utils/instalacionesInfra';
+import { DIAS_INFRAESTRUCTURA, instalacionesRealizadas, mesDeMarcas, mesesDeMarcas } from '../utils/instalacionesInfra';
 
 // Si la pestaña estuvo oculta más de esto, al volver se actualiza sola.
 export const REFRESCO_AUTOMATICO_MS = 10 * 60 * 1000;
@@ -27,19 +27,22 @@ const leer = (uid) => {
       referencia: (id) => doc(datos('reports'), id),
       consulta: (condiciones) => query(datos('reports'), where('tipoReporte', '==', 'CIERRE'), ...condiciones, orderBy('createdAt', 'desc')),
     }),
+    // Las marcas de "ya la anoté": un documento por mes, dos lecturas como mucho.
+    Promise.all(mesesDeMarcas().map((mes) => getDoc(doc(datos('infraAnotadas'), mes)))),
   ]);
 };
 
 // Las instalaciones realizadas para el módulo de INFRAESTRUCTURA. Sin listeners en vivo (cada cambio de cualquier orden costaría una lectura): se lee al abrir, con el botón
 // "Actualizar" y al volver a la pestaña tras un rato.
-// Devuelve { instalaciones, cargado, error, actualizadoEn, actualizando, actualizar }.
+// Devuelve { instalaciones, marcas, marcar, cargado, error, actualizadoEn, actualizando, actualizar }.
 export function useInstalacionesInfra(firebaseUser) {
-  const [estado, setEstado] = useState({ instalaciones: [], cargado: false, error: false, actualizadoEn: 0 });
+  const [estado, setEstado] = useState({ instalaciones: [], marcas: {}, cargado: false, error: false, actualizadoEn: 0 });
   const [actualizando, setActualizando] = useState(false);
   const ocupado = useRef(false);
 
-  const aplicar = useCallback(([ordenes, reportes]) => {
-    setEstado({ instalaciones: instalacionesRealizadas(aLista(ordenes), reportes.map((d) => ({ id: d.id, ...d.data() }))), cargado: true, error: false, actualizadoEn: Date.now() });
+  const aplicar = useCallback(([ordenes, reportes, meses]) => {
+    const marcas = Object.assign({}, ...meses.map((m) => (m.exists() ? m.data().marcas : null)));
+    setEstado({ instalaciones: instalacionesRealizadas(aLista(ordenes), reportes.map((d) => ({ id: d.id, ...d.data() }))), marcas, cargado: true, error: false, actualizadoEn: Date.now() });
   }, []);
 
   // Primera carga, al abrir.
@@ -70,6 +73,28 @@ export function useInstalacionesInfra(firebaseUser) {
     }
   }, [firebaseUser, aplicar]);
 
+  // Marca o desmarca una instalación como anotada. Se ve al instante y, si no se pudo guardar, vuelve a como estaba (y avisa quien llama).
+  // `por`: quién la marcó. Es solo la marca: no toca la orden.
+  const marcar = useCallback(async (fila, anotada, por) => {
+    if (!firebaseUser) return false;
+    const antes = estado.marcas[fila.id];
+    const nueva = anotada ? { por: por || '', en: Date.now() } : null;
+    const poner = (valor) => setEstado((e) => {
+      const marcas = { ...e.marcas };
+      if (valor) marcas[fila.id] = valor; else delete marcas[fila.id];
+      return { ...e, marcas };
+    });
+    poner(nueva);
+    try {
+      await setDoc(doc(datos('infraAnotadas'), mesDeMarcas(fila.fecha)), { marcas: { [fila.id]: nueva ?? deleteField() } }, { merge: true });
+      return true;
+    } catch (error) {
+      console.error('No se pudo guardar la marca:', error);
+      poner(antes || null);
+      return false;
+    }
+  }, [firebaseUser, estado.marcas]);
+
   const ultima = useRef(0);
   useEffect(() => { ultima.current = estado.actualizadoEn; }, [estado.actualizadoEn]);
   useEffect(() => {
@@ -80,5 +105,5 @@ export function useInstalacionesInfra(firebaseUser) {
     return () => document.removeEventListener('visibilitychange', alVolver);
   }, [actualizar]);
 
-  return { ...estado, actualizando, actualizar };
+  return { ...estado, actualizando, actualizar, marcar };
 }

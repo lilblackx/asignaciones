@@ -567,6 +567,24 @@ await check('INFRAESTRUCTURA NO puede escribir nada', async () => {
   await assertFails(datos(asInfra()).collection('reports').doc('reporte-1').update({ total: 9 }));
   await assertFails(ticketPath(asInfra(), 'instalacion-final').delete());
 });
+await check('INFRAESTRUCTURA marca las instalaciones que ya anotó (solo el campo marcas, en un documento por mes)', async () => {
+  const marca = (db, mes) => datos(db).collection('infraAnotadas').doc(mes);
+  await assertSucceeds(marca(asInfra(), '2026-10').set({ marcas: { a1: { por: 'infra', en: 1000 } } }, { merge: true }));
+  await assertSucceeds(marca(asInfra(), '2026-10').set({ marcas: { a2: { por: 'infra', en: 2000 } } }, { merge: true }));
+  await assertSucceeds(marca(asInfra(), '2026-10').get());
+  await assertSucceeds(marca(asAdmin(), '2026-10').get());
+  await assertFails(marca(asInfra(), '2026-10').set({ marcas: {}, otro: 1 }, { merge: true }));
+  await assertFails(marca(asInfra(), '2026-10').set({ marcas: 'x' }));
+  await assertFails(marca(asInfra(), 'cualquiera').set({ marcas: {} }));
+  await assertFails(marca(asInfra(), '2026-10').delete());
+});
+await check('Quien no es INFRAESTRUCTURA ni ADMIN no lee ni escribe las marcas de anotadas', async () => {
+  const marca = (db) => datos(db).collection('infraAnotadas').doc('2026-10');
+  await assertFails(marca(asUsuario()).get());
+  await assertFails(marca(asUsuario()).set({ marcas: { a1: true } }, { merge: true }));
+  await assertFails(marca(asTecnico()).get());
+  await assertFails(marca(testEnv.authenticatedContext('infra-off-uid').firestore()).set({ marcas: {} }, { merge: true }));
+});
 await check('INFRAESTRUCTURA desactivado no lee nada', async () => {
   await assertFails(instalacionesInfra(testEnv.authenticatedContext('infra-off-uid').firestore()).get());
 });
@@ -1026,6 +1044,16 @@ await check('Pagar: un pago grande (400 órdenes) cabe en un solo lote', async (
   const ordenes = Array.from({ length: 400 }, (_, i) => [`masiva-${i}`, ordenPagada('p-grande')]);
   await assertSucceeds(guardarPago(asFinanzas(), 'p-grande', pagoDe({ cantidadOrdenes: 400, total: 1400 }), ordenes));
 });
+await check('Anular: una orden de un pago vigente no se saca sola (se podría pagar dos veces); solo al anular el pago en el mismo lote', async () => {
+  await assertFails(fin(asFinanzas(), 'ordenesPagadas').doc('orden-a').delete());
+  await assertFails(fin(asAdmin(), 'ordenesPagadas').doc('orden-a').delete());
+  // Anular otro pago no libera las órdenes de este: el pago de cada orden es el que tiene que quedar anulado.
+  const db = asFinanzas();
+  const lote = db.batch();
+  lote.update(fin(db, 'pagosTecnicos').doc('p-tasa'), { anulado: true, anuladoPor: 'fina', anuladoEn: 5 });
+  lote.delete(fin(db, 'ordenesPagadas').doc('orden-a'));
+  await assertFails(lote.commit());
+});
 await check('Anular: queda el pago marcado y las órdenes vuelven a estar por pagar', async () => {
   const db = asFinanzas();
   const lote = db.batch();
@@ -1034,6 +1062,13 @@ await check('Anular: queda el pago marcado y las órdenes vuelven a estar por pa
   lote.delete(fin(db, 'ordenesPagadas').doc('orden-b'));
   await assertSucceeds(lote.commit());
   await assertSucceeds(guardarPago(asFinanzas(), 'p-5', pagoDe(), [['orden-a', ordenPagada('p-5', { concepto: 'INSTALACION', monto: 20 })]]));
+});
+await check('Anular: un pago grande (400 órdenes) se anula en un solo lote', async () => {
+  const db = asFinanzas();
+  const lote = db.batch();
+  lote.update(fin(db, 'pagosTecnicos').doc('p-grande'), { anulado: true, anuladoPor: 'fina', anuladoEn: 7 });
+  for (let i = 0; i < 400; i++) lote.delete(fin(db, 'ordenesPagadas').doc(`masiva-${i}`));
+  await assertSucceeds(lote.commit());
 });
 await check('Anular: no se anula dos veces, no se cambia otro campo del pago ni se borra el pago', async () => {
   await assertFails(fin(asFinanzas(), 'pagosTecnicos').doc('p-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 6 }));
@@ -1066,15 +1101,51 @@ await check('Adelanto: sin monto, con una forma inventada, ya descontado, a nomb
   for (const [i, extra] of intentos.entries()) await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc(`adel-mal-${i}`).set(adelantoDe(extra)));
   await assertFails(fin(asUsuario(), 'adelantosTecnicos').doc('adel-usuario').set(adelantoDe({ por: 'usuario' })));
 });
-await check('Adelanto: al pagar se descuenta (solo cambia aplicado, sin pasar del monto), al anular el pago se devuelve', async () => {
-  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 20 }));
-  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 60 }));
-  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: -1 }));
-  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 30, monto: 99 }));
-  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
+// Lo que ya se descontó (`aplicado`) de un adelanto, un descuento o un bono solo cambia junto a un pago, en el mismo lote: al pagar, el pago nuevo del mismo técnico (con ese adelanto o ajuste en
+// su lista); al anular, el pago que se anula. `pagoId` dice cuál.
+const aplicarEnPago = (db, pagoId, coleccion, id, aplicado, { campos = {}, ...extraPago } = {}) => {
+  const lista = coleccion === 'ajustesTecnicos' ? 'ajustes' : 'adelantos';
+  const lote = db.batch();
+  lote.set(fin(db, 'pagosTecnicos').doc(pagoId), pagoDe({ [lista]: [{ id, monto: aplicado }], ...extraPago }));
+  lote.update(fin(db, coleccion).doc(id), { aplicado, pagoId, ...campos });
+  return lote.commit();
+};
+const anularConPago = (db, pagoId, coleccion, id, aplicado) => {
+  const lote = db.batch();
+  lote.update(fin(db, 'pagosTecnicos').doc(pagoId), { anulado: true, anuladoPor: 'fina', anuladoEn: 9 });
+  lote.update(fin(db, coleccion).doc(id), { aplicado, pagoId });
+  return lote.commit();
+};
+await check('Adelanto: al pagar se descuenta (solo cambia aplicado, sin pasar del monto, con su pago en el mismo lote), al anular el pago se devuelve', async () => {
+  await assertSucceeds(aplicarEnPago(asFinanzas(), 'p-ad1', 'adelantosTecnicos', 'adel-1', 20));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-ad-x1', 'adelantosTecnicos', 'adel-1', 60));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-ad-x2', 'adelantosTecnicos', 'adel-1', -1));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-ad-x3', 'adelantosTecnicos', 'adel-1', 30, { campos: { monto: 99 } }));
+  // Sin el pago en el lote, con un pago que ya existía, con el pago de otro técnico o con un pago que no lo trae en su lista, no se descuenta nada.
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 30 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 30, pagoId: 'p-ad1' }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-ad-x4', 'adelantosTecnicos', 'adel-1', 30, { tecnico: 'REINEL BRAVO' }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-ad-x5', 'adelantosTecnicos', 'adel-1', 30, { adelantos: [] }));
+  // Devolverlo sin anular el pago, o borrarlo a secas, tampoco.
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
+  await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0, pagoId: 'p-ad1' }));
+  await assertSucceeds(anularConPago(asFinanzas(), 'p-ad1', 'adelantosTecnicos', 'adel-1', 0));
+});
+await check('Adelanto: un pago con 25 adelantos los descuenta y los devuelve en un solo lote', async () => {
+  const db = asFinanzas();
+  const ids = Array.from({ length: 25 }, (_, i) => `adel-multi-${i}`);
+  for (const id of ids) await assertSucceeds(fin(db, 'adelantosTecnicos').doc(id).set(adelantoDe({ monto: 5 })));
+  const lote = db.batch();
+  lote.set(fin(db, 'pagosTecnicos').doc('p-multi'), pagoDe({ adelantos: ids.map((id) => ({ id, monto: 5 })) }));
+  for (const id of ids) lote.update(fin(db, 'adelantosTecnicos').doc(id), { aplicado: 5, pagoId: 'p-multi' });
+  await assertSucceeds(lote.commit());
+  const anular = db.batch();
+  anular.update(fin(db, 'pagosTecnicos').doc('p-multi'), { anulado: true, anuladoPor: 'fina', anuladoEn: 9 });
+  for (const id of ids) anular.update(fin(db, 'adelantosTecnicos').doc(id), { aplicado: 0, pagoId: 'p-multi' });
+  await assertSucceeds(anular.commit());
 });
 await check('Adelanto: se anula solo si no se descontó nada, a nombre de quien lo hace, y no se borra', async () => {
-  await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 10 }));
+  await assertSucceeds(aplicarEnPago(asFinanzas(), 'p-ad2', 'adelantosTecnicos', 'adel-1', 10));
   await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
   await assertFails(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 9 }));
   await assertSucceeds(fin(asFinanzas(), 'adelantosTecnicos').doc('adel-2').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
@@ -1156,13 +1227,19 @@ await check('Ajustes: el técnico lee solo los suyos; la oficina no los lee', as
   await assertFails(fin(asOtroTecnico(), 'ajustesTecnicos').doc('desc_o1').get());
   await assertFails(fin(asUsuario(), 'ajustesTecnicos').get());
 });
-await check('Ajustes: Finanzas solo mueve `aplicado` (sin pasar de monto) y el ADMIN no lo toca ni lo borra una vez aplicado', async () => {
-  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 6 }));
-  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ aplicado: 7 }));
-  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ monto: 1 }));
-  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ aplicado: -1 }));
+await check('Ajustes: Finanzas solo mueve `aplicado` (sin pasar de monto, con su pago en el mismo lote) y el ADMIN no lo toca ni lo borra una vez aplicado', async () => {
+  // El bono es de REINEL BRAVO: entra en un pago suyo.
+  await assertSucceeds(aplicarEnPago(asFinanzas(), 'p-aj1', 'ajustesTecnicos', 'bono_o1', 6, { tecnico: 'REINEL BRAVO' }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-aj-x1', 'ajustesTecnicos', 'desc_o1', 7));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-aj-x2', 'ajustesTecnicos', 'desc_o1', 3, { campos: { monto: 1 } }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-aj-x3', 'ajustesTecnicos', 'desc_o1', -1));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-aj-x4', 'ajustesTecnicos', 'desc_o1', 3, { tecnico: 'REINEL BRAVO' }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('desc_o1').update({ aplicado: 3 }));
   await assertFails(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').delete());
-  await assertSucceeds(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 0 }));
+  // Quitar un descuento aplicado sin anular el pago no se puede; anulando el pago en el mismo lote, sí.
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 0 }));
+  await assertFails(fin(asFinanzas(), 'ajustesTecnicos').doc('bono_o1').update({ aplicado: 0, pagoId: 'p-aj1' }));
+  await assertSucceeds(anularConPago(asFinanzas(), 'p-aj1', 'ajustesTecnicos', 'bono_o1', 0));
 });
 await check('Ajustes: el ADMIN vuelve a guardar o borra los que no se han aplicado', async () => {
   await assertSucceeds(fin(asAdmin(), 'ajustesTecnicos').doc('bono_o1').set(bonoDe({ monto: 8 })));
