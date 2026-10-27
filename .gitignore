@@ -47,3 +47,6 @@ respaldos/
 
 # Clave API de Tomodat (secreto)
 tomodat api key.txt
+
+# Informes de auditoría de antislop (locales)
+anti-slop/
