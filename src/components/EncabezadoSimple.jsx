@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { LogOut, Menu, Moon, Plus, Sun } from 'lucide-react';
 import { ID_ACCIONES_ENCABEZADO } from './AccionesEncabezado';
+import AvisoSinConexion from './AvisoSinConexion';
 
 const ConfirmModal = lazy(() => import('./modals/ConfirmModal'));
 
@@ -58,6 +59,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
           </div>
         </div>
       </header>
+      <AvisoSinConexion />
 
       {confirmando && (
         <Suspense fallback={null}>

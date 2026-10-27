@@ -8,6 +8,7 @@ import { monedaDe, tieneCobroFinal } from './utils/cobro';
 import { enInfraestructura } from './utils/infraestructura';
 import TasaIndicador from './components/TasaIndicador';
 import AvisoNotificaciones from './components/AvisoNotificaciones';
+import AvisoSinConexion from './components/AvisoSinConexion';
 import EnviosInventarioModal, { AvisoInventario } from './components/AlertaInventario';
 import { crearConAviso } from './utils/errores';
 import { usePushToken } from './hooks/usePushToken';
@@ -699,6 +700,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           onGoHome={handleGoHome}
           notifications={notifications}
         />
+
+        <AvisoSinConexion />
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
           {verInventario && <AvisoInventario cantidad={enviosInventario.length} pendientes={enviosPendientes.length} onAbrir={abrirVentana('INVENTARIO', setIsInventarioOpen)} />}
