@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import NombreTecnico from '../NombreTecnico';
 import { ChevronDown, ChevronLeft, ChevronRight, FileText, History, Search } from 'lucide-react';
 import { TIPOS_TRABAJO } from '../../constants';
 import { motivoCancelacion } from '../../utils/cancelacion';
@@ -151,7 +152,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                 <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={CAMPO_FECHA} />
                 <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={CAMPO_FECHA} />
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
                 <BotonExportar
                   onClick={() => exportOrdersToCsv(filtered, describirFiltros())}
                   disabled={filtered.length === 0}
@@ -168,7 +169,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             </div>
           )}</Colapsable>
 
-          <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+          <div className="flex items-center justify-between gap-2 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
             <span>
               {filtered.length} {filtered.length === 1 ? 'orden' : 'órdenes'}
             </span>
@@ -176,7 +177,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           </div>
           {hasMoreReports && (
             <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-              Búsqueda sobre el historial ya cargado. Hay cierres más antiguos sin cargar —{' '}
+              Búsqueda sobre el historial ya cargado. Hay cierres más antiguos sin cargar -{' '}
               <button type="button" onClick={onLoadMoreReports} disabled={isLoadingReports} className="font-bold underline disabled:opacity-50">
                 {isLoadingReports ? 'cargando...' : 'cargar más'}
               </button>
@@ -193,11 +194,11 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-red-600 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
-                      <span className={`px-2 py-0.5 text-[9px] font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
-                      <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-500">{o.fecha}</span>
+                      <span className={`px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
+                      <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">{o.fecha}</span>
                     </div>
                     <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight mt-1 truncate">{o.nombre}</h5>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-0.5">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
                       <span className="font-bold text-red-600 dark:text-red-400">{o.tipoTrabajo}</span>
                       {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
                     </p>
@@ -205,9 +206,9 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right">
                       {o.tecnico
-                        ? <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${getTecnicoColor(o.tecnico)}`}>{o.tecnico}</span>
-                        : <span className="text-[10px] text-zinc-400 italic">Sin técnico</span>}
-                      <div className="text-[9px] text-zinc-400 mt-1">{o._origen}</div>
+                        ? <NombreTecnico nombre={o.tecnico} getTecnicoColor={getTecnicoColor} />
+                        : <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 italic">Sin técnico</span>}
+                      <div className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-1">{o._origen}</div>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </div>
@@ -250,7 +251,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           })}
 
           {filtered.length === 0 && (
-            <div className="text-center text-zinc-600 dark:text-zinc-500 py-10 text-sm">No se encontraron órdenes.</div>
+            <div className="text-center text-zinc-600 dark:text-zinc-400 py-10 text-sm">No se encontraron órdenes.</div>
           )}
 
         </div>

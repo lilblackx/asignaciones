@@ -7,7 +7,7 @@ export const getEstadoColor = (estado) => {
   const e = estado?.toUpperCase() || '';
   if (e === 'CANCELADO') return 'bg-red-700 text-white';
   if (e === 'PENDIENTE') return 'bg-slate-600 text-white';
-  if (e === 'PRE-FINALIZADO' || e === 'PRE-FINALIZADA') return 'bg-amber-500 text-black dark:bg-amber-600 dark:text-white font-bold';
+  if (e === 'PRE-FINALIZADO' || e === 'PRE-FINALIZADA') return 'bg-amber-500 text-black font-bold';
   if (e === 'FINALIZADO') return 'bg-emerald-700 text-white';
   return 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200';
 };
@@ -137,17 +137,17 @@ export const renderProgramadaBadge = (fechaProgStr, tecnico) => {
 
   if (sinTecnico && categoria !== 'futura') {
     return (
-      <div className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded mt-1 flex flex-col items-center justify-center shadow-sm w-max animate-pulse leading-none gap-0.5">
+      <div className="bg-red-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-1 rounded mt-1 flex flex-col items-center justify-center shadow-sm w-max animate-pulse leading-none gap-0.5">
         <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> ¡ASIGNAR!</span>
         <span>{formatted}</span>
       </div>
     );
   }
   if (categoria === 'hoy') {
-    return <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">HOY · {formatted}</span>;
+    return <span className="bg-red-600 text-white text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">HOY · {formatted}</span>;
   }
   if (categoria === 'vencida') {
-    return <span className="bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">Vencida: {formatted}</span>;
+    return <span className="bg-amber-500 text-black text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">Vencida: {formatted}</span>;
   }
-  return <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 border border-blue-200 dark:border-blue-800 w-max inline-block">Prog: {formatted}</span>;
+  return <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded mt-1 border border-blue-200 dark:border-blue-800 w-max inline-block">Prog: {formatted}</span>;
 };

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import NombreTecnico from '../../NombreTecnico';
 import { formatoTiempo, productividad } from '../../../utils/gestionTecnicos';
 import { formatoDuracion } from '../../../utils/logTecnico';
 import { useAhora } from '../../../hooks/useAhora';
@@ -23,11 +24,11 @@ export default function ProductividadView({ ordenes, eventos, rango, tecnico, ge
         nota="Las finalizadas por hora activa se calculan con el tiempo registrado entre activar y desactivar al técnico (solo desde el primer movimiento registrado; con menos de 30 min no se calcula)."
         columnas={[{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Tiempo activo', derecha: true }, { titulo: 'Por hora activa', derecha: true }, { titulo: 'Atención media', derecha: true }]}
         filas={filas.map((f) => [
-          <span key={f.tecnico} className={`inline-block text-[10px] font-bold px-2 py-1 rounded ${getTecnicoColor(f.tecnico)}`}>{f.tecnico}</span>,
+          <NombreTecnico key={f.tecnico} nombre={f.tecnico} getTecnicoColor={getTecnicoColor} />,
           f.finalizadas,
-          f.activoMs > 0 ? formatoDuracion(f.activoMs) : '—',
-          f.porHora === null ? '—' : decimal(f.porHora),
-          f.atencionMedia === null ? '—' : formatoTiempo(f.atencionMedia),
+          f.activoMs > 0 ? formatoDuracion(f.activoMs) : '-',
+          f.porHora === null ? '-' : decimal(f.porHora),
+          f.atencionMedia === null ? '-' : formatoTiempo(f.atencionMedia),
         ])}
         vacio="Sin órdenes finalizadas ni actividad registrada en este periodo."
       />

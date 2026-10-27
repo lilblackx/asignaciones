@@ -16,6 +16,8 @@ import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
 import InsigniaGarantia from './InsigniaGarantia';
 import BotonVerDetalle from './BotonVerDetalle';
+import CodigoOrden from './CodigoOrden';
+import NombreTecnico from './NombreTecnico';
 import ViajeControl, { EtiquetaViaje } from './ViajeControl';
 import { estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
@@ -42,6 +44,7 @@ export default function TicketsTable({
   onEdit,
   onCancelar,
   onCopyWhatsApp,
+  onCopiarMensajeCliente,
   onPegarUbicacion,
   onVerHistorial,
   onVerDetalle,
@@ -69,25 +72,25 @@ export default function TicketsTable({
   return (
     <div className="hidden lg:block bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border border-zinc-300 dark:border-zinc-800 overflow-clip transition-colors w-full">
       <table className="w-full text-xs text-left table-fixed">
-        <thead className="sticky z-[5] text-[10px] text-white uppercase bg-black" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
+        <thead className="sticky z-[5] text-[11px] max-lg:text-xs text-white uppercase bg-black" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
           {/* La raya roja va como sombra interior de cada título: un borde de la tabla no se queda pegado al bajar. */}
           <tr className="[&>th]:shadow-[inset_0_-2px_0_0_#dc2626]">
-            <th className="px-3 py-3 border-r border-zinc-800 w-[9%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[18%] align-middle text-center">NOMBRE</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[11%] min-[1440px]:w-[9%] align-middle text-center">CÉDULA</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[16%] min-[1440px]:w-[22%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[17%] min-[1440px]:w-[16%] align-middle text-center group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
+            <th className="px-3 py-3 border-r border-zinc-800 w-[8%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[16%] align-middle text-center">NOMBRE</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[13%] min-[1440px]:w-[12%] align-middle text-center">CÉDULA</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[18%] align-middle text-center">DIRECCIÓN</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] align-middle text-center group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
               {/* El título va centrado como los demás; el ícono de orden cuelga a su derecha sin correrlo. */}
               <span className="relative block w-fit mx-auto">
                 FALLA / TRABAJO
-                <ArrowDownAZ className={`absolute left-full top-1/2 -translate-y-1/2 ml-1 w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-600 dark:text-zinc-500 group-hover:text-zinc-300'}`} />
+                <ArrowDownAZ className={`absolute left-full top-1/2 -translate-y-1/2 ml-1 w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-400 group-hover:text-zinc-300'}`} />
               </span>
             </th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
             {/* Columna ENVIADO desactivada por ahora (el estado de envío sigue en isAsignado y en el Excel); ver también su celda más abajo.
             <th className="px-2 py-3 border-r border-zinc-800 w-[6%] align-middle text-center">ENVIADO</th>
             */}
-            <th className="px-3 py-3 border-r border-zinc-800 w-[8%] min-[1440px]:w-[7%] align-middle text-center">ESTADO</th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[14%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
             <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
           </tr>
         </thead>
@@ -106,7 +109,7 @@ export default function TicketsTable({
             return [
               nuevoDia && (
                 <tr key={`dia-${ticket.id}`} className="border-b border-zinc-300 dark:border-zinc-800">
-                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide ${dia.prioridad ? 'bg-red-600' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] max-lg:text-xs font-black ${dia.prioridad ? 'bg-red-600' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
                     {dia.prioridad && <Flag className="inline w-3 h-3 mr-1 -mt-0.5 fill-current" aria-hidden="true" />}{dia.texto}
                   </td>
                 </tr>
@@ -115,7 +118,7 @@ export default function TicketsTable({
                 <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
-                      <span>{ticket.codigo}</span>
+                      <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} />
                       {canEditTickets && puedeCambiarPrioridad(ticket) && (
                         <BotonPrioridad activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
                       )}
@@ -130,7 +133,7 @@ export default function TicketsTable({
                       <span className="font-medium">{ticket.nombre}</span>
                       {canEditTickets && onVerDetalle && <BotonVerDetalle ticket={ticket} onClick={onVerDetalle} />}
                     </div>
-                    {!agrupado && <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{ticket.fecha}</span>}
+                    {!agrupado && <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
                     <DevolucionAviso ticket={ticket} compact />
@@ -142,13 +145,13 @@ export default function TicketsTable({
                       <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
                     )}
                     {ticket.observacion && (
-                      <span className="flex items-start gap-1 text-[10px] text-zinc-600 dark:text-zinc-400" title={ticket.observacion}>
+                      <span className="flex items-start gap-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400" title={ticket.observacion}>
                         <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />
                         <span className="line-clamp-2">{ticket.observacion}</span>
                       </span>
                     )}
                     {ticket.observacionTecnico && (
-                      <span className="flex items-start gap-1 text-[10px] text-amber-700 dark:text-amber-400" title={`Técnico: ${ticket.observacionTecnico}`}>
+                      <span className="flex items-start gap-1 text-[11px] max-lg:text-xs text-amber-700 dark:text-amber-400" title={`Técnico: ${ticket.observacionTecnico}`}>
                         <Wrench className="w-3 h-3 shrink-0 mt-px" aria-label="Observación del técnico" role="img" />
                         <span className="line-clamp-2">{ticket.observacionTecnico}</span>
                       </span>
@@ -179,18 +182,18 @@ export default function TicketsTable({
                 <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight font-medium align-middle">
                   <div className="flex flex-col items-start justify-center h-full min-h-[2rem] gap-1">
                     <div className="flex flex-wrap items-center gap-1">
-                      <span className={`inline-block text-[10px] font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
+                      <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
                       <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
                       {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                     </div>
                     {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
                     {instalacionSinUbicacion(ticket) && (
                       canEditTickets ? (
-                        <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Copia el enlace de ubicación y haz clic para guardarlo" className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                        <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Copia el enlace de ubicación y haz clic para guardarlo" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
                           <MapPinOff className="w-3 h-3" aria-hidden="true" /> Sin ubicación · pegar
                         </button>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
                           <MapPinOff className="w-3 h-3" aria-hidden="true" /> Sin ubicación
                         </span>
                       )
@@ -200,7 +203,7 @@ export default function TicketsTable({
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-1">
                     {ticket.tecnico && (
-                      <span className={`inline-flex items-center justify-center px-2 py-1.5 text-[11px] font-bold rounded leading-none ${getTecnicoColor(ticket.tecnico)}`}>{ticket.tecnico}</span>
+                      <NombreTecnico nombre={ticket.tecnico} getTecnicoColor={getTecnicoColor} />
                     )}
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
@@ -230,7 +233,7 @@ export default function TicketsTable({
                 */}
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
                   <div className="flex items-center justify-center h-full min-h-[2rem]">
-                    <span className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
+                    <span className={`inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
                   </div>
                 </td>
                 <td className="px-1.5 py-2 text-center align-middle">
@@ -275,7 +278,7 @@ export default function TicketsTable({
                             />
                           </>
                         ) : (
-                          <span className="text-[10px] text-zinc-400 font-bold">-</span>
+                          <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold">-</span>
                         )}
                       </>
                     )}
@@ -289,14 +292,14 @@ export default function TicketsTable({
               <td colSpan={COLUMNAS} className="px-4 py-12 text-center text-zinc-600 dark:text-zinc-400 font-medium">
                 {isTecnico && !hasAnyTickets ? (
                   <div className="flex flex-col items-center gap-2">
-                    <Wrench className="w-6 h-6 text-zinc-500 dark:text-zinc-600" aria-hidden="true" />
+                    <Wrench className="w-6 h-6 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
                     <span>No tienes asignaciones en este momento.</span>
-                    <span className="text-xs text-zinc-600 dark:text-zinc-500">Cuando te asignen una orden, aparecerá aquí.</span>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400">Cuando te asignen una orden, aparecerá aquí.</span>
                   </div>
                 ) : isTecnico ? (
-                  'No tienes asignaciones que coincidan con los filtros actuales.'
+                  'Ninguna de tus asignaciones coincide con los filtros. Quítalos para ver todas.'
                 ) : (
-                  'No hay registros activos para mostrar con los filtros actuales.'
+                  'Ninguna orden activa coincide con los filtros. Quítalos para ver todas, o crea una con Nuevo.'
                 )}
               </td>
             </tr>

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import NombreTecnico from '../../NombreTecnico';
 import { activacionPorTecnico, formatoDuracion, fraccionDelDia } from '../../../utils/logTecnico';
 import { diaLegible } from '../../../utils/periodoReporte';
 import { cifrasActivacion } from '../../../utils/modelosReporte';
@@ -31,7 +32,7 @@ function EjeHoras() {
   return (
     <div className={`${FILA} mb-1`} aria-hidden="true">
       <span className="hidden sm:block" />
-      <div className="relative h-3 col-span-2 sm:col-span-1 text-[9px] text-zinc-400">
+      <div className="relative h-3 col-span-2 sm:col-span-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
         {HORAS_EJE.map((h) => (
           <span key={h} className="absolute -translate-x-1/2 first:translate-x-0 last:-translate-x-full" style={{ left: `${(h / 24) * 100}%` }}>{h}h</span>
         ))}
@@ -57,7 +58,7 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
       <Cifras items={cifrasActivacion(activacion)} />
 
       {tecnicos.length === 0 ? (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-8 text-center text-xs text-zinc-600 dark:text-zinc-500 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-8 text-center text-xs text-zinc-600 dark:text-zinc-400 shadow-sm">
           {cargando ? 'Cargando...' : 'Sin actividad registrada en este periodo. Solo cuenta desde el primer movimiento registrado de cada técnico.'}
         </div>
       ) : (
@@ -65,8 +66,8 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
           {tecnicos.map(({ nombre, dias, total: totalTecnico }) => (
             <section key={nombre} aria-label={nombre} className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm">
               <header className="flex items-center justify-between gap-3 mb-3">
-                <span className={`text-xs font-bold px-2.5 py-1 rounded ${getTecnicoColor(nombre)}`}>{nombre}</span>
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{formatoDuracion(totalTecnico)} <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-500">en total</span></span>
+                <NombreTecnico nombre={nombre} getTecnicoColor={getTecnicoColor} />
+                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{formatoDuracion(totalTecnico)} <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">en total</span></span>
               </header>
               <EjeHoras />
               <div className="flex flex-col gap-2.5">
@@ -85,19 +86,19 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
 
       <details className="group mt-4 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl shadow-sm">
         <summary className="cursor-pointer select-none list-none px-4 sm:px-5 py-3 text-sm font-bold text-zinc-900 dark:text-white flex items-center justify-between">
-          Movimientos <span className="text-xs font-bold text-zinc-600 dark:text-zinc-500">{movimientos.length} · ver detalle</span>
+          Movimientos <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{movimientos.length} · ver detalle</span>
         </summary>
         <div className="px-4 sm:px-5 pb-4">
           {movimientos.length === 0 ? (
-            <p className="text-xs text-zinc-600 dark:text-zinc-500 text-center py-4">Sin movimientos en este periodo.</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center py-4">Sin movimientos en este periodo.</p>
           ) : (
             <ul className="flex flex-col gap-1.5">
               {movimientos.map((m, i) => (
                 <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs">
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${m.accion === 'ACTIVADO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{m.accion}</span>
+                  <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${m.accion === 'ACTIVADO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{m.accion}</span>
                   <span className="font-bold">{m.tecnico}</span>
-                  <span className="text-zinc-600 dark:text-zinc-500">{m.fechaHora}</span>
-                  {m.por && <span className="text-zinc-600 dark:text-zinc-500 ml-auto">por {m.por}</span>}
+                  <span className="text-zinc-600 dark:text-zinc-400">{m.fechaHora}</span>
+                  {m.por && <span className="text-zinc-600 dark:text-zinc-400 ml-auto">por {m.por}</span>}
                 </li>
               ))}
             </ul>

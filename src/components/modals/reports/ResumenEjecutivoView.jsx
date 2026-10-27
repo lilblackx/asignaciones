@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
+import NombreTecnico from '../../NombreTecnico';
 import { resumenEjecutivo } from '../../../utils/resumenEjecutivo';
 import { formatoTiempo, textoPorcentaje } from '../../../utils/gestionTecnicos';
 import { useAhora } from '../../../hooks/useAhora';
-import Cifras from './Cifras';
+import { CifrasDestacadas, CifrasLista } from './Cifras';
 import ListaHallazgos from './ListaHallazgos';
 import GraficoColumnas from './GraficoColumnas';
 import TablaReporte from './TablaReporte';
 import AvisoHistorial from './AvisoHistorial';
 
+const DESTACADAS = ['Órdenes finalizadas', 'Tiempo promedio de atención', 'Pendientes de más de 3 días'];
 const decimal = (n) => n.toFixed(2).replace('.', ',');
 const INSTALACIONES = { nombre: 'Instalaciones', color: 'bg-[#2a78d6] dark:bg-[#3987e5]' };
 const AVERIAS_LOS = { nombre: 'Averías LOS', color: 'bg-[#eb6834] dark:bg-[#d95926]' };
@@ -16,12 +18,16 @@ const AVERIAS_LOS = { nombre: 'Averías LOS', color: 'bg-[#eb6834] dark:bg-[#d95
 export default function ResumenEjecutivoView({ ordenes, eventos, contadores, tickets, rango, tecnico, getTecnicoColor, historial }) {
   const ahora = useAhora();
   const r = useMemo(() => resumenEjecutivo({ ordenes, eventos, contadores, tickets, rango, tecnico, ahora }), [ordenes, eventos, contadores, tickets, rango, tecnico, ahora]);
+  // Tres cifras grandes (las que más se miran) y el resto en lista, en vez de ocho tarjetas del mismo peso.
+  const todas = [...r.cifras, ...r.cifrasMes];
+  const grandes = DESTACADAS.map((n) => todas.find((c) => c.etiqueta.startsWith(n))).filter(Boolean);
+  const resto = todas.filter((c) => !grandes.includes(c));
 
   return (
     <div>
       <AvisoHistorial {...historial} />
-      <Cifras items={r.cifras} />
-      <Cifras items={r.cifrasMes} />
+      <CifrasDestacadas items={grandes} />
+      <CifrasLista items={resto} />
       <ListaHallazgos items={r.hallazgos} />
       <GraficoColumnas
         titulo="Finalizadas por mes"
@@ -34,10 +40,10 @@ export default function ResumenEjecutivoView({ ordenes, eventos, contadores, tic
         nota="Del periodo elegido. Reincidencia, señal débil y devueltas: menos es mejor."
         columnas={[{ titulo: 'Técnico' }, { titulo: 'Finalizadas', derecha: true }, { titulo: 'Atención media', derecha: true }, { titulo: 'Por hora activa', derecha: true }, { titulo: 'Reincidencia', derecha: true }, { titulo: 'Señal débil', derecha: true }, { titulo: 'Devueltas', derecha: true }]}
         filas={r.tecnicos.map((f) => [
-          <span key={f.tecnico} className={`inline-block text-[10px] font-bold px-2 py-1 rounded ${getTecnicoColor(f.tecnico)}`}>{f.tecnico}</span>,
+          <NombreTecnico key={f.tecnico} nombre={f.tecnico} getTecnicoColor={getTecnicoColor} />,
           f.finalizadas,
-          f.atencionMedia === null ? '—' : formatoTiempo(f.atencionMedia),
-          f.porHora === null ? '—' : decimal(f.porHora),
+          f.atencionMedia === null ? '-' : formatoTiempo(f.atencionMedia),
+          f.porHora === null ? '-' : decimal(f.porHora),
           textoPorcentaje(f.pctReincidencia),
           textoPorcentaje(f.pctDebil),
           textoPorcentaje(f.pctDevueltas),
