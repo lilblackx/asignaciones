@@ -1,11 +1,12 @@
-import { ArrowLeft, HandCoins, CheckCircle2, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, HandCoins, CheckCircle2, MinusCircle, TriangleAlert } from 'lucide-react';
 import { BOTON, BOTON_FILA, BOTON_GRANDE, CHIP, ESTADO, ETIQUETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { aBs, agruparOrdenes, bolivares, conceptosSinTarifa, desglosePorConcepto, dolares, estadoDeAdelanto, estadoDeFila, fechaHoraLegiblePago, grupoDePago, textoDatosPago, textoGrupos, textoOrdenes, tienePorPagar } from '../../utils/finanzas';
 import { saldoAdelanto, sePuedeAnularAdelanto } from '../../utils/adelantos';
+import { sePuedeAnularDescuento } from '../../utils/descuentos';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 
 // Todo lo de un técnico en una sola pantalla, sin cajas: cuánto se le debe (en grande), lo que se paga por concepto con cantidad, precio y subtotal en $ y Bs, los adelantos,
-// las órdenes en los grupos de los reportes, y sus pagos y adelantos del periodo. "Pagar" y "Adelanto" abren el formulario en esta misma pantalla.
+// las órdenes en los grupos de los reportes, y sus pagos, adelantos y descuentos del periodo. "Pagar", "Adelanto" y "Descuento" abren su formulario en esta misma pantalla.
 const montoBs = (usd, tasa) => (tasa > 0 ? bolivares(aBs(usd, tasa)) : null);
 
 // Un monto en dólares con sus bolívares debajo.
@@ -28,14 +29,18 @@ function Seccion({ titulo, nota, children }) {
   );
 }
 
-export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adelantos, ajustes = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onVerOrden, onAnularPago, onAnularAdelanto, onVolver }) {
+export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adelantos, descuentos = [], ajustes = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onDescuento, onVerOrden, onAnularPago, onAnularAdelanto, onAnularDescuento, onVolver }) {
   const sinTarifa = conceptosSinTarifa(fila, tarifas);
   // Los descuentos que salen de esa orden (garantías de otro técnico por las que se le descuenta algo) y todavía no entraron en un pago.
   const descuentosDe = (item) => ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave && saldoAdelanto(a) > 0);
   const desglose = desglosePorConcepto(fila.cantidades, tarifas);
   const neto = fila.neto ?? fila.total;
   const descuento = fila.descuento ?? 0;
-  const saldoQueda = Math.max(0, (fila.adelantos ?? 0) + (fila.descuentosOrden ?? 0) - descuento);
+  const libres = fila.descuentosLibres ?? 0;
+  const saldoQueda = Math.max(0, (fila.adelantos ?? 0) + (fila.descuentosOrden ?? 0) + libres - descuento);
+  // Lo que suma el renglón de descuentos: adelantos, garantías y descuentos con motivo.
+  const clasesDescuento = [fila.adelantos > 0 && 'adelantos', fila.descuentosOrden > 0 && 'garantías', libres > 0 && 'descuentos con motivo'].filter(Boolean);
+  const etiquetaDescuento = clasesDescuento.length === 1 && fila.adelantos > 0 ? 'Adelantos descontados' : `Descuentos (${clasesDescuento.join(', ')})`;
   const bonos = fila.bonos ?? 0;
   const pendientes = fila.pendientes.length;
   const estado = ESTADO[estadoDeFila(fila)];
@@ -58,6 +63,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
         {fila.adelantos > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Adelanto: {dolares(fila.adelantos)}</p>}
         {bonos > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Pago por garantías: {dolares(bonos)}</p>}
         {fila.descuentosOrden > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuento por garantías: {dolares(fila.descuentosOrden)}</p>}
+        {libres > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuentos: {dolares(libres)}</p>}
         {sinTarifa.length > 0 && (
           <p role="alert" className="mt-3 inline-flex items-start gap-2 rounded-md bg-amber-400 text-black text-sm font-bold px-3 py-2">
             <TriangleAlert className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" /> Sin precio: {sinTarifa.join(', ')}. Ponlo en el Tabulador de precios antes de pagar.
@@ -71,6 +77,9 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
           )}
           <button type="button" onClick={onAdelanto} disabled={ocupado} className={`${BOTON_GRANDE} border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
             <HandCoins className="w-5 h-5" aria-hidden="true" /> Adelanto
+          </button>
+          <button type="button" onClick={onDescuento} disabled={ocupado} className={`${BOTON_GRANDE} border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
+            <MinusCircle className="w-5 h-5" aria-hidden="true" /> Descuento
           </button>
         </div>
       </div>
@@ -105,7 +114,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
             )}
             {descuento > 0 && (
               <div className="py-3 flex items-center justify-between gap-4">
-                <dt className="text-sm font-bold text-zinc-900 dark:text-white">{fila.descuentosOrden > 0 ? 'Descuentos (adelantos y garantías)' : 'Adelantos descontados'}</dt>
+                <dt className="text-sm font-bold text-zinc-900 dark:text-white">{etiquetaDescuento}</dt>
                 <dd className="text-right"><span className="block text-sm font-bold tabular-nums text-emerald-800 dark:text-emerald-300 whitespace-nowrap">− {dolares(descuento)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">− {montoBs(descuento, tasa)}</span>}</dd>
               </div>
             )}
@@ -114,7 +123,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
           {saldoQueda > 0 && <p className={`${TEXTO_SUAVE} mt-2`}>Le quedan {dolares(saldoQueda)} por descontar en un próximo pago.</p>}
         </Seccion>
       ) : (
-        <p className="text-sm text-zinc-700 dark:text-zinc-200">No hay órdenes por pagar en este periodo.{fila.adelantos + (fila.descuentosOrden ?? 0) > 0 ? ` Tiene ${dolares(fila.adelantos + (fila.descuentosOrden ?? 0))} por descontar en su próximo pago.` : ''}</p>
+        <p className="text-sm text-zinc-700 dark:text-zinc-200">No hay órdenes por pagar en este periodo.{fila.adelantos + (fila.descuentosOrden ?? 0) + libres > 0 ? ` Tiene ${dolares(fila.adelantos + (fila.descuentosOrden ?? 0) + libres)} por descontar en su próximo pago.` : ''}</p>
       )}
 
       {pendientes > 0 && (
@@ -160,7 +169,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
               <li key={p.id} className={`py-3 flex flex-wrap items-center justify-between gap-3 ${p.anulado ? 'opacity-70' : ''}`}>
                 <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-zinc-900 dark:text-white">{etiquetaRango({ desde: p.desde, hasta: p.hasta })}</span><span className={`${CHIP} ${p.anulado ? ESTADO.ANULADO.clase : 'bg-emerald-700 text-white'}`}>{p.anulado ? 'Anulado' : 'Pagado'}</span></span>
-                  <span className={`block ${TEXTO_SUAVE}`}>{textoOrdenes(p.cantidadOrdenes)}{p.descuento > 0 ? ` · ${dolares(p.total)} − ${dolares(p.descuento)} de adelantos` : ''}</span>
+                  <span className={`block ${TEXTO_SUAVE}`}>{textoOrdenes(p.cantidadOrdenes)}{p.descuento > 0 ? ` · ${dolares(p.total)} − ${dolares(p.descuento)} de adelantos y descuentos` : ''}</span>
                   {p.forma && <span className={`block ${TEXTO_SUAVE}`}>{textoDatosPago(p)}</span>}
                   {p.nota && <span className={`block ${TEXTO_SUAVE}`}>{p.nota}</span>}
                 </span>
@@ -185,6 +194,26 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
                   {Number(a.aplicado) > 0 && <span className={`block ${TEXTO_SUAVE}`}>Ya entró {dolares(a.aplicado)} en pagos; quedan {dolares(saldoAdelanto(a))}</span>}
                 </span>
                 <Monto usd={a.tipo === 'BONO' ? saldoAdelanto(a) : -saldoAdelanto(a)} tasa={tasa} />
+              </li>
+            ))}
+          </ul>
+        </Seccion>
+      )}
+
+      {descuentos.length > 0 && (
+        <Seccion titulo="Descuentos" nota="Un descuento con motivo se resta de su próximo pago. Lo que no alcanza a descontarse queda para el siguiente.">
+          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {descuentos.map((d) => (
+              <li key={d.id} className={`py-3 flex flex-wrap items-center justify-between gap-3 ${d.anulado ? 'opacity-70' : ''}`}>
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-zinc-900 dark:text-white">{fechaHoraLegiblePago(Number(d.creadoEn))}</span><span className={`${CHIP} ${d.anulado ? ESTADO.ANULADO.clase : saldoAdelanto(d) > 0 ? ESTADO.CON_ADELANTO.clase : 'bg-emerald-700 text-white'}`}>{d.anulado ? 'Anulado' : saldoAdelanto(d) > 0 ? 'Por descontar' : 'Descontado'}</span></span>
+                  <span className="block text-sm text-zinc-900 dark:text-zinc-100 break-words">{d.motivo}</span>
+                  <span className={`block ${TEXTO_SUAVE}`}>Lo registró {d.por}{!d.anulado && Number(d.aplicado) > 0 ? ` · ${estadoDeAdelanto(d)}` : ''}</span>
+                </span>
+                <span className="flex items-center gap-4">
+                  <Monto usd={d.monto} tasa={tasa} className={d.anulado ? 'line-through' : ''} />
+                  {sePuedeAnularDescuento(d) && <button type="button" onClick={() => onAnularDescuento(d)} disabled={ocupado} className={BOTON_FILA}>Anular</button>}
+                </span>
               </li>
             ))}
           </ul>

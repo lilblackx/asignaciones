@@ -416,13 +416,14 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/pagosTecnicos/{docId} {
       function pagoValido() {
         let p = request.resource.data;
-        return p.keys().hasOnly(['tecnico', 'desde', 'hasta', 'cantidades', 'tarifas', 'total', 'cantidadOrdenes', 'nota', 'por', 'creadoEn', 'anulado', 'tasa', 'descuento', 'neto', 'bonos', 'adelantos', 'ajustes', 'moneda', 'forma', 'banco', 'referencia', 'pagadoEn', 'montoPagado', 'notificado'])
+        return p.keys().hasOnly(['tecnico', 'desde', 'hasta', 'cantidades', 'tarifas', 'total', 'cantidadOrdenes', 'nota', 'por', 'creadoEn', 'anulado', 'tasa', 'descuento', 'neto', 'bonos', 'adelantos', 'ajustes', 'descuentosManuales', 'moneda', 'forma', 'banco', 'referencia', 'pagadoEn', 'montoPagado', 'notificado'])
           && (!('tasa' in p) || ((p.tasa is int || p.tasa is float) && p.tasa > 0 && p.tasa < 100000000))
           && (!('bonos' in p) || ((p.bonos is int || p.bonos is float) && p.bonos > 0 && p.bonos <= 100000))
           && (!('descuento' in p) || ((p.descuento is int || p.descuento is float) && p.descuento >= 0 && p.descuento <= p.total + p.get('bonos', 0)))
           && (!('neto' in p) || ((p.neto is int || p.neto is float) && p.neto >= 0 && p.neto <= p.total + p.get('bonos', 0)))
           && (!('adelantos' in p) || (p.adelantos is list && p.adelantos.size() <= 50))
           && (!('ajustes' in p) || (p.ajustes is list && p.ajustes.size() <= 50))
+          && (!('descuentosManuales' in p) || (p.descuentosManuales is list && p.descuentosManuales.size() <= 50))
           && (!('moneda' in p) || p.moneda in ['BS', 'USD'])
           && (!('forma' in p) || (p.forma is string && p.forma.size() > 0 && p.forma.size() <= 40))
           && (!('banco' in p) || (p.banco is string && p.banco.size() <= 40))
@@ -543,6 +544,37 @@ service cloud.firestore {
           && request.resource.data.aplicado >= 0 && request.resource.data.aplicado <= resource.data.monto
           && resource.data.anulado == false
           && aplicaEnPago(appId, 'adelantos'))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn'])
+          && resource.data.aplicado == 0 && resource.data.anulado == false
+          && request.resource.data.anulado == true
+          && request.resource.data.anuladoPor == usuarioFinanzas(appId)
+          && request.resource.data.anuladoEn is int));
+      allow delete: if false;
+    }
+
+    // Descuentos con motivo que Finanzas o el ADMIN le ponen a un técnico (siempre en dólares, sin orden asociada): se restan de lo que tiene por pagar, igual que un adelanto. `aplicado` es lo que ya se
+    // descontó en pagos (sube al pagar, baja al anular el pago, nunca pasa de `monto`); un descuento solo se anula si no se ha descontado nada, y sin motivo no se guarda. El técnico lee solo los suyos.
+    match /artifacts/{appId}/public/data/descuentosTecnicos/{docId} {
+      function descuentoValido() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['tecnico', 'monto', 'aplicado', 'motivo', 'por', 'creadoEn', 'anulado', 'notificado'])
+          && d.tecnico is string && d.tecnico.size() > 0 && d.tecnico.size() <= 100
+          && (d.monto is int || d.monto is float) && d.monto > 0 && d.monto <= 100000
+          && d.aplicado == 0
+          && d.motivo is string && d.motivo.size() > 0 && d.motivo.size() <= 300
+          && d.por == usuarioFinanzas(appId) && d.por != ''
+          && d.creadoEn is int
+          && d.anulado == false
+          && d.notificado is bool;
+      }
+      allow read: if llevaFinanzas(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
+      allow create: if llevaFinanzas(appId) && descuentoValido();
+      allow update: if llevaFinanzas(appId) && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['aplicado', 'pagoId'])
+          && (request.resource.data.aplicado is int || request.resource.data.aplicado is float)
+          && request.resource.data.aplicado >= 0 && request.resource.data.aplicado <= resource.data.monto
+          && resource.data.anulado == false
+          && aplicaEnPago(appId, 'descuentosManuales'))
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn'])
           && resource.data.aplicado == 0 && resource.data.anulado == false
           && request.resource.data.anulado == true

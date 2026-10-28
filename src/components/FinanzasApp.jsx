@@ -81,7 +81,9 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   const adelantosVisibles = useMemo(() => finanzas.adelantos.filter((a) => !tecnico || String(a.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.adelantos, tecnico]);
   // Los descuentos y bonos por órdenes corregidas del técnico elegido (o de todos): entran en su próximo pago.
   const ajustesVisibles = useMemo(() => finanzas.ajustes.filter((a) => !tecnico || String(a.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.ajustes, tecnico]);
-  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles]);
+  // Los descuentos con motivo del técnico elegido (o de todos): se restan de su próximo pago.
+  const descuentosVisibles = useMemo(() => finanzas.descuentos.filter((d) => !tecnico || String(d.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.descuentos, tecnico]);
+  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles]);
   // Lo ya pagado en el periodo por técnico (respeta el técnico elegido arriba).
   const pagadasPorTecnico = useMemo(
     () => {
@@ -102,7 +104,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
     setErrorExportar('');
     setExportando(formato);
     try {
-      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles } };
+      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles, descuentos: descuentosVisibles } };
       const documento = actual.documento(contexto);
       if (formato === 'csv') descargarCsv(csvDeDocumento(documento), `${actual.archivo}_${rango.desde}_${rango.hasta}.csv`);
       else await exportarDocumento(documento, formato, rango);
@@ -206,6 +208,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   tarifas={finanzas.tarifas}
                   pagos={finanzas.pagos}
                   adelantos={adelantosVisibles}
+                  descuentos={descuentosVisibles}
                   ajustes={ajustesVisibles}
                   ajustesTodos={finanzas.ajustes}
                   garantiasPendientes={garantiasPendientes}
@@ -218,6 +221,8 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onAnular={finanzas.anular}
                   onAdelanto={finanzas.registrarAdelanto}
                   onAnularAdelanto={finanzas.anularAdelanto}
+                  onDescuento={finanzas.registrarDescuento}
+                  onAnularDescuento={finanzas.anularDescuento}
                 />
               )}
               {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}

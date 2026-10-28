@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { avisoDeAdelanto, avisoDeAjuste, avisoDeAnulacion, avisoDePago } from '../utils/finanzas';
+import { avisoDeAdelanto, avisoDeAjuste, avisoDeAnulacion, avisoDeDescuento, avisoDePago } from '../utils/finanzas';
 import { playAprobadoSound } from '../utils/notificationSound';
 
-// Cuántos días hacia atrás se escuchan los pagos, adelantos y ajustes del técnico (un pago anulado después de ese plazo ya no se le avisa).
+// Cuántos días hacia atrás se escuchan los pagos, adelantos, descuentos y ajustes del técnico (un pago anulado después de ese plazo ya no se le avisa).
 const DIAS_DE_AVISOS = 30;
 
-// El técnico se entera, con la app abierta, de un pago, un adelanto o un descuento o bono por una orden corregida que le registraron (con la app cerrada le llega la push): aviso en pantalla, en la campana y
+// El técnico se entera, con la app abierta, de un pago, un adelanto, un descuento con motivo o un descuento o bono por una orden corregida que le registraron (con la app cerrada le llega la push): aviso en pantalla, en la campana y
 // con sonido, como el resto. Escucha solo lo suyo (las reglas se lo exigen) y solo avisa de lo que Finanzas marcó "Notificar al técnico"; lo que ya existía al abrir
 // la app es la base y no se avisa de nuevo.
 export function useAvisosPagos({ firebaseUser, tecnico, onNotify, setToastMsg }) {
@@ -54,6 +54,7 @@ export function useAvisosPagos({ firebaseUser, tecnico, onNotify, setToastMsg })
       escucharAnulaciones(),
       escuchar('pagosTecnicos', 'pagoTecnico', avisoDePago),
       escuchar('adelantosTecnicos', 'adelantoTecnico', avisoDeAdelanto),
+      escuchar('descuentosTecnicos', 'descuentoTecnico', avisoDeDescuento),
       // Un descuento o un bono por una orden que el administrador pasó de un técnico a otro (se avisa al aprobarla).
       escuchar('ajustesTecnicos', 'ajusteTecnico', avisoDeAjuste),
     ];

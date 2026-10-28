@@ -373,6 +373,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
       case 'desasignada':
       case 'pagoTecnico':
       case 'adelantoTecnico':
+      case 'descuentoTecnico':
       case 'ajusteTecnico':
         // Un pago o un adelanto no es una orden: el técnico vuelve a su lista.
         handleGoHome();

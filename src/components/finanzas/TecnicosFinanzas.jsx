@@ -8,23 +8,26 @@ import ListaTecnicos from './ListaTecnicos';
 import DetalleTecnico from './DetalleTecnico';
 import PanelPago from './PanelPago';
 import PanelAdelanto from './PanelAdelanto';
+import PanelDescuento from './PanelDescuento';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
 import { BOTON_FILA, TARJETA, TITULO_SECCION } from './estilos';
-import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
+import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, descuentosDelPeriodo, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
 import { saldoAdelanto } from '../../utils/adelantos';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 
 // La pantalla de pago a técnicos: arriba las cifras y los avisos, y debajo la lista de técnicos a la izquierda y todo lo del técnico elegido a la derecha (en el celular, la lista y,
-// al elegir uno, su pantalla con un botón para volver). "Pagar" y "Adelanto" abren su formulario en esa misma pantalla, no en una ventana.
-// `adelantos`: los adelantos; `onPagar(fila, { datosPago, notificar, nota })`, `onAdelanto(tecnico, entrada, { notificar })` y `onAnularAdelanto(adelanto)` devuelven true si se guardó.
-export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto }) {
+// al elegir uno, su pantalla con un botón para volver). "Pagar", "Adelanto" y "Descuento" abren su formulario en esa misma pantalla, no en una ventana.
+// `adelantos` y `descuentos`: los adelantos y los descuentos con motivo; `onPagar(fila, { datosPago, notificar, nota })`, `onAdelanto(tecnico, entrada, { notificar })`, `onDescuento(tecnico, entrada, { notificar })`,
+// `onAnularAdelanto(adelanto)` y `onAnularDescuento(descuento)` devuelven true si se guardó.
+export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento }) {
   const grande = useEsPantallaGrande();
   const [elegido, setElegido] = useState(null);
   const [modo, setModo] = useState('detalle');
   const [detalleOrden, setDetalleOrden] = useState(null);
   const [anulando, setAnulando] = useState(null);
   const [anulandoAdelanto, setAnulandoAdelanto] = useState(null);
+  const [anulandoDescuento, setAnulandoDescuento] = useState(null);
   const [verSinTecnico, setVerSinTecnico] = useState(false);
   const [verSinTipo, setVerSinTipo] = useState(false);
   const zonaDetalle = useRef(null);
@@ -36,6 +39,8 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   const registrados = pagosDelPeriodo(pagos, rango);
   // Los adelantos del periodo y, aunque sean de antes, los que todavía tienen algo por descontar.
   const adelantosVisibles = [...new Map([...adelantosDelPeriodo(adelantos, rango), ...adelantos.filter((a) => saldoAdelanto(a) > 0)].map((a) => [a.id, a])).values()].sort((a, b) => (Number(b.pagadoEn) || 0) - (Number(a.pagadoEn) || 0));
+  // Lo mismo con los descuentos con motivo: los del periodo y los que todavía tienen algo por descontar.
+  const descuentosVisibles = [...new Map([...descuentosDelPeriodo(descuentos, rango), ...descuentos.filter((d) => saldoAdelanto(d) > 0)].map((d) => [d.id, d])).values()].sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
 
   // En el celular, al elegir un técnico se salta directo a su pantalla (arriba hay filtros y cifras que no hacen falta para pagarle).
   const elegir = (tecnico) => {
@@ -49,6 +54,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
 
   const confirmarAnular = async () => { await onAnular(anulando); setAnulando(null); };
   const confirmarAnularAdelanto = async () => { await onAnularAdelanto(anulandoAdelanto); setAnulandoAdelanto(null); };
+  const confirmarAnularDescuento = async () => { await onAnularDescuento(anulandoDescuento); setAnulandoDescuento(null); };
 
   const alerta = 'rounded-lg border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
 
@@ -122,6 +128,8 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
                 <PanelPago fila={actual} rango={rango} tasa={tasa} ocupado={ocupado} onConfirmar={(opciones) => onPagar(actual, opciones)} onVolver={() => setModo('detalle')} />
               ) : modo === 'adelanto' ? (
                 <PanelAdelanto tecnico={actual.tecnico} porDescontar={actual.adelantos} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onAdelanto(actual.tecnico, entrada, opciones)} onVolver={() => setModo('detalle')} />
+              ) : modo === 'descuento' ? (
+                <PanelDescuento tecnico={actual.tecnico} neto={actual.neto ?? actual.total} porDescontar={actual.descuentosLibres} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onDescuento(actual.tecnico, entrada, opciones)} onVolver={() => setModo('detalle')} />
               ) : (
                 <DetalleTecnico
                   fila={actual}
@@ -130,15 +138,18 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
                   rango={rango}
                   pagos={registrados.filter((p) => p.tecnico === actual.tecnico)}
                   adelantos={adelantosVisibles.filter((a) => a.tecnico === actual.tecnico)}
+                  descuentos={descuentosVisibles.filter((d) => d.tecnico === actual.tecnico)}
                   ajustes={ajustes.filter((a) => a.tecnico === actual.tecnico && saldoAdelanto(a) > 0)}
                   garantiasPendientes={garantiasPendientes}
                   pagado={pagadasPorTecnico[actual.tecnico]}
                   ocupado={ocupado}
                   onPagar={() => setModo('pagar')}
                   onAdelanto={() => setModo('adelanto')}
+                  onDescuento={() => setModo('descuento')}
                   onVerOrden={setDetalleOrden}
                   onAnularPago={setAnulando}
                   onAnularAdelanto={setAnulandoAdelanto}
+                  onAnularDescuento={setAnulandoDescuento}
                   onVolver={volverALaLista}
                 />
               )}
@@ -159,11 +170,22 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
           onConfirm={confirmarAnularAdelanto}
         />
       )}
+      {anulandoDescuento && (
+        <ConfirmModal
+          color="red"
+          title="¿Anular este descuento?"
+          description={`El descuento de ${dolares(anulandoDescuento.monto)} a ${anulandoDescuento.tecnico} queda anulado y ya no se resta de sus pagos.`}
+          confirmLabel="Sí, anular"
+          processingLabel="Anulando..."
+          onCancel={() => setAnulandoDescuento(null)}
+          onConfirm={confirmarAnularDescuento}
+        />
+      )}
       {anulando && (
         <ConfirmModal
           color="red"
           title="¿Anular este pago?"
-          description={`El pago de ${dolares(anulando.neto ?? anulando.total)} a ${anulando.tecnico} queda anulado: sus ${textoOrdenes(anulando.cantidadOrdenes)} vuelven a estar por pagar${anulando.descuento > 0 ? ` y los ${dolares(anulando.descuento)} de adelantos, por descontar` : ''}.`}
+          description={`El pago de ${dolares(anulando.neto ?? anulando.total)} a ${anulando.tecnico} queda anulado: sus ${textoOrdenes(anulando.cantidadOrdenes)} vuelven a estar por pagar${anulando.descuento > 0 ? ` y los ${dolares(anulando.descuento)} de adelantos y descuentos, por descontar` : ''}.`}
           confirmLabel="Sí, anular"
           processingLabel="Anulando..."
           onCancel={() => setAnulando(null)}

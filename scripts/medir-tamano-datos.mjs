@@ -26,7 +26,7 @@ const promedio = (lista) => (lista.length ? lista.reduce((a, b) => a + b, 0) / l
 const percentil = (lista, p) => { const o = [...lista].sort((a, b) => a - b); return o[Math.min(o.length - 1, Math.floor(o.length * p))] || 0; };
 
 // Lo más reciente primero cuando la colección tiene un campo de fecha conocido; si no, los primeros que devuelva Firestore.
-const ORDEN = { tickets: 'createdAt', reports: 'createdAt', pagosTecnicos: 'creadoEn', adelantosTecnicos: 'creadoEn', ajustesTecnicos: 'creadoEn', historialInstalaciones: 'archivadoEn', telecomEnvios: 'actualizadoEn' };
+const ORDEN = { tickets: 'createdAt', reports: 'createdAt', pagosTecnicos: 'creadoEn', adelantosTecnicos: 'creadoEn', descuentosTecnicos: 'creadoEn', ajustesTecnicos: 'creadoEn', historialInstalaciones: 'archivadoEn', telecomEnvios: 'actualizadoEn' };
 
 async function leerMuestra(col) {
   const campo = ORDEN[col.id];

@@ -4,6 +4,7 @@
 //   pagosTecnicos/{pago}        un pago a un técnico por un periodo (con sus tarifas y cantidades de ese momento)
 //   ordenesPagadas/{orden}      cada orden incluida en un pago: así una orden no se paga dos veces
 //   ajustesTecnicos/{ajuste}    descuentos y bonos por una orden que el administrador pasó de un técnico a otro (utils/ajustes): entran en el próximo pago
+//   descuentosTecnicos/{id}     descuentos libres con motivo que Finanzas o el administrador le ponen a un técnico (utils/descuentos): se restan del próximo pago
 //
 // Qué se le paga al técnico (lo mismo que la columna "pagadas a técnico" del Registro de estadísticas):
 //   INSTALACION  instalación finalizada
@@ -156,8 +157,9 @@ const vacio = () => Object.fromEntries(CONCEPTOS_PAGO.map(({ id }) => [id, 0]));
 
 // Lo que se le debe a cada técnico: las órdenes pagables que todavía no están en ningún pago (`pagadas`: ids de ordenesPagadas).
 // [{ tecnico, cantidades, total, pendientes: [item], pagadas: n }] de más a menos por pagar. El total son dólares.
-// `adelantos`: los adelantos; `ajustes`: los descuentos y bonos por órdenes corregidas (un bono se suma al pago; un descuento se resta, igual que un adelanto).
-export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = []) {
+// `adelantos`: los adelantos; `ajustes`: los descuentos y bonos por órdenes corregidas (un bono se suma al pago; un descuento se resta, igual que un adelanto);
+// `descuentosLibres`: los descuentos con motivo que se le ponen a un técnico (se restan igual).
+export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = [], descuentosLibres = []) {
   const ya = pagadas instanceof Set ? pagadas : new Set(pagadas);
   const mapa = new Map();
   for (const item of items) {
@@ -169,7 +171,7 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
     fila.pendientes.push(item);
   }
   // Un técnico con adelantos, descuentos o bonos por aplicar tiene tarjeta aunque no tenga órdenes por pagar.
-  for (const a of [...adelantos, ...ajustes]) {
+  for (const a of [...adelantos, ...ajustes, ...descuentosLibres]) {
     if (saldoAdelanto(a) > 0 && !mapa.has(a.tecnico)) mapa.set(a.tecnico, { tecnico: a.tecnico, cantidades: vacio(), total: 0, pendientes: [], pagadas: 0 });
   }
   const suma = (lista) => redondear(lista.reduce((s, a) => s + saldoAdelanto(a), 0));
@@ -179,20 +181,24 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
       const total = redondear(f.total);
       const delAdelanto = adelantosConSaldo(adelantos, f.tecnico);
       const descuentos = descuentosConSaldo(ajustes, f.tecnico);
+      const libres = adelantosConSaldo(descuentosLibres, f.tecnico);
       const bonos = bonosConSaldo(ajustes, f.tecnico);
       const montoBonos = suma(bonos);
-      // Lo que se resta (adelantos y descuentos por órdenes, del más viejo al más nuevo) sale de las órdenes más los bonos, y nunca es más que eso: lo que sobra queda como saldo.
-      const { descuento, partes: todas } = repartirAdelantos([...delAdelanto, ...descuentos].sort((a, b) => marca(a) - marca(b)), redondear(total + montoBonos));
+      // Lo que se resta (adelantos y descuentos, del más viejo al más nuevo) sale de las órdenes más los bonos, y nunca es más que eso: lo que sobra queda como saldo.
+      const { descuento, partes: todas } = repartirAdelantos([...delAdelanto, ...descuentos, ...libres].sort((a, b) => marca(a) - marca(b)), redondear(total + montoBonos));
       const idsDescuentos = new Set(descuentos.map((a) => a.id));
-      // adelantos y descuentosOrden: lo que tiene por descontar de cada clase; bonos: lo que se le suma; descuento: lo que se resta de este pago; neto: lo que se le paga.
+      const idsLibres = new Set(libres.map((a) => a.id));
+      // adelantos, descuentosOrden y descuentosLibres: lo que tiene por descontar de cada clase; bonos: lo que se le suma; descuento: lo que se resta de este pago; neto: lo que se le paga.
       return {
         ...f,
         total,
         adelantos: suma(delAdelanto),
         descuentosOrden: suma(descuentos),
+        descuentosLibres: suma(libres),
         bonos: montoBonos,
         descuento,
-        partes: todas.filter((p) => !idsDescuentos.has(p.id)),
+        partes: todas.filter((p) => !idsDescuentos.has(p.id) && !idsLibres.has(p.id)),
+        partesLibres: todas.filter((p) => idsLibres.has(p.id)),
         partesAjustes: [...todas.filter((p) => idsDescuentos.has(p.id)).map((p) => ({ ...p, tipo: 'DESCUENTO' })), ...bonos.map((b) => ({ id: b.id, monto: saldoAdelanto(b), tipo: 'BONO' }))],
         neto: redondear(total + montoBonos - descuento),
       };
@@ -216,10 +222,10 @@ export function ordenesYaPagadas(pagadas, items) {
 
 // ¿Tiene algo por pagar? Órdenes o un bono por una orden corregida.
 export const tienePorPagar = (fila) => fila.pendientes.length > 0 || (fila.bonos ?? 0) > 0;
-// Cómo se ve su tarjeta: por pagar, con algo por descontar (adelantos o descuentos por órdenes corregidas) o al día.
-export const estadoDeFila = (fila) => (tienePorPagar(fila) ? 'POR_PAGAR' : (fila.adelantos ?? 0) > 0 || (fila.descuentosOrden ?? 0) > 0 ? 'CON_ADELANTO' : 'PAGADO');
+// Cómo se ve su tarjeta: por pagar, con algo por descontar (adelantos, descuentos por órdenes corregidas o descuentos con motivo) o al día.
+export const estadoDeFila = (fila) => (tienePorPagar(fila) ? 'POR_PAGAR' : (fila.adelantos ?? 0) > 0 || (fila.descuentosOrden ?? 0) > 0 || (fila.descuentosLibres ?? 0) > 0 ? 'CON_ADELANTO' : 'PAGADO');
 
-// Lo que falta pagar: el total de las órdenes más los bonos, menos lo que se descuenta (adelantos y descuentos por órdenes corregidas).
+// Lo que falta pagar: el total de las órdenes más los bonos, menos lo que se descuenta (adelantos y descuentos).
 export const totalPendiente = (filas) => redondear(filas.reduce((s, f) => s + (f.neto ?? f.total), 0));
 
 // Si el técnico tiene órdenes pendientes pero alguna tarifa en 0, avisa (para no pagar de menos sin darse cuenta).
@@ -232,14 +238,15 @@ export const idDePago = (tecnico, ahora) => `${ahora}-${String(tecnico).toUpperC
 // El pago y sus órdenes, listos para guardar en un lote: { pagoId, pago, ordenes: [{ id, datos }] } o { error }.
 // `tasa`: bolívares por dólar (BCV) del momento del pago; se guarda para que el pago en Bs no cambie después.
 // `datos` (de parseDatosPago): moneda, forma, referencia y fecha y hora del pago; `notificar`: si se le avisa al técnico. Los adelantos que se descuentan (`fila.partes`) van en el pago y en `adelantos`;
-// los descuentos y bonos por órdenes corregidas (`fila.partesAjustes`), en `ajustes`. Se puede pagar un técnico que solo tiene un bono (sin órdenes).
+// los descuentos y bonos por órdenes corregidas (`fila.partesAjustes`), en `ajustes`, y los descuentos con motivo (`fila.partesLibres`), en `descuentosManuales`. Se puede pagar un técnico que solo tiene un bono (sin órdenes).
 export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = null, datos = null, notificar = false }) {
   const bonos = fila.bonos ?? 0;
   if (fila.tecnico === SIN_TECNICO) return { error: 'Estas órdenes no tienen técnico: no se pueden pagar.' };
   if (fila.pendientes.length === 0 && !(bonos > 0)) return { error: 'No hay órdenes por pagar.' };
   const registros = fila.pendientes.filter((item) => item.registro).length;
   const ajustes = fila.partesAjustes ?? [];
-  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + fila.pendientes.length + registros + ajustes.length + (fila.partes?.length ?? 0) > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
+  const libres = fila.partesLibres ?? [];
+  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + fila.pendientes.length + registros + ajustes.length + libres.length + (fila.partes?.length ?? 0) > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
   if (fila.pendientes.length > 0 && fila.total <= 0) return { error: 'Configura las tarifas antes de pagar: el total es 0.' };
   if (datos?.moneda === MONEDA_BS && !(tasa > 0)) return { error: 'No hay tasa BCV: elige dólares o actualiza la tasa.' };
   const descuento = fila.descuento ?? 0;
@@ -258,6 +265,7 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
     ...(bonos > 0 && { bonos }),
     ...(partes.length > 0 && { adelantos: partes.map(({ id, monto }) => ({ id, monto })) }),
     ...(ajustes.length > 0 && { ajustes: ajustes.map(({ id, monto, tipo }) => ({ id, monto, tipo })) }),
+    ...(libres.length > 0 && { descuentosManuales: libres.map(({ id, monto }) => ({ id, monto })) }),
     ...(datos && { moneda: datos.moneda, forma: datos.forma, banco: datos.banco || '', referencia: datos.referencia, pagadoEn: datos.pagadoEn, montoPagado: datos.moneda === MONEDA_BS ? aBs(neto, tasa) : neto, notificado: Boolean(notificar) }),
     cantidadOrdenes: fila.pendientes.length,
     nota: String(nota || '').replace(/\s+/g, ' ').trim().slice(0, 300),
@@ -272,7 +280,7 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
   }));
   // Las filas de VN y TA que entran en el pago se marcan con él (así la oficina ve que ya se pagaron y no las cambia).
   const registrosMarcados = fila.pendientes.filter((item) => item.registro).map((item) => ({ id: item.registro.id, datos: { pagoId, pagadoEn: ahora } }));
-  return { pagoId, pago, ordenes, registros: registrosMarcados, adelantos: partes, ajustes };
+  return { pagoId, pago, ordenes, registros: registrosMarcados, adelantos: partes, ajustes, descuentosLibres: libres };
 }
 
 // El desglose de lo que se paga, una fila por concepto con órdenes: [{ id, nombre, cantidad, precio, subtotal }] en dólares (los bolívares los pone la pantalla con la tasa).
@@ -416,7 +424,7 @@ const textoReferencia = (forma, referencia, banco) => [forma, banco, referencia 
 // El aviso de un pago registrado: { title, body } para la notificación del técnico.
 export function avisoDePago(pago) {
   const monto = pago.moneda === MONEDA_BS && pago.montoPagado > 0 ? `${bolivares(pago.montoPagado)} (${dolares(pago.neto)})` : dolares(pago.neto ?? pago.total);
-  const descuento = pago.descuento > 0 ? ` Se descontaron ${dolares(pago.descuento)} de adelantos.` : '';
+  const descuento = pago.descuento > 0 ? ` Se descontaron ${dolares(pago.descuento)} de adelantos y descuentos.` : '';
   return {
     title: 'Pago recibido',
     body: `Se te registró un pago de ${monto} por ${textoOrdenes(pago.cantidadOrdenes)}: ${textoGrupos(pago.cantidades) || 'sin detalle'}.${descuento}${pago.forma ? ` ${textoReferencia(pago.forma, pago.referencia, pago.banco)}.` : ''}`,
@@ -440,6 +448,12 @@ export const avisoDeAdelanto = (adelanto) => ({
   body: `Se te registró un adelanto de ${dolares(adelanto.monto)} (${textoReferencia(adelanto.forma, adelanto.referencia, adelanto.banco)}). Se descontará de tu próximo pago.`,
 });
 
+// El aviso de un descuento con motivo que se le puso al técnico.
+export const avisoDeDescuento = (d) => ({
+  title: 'Descuento registrado',
+  body: `Se te registró un descuento de ${dolares(d.monto)}. Motivo: ${d.motivo}. Se resta de tu próximo pago.`,
+});
+
 // --- Adelantos en la pantalla y en los reportes ---
 
 // "Por descontar" / "Descontado en parte (20,00 $)" / "Descontado" / "Anulado".
@@ -459,6 +473,15 @@ const fechaHoraLegiblePago = (marca) => new Intl.DateTimeFormat('es-VE', { timeZ
 export const columnasAdelantos = () => [{ titulo: 'Fecha y hora' }, { titulo: 'Técnico' }, { titulo: 'Monto', derecha: true }, { titulo: 'Forma' }, { titulo: 'Banco' }, { titulo: 'Referencia' }, { titulo: 'Estado' }, { titulo: 'Nota' }];
 export const filaAdelanto = (a) => [fechaHoraLegiblePago(Number(a.pagadoEn) || Number(a.creadoEn)), a.tecnico, dolares(a.monto), a.forma || '', a.banco || '', a.referencia || '', estadoDeAdelanto(a), a.nota || ''];
 export { fechaHoraLegiblePago };
+
+// Los descuentos con motivo puestos en el periodo (por el día en que se registraron), del más reciente al más viejo; del técnico elegido si se pasa.
+export const descuentosDelPeriodo = (descuentos, rango, { tecnico } = {}) => descuentos
+  .filter((d) => enRango(diaDe(Number(d.creadoEn)), rango) && (!tecnico || String(d.tecnico).toUpperCase() === tecnico.toUpperCase()))
+  .sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
+// "Por descontar" / "Descontado en parte (20,00 $)" / "Descontado" / "Anulado": igual que un adelanto.
+export const estadoDeDescuento = estadoDeAdelanto;
+export const columnasDescuentos = () => [{ titulo: 'Fecha y hora' }, { titulo: 'Técnico' }, { titulo: 'Monto', derecha: true }, { titulo: 'Motivo' }, { titulo: 'Registrado por' }, { titulo: 'Estado' }];
+export const filaDescuento = (d) => [fechaHoraLegiblePago(Number(d.creadoEn)), d.tecnico, dolares(d.monto), d.motivo || '', d.por || '', estadoDeDescuento(d)];
 
 // --- Las órdenes agrupadas como en los reportes ---
 

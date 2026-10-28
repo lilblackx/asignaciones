@@ -29,6 +29,20 @@
       ]
     },
     {
+      "collectionGroup": "descuentosTecnicos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tecnico",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "adelantosTecnicos",
       "queryScope": "COLLECTION",
       "fields": [

@@ -1104,7 +1104,7 @@ await check('Adelanto: sin monto, con una forma inventada, ya descontado, a nomb
 // Lo que ya se descontó (`aplicado`) de un adelanto, un descuento o un bono solo cambia junto a un pago, en el mismo lote: al pagar, el pago nuevo del mismo técnico (con ese adelanto o ajuste en
 // su lista); al anular, el pago que se anula. `pagoId` dice cuál.
 const aplicarEnPago = (db, pagoId, coleccion, id, aplicado, { campos = {}, ...extraPago } = {}) => {
-  const lista = coleccion === 'ajustesTecnicos' ? 'ajustes' : 'adelantos';
+  const lista = coleccion === 'ajustesTecnicos' ? 'ajustes' : coleccion === 'descuentosTecnicos' ? 'descuentosManuales' : 'adelantos';
   const lote = db.batch();
   lote.set(fin(db, 'pagosTecnicos').doc(pagoId), pagoDe({ [lista]: [{ id, monto: aplicado }], ...extraPago }));
   lote.update(fin(db, coleccion).doc(id), { aplicado, pagoId, ...campos });
@@ -1161,6 +1161,54 @@ await check('Cada técnico lee solo sus pagos y sus adelantos (para ver el aviso
   await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-3').set(adelantoDe({ por: 'tecnico' })));
   await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
   await assertFails(fin(asOtroTecnico(), 'adelantosTecnicos').doc('adel-1').get());
+});
+
+// Descuentos con motivo a los técnicos (Finanzas y ADMIN los crean; siempre con motivo; se restan del próximo pago como un adelanto)
+const descuentoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', monto: 15, aplicado: 0, motivo: 'Equipo perdido', por: 'fina', creadoEn: 6, anulado: false, notificado: true, ...extra });
+await check('Descuento: Finanzas lo registra a su nombre, en dólares, con motivo y sin descontar nada todavía; el ADMIN también', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-1').set(descuentoDe()));
+  await assertSucceeds(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-2').set(descuentoDe({ notificado: false })));
+  await assertSucceeds(fin(asAdmin(), 'descuentosTecnicos').doc('desc-admin').set(descuentoDe({ por: 'admin', motivo: 'Multa por llegar tarde' })));
+});
+await check('Descuento: sin motivo (vacío o de más de 300 letras), sin monto, ya descontado, a nombre de otro, con campos de más o ya anulado no se guarda', async () => {
+  const intentos = [{ motivo: '' }, { motivo: 'x'.repeat(301) }, { motivo: 5 }, { monto: 0 }, { monto: -5 }, { monto: 100001 }, { monto: 'diez' }, { aplicado: 10 }, { por: 'otro' }, { extra: 1 }, { anulado: true }, { tecnico: '' }, { notificado: 'si' }, { creadoEn: 'hoy' }];
+  for (const [i, extra] of intentos.entries()) await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc(`desc-mal-${i}`).set(descuentoDe(extra)));
+  const sinMotivo = descuentoDe(); delete sinMotivo.motivo;
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-sin-motivo').set(sinMotivo));
+  await assertFails(fin(asUsuario(), 'descuentosTecnicos').doc('desc-usuario').set(descuentoDe({ por: 'usuario' })));
+  await assertFails(fin(asTecnico(), 'descuentosTecnicos').doc('desc-tecnico').set(descuentoDe({ por: 'tecnico' })));
+});
+await check('Descuento: al pagar se descuenta (solo cambia aplicado, sin pasar del monto, con su pago en el mismo lote), al anular el pago se devuelve', async () => {
+  await assertSucceeds(aplicarEnPago(asFinanzas(), 'p-de1', 'descuentosTecnicos', 'desc-1', 10));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-de-x1', 'descuentosTecnicos', 'desc-1', 20));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-de-x2', 'descuentosTecnicos', 'desc-1', -1));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-de-x3', 'descuentosTecnicos', 'desc-1', 12, { campos: { monto: 99 } }));
+  // Sin el pago en el lote, con el pago de otro técnico, o con un pago que no lo trae en su lista de descuentos, no se descuenta nada.
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-1').update({ aplicado: 12 }));
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-1').update({ aplicado: 12, pagoId: 'p-de1' }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-de-x4', 'descuentosTecnicos', 'desc-1', 12, { tecnico: 'REINEL BRAVO' }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-de-x5', 'descuentosTecnicos', 'desc-1', 12, { descuentosManuales: [] }));
+  // Devolverlo sin anular el pago tampoco.
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-1').update({ aplicado: 0, pagoId: 'p-de1' }));
+  await assertSucceeds(anularConPago(asFinanzas(), 'p-de1', 'descuentosTecnicos', 'desc-1', 0));
+});
+await check('Descuento: se anula solo si no se descontó nada, a nombre de quien lo hace (Finanzas o ADMIN), y no se borra', async () => {
+  await assertSucceeds(aplicarEnPago(asFinanzas(), 'p-de2', 'descuentosTecnicos', 'desc-1', 5));
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-2').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 9 }));
+  await assertSucceeds(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-2').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertSucceeds(fin(asAdmin(), 'descuentosTecnicos').doc('desc-admin').update({ anulado: true, anuladoPor: 'admin', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-2').update({ aplicado: 5 }));
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-1').update({ motivo: 'Otro motivo' }));
+  await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-1').delete());
+});
+await check('Descuento: el técnico lee solo los suyos; no escribe ni lee los de otro', async () => {
+  const propios = (db, nombre) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection(nombre).where('tecnico', '==', 'GERARDO MOLERO').get();
+  await assertSucceeds(propios(asTecnico(), 'descuentosTecnicos'));
+  await assertFails(fin(asTecnico(), 'descuentosTecnicos').get());
+  await assertFails(fin(asTecnico(), 'descuentosTecnicos').doc('desc-1').update({ aplicado: 0 }));
+  await assertFails(fin(asOtroTecnico(), 'descuentosTecnicos').doc('desc-1').get());
+  await assertFails(fin(asUsuario(), 'descuentosTecnicos').doc('desc-1').get());
 });
 
 // Revisión de pagos (la barrera antes de Finanzas): solo el ADMIN escribe; Finanzas la lee

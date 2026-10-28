@@ -197,10 +197,11 @@ check('el aviso lleva el tipo del pago y no abre ninguna orden', [enviosFcm[0]?.
 reiniciar();
 roles['finanzas-uid'] = 'FINANZAS';
 check('FINANZAS avisa también de un adelanto', (await enviar('finanzas-uid', { ...avisoPago, title: 'Adelanto registrado', tipo: 'adelantoTecnico' })).status, 200);
+check('FINANZAS avisa también de un descuento', (await enviar('finanzas-uid', { ...avisoPago, title: 'Descuento registrado', tipo: 'descuentoTecnico' })).status, 200);
 check('pero no puede mandar el aviso de una asignación a un técnico', (await enviar('finanzas-uid', { ...avisoPago, tipo: 'nuevaAsignacion' })).status, 403);
 check('ni avisar a la oficina ni a los aprobadores', [(await enviar('finanzas-uid', { ...avisoPago, target: { type: 'oficina' } })).status, (await enviar('finanzas-uid', { ...avisoPago, target: { type: 'aprobadores' } })).status], [403, 403]);
 check('ni sin tipo', (await enviar('finanzas-uid', { ...avisoPago, tipo: undefined })).status, 403);
-check('no se envió nada de lo rechazado', enviosFcm.length, 1);
+check('no se envió nada de lo rechazado', enviosFcm.length, 2);
 
 // --- Cierre automático: las instalaciones dejan un resumen liviano para la promotora ---
 const fetchBase = globalThis.fetch;

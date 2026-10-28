@@ -25,6 +25,7 @@ function iconoPara(type) {
   if (type === 'llegada') return <MapPin className="w-4 h-4 text-teal-500 shrink-0" aria-hidden="true" />;
   if (type === 'pagoTecnico') return <Banknote className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
   if (type === 'ajusteTecnico') return <HandCoins className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
+  if (type === 'descuentoTecnico') return <HandCoins className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
   if (type === 'adelantoTecnico') return <HandCoins className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'consultaCobro') return <Banknote className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
   if (type === 'respuestaCobro') return <Banknote className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;

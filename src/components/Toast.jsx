@@ -45,7 +45,7 @@ export default function Toast({ toastMsg: entrante, onClose }) {
   const isConsultaCobro = toastMsg.type === 'consultaCobro';
   const isRespuestaCobro = toastMsg.type === 'respuestaCobro';
   const isInfraestructura = toastMsg.type === 'infraestructura';
-  const isPago = toastMsg.type === 'pagoTecnico' || toastMsg.type === 'adelantoTecnico' || toastMsg.type === 'ajusteTecnico';
+  const isPago = toastMsg.type === 'pagoTecnico' || toastMsg.type === 'adelantoTecnico' || toastMsg.type === 'descuentoTecnico' || toastMsg.type === 'ajusteTecnico';
   const accion = toastMsg.action;
 
   return (

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { armarPago, avisoDeAdelanto, avisoDeAnulacion, avisoDePago, tarifasCompletas } from '../utils/finanzas';
+import { armarPago, avisoDeAdelanto, avisoDeAnulacion, avisoDeDescuento, avisoDePago, tarifasCompletas } from '../utils/finanzas';
 import { armarAdelanto } from '../utils/adelantos';
+import { armarDescuento } from '../utils/descuentos';
 import { sendPush } from '../lib/notify';
 import { esperarConLimite } from '../utils/tiempoLimite';
 
@@ -13,6 +14,7 @@ const aLista = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 // Los pagos más recientes: alcanzan para el reporte de un mes o más y para la lista de pagos registrados.
 const MAX_PAGOS_VISIBLES = 300;
 const MAX_ADELANTOS_VISIBLES = 300;
+const MAX_DESCUENTOS_VISIBLES = 300;
 const redondear = (valor) => Math.round((Number(valor) || 0) * 100) / 100;
 
 // Lo que lleva Finanzas, en vivo mientras la pantalla está abierta: las órdenes ya pagadas del periodo elegido, las filas del registro de VN y TA del periodo, las tarifas y los últimos pagos. Son pocos documentos (solo lo que Finanzas escribe), no las órdenes: esas se leen aparte (useDatosAlmacen).
@@ -23,6 +25,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
   const [tiposMudanza, setTiposMudanza] = useState({});
   const [adelantos, setAdelantos] = useState([]);
   const [ajustes, setAjustes] = useState([]);
+  const [descuentos, setDescuentos] = useState([]);
   const [revisionesLista, setRevisionesLista] = useState([]);
   const [pagos, setPagos] = useState([]);
   const [error, setError] = useState(false);
@@ -38,6 +41,8 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       onSnapshot(query(datos('adelantosTecnicos'), orderBy('creadoEn', 'desc'), limit(MAX_ADELANTOS_VISIBLES)), (s) => setAdelantos(aLista(s)), alFallar('los adelantos')),
       // Los descuentos y bonos por órdenes corregidas: se leen todos para ver los que todavía no entraron en ningún pago.
       onSnapshot(datos('ajustesTecnicos'), (s) => setAjustes(aLista(s)), alFallar('los descuentos y bonos')),
+      // Los descuentos con motivo que se le ponen a un técnico: los más recientes alcanzan para el periodo y para lo que está por descontar.
+      onSnapshot(query(datos('descuentosTecnicos'), orderBy('creadoEn', 'desc'), limit(MAX_DESCUENTOS_VISIBLES)), (s) => setDescuentos(aLista(s)), alFallar('los descuentos')),
     ];
     return () => bajas.forEach((baja) => baja());
   }, [firebaseUser]);
@@ -122,6 +127,10 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
         const actual = ajustes.find((a) => a.id === id);
         lote.update(documento('ajustesTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto), pagoId: armado.pagoId });
       }
+      for (const { id, monto } of armado.descuentosLibres) {
+        const actual = descuentos.find((d) => d.id === id);
+        lote.update(documento('descuentosTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto), pagoId: armado.pagoId });
+      }
       await lote.commit();
     }, `Pago registrado: ${fila.tecnico}.`, 'No se pudo registrar el pago. Alguna orden pudo haberse pagado ya: revisa e intenta de nuevo.');
     if (guardado && notificar) await avisarAlTecnico(fila.tecnico, avisoDePago(armado.pago), 'pagoTecnico');
@@ -143,6 +152,23 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
   const anularAdelanto = (adelanto) => ejecutar(
     () => updateDoc(documento('adelantosTecnicos', adelanto.id), { anulado: true, anuladoPor: usuario, anuladoEn: Date.now() }),
     'Adelanto anulado.', 'No se pudo anular el adelanto.',
+  );
+
+  // Un descuento en dólares con su motivo (`entrada`: lo que devuelve parseDescuento): queda por descontar en su próximo pago.
+  const registrarDescuento = async (tecnico, entrada, { notificar = false } = {}) => {
+    const descuento = armarDescuento(tecnico, entrada, { por: usuario, ahora: Date.now(), notificar });
+    const guardado = await ejecutar(
+      () => setDoc(doc(datos('descuentosTecnicos')), descuento),
+      `Descuento registrado: ${tecnico}.`, 'No se pudo registrar el descuento.',
+    );
+    if (guardado && notificar) await avisarAlTecnico(tecnico, avisoDeDescuento(descuento), 'descuentoTecnico');
+    return guardado;
+  };
+
+  // Solo se anula un descuento que todavía no se descontó en ningún pago (las reglas también lo exigen).
+  const anularDescuento = (descuento) => ejecutar(
+    () => updateDoc(documento('descuentosTecnicos', descuento.id), { anulado: true, anuladoPor: usuario, anuladoEn: Date.now() }),
+    'Descuento anulado.', 'No se pudo anular el descuento.',
   );
 
   const anular = async (pago) => {
@@ -167,8 +193,13 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       const actual = await getDoc(documento('ajustesTecnicos', id));
       if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)), pagoId: pago.id });
     }
+    // Y con los descuentos con motivo de ese pago.
+    for (const { id, monto } of pago.descuentosManuales || []) {
+      const actual = await getDoc(documento('descuentosTecnicos', id));
+      if (actual.exists()) lote.update(actual.ref, { aplicado: Math.max(0, redondear((Number(actual.data().aplicado) || 0) - monto)), pagoId: pago.id });
+    }
     await lote.commit();
-  }, 'Pago anulado: las órdenes vuelven a estar por pagar y los adelantos, por descontar.', 'No se pudo anular el pago.');
+  }, 'Pago anulado: las órdenes vuelven a estar por pagar y los adelantos y descuentos, por descontar.', 'No se pudo anular el pago.');
 
-  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas, registros, tiposMudanza, adelantos, ajustes, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto };
+  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas, registros, tiposMudanza, adelantos, ajustes, descuentos, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto, registrarDescuento, anularDescuento };
 }
