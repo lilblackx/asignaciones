@@ -4,7 +4,7 @@ import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
 import NumeroPulso from './NumeroPulso';
 
-export default function TechnicianWorkload({ tickets, technicians, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje }) {
+export default function TechnicianWorkload({ tickets, technicians, getTecnicoColor, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje }) {
   // TECNICO solo recibe (por query scoping) su propio técnico en `technicians`,
   // así que dejarlo togglear acá nunca le da acceso al badge de otro.
   const canToggle = canEditTickets || isTecnico;
@@ -76,14 +76,14 @@ export default function TechnicianWorkload({ tickets, technicians, canEditTicket
       ))}
       {counts.map(({ id, name, activo, count }) => {
         // El estado va con punto verde o anillo gris, borde punteado y la palabra "inactivo": no depende solo del color.
-        const pillClass = `inline-flex items-center gap-2 px-2.5 py-1.5 text-[11px] max-lg:text-xs font-bold rounded-md leading-none border ${activo ? 'border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100' : 'border-dashed border-zinc-400 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400'}`;
+        const pillClass = `inline-flex items-center gap-2 px-2.5 py-1.5 text-[11px] max-lg:text-xs font-bold rounded-md leading-none ${activo ? getTecnicoColor(name) : 'border border-dashed border-zinc-400 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400'}`;
         const dot = <span className={`w-2 h-2 rounded-full shrink-0 ${activo ? 'bg-emerald-500' : 'border-2 border-zinc-500'}`} aria-hidden="true" />;
         const label = (
           <>
             {dot}
             {name}
             {!activo && <span className="font-semibold">· inactivo</span>}
-            {count > 0 && <span className="font-semibold text-zinc-600 dark:text-zinc-400"><NumeroPulso valor={count} /></span>}
+            {count > 0 && <span className="font-semibold"><NumeroPulso valor={count} /></span>}
           </>
         );
         return canToggle ? (
@@ -93,7 +93,7 @@ export default function TechnicianWorkload({ tickets, technicians, canEditTicket
             onClick={() => onToggleActivo(id, !activo)}
             aria-label={`Marcar ${name} como ${activo ? 'inactivo' : 'activo'}`}
             title={activo ? 'Activo - click para marcar inactivo' : 'Inactivo - click para marcar activo'}
-            className={`${pillClass} max-lg:min-h-11 max-lg:px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer`}
+            className={`${pillClass} max-lg:min-h-11 max-lg:px-3 hover:brightness-95 dark:hover:brightness-125 cursor-pointer`}
           >
             {label}
           </button>
