@@ -7,6 +7,7 @@ import { BOTON, CHIP, ESTADO, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './est
 import { agruparOrdenes, bolivares, cifrasResumenPagado, dolares, frasePagado, grupoDePago, textoGrupos, textoOrdenes } from '../../utils/finanzas';
 import { diaDe } from '../../utils/totalesMes';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
+import InsigniaJM from '../InsigniaJM';
 
 // El reporte de Finanzas: lo que se pagó en el periodo, por técnico (cuánto y por cuántas órdenes), en filas grandes y sin cajas. "Ver órdenes" muestra las órdenes ya pagadas del
 // técnico agrupadas como en los reportes, con la marca Pagada. `ordenesPagadas`: las órdenes ya pagadas del periodo (ordenesYaPagadas).
@@ -66,6 +67,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                                         <button type="button" onClick={() => setDetalle(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button>
                                       ) : <span className="font-bold">{item.orden.codigo || 'S/C'}</span>}
                                       {item.orden.nombre ? ` · ${item.orden.nombre}` : ''}
+                                      <InsigniaJM orden={item.orden} className="ml-2" />
                                     </span>
                                     <span className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {grupoDePago(item.concepto)}</span>
                                   </span>

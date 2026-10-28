@@ -3,6 +3,7 @@ import { BOTON, BOTON_FILA, BOTON_GRANDE, CHIP, ESTADO, ETIQUETA, TEXTO_SUAVE, T
 import { aBs, agruparOrdenes, bolivares, conceptosSinTarifa, desglosePorConcepto, dolares, estadoDeAdelanto, estadoDeFila, fechaHoraLegiblePago, grupoDePago, textoDatosPago, textoGrupos, textoOrdenes, tienePorPagar } from '../../utils/finanzas';
 import { saldoAdelanto, sePuedeAnularAdelanto } from '../../utils/adelantos';
 import { sePuedeAnularDescuento } from '../../utils/descuentos';
+import InsigniaJM from '../InsigniaJM';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 
 // Todo lo de un técnico en una sola pantalla, sin cajas: cuánto se le debe (en grande), lo que se paga por concepto con cantidad, precio y subtotal en $ y Bs, los adelantos,
@@ -139,7 +140,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
                   {g.items.map((item) => (
                     <li key={item.clave} className="py-2.5 flex items-center justify-between gap-3">
                       <span className="min-w-0">
-                        <span className="block text-sm text-zinc-900 dark:text-zinc-100 break-words"><button type="button" onClick={() => onVerOrden(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button> · {item.orden.nombre}</span>
+                        <span className="block text-sm text-zinc-900 dark:text-zinc-100 break-words"><button type="button" onClick={() => onVerOrden(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button> · {item.orden.nombre} <InsigniaJM orden={item.orden} className="ml-1" /></span>
                         <span className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {grupoDePago(item.concepto)}</span>
                         {descuentosDe(item).map((a) => (
                           <span key={a.id} className="block text-xs font-bold text-sky-800 dark:text-sky-300">Descuento por la garantía {a.codigo || 's/c'} (de {a.a}): − {dolares(saldoAdelanto(a))} → cobra {dolares(Math.max(0, (tarifas[item.concepto] || 0) - saldoAdelanto(a)))}</span>

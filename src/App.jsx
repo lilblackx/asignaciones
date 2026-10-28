@@ -88,7 +88,7 @@ const EMPTY_FORM = () => ({
   fechaProgramada: '',
   codigo: '', nombre: '', cedula: '', tipoDocumento: 'V', direccion: '', telefono: '', nap: '', napCoordenadas: '', ubicacion: '',
   tipoTrabajo: 'AVERÍA', falla: '', tecnico: '', observacion: '', observacionInterna: false, estado: 'PENDIENTE',
-  plantillaOriginal: '', ventaTecnico: '', promotora: '', garantiaDe: null
+  plantillaOriginal: '', ventaTecnico: '', promotora: '', garantiaDe: null, olt: ''
 });
 
 // Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).

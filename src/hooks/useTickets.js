@@ -31,6 +31,9 @@ import { payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
+import { buscarClienteSmartOlt } from '../lib/smartolt';
+import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
+import { oltUnica } from '../utils/olt';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -191,6 +194,26 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     marcarEnvioInventario(ticket.id)
       .then(() => llamarInventario('/inventario/enviar', ticket.id))
       .catch((error) => console.warn('No se pudo iniciar el envío al inventario:', error));
+  };
+
+  // La OLT del cliente se guarda en la orden al crearla (con la cédula buscada en SmartOLT). Las que no la tienen (una instalación con la
+  // plantilla de la promotora: el cliente aún no estaba en la OLT) la toman al aprobarse o finalizarse, cuando el cliente ya existe. Va en segundo
+  // plano y solo escribe si la orden sigue sin OLT y con la misma cédula: nunca frena ni ensucia el cierre.
+  const completarOlt = (ticket) => {
+    const digitos = soloDigitos(ticket?.cedula);
+    if (!firebaseUser || !ticket?.id || ticket.olt || digitos.length < MIN_DIGITOS_CEDULA) return;
+    buscarClienteSmartOlt(digitos)
+      .then(async (onus) => {
+        const olt = oltUnica(onus);
+        if (!olt) return;
+        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id);
+        await runTransaction(db, async (tx) => {
+          const actual = await tx.get(ref);
+          if (!actual.exists() || actual.data().olt || soloDigitos(actual.data().cedula) !== digitos) return;
+          tx.update(ref, { olt });
+        });
+      })
+      .catch((error) => console.warn('No se pudo guardar la OLT del cliente:', error));
   };
 
   // Mismo criterio que el listener de abajo (nueva asignación / pre-finalizado /
@@ -826,6 +849,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     const armarTicket = (codigo) => {
       const ticketToSave = { ...editingTicket, nombre: nombrePersona(editingTicket.nombre), direccion: direccionCliente(editingTicket.direccion), codigo, potenciaDbm: potencia.valor ?? null, ubicacion: ubicacion.valor || '', napCoordenadas: napCoordenadas.valor || '' };
+      // Otra cédula es otro cliente: la OLT guardada ya no vale (se vuelve a llenar al buscarlo o al aprobar o finalizar la orden).
+      if (originalTicket?.olt && soloDigitos(originalTicket.cedula) !== soloDigitos(editingTicket.cedula)) ticketToSave.olt = '';
       // Sin el check de garantía (o sin original elegida) la orden no lleva ese campo.
       if (!ticketToSave.garantiaDe?.id) delete ticketToSave.garantiaDe;
       // Fecha en que se finalizó (la usa el módulo de materiales para filtrar por período).
@@ -1181,6 +1206,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     setToastMsg({ type: 'success', text: 'Orden aprobada y finalizada con éxito.' });
     notifyTicketChange(ticket, updatedTicket);
     enviarAlInventario(updatedTicket);
+    completarOlt(updatedTicket);
     return true;
   };
 
@@ -1250,6 +1276,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     setToastMsg({ type: 'success', text: 'Orden finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
     enviarAlInventario(updatedTicket);
+    completarOlt(updatedTicket);
     return true;
   };
 

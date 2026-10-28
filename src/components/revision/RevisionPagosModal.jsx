@@ -44,8 +44,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
 
   // Todo lo que se revisa (sin lo ya pagado), con su estado. El filtro de técnico se aplica al técnico efectivo (el corregido, si lo hay).
   const todos = useMemo(
-    () => revisar(itemsParaRevisar({ ordenes, rango: rangoRevision, registros: datos.registros, tiposMudanza: datos.tiposMudanza }), datos.revisiones).filter((i) => !datos.idsPagadas.has(i.clave)),
-    [ordenes, rangoRevision, datos.registros, datos.tiposMudanza, datos.revisiones, datos.idsPagadas],
+    () => revisar(itemsParaRevisar({ ordenes, rango: rangoRevision, rangoElegido: rango, registros: datos.registros, tiposMudanza: datos.tiposMudanza }), datos.revisiones).filter((i) => !datos.idsPagadas.has(i.clave)),
+    [ordenes, rangoRevision, rango, datos.registros, datos.tiposMudanza, datos.revisiones, datos.idsPagadas],
   );
   const delTecnico = useMemo(() => todos.filter((i) => !tecnico || i.tecnico === tecnico), [todos, tecnico]);
   // Una orden con descuento no se paga como orden a nadie: solo mueve ese monto de un técnico a otro (se ve en su fila).

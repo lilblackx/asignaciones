@@ -79,6 +79,7 @@ export function camposDeOnu(onu, cedula) {
     telefono: tel,
     nap: napDeOnu(onu),
     ubicacion: onu.latitud != null && onu.longitud != null ? `${onu.latitud}, ${onu.longitud}` : '',
+    olt: String(onu.olt || '').trim(),
   };
   return Object.fromEntries(Object.entries(campos).filter(([, v]) => v));
 }

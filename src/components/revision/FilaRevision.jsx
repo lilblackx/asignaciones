@@ -12,6 +12,7 @@ import { diaLegible } from '../../utils/periodoReporte';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import Boton from '../Boton';
 import Chip from '../Chip';
+import InsigniaJM from '../InsigniaJM';
 
 // Una orden en la revisión de pagos: lo que se paga por ella, su estado y las acciones del administrador (aprobar, retener, excluir, corregir o volver a pendiente). Retener y excluir
 // piden un motivo y corregir deja elegir otro técnico y otro concepto: esos formularios se despliegan debajo de la fila. Una garantía de otro técnico (o cualquier orden, si la oficina olvidó marcarla) se
@@ -89,6 +90,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           <p className="text-sm text-zinc-900 dark:text-zinc-100 break-words">
             <button type="button" onClick={() => onVerOrden(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button>
             {item.orden.nombre ? ` · ${item.orden.nombre}` : ''}
+            <InsigniaJM orden={item.orden} className="ml-2" />
           </p>
           <p className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {item.concepto ? nombreConcepto(item.concepto) : <span className="font-bold text-amber-700 dark:text-amber-300">Sin concepto: corrígela</span>}</p>
           {esGarantiaDeOtro && item.descuento <= 0 && !item.garantiaSinDescuento && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Garantía de otro técnico: de la orden {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}). Decide si se le descuenta algo antes de aprobarla.</p>}

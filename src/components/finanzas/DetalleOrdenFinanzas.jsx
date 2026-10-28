@@ -8,6 +8,7 @@ import { fechaHoraLegible } from '../../utils/formatoFecha';
 import { culminadaEn } from '../../utils/reporteMensual';
 import { aBs, bolivares, dolares, grupoDePago } from '../../utils/finanzas';
 import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
+import InsigniaJM from '../InsigniaJM';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
@@ -49,7 +50,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
 
   return (
     <VentanaFinanzas titulo={orden.codigo || 'S/C'} estado={{ texto: registro ? 'Registro' : item.pagada ? 'Pagada' : 'Por pagar', clase: item.pagada ? 'bg-emerald-700 text-white' : 'bg-amber-400 text-black' }} onClose={onClose} pie={pie} zIndexClass="z-[70]">
-          <p className="text-lg font-bold text-zinc-900 dark:text-white break-words -mb-1">{orden.nombre || 'Sin nombre'}</p>
+          <p className="text-lg font-bold text-zinc-900 dark:text-white break-words -mb-1">{orden.nombre || 'Sin nombre'} <InsigniaJM orden={orden} className="ml-1" /></p>
           {registro ? (
             <div className="grid grid-cols-2 gap-4">
               <Dato etiqueta="Trabajo realizado">{TRABAJOS_VNTA[registro.trabajo]?.nombre}</Dato>

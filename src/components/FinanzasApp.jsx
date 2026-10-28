@@ -68,8 +68,8 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   const rangoDeuda = useMemo(() => rangoPagable(rango), [rango]);
   // Finanzas solo ve lo que un administrador aprobó (ver el módulo Revisión de órdenes) y lo que ya se pagó. `revisados` trae todo con su estado de revisión.
   const revisados = useMemo(
-    () => revisar(itemsParaRevisar({ ordenes, rango: rangoDeuda, tecnico, registros: finanzas.registros, tiposMudanza: finanzas.tiposMudanza }), finanzas.revisiones),
-    [ordenes, rangoDeuda, tecnico, finanzas.registros, finanzas.tiposMudanza, finanzas.revisiones],
+    () => revisar(itemsParaRevisar({ ordenes, rango: rangoDeuda, rangoElegido: rango, tecnico, registros: finanzas.registros, tiposMudanza: finanzas.tiposMudanza }), finanzas.revisiones),
+    [ordenes, rangoDeuda, rango, tecnico, finanzas.registros, finanzas.tiposMudanza, finanzas.revisiones],
   );
   const items = useMemo(() => paraFinanzas(revisados, finanzas.idsPagadas), [revisados, finanzas.idsPagadas]);
   // Lo que todavía espera la revisión del administrador (no está aprobado, retenido ni excluido).

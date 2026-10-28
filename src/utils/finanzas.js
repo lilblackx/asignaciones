@@ -60,6 +60,33 @@ export const textoFechaCorte = (corte = FECHA_CORTE) => {
 
 // El periodo elegido sin los días anteriores a la fecha de corte; si todo el periodo es anterior, queda vacío (desde mayor que hasta).
 export const rangoPagable = (rango, corte = FECHA_CORTE) => ({ desde: corte && rango.desde < corte ? corte : rango.desde, hasta: rango.hasta });
+// Órdenes de antes del corte que, por esta vez, sí se revisan y se pagan (se terminaron antes del 26/10/2026 y quedaron sin pagar). Solo se ofrecen
+// cuando el periodo elegido incluye su día: la revisión y los pagos se leen por día, así que fuera de ese periodo no se vería si ya se aprobaron o pagaron.
+// Una vez pagadas dejan de salir solas; esta lista se puede vaciar después.
+export const ORDENES_FUERA_DEL_CORTE = [
+  { codigo: 'AO268', tecnico: 'JOSE' },
+  { codigo: 'AO270', tecnico: 'JOSE' },
+  { codigo: 'IO101', tecnico: 'JOSE' },
+];
+
+// Las órdenes de esa lista que caen en el periodo elegido (sin el recorte del corte) y son anteriores al corte; las demás ya entran por ordenesPagables.
+// Mismo formato que ordenesPagables.
+export function ordenesFueraDelCorte(ordenes, rango, { tecnico, tiposMudanza = null, excepciones = ORDENES_FUERA_DEL_CORTE, corte = FECHA_CORTE } = {}) {
+  if (!rango || !corte || excepciones.length === 0) return [];
+  const clave = (codigo, tec) => `${String(codigo || '').trim().toUpperCase()}|${String(tec || '').trim().toUpperCase()}`;
+  const permitidas = new Set(excepciones.map((e) => clave(e.codigo, e.tecnico)));
+  const lista = [];
+  for (const hoja of ['INSTALACIONES', 'VISITAS', 'AVERIAS']) {
+    for (const orden of ordenesDeHoja(ordenes, hoja, rango, { tecnico })) {
+      const dia = diaDe(fechaDeHoja(orden));
+      if (dia >= corte || !permitidas.has(clave(orden.codigo, orden.tecnico))) continue;
+      const concepto = conceptoDePago(orden, hoja, tiposMudanza);
+      if (concepto) lista.push({ orden, clave: claveOrden(orden), concepto, tecnico: String(orden.tecnico || '').trim() || SIN_TECNICO, dia });
+    }
+  }
+  return lista;
+}
+
 // Una operación por lote de Firestore es de 500: el pago y sus órdenes caben en uno solo.
 export const MAX_ORDENES_POR_PAGO = 450;
 // El pago, cada orden pagada y cada fila de VN y TA que se marca: todo va en el mismo lote.

@@ -1,6 +1,6 @@
 // Prueba la barrera de revisión de pagos (src/utils/revisionPagos.js): qué se revisa, la firma que invalida una aprobación cuando la orden cambia, las acciones del administrador
 // (aprobar, retener, excluir, corregir), qué pasa a Finanzas y los resúmenes. No necesita el emulador. Uso: `node scripts/test-revision-pagos.mjs`.
-import { SIN_TECNICO, claveOrden, tarifasCompletas } from '../src/utils/finanzas.js';
+import { SIN_TECNICO, claveOrden, ordenesFueraDelCorte, rangoPagable, tarifasCompletas } from '../src/utils/finanzas.js';
 import {
   aprobarPendientes, armarRevision, firmaDeItem, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar,
 } from '../src/utils/revisionPagos.js';
@@ -91,6 +91,26 @@ const tarifas = tarifasCompletas({ INSTALACION: 25, AVERIA: 4, VALIDACION_NAP: 2
 const resumen = resumenRevision(revisadas([aprobarInst, retener]), (i) => tarifas[i.concepto] || 0);
 check('el resumen cuenta y suma por estado', [resumen.APROBADA, resumen.RETENIDA, resumen.PENDIENTE.cantidad, resumen.EXCLUIDA.cantidad], [{ cantidad: 1, total: 25 }, { cantidad: 1, total: 4 }, 3, 0]);
 check('lo ya pagado no cuenta en el resumen', resumenRevision(sinRevisar, (i) => tarifas[i.concepto] || 0, new Set([claveOrden(inst)])).PENDIENTE.cantidad, sinRevisar.length - 1);
+
+// --- Órdenes de antes del corte que se ofrecen por esta vez (ORDENES_FUERA_DEL_CORTE) ---
+const vieja = (codigo, extra) => averia({ codigo, tecnico: 'JOSE', createdAt: Date.UTC(2026, 9, 22, 15), finalizadoEn: Date.UTC(2026, 9, 22, 18), ...extra });
+const ao268 = vieja('AO268', { tipoTrabajo: 'AVERÍA', falla: 'LOS', tipoVisita: 'CONECTOR_EXTERNO' });
+const otraVieja = vieja('AO999', { tipoTrabajo: 'AVERÍA' });
+const deOtro = vieja('AO270', { tecnico: 'GERARDO', tipoTrabajo: 'AVERÍA' });
+const periodo = (desde, hasta) => ({ desde, hasta });
+const conExcepcion = (r) => itemsParaRevisar({ ordenes: [ao268, otraVieja, deOtro, inst], rango: rangoPagable(r), rangoElegido: r }).map((i) => i.orden.codigo).sort();
+check('con el periodo que incluye el 22/10 entra la orden de la lista, solo esa y solo del técnico indicado', conExcepcion(periodo('2026-10-20', '2026-10-31')), ['AO268', inst.codigo].sort());
+check('con un periodo desde el corte no entra: la revisión y los pagos de ese día no se leerían', conExcepcion(periodo('2026-10-26', '2026-10-31')), [inst.codigo]);
+check('sin periodo elegido no entra ninguna', itemsParaRevisar({ ordenes: [ao268], rango: rangoPagable(periodo('2026-10-20', '2026-10-31')) }).length, 0);
+check('el concepto y el día son los de siempre', ordenesFueraDelCorte([ao268], periodo('2026-10-20', '2026-10-31')).map((i) => [i.concepto, i.dia, i.tecnico]), [['AVERIA', '2026-10-22', 'JOSE']]);
+check('una orden de la lista que ya es posterior al corte no se duplica', ordenesFueraDelCorte([vieja('AO268', { finalizadoEn: DIA(27), createdAt: DIA(27), tipoTrabajo: 'AVERÍA' })], periodo('2026-10-20', '2026-10-31')).length, 0);
+check('una vez revisada y aprobada pasa a Finanzas como cualquier otra', (() => {
+  const elegido = periodo('2026-10-20', '2026-10-31');
+  const [item] = itemsParaRevisar({ ordenes: [ao268], rango: rangoPagable(elegido), rangoElegido: elegido });
+  const doc = armarRevision(revisar([item])[0], 'APROBAR', { por: 'admin', ahora: 1 });
+  const aprobada = revisar([item], { [doc.id]: doc.datos });
+  return paraFinanzas(aprobada).map((i) => i.orden.codigo);
+})(), ['AO268']);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

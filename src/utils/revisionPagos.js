@@ -6,7 +6,7 @@
 //   estado: 'PENDIENTE' (solo con una corrección guardada), 'APROBADA' (pasa a Finanzas), 'RETENIDA' (no pasa por ahora, con motivo) o 'EXCLUIDA' (no se paga, con motivo).
 //   firma: huella de lo que decide el pago de esa orden (técnico, tipo de trabajo, cobro, estado, día y concepto). Si la orden cambia después, la firma ya no coincide y la
 //   aprobación (y las correcciones) dejan de valer: vuelve a "Pendiente".
-import { CONCEPTOS_PAGO, SIN_TECNICO, mudanzasSinTipo, ordenesPagables } from './finanzas.js';
+import { CONCEPTOS_PAGO, SIN_TECNICO, mudanzasSinTipo, ordenesFueraDelCorte, ordenesPagables } from './finanzas.js';
 import { ajustesDeOrden, idsAjustesDeOrden } from './ajustes.js';
 
 export const ESTADOS_REVISION = ['PENDIENTE', 'APROBADA', 'RETENIDA', 'EXCLUIDA'];
@@ -44,8 +44,11 @@ export function firmaDeItem(item) {
 
 // Lo que se revisa: lo que hoy llegaría a Finanzas más las mudanzas finalizadas que todavía no tienen tipo (el administrador les elige el concepto al corregirlas).
 // `registros`: filas de VN y TA del periodo; `tiposMudanza`: lo que Finanzas ya eligió para mudanzas de un cierre.
-export function itemsParaRevisar({ ordenes, rango, tecnico = '', registros = [], tiposMudanza = null }) {
+// `rangoElegido`: el periodo tal como se eligió, sin el recorte del corte; con él entran las órdenes de la excepción (ver ORDENES_FUERA_DEL_CORTE).
+export function itemsParaRevisar({ ordenes, rango, rangoElegido = null, tecnico = '', registros = [], tiposMudanza = null }) {
   const pagables = ordenesPagables(ordenes, rango, { tecnico, registros, tiposMudanza });
+  const claves = new Set(pagables.map((i) => i.clave));
+  pagables.push(...ordenesFueraDelCorte(ordenes, rangoElegido, { tecnico, tiposMudanza }).filter((i) => !claves.has(i.clave)));
   const sinTipo = mudanzasSinTipo(ordenes, rango, { tecnico, tiposMudanza }).map((i) => ({ ...i, concepto: null }));
   return [...pagables, ...sinTipo].sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
 }
