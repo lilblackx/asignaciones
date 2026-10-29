@@ -20,6 +20,7 @@ import { NOTA_HORAS, cifrasDeTramos, colasDeLaOficina, columnasPorTecnico, colum
 import { HOJAS, armarHoja, columnasMaterialesVisitas, filasMaterialesVisitas } from './reporteMensual.js';
 import { cifrasVnTa, columnasEstadisticaVnTa, columnasVnTa, estadisticaRegistros, filaVnTa, filasEstadisticaVnTa, ordenarRegistros } from './registroVnTa.js';
 import { cifrasPagosClientes, columnasPagosClientes, filaPagoCliente, pagosClientesDelPeriodo, resumenPorForma } from './pagoCliente.js';
+import { cobrosDelPeriodo, columnasCobros, filaCobro, resumenCobros as resumenCobrosClientes } from './cobrosClientes.js';
 import { NOTA_PAGOS, adelantosDelPeriodo, columnasAdelantos, filaAdelanto, descuentosDelPeriodo, columnasDescuentos, filaDescuento, cifrasPagos, cifrasResumenPagado, columnasPagosRegistrados, columnasPagosTecnico, columnasResumenPagado, filaPagoRegistrado, filaPagoTecnico, filaResumenPagado, pagosDelPeriodo, resumenPagado, sumaPagado } from './finanzas.js';
 import { etiquetaMes } from './totalesMes.js';
 import { mesesDeLaTendencia, tendenciaMensual, textoVariacion } from './tendenciaMensual.js';
@@ -333,17 +334,21 @@ export function documentoPagosTecnicos(ctx) {
   ]);
 }
 
-// Finanzas: lo que pagaron los clientes por las instalaciones y los cambios de equipo (lo registra el técnico), con todos los datos de cada pago.
+// Finanzas: los cobros emitidos a los clientes (y si Administración ya los cargó en el portal) y el historial de los pagos que registraron los técnicos de instalaciones y cambios de equipo.
 export function documentoPagosClientes(ctx) {
-  const { rango, tecnico, pagosClientes = [] } = ctx;
-  const pagos = pagosClientesDelPeriodo(pagosClientes, rango, { tecnico });
+  const { rango, tecnico, pagosClientes = [], cobrosClientes = [] } = ctx;
+  const cobros = cobrosDelPeriodo(cobrosClientes, rango, { tecnico });
+  const resumen = resumenCobrosClientes(cobros);
+  const pagos = pagosClientesDelPeriodo(pagosClientes.filter((p) => p.pago), rango, { tecnico });
   const porForma = resumenPorForma(pagos);
   return encabezado('Pagos de clientes', rango, tecnico, ctx, [
-    { tipo: 'cifras', items: cifrasPagosClientes(pagos) },
+    { tipo: 'cifras', titulo: 'Cobros emitidos', items: [{ etiqueta: 'Cobros emitidos', valor: String(resumen.PENDIENTE.cantidad + resumen.CARGADO.cantidad) }, { etiqueta: 'Cargados en el portal', valor: String(resumen.CARGADO.cantidad) }, { etiqueta: 'Pendientes por cargar', valor: String(resumen.PENDIENTE.cantidad) }, { etiqueta: 'Con cambio de monto', valor: String(resumen.alertas) }] },
+    { tipo: 'tabla', titulo: `Cobros emitidos (${cobros.length})`, columnas: columnasCobros(), filas: cobros.map(filaCobro), vacio: 'Ningún cobro emitido en este periodo.' },
+    { tipo: 'cifras', titulo: 'Pagos registrados por los técnicos', items: cifrasPagosClientes(pagos) },
     { tipo: 'tabla', titulo: 'Por forma de pago', columnas: [{ titulo: 'Forma' }, { titulo: 'Pagos', derecha: true }, { titulo: 'Dólares', derecha: true }, { titulo: 'Bolívares', derecha: true }],
       filas: porForma.map((f) => [f.forma, String(f.cantidad), f.USD ? `${String(f.USD).replace('.', ',')} $` : '', f.BS ? `${String(f.BS).replace('.', ',')} Bs` : '']), vacio: 'Ningún pago registrado en este periodo.' },
     { tipo: 'tabla', titulo: `Pagos de instalaciones y cambios de equipo (${pagos.length})`, columnas: columnasPagosClientes(), filas: pagos.map(filaPagoCliente), vacio: 'Ningún pago de clientes en este periodo.' },
-    { tipo: 'texto', texto: 'Son los pagos que el técnico registró por cada instalación y cada cambio de equipo, tal como los escribió. Un pago "sin pagar todavía" es una orden donde el técnico dijo que el cliente paga después.' },
+    { tipo: 'texto', texto: 'Los cobros se emiten al finalizarse cada orden con cobro y cada instalación; Administración los sube al portal de la empresa y los marca como cargados. Los pagos registrados son los que los técnicos anotaron antes de ese cambio, tal como los escribieron.' },
   ]);
 }
 

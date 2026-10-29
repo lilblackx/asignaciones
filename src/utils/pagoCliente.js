@@ -337,17 +337,14 @@ export const filaPagoCliente = (p) => [
   p.pago?.referencia || '', p.pago?.cuentaEmpresa || '', montoPago(p), [p.nota, p.compartidoCon ? `Pagó junto con ${p.compartidoCon.codigo}` : ''].filter(Boolean).join(' | '),
 ];
 
-// Las cifras de arriba de la sección: cuántos pagos, lo recibido en cada moneda y cuántos faltan por pagar.
+// Las cifras de arriba del historial: cuántos pagos y lo recibido en cada moneda.
 export function cifrasPagosClientes(pagos) {
-  const r = resumenPagos(pagos);
   const registrados = (pagos || []).filter((p) => p.pago);
   const monto = (moneda) => textoMonto(formatoMontoBs(registrados.filter((p) => p.pago.moneda === moneda).reduce((s, p) => s + (Number(p.pago.monto) || 0), 0)), moneda);
-  const sinPago = r[ESTADO_PAGO.PENDIENTE].cantidad;
   return [
     { etiqueta: 'Pagos registrados', valor: String(registrados.length) },
     { etiqueta: 'Recibido en dólares', valor: monto(MONEDA_USD) },
     { etiqueta: 'Recibido en bolívares', valor: monto(MONEDA_BS) },
-    { etiqueta: 'Sin pagar todavía', valor: String(sinPago), detalle: sinPago > 0 ? 'el cliente paga después' : '' },
   ];
 }
 

@@ -3,7 +3,8 @@ import { collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, se
 import { db, appId } from '../lib/firebase';
 import { armarPago, avisoDeAdelanto, avisoDeAnulacion, avisoDeDescuento, avisoDePago, tarifasCompletas } from '../utils/finanzas';
 import { armarAdelanto } from '../utils/adelantos';
-import { armarDescuento } from '../utils/descuentos';
+import { armarPlanDescuentos } from '../utils/descuentos';
+import { diaDe } from '../utils/totalesMes';
 import { sendPush } from '../lib/notify';
 import { esperarConLimite } from '../utils/tiempoLimite';
 
@@ -154,14 +155,22 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     'Adelanto anulado.', 'No se pudo anular el adelanto.',
   );
 
-  // Un descuento en dólares con su motivo (`entrada`: lo que devuelve parseDescuento): queda por descontar en su próximo pago.
-  const registrarDescuento = async (tecnico, entrada, { notificar = false } = {}) => {
-    const descuento = armarDescuento(tecnico, entrada, { por: usuario, ahora: Date.now(), notificar });
+  // Un descuento en dólares con su motivo (`entrada`: lo que devuelve parseDescuento): queda por descontar en su próximo pago. Con `programacion` (lo que devuelve parseProgramacion) entra desde esa fecha,
+  // en una o varias cuotas (el monto es el total): se guardan todos juntos y solo se avisa al técnico una vez, al programarlo.
+  const registrarDescuento = async (tecnico, entrada, { notificar = false, programacion = null } = {}) => {
+    const ahora = Date.now();
+    const hoy = diaDe(ahora);
+    const lista = armarPlanDescuentos(tecnico, entrada, programacion || { desde: hoy, cuotas: 1, frecuencia: '' }, { por: usuario, ahora, notificar, hoy });
+    const programado = lista.length > 1 || Boolean(lista[0].desde);
     const guardado = await ejecutar(
-      () => setDoc(doc(datos('descuentosTecnicos')), descuento),
-      `Descuento registrado: ${tecnico}.`, 'No se pudo registrar el descuento.',
+      async () => {
+        const lote = writeBatch(db);
+        for (const d of lista) lote.set(doc(datos('descuentosTecnicos')), d);
+        await lote.commit();
+      },
+      programado ? `Descuento programado: ${tecnico}.` : `Descuento registrado: ${tecnico}.`, 'No se pudo registrar el descuento.',
     );
-    if (guardado && notificar) await avisarAlTecnico(tecnico, avisoDeDescuento(descuento), 'descuentoTecnico');
+    if (guardado && notificar) await avisarAlTecnico(tecnico, avisoDeDescuento(lista[0]), 'descuentoTecnico');
     return guardado;
   };
 

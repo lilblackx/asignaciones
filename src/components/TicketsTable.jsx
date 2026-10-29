@@ -14,7 +14,6 @@ import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
-import InsigniaPagoPendiente from './InsigniaPagoPendiente';
 import InsigniaGarantia from './InsigniaGarantia';
 import BotonVerDetalle from './BotonVerDetalle';
 import CodigoOrden from './CodigoOrden';
@@ -61,7 +60,7 @@ export default function TicketsTable({
   filasCambiadas,
   onIniciarViaje,
   onLlegue,
-  onCancelarViaje, pagosPendientes = null
+  onCancelarViaje
 }) {
   // Una orden que el técnico pre-finaliza sube a su lugar deslizándose (solo en PC).
   const cuerpo = useRef(null);
@@ -185,7 +184,6 @@ export default function TicketsTable({
                     <div className="flex flex-wrap items-center gap-1">
                       <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
                       <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
-                      <InsigniaPagoPendiente ticket={ticket} pagosPendientes={pagosPendientes} />
                       {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                     </div>
                     {ticket.falla !== ticket.tipoTrabajo && ticket.falla}

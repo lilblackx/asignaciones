@@ -55,7 +55,7 @@ export default function Header({
   };
 
   return (
-    <header className="bg-black/80 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b-4 border-red-600 lg:h-[62px]">
+    <header className="bg-black text-white shadow-md sticky top-0 z-10 border-b-4 border-red-600 lg:h-[62px]">
       <div className="px-3 min-[360px]:px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
           {isAdmin && (

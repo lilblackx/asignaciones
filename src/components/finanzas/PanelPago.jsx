@@ -5,7 +5,7 @@ import NumeroPulso from '../NumeroPulso';
 import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
 import CampoBanco from './CampoBanco';
-import { BOTON, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
+import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
 import CampoFecha from '../CampoFecha';
 import CampoHora from '../CampoHora';
 import { aBs, bolivares, dolares, textoOrdenes } from '../../utils/finanzas';
@@ -122,7 +122,7 @@ export default function PanelPago({ fila, rango, tasa, ocupado, onConfirmar, onV
         <button type="button" onClick={confirmar} disabled={ocupado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
           {ocupado ? <Spinner /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />} Confirmar pago
         </button>
-        <button type="button" onClick={onVolver} disabled={ocupado} className={BOTON}>Cancelar</button>
+        <button type="button" onClick={onVolver} disabled={ocupado} className={BOTON_CON_BORDE_GRANDE}>Cancelar</button>
       </div>
     </div>
   );

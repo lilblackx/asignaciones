@@ -1,6 +1,6 @@
 // Prueba los descuentos con motivo a un técnico (src/utils/descuentos.js y lo que usan de finanzas.js): validación del monto y del motivo, el descuento junto a los adelantos y las garantías,
 // lo que queda como saldo, el pago que los lleva, el aviso al técnico y las tablas de los reportes. No necesita el emulador. Uso: `node scripts/test-descuentos.mjs`.
-import { MAX_MOTIVO, armarDescuento, parseDescuento, parseMontoDescuento, saldoTrasDescuento, sePuedeAnularDescuento } from '../src/utils/descuentos.js';
+import { FRECUENCIAS, MAX_CUOTAS, MAX_MOTIVO, aplicaYa, armarDescuento, armarPlanDescuentos, estaProgramado, fechaValida, parseDescuento, parseProgramacion, planDeCuotas, textoCuota, parseMontoDescuento, saldoTrasDescuento, sePuedeAnularDescuento } from '../src/utils/descuentos.js';
 import {
   armarPago, avisoDeDescuento, avisoDePago, columnasDescuentos, descuentosDelPeriodo, estadoDeDescuento, estadoDeFila, filaDescuento, ordenesPagables, resumenPagos, tarifasCompletas, totalPendiente,
 } from '../src/utils/finanzas.js';
@@ -65,7 +65,57 @@ check('el aviso al técnico lleva el monto y el motivo', avisoDeDescuento({ mont
 const lista = [descuento('d1', 15, { creadoEn: DIA(28) }), descuento('d2', 5, { creadoEn: DIA(29), tecnico: 'LUIS' }), descuento('d3', 9, { creadoEn: DIA(5) })];
 check('los descuentos del periodo, del más reciente al más viejo, y del técnico si se elige', [descuentosDelPeriodo(lista, rango).map((d) => d.id), descuentosDelPeriodo(lista, rango, { tecnico: 'gerardo' }).map((d) => d.id)], [['d2', 'd1'], ['d1']]);
 check('el estado de un descuento', [estadoDeDescuento(descuento('a', 10)), estadoDeDescuento(descuento('a', 10, { aplicado: 4 })), estadoDeDescuento(descuento('a', 10, { aplicado: 10 })), estadoDeDescuento(descuento('a', 10, { anulado: true }))], ['Por descontar', 'Descontado en parte (4,00 $)', 'Descontado', 'Anulado']);
-check('la tabla de los reportes lleva fecha, técnico, monto, motivo, quién y estado', [columnasDescuentos().map((c) => c.titulo), filaDescuento(descuento('d1', 15, { creadoEn: DIA(28) })).slice(1)], [['Fecha y hora', 'Técnico', 'Monto', 'Motivo', 'Registrado por', 'Estado'], ['GERARDO', '15,00 $', 'Equipo perdido', 'fina', 'Por descontar']]);
+check('la tabla de los reportes lleva fecha, técnico, monto, desde cuándo aplica, motivo, quién y estado', [columnasDescuentos().map((c) => c.titulo), filaDescuento(descuento('d1', 15, { creadoEn: DIA(28) })).slice(1)], [['Fecha y hora', 'Técnico', 'Monto', 'Aplica desde', 'Motivo', 'Registrado por', 'Estado'], ['GERARDO', '15,00 $', '', 'Equipo perdido', 'fina', 'Por descontar']]);
+
+// --- Descuentos programados y en cuotas ---
+const HOY = '2026-10-29';
+check('fechas válidas', ['2026-11-05', '2026-02-30', '2026-13-01', '05/11/2026', '', undefined].map(fechaValida), [true, false, false, false, false, false]);
+check('la programación: hoy o después, y de 1 a 12 cuotas', [
+  parseProgramacion({ desde: '2026-11-05' }, { hoy: HOY }).valor,
+  parseProgramacion({ desde: HOY }, { hoy: HOY }).valor?.desde,
+  parseProgramacion({ desde: '2026-10-28' }, { hoy: HOY }).campo,
+  parseProgramacion({ desde: '', cuotas: 1 }, { hoy: HOY }).campo,
+  parseProgramacion({ desde: '2026-11-05', cuotas: 4, frecuencia: 'QUINCENA' }, { hoy: HOY }).valor,
+  parseProgramacion({ desde: '2026-11-05', cuotas: 13 }, { hoy: HOY }).campo,
+  parseProgramacion({ desde: '2026-11-05', cuotas: 2.5 }, { hoy: HOY }).campo,
+  parseProgramacion({ desde: '2026-11-05', cuotas: 3, frecuencia: 'DIARIO' }, { hoy: HOY }).campo,
+], [{ desde: '2026-11-05', cuotas: 1, frecuencia: '' }, HOY, 'desde', 'desde', { desde: '2026-11-05', cuotas: 4, frecuencia: 'QUINCENA' }, 'cuotas', 'cuotas', 'frecuencia']);
+check('hay tres frecuencias y el tope son 12 cuotas', [FRECUENCIAS.map((f) => f.id), MAX_CUOTAS], [['SEMANA', 'QUINCENA', 'MES'], 12]);
+check('cuotas semanales: las fechas de 7 en 7 y el monto repartido parejo', planDeCuotas(80, { desde: '2026-11-05', cuotas: 4, frecuencia: 'SEMANA' }).map((c) => [c.cuota, c.monto, c.desde]),
+  [[1, 20, '2026-11-05'], [2, 20, '2026-11-12'], [3, 20, '2026-11-19'], [4, 20, '2026-11-26']]);
+check('cuotas cada 15 días', planDeCuotas(30, { desde: '2026-10-30', cuotas: 3, frecuencia: 'QUINCENA' }).map((c) => c.desde), ['2026-10-30', '2026-11-14', '2026-11-29']);
+check('cuotas cada mes caen el mismo día (el 31 de enero sigue en febrero)', planDeCuotas(90, { desde: '2027-01-31', cuotas: 3, frecuencia: 'MES' }).map((c) => c.desde), ['2027-01-31', '2027-02-28', '2027-03-31']);
+check('los centavos que sobran van en la última cuota y todo suma el total', (({ lista }) => [lista.map((c) => c.monto), Math.round(lista.reduce((s, c) => s + c.monto, 0) * 100) / 100])({ lista: planDeCuotas(100, { desde: '2026-11-05', cuotas: 3, frecuencia: 'SEMANA' }) }), [[33.33, 33.33, 33.34], 100]);
+const plan = armarPlanDescuentos('GERARDO', { monto: 80, motivo: 'Equipo perdido' }, { desde: '2026-11-05', cuotas: 4, frecuencia: 'SEMANA' }, { por: 'fina', ahora: DIA(29), notificar: true, hoy: HOY });
+check('el plan guarda un descuento por cuota, con su fecha y el total, y solo la primera avisa', [plan.length, plan.map((d) => d.monto), plan.map((d) => d.desde), plan.map((d) => d.notificado), plan.map(textoCuota), plan[2].totalPlan, plan.every((d) => d.aplicado === 0 && d.anulado === false)],
+  [4, [20, 20, 20, 20], ['2026-11-05', '2026-11-12', '2026-11-19', '2026-11-26'], [true, false, false, false], ['cuota 1 de 4', 'cuota 2 de 4', 'cuota 3 de 4', 'cuota 4 de 4'], 80, true]);
+const unoProgramado = armarPlanDescuentos('GERARDO', { monto: 25, motivo: 'Multa' }, { desde: '2026-11-05', cuotas: 1, frecuencia: '' }, { por: 'fina', ahora: DIA(29), notificar: true, hoy: HOY });
+check('uno solo programado lleva su fecha y ninguna cuota', [unoProgramado.length, unoProgramado[0].desde, 'cuotas' in unoProgramado[0], unoProgramado[0].notificado], [1, '2026-11-05', false, true]);
+const ya = armarPlanDescuentos('GERARDO', { monto: 25, motivo: 'Multa' }, { desde: HOY, cuotas: 1, frecuencia: '' }, { por: 'fina', ahora: DIA(29), notificar: false, hoy: HOY });
+check('uno solo que empieza hoy es un descuento normal, igual que antes (sin fecha)', [ya.length, 'desde' in ya[0], ya[0]], [1, false, armarDescuento('GERARDO', { monto: 25, motivo: 'Multa' }, { por: 'fina', ahora: DIA(29) })]);
+check('cuenta ya si no tiene fecha o la fecha es hoy o antes; programado si es después y no está anulado', [aplicaYa(descuento('a', 5), HOY), aplicaYa({ desde: HOY }, HOY), aplicaYa({ desde: '2026-11-05' }, HOY), estaProgramado({ desde: '2026-11-05' }, HOY), estaProgramado({ desde: '2026-11-05', anulado: true }, HOY), estaProgramado({ desde: HOY }, HOY)], [true, true, false, true, false, false]);
+
+const programado = (id, monto, desde, extra) => ({ ...descuento(id, monto), desde, ...extra });
+const antes = resumenPagos(items, tarifas, new Set(), [], [], [descuento('d1', 15), programado('p1', 40, '2026-11-05')], HOY)[0];
+check('un descuento programado no se resta ni cuenta como por descontar hasta su fecha', [antes.descuento, antes.descuentosLibres, antes.partesLibres.map((p) => p.id)], [15, 15, ['d1']]);
+const despues = resumenPagos(items, tarifas, new Set(), [], [], [descuento('d1', 15), programado('p1', 40, '2026-11-05')], '2026-11-05')[0];
+check('llegada su fecha entra al primer pago, junto con los demás', [despues.descuentosLibres, despues.partesLibres.map((p) => p.id).sort()], [55, ['d1', 'p1']]);
+const soloProgramado = resumenPagos([], tarifas, new Set(), [], [], [programado('p1', 40, '2026-11-05')], HOY);
+check('un técnico que solo tiene descuentos programados tiene tarjeta (para verlos y anularlos), sin nada por pagar ni por descontar todavía', [soloProgramado.length, soloProgramado[0].total, soloProgramado[0].descuentosLibres, soloProgramado[0].descuentosProgramados, estadoDeFila(soloProgramado[0])], [1, 0, 0, 40, 'PROGRAMADO']);
+check('lo programado suma aparte (sin los anulados) y al llegar la fecha pasa a lo que se descuenta', [
+  resumenPagos(items, tarifas, new Set(), [], [], [programado('p1', 40, '2026-11-05'), programado('p2', 20, '2026-11-12'), programado('p3', 9, '2026-11-12', { anulado: true })], HOY)[0].descuentosProgramados,
+  resumenPagos(items, tarifas, new Set(), [], [], [programado('p1', 40, '2026-11-05'), programado('p2', 20, '2026-11-12')], '2026-11-05')[0].descuentosProgramados,
+  resumenPagos([], tarifas, new Set(), [], [], [programado('p1', 40, '2026-11-05')], '2026-11-05').map(estadoDeFila),
+], [60, 20, ['CON_ADELANTO']]);
+check('con órdenes por pagar la tarjeta sigue "Por pagar" aunque tenga descuentos programados', estadoDeFila(resumenPagos(items, tarifas, new Set(), [], [], [programado('p1', 40, '2026-11-05')], HOY)[0]), 'POR_PAGAR');
+check('el aviso de uno programado dice desde cuándo; de un plan, el total y las cuotas; de uno normal, igual que antes', [
+  avisoDeDescuento({ monto: 25, motivo: 'Multa', desde: '2026-11-05', creadoEn: DIA(29) }).title,
+  avisoDeDescuento({ monto: 25, motivo: 'Multa', desde: '2026-11-05', creadoEn: DIA(29) }).body,
+  avisoDeDescuento({ monto: 20, motivo: 'Equipo perdido', desde: '2026-11-05', cuota: 1, cuotas: 4, totalPlan: 80, creadoEn: DIA(29) }).body,
+  avisoDeDescuento({ monto: 15, motivo: 'Equipo perdido', creadoEn: DIA(29) }).title,
+], ['Descuento programado', 'Se te programó un descuento de 25,00 $, desde el 05/11/2026. Motivo: Multa. Se resta del primer pago que se te haga desde esa fecha.', 'Se te programó un descuento de 80,00 $ en 4 cuotas, desde el 05/11/2026. Motivo: Equipo perdido. Cada cuota se resta del primer pago que se te haga desde su fecha.', 'Descuento registrado']);
+check('en los reportes: el estado dice "Programado" y la fila trae desde cuándo y la cuota', [estadoDeDescuento(programado('p1', 40, '2026-11-05'), HOY), estadoDeDescuento(programado('p1', 40, '2026-11-05'), '2026-11-05'), filaDescuento(programado('p2', 20, '2026-11-12', { cuota: 2, cuotas: 4, totalPlan: 80 })).slice(3, 5)],
+  ['Programado (desde el 05/11/2026)', 'Por descontar', ['12/11/2026', 'Equipo perdido (cuota 2 de 4)']]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

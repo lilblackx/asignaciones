@@ -12,6 +12,8 @@ export const BOTON = 'inline-flex items-center justify-center gap-2 h-9 px-3 rou
 export const BOTON_PRINCIPAL = 'inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-sm font-bold text-white transition-colors disabled:opacity-50';
 // Los botones de acción de un técnico (Pagar, Adelanto): un poco más grandes que el resto.
 export const BOTON_GRANDE = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-sm font-bold transition-colors disabled:opacity-50';
+// El botón con borde (Cancelar, Volver) al lado de uno grande: la misma altura que BOTON_GRANDE.
+export const BOTON_CON_BORDE_GRANDE = BOTON.replace('h-9 px-3', 'h-10 px-4');
 // Un botón pequeño dentro de una fila (Anular, Aprobar, Retener...).
 export const BOTON_FILA = 'inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50';
 
@@ -21,6 +23,7 @@ export const ESTADO = {
   PAGADO: { texto: 'Al día', clase: 'bg-emerald-700 text-white' },
   ANULADO: { texto: 'Anulado', clase: 'bg-red-600 text-white' },
   CON_ADELANTO: { texto: 'Por descontar', clase: 'bg-sky-700 text-white' },
+  PROGRAMADO: { texto: 'Con descuentos programados', clase: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300' }, // los mismos colores que la marca "JM" (InsigniaJM)
 };
 export const CAMPO_FECHA = 'w-full h-9 flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 hover:border-zinc-500 rounded-lg px-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-red-600 outline-none transition-colors';
 

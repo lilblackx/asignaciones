@@ -10,7 +10,7 @@ import { culminadaEn } from '../../utils/reporteMensual';
 import { aBs, bolivares, dolares, grupoDePago } from '../../utils/finanzas';
 import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
 import InsigniaJM from '../InsigniaJM';
-import PagoClienteDetalle from '../PagoClienteDetalle';
+import CobroClienteDetalle from '../CobroClienteDetalle';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
@@ -75,8 +75,8 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
 
           {!registro && (esInstalacion(orden.tipoTrabajo) || esCambioDeEquipo(orden)) && (
             <div className="rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
-              <p className={ETIQUETA}>{esInstalacion(orden.tipoTrabajo) ? 'Pago del cliente por la instalación' : 'Pago del cliente por el cambio de equipo'}</p>
-              <PagoClienteDetalle ticketId={orden.id ?? item.clave} paraFinanzas mensajeSinAcceso="No se puede leer el pago de esta orden." />
+              <p className={ETIQUETA}>{esInstalacion(orden.tipoTrabajo) ? 'Cobro al cliente por la instalación' : 'Cobro al cliente por el cambio de equipo'}</p>
+              <CobroClienteDetalle ticketId={orden.id ?? item.clave} paraFinanzas />
             </div>
           )}
 

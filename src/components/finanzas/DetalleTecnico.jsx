@@ -1,8 +1,12 @@
-import { ArrowLeft, HandCoins, CheckCircle2, MinusCircle, TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, ChevronDown, HandCoins, CheckCircle2, ListChecks, MinusCircle, TriangleAlert } from 'lucide-react';
+import Colapsable from '../Colapsable';
 import { BOTON, BOTON_FILA, BOTON_GRANDE, CHIP, ESTADO, ETIQUETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { aBs, agruparOrdenes, bolivares, conceptosSinTarifa, desglosePorConcepto, dolares, estadoDeAdelanto, estadoDeFila, fechaHoraLegiblePago, grupoDePago, textoDatosPago, textoGrupos, textoOrdenes, tienePorPagar } from '../../utils/finanzas';
 import { saldoAdelanto, sePuedeAnularAdelanto } from '../../utils/adelantos';
-import { sePuedeAnularDescuento } from '../../utils/descuentos';
+import { estaProgramado, sePuedeAnularDescuento, textoCuota, textoDesde } from '../../utils/descuentos';
+import { diaDe } from '../../utils/totalesMes';
+import { useAhora } from '../../hooks/useAhora';
 import InsigniaJM from '../InsigniaJM';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 
@@ -17,6 +21,26 @@ function Monto({ usd, tasa, grande = false, className = '' }) {
       <span className={`block font-bold tabular-nums whitespace-nowrap text-zinc-900 dark:text-white ${grande ? 'text-base' : 'text-sm'}`}>{dolares(usd)}</span>
       {tasa > 0 && <span className="block text-xs font-semibold tabular-nums whitespace-nowrap text-zinc-600 dark:text-zinc-300">{montoBs(usd, tasa)}</span>}
     </span>
+  );
+}
+
+// Un descuento con motivo en la lista "Ver descuentos": cuándo se puso, su estado, el motivo, quién lo registró (y desde cuándo aplica y la cuota si es programado), el monto y, mientras no se haya descontado, Anular.
+function FilaDescuento({ d, hoy, tasa, ocupado, onAnular }) {
+  const programado = estaProgramado(d, hoy);
+  const estadoTexto = d.anulado ? 'Anulado' : programado ? 'Programado' : saldoAdelanto(d) > 0 ? 'Por descontar' : 'Descontado';
+  const estadoClase = d.anulado ? ESTADO.ANULADO.clase : programado ? ESTADO.PROGRAMADO.clase : saldoAdelanto(d) > 0 ? ESTADO.CON_ADELANTO.clase : 'bg-emerald-700 text-white';
+  return (
+    <li className={`py-3 flex flex-wrap items-center justify-between gap-3 ${d.anulado ? 'opacity-70' : ''}`}>
+      <span className="min-w-0">
+        <span className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-zinc-900 dark:text-white">{programado ? `Desde el ${textoDesde(d)}` : fechaHoraLegiblePago(Number(d.creadoEn))}</span><span className={`${CHIP} ${estadoClase}`}>{estadoTexto}</span>{textoCuota(d) && <span className={TEXTO_SUAVE}>{textoCuota(d)}</span>}</span>
+        <span className="block text-sm text-zinc-900 dark:text-zinc-100 break-words">{d.motivo}</span>
+        <span className={`block ${TEXTO_SUAVE}`}>Lo registró {d.por} · {fechaHoraLegiblePago(Number(d.creadoEn))}{d.desde && !programado ? ` · desde el ${textoDesde(d)}` : ''}{!d.anulado && Number(d.aplicado) > 0 && Number(d.aplicado) < Number(d.monto) ? ` · ${estadoDeAdelanto(d)}` : ''}</span>
+      </span>
+      <span className="flex items-center gap-4">
+        <Monto usd={d.monto} tasa={tasa} className={d.anulado ? 'line-through' : ''} />
+        {sePuedeAnularDescuento(d) && <button type="button" onClick={() => onAnular(d)} disabled={ocupado} className={BOTON_FILA}>Anular</button>}
+      </span>
+    </li>
   );
 }
 
@@ -36,6 +60,20 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
   const descuentosDe = (item) => ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave && saldoAdelanto(a) > 0);
   const desglose = desglosePorConcepto(fila.cantidades, tarifas);
   const neto = fila.neto ?? fila.total;
+  const hoy = diaDe(useAhora());
+  const [verDescuentos, setVerDescuentos] = useState(false);
+  // Todos los descuentos con motivo del técnico, en cuatro grupos: programados (por su fecha), por descontar, descontados y anulados.
+  const programados = descuentos.filter((d) => estaProgramado(d, hoy)).sort((a, b) => String(a.desde).localeCompare(String(b.desde)) || (Number(a.cuota) || 0) - (Number(b.cuota) || 0));
+  const porDescontar = descuentos.filter((d) => !d.anulado && !estaProgramado(d, hoy) && saldoAdelanto(d) > 0).sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
+  const descontados = descuentos.filter((d) => !d.anulado && saldoAdelanto(d) <= 0).sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
+  const anulados = descuentos.filter((d) => d.anulado).sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
+  const gruposDescuentos = [
+    { id: 'programados', titulo: 'Programados', nota: 'Todavía no cuentan: entran al primer pago que se le haga desde su fecha.', lista: programados },
+    { id: 'por-descontar', titulo: 'Por descontar', nota: 'Se restan de su próximo pago.', lista: porDescontar },
+    { id: 'descontados', titulo: 'Descontados', nota: '', lista: descontados },
+    { id: 'anulados', titulo: 'Anulados', nota: '', lista: anulados },
+  ].filter((g) => g.lista.length > 0);
+  const pendientesDescontar = programados.length + porDescontar.length;
   const descuento = fila.descuento ?? 0;
   const libres = fila.descuentosLibres ?? 0;
   const saldoQueda = Math.max(0, (fila.adelantos ?? 0) + (fila.descuentosOrden ?? 0) + libres - descuento);
@@ -82,7 +120,29 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
           <button type="button" onClick={onDescuento} disabled={ocupado} className={`${BOTON_GRANDE} border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
             <MinusCircle className="w-5 h-5" aria-hidden="true" /> Descuento
           </button>
+          {descuentos.length > 0 && (
+            <button type="button" onClick={() => setVerDescuentos((v) => !v)} aria-expanded={verDescuentos} aria-controls="descuentos-del-tecnico" className={`${BOTON_GRANDE} border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
+              <ListChecks className="w-5 h-5" aria-hidden="true" /> Ver descuentos{pendientesDescontar > 0 ? ` (${pendientesDescontar})` : ''}
+              <ChevronDown className={`w-4 h-4 transition-transform ${verDescuentos ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
+          )}
         </div>
+        <Colapsable>{verDescuentos && descuentos.length > 0 && (
+          <div id="descuentos-del-tecnico" className="mt-4 rounded-lg border border-zinc-300 dark:border-zinc-700 p-3 sm:p-4 space-y-4">
+            {gruposDescuentos.map((g) => (
+              <section key={g.id} aria-label={g.titulo}>
+                <h3 className="flex flex-wrap items-baseline justify-between gap-2 text-sm font-bold text-zinc-900 dark:text-white">
+                  <span>{g.titulo} <span className="font-normal text-zinc-600 dark:text-zinc-300">· {g.lista.length}</span></span>
+                  {g.id !== 'anulados' && <span className="tabular-nums">{dolares(g.lista.reduce((suma, d) => suma + (g.id === 'descontados' ? Number(d.aplicado) || 0 : Number(d.monto) || 0), 0))}</span>}
+                </h3>
+                {g.nota && <p className={TEXTO_SUAVE}>{g.nota}</p>}
+                <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {g.lista.map((d) => <FilaDescuento key={d.id} d={d} hoy={hoy} tasa={tasa} ocupado={ocupado} onAnular={onAnularDescuento} />)}
+                </ul>
+              </section>
+            ))}
+          </div>
+        )}</Colapsable>
       </div>
 
       {tienePorPagar(fila) ? (
@@ -195,26 +255,6 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
                   {Number(a.aplicado) > 0 && <span className={`block ${TEXTO_SUAVE}`}>Ya entró {dolares(a.aplicado)} en pagos; quedan {dolares(saldoAdelanto(a))}</span>}
                 </span>
                 <Monto usd={a.tipo === 'BONO' ? saldoAdelanto(a) : -saldoAdelanto(a)} tasa={tasa} />
-              </li>
-            ))}
-          </ul>
-        </Seccion>
-      )}
-
-      {descuentos.length > 0 && (
-        <Seccion titulo="Descuentos" nota="Un descuento con motivo se resta de su próximo pago. Lo que no alcanza a descontarse queda para el siguiente.">
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-            {descuentos.map((d) => (
-              <li key={d.id} className={`py-3 flex flex-wrap items-center justify-between gap-3 ${d.anulado ? 'opacity-70' : ''}`}>
-                <span className="min-w-0">
-                  <span className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-zinc-900 dark:text-white">{fechaHoraLegiblePago(Number(d.creadoEn))}</span><span className={`${CHIP} ${d.anulado ? ESTADO.ANULADO.clase : saldoAdelanto(d) > 0 ? ESTADO.CON_ADELANTO.clase : 'bg-emerald-700 text-white'}`}>{d.anulado ? 'Anulado' : saldoAdelanto(d) > 0 ? 'Por descontar' : 'Descontado'}</span></span>
-                  <span className="block text-sm text-zinc-900 dark:text-zinc-100 break-words">{d.motivo}</span>
-                  <span className={`block ${TEXTO_SUAVE}`}>Lo registró {d.por}{!d.anulado && Number(d.aplicado) > 0 ? ` · ${estadoDeAdelanto(d)}` : ''}</span>
-                </span>
-                <span className="flex items-center gap-4">
-                  <Monto usd={d.monto} tasa={tasa} className={d.anulado ? 'line-through' : ''} />
-                  {sePuedeAnularDescuento(d) && <button type="button" onClick={() => onAnularDescuento(d)} disabled={ocupado} className={BOTON_FILA}>Anular</button>}
-                </span>
               </li>
             ))}
           </ul>

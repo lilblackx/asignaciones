@@ -1170,6 +1170,28 @@ await check('Descuento: Finanzas lo registra a su nombre, en dólares, con motiv
   await assertSucceeds(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-2').set(descuentoDe({ notificado: false })));
   await assertSucceeds(fin(asAdmin(), 'descuentosTecnicos').doc('desc-admin').set(descuentoDe({ por: 'admin', motivo: 'Multa por llegar tarde' })));
 });
+await check('Descuento programado: con "desde" (día de Caracas) y, en cuotas, la cuota, las cuotas y el total del plan', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-prog-1').set(descuentoDe({ desde: '2026-11-05' })));
+  await assertSucceeds(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-prog-2').set(descuentoDe({ monto: 20, desde: '2026-11-05', cuota: 1, cuotas: 4, totalPlan: 80 })));
+  await assertSucceeds(fin(asAdmin(), 'descuentosTecnicos').doc('desc-prog-3').set(descuentoDe({ por: 'admin', monto: 20, desde: '2026-11-12', cuota: 2, cuotas: 4, totalPlan: 80, notificado: false })));
+});
+await check('Descuento programado: fecha mal escrita, cuotas sueltas o fuera de rango, cuota mayor que las cuotas o total menor que la cuota no se guardan', async () => {
+  const malos = [
+    { desde: '05/11/2026' }, { desde: 20261105 }, { desde: '2026-11-5' },
+    { cuota: 1, cuotas: 4, totalPlan: 80 },
+    { desde: '2026-11-05', cuotas: 4, totalPlan: 80 },
+    { desde: '2026-11-05', cuota: 1, cuotas: 1, totalPlan: 15 },
+    { desde: '2026-11-05', cuota: 1, cuotas: 13, totalPlan: 195 },
+    { desde: '2026-11-05', cuota: 5, cuotas: 4, totalPlan: 80 },
+    { desde: '2026-11-05', cuota: 0, cuotas: 4, totalPlan: 80 },
+    { desde: '2026-11-05', cuota: 1, cuotas: 4, totalPlan: 10 },
+    { desde: '2026-11-05', cuota: 1, cuotas: 4 },
+    { desde: '2026-11-05', cuota: 1, cuotas: 4, totalPlan: 2000000 },
+  ];
+  for (const [i, extra] of malos.entries()) await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc(`desc-prog-mal-${i}`).set(descuentoDe(extra)));
+  await assertFails(fin(asTecnico(), 'descuentosTecnicos').doc('desc-prog-tecnico').set(descuentoDe({ por: 'tecnico', desde: '2026-11-05' })));
+});
+await check('Descuento programado: se anula mientras no se descuente, como cualquier descuento', () => assertSucceeds(fin(asFinanzas(), 'descuentosTecnicos').doc('desc-prog-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 7 })));
 await check('Descuento: sin motivo (vacío o de más de 300 letras), sin monto, ya descontado, a nombre de otro, con campos de más o ya anulado no se guarda', async () => {
   const intentos = [{ motivo: '' }, { motivo: 'x'.repeat(301) }, { motivo: 5 }, { monto: 0 }, { monto: -5 }, { monto: 100001 }, { monto: 'diez' }, { aplicado: 10 }, { por: 'otro' }, { extra: 1 }, { anulado: true }, { tecnico: '' }, { notificado: 'si' }, { creadoEn: 'hoy' }];
   for (const [i, extra] of intentos.entries()) await assertFails(fin(asFinanzas(), 'descuentosTecnicos').doc(`desc-mal-${i}`).set(descuentoDe(extra)));

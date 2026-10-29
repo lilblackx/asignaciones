@@ -13,8 +13,7 @@ export default function FiltersBar({
   tipoFilter, setTipoFilter,
   sortBy, setSortBy,
   technicians,
-  isTecnico = false,
-  conPagoPendiente = false
+  isTecnico = false
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const limpiarFiltros = () => {
@@ -34,7 +33,6 @@ export default function FiltersBar({
       { value: 'EN_INFRAESTRUCTURA', label: 'En infraestructura' }
     ] : []),
     { value: 'INSTALACION_SIN_UBICACION', label: 'Instalaciones sin ubicación' },
-    ...(conPagoPendiente ? [{ value: 'PAGO_PENDIENTE', label: 'Pago pendiente' }] : []),
     { group: 'Programadas', options: [
       { value: 'PROG_HOY', label: 'Hoy / vencidas' },
       { value: 'PROG_MANANA', label: 'Mañana' },

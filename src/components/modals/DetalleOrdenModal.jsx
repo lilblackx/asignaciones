@@ -2,8 +2,7 @@ import { Cable, ExternalLink, FileText, History, Landmark, MapPin, MessageSquare
 import Modal from '../Modal';
 import HistorialTimeline from '../HistorialTimeline';
 import InsigniaVentaTecnico from '../InsigniaVentaTecnico';
-import InsigniaPagoPendiente from '../InsigniaPagoPendiente';
-import PagoClienteDetalle from '../PagoClienteDetalle';
+import CobroClienteDetalle from '../CobroClienteDetalle';
 import TelefonoAccion from '../TelefonoAccion';
 import BotonCopiar from '../BotonCopiar';
 import ValoresClienteTarjeta from './ValoresClienteTarjeta';
@@ -51,8 +50,8 @@ const ENLACE = 'inline-flex items-center gap-1 max-lg:min-h-11 text-sky-700 dark
 
 // Todos los datos de una orden en una sola ventana, solo para mirar (desde el ojito junto al nombre en la lista). Editar,
 // aprobar o finalizar siguen en el menú de la fila. `onCopy(texto, mensaje)` copia y avisa con el toast.
-// `verPago` (la oficina): muestra el pago del cliente en solo lectura; `pagosPendientes`: ids con pago pendiente de cobro (la etiqueta).
-export default function DetalleOrdenModal({ ticket, onCopy, onClose, verPago = false, pagosPendientes = null }) {
+// `verCobro` (la oficina): muestra el cobro de la orden al cliente (pendiente o cargado en el portal) en solo lectura.
+export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = false }) {
   const { copiado, copiar } = useCopiado(onCopy);
   const instalacion = esInstalacion(ticket.tipoTrabajo);
   const datos = ticket.instalacion || {};
@@ -81,15 +80,14 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verPago = f
             <span className={`text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
             <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
             <InsigniaVentaTecnico ticket={ticket} />
-            <InsigniaPagoPendiente ticket={ticket} pagosPendientes={pagosPendientes} />
             {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{ticket.falla}</span>}
           </div>
 
           <CancelacionAviso ticket={ticket} />
 
-          {verPago && (
-            <Seccion icono={Landmark} titulo="Pago del cliente">
-              <PagoClienteDetalle ticketId={ticket.id} />
+          {verCobro && (
+            <Seccion icono={Landmark} titulo="Cobro al cliente">
+              <CobroClienteDetalle ticketId={ticket.id} />
             </Seccion>
           )}
 

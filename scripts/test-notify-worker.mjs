@@ -203,19 +203,21 @@ check('ni avisar a la oficina ni a los aprobadores', [(await enviar('finanzas-ui
 check('ni sin tipo', (await enviar('finanzas-uid', { ...avisoPago, tipo: undefined })).status, 403);
 check('no se envió nada de lo rechazado', enviosFcm.length, 2);
 
-// 9) Pago de un cliente: el técnico le avisa a ADMINISTRACION (y solo a ADMINISTRACION) que registró un pago o que el cliente paga después
+// 9) Cobro de un cliente: quien finaliza la orden (ADMIN, USUARIO o quien cierra) le avisa a ADMINISTRACION (y solo a ADMINISTRACION) que hay un cobro por cargar
 reiniciar();
 roles['admon-uid'] = 'ADMINISTRACION';
+roles['usuario-uid'] = 'USUARIO';
 roles['finanzas-uid'] = 'FINANZAS';
-const avisoPagoCliente = { target: { type: 'administracion' }, title: 'Pago registrado', body: 'AO7 · JOSE · 5.696 Bs', tipo: 'pagoCliente', ticketId: 't-pago' };
-r = await enviar('tecnico-uid', avisoPagoCliente);
-check('el técnico avisa a Administración de un pago de un cliente', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
+const avisoPagoCliente = { target: { type: 'administracion' }, title: 'Cobro por cargar', body: 'AO7 · Ana Pérez · 5.696 Bs', tipo: 'pagoCliente', ticketId: 't-pago' };
+r = await enviar('admin-uid', avisoPagoCliente);
+check('el ADMIN que finaliza una orden avisa a Administración de su cobro', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
+check('también USUARIO y quien cierra (o un técnico de una versión vieja de la app)', [(await enviar('usuario-uid', avisoPagoCliente)).status, (await enviar('tecnico-uid', avisoPagoCliente)).status], [200, 200]);
 check('la búsqueda de destinos es por el rol ADMINISTRACION (no por el ADMIN ni la oficina)', busquedas.at(-1), { field: { fieldPath: 'role' }, op: 'EQUAL', value: { stringValue: 'ADMINISTRACION' } });
 check('el aviso lleva su tipo y la orden', [enviosFcm[0]?.data.tipo, enviosFcm[0]?.data.ticketId], ['pagoCliente', 't-pago']);
-check('el técnico no puede mandar otro tipo de aviso a Administración', (await enviar('tecnico-uid', { ...avisoPagoCliente, tipo: 'nuevaAsignacion' })).status, 403);
+check('nadie manda otro tipo de aviso a Administración', (await enviar('tecnico-uid', { ...avisoPagoCliente, tipo: 'nuevaAsignacion' })).status, 403);
 check('ni sin tipo', (await enviar('tecnico-uid', { ...avisoPagoCliente, tipo: undefined })).status, 403);
-check('nadie más avisa a Administración: ni el ADMIN, ni Finanzas, ni la propia Administración', [(await enviar('admin-uid', avisoPagoCliente)).status, (await enviar('finanzas-uid', avisoPagoCliente)).status, (await enviar('admon-uid', avisoPagoCliente)).status], [403, 403, 403]);
-check('no se envió nada de lo rechazado', enviosFcm.length, 1);
+check('Finanzas y la propia Administración no avisan a Administración', [(await enviar('finanzas-uid', avisoPagoCliente)).status, (await enviar('admon-uid', avisoPagoCliente)).status], [403, 403]);
+check('no se envió nada de lo rechazado (solo los tres avisos permitidos)', enviosFcm.length, 3);
 
 // --- Cierre automático: las instalaciones dejan un resumen liviano para la promotora ---
 const fetchBase = globalThis.fetch;

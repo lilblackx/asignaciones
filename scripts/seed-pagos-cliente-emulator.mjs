@@ -1,8 +1,8 @@
-// Datos de prueba de los pagos que los clientes hacen por las órdenes (módulo de Administración y pantalla de cobro del técnico), solo en el emulador local.
+// Datos de prueba del HISTORIAL de pagos que los técnicos registraban por las órdenes (desde que los cobros pasaron a Administración ya no se registran pagos; ver seed-cobros-emulator.mjs), solo en el
+// emulador local. Se ven en Finanzas > "Pagos de clientes" > "Historial de pagos registrados".
 // Requiere `npm run emulators` y haber corrido `npm run seed:emulator` (los usuarios). No toca el proyecto real. Se puede repetir: reemplaza lo que creó antes.
-//   - Órdenes de GERARDO MOLERO (tecnico1) para probar: dos averías ya finalizadas con cobro (piden el pago al abrir la app) y una instalación pendiente (pide el pago al pre-finalizar).
-//   - Pagos de varios técnicos en cada estado para el módulo de Administración, con la referencia reservada de los registrados.
-//   - Las cuentas de la empresa (formas de pago) para elegir dónde llegó el pago.
+//   - Pagos de varios técnicos en cada estado, con la referencia reservada de los registrados.
+//   - Las cuentas de la empresa (formas de pago).
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -18,21 +18,9 @@ const DIA = 24 * HORA;
 
 // Lo anterior de esta prueba.
 for (const c of ['pagosOrdenes', 'referenciasPago']) for (const d of (await base.collection(c).get()).docs) await d.ref.delete();
-for (const id of ['pc-visita', 'pc-visita2', 'pc-inst']) await base.collection('tickets').doc(id).delete();
 
 await base.collection('config').doc('formasPago').set({ formas: FORMAS_PAGO_INICIALES, actualizadoEn: AHORA, actualizadoPor: 'seed' });
 await base.collection('config').doc('tasaBcv').set({ montoBaseEUR: 10, tasa: 569.6, fecha: new Date(AHORA).toISOString().slice(0, 10) }, { merge: true });
-
-const orden = (extra) => ({
-  tecnico: 'GERARDO MOLERO', tipoTrabajo: 'AVERÍA', falla: 'LOS', tipoVisita: 'CONECTOR_EXTERNO', estado: 'FINALIZADO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', cobroMoneda: 'BS',
-  creado: 'admin', createdAt: AHORA - 5 * HORA, finalizadoEn: AHORA - HORA, isAsignado: true, fecha: new Date(AHORA).toLocaleDateString('es-VE'), historialEdiciones: [], ...extra,
-});
-await base.collection('tickets').doc('pc-visita').set(orden({ codigo: 'AO501', nombre: 'Ana Pérez', cedula: '20214277', direccion: 'Calle 1 casa 5', telefono: '0414-1234567' }));
-await base.collection('tickets').doc('pc-visita2').set(orden({ codigo: 'AO502', nombre: 'Ana Pérez', cedula: '20214277', direccion: 'Calle 1 casa 5', telefono: '0414-1234567', falla: 'Tensado de drop', tipoVisita: 'DROP_ATENUADO', finalizadoEn: AHORA - 2 * HORA }));
-await base.collection('tickets').doc('pc-inst').set({
-  codigo: 'IO501', nombre: 'Luis Gómez', cedula: '18222333', tipoDocumento: 'V', direccion: 'Av 3 casa 10', telefono: '0412-5550101', tecnico: 'GERARDO MOLERO', tipoTrabajo: 'INSTALACIÓN', falla: 'SM', estado: 'PENDIENTE',
-  creado: 'admin', createdAt: AHORA - 6 * HORA, isAsignado: true, fecha: new Date(AHORA).toLocaleDateString('es-VE'), historialEdiciones: [], nap: '', promotora: 'Sariana', promotoraClave: 'sariana',
-});
 
 const valor = (extra = {}, cobro = { monto: 5696, moneda: 'BS' }) => parsePagoCliente({ moneda: 'BS', forma: 'Pago móvil', monto: '5696', banco: 'Banesco', cuentaEmpresa: 'Pago Móvil · Banco Nacional de Crédito (BNC) · 0412-1009927', referencia: '100001', fecha: new Date(AHORA - HORA).toISOString().slice(0, 10), hora: '09:30', nota: '', ...extra }, { cobro, cuentas: [], ahora: AHORA + HORA }).valor;
 const ficha = (id, codigo, nombre, tecnico, tipoTrabajo = 'AVERÍA') => ({ id, codigo, nombre, cedula: '12345678', telefono: '0414-5550142 / 0424-5550199', tecnico, tipoTrabajo, falla: tipoTrabajo === 'AVERÍA' ? 'LOS' : 'SM', tipoVisita: '', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' });
@@ -66,8 +54,6 @@ await guardar({ ...conciliado, ...armarConciliacion(conciliado, { nota: 'Verific
 const sinCobrar = armarPagoPendiente(ficha('sc-1', 'AO395', 'Iván Soto', 'REINEL BRAVO'), { nota: 'Paga el lunes' }, { por: 'tecnico2', ahora: AHORA - 9 * DIA });
 await guardar({ ...sinCobrar, ...armarSinCobrar(sinCobrar, { nota: 'El cliente se mudó y no responde' }, { por: 'administracion', ahora: AHORA - 4 * DIA }).cambios }, 9 * DIA);
 
-console.log('OK  órdenes AO501 y AO502 (averías con cobro, piden el pago), IO501 (instalación pendiente), formas de pago de la empresa y 13 pagos en todos los estados (incluye instalaciones y cambios de equipo para la sección de Finanzas)');
-console.log('    tecnico1 / Tecnico1234 -> al entrar, la pantalla pide el pago de AO501 y AO502; IO501 pide el pago al pre-finalizar');
-console.log('    finanzas / Finanzas1234 -> Finanzas > "Pagos de clientes" ve los pagos de instalaciones y cambios de equipo');
-console.log('    (el módulo de Administración está apagado: ADMINISTRACION_ACTIVA en src/constants.js)');
+console.log('OK  formas de pago de la empresa y 13 pagos del historial en todos los estados (incluye instalaciones y cambios de equipo)');
+console.log('    finanzas / Finanzas1234 -> Finanzas > "Pagos de clientes" > "Historial de pagos registrados"');
 process.exit(0);

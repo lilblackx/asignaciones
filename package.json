@@ -22,6 +22,7 @@
     "test:descuentos": "node scripts/test-descuentos.mjs",
     "test:olt": "node scripts/test-olt.mjs",
     "test:pagocliente": "node scripts/test-pago-cliente.mjs",
+    "test:cobroscliente": "node scripts/test-cobros-clientes.mjs",
     "test:llenarolt": "node scripts/test-llenar-olt.mjs",
     "test:revisionpagos": "node scripts/test-revision-pagos.mjs",
     "seed:emulator": "node scripts/seed-emulator.mjs",

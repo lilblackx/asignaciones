@@ -4,7 +4,7 @@ import Colapsable from '../Colapsable';
 import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
 import CampoBanco from './CampoBanco';
-import { BOTON, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
+import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
 import CampoFecha from '../CampoFecha';
 import CampoHora from '../CampoHora';
 import { aBs, bolivares, dolares } from '../../utils/finanzas';
@@ -96,7 +96,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
         <button type="button" onClick={guardar} disabled={ocupado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
           {ocupado ? <Spinner /> : <HandCoins className="w-5 h-5" aria-hidden="true" />} Registrar adelanto
         </button>
-        <button type="button" onClick={onVolver} disabled={ocupado} className={BOTON}>Cancelar</button>
+        <button type="button" onClick={onVolver} disabled={ocupado} className={BOTON_CON_BORDE_GRANDE}>Cancelar</button>
       </div>
     </div>
   );

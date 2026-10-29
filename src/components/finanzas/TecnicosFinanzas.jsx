@@ -13,7 +13,7 @@ import PanelAdelanto from './PanelAdelanto';
 import PanelDescuento from './PanelDescuento';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
 import { BOTON_FILA, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
-import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, descuentosDelPeriodo, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
+import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
 import { saldoAdelanto } from '../../utils/adelantos';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
@@ -46,8 +46,6 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   const registrados = pagosDelPeriodo(pagos, rango);
   // Los adelantos del periodo y, aunque sean de antes, los que todavía tienen algo por descontar.
   const adelantosVisibles = [...new Map([...adelantosDelPeriodo(adelantos, rango), ...adelantos.filter((a) => saldoAdelanto(a) > 0)].map((a) => [a.id, a])).values()].sort((a, b) => (Number(b.pagadoEn) || 0) - (Number(a.pagadoEn) || 0));
-  // Lo mismo con los descuentos con motivo: los del periodo y los que todavía tienen algo por descontar.
-  const descuentosVisibles = [...new Map([...descuentosDelPeriodo(descuentos, rango), ...descuentos.filter((d) => saldoAdelanto(d) > 0)].map((d) => [d.id, d])).values()].sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
 
   // En el celular, al elegir un técnico se salta directo a su pantalla (arriba hay filtros y cifras que no hacen falta para pagarle).
   const elegir = (tecnico) => {
@@ -175,7 +173,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
                   rango={rango}
                   pagos={registrados.filter((p) => p.tecnico === actual.tecnico)}
                   adelantos={adelantosVisibles.filter((a) => a.tecnico === actual.tecnico)}
-                  descuentos={descuentosVisibles.filter((d) => d.tecnico === actual.tecnico)}
+                  descuentos={descuentos.filter((d) => d.tecnico === actual.tecnico)}
                   ajustes={ajustes.filter((a) => a.tecnico === actual.tecnico && saldoAdelanto(a) > 0)}
                   garantiasPendientes={garantiasPendientes}
                   pagado={pagadasPorTecnico[actual.tecnico]}

@@ -29,14 +29,14 @@ import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalac
 import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
 import { payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
+import { emitirCobro, sincronizarCobroDeOrden } from '../lib/cobrosClientes';
+import { avisoDeCobro } from '../utils/cobrosClientes';
+import { ADMINISTRACION_ACTIVA } from '../constants';
 import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
 import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
 import { oltUnica } from '../utils/olt';
-import { ADMINISTRACION_ACTIVA } from '../constants';
-import { avisoDePagoCliente, cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, piensaPagoCliente } from '../utils/pagoCliente';
-import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -136,8 +136,7 @@ async function actualizarTicketConGuardia(original, actualizada, verificar) {
   });
 }
 
-// `pagosCliente`: { ids, cargado } los pagos que el técnico ya registró (usePagosTecnico); sin saberlo no se le pide ninguno.
-export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify, currentUserName = null, pagosCliente = null) {
+export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify, currentUserName = null) {
   const [tickets, setTickets] = useState([]);
   // false hasta que llega el primer snapshot de órdenes (antes, `tickets` está vacío).
   const [ticketsCargados, setTicketsCargados] = useState(false);
@@ -152,22 +151,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const currentUserRef = useRef(currentUser);
   useEffect(() => { currentUserRef.current = currentUser; });
 
-  // Las órdenes con cobro que se finalizan desde que se pide el pago del cliente (y las instalaciones) ya no se cierran con "Entendido": el técnico registra el pago
-  // (ver cobrosPorRegistrar). Las exoneradas y lo anterior a esa fecha siguen con el aviso de siempre.
   const cobrosPendientes = useMemo(() => {
     if (role !== 'TECNICO' || !cobrosVistos) return [];
-    return tickets.filter(t => esCobroFinalizado(t) && !piensaPagoCliente(t) && !cobroVisto(cobrosVistos, t));
-  }, [role, tickets, cobrosVistos]);
-
-  // Lo que el técnico debe registrar: primero el cobro que sale al pre-finalizar con conector interno y después las órdenes (con cobro o instalaciones) que siguen sin pago.
-  // La lista se vacía sola cuando el pago aparece en sus pagos (Firestore).
-  const pagosRegistradosIds = pagosCliente?.ids;
-  const pagosCargados = Boolean(pagosCliente?.cargado);
-  const cobrosPorRegistrar = useMemo(() => {
-    if (role !== 'TECNICO' || !pagosCargados) return [];
-    const sinPago = tickets.filter(t => t.id !== cobroInmediato?.id && !pagosRegistradosIds.has(t.id) && (debePedirPagoCobro(t, false) || debePedirPagoInstalacion(t, false)));
-    return cobroInmediato && !pagosRegistradosIds.has(cobroInmediato.id) ? [cobroInmediato, ...sinPago] : sinPago;
-  }, [role, tickets, pagosCargados, pagosRegistradosIds, cobroInmediato]);
+    const finalizados = tickets.filter(t => esCobroFinalizado(t) && !cobroVisto(cobrosVistos, t) && t.id !== cobroInmediato?.id);
+    return cobroInmediato ? [cobroInmediato, ...finalizados] : finalizados;
+  }, [role, tickets, cobrosVistos, cobroInmediato]);
   const actualizarCobrosVistos = (fn) => {
     const siguiente = fn(new Set(cobrosVistos || []));
     guardarCobrosVistos(currentUser, siguiente);
@@ -180,41 +168,6 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     actualizarCobrosVistos(set => set.add(claveCobro(actual)));
     if (actual === cobroInmediato) setCobroInmediato(null);
   };
-  // El técnico registra el pago del cliente (o dice que paga después): se guarda y se avisa a Administración (push; con la app abierta le sale en la campana).
-  // Devuelve lo que necesita el formulario: { ok }, { repetida } si la referencia ya está en otra orden, o { error }.
-  const avisarPagoAAdministracion = (documento) => {
-    if (!ADMINISTRACION_ACTIVA) return;
-    const { title, body } = avisoDePagoCliente(documento);
-    avisarPush({ target: { type: 'administracion' }, title, body, tipo: 'pagoCliente', ticketId: documento.ticketId });
-  };
-  const registrarPagoDeOrden = async (ticket, valor) => {
-    if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
-    try {
-      const r = await registrarPagoCliente(ticket, valor, { por: currentUser, cobro: cobroEsperadoDe(ticket) });
-      if (r.repetida) return r;
-      if (cobroInmediato?.id === ticket.id) setCobroInmediato(null);
-      setToastMsg({ type: 'success', text: ADMINISTRACION_ACTIVA ? 'Pago registrado. Administración lo concilia.' : 'Pago registrado.' });
-      avisarPagoAAdministracion(r.documento);
-      return { ok: true };
-    } catch (error) {
-      console.error('No se pudo registrar el pago del cliente:', error);
-      return { error: 'No se pudo guardar el pago. Revisa tu conexión e intenta de nuevo.' };
-    }
-  };
-  const registrarPagoPendienteDeOrden = async (ticket, { nota, compartidoCon = null }) => {
-    if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
-    try {
-      const r = await registrarPagoPendiente(ticket, { nota, compartidoCon }, { por: currentUser, cobro: cobroEsperadoDe(ticket) });
-      if (cobroInmediato?.id === ticket.id) setCobroInmediato(null);
-      setToastMsg({ type: 'success', text: 'Listo: el pago pasa a Administración.' });
-      avisarPagoAAdministracion(r.documento);
-      return { ok: true };
-    } catch (error) {
-      console.error('No se pudo dejar el pago pendiente:', error);
-      return { error: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' };
-    }
-  };
-
   // Desde la campana: vuelve a mostrar un cobro ya confirmado.
   const mostrarCobro = (ticket) => actualizarCobrosVistos(set => { set.delete(ticket.id); set.delete(claveCobro(ticket)); return set; });
   // Pre-finalizar con conector interno: el cobro se informa en ese momento, sin esperar la aprobación.
@@ -244,6 +197,25 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     marcarEnvioInventario(ticket.id)
       .then(() => llamarInventario('/inventario/enviar', ticket.id))
       .catch((error) => console.warn('No se pudo iniciar el envío al inventario:', error));
+  };
+
+  // Al aprobar o finalizar una orden con cobro (o una instalación) se emite su cobro para Administración, que lo sube al portal de la empresa (ver utils/cobrosClientes). Va en segundo plano y nunca
+  // frena ni ensucia el cierre; si no se pudo emitir, queda el aviso en la consola. Con Administración encendida, le llega el aviso (push y campana).
+  const emitirCobroDeOrden = (ticket) => {
+    if (!firebaseUser || !ticket?.id) return;
+    emitirCobro(ticket, { por: currentUser })
+      .then((cobro) => {
+        if (!cobro || !ADMINISTRACION_ACTIVA) return;
+        const { title, body } = avisoDeCobro(cobro);
+        avisarPush({ target: { type: 'administracion' }, title, body, tipo: 'pagoCliente', ticketId: cobro.ticketId });
+      })
+      .catch((error) => console.warn('No se pudo emitir el cobro de la orden:', error));
+  };
+  // Si una orden ya finalizada cambia (se edita o se cancela), su cobro la sigue: pendiente se actualiza o se retira; cargado queda con la alerta de cambio de monto.
+  const sincronizarCobro = (ticket) => {
+    if (!firebaseUser || !ticket?.id) return;
+    sincronizarCobroDeOrden(ticket, { por: currentUser })
+      .catch((error) => console.warn('No se pudo actualizar el cobro de la orden:', error));
   };
 
   // La OLT del cliente se guarda en la orden al crearla (con la cédula buscada en SmartOLT). Las que no la tienen (una instalación con la
@@ -987,6 +959,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     setToastMsg({ type: 'success', text: 'Orden actualizada correctamente.' });
     notifyTicketChange(originalTicket, ticketToSave);
+    if (originalTicket?.estado === 'FINALIZADO') sincronizarCobro(ticketToSave);
     return true;
   };
 
@@ -1256,6 +1229,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     setToastMsg({ type: 'success', text: 'Orden aprobada y finalizada con éxito.' });
     notifyTicketChange(ticket, updatedTicket);
     enviarAlInventario(updatedTicket);
+    emitirCobroDeOrden(updatedTicket);
     completarOlt(updatedTicket);
     return true;
   };
@@ -1326,6 +1300,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     setToastMsg({ type: 'success', text: 'Orden finalizada.' });
     notifyTicketChange(ticket, updatedTicket);
     enviarAlInventario(updatedTicket);
+    emitirCobroDeOrden(updatedTicket);
     completarOlt(updatedTicket);
     return true;
   };
@@ -1584,6 +1559,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const updatedTicket = { ...cancelada, ...camposCancelacion(actual, { ...cancelada, motivoCancelacion: motivo.valor }, { por: currentUser }), historialEdiciones: [...(actual.historialEdiciones || []), nuevaEdicion] };
     if (!(await guardarConGuardia(actual, updatedTicket, verificarEstado([actual.estado])))) return false;
     notifyTicketChange(actual, updatedTicket);
+    if (actual.estado === 'FINALIZADO') sincronizarCobro(updatedTicket);
     setToastMsg({ type: 'success', text: 'Orden cancelada.' });
     return true;
   };
@@ -1630,9 +1606,6 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     tickets,
     ticketsCargados,
     cobrosPendientes,
-    cobrosPorRegistrar,
-    registrarPagoDeOrden,
-    registrarPagoPendienteDeOrden,
     mostrarCobro,
     mostrarCobroInmediato,
     cerrarCobro,

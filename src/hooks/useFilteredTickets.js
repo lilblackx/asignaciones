@@ -16,8 +16,7 @@ function parseFecha(fechaStr) {
 // ocultarProgramadasFuturas: el técnico no ve en "Activas" las órdenes cuya
 // fecha programada aún no llega (las encuentra en el filtro "Programadas").
 // preFinalizadasArriba: la oficina ve primero lo que el técnico pre-finalizó, para aprobarlo sin buscarlo (con otro orden pedido, ese orden manda).
-// pagosPendientes: ids de las órdenes con el pago del cliente pendiente de cobro (el filtro "Pago pendiente" las muestra aunque ya estén finalizadas).
-export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false, preFinalizadasArriba = false, ahora, pagosPendientes = null } = {}) {
+export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false, preFinalizadasArriba = false, ahora } = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('TODOS');
   const [tipoFilter, setTipoFilter] = useState('TODOS');
@@ -40,7 +39,6 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
         : statusFilter === 'EN_CAMINO' ? estaEnCamino(t, ahora)
         : statusFilter === 'EN_SITIO' ? estaEnSitio(t, ahora)
         : statusFilter === 'EN_INFRAESTRUCTURA' ? enInfraestructura(t)
-        : statusFilter === 'PAGO_PENDIENTE' ? Boolean(pagosPendientes?.has(t.id))
         : statusFilter === 'INSTALACION_SIN_UBICACION' ? instalacionSinUbicacion(t)
         : statusFilter === 'PENDIENTE_SIN_TECNICO' ? t.estado === 'PENDIENTE' && (!t.tecnico || t.tecnico.trim() === '')
         : t.estado?.toUpperCase() === statusFilter;
@@ -82,7 +80,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
     }
 
     return result;
-  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas, preFinalizadasArriba, ahora, pagosPendientes]);
+  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas, preFinalizadasArriba, ahora]);
 
   const visibleTickets = filteredTickets.slice(0, visibleCount);
   const hasMore = filteredTickets.length > visibleCount;

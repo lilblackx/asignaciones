@@ -26,6 +26,8 @@ import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO } from './tipoVisita.js';
 import { TRABAJOS_VNTA } from './registroVnTa.js';
 import { adelantosConSaldo, repartirAdelantos, saldoAdelanto } from './adelantos.js';
 import { bonosConSaldo, descuentosConSaldo } from './ajustes.js';
+import { aplicaYa, estaProgramado, textoCuota } from './descuentos.js';
+import { fechaCorta } from './calendario.js';
 import { MONEDA_BS } from './datosPago.js';
 
 export const CONCEPTOS_PAGO = [
@@ -186,7 +188,9 @@ const vacio = () => Object.fromEntries(CONCEPTOS_PAGO.map(({ id }) => [id, 0]));
 // [{ tecnico, cantidades, total, pendientes: [item], pagadas: n }] de más a menos por pagar. El total son dólares.
 // `adelantos`: los adelantos; `ajustes`: los descuentos y bonos por órdenes corregidas (un bono se suma al pago; un descuento se resta, igual que un adelanto);
 // `descuentosLibres`: los descuentos con motivo que se le ponen a un técnico (se restan igual).
-export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = [], descuentosLibres = []) {
+export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = [], todosLosDescuentos = [], hoy = diaDe(Date.now())) {
+  // Un descuento programado no cuenta hasta su fecha.
+  const descuentosLibres = todosLosDescuentos.filter((d) => aplicaYa(d, hoy));
   const ya = pagadas instanceof Set ? pagadas : new Set(pagadas);
   const mapa = new Map();
   for (const item of items) {
@@ -197,8 +201,8 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
     fila.total += tarifas[item.concepto] || 0;
     fila.pendientes.push(item);
   }
-  // Un técnico con adelantos, descuentos o bonos por aplicar tiene tarjeta aunque no tenga órdenes por pagar.
-  for (const a of [...adelantos, ...ajustes, ...descuentosLibres]) {
+  // Un técnico con adelantos, descuentos (también los programados) o bonos por aplicar tiene tarjeta aunque no tenga órdenes por pagar.
+  for (const a of [...adelantos, ...ajustes, ...todosLosDescuentos]) {
     if (saldoAdelanto(a) > 0 && !mapa.has(a.tecnico)) mapa.set(a.tecnico, { tecnico: a.tecnico, cantidades: vacio(), total: 0, pendientes: [], pagadas: 0 });
   }
   const suma = (lista) => redondear(lista.reduce((s, a) => s + saldoAdelanto(a), 0));
@@ -210,6 +214,7 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
       const descuentos = descuentosConSaldo(ajustes, f.tecnico);
       const libres = adelantosConSaldo(descuentosLibres, f.tecnico);
       const bonos = bonosConSaldo(ajustes, f.tecnico);
+      const programados = todosLosDescuentos.filter((d) => d.tecnico === f.tecnico && estaProgramado(d, hoy));
       const montoBonos = suma(bonos);
       // Lo que se resta (adelantos y descuentos, del más viejo al más nuevo) sale de las órdenes más los bonos, y nunca es más que eso: lo que sobra queda como saldo.
       const { descuento, partes: todas } = repartirAdelantos([...delAdelanto, ...descuentos, ...libres].sort((a, b) => marca(a) - marca(b)), redondear(total + montoBonos));
@@ -222,6 +227,7 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
         adelantos: suma(delAdelanto),
         descuentosOrden: suma(descuentos),
         descuentosLibres: suma(libres),
+        descuentosProgramados: suma(programados),
         bonos: montoBonos,
         descuento,
         partes: todas.filter((p) => !idsDescuentos.has(p.id) && !idsLibres.has(p.id)),
@@ -250,7 +256,7 @@ export function ordenesYaPagadas(pagadas, items) {
 // ¿Tiene algo por pagar? Órdenes o un bono por una orden corregida.
 export const tienePorPagar = (fila) => fila.pendientes.length > 0 || (fila.bonos ?? 0) > 0;
 // Cómo se ve su tarjeta: por pagar, con algo por descontar (adelantos, descuentos por órdenes corregidas o descuentos con motivo) o al día.
-export const estadoDeFila = (fila) => (tienePorPagar(fila) ? 'POR_PAGAR' : (fila.adelantos ?? 0) > 0 || (fila.descuentosOrden ?? 0) > 0 || (fila.descuentosLibres ?? 0) > 0 ? 'CON_ADELANTO' : 'PAGADO');
+export const estadoDeFila = (fila) => (tienePorPagar(fila) ? 'POR_PAGAR' : (fila.adelantos ?? 0) > 0 || (fila.descuentosOrden ?? 0) > 0 || (fila.descuentosLibres ?? 0) > 0 ? 'CON_ADELANTO' : (fila.descuentosProgramados ?? 0) > 0 ? 'PROGRAMADO' : 'PAGADO');
 
 // Lo que falta pagar: el total de las órdenes más los bonos, menos lo que se descuenta (adelantos y descuentos).
 export const totalPendiente = (filas) => redondear(filas.reduce((s, f) => s + (f.neto ?? f.total), 0));
@@ -476,10 +482,11 @@ export const avisoDeAdelanto = (adelanto) => ({
 });
 
 // El aviso de un descuento con motivo que se le puso al técnico.
-export const avisoDeDescuento = (d) => ({
-  title: 'Descuento registrado',
-  body: `Se te registró un descuento de ${dolares(d.monto)}. Motivo: ${d.motivo}. Se resta de tu próximo pago.`,
-});
+export const avisoDeDescuento = (d) => {
+  if (Number(d.cuotas) > 1) return { title: 'Descuento programado', body: `Se te programó un descuento de ${dolares(d.totalPlan)} en ${d.cuotas} cuotas, desde el ${fechaCorta(d.desde)}. Motivo: ${d.motivo}. Cada cuota se resta del primer pago que se te haga desde su fecha.` };
+  if (d.desde && d.desde > diaDe(Number(d.creadoEn) || Date.now())) return { title: 'Descuento programado', body: `Se te programó un descuento de ${dolares(d.monto)}, desde el ${fechaCorta(d.desde)}. Motivo: ${d.motivo}. Se resta del primer pago que se te haga desde esa fecha.` };
+  return { title: 'Descuento registrado', body: `Se te registró un descuento de ${dolares(d.monto)}. Motivo: ${d.motivo}. Se resta de tu próximo pago.` };
+};
 
 // --- Adelantos en la pantalla y en los reportes ---
 
@@ -506,9 +513,10 @@ export const descuentosDelPeriodo = (descuentos, rango, { tecnico } = {}) => des
   .filter((d) => enRango(diaDe(Number(d.creadoEn)), rango) && (!tecnico || String(d.tecnico).toUpperCase() === tecnico.toUpperCase()))
   .sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
 // "Por descontar" / "Descontado en parte (20,00 $)" / "Descontado" / "Anulado": igual que un adelanto.
-export const estadoDeDescuento = estadoDeAdelanto;
-export const columnasDescuentos = () => [{ titulo: 'Fecha y hora' }, { titulo: 'Técnico' }, { titulo: 'Monto', derecha: true }, { titulo: 'Motivo' }, { titulo: 'Registrado por' }, { titulo: 'Estado' }];
-export const filaDescuento = (d) => [fechaHoraLegiblePago(Number(d.creadoEn)), d.tecnico, dolares(d.monto), d.motivo || '', d.por || '', estadoDeDescuento(d)];
+// Uno programado dice desde cuándo entra: "Programado (desde el 05/11/2026)".
+export const estadoDeDescuento = (d, hoy = diaDe(Date.now())) => (estaProgramado(d, hoy) ? `Programado (desde el ${fechaCorta(d.desde)})` : estadoDeAdelanto(d));
+export const columnasDescuentos = () => [{ titulo: 'Fecha y hora' }, { titulo: 'Técnico' }, { titulo: 'Monto', derecha: true }, { titulo: 'Aplica desde' }, { titulo: 'Motivo' }, { titulo: 'Registrado por' }, { titulo: 'Estado' }];
+export const filaDescuento = (d) => [fechaHoraLegiblePago(Number(d.creadoEn)), d.tecnico, dolares(d.monto), d.desde ? fechaCorta(d.desde) : '', [d.motivo || '', textoCuota(d) && `(${textoCuota(d)})`].filter(Boolean).join(' '), d.por || '', estadoDeDescuento(d)];
 
 // --- Las órdenes agrupadas como en los reportes ---
 

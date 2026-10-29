@@ -172,45 +172,34 @@ export function exportResumenTecnicosToCsv(orders, filtros) {
   ]);
 }
 
-// Los pagos de los clientes del módulo de Administración (documentos de pagosOrdenes) tal como quedaron filtrados en pantalla.
-export function exportPagosToCsv(filas, filtros) {
+// Los cobros a los clientes del módulo de Administración (documentos de cobrosClientes) tal como quedaron filtrados en pantalla.
+export function exportCobrosToCsv(filas, filtros) {
   const fecha = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
-  const estados = { PENDIENTE_COBRO: 'Pendiente de cobro', POR_CONCILIAR: 'Por conciliar', CONCILIADO: 'Conciliado', SIN_COBRAR: 'Sin cobrar' };
+  const estados = { PENDIENTE: 'Pendiente', CARGADO: 'Cargado' };
+  const monedaTexto = (c) => (c.moneda === 'USD' ? '$' : c.moneda === 'BS' ? 'Bs' : '');
   const columnas = [
-    ['Registrado', p => fecha(p.creadoEn)],
-    ['Código', p => p.codigo],
-    ['Cliente', p => p.nombre],
-    ['Cédula', p => p.cedula],
-    ['Teléfono', p => p.telefono],
-    ['Técnico', p => p.tecnico],
-    ['Trabajo', p => [p.tipoTrabajo, p.falla].filter(Boolean).join(' - ')],
-    ['Estado', p => estados[p.estado] || p.estado],
-    ['Cobro esperado', p => (p.cobro ? `${String(p.cobro.monto).replace('.', ',')} ${p.cobro.moneda === 'USD' ? '$' : 'Bs'}` : '')],
-    ['Moneda pagada', p => (p.pago ? (p.pago.moneda === 'USD' ? '$' : 'Bs') : '')],
-    ['Monto pagado', p => (p.pago ? String(p.pago.monto).replace('.', ',') : '')],
-    ['Forma de pago', p => p.pago?.forma],
-    ['Banco', p => p.pago?.banco],
-    ['Titular de la cuenta', p => p.pago?.titular],
-    ['Cuenta de la empresa', p => p.pago?.cuentaEmpresa],
-    ['Referencia', p => p.pago?.referencia],
-    ['Fecha del pago', p => fecha(p.pago?.pagadoEn)],
-    ['Moneda distinta', p => (p.monedaDistinta ? 'Sí' : '')],
-    ['Monto distinto', p => (p.diferencia ? 'Sí' : '')],
-    ['Pagó junto con', p => p.compartidoCon?.codigo],
-    ['Nota del técnico', p => p.nota],
-    ['Registrado por', p => p.registradoPor],
-    ['Conciliado por', p => p.conciliadoPor],
-    ['Conciliado el', p => fecha(p.conciliadoEn)],
-    ['Nota de Administración', p => p.notaAdministracion],
+    ['Emitido', c => fecha(c.creadoEn)],
+    ['Código', c => c.codigo],
+    ['Cliente', c => c.nombre],
+    ['Cédula', c => c.cedula],
+    ['Teléfono', c => c.telefono],
+    ['Técnico', c => c.tecnico],
+    ['Trabajo', c => [c.tipoTrabajo, c.falla].filter(Boolean).join(' - ')],
+    ['Monto', c => (c.monto > 0 ? String(c.monto).replace('.', ',') : '')],
+    ['Moneda', c => monedaTexto(c)],
+    ['Estado', c => estados[c.estado] || c.estado],
+    ['Cargado por', c => c.cargadoPor],
+    ['Cargado el', c => fecha(c.cargadoEn)],
+    ['Cambio de monto por corregir', c => (c.montoCambio ? 'Sí' : '')],
   ];
   const lineas = [
-    'Pagos de los clientes',
+    'Cobros a los clientes',
     `Generado: ${new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}`,
     `Filtros: ${filtros || 'ninguno'}`,
     `Total: ${filas.length}`,
     '',
     columnas.map(([label]) => csvField(label)).join(';'),
-    ...filas.map(p => filaDe(columnas, p)),
+    ...filas.map(c => filaDe(columnas, c)),
   ];
-  descargarCsv(`pagos_clientes_${fechaArchivoHoy()}.csv`, lineas);
+  descargarCsv(`cobros_clientes_${fechaArchivoHoy()}.csv`, lineas);
 }

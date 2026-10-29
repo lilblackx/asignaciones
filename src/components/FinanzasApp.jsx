@@ -5,6 +5,7 @@ import { useTema } from '../hooks/useTema';
 import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
 import { useFinanzas } from '../hooks/useFinanzas';
 import { usePagosFinanzas } from '../hooks/usePagosOrdenes';
+import { useCobrosFinanzas } from '../hooks/useCobrosClientes';
 import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
 import { rangoDe } from '../utils/periodoReporte';
@@ -65,6 +66,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   const finanzas = useFinanzas({ firebaseUser, rango, usuario: currentUser, setToastMsg });
   // Lo que pagaron los clientes por instalaciones y cambios de equipo (lo registra el técnico); solo se lee cuando se abre esa sección.
   const pagosClientes = usePagosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
+  const cobrosClientes = useCobrosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
   // La tasa BCV del dólar, para mostrar los bolívares (cada pago guarda la de su momento).
   const bcv = useTasaDolar();
   const tasa = bcv.tasa;
@@ -91,7 +93,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   const ajustesVisibles = useMemo(() => finanzas.ajustes.filter((a) => !tecnico || String(a.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.ajustes, tecnico]);
   // Los descuentos con motivo del técnico elegido (o de todos): se restan de su próximo pago.
   const descuentosVisibles = useMemo(() => finanzas.descuentos.filter((d) => !tecnico || String(d.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.descuentos, tecnico]);
-  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles]);
+  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy]);
   // Lo ya pagado en el periodo por técnico (respeta el técnico elegido arriba).
   const pagadasPorTecnico = useMemo(
     () => {
@@ -112,7 +114,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
     setErrorExportar('');
     setExportando(formato);
     try {
-      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosClientes: pagosClientes.pagos, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles, descuentos: descuentosVisibles } };
+      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosClientes: pagosClientes.pagos, cobrosClientes: cobrosClientes.cobros, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles, descuentos: descuentosVisibles } };
       const documento = actual.documento(contexto);
       if (formato === 'csv') descargarCsv(csvDeDocumento(documento), `${actual.archivo}_${rango.desde}_${rango.hasta}.csv`);
       else await exportarDocumento(documento, formato, rango);
@@ -191,7 +193,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onTecnico={setTecnico}
                   tecnicos={nombresTecnicos}
                   cargando={actualizando}
-                  onRecargar={() => { actualizar(); if (seccion === 'CLIENTES') pagosClientes.recargar(); }}
+                  onRecargar={() => { actualizar(); if (seccion === 'CLIENTES') { pagosClientes.recargar(); cobrosClientes.recargar(); } }}
                   formatosExportar={['pdf', 'docx', 'csv']}
                   onExportar={exportar}
                   exportando={exportando}
@@ -234,7 +236,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onAnularDescuento={finanzas.anularDescuento}
                 />
               )}
-              {seccion === 'CLIENTES' && <PagosClientes pagos={pagosClientes.pagos} rango={rango} tecnico={tecnico} cargado={pagosClientes.cargado} error={pagosClientes.error} />}
+              {seccion === 'CLIENTES' && <PagosClientes cobros={cobrosClientes} pagos={pagosClientes} rango={rango} tecnico={tecnico} />}
               {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}
               {seccion === 'REPORTE' && <ResumenPagado resumen={pagado} rango={rango} ordenesPagadas={yaPagadas} tarifas={finanzas.tarifas} tasa={tasa} />}
               </div>
