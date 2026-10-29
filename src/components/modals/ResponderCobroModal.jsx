@@ -38,7 +38,7 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>

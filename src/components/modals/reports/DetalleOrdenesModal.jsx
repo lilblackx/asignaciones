@@ -13,7 +13,7 @@ export default function DetalleOrdenesModal({ titulo, subtitulo, columnas, filas
             <h2 className="text-sm font-black text-white flex items-center gap-2"><ListChecks className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> <span className="truncate">{titulo}</span></h2>
             {subtitulo && <p className="text-[11px] max-lg:text-xs font-medium text-red-400">{subtitulo}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-4 overflow-y-auto bg-fondo">
           <TablaReporte titulo={`${filas.length} ${filas.length === 1 ? 'orden' : 'órdenes'}`} columnas={columnas} filas={filas} vacio={vacio} />

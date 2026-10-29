@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, RefreshCw, Search } from 'lucide-react';
+import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, Pencil, RefreshCw, Search, Send } from 'lucide-react';
 import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
@@ -10,6 +10,7 @@ import BotonFiltros from './BotonFiltros';
 import { BUSCADOR } from './estilos';
 import ChipFiltro from './Chip';
 import Boton from './Boton';
+import CorregirEnvioModal from './modals/CorregirEnvioModal';
 
 const ETIQUETA_ESTADO = {
   SERIAL_NO_ENCONTRADO: 'Serial no existe',
@@ -77,7 +78,7 @@ function Serial({ serial }) {
   );
 }
 
-function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar }) {
+function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCorregir }) {
   const [ocupado, setOcupado] = useState(false);
   const [avisando, setAvisando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
@@ -124,6 +125,9 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar }) {
             Descartar
           </Boton>
         )}
+        <Boton variante="secundario" tamano="compacto" className="w-full" type="button" onClick={() => onCorregir(envio)} disabled={ocupado}>
+          <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Corregir la orden (serial, metraje, conectores)
+        </Boton>
         <Boton variante="secundario" tamano="compacto" className="w-full" type="button" onClick={reenviarAviso} disabled={ocupado || avisando}>
           <Bell className="w-3.5 h-3.5" aria-hidden="true" /> {avisando ? 'Reenviando aviso...' : 'Reenviar aviso a la app del almacén'}
         </Boton>
@@ -149,10 +153,11 @@ function lineasEnvio(e) {
   return lineas;
 }
 
-function FilaReciente({ envio, onReintentar, onReenviarAviso }) {
+function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorregir }) {
   const [abierta, setAbierta] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [avisando, setAvisando] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const lineas = lineasEnvio(envio);
 
@@ -172,6 +177,11 @@ function FilaReciente({ envio, onReintentar, onReenviarAviso }) {
     setAvisando(true);
     await onReenviarAviso(envio);
     setAvisando(false);
+  };
+  const reenviar = async () => {
+    setReenviando(true);
+    await onReenviar(envio);
+    setReenviando(false);
   };
 
   return (
@@ -197,6 +207,16 @@ function FilaReciente({ envio, onReintentar, onReenviarAviso }) {
               <Boton variante="secundario" tamano="compacto" type="button" onClick={copiar}>
                 <ClipboardCopy className="w-3 h-3" aria-hidden="true" /> {copiado ? 'Copiado' : 'Copiar resumen'}
               </Boton>
+              {envio.estado === 'ENVIADO' && (
+                <>
+                  <Boton variante="secundario" tamano="compacto" type="button" onClick={() => onCorregir(envio)}>
+                    <Pencil className="w-3 h-3" aria-hidden="true" /> Corregir
+                  </Boton>
+                  <Boton variante="principal" tamano="compacto" type="button" onClick={reenviar} disabled={reenviando}>
+                    <Send className={`w-3 h-3 ${reenviando ? 'animate-pulse' : ''}`} aria-hidden="true" /> {reenviando ? 'Reenviando...' : 'Reenviar'}
+                  </Boton>
+                </>
+              )}
               {ESTADOS_CON_ALERTA.includes(envio.estado) && (
                 <Boton variante="secundario" tamano="compacto" type="button" onClick={reenviarAviso} disabled={avisando}>
                   <Bell className="w-3 h-3" aria-hidden="true" /> {avisando ? 'Reenviando aviso...' : 'Reenviar aviso'}
@@ -227,7 +247,7 @@ const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u03
 // Módulo "Envíos al inventario" (solo para los usuarios de utils/accesoInventario): arriba, las órdenes aprobadas que no se
 // pudieron descontar del inventario del almacén, con "Reintentar" (por ejemplo, después de que el almacén ingresó el serial)
 // y "Descartar" (se da por resuelta sin enviar; queda guardada); abajo, la actividad reciente de los envíos.
-export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReenviarAviso, onReintentarTodas, onBuscar, onDescartar, onClose, enPagina = false }) {
+export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReenviar, onReenviarAviso, onReintentarTodas, onBuscar, onDescartar, onClose, usuario = '', enPagina = false }) {
   useEffect(() => { onCargar(); }, [onCargar]);
   const [filtro, setFiltro] = useState('TODOS');
   const [texto, setTexto] = useState('');
@@ -236,6 +256,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
   const [buscando, setBuscando] = useState(false);
   const [buscado, setBuscado] = useState('');
   const [reintentandoTodas, setReintentandoTodas] = useState(false);
+  const [corrigiendo, setCorrigiendo] = useState(null);
 
   const porReintentar = [...envios, ...pendientes];
   const reintentarTodas = async () => {
@@ -295,7 +316,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-4 rounded-xl border border-dashed border-zinc-400 dark:border-zinc-700">No hay órdenes pendientes de revisar.</p>
             ) : (
               <ul className="space-y-2.5">
-                {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} onDescartar={onDescartar} />)}
+                {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} onDescartar={onDescartar} onCorregir={setCorrigiendo} />)}
               </ul>
             )}
           </section>
@@ -341,7 +362,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               </p>
             ) : (
               <ul className="border border-zinc-200 dark:border-zinc-800 rounded-xl divide-y divide-zinc-200 dark:divide-zinc-800">
-                {visibles.map((e) => <FilaReciente key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} />)}
+                {visibles.map((e) => <FilaReciente key={e.id} envio={e} onReintentar={onReintentar} onReenviar={onReenviar} onReenviarAviso={onReenviarAviso} onCorregir={setCorrigiendo} />)}
               </ul>
             )}
 
@@ -358,6 +379,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
           </section>
         </div>
       </div>
+      {corrigiendo && <CorregirEnvioModal envio={corrigiendo} usuario={usuario} onReenviar={onReenviar} onClose={() => setCorrigiendo(null)} />}
     </Modal>
   );
 }

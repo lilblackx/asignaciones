@@ -33,6 +33,9 @@ import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
 import { useFormasPago } from './hooks/useFormasPago';
+import { usePagosPendientes, usePagosTecnico } from './hooks/usePagosOrdenes';
+import { estadoReferencia } from './lib/pagosOrdenes';
+import { normalizarFormasPago } from './utils/formasPago';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
 import { useCompletarPromotoras } from './hooks/useCompletarPromotoras';
 import { esProgramadaFutura } from './utils/programada';
@@ -92,7 +95,7 @@ const EMPTY_FORM = () => ({
 });
 
 // Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).
-const ACTIVO_EN_MENU = { FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
+const ACTIVO_EN_MENU = { ADMINISTRACION: 'administracion', FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
 
 // `auth`: la sesión (useAuth) la resuelve Root, que decide qué pantalla corresponde al rol.
 // `moduloActivo` / `onAbrirModulo(id)`: el administrador abre cada módulo desde el menú lateral y se ve como página dentro del marco, a la derecha del menú (los demás roles los abren como ventana); Root guarda cuál está abierto
@@ -112,7 +115,12 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
+  // Los pagos que el técnico ya registró (sin saberlo no se le pide ninguno).
+  const pagosCliente = usePagosTecnico(firebaseUser, role === ROLES.TECNICO ? tecnicoAsociado : null);
+  // Las órdenes con pago pendiente de cobro (etiqueta en la lista y contador del menú): la oficina y el ADMIN las escuchan todas; el técnico, las suyas.
+  const pagosPendientesTodos = usePagosPendientes(firebaseUser, role === ROLES.ADMIN || role === ROLES.USUARIO);
+  const pagosPendientes = useMemo(() => (role === ROLES.TECNICO ? new Set(pagosCliente.pagos.filter((p) => p.estado === 'PENDIENTE_COBRO').map((p) => p.ticketId || p.id)) : pagosPendientesTodos), [role, pagosCliente.pagos, pagosPendientesTodos]);
+  const { tickets, ticketsCargados, cobrosPendientes, cobrosPorRegistrar, registrarPagoDeOrden, registrarPagoPendienteDeOrden, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName, pagosCliente);
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
   const filasCambiadas = useFilasCambiadas(tickets, ticketsCargados);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
@@ -120,7 +128,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   useAvisosPagos({ firebaseUser, tecnico: isTecnico ? tecnicoAsociado : null, onNotify: notifications.addNotification, setToastMsg });
   // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
   const verInventario = veEnviosInventario(currentUser);
-  const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
+  const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviar: reenviarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
   useCompletarPromotoras(firebaseUser, role, tickets);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports, refreshReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
@@ -241,7 +249,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     ? ticketsParaVer.some(t => (t.estado === 'PENDIENTE' && !esProgramadaFutura(t)) || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
     : tickets.length > 0;
 
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, ahora });
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, ahora, pagosPendientes });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.
@@ -494,8 +502,15 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const handleConfirmPreFinalizar = conAviso(async (ticket, extra) => {
     // Conector interno: el cobro se informa ya (y queda en el historial de la orden).
     const monto = avisaCobroAlPreFinalizar(extra.tipoVisita) ? montoBsDe(tasaConfig) : null;
-    const ok = await preFinalizarTicket(ticket, { ...extra, montoBs: monto });
+    const { pagoCliente, ...datosVisita } = extra;
+    const ok = await preFinalizarTicket(ticket, { ...datosVisita, montoBs: monto });
     setPreFinalizarTarget(null);
+    // Instalación: el pago del cliente que el técnico anotó en el mismo formulario. Si no se pudo guardar, la pantalla de pago vuelve a salir (la orden ya está en revisión sin pago).
+    if (ok && isTecnico && pagoCliente) {
+      const conDatos = { ...ticket, ...datosVisita };
+      const r = pagoCliente.tipo === 'pago' ? await registrarPagoDeOrden(conDatos, pagoCliente.valor) : await registrarPagoPendienteDeOrden(conDatos, { nota: pagoCliente.nota, compartidoCon: pagoCliente.compartidoCon });
+      if (r?.error || r?.repetida) setToastMsg({ type: 'error', duration: 9000, text: 'La orden se envió a revisión, pero el pago no se guardó. Vuelve a registrarlo en la pantalla que sale ahora.' });
+    }
     // Conector interno: el técnico ve el cobro ya, para informárselo al cliente en el momento.
     if (ok && isTecnico && avisaCobroAlPreFinalizar(extra.tipoVisita)) {
       if (monto) mostrarCobroInmediato({ ...ticket, ...extra }, monto);
@@ -644,11 +659,12 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onCerrar={() => setIsSidebarOpen(false)}
             veInventario={verInventario}
             alertasInventario={enviosInventario.length}
+            pagosPorCobrar={pagosPendientes.size}
             acciones={{ inicio: () => { onAbrirModulo(null); handleGoHome(); }, modulo: onAbrirModulo }}
           />
         )}
 
-        {isAdmin && (moduloActivo === 'FINANZAS' || moduloActivo === 'PROMOTORA' || moduloActivo === 'INFRAESTRUCTURA') && (
+        {isAdmin && (moduloActivo === 'FINANZAS' || moduloActivo === 'PROMOTORA' || moduloActivo === 'INFRAESTRUCTURA' || moduloActivo === 'ADMINISTRACION') && (
           <div className="flex-1 min-w-0">{renderModulo(moduloActivo, { onAbrirMenu: () => setIsSidebarOpen(true) })}</div>
         )}
 
@@ -718,6 +734,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             setSortBy={setSortBy}
             technicians={technicians}
             isTecnico={isTecnico}
+            conPagoPendiente={pagosPendientes.size > 0}
           />
 
           <TechnicianWorkload tickets={tickets} technicians={technicians} getTecnicoColor={getTecnicoColor} canEditTickets={canEditTickets} isTecnico={isTecnico} onToggleActivo={toggleTechnicoActivoSeguro} onOpenSinTecnico={() => setStatusFilter('PENDIENTE_SIN_TECNICO')} ahora={ahora} onOpenViaje={setStatusFilter} />
@@ -736,6 +753,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           {/* Al llegar los datos (ticketsCargados) la lista entra con un fundido en vez de aparecer de golpe. */}
           <div key={String(ticketsCargados)} className="lg:animate-fade-in">
             <TicketsMobileList
+              pagosPendientes={pagosPendientes}
               filteredTickets={visibleTickets}
               canEditTickets={canEditTickets}
               isTecnico={isTecnico}
@@ -763,6 +781,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             />
 
             <TicketsTable
+              pagosPendientes={pagosPendientes}
               filteredTickets={visibleTickets}
               filasCambiadas={filasCambiadas}
               canEditTickets={canEditTickets}
@@ -1005,6 +1024,14 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {preFinalizarTarget && (
           <PreFinalizarModal
             ticket={tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget}
+            pagoInstalacion={isTecnico && !pagosCliente.ids.has(preFinalizarTarget.id) ? {
+              cuentasEmpresa: normalizarFormasPago(formasPago),
+              otrasOrdenes: tickets
+                .filter((o) => o.id !== preFinalizarTarget.id && String(o.cedula || '').trim() !== '' && String(o.cedula || '').replace(/\D/g, '') === String((tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget).cedula || '').replace(/\D/g, ''))
+                .map((o) => ({ id: o.id, codigo: o.codigo, nombre: o.nombre })),
+              // La referencia ya está en otra orden: { ticketId, codigo }; si está libre, null.
+              verificarReferencia: async (clave) => { const e = await estadoReferencia(clave, preFinalizarTarget.id); return e.estado === 'ajena' ? { ticketId: e.ticketId, codigo: e.codigo } : null; },
+            } : null}
             onConfirm={handleConfirmPreFinalizar}
             onConsultarCobro={consultarCobroRecableado}
             onClose={() => setPreFinalizarTarget(null)}
@@ -1040,6 +1067,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
         {detalleTarget && (
           <DetalleOrdenModal
+            verPago={canEditTickets}
+            pagosPendientes={pagosPendientes}
             ticket={tickets.find(t => t.id === detalleTarget.id) || detalleTarget}
             onCopy={(texto, mensaje) => copyToClipboard(texto, mensaje)}
             onClose={() => setDetalleTarget(null)}
@@ -1061,7 +1090,23 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           />
         )}
 
-        {isTecnico && cobrosPendientes.length > 0 && (
+        {isTecnico && cobrosPorRegistrar.length > 0 ? (
+          <CobroResultanteModal
+            ticket={cobrosPorRegistrar[0]}
+            restantes={cobrosPorRegistrar.length - 1}
+            formasPago={formasPago}
+            onCopy={copyToClipboard}
+            onClose={() => {}}
+            registro={{
+              onRegistrar: registrarPagoDeOrden,
+              onPagaDespues: registrarPagoPendienteDeOrden,
+              // Otras órdenes del mismo cliente (misma cédula), por si pagó varias con un solo pago.
+              otrasOrdenes: tickets
+                .filter((o) => o.id !== cobrosPorRegistrar[0].id && String(o.cedula || '').replace(/\D/g, '') === String(cobrosPorRegistrar[0].cedula || '').replace(/\D/g, '') && String(o.cedula || '').trim() !== '')
+                .map((o) => ({ id: o.id, codigo: o.codigo, nombre: o.nombre })),
+            }}
+          />
+        ) : isTecnico && cobrosPendientes.length > 0 && (
           <CobroResultanteModal ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} formasPago={formasPago} onCopy={copyToClipboard} onClose={cerrarCobro} />
         )}
 
@@ -1102,6 +1147,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onCargarMas={cargarMasEnvios}
             onActualizar={actualizarRecientes}
             onReintentar={reintentarEnvio}
+            onReenviar={reenviarEnvio}
+            usuario={currentUser}
             onReenviarAviso={reenviarAvisoEnvio}
             onReintentarTodas={reintentarTodasEnvios}
             onBuscar={buscarEnvios}

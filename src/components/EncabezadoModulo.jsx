@@ -18,7 +18,7 @@ export default function EncabezadoModulo({ Icono, titulo, onClose, onVolver, acc
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {acciones}
         {onClose && (
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
         )}
       </div>
     </div>

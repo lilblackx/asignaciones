@@ -1,16 +1,18 @@
 import { useRef, useState } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { HandCoins, MinusCircle, TriangleAlert } from 'lucide-react';
 import ResumenCifras from './ResumenCifras';
 import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
 import Colapsable from '../Colapsable';
+import SelectMenu from '../SelectMenu';
+import Boton from '../Boton';
 import ListaTecnicos from './ListaTecnicos';
 import DetalleTecnico from './DetalleTecnico';
 import PanelPago from './PanelPago';
 import PanelAdelanto from './PanelAdelanto';
 import PanelDescuento from './PanelDescuento';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
-import { BOTON_FILA, TARJETA, TITULO_SECCION } from './estilos';
+import { BOTON_FILA, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, descuentosDelPeriodo, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
 import { saldoAdelanto } from '../../utils/adelantos';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
@@ -20,7 +22,7 @@ import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 // al elegir uno, su pantalla con un botón para volver). "Pagar", "Adelanto" y "Descuento" abren su formulario en esa misma pantalla, no en una ventana.
 // `adelantos` y `descuentos`: los adelantos y los descuentos con motivo; `onPagar(fila, { datosPago, notificar, nota })`, `onAdelanto(tecnico, entrada, { notificar })`, `onDescuento(tecnico, entrada, { notificar })`,
 // `onAnularAdelanto(adelanto)` y `onAnularDescuento(descuento)` devuelven true si se guardó.
-export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento }) {
+export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento, tecnicosTodos = [] }) {
   const grande = useEsPantallaGrande();
   const [elegido, setElegido] = useState(null);
   const [modo, setModo] = useState('detalle');
@@ -30,6 +32,11 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   const [anulandoDescuento, setAnulandoDescuento] = useState(null);
   const [verSinTecnico, setVerSinTecnico] = useState(false);
   const [verSinTipo, setVerSinTipo] = useState(false);
+  // "Descuento" y "Adelanto" generales: a cualquier técnico, tenga o no órdenes por pagar (no dependen de que exista su tarjeta).
+  const [general, setGeneral] = useState(null); // null | 'descuento' | 'adelanto'
+  const [tecnicoGeneral, setTecnicoGeneral] = useState('');
+  const cerrarGeneral = () => { setGeneral(null); setTecnicoGeneral(''); };
+  const abrirGeneral = (tipo) => { setGeneral(tipo); setTecnicoGeneral(''); };
   const zonaDetalle = useRef(null);
 
   const tecnicos = filas.filter((f) => f.tecnico !== SIN_TECNICO);
@@ -113,9 +120,39 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
         </div>
       )}
 
-      {!enDetalleMovil && <h2 className={TITULO_SECCION}>Técnicos · {etiquetaRango(rango)}</h2>}
+      {!enDetalleMovil && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className={TITULO_SECCION}>Técnicos · {etiquetaRango(rango)}</h2>
+          {!general && (
+            <div className="flex flex-wrap gap-2">
+              <Boton variante="secundario" tamano="normal" icono={MinusCircle} onClick={() => abrirGeneral('descuento')} disabled={ocupado}>Nuevo descuento</Boton>
+              <Boton variante="secundario" tamano="normal" icono={HandCoins} onClick={() => abrirGeneral('adelanto')} disabled={ocupado}>Nuevo adelanto</Boton>
+            </div>
+          )}
+        </div>
+      )}
 
-      {tecnicos.length === 0 ? (
+      {general ? (
+        <div className={`${TARJETA} p-4 sm:p-5 space-y-4 max-w-3xl`}>
+          <div className="space-y-1">
+            <h3 className={TITULO_SECCION}>{general === 'descuento' ? 'Nuevo descuento' : 'Nuevo adelanto'}</h3>
+            <p className={TEXTO_SUAVE}>Elige a quién. No hace falta que tenga órdenes por pagar: queda por descontar de su próximo pago.</p>
+          </div>
+          <div>
+            <label htmlFor="general-tecnico" className={ETIQUETA}>Técnico</label>
+            <div className="mt-1">
+              <SelectMenu id="general-tecnico" ariaLabel={general === 'descuento' ? 'Técnico del descuento' : 'Técnico del adelanto'} className={SELECTOR} value={tecnicoGeneral} onChange={setTecnicoGeneral} items={[{ value: '', label: 'Elige el técnico' }, ...tecnicosTodos.map((t) => ({ value: t, label: t }))]} />
+            </div>
+          </div>
+          {!tecnicoGeneral ? (
+            <Boton variante="secundario" tamano="normal" onClick={cerrarGeneral}>Cancelar</Boton>
+          ) : general === 'descuento' ? (
+            <PanelDescuento key={`d-${tecnicoGeneral}`} tecnico={tecnicoGeneral} neto={filas.find((f) => f.tecnico === tecnicoGeneral)?.neto ?? filas.find((f) => f.tecnico === tecnicoGeneral)?.total ?? 0} porDescontar={filas.find((f) => f.tecnico === tecnicoGeneral)?.descuentosLibres ?? 0} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onDescuento(tecnicoGeneral, entrada, opciones)} onVolver={cerrarGeneral} volverTexto="Cancelar" />
+          ) : (
+            <PanelAdelanto key={`a-${tecnicoGeneral}`} tecnico={tecnicoGeneral} porDescontar={filas.find((f) => f.tecnico === tecnicoGeneral)?.adelantos ?? 0} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onAdelanto(tecnicoGeneral, entrada, opciones)} onVolver={cerrarGeneral} volverTexto="Cancelar" />
+          )}
+        </div>
+      ) : tecnicos.length === 0 ? (
         <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ninguna orden pagable en este periodo. Aquí solo aparecen las que Revisión de órdenes ya aprobó: amplía el rango de fechas o aprueba las pendientes en Revisión de órdenes.</p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(20rem,26rem)_1fr] items-start">

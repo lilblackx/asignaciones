@@ -120,6 +120,9 @@ async function resolveTokens(env, accessToken, target) {
     const oficina = await Promise.all(['ADMIN', 'USUARIO'].map((r) => runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: r })));
     const seen = new Set();
     docs = oficina.flat().filter((d) => (seen.has(d.name) ? false : (seen.add(d.name), true)));
+  } else if (target?.type === 'administracion') {
+    // Quien concilia los pagos de los clientes: los usuarios con el rol ADMINISTRACION (el ADMIN no recibe estos avisos).
+    docs = await runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: 'ADMINISTRACION' });
   } else if (target?.type === 'aprobadores') {
     const admins = await runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: 'ADMIN' });
     const puedeCerrar = await runQuery(env, accessToken, 'puedeCerrar', 'EQUAL', { booleanValue: true });
@@ -206,7 +209,7 @@ async function handleResetPassword(request, env, headers, callerUid) {
 // Alta de usuario hecha por un ADMIN: crea la cuenta de Auth y su perfil. Va por
 // el Worker para poder cerrar el registro público de Firebase Auth (con el registro
 // abierto, cualquiera con la apiKey pública podía crearse una cuenta).
-const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS', 'INFRAESTRUCTURA'];
+const ROLES_VALIDOS = ['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS', 'INFRAESTRUCTURA', 'ADMINISTRACION'];
 const USERNAME_VALIDO = /^[a-z0-9._-]{1,40}$/;
 
 async function crearCuentaAuth(env, accessToken, email, password) {
@@ -800,7 +803,7 @@ export default {
     if (pathname === '/inventario/notificar') {
       return reenviarNotificacion(request, env, headers, payload.sub, depsInventario);
     }
-    if (pathname === '/inventario/enviar' || pathname === '/inventario/reintentar') {
+    if (pathname === '/inventario/enviar' || pathname === '/inventario/reintentar' || pathname === '/inventario/reenviar') {
       return manejarInventario(request, env, headers, payload.sub, depsInventario);
     }
 
@@ -823,7 +826,10 @@ export default {
       const rol = await rolActivo(env, accessToken, payload.sub);
       // Una PROMOTORA solo avisa a la oficina de una venta nueva, y solo si el administrador le dio el permiso de crear ventas.
       // FINANZAS solo le avisa a un técnico que se le registró un pago, un adelanto o un descuento.
-      const permitido = rol === 'PROMOTORA'
+      // Avisar a ADMINISTRACION de un pago de un cliente lo hace el técnico al registrarlo (o decir que el cliente paga después); nadie más, ni otro aviso a ese destino.
+      const permitido = target.type === 'administracion'
+        ? rol === 'TECNICO' && tipo === 'pagoCliente'
+        : rol === 'PROMOTORA'
         ? target.type === 'oficina' && tipo === 'nuevaVenta' && (await getUserDoc(env, accessToken, payload.sub))?.fields?.puedeCrearVentas?.booleanValue === true
         : rol === 'FINANZAS'
           ? target.type === 'tecnico' && ['pagoTecnico', 'adelantoTecnico', 'descuentoTecnico'].includes(tipo)

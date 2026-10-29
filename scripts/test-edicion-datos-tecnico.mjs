@@ -4,6 +4,7 @@
 import {
   cambiosDatosTecnico, formularioDatosTecnico, formularioModificado, tieneDatosDelTecnico, validarDatosTecnico,
 } from '../src/utils/edicionDatosTecnico.js';
+import { corregirDatosParaEnvio } from '../src/utils/correccionEnvio.js';
 import { payloadEnvioInventario } from '../src/utils/envioInventario.js';
 import { errorSerialCaja, esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../src/utils/serialOlt.js';
 import { generarMensajeWhatsAppInstalacion } from '../src/utils/whatsapp.js';
@@ -149,6 +150,20 @@ check('el historial de un cambio de equipo y de un recableado',
   [cambiosDatosTecnico(cambioEquipo, { ...cambioEquipo, serialEquipo: 'ZTEG00112233' }), cambiosDatosTecnico(recableado, { ...recableado, metrosCable: 55 }), cambiosDatosTecnico(recableado, { ...recableado, tipoVisita: 'DROP_ATENUADO', metrosCable: null, conectorExterno: '' })],
   [['Serial del equipo nuevo: ZTEG00112233'], ['Recableado: 55 m de cable, Conector externo: Verde'], ['Tipo de visita: Drop atenuado', 'Recableado: Sin datos']]);
 check('el historial de una visita de conector con otras cantidades', cambiosDatosTecnico(visitaInterna, { ...visitaInterna, conectoresUsados: { verde: 3, azul: 0 } }), ['Conectores: 3 verdes']);
+
+// --- Corregir desde Envíos al inventario (órdenes ya cerradas) ---
+const AHORA = new Date('2026-10-29T12:00:00-04:00');
+const conPlantilla = { ...instalacionCompleta, plantillaOriginal: 'IS1\n*Mac:*\n*Instalador:*' };
+const corr = corregirDatosParaEnvio(conPlantilla, { ...formularioDatosTecnico(conPlantilla), serial: 'hwtc9z8y7x6w' }, { por: 'lfernandez', ahora: AHORA });
+check('corregir el serial deja la orden con el serial nuevo y no toca lo demás', [corr.ticket.instalacion.serial, corr.ticket.instalacion.metraje, corr.ticket.tecnico, corr.ticket.estado, corr.ticket.nombre], ['HWTC9Z8Y7X6W', 120, 'ABRAHAM', 'FINALIZADO', 'Leonardo Pineda']);
+check('lo corregido es lo que se envía al almacén', payloadEnvioInventario(corr.ticket).serial, 'HWTC9Z8Y7X6W');
+check('la corrección queda en el historial con quién la hizo y que fue desde Envíos al inventario', [corr.cambios, corr.ticket.historialEdiciones.at(-1).operador, corr.ticket.historialEdiciones.at(-1).detalle], [['Serial: HWTC9Z8Y7X6W'], 'lfernandez', 'Serial: HWTC9Z8Y7X6W (desde Envíos al inventario)']);
+check('la plantilla final de una instalación finalizada se rehace con el serial corregido', String(corr.ticket.plantillaFinal || '').includes('HWTC9Z8Y7X6W'), true);
+check('sin tocar nada no hay nada que guardar', corregirDatosParaEnvio(instalacionCompleta, formularioDatosTecnico(instalacionCompleta), { por: 'a' }).sinCambios, true);
+const mala = corregirDatosParaEnvio(instalacionCompleta, { ...formularioDatosTecnico(instalacionCompleta), serial: '' }, { por: 'a' });
+check('lo que la orden ya tenía no se puede dejar vacío', [mala.error, Boolean(mala.errores.serial), mala.primerCampo], [true, true, 'ed-serial']);
+const metrajeNuevo = corregirDatosParaEnvio(instalacionCompleta, { ...formularioDatosTecnico(instalacionCompleta), metraje: '95' }, { por: 'a', ahora: AHORA });
+check('el metraje corregido cambia lo que se descuenta del almacén', [metrajeNuevo.ticket.instalacion.metraje, payloadEnvioInventario(metrajeNuevo.ticket).dropMetros], [95, 95]);
 
 if (failures > 0) {
   console.log(`\n${failures} prueba(s) fallaron.`);

@@ -164,7 +164,7 @@ check('las reglas no dan escritura a los roles nuevos', /allow (create|update|de
 check('FINANZAS solo escribe en las colecciones de Finanzas', /allow (create|update|delete|write)[^;]*isFinanzasRole/.test(reglas), false);
 check('las colecciones de Finanzas se escriben con llevaFinanzas', ['tarifasPago', 'pagosTecnicos', 'ordenesPagadas'].every((c) => new RegExp(`match /artifacts/\\{appId\\}/public/data/${c}/[^}]*\\}[\\s\\S]*?allow (create|update|delete)[^;]*llevaFinanzas`).test(reglas)), true);
 const worker = leer('../cf-worker/src/index.js');
-check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS', 'INFRAESTRUCTURA'\]/.test(worker), true);
+check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS', 'INFRAESTRUCTURA', 'ADMINISTRACION'\]/.test(worker), true);
 check('Finanzas tiene su pantalla y no importa hooks de la oficina', /FinanzasApp/.test(root) && !/useTickets'|usePushToken|useUsers/.test(leer('../src/components/FinanzasApp.jsx')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');

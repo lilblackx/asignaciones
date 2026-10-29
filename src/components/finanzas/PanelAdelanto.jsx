@@ -13,7 +13,7 @@ import { stripEmojis } from '../../utils/sanitizeInput';
 
 // Registrar un adelanto a un técnico: siempre en dólares. Queda por descontar y se resta de lo que tenga pendiente en su próximo pago. Va en la misma pantalla (no es una ventana).
 // `onGuardar(entrada, { notificar })` devuelve true si se guardó.
-export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado, onGuardar, onVolver }) {
+export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado, onGuardar, onVolver, volverTexto = 'Volver al detalle' }) {
   const [hoy] = useState(() => fechaHoraDeMarca(Date.now()).fecha);
   const [form, setForm] = useState(() => ({ monto: '', forma: '', banco: '', referencia: '', nota: '', ...fechaHoraDeMarca(Date.now()) }));
   const [notificar, setNotificar] = useState(true);
@@ -32,7 +32,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
   return (
     <div className="space-y-4 lg:animate-fade-in">
       <div>
-        <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Volver al detalle</button>
+        <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-base font-bold text-zinc-900 dark:text-white">Registrar un adelanto a {tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.CON_ADELANTO.clase}`}>Adelanto</span>
@@ -75,7 +75,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
           </div>
           <div>
             <label htmlFor="adelanto-hora" className={ETIQUETA}>Hora</label>
-            <div className="mt-1"><CampoHora id="adelanto-hora" ariaLabel="Hora del adelanto" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR} claseBoton="px-4 text-sm" /></div>
+            <div className="mt-1"><CampoHora id="adelanto-hora" ariaLabel="Hora del adelanto" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} claseBoton="px-2.5 min-[400px]:px-4 text-sm" /></div>
           </div>
           <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
 

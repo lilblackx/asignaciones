@@ -172,7 +172,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center">
           <h2 className="text-sm font-black text-white">NUEVA ASIGNACIÓN</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
         </div>
 
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-2">

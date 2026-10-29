@@ -53,6 +53,16 @@ service cloud.firestore {
       return isAdminUser(appId) || isFinanzasRole(appId);
     }
 
+    // ADMINISTRACION concilia los pagos que los clientes hacen por las órdenes (pagosOrdenes, más abajo): lee las órdenes, los técnicos y los reportes (sin
+    // escribir nada de eso) y escribe solo esos pagos. El ADMIN también los trabaja.
+    function isAdministracionRole(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'ADMINISTRACION';
+    }
+
+    function llevaAdministracion(appId) {
+      return isAdminUser(appId) || isAdministracionRole(appId);
+    }
+
     // El nombre de usuario de quien escribe: lo que queda en "por" de cada registro de Finanzas.
     function usuarioFinanzas(appId) {
       return get(profilePath(appId)).data.get('username', '');
@@ -111,7 +121,7 @@ service cloud.firestore {
       // TECNICO solo puede ver su propio técnico vinculado (el cliente debe
       // hacer where('name','==', tecnicoAsociado); sin eso el list se rechaza).
       // Una PROMOTORA con permiso de crear ventas lee la lista para emparejar el "Instalador:" de la plantilla con un técnico.
-      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId) || isFinanzasRole(appId)
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId) || isFinanzasRole(appId) || isAdministracionRole(appId)
         || (isPromotoraRole(appId) && get(profilePath(appId)).data.get('puedeCrearVentas', false) == true)
         || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId));
 
@@ -175,7 +185,7 @@ service cloud.firestore {
       // ALMACEN cuenta el material de todas las órdenes; PROMOTORA solo ve las instalaciones que vendió ella (su
       // promotoraClave está entre las suyas). El cliente debe consultar con where('tipoTrabajo','==','INSTALACIÓN') y
       // where('promotoraClave','==', una de sus claves), si no la lectura es rechazada.
-      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId) || isFinanzasRole(appId)
+      allow read: if isAdminUser(appId) || isUsuarioRole(appId) || isAlmacenRole(appId) || isFinanzasRole(appId) || isAdministracionRole(appId)
         || (isPromotoraRole(appId) && resource.data.tipoTrabajo == 'INSTALACIÓN' && (promotoraVeTodas(appId) || resource.data.get('promotoraClave', '') in promotoraClaves(appId)))
         // Ventas (el PROMOTOR con "ve todas") también sigue las averías de tipo LOS: solo esas, y solo ellas.
         || (isPromotoraRole(appId) && promotoraVeTodas(appId) && resource.data.tipoTrabajo == 'AVERÍA' && resource.data.get('falla', '') == 'LOS')
@@ -309,7 +319,7 @@ service cloud.firestore {
 
     match /artifacts/{appId}/public/data/reports/{docId} {
       // ALMACEN lee los reportes para sumar el material de las órdenes ya archivadas; FINANZAS, para los cobros y pagos de las ya archivadas.
-      allow read: if canCerrar(appId) || isAlmacenRole(appId) || isFinanzasRole(appId)
+      allow read: if canCerrar(appId) || isAlmacenRole(appId) || isFinanzasRole(appId) || isAdministracionRole(appId)
         // INFRAESTRUCTURA lee solo los reportes de cierre (donde están las instalaciones archivadas); la consulta debe pedir tipoReporte.
         || (isInfraestructuraRole(appId) && resource.data.get('tipoReporte', '') == 'CIERRE');
       allow write: if canCerrar(appId);
@@ -614,6 +624,107 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['ultimo', 'actualizadoEn'])
         && request.resource.data.ultimo is int
         && request.resource.data.ultimo >= resource.data.ultimo;
+    }
+
+    // El pago que el cliente hace por el cobro de una orden: un documento por orden (id = id de la orden) con los datos clave de la orden copiados, para
+    // que el Cierre del día no lo afecte. El TECNICO crea el de su propia orden, una sola vez (no se edita): o registra el pago (POR_CONCILIAR, y reserva su
+    // referencia en el mismo lote) o dice que el cliente paga después (PENDIENTE_COBRO, con nota). ADMINISTRACION y ADMIN lo concilian, lo cobran, lo marcan
+    // sin cobrar o lo corrigen, siempre dejando quién y cuándo en el historial. Nadie lo borra. La OFICINA y el técnico dueño lo leen; el resto no.
+    match /artifacts/{appId}/public/data/pagosOrdenes/{ticketId} {
+      function referenciaDePago(appId) {
+        return /databases/$(database)/documents/artifacts/$(appId)/public/data/referenciasPago/$(request.resource.data.referenciaClave);
+      }
+
+      function pagoOrdenValido() {
+        let p = request.resource.data;
+        return p.keys().hasOnly(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'falla', 'tipoVisita', 'estado', 'cobro', 'pago', 'referenciaClave', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'conciliadoPor', 'conciliadoEn', 'notaAdministracion', 'creadoEn', 'actualizadoEn', 'historial'])
+          && p.keys().hasAll(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'falla', 'tipoVisita', 'estado', 'cobro', 'pago', 'referenciaClave', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'conciliadoPor', 'conciliadoEn', 'notaAdministracion', 'creadoEn', 'actualizadoEn', 'historial'])
+          && p.ticketId == ticketId
+          && p.codigo is string && p.codigo.size() <= 40
+          && p.nombre is string && p.nombre.size() <= 200
+          && p.cedula is string && p.cedula.size() <= 40
+          && p.telefono is string && p.telefono.size() <= 80
+          && p.tecnico is string && p.tecnico.size() > 0 && p.tecnico.size() <= 100
+          && p.tipoTrabajo is string && p.tipoTrabajo.size() <= 60
+          && p.falla is string && p.falla.size() <= 100
+          && p.tipoVisita is string && p.tipoVisita.size() <= 60
+          && p.estado in ['PENDIENTE_COBRO', 'POR_CONCILIAR', 'CONCILIADO', 'SIN_COBRAR']
+          && (p.cobro == null || (p.cobro is map && p.cobro.keys().hasOnly(['monto', 'moneda']) && p.cobro.monto is number && p.cobro.monto > 0 && p.cobro.moneda in ['BS', 'USD']))
+          && (p.pago == null || (p.pago is map
+            && p.pago.keys().hasOnly(['moneda', 'forma', 'monto', 'banco', 'titular', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
+            && p.pago.keys().hasAll(['moneda', 'forma', 'monto', 'banco', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
+            && p.pago.moneda in ['BS', 'USD']
+            && p.pago.forma in ['Pago móvil', 'Transferencia', 'Efectivo', 'Zelle', 'Binance', 'Otro']
+            && p.pago.monto is number && p.pago.monto > 0 && p.pago.monto <= 999999999
+            && p.pago.banco is string && p.pago.banco.size() <= 40
+            && (!('titular' in p.pago) || (p.pago.titular is string && p.pago.titular.size() <= 80))
+            && p.pago.cuentaEmpresa is string && p.pago.cuentaEmpresa.size() <= 160
+            && p.pago.referencia is string && p.pago.referencia.size() <= 40
+            && p.pago.pagadoEn is int))
+          && p.referenciaClave is string && p.referenciaClave.size() <= 200
+          && (p.referenciaClave == '' || p.referenciaClave.matches('^[a-z0-9_]+$'))
+          && p.nota is string && p.nota.size() <= 300
+          && p.notaAdministracion is string && p.notaAdministracion.size() <= 300
+          && (p.compartidoCon == null || (p.compartidoCon is map && p.compartidoCon.keys().hasOnly(['id', 'codigo'])
+            && p.compartidoCon.id is string && p.compartidoCon.id.size() > 0 && p.compartidoCon.id.size() <= 200 && p.compartidoCon.codigo is string && p.compartidoCon.codigo.size() <= 40))
+          && p.monedaDistinta is bool && p.diferencia is bool
+          && p.registradoPor is string && p.registradoPor.size() <= 100
+          && p.conciliadoPor is string && p.conciliadoPor.size() <= 100
+          && p.registradoEn is int && p.conciliadoEn is int && p.creadoEn is int && p.actualizadoEn is int
+          && p.historial is list && p.historial.size() >= 1 && p.historial.size() <= 100;
+      }
+
+      // El técnico solo crea el pago de su propia orden, ya pre-finalizada o finalizada, y a su nombre.
+      function tecnicoCreaSuPago(appId) {
+        let p = request.resource.data;
+        let orden = get(/databases/$(database)/documents/artifacts/$(appId)/public/data/tickets/$(ticketId)).data;
+        return isTecnicoRole(appId)
+          && p.tecnico == tecnicoAsociado(appId)
+          && orden.tecnico == tecnicoAsociado(appId)
+          && orden.estado in ['PRE-FINALIZADO', 'FINALIZADO']
+          && p.registradoPor == usuarioFinanzas(appId)
+          && p.conciliadoPor == '' && p.conciliadoEn == 0 && p.notaAdministracion == ''
+          && p.historial.size() == 1
+          && (
+            (p.estado == 'POR_CONCILIAR' && p.pago != null && p.compartidoCon == null
+              && (p.pago.referencia == '') == (p.referenciaClave == '')
+              // La referencia se reserva en el mismo lote y nadie la tenía: no se puede repetir en otra orden.
+              && (p.referenciaClave == '' || (!exists(referenciaDePago(appId)) && existsAfter(referenciaDePago(appId)) && getAfter(referenciaDePago(appId)).data.ticketId == ticketId)))
+            || (p.estado == 'PENDIENTE_COBRO' && p.pago == null && p.referenciaClave == '' && p.nota.size() > 0)
+          );
+      }
+
+      // FINANZAS ve el pago de una instalación, completo, cuando ya está conciliado (y de ningún otro tipo de orden).
+      allow read: if llevaAdministracion(appId) || isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId))
+        || (isFinanzasRole(appId) && resource.data.estado == 'CONCILIADO' && resource.data.tipoTrabajo.upper().matches('.*INSTAL.*'));
+      allow create: if pagoOrdenValido() && tecnicoCreaSuPago(appId);
+      allow update: if llevaAdministracion(appId)
+        && pagoOrdenValido()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'pago', 'referenciaClave', 'monedaDistinta', 'diferencia', 'conciliadoPor', 'conciliadoEn', 'notaAdministracion', 'actualizadoEn', 'historial'])
+        && request.resource.data.historial.size() > resource.data.historial.size()
+        && request.resource.data.historial.hasAll(resource.data.historial)
+        && (request.resource.data.conciliadoPor == resource.data.conciliadoPor || request.resource.data.conciliadoPor == usuarioFinanzas(appId));
+      allow delete: if false;
+    }
+
+    // Las referencias de pago ya usadas (un documento por referencia, con la forma de pago, el banco y el número ya normalizados como id): así dos técnicos no pueden
+    // registrar la misma ni a la vez. Se crea en el mismo lote que el pago y nadie la cambia. Solo ADMINISTRACION y ADMIN pueden repetir una referencia (con nota) y
+    // liberarla al corregirla o marcar el pago sin cobrar. El técnico consulta una por una (para decir en qué orden está), nunca la lista.
+    match /artifacts/{appId}/public/data/referenciasPago/{clave} {
+      allow get: if isTecnicoRole(appId) || isUsuarioRole(appId) || llevaAdministracion(appId);
+      allow list: if llevaAdministracion(appId);
+      allow create: if (isTecnicoRole(appId) || llevaAdministracion(appId))
+        && clave.matches('^[a-z0-9_]{1,200}$')
+        && request.resource.data.keys().hasOnly(['ticketId', 'codigo', 'por', 'en'])
+        && request.resource.data.ticketId is string && request.resource.data.ticketId.size() > 0 && request.resource.data.ticketId.size() <= 200
+        && request.resource.data.codigo is string && request.resource.data.codigo.size() <= 40
+        && request.resource.data.por == usuarioFinanzas(appId)
+        && request.resource.data.en is int
+        && existsAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosOrdenes/$(request.resource.data.ticketId))
+        && getAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosOrdenes/$(request.resource.data.ticketId)).data.referenciaClave == clave
+        && (llevaAdministracion(appId) || getAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosOrdenes/$(request.resource.data.ticketId)).data.tecnico == tecnicoAsociado(appId));
+      allow update: if false;
+      allow delete: if llevaAdministracion(appId);
     }
 
     match /artifacts/{appId}/public/data/config/{docId} {

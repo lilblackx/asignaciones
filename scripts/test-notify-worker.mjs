@@ -203,6 +203,20 @@ check('ni avisar a la oficina ni a los aprobadores', [(await enviar('finanzas-ui
 check('ni sin tipo', (await enviar('finanzas-uid', { ...avisoPago, tipo: undefined })).status, 403);
 check('no se envió nada de lo rechazado', enviosFcm.length, 2);
 
+// 9) Pago de un cliente: el técnico le avisa a ADMINISTRACION (y solo a ADMINISTRACION) que registró un pago o que el cliente paga después
+reiniciar();
+roles['admon-uid'] = 'ADMINISTRACION';
+roles['finanzas-uid'] = 'FINANZAS';
+const avisoPagoCliente = { target: { type: 'administracion' }, title: 'Pago registrado', body: 'AO7 · JOSE · 5.696 Bs', tipo: 'pagoCliente', ticketId: 't-pago' };
+r = await enviar('tecnico-uid', avisoPagoCliente);
+check('el técnico avisa a Administración de un pago de un cliente', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
+check('la búsqueda de destinos es por el rol ADMINISTRACION (no por el ADMIN ni la oficina)', busquedas.at(-1), { field: { fieldPath: 'role' }, op: 'EQUAL', value: { stringValue: 'ADMINISTRACION' } });
+check('el aviso lleva su tipo y la orden', [enviosFcm[0]?.data.tipo, enviosFcm[0]?.data.ticketId], ['pagoCliente', 't-pago']);
+check('el técnico no puede mandar otro tipo de aviso a Administración', (await enviar('tecnico-uid', { ...avisoPagoCliente, tipo: 'nuevaAsignacion' })).status, 403);
+check('ni sin tipo', (await enviar('tecnico-uid', { ...avisoPagoCliente, tipo: undefined })).status, 403);
+check('nadie más avisa a Administración: ni el ADMIN, ni Finanzas, ni la propia Administración', [(await enviar('admin-uid', avisoPagoCliente)).status, (await enviar('finanzas-uid', avisoPagoCliente)).status, (await enviar('admon-uid', avisoPagoCliente)).status], [403, 403, 403]);
+check('no se envió nada de lo rechazado', enviosFcm.length, 1);
+
 // --- Cierre automático: las instalaciones dejan un resumen liviano para la promotora ---
 const fetchBase = globalThis.fetch;
 const HOY = 'Tue Oct 13 2026';

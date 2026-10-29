@@ -13,7 +13,7 @@ export default function HistorialOrdenModal({ ticket, onClose }) {
             <h2 className="text-sm font-black text-white flex items-center gap-2"><History className="w-4 h-4 text-red-500" aria-hidden="true" /> HISTORIAL DE LA ORDEN</h2>
             <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 shrink-0"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 shrink-0"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-4 overflow-y-auto">
           <HistorialTimeline ticket={ticket} />

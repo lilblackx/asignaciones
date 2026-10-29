@@ -61,7 +61,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
         <h3 className="text-[11px] max-lg:text-xs font-black tracking-wide text-amber-800 dark:text-amber-300">DATOS QUE CARGÓ EL TÉCNICO</h3>
         <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
           Corrige lo que el técnico escribió.{instalacion ? ' La plantilla de la orden se actualiza con estos datos.' : ''}
-          {finalizada ? ' Si la orden ya se envió al inventario del almacén, el cambio no se reenvía: solo se corrige aquí.' : ''}
+          {finalizada ? ' Si la orden ya se envió al inventario del almacén, el cambio no se reenvía solo: usa "Reenviar" o "Corregir" en Envíos al inventario.' : ''}
         </p>
       </div>
 

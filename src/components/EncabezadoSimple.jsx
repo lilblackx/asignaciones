@@ -13,7 +13,7 @@ const ConfirmModal = lazy(() => import('./modals/ConfirmModal'));
 // `contexto` (opcional): una línea de contexto bajo el título, solo en PC (p. ej. la última actualización).
 // Las acciones principales del módulo en PC van en el lugar que deja AccionesEncabezado, a la derecha del título.
 // `onAbrirMenu` (opcional): el botón ☰ que abre el menú lateral en el celular (el administrador que está en este módulo dentro del menú lateral).
-export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, rol, isDarkMode, setIsDarkMode, handleLogout, accion = null, onAbrirMenu = null, contexto = '' }) {
+export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, rol, isDarkMode, setIsDarkMode, handleLogout, accion = null, onAbrirMenu = null, contexto = '', campana = null }) {
   const [confirmando, setConfirmando] = useState(false);
   // Dentro del menú lateral del administrador (`onAbrirMenu`), su nombre, el tema y cerrar sesión están en el pie de ese menú.
   const enMarco = !!onAbrirMenu;
@@ -23,7 +23,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
       <header className="bg-black/80 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b-4 border-red-600 lg:h-[62px]">
         <div className="px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center gap-2 max-w-[1400px] mx-auto w-full">
           {onAbrirMenu && (
-            <button type="button" onClick={onAbrirMenu} aria-label="Abrir menú" title="Menú" className="shrink-0 p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
+            <button type="button" onClick={onAbrirMenu} aria-label="Abrir menú" title="Menú" className="shrink-0 inline-flex items-center justify-center p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
               <Menu className="w-4 h-4" aria-hidden="true" />
             </button>
           )}
@@ -40,7 +40,8 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
               <span className="text-xs sm:text-sm font-bold leading-none text-red-500 max-w-[8rem] sm:max-w-[16rem] truncate">{nombre}</span>
               <span className="text-[11px] max-lg:text-xs font-bold text-zinc-400 uppercase tracking-wider">{rol}</span>
             </div>}
-            {!enMarco && <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700">
+            {campana}
+            {!enMarco && <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="inline-flex items-center justify-center p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700">
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>}
             {accion && (
@@ -51,7 +52,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
             {!enMarco && (
               <>
                 <div className="w-px h-8 bg-zinc-800 hidden sm:block mx-1"></div>
-                <button onClick={() => setConfirmando(true)} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg flex items-center transition-colors border border-zinc-700">
+                <button onClick={() => setConfirmando(true)} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg inline-flex items-center justify-center transition-colors border border-zinc-700">
                   <LogOut className="w-4 h-4" />
                 </button>
               </>

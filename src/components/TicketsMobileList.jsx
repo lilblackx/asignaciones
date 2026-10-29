@@ -10,6 +10,7 @@ import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
+import InsigniaPagoPendiente from './InsigniaPagoPendiente';
 import InsigniaGarantia from './InsigniaGarantia';
 import BotonVerDetalle from './BotonVerDetalle';
 import CodigoOrden from './CodigoOrden';
@@ -48,7 +49,7 @@ export default function TicketsMobileList({
   ahora,
   onIniciarViaje,
   onLlegue,
-  onCancelarViaje
+  onCancelarViaje, pagosPendientes = null
 }) {
   if (filteredTickets.length === 0) {
     return (
@@ -159,6 +160,7 @@ export default function TicketsMobileList({
                 <div className="flex flex-wrap items-center gap-1 mb-0.5">
                   <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
                   <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
+                  <InsigniaPagoPendiente ticket={ticket} pagosPendientes={pagosPendientes} />
                       {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                 </div>
                 {/* Sin falla, la orden guarda el tipo de trabajo como falla: no se repite. */}

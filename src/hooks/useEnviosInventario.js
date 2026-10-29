@@ -84,6 +84,19 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
     return false;
   }, [cargarRecientes, setToastMsg]);
 
+  // Vuelve a enviar una orden con lo que dice ahora, también si ya estaba enviada (se corrigió el serial u otro dato). Lo que ya está en el
+  // almacén se sobrescribe, no se duplica. Devuelve true si quedó enviada.
+  const reenviar = useCallback(async (envio) => {
+    const r = await llamarInventario('/inventario/reenviar', envio.id);
+    await cargarRecientes();
+    if (r.ok && r.estado === 'ENVIADO') {
+      setToastMsg?.({ type: 'success', text: `La orden ${envio.codigo || 'S/C'} se reenvió al inventario con los datos corregidos.` });
+      return true;
+    }
+    setToastMsg?.({ type: 'error', text: r.ok ? (r.mensaje || 'No se pudo reenviar. Revisa el detalle de la alerta.') : (r.mensaje || 'No se pudo reenviar la orden.') });
+    return false;
+  }, [cargarRecientes, setToastMsg]);
+
   // Vuelve a avisar al otro sistema (su módulo de notificaciones) de una orden con alerta. Devuelve true si el aviso quedó escrito.
   const reenviarAviso = useCallback(async (envio) => {
     const r = await llamarInventario('/inventario/notificar', envio.id);
@@ -140,5 +153,5 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
     }
   }, [cargarRecientes, setToastMsg, usuario]);
 
-  return { envios, pendientes, recientes, cargandoRecientes, hayMas, cargarRecientes, cargarMas, actualizarRecientes, reintentar, reenviarAviso, reintentarTodas, buscar, descartar };
+  return { envios, pendientes, recientes, cargandoRecientes, hayMas, cargarRecientes, cargarMas, actualizarRecientes, reintentar, reenviar, reenviarAviso, reintentarTodas, buscar, descartar };
 }

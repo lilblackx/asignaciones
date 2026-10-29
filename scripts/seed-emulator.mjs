@@ -61,6 +61,7 @@ await upsertUser({ username: 'tecnico1', password: 'Tecnico1234', nombre: 'Gerar
 await upsertUser({ username: 'tecnico2', password: 'Tecnico1234', nombre: 'Reinel Bravo', role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO' });
 await upsertUser({ username: 'almacen', password: 'Almacen1234', nombre: 'Almacén Demo', role: 'ALMACEN' });
 await upsertUser({ username: 'finanzas', password: 'Finanzas1234', nombre: 'Finanzas Demo', role: 'FINANZAS' });
+await upsertUser({ username: 'administracion', password: 'Administracion1234', nombre: 'Administración Demo', role: 'ADMINISTRACION' });
 await upsertUser({ username: 'infra', password: 'Infra1234', nombre: 'Infraestructura Demo', role: 'INFRAESTRUCTURA' });
 await upsertUser({ username: 'promotora', password: 'Promotora1234', nombre: 'Promotora Demo', role: 'PROMOTORA', promotoraNombres: ['Sariana'] });
 await upsertUser({ username: 'promotora2', password: 'Promotora1234', nombre: 'Promotor Demo', role: 'PROMOTORA', promotoraNombres: ['Alexis Añez'] });
@@ -86,6 +87,7 @@ console.log('OK  2 tickets de prueba creados (uno por técnico)');
 
 console.log('\nListo. Login en la app con cualquiera de estos usuarios (usuario/clave, NO el email):');
 console.log('  admin / Admin1234        -> ve y edita todo');
+console.log('  administracion / Administracion1234 -> concilia los pagos de los clientes (rol ADMINISTRACION)');
 console.log('  usuario / Usuario1234    -> ve y edita todo, puede cerrar día y aprobar');
 console.log('  tecnico1 / Tecnico1234   -> solo ve el ticket AS1 (GERARDO MOLERO)');
 console.log('  tecnico2 / Tecnico1234   -> solo ve el ticket AS2 (REINEL BRAVO)');

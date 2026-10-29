@@ -1,7 +1,9 @@
-import { Cable, ExternalLink, FileText, History, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
+import { Cable, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import HistorialTimeline from '../HistorialTimeline';
 import InsigniaVentaTecnico from '../InsigniaVentaTecnico';
+import InsigniaPagoPendiente from '../InsigniaPagoPendiente';
+import PagoClienteDetalle from '../PagoClienteDetalle';
 import TelefonoAccion from '../TelefonoAccion';
 import BotonCopiar from '../BotonCopiar';
 import ValoresClienteTarjeta from './ValoresClienteTarjeta';
@@ -49,7 +51,8 @@ const ENLACE = 'inline-flex items-center gap-1 max-lg:min-h-11 text-sky-700 dark
 
 // Todos los datos de una orden en una sola ventana, solo para mirar (desde el ojito junto al nombre en la lista). Editar,
 // aprobar o finalizar siguen en el menú de la fila. `onCopy(texto, mensaje)` copia y avisa con el toast.
-export default function DetalleOrdenModal({ ticket, onCopy, onClose }) {
+// `verPago` (la oficina): muestra el pago del cliente en solo lectura; `pagosPendientes`: ids con pago pendiente de cobro (la etiqueta).
+export default function DetalleOrdenModal({ ticket, onCopy, onClose, verPago = false, pagosPendientes = null }) {
   const { copiado, copiar } = useCopiado(onCopy);
   const instalacion = esInstalacion(ticket.tipoTrabajo);
   const datos = ticket.instalacion || {};
@@ -70,7 +73,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose }) {
             <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-500" aria-hidden="true" /> DETALLE DE LA ORDEN</h2>
             <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 shrink-0"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 shrink-0"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="p-4 overflow-y-auto space-y-3">
@@ -78,10 +81,17 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose }) {
             <span className={`text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
             <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
             <InsigniaVentaTecnico ticket={ticket} />
+            <InsigniaPagoPendiente ticket={ticket} pagosPendientes={pagosPendientes} />
             {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{ticket.falla}</span>}
           </div>
 
           <CancelacionAviso ticket={ticket} />
+
+          {verPago && (
+            <Seccion icono={Landmark} titulo="Pago del cliente">
+              <PagoClienteDetalle ticketId={ticket.id} />
+            </Seccion>
+          )}
 
           <Seccion icono={User} titulo="Cliente">
             <Dato etiqueta="Nombre">{ticket.nombre}</Dato>

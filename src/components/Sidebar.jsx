@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, Home, LogOut, Moon, Network, PackageCheck, PanelLeftClose, PanelLeftOpen, ShieldCheck, Sun, TrendingUp, User, Users, Wallet, X } from 'lucide-react';
+import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LogOut, Moon, Network, PackageCheck, PanelLeftClose, PanelLeftOpen, ShieldCheck, Sun, TrendingUp, User, Users, Wallet, X } from 'lucide-react';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 
@@ -9,10 +9,10 @@ const guardarColapsado = (valor) => { try { localStorage.setItem(CLAVE_COLAPSADO
 // El menú lateral del administrador: todos los módulos de la app agrupados por tema. En pantallas grandes queda fijo a la izquierda (expandido o compacto, solo íconos, y recuerda
 // cuál dejaste); en el celular es un panel que se abre con el botón ☰ del encabezado. Los de la oficina abren su ventana; Finanzas y Ventas abren su pantalla completa; Almacén es la
 // misma pantalla de Materiales. "Envíos al inventario" solo sale para quien tiene ese acceso (`veInventario`).
-//   acciones: { inicio, modulo(id) }: `inicio` vuelve a la oficina y `modulo(id)` abre el módulo (CIERRE, REPORTES, HISTORIAL, REVISION, FINANZAS, TASA, TECNICOS, USUARIOS, ALMACEN, INFRAESTRUCTURA, INVENTARIO o PROMOTORA) como página dentro del marco.
+//   acciones: { inicio, modulo(id) }: `inicio` vuelve a la oficina y `modulo(id)` abre el módulo (CIERRE, REPORTES, HISTORIAL, REVISION, ADMINISTRACION, FINANZAS, TASA, TECNICOS, USUARIOS, ALMACEN, INFRAESTRUCTURA, INVENTARIO o PROMOTORA) como página dentro del marco.
 //   nombre, rol, isDarkMode, onCambiarTema, onSalir: el pie del menú (quién está conectado, el tema y cerrar sesión).
 //   activo: el módulo que está a la vista ('oficina', 'revision', 'finanzas', 'almacen' o 'ventas'); los demás son ventanas que se abren encima.
-export default function Sidebar({ acciones, veInventario = false, alertasInventario = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
+export default function Sidebar({ acciones, veInventario = false, alertasInventario = 0, pagosPorCobrar = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
   const [colapsado, setColapsado] = useState(leerColapsado);
   const alternar = () => setColapsado((c) => { guardarColapsado(!c); return !c; });
 
@@ -33,6 +33,7 @@ export default function Sidebar({ acciones, veInventario = false, alertasInventa
     ] },
     { titulo: 'Dinero', items: [
       { id: 'revision', Icono: ClipboardCheck, nombre: 'Revisión de órdenes', accion: () => acciones.modulo('REVISION') },
+      { id: 'administracion', Icono: Landmark, nombre: 'Administración', alertas: pagosPorCobrar, accion: () => acciones.modulo('ADMINISTRACION') },
       { id: 'finanzas', Icono: Wallet, nombre: 'Finanzas', accion: () => acciones.modulo('FINANZAS') },
       { id: 'tasa', Icono: Coins, nombre: 'Tasa y pagos', accion: () => acciones.modulo('TASA') },
     ] },
@@ -110,10 +111,10 @@ export default function Sidebar({ acciones, veInventario = false, alertasInventa
             <p className="truncate text-sm font-bold text-red-500">{nombre}</p>
             <p className="text-[11px] max-lg:text-xs font-bold text-zinc-400 uppercase tracking-wider">{rol}</p>
           </div>
-          <button type="button" onClick={onCambiarTema} aria-label="Cambiar tema" title="Cambiar tema" className={`shrink-0 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors ${colapsado ? 'lg:hidden' : ''}`}>
+          <button type="button" onClick={onCambiarTema} aria-label="Cambiar tema" title="Cambiar tema" className={`shrink-0 inline-flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors ${colapsado ? 'lg:hidden' : ''}`}>
             {isDarkMode ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
           </button>
-          <button type="button" onClick={onSalir} aria-label="Cerrar sesión" title="Cerrar sesión" className="shrink-0 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
+          <button type="button" onClick={onSalir} aria-label="Cerrar sesión" title="Cerrar sesión" className="shrink-0 inline-flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
             <LogOut className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>

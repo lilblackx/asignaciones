@@ -13,7 +13,7 @@ export default function WhatsAppMessageModal({ mensaje, onCopy, onClose }) {
               <p className="text-[11px] max-lg:text-xs font-medium text-green-400 leading-tight">Mensaje listo para el cliente</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-4 space-y-3">
           <textarea

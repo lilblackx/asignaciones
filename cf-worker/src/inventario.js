@@ -4,6 +4,8 @@
 //
 //   POST /inventario/enviar     { ticketId }  la app lo llama al aprobar/finalizar una orden (ADMIN, USUARIO o quien cierra)
 //   POST /inventario/reintentar { ticketId }  desde el módulo de la app, solo para los usuarios de USUARIOS_INVENTARIO
+//   POST /inventario/reenviar { ticketId }    lo mismo, pero también de una orden ya ENVIADA: se vuelve a enviar con lo que dice la orden ahora
+//                                             (por ejemplo, con el serial corregido). Escribe lo mismo en las mismas filas (no duplica material).
 //   POST /inventario/notificar  { ticketId }  vuelve a escribir el aviso de una orden con alerta en syncNotifications, solo para USUARIOS_INVENTARIO
 //   cron                        envía lo PENDIENTE: lo que no se pudo enviar (red caída, clave rechazada...) y lo que la app
 //                               marcó al aprobar pero no alcanzó a llamar al Worker; cada 15 minutos
@@ -273,10 +275,36 @@ async function guardarEnvio(env, deps, accessToken, ticketId, datos) {
   await deps.commitFirestore(env, accessToken, [{ update: { name: nombre, fields: campos(datos) } }]);
 }
 
+// La orden ya cerrada, tal como quedó en su reporte de cierre (las órdenes archivadas viven en `ticketsDetalle` de un reporte). El cierre
+// se hace el día de la orden o poco después, así que se miran solo los primeros reportes creados desde que se finalizó.
+const REPORTES_A_MIRAR = 6;
+async function leerOrdenArchivada(env, deps, accessToken, ticketId, desdeMs) {
+  if (!(desdeMs > 0)) return null;
+  const res = await fetch(`${deps.docsBase(env)}/${deps.rutaDatos(env)}:runQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: 'reports' }],
+      where: { fieldFilter: { field: { fieldPath: 'createdAt' }, op: 'GREATER_THAN_OR_EQUAL', value: { integerValue: String(Math.floor(desdeMs)) } } },
+      orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'ASCENDING' }],
+      limit: REPORTES_A_MIRAR,
+    } }),
+  });
+  if (!res.ok) throw new Error(`No se pudo leer los reportes de cierre: ${res.status}`);
+  for (const fila of await res.json()) {
+    if (!fila.document) continue;
+    const detalle = camposAObjeto(fila.document.fields).ticketsDetalle;
+    const orden = Array.isArray(detalle) ? detalle.find((t) => String(t?.id) === String(ticketId)) : null;
+    if (orden) return orden;
+  }
+  return null;
+}
+
 // Lo que hay que enviar de una orden, leído de la propia orden (no de lo que mande la app): { payload } o, si la orden ya no está
-// en la lista (el cierre del día la archivó), { archivada: true }; { payload: null } si no corresponde enviar nada.
-async function payloadDeOrden(env, deps, accessToken, ticketId) {
-  const ticket = await leerDocumento(env, deps, accessToken, 'tickets', ticketId);
+// ni en la lista ni en un reporte de cierre, { archivada: true }; { payload: null } si no corresponde enviar nada.
+// `desdeMs`: cuándo se finalizó (para buscarla en los reportes de cierre).
+async function payloadDeOrden(env, deps, accessToken, ticketId, desdeMs = 0) {
+  const ticket = await leerDocumento(env, deps, accessToken, 'tickets', ticketId) || await leerOrdenArchivada(env, deps, accessToken, ticketId, desdeMs);
   if (!ticket) return { archivada: true };
   return { payload: payloadEnvioInventario({ ...ticket, id: ticketId }) };
 }
@@ -295,7 +323,7 @@ async function conTecnicoInventario(env, deps, accessToken, p) {
 // serial mal escrito, llega al reintentar) o, si la orden ya se archivó y `usarGuardado`, lo que quedó guardado del envío.
 //   { payload } | { omitir: true } (la orden ya no tiene nada que enviar) | { archivada: true } (no hay de dónde sacarlo)
 async function payloadAEnviar(env, deps, accessToken, ticketId, existente, usarGuardado) {
-  const orden = await payloadDeOrden(env, deps, accessToken, ticketId);
+  const orden = await payloadDeOrden(env, deps, accessToken, ticketId, Number(existente?.finalizadoEn) || 0);
   // El envío guardado puede traer un serial de antes de una corrección de serialParaOlt (p. ej. TPLH... sin la G): se vuelve a convertir.
   if (orden.archivada) return usarGuardado && existente?.accion ? { payload: await conTecnicoInventario(env, deps, accessToken, { ...existente, serial: serialParaOlt(existente.serial) }) } : { archivada: true };
   return orden.payload ? { payload: await conTecnicoInventario(env, deps, accessToken, orden.payload) } : { omitir: true };
@@ -359,19 +387,22 @@ export async function manejarInventario(request, env, headers, uid, deps, ahoraM
   try {
     const accessToken = await deps.getGoogleAccessToken(env);
     const { enviar, gestionar } = await permisos(env, deps, accessToken, uid);
-    const reintento = new URL(request.url).pathname === '/inventario/reintentar';
+    const ruta = new URL(request.url).pathname;
+    // "Reenviar" es un reintento que también vale para una orden ya ENVIADA (se corrigió algo de la orden y hay que mandarlo otra vez).
+    const reenvio = ruta === '/inventario/reenviar';
+    const reintento = reenvio || ruta === '/inventario/reintentar';
     if (!(reintento ? gestionar : enviar)) return new Response('Sin permiso.', { status: 403, headers });
     if (!inventarioActivo(env)) return json({ estado: 'DESHABILITADO' }, 200, headers);
 
     const existente = await leerDocumento(env, deps, accessToken, 'telecomEnvios', ticketId);
-    if (existente?.estado === ESTADO_ENVIADO) return json({ estado: ESTADO_ENVIADO, repetido: true }, 200, headers);
+    if (existente?.estado === ESTADO_ENVIADO && !reenvio) return json({ estado: ESTADO_ENVIADO, repetido: true }, 200, headers);
 
     if (reintento && !existente) return new Response('No hay un envío para reintentar.', { status: 404, headers });
     // Se envía lo que dice la orden ahora; solo si ya se archivó, reintentar usa lo que quedó guardado.
     const aEnviar = await payloadAEnviar(env, deps, accessToken, ticketId, existente, reintento);
     if (aEnviar.archivada) return new Response('Orden no encontrada.', { status: 404, headers });
     if (aEnviar.omitir) {
-      if (existente) await borrarEnvio(env, deps, accessToken, ticketId);
+      if (existente && !reenvio) await borrarEnvio(env, deps, accessToken, ticketId);
       return json({ estado: 'OMITIDO' }, 200, headers);
     }
     const payload = aEnviar.payload;

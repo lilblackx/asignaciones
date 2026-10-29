@@ -91,7 +91,7 @@ export default function Header({
           )}
 
           {!isAdmin && (
-            <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
+            <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="inline-flex items-center justify-center p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           )}
@@ -174,7 +174,7 @@ export default function Header({
             <>
               <div className="w-px h-8 bg-zinc-800 hidden sm:block mx-1"></div>
 
-              <button onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg flex items-center transition-colors border border-zinc-700">
+              <button onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg inline-flex items-center justify-center transition-colors border border-zinc-700">
                 <LogOut className="w-4 h-4" />
               </button>
             </>

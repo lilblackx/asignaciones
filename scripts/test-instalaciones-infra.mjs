@@ -99,7 +99,7 @@ check('el mes de la marca de un 1 de enero', mesDeMarcas(new Date(2027, 0, 1, 0,
 check('se leen el mes actual y el de hace 30 días', mesesDeMarcas(new Date(2026, 9, 21, 15).getTime()), ['2026-09', '2026-10']);
 check('a mitad de mes basta un solo documento', mesesDeMarcas(new Date(2026, 9, 31, 15).getTime()), ['2026-10']);
 check('el hook lee las marcas en un documento por mes y escribe con merge', /getDoc\(doc\(datos\('infraAnotadas'\)/.test(hook) && /merge: true/.test(hook), true);
-check('el Worker acepta el rol al crear usuarios', /ROLES_VALIDOS = \[[^\]]*'INFRAESTRUCTURA'\]/.test(leer('../cf-worker/src/index.js')), true);
+check('el Worker acepta el rol al crear usuarios', /ROLES_VALIDOS = \[[^\]]*'INFRAESTRUCTURA'/.test(leer('../cf-worker/src/index.js')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

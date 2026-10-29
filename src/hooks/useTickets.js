@@ -34,6 +34,8 @@ import { lineaTecnico } from '../utils/historial';
 import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
 import { oltUnica } from '../utils/olt';
+import { avisoDePagoCliente, cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, piensaPagoCliente } from '../utils/pagoCliente';
+import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -133,7 +135,8 @@ async function actualizarTicketConGuardia(original, actualizada, verificar) {
   });
 }
 
-export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify, currentUserName = null) {
+// `pagosCliente`: { ids, cargado } los pagos que el técnico ya registró (usePagosTecnico); sin saberlo no se le pide ninguno.
+export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, onNotify, currentUserName = null, pagosCliente = null) {
   const [tickets, setTickets] = useState([]);
   // false hasta que llega el primer snapshot de órdenes (antes, `tickets` está vacío).
   const [ticketsCargados, setTicketsCargados] = useState(false);
@@ -148,11 +151,22 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const currentUserRef = useRef(currentUser);
   useEffect(() => { currentUserRef.current = currentUser; });
 
+  // Las órdenes con cobro que se finalizan desde que se pide el pago del cliente (y las instalaciones) ya no se cierran con "Entendido": el técnico registra el pago
+  // (ver cobrosPorRegistrar). Las exoneradas y lo anterior a esa fecha siguen con el aviso de siempre.
   const cobrosPendientes = useMemo(() => {
     if (role !== 'TECNICO' || !cobrosVistos) return [];
-    const finalizados = tickets.filter(t => esCobroFinalizado(t) && !cobroVisto(cobrosVistos, t) && t.id !== cobroInmediato?.id);
-    return cobroInmediato ? [cobroInmediato, ...finalizados] : finalizados;
-  }, [role, tickets, cobrosVistos, cobroInmediato]);
+    return tickets.filter(t => esCobroFinalizado(t) && !piensaPagoCliente(t) && !cobroVisto(cobrosVistos, t));
+  }, [role, tickets, cobrosVistos]);
+
+  // Lo que el técnico debe registrar: primero el cobro que sale al pre-finalizar con conector interno y después las órdenes (con cobro o instalaciones) que siguen sin pago.
+  // La lista se vacía sola cuando el pago aparece en sus pagos (Firestore).
+  const pagosRegistradosIds = pagosCliente?.ids;
+  const pagosCargados = Boolean(pagosCliente?.cargado);
+  const cobrosPorRegistrar = useMemo(() => {
+    if (role !== 'TECNICO' || !pagosCargados) return [];
+    const sinPago = tickets.filter(t => t.id !== cobroInmediato?.id && !pagosRegistradosIds.has(t.id) && (debePedirPagoCobro(t, false) || debePedirPagoInstalacion(t, false)));
+    return cobroInmediato && !pagosRegistradosIds.has(cobroInmediato.id) ? [cobroInmediato, ...sinPago] : sinPago;
+  }, [role, tickets, pagosCargados, pagosRegistradosIds, cobroInmediato]);
   const actualizarCobrosVistos = (fn) => {
     const siguiente = fn(new Set(cobrosVistos || []));
     guardarCobrosVistos(currentUser, siguiente);
@@ -165,6 +179,40 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     actualizarCobrosVistos(set => set.add(claveCobro(actual)));
     if (actual === cobroInmediato) setCobroInmediato(null);
   };
+  // El técnico registra el pago del cliente (o dice que paga después): se guarda y se avisa a Administración (push; con la app abierta le sale en la campana).
+  // Devuelve lo que necesita el formulario: { ok }, { repetida } si la referencia ya está en otra orden, o { error }.
+  const avisarPagoAAdministracion = (documento) => {
+    const { title, body } = avisoDePagoCliente(documento);
+    avisarPush({ target: { type: 'administracion' }, title, body, tipo: 'pagoCliente', ticketId: documento.ticketId });
+  };
+  const registrarPagoDeOrden = async (ticket, valor) => {
+    if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
+    try {
+      const r = await registrarPagoCliente(ticket, valor, { por: currentUser, cobro: cobroEsperadoDe(ticket) });
+      if (r.repetida) return r;
+      if (cobroInmediato?.id === ticket.id) setCobroInmediato(null);
+      setToastMsg({ type: 'success', text: 'Pago registrado. Administración lo concilia.' });
+      avisarPagoAAdministracion(r.documento);
+      return { ok: true };
+    } catch (error) {
+      console.error('No se pudo registrar el pago del cliente:', error);
+      return { error: 'No se pudo guardar el pago. Revisa tu conexión e intenta de nuevo.' };
+    }
+  };
+  const registrarPagoPendienteDeOrden = async (ticket, { nota, compartidoCon = null }) => {
+    if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
+    try {
+      const r = await registrarPagoPendiente(ticket, { nota, compartidoCon }, { por: currentUser, cobro: cobroEsperadoDe(ticket) });
+      if (cobroInmediato?.id === ticket.id) setCobroInmediato(null);
+      setToastMsg({ type: 'success', text: 'Listo: el pago pasa a Administración.' });
+      avisarPagoAAdministracion(r.documento);
+      return { ok: true };
+    } catch (error) {
+      console.error('No se pudo dejar el pago pendiente:', error);
+      return { error: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' };
+    }
+  };
+
   // Desde la campana: vuelve a mostrar un cobro ya confirmado.
   const mostrarCobro = (ticket) => actualizarCobrosVistos(set => { set.delete(ticket.id); set.delete(claveCobro(ticket)); return set; });
   // Pre-finalizar con conector interno: el cobro se informa en ese momento, sin esperar la aprobación.
@@ -1580,6 +1628,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     tickets,
     ticketsCargados,
     cobrosPendientes,
+    cobrosPorRegistrar,
+    registrarPagoDeOrden,
+    registrarPagoPendienteDeOrden,
     mostrarCobro,
     mostrarCobroInmediato,
     cerrarCobro,

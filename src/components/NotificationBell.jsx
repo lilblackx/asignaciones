@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { contarPendientes } from '../hooks/useInsigniaApp';
 import { usePresencia } from '../hooks/usePresencia';
 import NumeroPulso from './NumeroPulso';
-import { Ban, Banknote, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, HandCoins, HardHat, MapPin, Star, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
+import { Ban, Banknote, Bell, CalendarCheck, Car, CheckCheck, ChevronRight, Clock, Flag, HandCoins, HardHat, Landmark, MapPin, Star, Trash2, Undo2, UserCog, UserMinus, Wrench, X } from 'lucide-react';
 
 function tiempoRelativo(timestamp) {
   const diffMs = Date.now() - timestamp;
@@ -23,6 +23,7 @@ function iconoPara(type) {
   if (type === 'devuelto') return <Undo2 className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
   if (type === 'encamino') return <Car className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'llegada') return <MapPin className="w-4 h-4 text-teal-500 shrink-0" aria-hidden="true" />;
+  if (type === 'pagoCliente') return <Landmark className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
   if (type === 'pagoTecnico') return <Banknote className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
   if (type === 'ajusteTecnico') return <HandCoins className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
   if (type === 'descuentoTecnico') return <HandCoins className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;

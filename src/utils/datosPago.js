@@ -31,6 +31,7 @@ export const bancosDeForma = (forma) => (esZelle(forma) ? BANCOS_EEUU : BANCOS_V
 export const exigeBanco = (forma) => ['Pago móvil', 'Transferencia'].includes(forma);
 export const MAX_BANCO = 40;
 export const MAX_REFERENCIA = 40;
+export const MAX_TITULAR = 80;
 export const MAX_NOTA = 300;
 export const MAX_ADELANTO = 100000;
 // Una hora de diferencia hacia adelante se tolera por el reloj del equipo; más que eso es una fecha futura.

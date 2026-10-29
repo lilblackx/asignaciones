@@ -152,7 +152,7 @@ export default function SelectMenu({
 
   return (
     <div className={`items-center gap-2 ${fullWidth ? 'flex w-full' : 'inline-flex'}`}>
-      <div className={`relative ${fullWidth ? 'w-full' : ''}`}>
+      <div className={`relative ${fullWidth ? 'w-full min-w-0' : ''}`}>
         <button
           ref={buttonRef}
           id={id}

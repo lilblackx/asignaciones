@@ -171,3 +171,46 @@ export function exportResumenTecnicosToCsv(orders, filtros) {
     ...renglones,
   ]);
 }
+
+// Los pagos de los clientes del módulo de Administración (documentos de pagosOrdenes) tal como quedaron filtrados en pantalla.
+export function exportPagosToCsv(filas, filtros) {
+  const fecha = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
+  const estados = { PENDIENTE_COBRO: 'Pendiente de cobro', POR_CONCILIAR: 'Por conciliar', CONCILIADO: 'Conciliado', SIN_COBRAR: 'Sin cobrar' };
+  const columnas = [
+    ['Registrado', p => fecha(p.creadoEn)],
+    ['Código', p => p.codigo],
+    ['Cliente', p => p.nombre],
+    ['Cédula', p => p.cedula],
+    ['Teléfono', p => p.telefono],
+    ['Técnico', p => p.tecnico],
+    ['Trabajo', p => [p.tipoTrabajo, p.falla].filter(Boolean).join(' - ')],
+    ['Estado', p => estados[p.estado] || p.estado],
+    ['Cobro esperado', p => (p.cobro ? `${String(p.cobro.monto).replace('.', ',')} ${p.cobro.moneda === 'USD' ? '$' : 'Bs'}` : '')],
+    ['Moneda pagada', p => (p.pago ? (p.pago.moneda === 'USD' ? '$' : 'Bs') : '')],
+    ['Monto pagado', p => (p.pago ? String(p.pago.monto).replace('.', ',') : '')],
+    ['Forma de pago', p => p.pago?.forma],
+    ['Banco', p => p.pago?.banco],
+    ['Titular de la cuenta', p => p.pago?.titular],
+    ['Cuenta de la empresa', p => p.pago?.cuentaEmpresa],
+    ['Referencia', p => p.pago?.referencia],
+    ['Fecha del pago', p => fecha(p.pago?.pagadoEn)],
+    ['Moneda distinta', p => (p.monedaDistinta ? 'Sí' : '')],
+    ['Monto distinto', p => (p.diferencia ? 'Sí' : '')],
+    ['Pagó junto con', p => p.compartidoCon?.codigo],
+    ['Nota del técnico', p => p.nota],
+    ['Registrado por', p => p.registradoPor],
+    ['Conciliado por', p => p.conciliadoPor],
+    ['Conciliado el', p => fecha(p.conciliadoEn)],
+    ['Nota de Administración', p => p.notaAdministracion],
+  ];
+  const lineas = [
+    'Pagos de los clientes',
+    `Generado: ${new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}`,
+    `Filtros: ${filtros || 'ninguno'}`,
+    `Total: ${filas.length}`,
+    '',
+    columnas.map(([label]) => csvField(label)).join(';'),
+    ...filas.map(p => filaDe(columnas, p)),
+  ];
+  descargarCsv(`pagos_clientes_${fechaArchivoHoy()}.csv`, lineas);
+}

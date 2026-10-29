@@ -18,7 +18,7 @@ import Chip from '../Chip';
 
 // En el celular la fila es: nombre y botones arriba, y debajo el rol y los permisos lado a lado; en PC son cuatro columnas.
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.1fr)_9.5rem_minmax(0,1.3fr)_5.5rem]';
-const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
+const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ROLES.ADMINISTRACION, ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
 const ROL_NUEVO_ITEMS = [
   { value: ROLES.USUARIO, label: 'USUARIO (sin Técnicos/Usuarios/Tasa y pagos)' },
   { value: ROLES.TECNICO, label: 'TÉCNICO (asignaciones propias y pre-finalizar)' },
@@ -26,17 +26,18 @@ const ROL_NUEVO_ITEMS = [
   { value: ROLES.PROMOTORA, label: 'VENTAS (ve sus instalaciones, o todas con "Ver todas")' },
   { value: ROLES.FINANZAS, label: 'FINANZAS (cobros, pago a técnicos y reportes; no toca las órdenes)' },
   { value: ROLES.INFRAESTRUCTURA, label: 'INFRAESTRUCTURA (ve las instalaciones con su NAP y puerto)' },
+  { value: ROLES.ADMINISTRACION, label: 'ADMINISTRACIÓN (concilia los pagos de los clientes; no toca las órdenes)' },
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];
 const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
 
-const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA];
+const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ROLES.ADMINISTRACION];
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const claseRol = (rol) => (rol === ROLES.ADMIN
   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
   : rol === ROLES.TECNICO
     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-    : [ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA].includes(rol)
+    : [ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ROLES.ADMINISTRACION].includes(rol)
       ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
       : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300');
 

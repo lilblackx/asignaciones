@@ -81,6 +81,7 @@ const dec = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k
 let sinPermisoAuditoria = false; // sus reglas no dejan escribir auditLogs
 let sinPermisoNotificaciones = false; // sus reglas no dejan escribir syncNotifications
 let notificacionesTelecom = [];
+let reportes = []; // reportes de cierre: [{ createdAt, tickets: [orden] }]
 let roles, ordenes, envios, inventario, tecnicosNuestros, tecnicosTelecom, comportamientoTelecom, llamadasTelecom, commitsTelecom, loginsTelecom, pushes, consultasNuestras;
 const respuesta = (cuerpo, status = 200) => new Response(typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -150,6 +151,10 @@ globalThis.fetch = async (url, init = {}) => {
       const estado = q.where.fieldFilter.value.stringValue;
       return respuesta(Object.entries(envios).filter(([, f]) => f.estado.stringValue === estado).map(([id, f]) => ({ document: { name: `${DOCS}/telecomEnvios/${id}`, fields: f } })));
     }
+    if (col === 'reports') {
+      const desde = Number(q.where.fieldFilter.value.integerValue);
+      return respuesta(reportes.filter((x) => x.createdAt >= desde).sort((a, b) => a.createdAt - b.createdAt).slice(0, q.limit).map((x, i) => ({ document: { name: `${DOCS}/reports/r${i}`, fields: { createdAt: n(x.createdAt), ticketsDetalle: { arrayValue: { values: x.tickets.map((t) => ({ mapValue: { fields: fieldsDe(t) } })) } } } } })));
+    }
     if (col === 'users') {
       // Los avisos se buscan por nombre de usuario; solo lfernandez tiene un dispositivo registrado.
       const esDeInventario = q.where.fieldFilter.field.fieldPath === 'username' && q.where.fieldFilter.value.stringValue === 'lfernandez';
@@ -181,7 +186,7 @@ const reiniciar = () => {
   tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Activo' }, { nombre: 'OTRO TECNICO', estado: 'Activo' }];
   comportamientoTelecom = 'ok';
   sinPermisoNotificaciones = false; notificacionesTelecom = [];
-  llamadasTelecom = []; commitsTelecom = []; loginsTelecom = []; pushes = []; consultasNuestras = [];
+  llamadasTelecom = []; commitsTelecom = []; loginsTelecom = []; pushes = []; consultasNuestras = []; reportes = [];
 };
 
 async function llamar(ruta, uid, cuerpo, e = env) {
@@ -268,6 +273,40 @@ inventario = {};
 await enviar('inst1');
 ordenes.inst1 = fieldsDe({ ...instalacion, estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', instalacion: { serial: 'HWTC1A2B3C4D' } });
 check('si la corrección deja la orden sin nada que enviar (sin metraje), reintentar borra la alerta', [(await reintentar('inst1')).json.estado, envio('inst1'), commitsTelecom.length], ['OMITIDO', null, 0]);
+
+// 3d) Una orden ya cerrada vive dentro de su reporte de cierre: ahí la lee el Worker, con lo que la oficina corrigió
+const archivada = { ...instalacion, id: 'inst1', estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN' };
+reiniciar();
+inventario = {};
+await enviar('inst1');
+ordenes = {};
+reportes = [{ createdAt: FIN + 3600000, tickets: [{ ...archivada, id: 'otra', codigo: 'X9' }, { ...archivada, instalacion: { ...archivada.instalacion, serial: 'HWTC9Z8Y7X6W', metraje: 95 } }] }];
+inventario = { HWTC9Z8Y7X6W: { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } } };
+r = await reintentar('inst1');
+check('orden archivada con su reporte de cierre: reintentar envía lo que dice el reporte (serial y metraje corregidos), no lo guardado', [r.json.estado, envio('inst1').serial, envio('inst1').dropMetros], ['ENVIADO', 'HWTC9Z8Y7X6W', 95]);
+reiniciar();
+inventario = {};
+await enviar('inst1');
+ordenes = {};
+reportes = [{ createdAt: FIN - 3600000, tickets: [{ ...archivada, instalacion: { ...archivada.instalacion, serial: 'OTRO0000' } }] }];
+check('un reporte creado antes de que se finalizara la orden no se mira: se usa lo guardado', [(await reintentar('inst1')).json.estado, envio('inst1').serial], ['SERIAL_NO_ENCONTRADO', 'HWTC1A2B3C4D']);
+
+// 3e) Reenviar una orden ya ENVIADA con lo corregido (el serial estaba mal): el equipo bueno pasa a Instalado y el registro de material se sobrescribe
+reiniciar();
+inventario.HWTC9Z8Y7X6W = { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } };
+await enviar('inst1');
+check('la orden queda enviada con el serial malo', [envio('inst1').estado, envio('inst1').serial, commitsTelecom.length], ['ENVIADO', 'HWTC1A2B3C4D', 1]);
+check('reintentar no reenvía una orden ya enviada', [(await reintentar('inst1')).json, commitsTelecom.length], [{ estado: 'ENVIADO', repetido: true }, 1]);
+ordenes = {};
+reportes = [{ createdAt: FIN + 3600000, tickets: [{ ...archivada, instalacion: { ...archivada.instalacion, serial: 'HWTC9Z8Y7X6W' } }] }];
+const reenviar = (ticketId, uid = 'lf-uid') => llamar('/inventario/reenviar', uid, { ticketId });
+r = await reenviar('inst1');
+const registroViejo = dec(escrituraDe(commitsTelecom[0], 'materialLogs').update.fields);
+const registroNuevo = dec(escrituraDe(commitsTelecom[1], 'materialLogs').update.fields);
+check('reenviar manda otra vez la orden con el serial corregido y deja el envío con ese serial', [r.json.estado, envio('inst1').serial, envio('inst1').estado, commitsTelecom.length], ['ENVIADO', 'HWTC9Z8Y7X6W', 'ENVIADO', 2]);
+check('el equipo corregido pasa a Instalado con el cliente de la orden', [escrituraDe(commitsTelecom[1], 'inventory').update.name.endsWith('/inv-9'), dec(escrituraDe(commitsTelecom[1], 'inventory').update.fields).estado, dec(escrituraDe(commitsTelecom[1], 'inventory').update.fields).cliente], [true, 'Instalado', 'Ana Pérez']);
+check('el registro de material tiene el mismo id (se sobrescribe, no se duplica) y ahora lleva el serial corregido', [escrituraDe(commitsTelecom[1], 'materialLogs').update.name === escrituraDe(commitsTelecom[0], 'materialLogs').update.name, registroViejo.equipoSerial, registroNuevo.equipoSerial, registroNuevo.drop === registroViejo.drop], [true, 'HWTC1A2B3C4D', 'HWTC9Z8Y7X6W', true]);
+check('reenviar es solo del usuario del módulo y pide que exista un envío', [(await reenviar('inst1', 'admin-uid')).status, (await reenviar('inst1', 'usuario-uid')).status, (await reenviar('noexiste')).status], [403, 403, 404]);
 
 // 4) Equipo ya instalado a otro cliente
 reiniciar();

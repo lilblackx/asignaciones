@@ -219,6 +219,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   historial={historial}
                   onPagar={(fila, opciones) => finanzas.pagar(fila, rangoDeuda, { ...opciones, tasa })}
                   onAnular={finanzas.anular}
+                  tecnicosTodos={nombresTecnicos}
                   onAdelanto={finanzas.registrarAdelanto}
                   onAnularAdelanto={finanzas.anularAdelanto}
                   onDescuento={finanzas.registrarDescuento}

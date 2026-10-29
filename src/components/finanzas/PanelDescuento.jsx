@@ -11,7 +11,7 @@ import { stripEmojis } from '../../utils/sanitizeInput';
 // Registrar un descuento a un técnico: siempre en dólares y con un motivo (sin motivo no se guarda). Queda por descontar y se resta de lo que tenga pendiente en su próximo pago;
 // la fecha y la hora son las de ahora. Si es más de lo que se le puede descontar hoy, pide confirmar antes de guardar. Va en la misma pantalla (no es una ventana).
 // `neto`: lo que tiene por cobrar ahora (ya sin sus otros descuentos); `onGuardar(entrada, { notificar })` devuelve true si se guardó.
-export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, tasa, ocupado, onGuardar, onVolver }) {
+export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, tasa, ocupado, onGuardar, onVolver, volverTexto = 'Volver al detalle' }) {
   const [form, setForm] = useState({ monto: '', motivo: '' });
   const [notificar, setNotificar] = useState(true);
   const [error, setError] = useState(null);
@@ -40,7 +40,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
   return (
     <div className="space-y-4 lg:animate-fade-in">
       <div>
-        <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Volver al detalle</button>
+        <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-base font-bold text-zinc-900 dark:text-white">Registrar un descuento a {tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.CON_ADELANTO.clase}`}>Descuento</span>

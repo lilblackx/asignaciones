@@ -92,10 +92,11 @@ export const TIPOS_POR_TRABAJO = {
 // ALMACEN: solo ve el módulo de Materiales. PROMOTORA: solo ve el estado de las instalaciones. Ninguno de los dos edita nada.
 // FINANZAS: ve los cobros y los reportes de las órdenes (sin tocarlas) y lleva la conciliación de cobros y el pago a técnicos.
 // INFRAESTRUCTURA: ve las instalaciones realizadas con la NAP y el puerto de cada cliente nuevo (solo lectura).
+// ADMINISTRACION: concilia los pagos que los clientes hacen por las órdenes (ve las órdenes en solo lectura y escribe solo esos pagos).
 // Cómo se muestra cada rol. El valor guardado en el perfil (y que usan las reglas) no cambia: PROMOTORA se ve "VENTAS".
 export const etiquetaRol = (rol) => (rol === 'PROMOTORA' ? 'VENTAS' : rol);
 
-export const ROLES = { ADMIN: 'ADMIN', USUARIO: 'USUARIO', TECNICO: 'TECNICO', ALMACEN: 'ALMACEN', PROMOTORA: 'PROMOTORA', FINANZAS: 'FINANZAS', INFRAESTRUCTURA: 'INFRAESTRUCTURA' };
+export const ROLES = { ADMIN: 'ADMIN', USUARIO: 'USUARIO', TECNICO: 'TECNICO', ALMACEN: 'ALMACEN', PROMOTORA: 'PROMOTORA', FINANZAS: 'FINANZAS', INFRAESTRUCTURA: 'INFRAESTRUCTURA', ADMINISTRACION: 'ADMINISTRACION' };
 
 // Firebase Auth requires an email-shaped identifier. Usuarios inician sesión solo
 // con su nombre de usuario; este dominio ficticio nunca recibe correos reales.

@@ -9,6 +9,7 @@ import { culminadaEn } from '../../utils/reporteMensual';
 import { aBs, bolivares, dolares, grupoDePago } from '../../utils/finanzas';
 import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
 import InsigniaJM from '../InsigniaJM';
+import PagoClienteDetalle from '../PagoClienteDetalle';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
@@ -30,7 +31,7 @@ const TIPO_DE_AVERIA = { MUDANZA_INTERNA: 'Mudanza interna', MUDANZA_EXTERNA: 'M
 function textoCobro(orden) {
   if (estaExonerado(orden)) return 'Exonerado';
   if (orden.cobroBs) return textoMonto(orden.cobroBs, monedaDe(orden));
-  return esInstalacion(orden.tipoTrabajo) ? 'Las instalaciones no llevan cobro' : 'Sin cobro registrado';
+  return esInstalacion(orden.tipoTrabajo) ? 'Sin monto fijado por la oficina' : 'Sin cobro registrado';
 }
 
 // `item`: { orden, concepto, tecnico } de ordenesPagables; `tarifas`: el tabulador de precios.
@@ -69,6 +70,13 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
             <Dato etiqueta="Cobro al cliente">{textoCobro(orden)}</Dato>
             <Dato etiqueta="Dirección">{orden.direccion}</Dato>
           </div>
+          )}
+
+          {!registro && esInstalacion(orden.tipoTrabajo) && (
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
+              <p className={ETIQUETA}>Pago del cliente por la instalación</p>
+              <PagoClienteDetalle ticketId={orden.id ?? item.clave} mensajeSinAcceso="El pago de esta instalación aún no está conciliado por Administración. Cuando lo esté, lo verás aquí." />
+            </div>
           )}
 
           <div className="flex items-center justify-between gap-3 rounded-md bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
