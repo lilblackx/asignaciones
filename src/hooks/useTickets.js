@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, doc, runTransaction, setDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual } from '../utils/correlativo';
+import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual, esCodigoSinNumero } from '../utils/correlativo';
 import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound, playTecnicoStatusSound } from '../utils/notificationSound';
 import { esPrioritaria, mapaPrioridad, prioridadNueva, textoAvisoPrioridad } from '../utils/prioridad';
 import { sendPush } from '../lib/notify';
@@ -13,7 +13,7 @@ import { direccionCliente, nombrePersona } from '../utils/datosCliente';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
-import { errorGarantia } from '../utils/garantia';
+import { errorGarantia, esTipoGarantia } from '../utils/garantia';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { ConflictoOrdenError, verificarEstado } from '../utils/concurrencia';
 import { camposTiempos, conTiempos } from '../utils/tiemposOrden';
@@ -897,7 +897,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         if (originalTicket.tecnico !== editingTicket.tecnico) cambios.push(lineaTecnico(originalTicket.tecnico, editingTicket.tecnico));
         if (originalTicket.tipoTrabajo !== editingTicket.tipoTrabajo) cambios.push(`Trabajo: ${editingTicket.tipoTrabajo}`);
         if (originalTicket.fechaProgramada !== editingTicket.fechaProgramada) cambios.push(`Prog: ${editingTicket.fechaProgramada || 'Ninguna'}`);
-        if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(`Cód: ${ticketToSave.codigo}`);
+        // Solo en las garantías (que reusan el código de la original): con el código anterior, para poder buscar una orden por el número que tuvo (un código cambiado a mano deja un hueco en el contador).
+        if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(esTipoGarantia(ticketToSave.tipoTrabajo) && originalTicket.codigo && !esCodigoSinNumero(originalTicket.codigo) ? `Cód: ${originalTicket.codigo} → ${ticketToSave.codigo}` : `Cód: ${ticketToSave.codigo}`);
         if (originalTicket.observacion !== editingTicket.observacion) cambios.push(`Obs. modificada`);
         if ((originalTicket.observacionTecnico || '') !== (editingTicket.observacionTecnico || '')) cambios.push('Obs. del técnico modificada');
         if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');

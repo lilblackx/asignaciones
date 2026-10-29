@@ -5,6 +5,7 @@ import { TIPOS_POR_TRABAJO } from '../../constants';
 import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchivados, buscarHistorialCliente, textoHace } from '../../utils/reincidencia';
 import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
+import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia } from '../../utils/garantia';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import CampoFecha from '../CampoFecha';
@@ -87,6 +88,10 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   );
   // Orden todavía abierta del mismo cliente: pide confirmación antes de crear.
   const ticketDuplicado = historial.abiertas[0] || null;
+  // Una garantía lleva el código de la orden original: las del cliente que se pueden reutilizar, y el error si falta.
+  const esGarantiaTipo = esTipoGarantia(formData.tipoTrabajo);
+  const codigosOriginales = useMemo(() => (esGarantiaTipo ? codigosParaGarantia(ordenesGarantia, formData.cedula) : []), [esGarantiaTipo, ordenesGarantia, formData.cedula]);
+  const errorCodigo = errorCodigoGarantia(formData.tipoTrabajo, formData.codigo, codigosOriginales);
   // Reincidencia: solo tiene sentido si esto no es una instalación nueva.
   const reincidencias = esInstalacion ? [] : historial.recientes;
   const reincidenciaMuyReciente = reincidencias.some(r => r.dias <= REINCIDENCIA_MUY_RECIENTE_DIAS);
@@ -139,6 +144,11 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
       return;
     }
     if (verificandoCodigo) return;
+    if (errorCodigo) {
+      setIntentoGuardar(true);
+      document.getElementById('tk-codigo')?.focus();
+      return;
+    }
     // Un dato con error: el cursor va al primero, en el orden del formulario.
     const campoConError = napCoordenadasParseadas.error ? 'tk-nap-coords' : ubicacionParseada.error ? 'tk-ubicacion' : null;
     if (campoConError) {
@@ -182,7 +192,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           </div>
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-codigo" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO</label>
-            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder="Auto" value={formData.codigo} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs uppercase placeholder:normal-case placeholder:text-zinc-400" />
+            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={esGarantiaTipo && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs uppercase placeholder:normal-case placeholder:text-zinc-400" />
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-fecha-prog" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
@@ -253,6 +263,26 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             turnoSugerido={turnoSugerido}
             emptyOptionLabel="N/A"
           />
+
+          {esGarantiaTipo && (
+            <div className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-1.5 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200">
+              {codigosOriginales.length > 0 ? (
+                <>
+                  <p>La garantía lleva el código de la orden original, no un número nuevo. Elige la del cliente:</p>
+                  <div role="group" aria-label="Código de la orden original" className="flex flex-wrap gap-1.5">
+                    {codigosOriginales.map((o) => (
+                      <button key={o.codigo} type="button" onClick={() => handleCreateChange({ target: { name: 'codigo', value: o.codigo, type: 'text' } })} aria-pressed={formData.codigo.trim().toUpperCase() === o.codigo} className="max-lg:min-h-11 px-2.5 py-1 rounded border border-zinc-300 dark:border-zinc-600 font-bold aria-pressed:bg-black aria-pressed:text-white aria-pressed:border-black">
+                        {o.codigo}<span className="font-normal"> · {o.tipoTrabajo}{o.tecnico ? ` · ${o.tecnico}` : ''}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {intentoGuardar && errorCodigo && <p role="alert" className="font-bold text-red-700 dark:text-red-400">{errorCodigo}</p>}
+                </>
+              ) : (
+                <p>No hay órdenes anteriores de esta cédula en la app. Si la original existe, escribe su código arriba; si no, la garantía toma un número nuevo.</p>
+              )}
+            </div>
+          )}
 
           {esInstalacion && esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
             <div className="col-span-2 sm:col-span-5 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-emerald-800 dark:text-emerald-300">

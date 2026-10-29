@@ -55,6 +55,16 @@ export function esCodigoSinNumero(codigo) {
   return /^I[A-Z]{1,2}$/.test(codigo || '');
 }
 
+// Los códigos que tuvo una orden antes de que la oficina se lo cambiara a mano: salen del historial ("Cód: AO299 → IO100").
+// Sirven para encontrar la orden por el número que se le dio al crearla, que ya no aparece en ninguna otra parte.
+export function codigosAnteriores(ticket) {
+  const anteriores = [];
+  for (const edicion of ticket?.historialEdiciones || []) {
+    for (const [, anterior] of String(edicion?.detalle || '').matchAll(/Cód: ([A-Z0-9]+) → /g)) anteriores.push(anterior);
+  }
+  return anteriores;
+}
+
 // El año va en el ID del contador (no en el código visible) para que
 // "AS1" de septiembre 2026 no siga la cuenta de septiembre 2027.
 function contadorRefPara(db, appId, prefijo, mesCodigo, anio) {

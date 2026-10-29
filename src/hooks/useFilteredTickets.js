@@ -5,6 +5,7 @@ import { prioritariasPrimero } from '../utils/prioridad';
 import { preFinalizadasPrimero } from '../utils/preFinalizadas';
 import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
+import { codigosAnteriores } from '../utils/correlativo';
 
 const PAGE_SIZE = 50;
 
@@ -29,6 +30,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
     let result = tickets.filter(t => {
       const matchesSearch = String(t.nombre || '').toLowerCase().includes(searchLower) ||
                             String(t.codigo || '').toLowerCase().includes(searchLower) ||
+                            (searchLower.length >= 3 && codigosAnteriores(t).some((c) => c.toLowerCase().includes(searchLower))) ||
                             String(t.cedula || '').toLowerCase().includes(searchLower);
 
       const matchesStatus = statusFilter === 'TODOS' ? (t.estado === 'PENDIENTE' || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA') && !(ocultarProgramadasFuturas && esProgramadaFutura(t))
