@@ -3,13 +3,15 @@
 // Algunas cajas traen ese serial con "GPON" delante (o "GOPN", como lo han anotado), de dos maneras:
 //   - En texto: GPONBTPTDD9BA416 (BT-PON) = GPON + BTPTDD9BA416 -> se quita el "GPON".
 //   - En hexadecimal (TP-Link): GOPN54504C47BDAA8DE0 = GOPN + 54504C47 ("TPLG" en ASCII hexadecimal) + BDAA8DE0 -> TPLGBDAA8DE0.
+//   - En hexadecimal sin GPON (AmericanPon): su etiqueta trae "XPSN:4857544310184360" = 48575443 ("HWTC") + 10184360 -> HWTC10184360 (los últimos 8 son los de la MAC;
+//     el S/N de fábrica 2024101705174 y la MAC A24E10184360 no sirven). El campo del técnico quita los ":", así que llega XPSN4857544310184360, o solo los 16 dígitos.
 // Las cajas de V-SOL ya traen el PON S/N (VSOL00E65D25) en su etiqueta: no se calcula desde la MAC (no coincide).
 // Los equipos TP-Link (MR) siempre empiezan con "TPLG" (el fabricante en hexadecimal es 54504C47): si el técnico escribió "TPL" sin la G
 // (TPLBDAA8C10) o con otra letra en su lugar (TPLHBDAA8C10, la H queda pegada a la G en el teclado), se envía con la G (TPLGBDAA8C10).
 // Solo se convierte al enviar al almacén (utils/envioInventario); lo que escribió el técnico se guarda y se muestra tal cual.
 
 const FORMATO_CAJA_TEXTO = /^G(?:PO|OP)N([A-Z]{4}[0-9A-F]{8})$/;
-const FORMATO_CAJA_HEX = /^G(?:PO|OP)N([0-9A-F]{8})([0-9A-F]{8})$/;
+const FORMATO_CAJA_HEX = /^(?:G(?:PO|OP)N|XPSN:?)?([0-9A-F]{8})([0-9A-F]{8})$/;
 const FORMATO_OLT = /^[A-Z]{4}[0-9A-F]{8}$/;
 const FORMATO_TPLINK = /^TPL[A-Z]?([0-9A-F]{8})$/;
 
@@ -46,7 +48,7 @@ export function evaluarSerialCaja(serial) {
   if (texto.startsWith('GOPN')) return { estado: 'error', codigo: 'GOPN', mensaje: 'Dice GOPN: debe ser GPON. Revisa el serial de la caja.' };
   if (esSerialOlt(serialParaOlt(texto))) return { estado: 'ok', codigo: '', mensaje: 'Serial correcto.' };
   if (/^[0-9A-F]{12}$/.test(texto)) return { estado: 'error', codigo: 'MAC', mensaje: 'Eso parece la MAC. Escribe el serial de la etiqueta (PON S/N o GPON/SN).' };
-  return { estado: 'error', codigo: 'FORMATO', mensaje: 'Revisa el serial: no tiene el formato esperado (ej. VSOL00E65D25 o GPON…).' };
+  return { estado: 'error', codigo: 'FORMATO', mensaje: 'Revisa el serial: no tiene el formato esperado (ej. VSOL00E65D25, GPON… o el XPSN de AmericanPon).' };
 }
 
 // El mensaje de error del serial, o '' si está bien (o vacío: que sea obligatorio lo exige quien lo pide).

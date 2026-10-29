@@ -96,9 +96,9 @@ export const TIPOS_POR_TRABAJO = {
 // Cómo se muestra cada rol. El valor guardado en el perfil (y que usan las reglas) no cambia: PROMOTORA se ve "VENTAS".
 export const etiquetaRol = (rol) => (rol === 'PROMOTORA' ? 'VENTAS' : rol);
 
-// El módulo y el rol ADMINISTRACION (conciliar los pagos de los clientes) están apagados por ahora: sin menú, sin cuenta que crear y sin avisos. El técnico sigue registrando el pago de
-// cada orden y FINANZAS lo ve en su sección "Pagos de clientes". Para volver a usarlo basta ponerlo en true (y crear la cuenta en Usuarios).
-export const ADMINISTRACION_ACTIVA = false;
+// El módulo y el rol ADMINISTRACION (conciliar los pagos de los clientes). En false no hay menú, ni cuenta que crear, ni avisos; el técnico igual registra el pago de cada orden y
+// FINANZAS lo ve en su sección "Pagos de clientes" (siempre como "Registrado"). En true hay que crear la cuenta en Usuarios.
+export const ADMINISTRACION_ACTIVA = true;
 
 export const ROLES = { ADMIN: 'ADMIN', USUARIO: 'USUARIO', TECNICO: 'TECNICO', ALMACEN: 'ALMACEN', PROMOTORA: 'PROMOTORA', FINANZAS: 'FINANZAS', INFRAESTRUCTURA: 'INFRAESTRUCTURA', ADMINISTRACION: 'ADMINISTRACION' };
 

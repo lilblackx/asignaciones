@@ -6,6 +6,7 @@ import {
   cifrasPagosClientes, columnasPagosClientes, esPagoDeFinanzas, etiquetaEstadoPago, filaPagoCliente, filtrarPagosClientes, pagosClientesDelPeriodo, parsePagoCliente, resumenPagos, resumenPorForma, textoPago, tipoPagoFinanzas,
 } from '../src/utils/pagoCliente.js';
 import { documentoPagosClientes } from '../src/utils/modelosReporte.js';
+import { ADMINISTRACION_ACTIVA } from '../src/constants.js';
 import { normalizarFormasPago } from '../src/utils/formasPago.js';
 
 let failures = 0;
@@ -129,7 +130,7 @@ check('fuera del rango no sale y el técnico filtra', [pagosClientesDelPeriodo(p
 check('filtrar por tipo, forma y moneda', [filtrarPagosClientes(pagosFin, { tipo: 'Instalación' }).map((p) => p.id), filtrarPagosClientes(pagosFin, { forma: 'Zelle', moneda: 'USD' }).length, filtrarPagosClientes(pagosFin, { moneda: 'BS' }).map((p) => p.id)], [['I1'], 2, ['T1', 'C2']]);
 check('el resumen por forma suma lo pagado en cada moneda', resumenPorForma(pagosFin), [{ forma: 'Zelle', cantidad: 2, BS: 0, USD: 75 }, { forma: 'Pago móvil', cantidad: 1, BS: 5696, USD: 0 }]);
 check('las cifras: pagos registrados, lo recibido y lo que falta pagar', cifrasPagosClientes(pagosClientesDelPeriodo(pagosFin, rangoFin)).map((c) => [c.etiqueta, c.valor]), [['Pagos registrados', '2'], ['Recibido en dólares', '75 $'], ['Recibido en bolívares', '0 Bs'], ['Sin pagar todavía', '1']]);
-check('con Administración apagada, "por conciliar" se llama "Registrado"', [etiquetaEstadoPago('POR_CONCILIAR'), etiquetaEstadoPago('PENDIENTE_COBRO'), etiquetaEstadoPago('CONCILIADO')], ['Registrado', 'Pendiente de cobro', 'Conciliado']);
+check('"por conciliar" se llama "Registrado" solo con Administración apagada', [etiquetaEstadoPago('POR_CONCILIAR'), etiquetaEstadoPago('PENDIENTE_COBRO'), etiquetaEstadoPago('CONCILIADO')], [ADMINISTRACION_ACTIVA ? 'Por conciliar' : 'Registrado', 'Pendiente de cobro', 'Conciliado']);
 check('la fila del reporte lleva el titular, la referencia y el estado', (({ length }) => length)(columnasPagosClientes()) === filaPagoCliente(pagosFin[0]).length, true);
 check('fila de un pago Zelle (sin columna de estado: Finanzas solo ve "Registrado")', filaPagoCliente(pagosFin[0]).slice(1, 11), ['IO7', 'Ana', 'JOSE', 'Instalación', 'Zelle', 'Chase', 'Juan Pérez', 'Z-1', '', '45 $']);
 const docFin = documentoPagosClientes({ rango: rangoFin, tecnico: '', pagosClientes: pagosFin, generadoPor: 'finanzas', ahora: AHORA });
