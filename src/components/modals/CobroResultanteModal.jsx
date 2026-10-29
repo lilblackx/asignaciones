@@ -139,6 +139,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
               ticket={ticket}
               cobro={cobroEsperadoDe(ticket)}
               cuentasEmpresa={formas}
+              permitirPagarDespues={!esInstalacion(ticket.tipoTrabajo)}
               otrasOrdenes={registro.otrasOrdenes}
               onGuardar={(valor) => registro.onRegistrar(ticket, valor)}
               onPagaDespues={(datos) => registro.onPagaDespues(ticket, datos)}

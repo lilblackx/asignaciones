@@ -694,9 +694,9 @@ service cloud.firestore {
           );
       }
 
-      // FINANZAS ve el pago de una instalación, completo, cuando ya está conciliado (y de ningún otro tipo de orden).
+      // FINANZAS ve el pago, completo y en cualquier estado, de una instalación y de un cambio de equipo (y de ningún otro tipo de orden). Va con igualdades para que sus consultas por tipo se puedan comprobar.
       allow read: if llevaAdministracion(appId) || isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId))
-        || (isFinanzasRole(appId) && resource.data.estado == 'CONCILIADO' && resource.data.tipoTrabajo.upper().matches('.*INSTAL.*'));
+        || (isFinanzasRole(appId) && (resource.data.tipoTrabajo == 'INSTALACIÓN' || resource.data.tipoTrabajo == 'CAMBIO DE EQUIPO' || resource.data.tipoVisita == 'CAMBIO_EQUIPO'));
       allow create: if pagoOrdenValido() && tecnicoCreaSuPago(appId);
       allow update: if llevaAdministracion(appId)
         && pagoOrdenValido()

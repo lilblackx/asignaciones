@@ -19,6 +19,7 @@ import { NOTA_COBROS, RESULTADOS, cifrasCobros, columnasDesglose, columnasMonto,
 import { NOTA_HORAS, cifrasDeTramos, colasDeLaOficina, columnasPorTecnico, columnasPorTipo, columnasTramo, esperasDelCiclo, filaPorTecnico, filaPorTipo, filaTramo } from './esperasCiclo.js';
 import { HOJAS, armarHoja, columnasMaterialesVisitas, filasMaterialesVisitas } from './reporteMensual.js';
 import { cifrasVnTa, columnasEstadisticaVnTa, columnasVnTa, estadisticaRegistros, filaVnTa, filasEstadisticaVnTa, ordenarRegistros } from './registroVnTa.js';
+import { cifrasPagosClientes, columnasPagosClientes, filaPagoCliente, pagosClientesDelPeriodo, resumenPorForma } from './pagoCliente.js';
 import { NOTA_PAGOS, adelantosDelPeriodo, columnasAdelantos, filaAdelanto, descuentosDelPeriodo, columnasDescuentos, filaDescuento, cifrasPagos, cifrasResumenPagado, columnasPagosRegistrados, columnasPagosTecnico, columnasResumenPagado, filaPagoRegistrado, filaPagoTecnico, filaResumenPagado, pagosDelPeriodo, resumenPagado, sumaPagado } from './finanzas.js';
 import { etiquetaMes } from './totalesMes.js';
 import { mesesDeLaTendencia, tendenciaMensual, textoVariacion } from './tendenciaMensual.js';
@@ -329,6 +330,20 @@ export function documentoPagosTecnicos(ctx) {
     { tipo: 'tabla', titulo: `Adelantos (${adelantosPeriodo.length})`, columnas: columnasAdelantos(), filas: adelantosPeriodo.map(filaAdelanto), vacio: 'Ningún adelanto en este periodo.' },
     { tipo: 'tabla', titulo: `Descuentos (${descuentosPeriodo.length})`, columnas: columnasDescuentos(), filas: descuentosPeriodo.map(filaDescuento), vacio: 'Ningún descuento en este periodo.' },
     { tipo: 'texto', texto: NOTA_PAGOS },
+  ]);
+}
+
+// Finanzas: lo que pagaron los clientes por las instalaciones y los cambios de equipo (lo registra el técnico), con todos los datos de cada pago.
+export function documentoPagosClientes(ctx) {
+  const { rango, tecnico, pagosClientes = [] } = ctx;
+  const pagos = pagosClientesDelPeriodo(pagosClientes, rango, { tecnico });
+  const porForma = resumenPorForma(pagos);
+  return encabezado('Pagos de clientes', rango, tecnico, ctx, [
+    { tipo: 'cifras', items: cifrasPagosClientes(pagos) },
+    { tipo: 'tabla', titulo: 'Por forma de pago', columnas: [{ titulo: 'Forma' }, { titulo: 'Pagos', derecha: true }, { titulo: 'Dólares', derecha: true }, { titulo: 'Bolívares', derecha: true }],
+      filas: porForma.map((f) => [f.forma, String(f.cantidad), f.USD ? `${String(f.USD).replace('.', ',')} $` : '', f.BS ? `${String(f.BS).replace('.', ',')} Bs` : '']), vacio: 'Ningún pago registrado en este periodo.' },
+    { tipo: 'tabla', titulo: `Pagos de instalaciones y cambios de equipo (${pagos.length})`, columnas: columnasPagosClientes(), filas: pagos.map(filaPagoCliente), vacio: 'Ningún pago de clientes en este periodo.' },
+    { tipo: 'texto', texto: 'Son los pagos que el técnico registró por cada instalación y cada cambio de equipo, tal como los escribió. Un pago "sin pagar todavía" es una orden donde el técnico dijo que el cliente paga después.' },
   ]);
 }
 

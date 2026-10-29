@@ -3,6 +3,7 @@ import { BOTON } from './estilos';
 import { formatearCedula } from '../../utils/cedula';
 import { estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
 import { esInstalacion } from '../../utils/instalacion';
+import { esCambioDeEquipo } from '../../utils/pagoCliente';
 import { etiquetaTipoVisita } from '../../utils/tipoVisita';
 import { fechaHoraLegible } from '../../utils/formatoFecha';
 import { culminadaEn } from '../../utils/reporteMensual';
@@ -72,10 +73,10 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           </div>
           )}
 
-          {!registro && esInstalacion(orden.tipoTrabajo) && (
+          {!registro && (esInstalacion(orden.tipoTrabajo) || esCambioDeEquipo(orden)) && (
             <div className="rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
-              <p className={ETIQUETA}>Pago del cliente por la instalación</p>
-              <PagoClienteDetalle ticketId={orden.id ?? item.clave} mensajeSinAcceso="El pago de esta instalación aún no está conciliado por Administración. Cuando lo esté, lo verás aquí." />
+              <p className={ETIQUETA}>{esInstalacion(orden.tipoTrabajo) ? 'Pago del cliente por la instalación' : 'Pago del cliente por el cambio de equipo'}</p>
+              <PagoClienteDetalle ticketId={orden.id ?? item.clave} paraFinanzas mensajeSinAcceso="No se puede leer el pago de esta orden." />
             </div>
           )}
 

@@ -4,6 +4,7 @@ import { useToast } from '../hooks/useToast';
 import { useTema } from '../hooks/useTema';
 import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
 import { useFinanzas } from '../hooks/useFinanzas';
+import { usePagosFinanzas } from '../hooks/usePagosOrdenes';
 import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
 import { rangoDe } from '../utils/periodoReporte';
@@ -13,7 +14,7 @@ import { itemsParaRevisar, paraFinanzas, revisar } from '../utils/revisionPagos'
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
 import { exportarDocumento } from '../utils/exportarDocumento';
-import { documentoPagosTecnicos, documentoResumenPagos } from '../utils/modelosReporte';
+import { documentoPagosClientes, documentoPagosTecnicos, documentoResumenPagos } from '../utils/modelosReporte';
 import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
 import PieVersion from './PieVersion';
@@ -25,14 +26,19 @@ import TecnicosFinanzas from './finanzas/TecnicosFinanzas';
 import TamanoLetra from './finanzas/TamanoLetra';
 import { useTamanoLetra } from '../hooks/useTamanoLetra';
 import ResumenPagado from './finanzas/ResumenPagado';
+import PagosClientes from './finanzas/PagosClientes';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
 
 // "3:45 p. m." (hora de Caracas) de cuando se leyeron las órdenes por última vez.
 const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(ms));
 
 // `documento` y `archivo`: lo que se baja con "Exportar" en esa sección (el tabulador no tiene).
+// Mientras no está abierta "Pagos de clientes" no se lee nada de pagosOrdenes (un rango vacío no consulta).
+const SIN_LEER = { desde: '', hasta: '' };
+
 const SECCIONES = [
   { id: 'PAGOS', nombre: 'Técnicos', corto: 'Técnicos', documento: documentoPagosTecnicos, archivo: 'pago-a-tecnicos' },
+  { id: 'CLIENTES', nombre: 'Pagos de clientes', corto: 'Clientes', documento: documentoPagosClientes, archivo: 'pagos-de-clientes' },
   { id: 'PRECIOS', nombre: 'Tabulador de precios', corto: 'Precios' },
   { id: 'REPORTE', nombre: 'Reporte de pagos', corto: 'Reporte', documento: documentoResumenPagos, archivo: 'resumen-de-pagos' },
 ];
@@ -57,6 +63,8 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
 
   const rango = useMemo(() => rangoDe(periodo, personalizado), [periodo, personalizado]);
   const finanzas = useFinanzas({ firebaseUser, rango, usuario: currentUser, setToastMsg });
+  // Lo que pagaron los clientes por instalaciones y cambios de equipo (lo registra el técnico); solo se lee cuando se abre esa sección.
+  const pagosClientes = usePagosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
   // La tasa BCV del dólar, para mostrar los bolívares (cada pago guarda la de su momento).
   const bcv = useTasaDolar();
   const tasa = bcv.tasa;
@@ -104,7 +112,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
     setErrorExportar('');
     setExportando(formato);
     try {
-      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles, descuentos: descuentosVisibles } };
+      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosClientes: pagosClientes.pagos, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles, descuentos: descuentosVisibles } };
       const documento = actual.documento(contexto);
       if (formato === 'csv') descargarCsv(csvDeDocumento(documento), `${actual.archivo}_${rango.desde}_${rango.hasta}.csv`);
       else await exportarDocumento(documento, formato, rango);
@@ -183,7 +191,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onTecnico={setTecnico}
                   tecnicos={nombresTecnicos}
                   cargando={actualizando}
-                  onRecargar={actualizar}
+                  onRecargar={() => { actualizar(); if (seccion === 'CLIENTES') pagosClientes.recargar(); }}
                   formatosExportar={['pdf', 'docx', 'csv']}
                   onExportar={exportar}
                   exportando={exportando}
@@ -226,6 +234,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onAnularDescuento={finanzas.anularDescuento}
                 />
               )}
+              {seccion === 'CLIENTES' && <PagosClientes pagos={pagosClientes.pagos} rango={rango} tecnico={tecnico} cargado={pagosClientes.cargado} error={pagosClientes.error} />}
               {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}
               {seccion === 'REPORTE' && <ResumenPagado resumen={pagado} rango={rango} ordenesPagadas={yaPagadas} tarifas={finanzas.tarifas} tasa={tasa} />}
               </div>

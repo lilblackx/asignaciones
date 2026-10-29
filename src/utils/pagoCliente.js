@@ -12,6 +12,8 @@ import { CAMPOS_POR_TIPO, TIPO_BINANCE, TIPO_CUENTA, TIPO_PAGO_MOVIL, TIPO_ZELLE
 import { COBRO_EXONERADO, formatoMontoBs, llevaCobro, monedaDe, parseMontoBs, textoMonto } from './cobro.js';
 import { esInstalacion } from './instalacion.js';
 import { diaDe } from './totalesMes.js';
+import { ADMINISTRACION_ACTIVA } from '../constants.js';
+import { TIPO_CAMBIO_EQUIPO } from './tipoVisita.js';
 
 export { MONEDA_BS, MONEDA_USD, fechaHoraDeMarca };
 
@@ -283,6 +285,70 @@ export function armarCorreccion(actual, { valor, nota = '', repiteReferencia = f
       historial: [...(actual.historial || []), entradaHistorial(por, ahora, `Corregido: ${textoPago(valor.pago)} | ${notaLimpia}`)],
     },
   };
+}
+
+// --- Finanzas: los pagos de instalaciones y de cambios de equipo ---
+
+// Con Administración apagada nadie concilia: un pago registrado por el técnico se llama "Registrado", no "Por conciliar".
+export const etiquetaEstadoPago = (estado) => (!ADMINISTRACION_ACTIVA && estado === ESTADO_PAGO.POR_CONCILIAR ? 'Registrado' : ETIQUETA_ESTADO_PAGO[estado] || estado || '');
+
+// FINANZAS no ve estados (nadie concilia para ella): todo lo que el técnico registró se llama "Registrado", para no confundirlo con el flujo de Administración.
+export const ETIQUETA_PAGO_FINANZAS = 'Registrado';
+export const CLASE_PAGO_FINANZAS = 'bg-sky-700 text-white';
+
+// Lo que ve FINANZAS: el pago de una instalación y el de un cambio de equipo (las reglas de pagosOrdenes dejan leer solo esos).
+export const esCambioDeEquipo = (p) => p?.tipoTrabajo === 'CAMBIO DE EQUIPO' || p?.tipoVisita === TIPO_CAMBIO_EQUIPO;
+export const esPagoDeFinanzas = (p) => esInstalacion(p?.tipoTrabajo) || esCambioDeEquipo(p);
+export const tipoPagoFinanzas = (p) => (esInstalacion(p?.tipoTrabajo) ? 'Instalación' : 'Cambio de equipo');
+export const FILTROS_TIPO_PAGO = [{ valor: '', etiqueta: 'Todos' }, { valor: 'Instalación', etiqueta: 'Instalaciones' }, { valor: 'Cambio de equipo', etiqueta: 'Cambios de equipo' }];
+
+// Los pagos creados en el rango (días de Caracas, "AAAA-MM-DD") y, si se pide, de un técnico; los más nuevos primero.
+export function pagosClientesDelPeriodo(pagos, rango, { tecnico = '' } = {}) {
+  return (pagos || [])
+    .filter((p) => esPagoDeFinanzas(p) && (!tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()))
+    .filter((p) => { const dia = diaDe(Number(p.creadoEn) || 0); return dia >= rango.desde && dia <= rango.hasta; })
+    .sort((a, b) => (Number(b.creadoEn) || 0) - (Number(a.creadoEn) || 0));
+}
+
+export const filtrarPagosClientes = (pagos, { tipo = '', ...filtros } = {}) => filtrarPagos((pagos || []).filter((p) => !tipo || tipoPagoFinanzas(p) === tipo), filtros);
+
+// Lo registrado por forma de pago: [{ forma, cantidad, BS, USD }], la que más se usa primero. Solo cuenta lo que ya tiene pago.
+export function resumenPorForma(pagos) {
+  const porForma = new Map();
+  for (const p of pagos || []) {
+    if (!p.pago) continue;
+    const fila = porForma.get(p.pago.forma) || { forma: p.pago.forma, cantidad: 0, [MONEDA_BS]: 0, [MONEDA_USD]: 0 };
+    fila.cantidad += 1;
+    if (fila[p.pago.moneda] !== undefined) fila[p.pago.moneda] = redondear(fila[p.pago.moneda] + (Number(p.pago.monto) || 0));
+    porForma.set(p.pago.forma, fila);
+  }
+  return [...porForma.values()].sort((a, b) => b.cantidad - a.cantidad || a.forma.localeCompare(b.forma, 'es'));
+}
+
+const fechaHoraPago = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
+const montoPago = (p) => (p.pago ? textoMonto(formatoMontoBs(Number(p.pago.monto) || 0), p.pago.moneda) : p.cobro ? `Debe ${textoDeCobro(p.cobro)}` : '');
+
+export const columnasPagosClientes = () => [
+  { titulo: 'Pagado el' }, { titulo: 'Código' }, { titulo: 'Cliente' }, { titulo: 'Técnico' }, { titulo: 'Tipo' }, { titulo: 'Forma de pago' }, { titulo: 'Banco' }, { titulo: 'Titular' },
+  { titulo: 'Referencia' }, { titulo: 'Cuenta de la empresa' }, { titulo: 'Monto', derecha: true }, { titulo: 'Nota' },
+];
+export const filaPagoCliente = (p) => [
+  fechaHoraPago(p.pago?.pagadoEn || p.creadoEn), p.codigo || '', p.nombre || '', p.tecnico || '', tipoPagoFinanzas(p), p.pago?.forma || '', p.pago?.banco || '', p.pago?.titular || '',
+  p.pago?.referencia || '', p.pago?.cuentaEmpresa || '', montoPago(p), [p.nota, p.compartidoCon ? `Pagó junto con ${p.compartidoCon.codigo}` : ''].filter(Boolean).join(' | '),
+];
+
+// Las cifras de arriba de la sección: cuántos pagos, lo recibido en cada moneda y cuántos faltan por pagar.
+export function cifrasPagosClientes(pagos) {
+  const r = resumenPagos(pagos);
+  const registrados = (pagos || []).filter((p) => p.pago);
+  const monto = (moneda) => textoMonto(formatoMontoBs(registrados.filter((p) => p.pago.moneda === moneda).reduce((s, p) => s + (Number(p.pago.monto) || 0), 0)), moneda);
+  const sinPago = r[ESTADO_PAGO.PENDIENTE].cantidad;
+  return [
+    { etiqueta: 'Pagos registrados', valor: String(registrados.length) },
+    { etiqueta: 'Recibido en dólares', valor: monto(MONEDA_USD) },
+    { etiqueta: 'Recibido en bolívares', valor: monto(MONEDA_BS) },
+    { etiqueta: 'Sin pagar todavía', valor: String(sinPago), detalle: sinPago > 0 ? 'el cliente paga después' : '' },
+  ];
 }
 
 // --- Textos ---

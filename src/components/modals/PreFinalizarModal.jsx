@@ -351,10 +351,11 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
             {pedirPago && (
               <section aria-label="Pago del cliente" className="space-y-3 rounded-xl border-2 border-zinc-300 dark:border-zinc-700 p-3">
                 <h3 className="text-sm font-black tracking-wide text-zinc-900 dark:text-white">PAGO DEL CLIENTE</h3>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">Registra lo que el cliente pagó por la instalación. Es obligatorio: sin esto no se envía a revisión.</p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">Registra lo que el cliente pagó por la instalación. Es obligatorio: el cliente paga la instalación de una vez y, sin esto, no se envía a revisión.</p>
                 <FormularioPagoCliente
                   ref={pagoRef}
                   incrustado
+                  permitirPagarDespues={false}
                   idPrefijo="pf-pago"
                   cuentasEmpresa={pagoInstalacion.cuentasEmpresa}
                   otrasOrdenes={pagoInstalacion.otrasOrdenes}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LogOut, Moon, Network, PackageCheck, PanelLeftClose, PanelLeftOpen, ShieldCheck, Sun, TrendingUp, User, Users, Wallet, X } from 'lucide-react';
+import { ADMINISTRACION_ACTIVA } from '../constants';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 
@@ -33,7 +34,7 @@ export default function Sidebar({ acciones, veInventario = false, alertasInventa
     ] },
     { titulo: 'Dinero', items: [
       { id: 'revision', Icono: ClipboardCheck, nombre: 'Revisión de órdenes', accion: () => acciones.modulo('REVISION') },
-      { id: 'administracion', Icono: Landmark, nombre: 'Administración', alertas: pagosPorCobrar, accion: () => acciones.modulo('ADMINISTRACION') },
+      ...(ADMINISTRACION_ACTIVA ? [{ id: 'administracion', Icono: Landmark, nombre: 'Administración', alertas: pagosPorCobrar, accion: () => acciones.modulo('ADMINISTRACION') }] : []),
       { id: 'finanzas', Icono: Wallet, nombre: 'Finanzas', accion: () => acciones.modulo('FINANZAS') },
       { id: 'tasa', Icono: Coins, nombre: 'Tasa y pagos', accion: () => acciones.modulo('TASA') },
     ] },

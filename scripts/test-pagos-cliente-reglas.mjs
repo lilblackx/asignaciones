@@ -238,26 +238,42 @@ await check('la clave de una referencia solo admite letras minúsculas, números
   await assertFails(refs(ctx).doc('Mala Clave').set({ ticketId: 'g2', codigo: doc.codigo, por: 'admon', en: AHORA }));
 });
 
-// --- FINANZAS ve el pago de una instalación solo cuando ya está conciliado ---
-const inst = (id, estado, tipoTrabajo = 'INSTALACIÓN') => {
-  const doc = armarPagoRegistrado({ ...ordenDe(id), tipoTrabajo }, valor({ referencia: `fin${id}` }, null), { por: 'gerardo', ahora: AHORA });
+// --- FINANZAS ve el pago de una instalación y de un cambio de equipo, en cualquier estado ---
+const inst = (id, estado, tipoTrabajo = 'INSTALACIÓN', extra = {}) => {
+  const doc = armarPagoRegistrado({ ...ordenDe(id), tipoTrabajo, ...extra }, valor({ referencia: `fin${id}` }, null), { por: 'gerardo', ahora: AHORA });
   return { ...doc, estado };
 };
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await pagos(ctx).doc('fi-conciliada').set(inst('fi-conciliada', 'CONCILIADO'));
   await pagos(ctx).doc('fi-por-conciliar').set(inst('fi-por-conciliar', 'POR_CONCILIAR'));
-  await pagos(ctx).doc('fi-averia').set(inst('fi-averia', 'CONCILIADO', 'AVERÍA'));
+  await pagos(ctx).doc('fi-cambio').set(inst('fi-cambio', 'POR_CONCILIAR', 'AVERÍA', { tipoVisita: 'CAMBIO_EQUIPO' }));
+  await pagos(ctx).doc('fi-cambio-trabajo').set(inst('fi-cambio-trabajo', 'POR_CONCILIAR', 'CAMBIO DE EQUIPO'));
+  await pagos(ctx).doc('fi-averia').set(inst('fi-averia', 'CONCILIADO', 'AVERÍA', { tipoVisita: 'CONECTOR_INTERNO' }));
 });
-await check('FINANZAS lee el pago de una instalación ya conciliada, completo', async () => {
+await check('FINANZAS lee el pago de una instalación, completo, conciliado o no', async () => {
   const snap = await assertSucceeds(pagos(como('finanzas-uid')).doc('fi-conciliada').get());
   if (snap.data().pago.referencia !== 'finfi-conciliada') throw new Error('no trae los datos del pago');
+  await assertSucceeds(pagos(como('finanzas-uid')).doc('fi-por-conciliar').get());
 });
-await check('pero no el de una instalación que todavía no se concilia', () => assertFails(pagos(como('finanzas-uid')).doc('fi-por-conciliar').get()));
-await check('ni el de ninguna orden que no sea instalación, aunque esté conciliado', () => assertFails(pagos(como('finanzas-uid')).doc('fi-averia').get()));
-await check('FINANZAS no lista los pagos ni escribe en ellos', async () => {
-  await assertFails(pagos(como('finanzas-uid')).get());
-  await assertFails(pagos(como('finanzas-uid')).where('estado', '==', 'CONCILIADO').get());
-  await assertFails(pagos(como('finanzas-uid')).doc('fi-conciliada').update({ nota: 'x' }));
+await check('y el de un cambio de equipo (por su tipo de visita o por el tipo de trabajo)', async () => {
+  await assertSucceeds(pagos(como('finanzas-uid')).doc('fi-cambio').get());
+  await assertSucceeds(pagos(como('finanzas-uid')).doc('fi-cambio-trabajo').get());
+});
+await check('pero no el de una avería u otra visita, aunque esté conciliado', () => assertFails(pagos(como('finanzas-uid')).doc('fi-averia').get()));
+await check('FINANZAS lista los pagos de instalaciones y de cambios de equipo por su tipo y fecha (las consultas de la sección)', async () => {
+  const ctx = como('finanzas-uid');
+  const a = await assertSucceeds(pagos(ctx).where('tipoTrabajo', '==', 'INSTALACIÓN').where('creadoEn', '>=', 0).where('creadoEn', '<=', AHORA + 1000).get());
+  if (!a.docs.some((d) => d.id === 'fi-por-conciliar') || a.docs.some((d) => d.id === 'fi-averia')) throw new Error('la consulta de instalaciones trae otra cosa');
+  const b = await assertSucceeds(pagos(ctx).where('tipoVisita', '==', 'CAMBIO_EQUIPO').where('creadoEn', '>=', 0).where('creadoEn', '<=', AHORA + 1000).get());
+  if (!b.docs.some((d) => d.id === 'fi-cambio')) throw new Error('la consulta de cambios de equipo no trae el pago');
+  await assertSucceeds(pagos(ctx).where('tipoTrabajo', '==', 'CAMBIO DE EQUIPO').where('creadoEn', '>=', 0).get());
+});
+await check('pero no puede listar todo ni otros tipos de orden, y no escribe en los pagos', async () => {
+  const ctx = como('finanzas-uid');
+  await assertFails(pagos(ctx).get());
+  await assertFails(pagos(ctx).where('estado', '==', 'CONCILIADO').get());
+  await assertFails(pagos(ctx).where('tipoTrabajo', '==', 'AVERÍA').get());
+  await assertFails(pagos(ctx).doc('fi-conciliada').update({ nota: 'x' }));
 });
 await check('ALMACEN sigue sin ver ese pago', () => assertFails(pagos(como('almacen-uid')).doc('fi-conciliada').get()));
 

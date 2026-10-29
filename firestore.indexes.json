@@ -83,6 +83,34 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "pagosOrdenes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoTrabajo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "pagosOrdenes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoVisita",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

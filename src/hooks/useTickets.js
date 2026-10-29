@@ -34,6 +34,7 @@ import { lineaTecnico } from '../utils/historial';
 import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
 import { oltUnica } from '../utils/olt';
+import { ADMINISTRACION_ACTIVA } from '../constants';
 import { avisoDePagoCliente, cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, piensaPagoCliente } from '../utils/pagoCliente';
 import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
 
@@ -182,6 +183,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // El técnico registra el pago del cliente (o dice que paga después): se guarda y se avisa a Administración (push; con la app abierta le sale en la campana).
   // Devuelve lo que necesita el formulario: { ok }, { repetida } si la referencia ya está en otra orden, o { error }.
   const avisarPagoAAdministracion = (documento) => {
+    if (!ADMINISTRACION_ACTIVA) return;
     const { title, body } = avisoDePagoCliente(documento);
     avisarPush({ target: { type: 'administracion' }, title, body, tipo: 'pagoCliente', ticketId: documento.ticketId });
   };
@@ -191,7 +193,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       const r = await registrarPagoCliente(ticket, valor, { por: currentUser, cobro: cobroEsperadoDe(ticket) });
       if (r.repetida) return r;
       if (cobroInmediato?.id === ticket.id) setCobroInmediato(null);
-      setToastMsg({ type: 'success', text: 'Pago registrado. Administración lo concilia.' });
+      setToastMsg({ type: 'success', text: ADMINISTRACION_ACTIVA ? 'Pago registrado. Administración lo concilia.' : 'Pago registrado.' });
       avisarPagoAAdministracion(r.documento);
       return { ok: true };
     } catch (error) {

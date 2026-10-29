@@ -9,7 +9,7 @@ import TelefonoAccion from '../TelefonoAccion';
 import { AREA_TEXTO, ETIQUETA } from '../estilos';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
-import { ESTADO_PAGO, ETIQUETA_ESTADO_PAGO, diasEsperando, textoPago } from '../../utils/pagoCliente';
+import { CLASE_PAGO_FINANZAS, ESTADO_PAGO, ETIQUETA_PAGO_FINANZAS, diasEsperando, etiquetaEstadoPago, textoPago } from '../../utils/pagoCliente';
 import { stripEmojis } from '../../utils/sanitizeInput';
 
 const CLASE_ESTADO = {
@@ -36,7 +36,8 @@ function Dato({ etiqueta, children }) {
 //   - Por conciliar: conciliarlo tal cual, corregir sus datos o marcarlo sin cobrar.
 //   - Conciliado: corregir sus datos o devolverlo a por conciliar.
 // `onTrabajar(accion, { valor, nota })` devuelve { ok } o { error, campo }; accion: 'conciliar' | 'corregir' | 'sinCobrar' | 'devolver'.
-export default function ConciliarPagoModal({ pago, cuentasEmpresa, onTrabajar, onClose }) {
+// `soloLectura` (Finanzas): se ven todos los datos y el historial, sin ninguna acción.
+export default function ConciliarPagoModal({ pago, cuentasEmpresa = [], onTrabajar = null, soloLectura = false, onClose }) {
   const [vista, setVista] = useState('detalle'); // 'detalle' | 'cobrar' | 'corregir' | 'sinCobrar' | 'devolver'
   const [nota, setNota] = useState('');
   const [error, setError] = useState('');
@@ -91,7 +92,7 @@ export default function ConciliarPagoModal({ pago, cuentasEmpresa, onTrabajar, o
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="conciliar-titulo" className="text-base font-black text-white">{pago.codigo || 'S/C'}</h2>
-              <span className={`whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[pago.estado] || ''}`}>{ETIQUETA_ESTADO_PAGO[pago.estado] || pago.estado}</span>
+              <span className={`whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${soloLectura ? CLASE_PAGO_FINANZAS : CLASE_ESTADO[pago.estado] || ''}`}>{soloLectura ? ETIQUETA_PAGO_FINANZAS : etiquetaEstadoPago(pago.estado)}</span>
             </div>
             <p className="text-xs font-bold text-zinc-300 truncate">{pago.nombre}</p>
           </div>
@@ -141,13 +142,13 @@ export default function ConciliarPagoModal({ pago, cuentasEmpresa, onTrabajar, o
               ) : (
                 <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-900/60 p-3 space-y-1">
                   <p className="text-sm font-black text-amber-900 dark:text-amber-200">{pago.compartidoCon ? `Pagó junto con la orden ${pago.compartidoCon.codigo}` : 'El cliente paga después'}</p>
-                  <p className="text-xs text-amber-900 dark:text-amber-200">Hay que cobrarlo y registrar los datos del pago.</p>
+                  <p className="text-xs text-amber-900 dark:text-amber-200">{soloLectura ? 'Todavía no hay datos del pago: el técnico no los ha registrado.' : 'Hay que cobrarlo y registrar los datos del pago.'}</p>
                 </div>
               )}
 
               {pago.nota && <Dato etiqueta="Nota del técnico">{pago.nota}</Dato>}
-              {pago.notaAdministracion && <Dato etiqueta="Nota de Administración">{pago.notaAdministracion}</Dato>}
-              {(pago.estado === ESTADO_PAGO.CONCILIADO || pago.estado === ESTADO_PAGO.SIN_COBRAR) && pago.conciliadoPor && <Dato etiqueta={pago.estado === ESTADO_PAGO.CONCILIADO ? 'Conciliado por' : 'Marcado sin cobrar por'}>{pago.conciliadoPor} · {fechaHora(pago.conciliadoEn)}</Dato>}
+              {!soloLectura && pago.notaAdministracion && <Dato etiqueta="Nota de Administración">{pago.notaAdministracion}</Dato>}
+              {!soloLectura && (pago.estado === ESTADO_PAGO.CONCILIADO || pago.estado === ESTADO_PAGO.SIN_COBRAR) && pago.conciliadoPor && <Dato etiqueta={pago.estado === ESTADO_PAGO.CONCILIADO ? 'Conciliado por' : 'Marcado sin cobrar por'}>{pago.conciliadoPor} · {fechaHora(pago.conciliadoEn)}</Dato>}
 
               <details className="rounded-lg border border-zinc-200 dark:border-zinc-800">
                 <summary className="px-3 py-2 text-xs font-black tracking-wide text-zinc-700 dark:text-zinc-300 cursor-pointer">HISTORIAL ({(pago.historial || []).length})</summary>
@@ -160,6 +161,7 @@ export default function ConciliarPagoModal({ pago, cuentasEmpresa, onTrabajar, o
 
               <Colapsable>{error && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{error}</p>}</Colapsable>
 
+              {!soloLectura && (
               <div className="space-y-2">
                 {sinDatos ? (
                   <Boton variante="principal" tamano="grande" icono={CheckCircle2} className="w-full" onClick={() => setVista('cobrar')}>Cobrar y conciliar</Boton>
@@ -180,6 +182,7 @@ export default function ConciliarPagoModal({ pago, cuentasEmpresa, onTrabajar, o
                   <Boton variante="peligro" tamano="grande" icono={Ban} className="w-full" onClick={() => { setVista('sinCobrar'); setError(''); setNota(''); }}>Marcar sin cobrar</Boton>
                 )}
               </div>
+              )}
             </>
           )}
 

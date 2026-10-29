@@ -54,13 +54,20 @@ await guardar(armarPagoRegistrado(ficha('pr-2', 'AO421', 'Pedro Díaz', 'REINEL 
 await guardar(armarPagoRegistrado(ficha('pr-3', 'IO410', 'Sofía Peña', 'GERARDO MOLERO', 'INSTALACIÓN'), valor({ monto: '40000', referencia: '200003', nota: '' }, null), { por: 'tecnico1', ahora: AHORA - DIA }), DIA);
 await guardar(armarPagoRegistrado(ficha('pr-4', 'AO422', 'Raúl León', 'REINEL BRAVO'), valor({ monto: '5000', referencia: '200004', nota: 'Pagó menos, descuento del técnico' }), { por: 'tecnico2', ahora: AHORA - 8 * HORA }), 8 * HORA);
 
+// Para la sección "Pagos de clientes" de Finanzas: más instalaciones y cambios de equipo (Zelle con titular, efectivo, pago móvil y un cambio de equipo donde el cliente paga después)
+await guardar(armarPagoRegistrado(ficha('fi-1', 'IO411', 'Marisol Duarte', 'REINEL BRAVO', 'INSTALACIÓN'), valor({ moneda: 'USD', forma: 'Zelle', monto: '45', banco: 'Chase', titular: 'Roberto Duarte', cuentaEmpresa: '', referencia: 'WFCT22TF8QLH', nota: '' }, null), { por: 'tecnico2', ahora: AHORA - 5 * HORA }), 5 * HORA);
+await guardar(armarPagoRegistrado(ficha('fi-2', 'IO412', 'Yoleida Aranda', 'GERARDO MOLERO', 'INSTALACIÓN'), valor({ moneda: 'USD', forma: 'Efectivo', monto: '50', banco: '', cuentaEmpresa: '', referencia: '', nota: 'Pagó en efectivo al instalar' }, null), { por: 'tecnico1', ahora: AHORA - 2 * HORA }), 2 * HORA);
+await guardar(armarPagoRegistrado({ ...ficha('fi-3', 'AC501', 'Néstor Parra', 'GERARDO MOLERO'), tipoVisita: 'CAMBIO_EQUIPO', falla: 'Cambio de ONU', cobroBs: '85.000' }, valor({ monto: '85000', referencia: '700123' }, { monto: 85000, moneda: 'BS' }), { por: 'tecnico1', ahora: AHORA - 26 * HORA }), 26 * HORA);
+await guardar(armarPagoPendiente({ ...ficha('fi-4', 'AC502', 'Dilia Moreno', 'REINEL BRAVO'), tipoVisita: 'CAMBIO_EQUIPO', falla: 'Cambio de ONU', cobroBs: '40' }, { nota: 'Paga el sábado' }, { por: 'tecnico2', ahora: AHORA - 20 * HORA, cobro: { monto: 40, moneda: 'USD' } }), 20 * HORA);
+
 // Conciliados y sin cobrar
 const conciliado = armarPagoRegistrado(ficha('cn-1', 'AO400', 'Elena Mora', 'GERARDO MOLERO'), valor({ referencia: '300001' }), { por: 'tecnico1', ahora: AHORA - 3 * DIA });
 await guardar({ ...conciliado, ...armarConciliacion(conciliado, { nota: 'Verificado en el banco' }, { por: 'administracion', ahora: AHORA - 2 * DIA }).cambios }, 3 * DIA);
 const sinCobrar = armarPagoPendiente(ficha('sc-1', 'AO395', 'Iván Soto', 'REINEL BRAVO'), { nota: 'Paga el lunes' }, { por: 'tecnico2', ahora: AHORA - 9 * DIA });
 await guardar({ ...sinCobrar, ...armarSinCobrar(sinCobrar, { nota: 'El cliente se mudó y no responde' }, { por: 'administracion', ahora: AHORA - 4 * DIA }).cambios }, 9 * DIA);
 
-console.log('OK  órdenes AO501 y AO502 (averías con cobro, piden el pago), IO501 (instalación pendiente), formas de pago de la empresa y 9 pagos en todos los estados');
+console.log('OK  órdenes AO501 y AO502 (averías con cobro, piden el pago), IO501 (instalación pendiente), formas de pago de la empresa y 13 pagos en todos los estados (incluye instalaciones y cambios de equipo para la sección de Finanzas)');
 console.log('    tecnico1 / Tecnico1234 -> al entrar, la pantalla pide el pago de AO501 y AO502; IO501 pide el pago al pre-finalizar');
-console.log('    administracion / Administracion1234 -> ve los pagos y los concilia (el módulo también está en el menú del ADMIN)');
+console.log('    finanzas / Finanzas1234 -> Finanzas > "Pagos de clientes" ve los pagos de instalaciones y cambios de equipo');
+console.log('    (el módulo de Administración está apagado: ADMINISTRACION_ACTIVA en src/constants.js)');
 process.exit(0);

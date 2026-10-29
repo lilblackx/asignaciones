@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { ESTADO_PAGO, ETIQUETA_ESTADO_PAGO, textoPago } from '../utils/pagoCliente';
+import { CLASE_PAGO_FINANZAS, ESTADO_PAGO, ETIQUETA_PAGO_FINANZAS, etiquetaEstadoPago, textoPago } from '../utils/pagoCliente';
 
 const CLASE_ESTADO = {
   PENDIENTE_COBRO: 'bg-amber-400 text-black',
@@ -13,7 +13,8 @@ const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { d
 
 // El pago que el cliente hizo por una orden, en solo lectura (para la oficina y Finanzas: se trabaja en el módulo de Administración). Lo lee una vez al abrir.
 // `mensajeSinAcceso`: lo que se dice si las reglas no dejan leerlo (Finanzas solo lee el de una instalación ya conciliada).
-export default function PagoClienteDetalle({ ticketId, mensajeSinAcceso = '' }) {
+// `paraFinanzas`: Finanzas no ve estados, solo "Registrado".
+export default function PagoClienteDetalle({ ticketId, mensajeSinAcceso = '', paraFinanzas = false }) {
   const [estado, setEstado] = useState({ cargando: true, pago: null, error: false, sinAcceso: false });
   useEffect(() => {
     let vigente = true;
@@ -30,7 +31,7 @@ export default function PagoClienteDetalle({ ticketId, mensajeSinAcceso = '' }) 
   if (!pago) return <p className="text-xs text-zinc-600 dark:text-zinc-400">Todavía no hay un pago registrado para esta orden.</p>;
   return (
     <div className="space-y-1.5">
-      <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[pago.estado] || ''}`}>{ETIQUETA_ESTADO_PAGO[pago.estado] || pago.estado}</span>
+      <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${paraFinanzas ? CLASE_PAGO_FINANZAS : CLASE_ESTADO[pago.estado] || ''}`}>{paraFinanzas ? ETIQUETA_PAGO_FINANZAS : etiquetaEstadoPago(pago.estado)}</span>
       <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">
         {pago.pago ? textoPago(pago.pago) : pago.compartidoCon ? `Pagó junto con la orden ${pago.compartidoCon.codigo}` : 'El cliente paga después'}
       </p>

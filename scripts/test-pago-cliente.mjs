@@ -3,8 +3,9 @@
 import {
   ESTADO_PAGO, armarConciliacion, armarCorreccion, armarDevolucion, armarPagoPendiente, armarPagoRegistrado, armarSinCobrar, aplicaBancoCliente, avisoDePagoCliente, cantidadPorCobrar,
   claveReferencia, cobroEsperadoDe, cuentasParaForma, debePedirPagoCobro, diasEsperando, etiquetaCuenta, formasDeCliente, notaPagoCompartido, numeroDeCobro,
-  parsePagoCliente, resumenPagos, textoPago,
+  cifrasPagosClientes, columnasPagosClientes, esPagoDeFinanzas, etiquetaEstadoPago, filaPagoCliente, filtrarPagosClientes, pagosClientesDelPeriodo, parsePagoCliente, resumenPagos, resumenPorForma, textoPago, tipoPagoFinanzas,
 } from '../src/utils/pagoCliente.js';
+import { documentoPagosClientes } from '../src/utils/modelosReporte.js';
 import { normalizarFormasPago } from '../src/utils/formasPago.js';
 
 let failures = 0;
@@ -109,6 +110,30 @@ const conciliadoDoc = { ...registrado, ...armarConciliacion(registrado, {}, { po
 const devuelto = armarDevolucion(conciliadoDoc, { nota: 'Falta verificar la referencia' }, { por: 'admon', ahora: AHORA + 2000 });
 check('devolver exige nota y un pago conciliado', [armarDevolucion(conciliadoDoc, {}, { por: 'a', ahora: AHORA }).campo, armarDevolucion(registrado, { nota: 'x' }, { por: 'a', ahora: AHORA }).campo], ['nota', 'nota']);
 check('devolver deja el pago y su referencia, vuelve a por conciliar y anota quién', [devuelto.cambios.estado, 'pago' in devuelto.cambios, 'referenciaClave' in devuelto.cambios, devuelto.cambios.historial.at(-1).por, devuelto.cambios.historial.length], [ESTADO_PAGO.POR_CONCILIAR, false, false, 'admon', conciliadoDoc.historial.length + 1]);
+
+// --- Finanzas: pagos de instalaciones y de cambios de equipo ---
+const instalacionOrden = { ...orden, id: 'I1', codigo: 'IO7', tipoTrabajo: 'INSTALACIÓN', tipoVisita: '', cobroBs: '', cobroTipo: '' };
+const cambioOrden = { ...orden, id: 'C1', codigo: 'AC9', nombre: 'Luis', tipoTrabajo: 'AVERÍA', tipoVisita: 'CAMBIO_EQUIPO' };
+const zelle = (o, extra) => armarPagoRegistrado(o, parse({ moneda: 'USD', forma: 'Zelle', banco: 'Chase', titular: 'Juan Pérez', monto: '45', referencia: 'Z-1', ...extra }).valor, { por: 'jose', ahora: AHORA, cobro: null });
+const pagosFin = [
+  { ...zelle(instalacionOrden), id: 'I1' },
+  { ...zelle(cambioOrden, { referencia: 'Z-2', monto: '30' }), id: 'C1', creadoEn: AHORA + 1000 },
+  { ...registrado, id: 'T1' },
+  { ...armarPagoPendiente({ ...cambioOrden, id: 'C2', codigo: 'AC10' }, { nota: 'Paga el lunes' }, { por: 'jose', ahora: AHORA }), id: 'C2' },
+];
+check('Finanzas ve instalaciones y cambios de equipo (por tipo de trabajo o de visita), no otras órdenes', pagosFin.map(esPagoDeFinanzas), [true, true, false, true]);
+check('el tipo que se muestra', [tipoPagoFinanzas(pagosFin[0]), tipoPagoFinanzas(pagosFin[1])], ['Instalación', 'Cambio de equipo']);
+const rangoFin = { desde: '2026-10-28', hasta: '2026-10-28' };
+check('del período y del técnico, los más nuevos primero, sin las órdenes que no ve Finanzas', pagosClientesDelPeriodo(pagosFin, rangoFin).map((p) => p.id), ['C1', 'I1', 'C2']);
+check('fuera del rango no sale y el técnico filtra', [pagosClientesDelPeriodo(pagosFin, { desde: '2026-10-29', hasta: '2026-10-30' }).length, pagosClientesDelPeriodo(pagosFin, rangoFin, { tecnico: 'otro' }).length], [0, 0]);
+check('filtrar por tipo, forma y moneda', [filtrarPagosClientes(pagosFin, { tipo: 'Instalación' }).map((p) => p.id), filtrarPagosClientes(pagosFin, { forma: 'Zelle', moneda: 'USD' }).length, filtrarPagosClientes(pagosFin, { moneda: 'BS' }).map((p) => p.id)], [['I1'], 2, ['T1', 'C2']]);
+check('el resumen por forma suma lo pagado en cada moneda', resumenPorForma(pagosFin), [{ forma: 'Zelle', cantidad: 2, BS: 0, USD: 75 }, { forma: 'Pago móvil', cantidad: 1, BS: 5696, USD: 0 }]);
+check('las cifras: pagos registrados, lo recibido y lo que falta pagar', cifrasPagosClientes(pagosClientesDelPeriodo(pagosFin, rangoFin)).map((c) => [c.etiqueta, c.valor]), [['Pagos registrados', '2'], ['Recibido en dólares', '75 $'], ['Recibido en bolívares', '0 Bs'], ['Sin pagar todavía', '1']]);
+check('con Administración apagada, "por conciliar" se llama "Registrado"', [etiquetaEstadoPago('POR_CONCILIAR'), etiquetaEstadoPago('PENDIENTE_COBRO'), etiquetaEstadoPago('CONCILIADO')], ['Registrado', 'Pendiente de cobro', 'Conciliado']);
+check('la fila del reporte lleva el titular, la referencia y el estado', (({ length }) => length)(columnasPagosClientes()) === filaPagoCliente(pagosFin[0]).length, true);
+check('fila de un pago Zelle (sin columna de estado: Finanzas solo ve "Registrado")', filaPagoCliente(pagosFin[0]).slice(1, 11), ['IO7', 'Ana', 'JOSE', 'Instalación', 'Zelle', 'Chase', 'Juan Pérez', 'Z-1', '', '45 $']);
+const docFin = documentoPagosClientes({ rango: rangoFin, tecnico: '', pagosClientes: pagosFin, generadoPor: 'finanzas', ahora: AHORA });
+check('el documento para exportar: título, cifras, por forma y el detalle de cada pago', [docFin.titulo, docFin.bloques.map((b) => b.tipo), docFin.bloques[2].filas.length, docFin.bloques[1].filas.map((f) => f[0])], ['Pagos de clientes', ['cifras', 'tabla', 'tabla', 'texto'], 3, ['Zelle']]);
 
 // --- Textos y avisos ---
 check('el texto de un pago', [textoPago(registrado.pago), textoPago(parse({ moneda: 'USD', forma: 'Zelle', banco: '', titular: 'Juan Pérez', monto: '30', referencia: 'Z1' }).valor.pago), textoPago(null)], ['Pago móvil · Banesco · ref. 123456 · 5.696 Bs', 'Zelle · ref. Z1 · 30 $', '']);

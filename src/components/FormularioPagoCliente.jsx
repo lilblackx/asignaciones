@@ -30,12 +30,13 @@ const montoComoTexto = (monto) => (monto ? String(monto).replace('.', ',') : '')
 //   onGuardar(valor, nota): guarda; devuelve undefined/{ ok } si se guardó, { error, campo } si el servidor rechazó algo, o { repetida: { ticketId, codigo } } si la referencia ya está en otra orden.
 //   onPagaDespues({ nota, compartidoCon? }): solo el técnico ("el cliente paga después" y "pagó junto con otra orden"). Sin esta función no aparecen esos botones.
 //   otrasOrdenes: [{ id, codigo, nombre }] otras órdenes del mismo cliente, para "pagó junto con otra orden".
+//   permitirPagarDespues: false en las instalaciones (el cliente siempre paga de una vez): no hay "el cliente paga después"; "pagó junto con otra orden" sigue saliendo si la referencia ya está en otra orden.
 //   notaObligatoria: la nota siempre se exige (Administración al corregir). `guardarTexto`: el texto del botón principal.
 //   incrustado: el formulario va dentro de otro con su propio botón (el Pre-finalizar de una instalación): no lleva botones y, con `ref`, se pide la decisión con `await ref.current.obtener()`, que devuelve
 //   { tipo: 'pago', valor, nota } (ya pagó) o { tipo: 'despues', nota, compartidoCon? } o null si falta algo (marca el error). `verificarReferencia(clave) -> { ticketId, codigo } | null` dice si la referencia ya está en otra orden.
 export default function FormularioPagoCliente({
   cobro = null, cuentasEmpresa = [], valoresIniciales = null, ocupado = false, onGuardar = null, onPagaDespues = null, otrasOrdenes = [],
-  guardarTexto = 'Registrar pago', idPrefijo = 'pc', notaObligatoria = false, notaEtiqueta = 'Nota', incrustado = false, verificarReferencia = null, ref = null,
+  guardarTexto = 'Registrar pago', idPrefijo = 'pc', notaObligatoria = false, permitirPagarDespues = true, notaEtiqueta = 'Nota', incrustado = false, verificarReferencia = null, ref = null,
 }) {
   const inicial = valoresIniciales;
   const [form, setForm] = useState(() => ({
@@ -116,7 +117,7 @@ export default function FormularioPagoCliente({
   // Incrustado: el contenedor pide la decisión al confirmar. Devuelve null si falta algo.
   useImperativeHandle(ref, () => ({
     obtener: async () => {
-      if (pagaDespues) {
+      if (pagaDespues && permitirPagarDespues) {
         if (!notaPendienteLimpia) { setError({ texto: 'Escribe la nota: por ejemplo, cuándo va a pagar el cliente.', campo: 'notaPendiente' }); return null; }
         return { tipo: 'despues', nota: notaPendienteLimpia };
       }
@@ -151,7 +152,7 @@ export default function FormularioPagoCliente({
 
   return (
     <div className="space-y-4">
-      {incrustado && (
+      {incrustado && permitirPagarDespues && (
         <div role="group" aria-label="¿El cliente ya pagó?" className="flex gap-2">
           {[[false, 'El cliente ya pagó'], [true, 'Paga después']].map(([valor, etiqueta]) => (
             <button key={String(valor)} type="button" aria-pressed={pagaDespues === valor} onClick={() => { setPagaDespues(valor); limpiarAvisos(); }}
@@ -161,7 +162,7 @@ export default function FormularioPagoCliente({
         </div>
       )}
 
-      {incrustado && pagaDespues ? areaPaga : (
+      {incrustado && pagaDespues && permitirPagarDespues ? areaPaga : (
         <>
           <div>
             <p className={ETIQUETA}>Moneda del pago</p>
@@ -264,7 +265,7 @@ export default function FormularioPagoCliente({
             {guardando ? <Spinner /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />} {guardarTexto}
           </button>
 
-          {onPagaDespues && (
+          {onPagaDespues && permitirPagarDespues && (
             <>
               <button type="button" onClick={() => { setPagaDespues((v) => !v); setError(null); }} aria-expanded={pagaDespues} disabled={bloqueado} className={`${BOTON} w-full h-11`}>
                 <Clock className="w-4 h-4" aria-hidden="true" /> El cliente paga después
