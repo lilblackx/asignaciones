@@ -11,9 +11,15 @@ const logRef = () => collection(db, 'artifacts', appId, 'public', 'data', 'techn
 export function useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, onNotify) {
   const [technicians, setTechnicians] = useState([]);
   const estadoAnteriorRef = useRef(null);
+  // El escuchador no depende de setToastMsg ni de onNotify (si cambiaran en cada render se volvería a suscribir y releería todo): van por referencias.
+  const setToastRef = useRef(setToastMsg);
+  const onNotifyRef = useRef(onNotify);
+  useEffect(() => { setToastRef.current = setToastMsg; onNotifyRef.current = onNotify; });
 
   useEffect(() => {
     if (!firebaseUser) return;
+    const setToastMsg = (...args) => setToastRef.current?.(...args);
+    const onNotify = (...args) => onNotifyRef.current?.(...args);
     const techsRef = collection(db, 'artifacts', appId, 'public', 'data', 'technicians');
     // TECNICO solo puede leer su propio técnico vinculado (regla de Firestore lo
     // exige: un query sin este where es rechazado completo para ese rol).
@@ -43,7 +49,7 @@ export function useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado,
       setToastMsg({ type: 'error', text: 'No se pudieron cargar los técnicos.' });
     });
     return () => unsubTechs();
-  }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
+  }, [firebaseUser, role, tecnicoAsociado]);
 
   const getTecnicoColor = (tecnicoNombre) => {
     const tech = technicians.find(t => t.name.toUpperCase() === (tecnicoNombre || '').toUpperCase());

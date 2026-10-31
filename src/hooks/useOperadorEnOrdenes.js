@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { doc, writeBatch } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
+import { ejecutarAutomatica } from '../lib/escrituraAutomatica';
 
 const MAX_POR_LOTE = 400;
 
@@ -17,9 +18,12 @@ export function useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tick
       .filter((t) => !t.creadoNombre && nombreDe.has(t.creado) && !intentadas.current.has(t.id))
       .slice(0, MAX_POR_LOTE);
     if (pendientes.length === 0) return;
+    // Escritura automática (ver escrituraAutomatica.js): cada orden se intenta una sola vez por sesión, y respeta la pausa remota y el cortacircuitos.
     pendientes.forEach((t) => intentadas.current.add(t.id));
-    const lote = writeBatch(db);
-    pendientes.forEach((t) => lote.update(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', t.id), { creadoNombre: nombreDe.get(t.creado) }));
-    lote.commit().catch((error) => console.warn('No se pudo anotar el nombre del operador en las órdenes:', error));
+    ejecutarAutomatica(`operador:${pendientes[0].id}:${pendientes.length}`, () => {
+      const lote = writeBatch(db);
+      pendientes.forEach((t) => lote.update(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', t.id), { creadoNombre: nombreDe.get(t.creado) }));
+      return lote.commit();
+    });
   }, [firebaseUser, role, ticketsCargados, tickets, users]);
 }

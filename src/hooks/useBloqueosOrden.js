@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
+import { ejecutarAutomatica } from '../lib/escrituraAutomatica';
 
 // "Alguien está revisando esta orden": cuando una persona de la oficina abre una orden para aprobarla, finalizarla, resolverla o editarla, deja un
 // aviso con vencimiento (un documento por orden y persona en bloqueosOrden, ver firestore.rules). Los demás lo ven en la lista y dentro de su
@@ -20,7 +21,8 @@ export function useBloqueosOrden({ firebaseUser, rol, usuario, nombre, ordenId, 
   const nombreRef = useRef(nombre);
   useEffect(() => { nombreRef.current = nombre; });
 
-  // Los avisos de todos (son pocos y de vida corta). De paso, se borran los que quedaron vencidos hace rato (limpieza).
+  // Los avisos de todos (son pocos y de vida corta). De paso, se borran los que quedaron vencidos hace rato (limpieza). La limpieza pasa
+  // por ejecutarAutomatica: cada aviso se intenta borrar pocas veces y con espera, aunque la lista lo siga mostrando (ver escrituraAutomatica.js).
   useEffect(() => {
     if (!activo) return undefined;
     const col = collection(db, 'artifacts', appId, 'public', 'data', 'bloqueosOrden');
@@ -28,7 +30,8 @@ export function useBloqueosOrden({ firebaseUser, rol, usuario, nombre, ordenId, 
       const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       setAvisos(lista);
       const limite = Date.now() - BORRAR_VENCIDOS_DESPUES_DE_MS;
-      lista.filter((a) => Number(a.venceEn) < limite).slice(0, 10).forEach((a) => deleteDoc(doc(col, a.id)).catch(() => {}));
+      lista.filter((a) => Number(a.venceEn) < limite).slice(0, 10)
+        .forEach((a) => ejecutarAutomatica(`bloqueo:${a.id}:${a.venceEn}`, () => deleteDoc(doc(col, a.id))));
     }, () => {});
   }, [activo]);
 

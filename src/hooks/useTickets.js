@@ -37,6 +37,7 @@ import { lineaTecnico } from '../utils/historial';
 import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
 import { oltUnica } from '../utils/olt';
+import { ejecutarAutomatica } from '../lib/escrituraAutomatica';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -384,8 +385,16 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // Técnicos cuyo "en camino" se está guardando ahora mismo (ver iniciarEnCamino).
   const iniciandoViajeRef = useRef(new Set());
 
+  // El escuchador de órdenes no depende de setToastMsg ni de onNotify: si alguno llegara a cambiar en cada render, se volvería a suscribir
+  // y releería todas las órdenes cada vez (cada relectura cuesta una lectura por orden). Se usan a través de referencias.
+  const setToastRef = useRef(setToastMsg);
+  const onNotifyRef = useRef(onNotify);
+  useEffect(() => { setToastRef.current = setToastMsg; onNotifyRef.current = onNotify; });
+
   useEffect(() => {
     if (!firebaseUser) return;
+    const setToastMsg = (...args) => setToastRef.current?.(...args);
+    const onNotify = (...args) => onNotifyRef.current?.(...args);
     const ticketsRef = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
     // TECNICO solo puede leer sus propios tickets (reglas de Firestore lo exigen:
     // un rule que filtra por resource.data.tecnico rechaza un query sin este where).
@@ -639,7 +648,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       consultaAnteriorRef.current = null;
       infraestructuraAnteriorRef.current = null;
     };
-  }, [firebaseUser, role, tecnicoAsociado, setToastMsg, onNotify]);
+  }, [firebaseUser, role, tecnicoAsociado]);
 
   // Una venta que cargó una promotora con el técnico de la plantilla llega asignada pero sin número ("IS"): los contadores son
   // de la oficina. La primera sesión de ADMIN/USUARIO que la ve la numera (en una transacción: si otra la numeró antes, se
@@ -667,13 +676,12 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       if (!reutilizada) notifyTicketChange(null, guardada);
     };
   });
-  const ventasNumeradasRef = useRef(new Set());
+  // Escritura automática: si falla, se reintenta pocas veces y con espera, no en cada cambio de la lista (ver escrituraAutomatica.js).
   useEffect(() => {
     if (!firebaseUser || !ticketsCargados || (role !== 'ADMIN' && role !== 'USUARIO')) return;
     for (const t of tickets) {
-      if (!esVentaPorNumerar(t) || ventasNumeradasRef.current.has(t.id)) continue;
-      ventasNumeradasRef.current.add(t.id);
-      numerarVentaRef.current(t).catch((err) => { ventasNumeradasRef.current.delete(t.id); console.error('No se pudo numerar la venta:', err); });
+      if (!esVentaPorNumerar(t)) continue;
+      ejecutarAutomatica(`numerarVenta:${t.id}`, () => numerarVentaRef.current(t));
     }
   }, [firebaseUser, ticketsCargados, role, tickets]);
 
