@@ -435,6 +435,11 @@ await check('cada quien borra el suyo; el vigente de otro no se borra, el vencid
   await assertSucceeds(aviso(asAdmin(), 'ticket-de-gerardo__usuario').delete());
   await assertSucceeds(aviso(asUsuario(), 'gerardo-campos__usuario').delete());
 });
+await check('borrar un aviso que ya no existe no da error (si no, el navegador lo reintenta sin fin y cada intento cuesta una lectura); el TECNICO sigue sin poder', async () => {
+  await assertSucceeds(aviso(asAdmin(), 'ya-no-existe__admin').delete());
+  await assertSucceeds(aviso(asUsuario(), 'ya-no-existe__otro').delete());
+  await assertFails(aviso(asTecnico(), 'ya-no-existe__tecnico').delete());
+});
 
 // Registro de VN y TA (se llena a mano)
 const filaVnTa = (db, id) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('registroVnTa').doc(id);

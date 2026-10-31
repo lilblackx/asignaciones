@@ -270,8 +270,9 @@ service cloud.firestore {
         && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 100
         && request.resource.data.desde is int && request.resource.data.venceEn is int
         && request.resource.data.venceEn <= request.time.toMillis() + 600000;
+      // `resource == null`: borrar un aviso que ya no existe no es un error (si no, el navegador que lo intenta lo reintenta sin fin: cada intento fallido cuesta una lectura del perfil).
       allow delete: if (isAdminUser(appId) || isUsuarioRole(appId))
-        && (resource.data.por == usuarioActual(appId) || resource.data.venceEn < request.time.toMillis());
+        && (resource == null || resource.data.get('por', '') == usuarioActual(appId) || resource.data.get('venceEn', 0) < request.time.toMillis());
     }
 
     // Registro de VN y TA (la pestaña VN/TA de la hoja del departamento): se llena a mano, una fila por documento. Lo leen y lo escriben la oficina
