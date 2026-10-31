@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { onSnapshot } from '../lib/medidorFirestore.js';
 import { auth, db, appId, borrarCacheLocal } from '../lib/firebase';
 import { usernameToAuthEmail } from '../utils/authEmail';
 

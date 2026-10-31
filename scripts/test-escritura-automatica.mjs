@@ -15,7 +15,8 @@ function check(name, actual, esperado) {
   else { failures++; console.log(`FAIL  ${name}\n      esperado ${e}\n      llegó    ${a}`); }
 }
 const silenciar = () => { const w = console.warn; const e = console.error; console.warn = () => {}; console.error = () => {}; return () => { console.warn = w; console.error = e; }; };
-const esperarMicrotareas = () => new Promise((r) => setTimeout(r, 0));
+// setImmediate y no setTimeout(0): en Windows cada setTimeout tarda hasta ~15 ms y la prueba hace miles.
+const esperarMicrotareas = () => new Promise((r) => setImmediate(r));
 
 // --- Registro de intentos por tarea ---
 {

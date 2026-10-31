@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, limit, orderBy, query, where } from 'firebase/firestore';
+import { onSnapshot, getDocs, getDoc, setDoc, updateDoc, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { armarPago, avisoDeAdelanto, avisoDeAnulacion, avisoDeDescuento, avisoDePago, tarifasCompletas } from '../utils/finanzas';
 import { armarAdelanto } from '../utils/adelantos';

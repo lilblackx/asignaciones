@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
+import { onSnapshot } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { avisoDeAdelanto, avisoDeAjuste, avisoDeAnulacion, avisoDeDescuento, avisoDePago } from '../utils/finanzas';
 import { playAprobadoSound } from '../utils/notificationSound';

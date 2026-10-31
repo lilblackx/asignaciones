@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from 'react';
 import { ROLES } from './constants';
 import { useAuth } from './hooks/useAuth';
 import { useControlRemoto } from './hooks/useControlRemoto';
+import { useEstacion } from './hooks/useEstacion';
 import App from './App.jsx';
 
 // Cada rol de solo lectura tiene su propia pantalla, que se descarga solo si ese rol inicia sesión. Con esos roles la
@@ -22,6 +23,7 @@ export default function Root() {
   const auth = useAuth();
   // Aquí y no dentro de cada pantalla: así llega a todos los roles.
   useControlRemoto(auth.firebaseUser);
+  useEstacion(auth);
   const [modulo, setModulo] = useState(null);
   const Pantalla = PANTALLAS[auth.role];
   if (Pantalla) {

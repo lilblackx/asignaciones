@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { collection, limit, orderBy, query } from 'firebase/firestore';
+import { getDocs } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 
 // Los movimientos más recientes que se leen para el reporte de activación: de sobra para varios meses de cambios.

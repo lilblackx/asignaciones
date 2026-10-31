@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { onSnapshot, setDoc, updateDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 
 const TURNO_REF = () => doc(db, 'artifacts', appId, 'public', 'data', 'config', 'turnoInstalaciones');

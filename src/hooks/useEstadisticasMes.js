@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { getDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { mesDe } from '../utils/totalesMes';
 

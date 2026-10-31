@@ -60,18 +60,31 @@ const registro = crearRegistroIntentos();
 const cortacircuitos = crearCortacircuitos();
 let pausadas = false;
 let avisoCorte = false;
+// Para el registro de estaciones (hooks/useEstacion): cuántas se intentaron y fallaron en la sesión y desde el último reporte.
+const contadores = { intentadas: 0, fallidas: 0, ventanaIntentadas: 0, ventanaFallidas: 0 };
 
 // Lo cambia useControlRemoto con lo que dice config/app.
 export function setAutomaticasPausadas(valor) {
   pausadas = Boolean(valor);
 }
 export const automaticasPausadas = () => pausadas;
+export const cortacircuitosAbierto = () => cortacircuitos.abierto();
+export const contadoresAutomaticas = () => ({ ...contadores });
+// Devuelve los contadores y empieza la ventana siguiente (al reportar).
+export function cortarContadoresAutomaticas() {
+  const actuales = { ...contadores };
+  contadores.ventanaIntentadas = 0;
+  contadores.ventanaFallidas = 0;
+  return actuales;
+}
 
 // Corre `escribir()` (una promesa) si la tarea `clave` se puede intentar ahora. Devuelve la promesa de la escritura, o null si no se intentó.
 // Nunca rechaza: un fallo se cuenta y se anota en la consola, y el que llama no tiene que capturarlo.
 export function ejecutarAutomatica(clave, escribir, { ahora = Date.now } = {}) {
   if (pausadas || cortacircuitos.abierto() || !registro.puede(clave, ahora())) return null;
   registro.empezar(clave);
+  contadores.intentadas++;
+  contadores.ventanaIntentadas++;
   return Promise.resolve()
     .then(escribir)
     .then((resultado) => {
@@ -79,6 +92,8 @@ export function ejecutarAutomatica(clave, escribir, { ahora = Date.now } = {}) {
       return resultado;
     })
     .catch((error) => {
+      contadores.fallidas++;
+      contadores.ventanaFallidas++;
       registro.fallo(clave, ahora());
       if (cortacircuitos.registrarFallo(ahora()) && !avisoCorte) {
         avisoCorte = true;

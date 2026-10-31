@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { collection, onSnapshot, doc, deleteDoc, deleteField, updateDoc, query, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, deleteField, query, where } from 'firebase/firestore';
+import { onSnapshot, updateDoc, deleteDoc, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { playTecnicoStatusSound } from '../utils/notificationSound';
 import { estiloTecnico } from '../constants';

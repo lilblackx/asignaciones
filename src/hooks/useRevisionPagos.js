@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { collection, doc, onSnapshot, query, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { onSnapshot, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { avisoDeAjuste, tarifasCompletas } from '../utils/finanzas';
 import { MAX_REVISIONES_POR_LOTE, borrarAlDeshacer } from '../utils/revisionPagos';

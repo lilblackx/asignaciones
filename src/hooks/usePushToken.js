@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteToken, getMessaging, getToken, isSupported } from 'firebase/messaging';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { updateDoc } from '../lib/medidorFirestore.js';
 import { app, db, appId, FCM_VAPID_KEY } from '../lib/firebase';
 import { swRegistrationReady } from '../lib/swRegistration';
+import { esBrave } from '../utils/fallosPush';
 
 const permisoActual = () => (typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
 const perfilRef = (uid) => doc(db, 'artifacts', appId, 'public', 'data', 'users', uid);
@@ -45,6 +47,9 @@ export function usePushToken(uid) {
   const [permiso, setPermiso] = useState(permisoActual);
   const [registro, setRegistro] = useState(null);
   const [detalleError, setDetalleError] = useState('');
+  // Brave trae apagado el servicio de push de Google: el registro falla aunque el permiso esté en "Permitir" (ver utils/fallosPush).
+  const [brave, setBrave] = useState(false);
+  useEffect(() => { esBrave().then(setBrave); }, []);
   const tokenRef = useRef(null);
 
   // Devuelve { estado: 'ok' | 'error' | null, detalle } (null: nada que registrar, p. ej. sin
@@ -137,5 +142,5 @@ export function usePushToken(uid) {
     }
   }, [uid]);
 
-  return { permiso, registro, detalleError, activar, desvincular };
+  return { permiso, registro, detalleError, brave, activar, desvincular };
 }

@@ -28,6 +28,8 @@ import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
 import { useEnviosInventario } from './hooks/useEnviosInventario';
 import { veEnviosInventario } from './utils/accesoInventario';
+import { veEstaciones } from './utils/estaciones';
+import EstacionesView from './components/EstacionesView';
 import { listarTecnicosInventario } from './lib/inventario';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
@@ -51,7 +53,7 @@ import { useTema } from './hooks/useTema';
 import Sidebar from './components/Sidebar';
 import PieVersion from './components/PieVersion';
 import PaginaMarco from './components/PaginaMarco';
-import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, PackageCheck, ShieldCheck, Users } from 'lucide-react';
+import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, MonitorSmartphone, PackageCheck, ShieldCheck, Users } from 'lucide-react';
 import { aplanarArchivados } from './utils/reincidencia';
 import { construirNapsConocidas } from './utils/napsConocidas';
 import FiltersBar from './components/FiltersBar';
@@ -93,7 +95,7 @@ const EMPTY_FORM = () => ({
 });
 
 // Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).
-const ACTIVO_EN_MENU = { ADMINISTRACION: 'administracion', FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
+const ACTIVO_EN_MENU = { ADMINISTRACION: 'administracion', FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', ESTACIONES: 'estaciones', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
 
 // `auth`: la sesión (useAuth) la resuelve Root, que decide qué pantalla corresponde al rol.
 // `moduloActivo` / `onAbrirModulo(id)`: el administrador abre cada módulo desde el menú lateral y se ve como página dentro del marco, a la derecha del menú (los demás roles los abren como ventana); Root guarda cuál está abierto
@@ -123,6 +125,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   useAvisosPagos({ firebaseUser, tecnico: isTecnico ? tecnicoAsociado : null, onNotify: notifications.addNotification, setToastMsg });
   // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
   const verInventario = veEnviosInventario(currentUser);
+  const verEstaciones = veEstaciones(currentUser);
   const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviar: reenviarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
   useCompletarPromotoras(firebaseUser, role, tickets);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports, refreshReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
@@ -280,6 +283,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const [isTasaModalOpen, setIsTasaModalOpen] = useState(false);
   const [isFormasPagoOpen, setIsFormasPagoOpen] = useState(false);
   const [isInventarioOpen, setIsInventarioOpen] = useState(false);
+  const [isEstacionesOpen, setIsEstacionesOpen] = useState(false);
   const [newTech, setNewTech] = useState({ name: '', color: null });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
@@ -646,6 +650,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onSalir={() => setIsLogoutConfirmOpen(true)}
             onCerrar={() => setIsSidebarOpen(false)}
             veInventario={verInventario}
+            veEstaciones={verEstaciones}
             alertasInventario={enviosInventario.length}
             pagosPorCobrar={cobrosPorCargar}
             acciones={{ inicio: () => { onAbrirModulo(null); handleGoHome(); }, modulo: onAbrirModulo }}
@@ -710,7 +715,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
           {verInventario && <AvisoInventario cantidad={enviosInventario.length} pendientes={enviosPendientes.length} onAbrir={abrirVentana('INVENTARIO', setIsInventarioOpen)} />}
-          {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} onActivar={push.activar} avisarFallo={isTecnico} />}
+          {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} brave={push.brave} onActivar={push.activar} avisarFallo={isTecnico} />}
           <FiltersBar
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -1116,6 +1121,10 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             enPagina={isAdmin}
             onClose={cerrarVentana(setIsInventarioOpen)}
           />
+        ))}
+
+        {verEstaciones && abierta('ESTACIONES', isEstacionesOpen) && enMarco('Estaciones', MonitorSmartphone, (
+          <EstacionesView enPagina={isAdmin} onClose={cerrarVentana(setIsEstacionesOpen)} />
         ))}
 
 

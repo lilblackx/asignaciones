@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
+import { onSnapshot } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { FALLA_LOS, TIPO_AVERIA, TIPO_INSTALACION } from '../utils/estadoInstalacion';
 

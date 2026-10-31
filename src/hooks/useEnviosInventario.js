@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collection, doc, getDocs, limit, onSnapshot, orderBy, query, startAfter, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
+import { onSnapshot, getDocs, updateDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { llamarInventario } from '../lib/inventario';
 import { ESTADOS_CON_ALERTA, ESTADO_DESCARTADO, ESTADO_ENVIADO, ESTADO_PENDIENTE } from '../utils/envioInventario';

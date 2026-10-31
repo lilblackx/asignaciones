@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
+import { getDocs } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 
 const coleccion = () => collection(db, 'artifacts', appId, 'public', 'data', 'pagosOrdenes');

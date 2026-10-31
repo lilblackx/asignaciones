@@ -1,4 +1,5 @@
-import { doc, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { getDoc, setDoc, updateDoc, runTransaction } from '../lib/medidorFirestore.js';
 import { cambiosDeTicket } from './cambiosTicket.js';
 import { ConflictoOrdenError } from './concurrencia.js';
 

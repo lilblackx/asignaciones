@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
+import { getDocs, setDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { sendPush } from '../lib/notify';
 import { armarVentaPromotora, errorVentaPromotora, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';

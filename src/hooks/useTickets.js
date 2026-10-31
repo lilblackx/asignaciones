@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, onSnapshot, doc, runTransaction, setDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { onSnapshot, setDoc, updateDoc, runTransaction } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual, esCodigoSinNumero } from '../utils/correlativo';
 import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound, playTecnicoStatusSound } from '../utils/notificationSound';

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
+import { onSnapshot, setDoc, deleteDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { ejecutarAutomatica } from '../lib/escrituraAutomatica';
 

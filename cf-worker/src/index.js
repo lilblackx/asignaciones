@@ -3,6 +3,7 @@ import { manejarApiMateriales } from './materiales-api.js';
 import { listarTecnicosInventario, manejarInventario, reenviarNotificacion, reintentarPendientes } from './inventario.js';
 import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
 import { direccionCliente, nombrePersona } from '../../src/utils/datosCliente.js';
+import { actualizarUsoFirestore } from './usoFirestore.js';
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
@@ -50,7 +51,8 @@ async function pedirGoogleAccessToken(env, now) {
   const privateKey = await importPKCS8(serviceAccount.private_key, 'RS256');
 
   const assertion = await new SignJWT({
-    scope: 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/identitytoolkit',
+    // monitoring.read: el resumen de uso de Firestore (usoFirestore.js); el permiso real lo da el rol Monitoring Viewer de la cuenta de servicio.
+    scope: 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/identitytoolkit https://www.googleapis.com/auth/monitoring.read',
   })
     .setProtectedHeader({ alg: 'RS256' })
     .setIssuer(serviceAccount.client_email)
@@ -857,5 +859,6 @@ export default {
     ctx.waitUntil(cierreAutomatico(env).catch((err) => console.error('Cron de cierre automático:', err)));
     ctx.waitUntil(reintentarPendientes(env, depsInventario, event.scheduledTime).catch((err) => console.error('Cron de envíos al inventario:', err)));
     ctx.waitUntil(actualizarTasaBcv(env).catch((err) => console.error('Cron de tasa BCV:', err)));
+    ctx.waitUntil(actualizarUsoFirestore(env, depsInventario, event.scheduledTime).catch((err) => console.error('Cron de uso de Firestore:', err)));
   },
 };

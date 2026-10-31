@@ -368,6 +368,48 @@ service cloud.firestore {
       return isActiveUser(appId) && get(profilePath(appId)).data.get('username', '') in ['lfernandez'];
     }
 
+    // Registro de estaciones: cada navegador con la app abierta (todos los roles) reporta cada ~10 minutos quién lo usa, desde qué equipo y cuánto
+    // lee (src/hooks/useEstacion.js), para saber desde dónde viene un problema. Cada quien escribe solo a su nombre y con campos fijos; solo lo ven
+    // (y lo pueden borrar) estos usuarios. Mantener sincronizado con USUARIOS_ESTACIONES de src/utils/estaciones.js (lo comprueba scripts/test-estaciones.mjs).
+    function veEstaciones(appId) {
+      return isActiveUser(appId) && get(profilePath(appId)).data.get('username', '') in ['lfernandez'];
+    }
+
+    match /artifacts/{appId}/public/data/estaciones/{estacionId} {
+      function estacionValida() {
+        let e = request.resource.data;
+        return e.keys().hasOnly(['estacionId', 'uid', 'usuario', 'nombre', 'rol', 'equipo', 'build', 'abiertaEn', 'ultimaSenal', 'visible', 'conectada', 'ventana', 'total', 'escuchadoresActivos', 'ultimoError', 'cortacircuitos', 'automaticasPausadas', 'anomalia', 'reloj'])
+          && estacionId.matches('^[a-z0-9]{12,40}$') && e.estacionId == estacionId
+          && e.uid == request.auth.uid
+          && e.usuario == get(profilePath(appId)).data.get('username', '')
+          && e.nombre is string && e.nombre.size() <= 100
+          && e.rol is string && e.rol.size() <= 30
+          && e.equipo is map && e.equipo.keys().hasOnly(['sistema', 'navegador', 'movil', 'pantalla', 'instalada'])
+          && e.build is string && e.build.size() <= 60
+          && e.abiertaEn is int && e.ultimaSenal is int
+          && e.visible is bool && e.conectada is bool && e.cortacircuitos is bool && e.automaticasPausadas is bool
+          && e.ventana is map && e.ventana.keys().hasOnly(['desde', 'hasta', 'lecturas', 'porColeccion', 'escrituras', 'escriturasPorColeccion', 'rechazadas', 'erroresEscucha', 'errores', 'suscripciones', 'erroresApp', 'automaticasIntentadas', 'automaticasFallidas'])
+          && e.ventana.porColeccion is map && e.ventana.porColeccion.size() <= 7
+          && e.ventana.escriturasPorColeccion is map && e.ventana.escriturasPorColeccion.size() <= 7
+          && e.ventana.errores is map && e.ventana.errores.size() <= 7
+          && e.total is map && e.total.keys().hasOnly(['lecturas', 'escrituras', 'rechazadas', 'erroresEscucha', 'suscripciones', 'erroresApp', 'automaticasIntentadas', 'automaticasFallidas'])
+          && e.escuchadoresActivos is int && e.escuchadoresActivos >= 0
+          && e.ultimoError is string && e.ultimoError.size() <= 200
+          && e.anomalia is string && e.anomalia.size() <= 600
+          // La hora del servidor (serverTimestamp): no se puede falsificar; comparada con ultimaSenal dice si el reloj del equipo está desfasado.
+          && e.reloj == request.time;
+      }
+      allow read, delete: if veEstaciones(appId);
+      allow create, update: if isActiveUser(appId) && estacionValida();
+    }
+
+    // Uso de Firestore de todo el proyecto (lecturas, escrituras, borrados y rechazos de las reglas por hora y del día de la cuota): lo escribe el
+    // Worker cada 15 minutos con su cuenta de servicio (cf-worker/src/usoFirestore.js). Solo lo leen los mismos usuarios de veEstaciones.
+    match /artifacts/{appId}/public/data/estadoFirestore/{docId} {
+      allow read: if veEstaciones(appId);
+      allow write: if false;
+    }
+
     // Estado de cada envío al inventario del otro sistema (un documento por orden aprobada; lo escribe el Worker con su
     // cuenta de servicio). Solo lo ven y gestionan los usuarios de veInventario. Quien aprueba una orden deja, nada más,
     // la marca mínima "pendiente" sin datos de la orden: el Worker lee la orden él mismo, así que una marca no puede

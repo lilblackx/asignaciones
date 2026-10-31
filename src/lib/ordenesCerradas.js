@@ -1,4 +1,6 @@
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, setDoc, where } from 'firebase/firestore';
+import { collection, doc, limit, orderBy, query, where } from 'firebase/firestore';
+import { setDoc, runTransaction } from './medidorFirestore.js';
+import { getDoc, getDocs } from './medidorFirestore';
 import { db, appId } from './firebase';
 
 // Leer y corregir una orden que ya salió de la lista: el cierre del día la mueve a `ticketsDetalle` de un reporte de cierre.

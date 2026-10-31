@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collection, deleteField, doc, getDoc, getDocs, orderBy, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteField, doc, orderBy, query, where } from 'firebase/firestore';
+import { getDocs, getDoc, setDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { leerReportesIncremental } from '../lib/reportesLocales';
 import { DIAS_INFRAESTRUCTURA, instalacionesRealizadas, mesDeMarcas, mesesDeMarcas } from '../utils/instalacionesInfra';

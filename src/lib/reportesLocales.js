@@ -1,4 +1,5 @@
-import { getDocFromCache, getDocs, getDocsFromCache, where } from 'firebase/firestore';
+import { getDocFromCache, getDocsFromCache, where } from 'firebase/firestore';
+import { getDocs } from './medidorFirestore';
 
 // Los reportes de cierre pesan (cada uno trae las órdenes completas del día) y no cambian una vez escritos. Con la caché local
 // de Firestore (ver firebase.js) basta pedirle al servidor los que salieron después del último que ya se tiene.

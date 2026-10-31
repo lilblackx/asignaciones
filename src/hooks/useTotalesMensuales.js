@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
+import { getDocs } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 
 const SIN_LEER = { version: -1, contadores: {}, error: false };

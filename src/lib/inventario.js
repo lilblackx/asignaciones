@@ -1,4 +1,5 @@
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { setDoc } from './medidorFirestore.js';
 import { auth, appId, db, NOTIFY_WORKER_URL } from './firebase';
 
 // Envío al inventario del otro sistema (ver cf-worker/src/inventario.js y utils/envioInventario). Al aprobar una orden la app

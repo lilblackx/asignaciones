@@ -4,6 +4,8 @@
 // hay un host de firestore configurado en firebase.json).
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 
 const APP_ID = 'default-app-id';
 
@@ -772,6 +774,44 @@ await check('Los roles de siempre siguen leyendo igual (TECNICO solo lo suyo)', 
   await assertSucceeds(datos(asUsuario()).collection('tickets').get());
   await assertFails(datos(asTecnico()).collection('tickets').get());
   await assertFails(datos(asTecnico()).collection('reports').get());
+});
+
+// --- Registro de estaciones (src/hooks/useEstacion.js): cada quien reporta la suya; solo lfernandez las ve ---
+const asLfEstaciones = () => testEnv.authenticatedContext('lfernandez-uid').firestore();
+const estacion = (db, id) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('estaciones').doc(id);
+const reporteDe = (uid, usuario, id, extra = {}) => ({
+  estacionId: id, uid, usuario, nombre: 'Demo', rol: 'ADMIN', equipo: { sistema: 'Windows', navegador: 'Edge', movil: false, pantalla: '1366x768', instalada: false },
+  build: 'b1', abiertaEn: 1, ultimaSenal: 2, visible: true, conectada: true,
+  ventana: { desde: 1, hasta: 2, lecturas: 10, porColeccion: { tickets: 8, config: 2 }, escrituras: 1, escriturasPorColeccion: { estaciones: 1 }, rechazadas: 0, erroresEscucha: 0, errores: {}, suscripciones: 20, erroresApp: 0, automaticasIntentadas: 0, automaticasFallidas: 0 },
+  total: { lecturas: 10, escrituras: 1, rechazadas: 0, erroresEscucha: 0, suscripciones: 20, erroresApp: 0, automaticasIntentadas: 0, automaticasFallidas: 0 },
+  escuchadoresActivos: 20, ultimoError: '', cortacircuitos: false, automaticasPausadas: false, anomalia: '', reloj: firebase.firestore.FieldValue.serverTimestamp(), ...extra,
+});
+await check('cada sesión reporta su estación a su nombre (cualquier rol activo) y la vuelve a reportar', async () => {
+  await assertSucceeds(estacion(asAdmin(), 'estacionadmin01').set(reporteDe('admin-uid', 'admin', 'estacionadmin01')));
+  await assertSucceeds(estacion(asAdmin(), 'estacionadmin01').set(reporteDe('admin-uid', 'admin', 'estacionadmin01', { ultimaSenal: 3 })));
+  await assertSucceeds(estacion(asUsuario(), 'estacionusuario1').set(reporteDe('usuario-uid', 'usuario', 'estacionusuario1')));
+  await assertSucceeds(estacion(asTecnico(), 'estaciontecnico1').set(reporteDe('tecnico-uid', '', 'estaciontecnico1', { rol: 'TECNICO' })));
+});
+await check('no se reporta a nombre de otro, con otro id, con campos de más, con datos inválidos ni con una hora del servidor falsa', async () => {
+  await assertFails(estacion(asUsuario(), 'estacionfalsa01').set(reporteDe('admin-uid', 'admin', 'estacionfalsa01')));
+  await assertFails(estacion(asUsuario(), 'estacionfalsa02').set(reporteDe('usuario-uid', 'admin', 'estacionfalsa02')));
+  await assertFails(estacion(asUsuario(), 'estacionfalsa03').set(reporteDe('usuario-uid', 'usuario', 'otraestacion000')));
+  await assertFails(estacion(asUsuario(), 'CON-MAYUSCULAS').set(reporteDe('usuario-uid', 'usuario', 'CON-MAYUSCULAS')));
+  await assertFails(estacion(asUsuario(), 'estacionfalsa04').set(reporteDe('usuario-uid', 'usuario', 'estacionfalsa04', { extra: 1 })));
+  await assertFails(estacion(asUsuario(), 'estacionfalsa05').set(reporteDe('usuario-uid', 'usuario', 'estacionfalsa05', { anomalia: 'x'.repeat(601) })));
+  await assertFails(estacion(asUsuario(), 'estacionfalsa06').set(reporteDe('usuario-uid', 'usuario', 'estacionfalsa06', { equipo: { sistema: 'X', otra: 1 } })));
+  await assertFails(estacion(asUsuario(), 'estacionfalsa07').set(reporteDe('usuario-uid', 'usuario', 'estacionfalsa07', { reloj: 12345 })));
+  await assertFails(estacion(asUsuario(), 'estacionfalsa08').set(reporteDe('usuario-uid', 'usuario', 'estacionfalsa08', { ventana: { desde: 1, hasta: 2, lecturas: 1, porColeccion: {}, extra: 1 } })));
+});
+await check('solo lfernandez ve (y puede borrar) las estaciones: ni otro ADMIN ni nadie más', async () => {
+  await assertSucceeds(estacion(asLfEstaciones(), 'estacionadmin01').get());
+  await assertSucceeds(asLfEstaciones().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('estaciones').get());
+  await assertFails(estacion(asAdmin(), 'estacionadmin01').get());
+  await assertFails(asAdmin().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('estaciones').get());
+  await assertFails(estacion(asUsuario(), 'estacionusuario1').get());
+  await assertFails(estacion(asTecnico(), 'estaciontecnico1').get());
+  await assertFails(estacion(asAdmin(), 'estacionusuario1').delete());
+  await assertSucceeds(estacion(asLfEstaciones(), 'estacionusuario1').delete());
 });
 
 // --- Envío al inventario del otro sistema: telecomEnvios (el módulo es solo de lfernandez) ---

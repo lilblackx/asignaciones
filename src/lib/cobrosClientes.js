@@ -1,4 +1,6 @@
-import { collection, doc, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
+import { setDoc, updateDoc, runTransaction } from './medidorFirestore.js';
+import { getDoc } from './medidorFirestore';
 import { db, appId } from './firebase';
 import { armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, sincronizarCobro } from '../utils/cobrosClientes';
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { onSnapshot } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 
 const STORAGE_PREFIX = 'asignaciones:cierreAutomatico:';

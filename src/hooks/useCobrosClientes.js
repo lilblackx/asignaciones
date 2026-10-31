@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { query, where } from 'firebase/firestore';
+import { getDocs, onSnapshot } from '../lib/medidorFirestore.js';
 import { coleccionCobros } from '../lib/cobrosClientes';
 import { ESTADO_COBRO, avisoDeCobro, cantidadPorCargar } from '../utils/cobrosClientes';
 import { playAprobadoSound } from '../utils/notificationSound';

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { initializeApp, getApps, deleteApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from 'firebase/auth';
-import { collection, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
+import { onSnapshot, setDoc, updateDoc } from '../lib/medidorFirestore.js';
 import { db, appId, firebaseConfig, NOTIFY_WORKER_URL } from '../lib/firebase';
 import { usernameToAuthEmail, normalizeUsername } from '../utils/authEmail';
 import { parseNombresPromotora } from '../utils/promotora';

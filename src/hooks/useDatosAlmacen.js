@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collection, doc, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
+import { collection, doc, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
+import { getDocs } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { leerReportesIncremental } from '../lib/reportesLocales';
 

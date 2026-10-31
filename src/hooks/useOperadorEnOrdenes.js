@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { doc, writeBatch } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { ejecutarAutomatica } from '../lib/escrituraAutomatica';
 

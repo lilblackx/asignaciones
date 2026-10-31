@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collection, documentId, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
+import { collection, documentId, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
+import { getDocs } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { RETENCION_MS_HISTORIAL, RETENCION_MS_HISTORIAL_VENTAS } from '../utils/estadoInstalacion';
 

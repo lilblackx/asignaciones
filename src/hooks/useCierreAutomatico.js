@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { onSnapshot, setDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 
 const CONFIG_REF = () => doc(db, 'artifacts', appId, 'public', 'data', 'config', 'cierreAutomatico');

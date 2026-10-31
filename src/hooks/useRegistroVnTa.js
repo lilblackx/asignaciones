@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, deleteDoc, doc, onSnapshot, query, runTransaction, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { onSnapshot, updateDoc, deleteDoc, runTransaction } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { codigoDe, idContador, ordenarRegistros, parseRegistro } from '../utils/registroVnTa';
 
