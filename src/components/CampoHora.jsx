@@ -7,7 +7,7 @@ const dos = (n) => String(n).padStart(2, '0');
 const HORAS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: dos(i + 1) }));
 const MINUTOS = Array.from({ length: 60 }, (_, i) => ({ value: String(i), label: dos(i) }));
 
-const CLASE_SELECTOR = 'w-full h-10 bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-lg pl-3 pr-8 text-sm font-bold text-zinc-900 dark:text-white focus:ring-0 focus:border-red-600 outline-none disabled:opacity-60';
+const CLASE_SELECTOR = 'w-full h-10 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-lg pl-3 pr-8 text-sm font-bold text-zinc-900 dark:text-white focus:ring-0 focus:border-red-600 outline-none disabled:opacity-60';
 
 export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', claseSelector = CLASE_SELECTOR, claseBoton = 'px-2.5 min-[380px]:px-3 text-sm', alto = 'h-10', disabled = false }) {
   const m = /^(\d{2}):(\d{2})$/.exec(valor || '');
@@ -26,7 +26,7 @@ export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', cla
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu id={id} ariaLabel={`${ariaLabel}: hora`} disabled={disabled} className={claseSelector} value={String(hora12)} onChange={(v) => cambiar(Number(v), minuto, pm)} items={HORAS} /></div>
       <span className="font-black text-zinc-700 dark:text-zinc-200" aria-hidden="true">:</span>
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu ariaLabel={`${ariaLabel}: minutos`} disabled={disabled} className={claseSelector} value={String(minuto)} onChange={(v) => cambiar(hora12, Number(v), pm)} items={MINUTOS} /></div>
-      <div className={`inline-flex ${alto} rounded-lg border-2 border-zinc-400 dark:border-zinc-700 overflow-hidden shrink-0`}>
+      <div className={`inline-flex ${alto} rounded-lg border border-zinc-400 dark:border-zinc-700 overflow-hidden shrink-0`}>
         {[['a. m.', false], ['p. m.', true]].map(([texto, esPm]) => (
           <button
             key={texto}

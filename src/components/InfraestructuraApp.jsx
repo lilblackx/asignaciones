@@ -129,7 +129,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Infraestructura" icono={Network} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
-        <main className="p-3 sm:p-4 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
+        <main className="p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
           {!cargado ? (
             <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando instalaciones...</p>
           ) : error && !actualizadoEn ? (
@@ -188,7 +188,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   {/* Celular: una tarjeta por instalación. */}
                   <ul className="md:hidden flex flex-col gap-2">
                     {filas.map((f) => (
-                      <li key={f.id} className="rounded-xl border-2 border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-2">
+                      <li key={f.id} className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-bold text-sm break-words">{f.cliente || 'Sin nombre'}</p>
@@ -208,7 +208,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   </ul>
 
                   {/* Escritorio: tabla. */}
-                  <div className="hidden md:block rounded-xl border-2 border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-x-auto">
+                  <div className="hidden md:block rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-x-auto">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
                         <tr>

@@ -29,7 +29,7 @@ const ROL_NUEVO_ITEMS = [
   ...(ADMINISTRACION_ACTIVA ? [{ value: ROLES.ADMINISTRACION, label: 'ADMINISTRACIÓN (concilia los pagos de los clientes; no toca las órdenes)' }] : []),
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];
-const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
+const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
 
 const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ROLES.ADMINISTRACION];
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();

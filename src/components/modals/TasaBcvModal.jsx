@@ -29,7 +29,7 @@ function digitsToNumber(digits) {
   return num / 100;
 }
 
-const NUMBER_INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm text-right font-mono';
+const NUMBER_INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm text-right font-mono';
 
 const PESTANAS = [
   { id: 'tasa', etiqueta: 'Tasa BCV' },

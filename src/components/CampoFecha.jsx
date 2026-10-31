@@ -8,7 +8,7 @@ import { fechaCorta } from '../utils/calendario';
 // `valor`/`onChange(iso)`: la fecha como "AAAA-MM-DD" ('' si no hay). `min`/`max`: límites. `onChange('')` solo se llama si `permitirBorrar` (fecha opcional).
 // `flotante`: el calendario sale sobre lo que hay debajo (para barras de filtros; `derecha` lo alinea al borde derecho del campo); si no, se despliega debajo del campo, dentro del formulario.
 // `clase`: el estilo del botón (debe dejar sitio a la derecha para el ícono); `grande`: calendario de letra grande.
-const CLASE = 'w-full h-10 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border-2 border-zinc-400 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-lg px-3 text-sm text-zinc-900 dark:text-white focus:border-red-600 outline-none disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
+const CLASE = 'w-full h-10 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-lg px-3 text-sm text-zinc-900 dark:text-white focus:border-red-600 outline-none disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
 
 export default function CampoFecha({ id, valor, onChange, min, max, ariaLabel, vacio = 'Elige la fecha', permitirBorrar = false, flotante = false, derecha = false, grande = false, disabled = false, clase = CLASE, ancho = '' }) {
   const [abierto, setAbierto] = useState(false);

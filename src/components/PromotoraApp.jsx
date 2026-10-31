@@ -203,7 +203,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo={verTodasInstalaciones ? 'Instalaciones y LOS' : 'Instalaciones'} tituloCorto="Instalaciones" icono={Building2} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} accion={puedeCrearVentas ? { texto: 'Nuevo', onClick: () => setCreandoVenta(true), deshabilitado: !verTodasInstalaciones && promotoraClaves.length === 0, ayuda: !verTodasInstalaciones && promotoraClaves.length === 0 ? 'Tu usuario todavía no tiene un nombre de promotor asignado' : 'Nueva venta' } : null} />
 
-        <main className="p-4 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
+        <main className="p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
           {verTodasInstalaciones && cargado && <TotalesMes mes={mes} meses={meses} onCambiarMes={setMes} totales={totales} error={errorTotales} />}
 
           <div className="flex gap-2">

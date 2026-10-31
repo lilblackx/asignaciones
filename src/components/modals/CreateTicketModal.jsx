@@ -192,11 +192,11 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           </div>
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-codigo" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO</label>
-            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={esGarantiaTipo && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs uppercase placeholder:normal-case placeholder:text-zinc-400" />
+            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={esGarantiaTipo && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs uppercase placeholder:normal-case placeholder:text-zinc-400" />
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-fecha-prog" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
-            <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 rounded text-xs" />
+            <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 rounded text-xs" />
           </div>
           <CedulaField
             variant="create"
@@ -241,7 +241,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
             <label htmlFor="tk-nombre" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
+            <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs" />
           </div>
 
           <TipoTrabajoField
@@ -311,7 +311,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           {tipoUsaPlantillaPromotora(formData.tipoTrabajo) && (
             <div className="col-span-2 sm:col-span-5 space-y-0.5">
               <label htmlFor="tk-plantilla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
-              <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs font-mono" placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
+              <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs font-mono" placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
               {!formData.plantillaOriginal?.trim() && (esInstalacion
                 ? <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>
                 : <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Sin la plantilla de la promotora, la plantilla de esta orden se arma con el formato de la app.</p>)}
@@ -325,7 +325,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               onChange={handleCreateChange}
               wrapperClassName="col-span-2 sm:col-span-5 space-y-0.5"
               labelClassName="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1"
-              inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs"
+              inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs"
               ayuda="(se llena con la plantilla)"
             />
           )}
@@ -346,7 +346,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           </div>
           <div className="col-span-1 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-direccion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
+            <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs" />
           </div>
 
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
@@ -356,12 +356,12 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               required
               value={formData.telefono}
               onChange={(value) => handleCreateChange({ target: { name: 'telefono', value, type: 'text' } })}
-              inputClassName="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs"
+              inputClassName="bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs"
             />
           </div>
           <div className="col-span-2 sm:col-span-2 space-y-0.5">
             <label htmlFor="tk-nap" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NAP</label>
-            <input id="tk-nap" type="text" maxLength="50" name="nap" value={formData.nap} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-2 py-1.5 rounded text-xs" />
+            <input id="tk-nap" type="text" maxLength="50" name="nap" value={formData.nap} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs" />
           </div>
 
           <NapCoordenadasField
