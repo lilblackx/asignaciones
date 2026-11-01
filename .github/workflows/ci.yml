@@ -20,7 +20,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            cf-worker/package-lock.json
+            cf-worker-tomodat/package-lock.json
       - run: npm ci
+      # Las pruebas de los Workers cargan su código y `jose` desde la carpeta de cada Worker: sin esto no encuentran la librería.
+      # `--omit=dev` salta Wrangler (pesado y no hace falta para probar).
+      - name: Dependencias de los Workers
+        run: |
+          npm ci --omit=dev --prefix cf-worker
+          npm ci --omit=dev --prefix cf-worker-tomodat
       - name: Lint
         run: npm run lint
       # Las pruebas que necesitan el emulador de Firestore (reglas, correlativo, respaldo...) quedan fuera: se corren en local con `npm test`.
