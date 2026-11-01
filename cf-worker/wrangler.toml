@@ -7,6 +7,15 @@ compatibility_date = "2024-11-01"
 [triggers]
 crons = ["*/5 * * * *"]
 
+# Tope de llamadas por usuario (ver el comentario en src/index.js): 120 por minuto, de sobra para el uso normal
+# (reintentar todos los envíos al inventario hace una llamada por envío).
+[[ratelimits]]
+name = "LIMITADOR"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 120
+  period = 60
+
 [vars]
 FIREBASE_PROJECT_ID = "seguimientons-f2026"
 APP_ID = "default-app-id"

@@ -116,6 +116,22 @@ reiniciar();
 let r = await enviar('admin-uid', aviso);
 check('responde 200 con 1 dispositivo enviado', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
 check('un solo envío a FCM', enviosFcm.length, 1);
+
+// Tope de llamadas por usuario: si el binding dice que no, 429 sin tocar FCM; si dice que sí, pasa; sin binding, pasa.
+{
+  const llamadasAlLimitador = [];
+  // Usa su propio estado y deja el de la prueba anterior tal cual lo encontró.
+  const guardado = { busquedas, roles, conPermisoVentas, tokensDelTecnico, comportamientoFcm, enviosFcm, commits };
+  const pedir = async (limitador) => {
+    const req = new Request('https://worker.test/', { method: 'POST', headers: { Authorization: `Bearer ${await idTokenDe('admin-uid')}`, Origin: env.ALLOWED_ORIGINS, 'Content-Type': 'application/json' }, body: JSON.stringify(aviso) });
+    return (await worker.fetch(req, { ...env, ...(limitador && { LIMITADOR: limitador }) })).status;
+  };
+  reiniciar();
+  const bloqueado = await pedir({ limit: async ({ key }) => { llamadasAlLimitador.push(key); return { success: false }; } });
+  check('con el tope superado responde 429 y no envía nada', [bloqueado, enviosFcm.length, llamadasAlLimitador], [429, 0, ['admin-uid']]);
+  check('con cupo disponible el aviso sale', await pedir({ limit: async () => ({ success: true }) }), 200);
+  ({ busquedas, roles, conPermisoVentas, tokensDelTecnico, comportamientoFcm, enviosFcm, commits } = guardado);
+}
 check('el mensaje lleva título, texto, tipo, id de la orden y tag', enviosFcm[0].data,
   { title: 'Nueva asignación', body: 'Te asignaron la orden AS9 - Cliente Nuevo.', tag: 'nuevaAsignacion:abc123', ticketId: 'abc123', tipo: 'nuevaAsignacion' });
 check('prioridad alta para web y Android, con TTL corto',

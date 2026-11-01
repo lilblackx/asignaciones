@@ -792,6 +792,13 @@ export default {
       return new Response(`Token inválido: ${err.message}`, { status: 401, headers });
     }
 
+    // Tope de llamadas por usuario (binding LIMITADOR de wrangler.toml): una cuenta que se comprometa o un error que se repita en un bucle
+    // no puede disparar cientos de avisos o envíos por minuto. Sin el binding (pruebas, desarrollo) no se limita nada.
+    if (env.LIMITADOR) {
+      const { success } = await env.LIMITADOR.limit({ key: payload.sub });
+      if (!success) return new Response('Demasiadas solicitudes. Espera un momento e intenta de nuevo.', { status: 429, headers: { ...headers, 'Retry-After': '30' } });
+    }
+
     const { pathname } = new URL(request.url);
     if (pathname === '/admin/reset-password') {
       return handleResetPassword(request, env, headers, payload.sub);
