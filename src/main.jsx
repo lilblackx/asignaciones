@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import Root from './Root.jsx'
 import InstallGate from './components/InstallGate.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { registerSW } from 'virtual:pwa-register'
 import { setSwRegistration } from './lib/swRegistration'
 import { setUpdateAvailable } from './lib/updateAvailable'
@@ -57,9 +58,11 @@ const updateSW = registerSW({
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <InstallGate>
-      <Root />
-    </InstallGate>
-    <UpdatePrompt />
+    <ErrorBoundary>
+      <InstallGate>
+        <Root />
+      </InstallGate>
+      <UpdatePrompt />
+    </ErrorBoundary>
   </StrictMode>,
 )

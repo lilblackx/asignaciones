@@ -69,6 +69,7 @@ export default defineConfig({
         name: 'Asignaciones NS',
         short_name: 'Asignaciones',
         description: 'Sistema de control y seguimiento de asignaciones',
+        lang: 'es',
         start_url: '/',
         scope: '/',
         display: 'standalone',
