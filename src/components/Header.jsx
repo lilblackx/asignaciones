@@ -117,7 +117,7 @@ export default function Header({
               onClick={onOpenFormasPago}
               aria-label="Formas de pago"
               title="Formas de pago"
-              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 flex items-center gap-1.5 text-sm font-bold"
+              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 flex items-center justify-center gap-1.5 text-sm font-bold"
             >
               <Landmark className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Pagos</span>
             </button>
@@ -133,7 +133,7 @@ export default function Header({
                 aria-label="Más acciones"
                 aria-expanded={menuOpen}
                 title="Más acciones"
-                className="relative p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700"
+                className="relative inline-flex items-center justify-center p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700"
               >
                 <MoreVertical className="w-4 h-4" />
                 {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black" aria-hidden="true" />}

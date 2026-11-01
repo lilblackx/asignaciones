@@ -10,7 +10,7 @@ export default function BotonCopiar({ copiado, onClick, etiqueta, titulo, classN
       onClick={onClick}
       aria-label={etiqueta}
       title={titulo}
-      className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${className} ${copiado ? tonoCopiado : tono}`}
+      className={`inline-flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${className} ${copiado ? tonoCopiado : tono}`}
     >
       {copiado ? <Check className={iconoClase} aria-hidden="true" /> : <Copy className={iconoClase} aria-hidden="true" />}
       {children}

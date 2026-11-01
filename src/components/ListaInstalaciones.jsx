@@ -10,7 +10,7 @@ import { getTipoTrabajoEstilo } from '../utils/ticketDisplay';
 // En pantallas anchas es una tabla; en el celular, filas apiladas con lo esencial. Solo lectura; "Ver plantilla" y "Copiar" como en la tarjeta.
 
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
-const BOTON = 'inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors whitespace-nowrap';
+const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors whitespace-nowrap';
 const ENCABEZADOS = ['Código', 'Cliente', 'Dirección', 'Promotor', 'Técnico', 'Estado', 'Fecha', ''];
 
 // Lo que cada fila necesita de una orden, calculado una vez.
@@ -64,7 +64,7 @@ function Plantilla({ orden, d, onVerPlantilla, onCopiarPlantilla }) {
   return (
     <div className="flex items-center gap-1.5">
       <button type="button" onClick={() => onVerPlantilla(orden)} className={BOTON}>
-        <FileText className="w-3 h-3" aria-hidden="true" /> Ver plantilla
+        <FileText className="w-3 h-3 shrink-0" aria-hidden="true" /><span>Ver plantilla</span>
       </button>
       {onCopiarPlantilla && (
         <button type="button" onClick={() => onCopiarPlantilla(orden)} aria-label={`Copiar la plantilla de ${orden.codigo || 'la orden'}`} title="Copiar plantilla" className={BOTON}>

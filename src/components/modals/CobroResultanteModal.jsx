@@ -53,10 +53,10 @@ export default function CobroResultanteModal({ ticket, restantes = 0, onCopy, on
         </div>
 
         <div className="px-5 py-6 text-center bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-900/50">
-          <p className="text-xs sm:text-sm font-black tracking-widest text-emerald-800 dark:text-emerald-300">{exonerado ? 'VISITA EXONERADA' : 'COBRO RESULTANTE AL CLIENTE'}</p>
+          <p className="text-xs sm:text-sm font-black tracking-widest text-emerald-800 dark:text-emerald-300">COBRO RESULTANTE AL CLIENTE</p>
           {exonerado ? (
             <>
-              <p className="mt-1 text-5xl sm:text-6xl font-black text-emerald-700 dark:text-emerald-400 leading-none">NO COBRAR</p>
+              <p className="mt-1 text-5xl sm:text-6xl font-black text-emerald-700 dark:text-emerald-400 leading-none">EXONERADA</p>
               <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Esta visita se exoneró: no le cobres nada al cliente.</p>
             </>
           ) : (

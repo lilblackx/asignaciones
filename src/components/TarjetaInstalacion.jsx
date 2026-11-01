@@ -16,7 +16,7 @@ import { useCopiado } from '../hooks/useCopiado';
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 const ETIQUETA = 'text-[11px] max-lg:text-xs font-semibold text-zinc-600 dark:text-zinc-400';
 const VALOR = 'text-sm text-zinc-900 dark:text-zinc-100 mt-0.5 break-words';
-const BOTON = 'inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
+const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
 
 // `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
 export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlantilla, onCopy, mostrarTipo = false, ahora }) {
@@ -108,7 +108,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
         {conPlantilla && (
           <div className="flex items-center gap-1.5">
             <button type="button" onClick={() => onVerPlantilla(orden)} className={BOTON}>
-              <FileText className="w-3 h-3" aria-hidden="true" /> Ver plantilla
+              <FileText className="w-3 h-3 shrink-0" aria-hidden="true" /><span>Ver plantilla</span>
             </button>
             {onCopiarPlantilla && (
               <button type="button" onClick={() => onCopiarPlantilla(orden)} aria-label={`Copiar la plantilla de ${orden.codigo || 'la orden'}`} title="Copiar plantilla" className={BOTON}>

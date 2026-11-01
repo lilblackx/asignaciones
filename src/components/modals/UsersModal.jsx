@@ -325,7 +325,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       ) : (
                         <p className="text-sm font-black text-zinc-900 dark:text-white flex items-center gap-1.5 break-words">
                           {u.nombre || u.username}
-                          <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"><Pencil className="w-3.5 h-3.5" /></button>
                         </p>
                       )}
                       <p className="text-xs text-zinc-600 dark:text-zinc-400">@{u.username}{u.disabled && ' · deshabilitado'}</p>

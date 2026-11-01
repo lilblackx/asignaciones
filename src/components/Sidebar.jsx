@@ -73,7 +73,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
           >
             {colapsado ? <PanelLeftOpen className="w-4 h-4" aria-hidden="true" /> : <PanelLeftClose className="w-4 h-4" aria-hidden="true" />}
           </button>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="p-1.5 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 lg:hidden"><X className="w-5 h-5" aria-hidden="true" /></button>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="flex items-center justify-center p-1.5 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 lg:hidden"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
 
         <nav className="flex-1 min-h-0 px-2 py-2 overflow-y-auto overflow-x-hidden [scrollbar-width:thin] [scrollbar-color:#a1a1aa_transparent] dark:[scrollbar-color:#3f3f46_transparent]">

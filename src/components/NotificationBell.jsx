@@ -113,21 +113,31 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
               </div>
             ) : (
               notifications.map(n => (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => { dismissNotification(n.id); setIsOpen(false); onOpenNotification?.(n); }}
-                  title="Click para ir a la orden y quitar la notificación"
-                  className={`w-full text-left px-4 py-3 border-t border-zinc-800 first:border-t-0 flex items-start gap-2.5 group hover:bg-zinc-800 transition-colors ${n.read ? '' : 'bg-zinc-800/60'}`}
-                >
-                  {iconoPara(n.type)}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-zinc-200 leading-snug">{n.text}</p>
-                    <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-medium">{tiempoRelativo(n.timestamp)}</span>
-                  </div>
-                  {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1 group-hover:hidden" aria-hidden="true" />}
-                  <X className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400 shrink-0 mt-0.5 hidden group-hover:block" aria-hidden="true" />
-                </button>
+                // La fila son dos botones hermanos: el texto lleva a la orden y quita el aviso; la X solo lo quita (una X dentro del botón de la fila también lo activaba).
+                <div key={n.id} className={`border-t border-zinc-800 first:border-t-0 flex items-stretch hover:bg-zinc-800 transition-colors ${n.read ? '' : 'bg-zinc-800/60'}`}>
+                  <button
+                    type="button"
+                    onClick={() => { dismissNotification(n.id); setIsOpen(false); onOpenNotification?.(n); }}
+                    title="Click para ir a la orden y quitar la notificación"
+                    className="min-w-0 flex-1 text-left pl-4 pr-2 py-3 flex items-start gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-500"
+                  >
+                    {iconoPara(n.type)}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-zinc-200 leading-snug">{n.text}</p>
+                      <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-medium">{tiempoRelativo(n.timestamp)}</span>
+                    </div>
+                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1" aria-hidden="true" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dismissNotification(n.id)}
+                    aria-label="Quitar esta notificación"
+                    title="Quitar sin abrir la orden"
+                    className="shrink-0 px-3 max-lg:min-w-11 flex items-center justify-center text-zinc-500 hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-500 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                </div>
               ))
             )}
           </div>

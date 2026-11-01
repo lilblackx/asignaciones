@@ -160,7 +160,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   role="tab"
                   aria-selected={seccion === id}
                   onClick={() => setSeccion(id)}
-                  className={`flex-1 md:flex-none min-w-0 h-9 px-2 sm:px-4 rounded-lg text-sm font-semibold border transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={`flex-1 md:flex-none min-w-0 h-9 px-1 sm:px-4 rounded-lg text-sm max-sm:text-[13px] font-semibold border transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 >
                   <span className="sm:hidden">{corto}</span><span className="hidden sm:inline">{nombre}</span>
                 </button>
