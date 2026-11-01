@@ -11,7 +11,7 @@
 //   No genera cobro.
 // - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
 //   `serialEquipo`, junto con el tipo del equipo nuevo (MRTV, MTV, MR o SM; obligatorio) en `tipoEquipoNuevo`.
-// - Drop atenuado, configuración de router y fuente averiada: solo se registra el tipo de visita,
+// - Drop atenuado, configuración de router, fuente averiada y mudanza interna: solo se registra el tipo de visita,
 //   sin datos extra.
 
 import { esInstalacion, parseSerial } from './instalacion.js';
@@ -25,6 +25,7 @@ export const TIPO_CAMBIO_EQUIPO = 'CAMBIO_EQUIPO';
 export const TIPO_DROP_ATENUADO = 'DROP_ATENUADO';
 export const TIPO_CONFIG_ROUTER = 'CONFIG_ROUTER';
 export const TIPO_FUENTE_AVERIADA = 'FUENTE_AVERIADA';
+export const TIPO_MUDANZA_INTERNA = 'MUDANZA_INTERNA';
 
 export const ETIQUETA_TIPO_VISITA = {
   [TIPO_CONECTOR_EXTERNO]: 'Conector externo',
@@ -34,6 +35,7 @@ export const ETIQUETA_TIPO_VISITA = {
   [TIPO_DROP_ATENUADO]: 'Drop atenuado',
   [TIPO_CONFIG_ROUTER]: 'Configuración de router',
   [TIPO_FUENTE_AVERIADA]: 'Fuente averiada',
+  [TIPO_MUDANZA_INTERNA]: 'Mudanza interna',
 };
 
 export const TIPOS_VISITA = [
@@ -45,6 +47,7 @@ export const TIPOS_VISITA = [
   { value: TIPO_DROP_ATENUADO, label: ETIQUETA_TIPO_VISITA[TIPO_DROP_ATENUADO] },
   { value: TIPO_CONFIG_ROUTER, label: ETIQUETA_TIPO_VISITA[TIPO_CONFIG_ROUTER] },
   { value: TIPO_FUENTE_AVERIADA, label: ETIQUETA_TIPO_VISITA[TIPO_FUENTE_AVERIADA] },
+  { value: TIPO_MUDANZA_INTERNA, label: ETIQUETA_TIPO_VISITA[TIPO_MUDANZA_INTERNA] },
 ];
 
 // El tipo de visita es obligatorio al pre-finalizar cualquier orden que no sea una instalación (que no lo lleva): el técnico escoge uno de los tipos, sin opción "Ninguno".

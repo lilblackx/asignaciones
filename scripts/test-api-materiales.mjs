@@ -118,11 +118,14 @@ check('POST: 405', r.status, 405);
 r = await pedir('/api/materiales', { e: { ...env, MATERIALES_API_KEY: undefined } });
 check('sin secreto configurado la API está apagada (503), no abierta', r.status, 503);
 check('ninguna de esas consultas llegó a Firestore', consultas.length, 0);
+// El reloj queda fijo en el 15 de octubre: lo que se pide (y a qué fecha) no depende del día en que se corra la prueba.
+const RELOJ = Date.now;
+Date.now = () => HOY_MS + 3600000;
 r = await pedir('/api/materiales', { cabecera: 'X-API-Key' });
+Date.now = RELOJ;
 check('también acepta X-API-Key', r.status, 200);
 
 // --- Contenido (el mes en curso a las 11:00 del 15 de octubre, hora de Venezuela) ---
-const RELOJ = Date.now;
 Date.now = () => HOY_MS + 3600000;
 r = await pedir('/api/materiales?periodo=MES');
 Date.now = RELOJ;
