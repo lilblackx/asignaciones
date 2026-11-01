@@ -1,5 +1,5 @@
 // Prueba cuándo un aviso de la campana se da por atendido y se quita solo (src/utils/avisoAtendido.js). No necesita el emulador.
-import { avisoAtendido } from '../src/utils/avisoAtendido.js';
+import { avisoAtendido, avisoAtendidoEn } from '../src/utils/avisoAtendido.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -47,6 +47,22 @@ check('avisos que solo informan se quedan aunque la orden esté cerrada',
   ['cancelada', 'aprobado', 'desasignada', 'pagoTecnico', 'pagoCliente', 'cierreAutomatico', 'tecnicoStatus'].map(tipo => avisoAtendido(aviso(tipo), orden({ estado: 'FINALIZADO' }), true)),
   [false, false, false, false, false, false, false]);
 check('avisos de varias órdenes (sin ticketId) se quedan', avisoAtendido({ id: 'n', type: 'prefinalizado', text: '3 órdenes' }, orden({ estado: 'FINALIZADO' }), true), false);
+
+// --- Avisos que agrupan varias órdenes (ticketIds): se quitan cuando se atendieron todas ---
+const porId = (...ordenes) => new Map(ordenes.map(o => [o.id, o]));
+const grupo = (type, ...ids) => ({ id: 'g', type, ticketIds: ids, text: 'varias' });
+const a = (extra) => orden({ id: 'a', ...extra });
+const b = (extra) => orden({ id: 'b', ...extra });
+check('grupo de asignaciones: una sigue pendiente, se queda; las dos atendidas, se quita',
+  [porId(a(), b({ estado: 'FINALIZADO' })), porId(a({ estado: 'FINALIZADO' }), b({ estado: 'PRE-FINALIZADO' }))].map(m => avisoAtendidoEn(grupo('nuevaAsignacion', 'a', 'b'), m, false)), [false, true]);
+check('grupo: una orden que ya no está cuenta como atendida', avisoAtendidoEn(grupo('nuevaAsignacion', 'a', 'b'), porId(a({ estado: 'FINALIZADO' })), false), true);
+check('grupo de pre-finalizadas: se quita cuando ninguna espera aprobación',
+  [porId(a({ estado: 'PRE-FINALIZADO' }), b({ estado: 'FINALIZADO' })), porId(a({ estado: 'FINALIZADO' }), b({ estado: 'PENDIENTE' }))].map(m => avisoAtendidoEn(grupo('prefinalizado', 'a', 'b'), m, true)), [false, true]);
+check('grupo de un tipo informativo nunca se quita', avisoAtendidoEn(grupo('cancelada', 'a', 'b'), porId(a({ estado: 'CANCELADO' }), b({ estado: 'CANCELADO' })), false), false);
+check('aviso sin ticketId ni ticketIds se queda; con lista vacía también',
+  [{ id: 'x', type: 'prefinalizado' }, { id: 'x', type: 'prefinalizado', ticketIds: [] }].map(n => avisoAtendidoEn(n, porId(), true)), [false, false]);
+check('avisoAtendidoEn con una sola orden da lo mismo que avisoAtendido',
+  [orden(), orden({ estado: 'PRE-FINALIZADO' })].map(t => avisoAtendidoEn(aviso('nuevaAsignacion'), porId(t), false)), [false, true]);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

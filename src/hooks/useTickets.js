@@ -445,7 +445,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           } else if (nuevas.length > 1) {
             const texto = `${nuevas.length} órdenes marcadas PRE-FINALIZADO - revisar.`;
             setToastMsg({ type: 'prefinalizado', text: texto, duration: 7000 });
-            onNotify?.({ type: 'prefinalizado', text: texto });
+            onNotify?.({ type: 'prefinalizado', text: texto, ticketIds: nuevas.map(t => t.id) });
             playPreFinalizadoSound();
           }
           // Avisa a la oficina cuando una promotora carga una venta (id que no estaba en el snapshot anterior).
@@ -456,7 +456,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             const t = ventasNuevas[0];
             const texto = ventasNuevas.length === 1 ? TEXTO_AVISO_NUEVA_VENTA : `${ventasNuevas.length} nuevas ventas`;
             setToastMsg({ type: 'nuevaVenta', text: texto, duration: 7000 });
-            onNotify?.({ type: 'nuevaVenta', text: texto, ...(ventasNuevas.length === 1 && { ticketId: t.id }) });
+            onNotify?.({ type: 'nuevaVenta', text: texto, ...(ventasNuevas.length === 1 ? { ticketId: t.id } : { ticketIds: ventasNuevas.map(v => v.id) }) });
             playNuevaAsignacionSound();
           }
         } else if (role === 'TECNICO') {
@@ -480,7 +480,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             const prio = conPrioridadN > 0;
             const texto = `Te asignaron ${nuevasAsignaciones.length} órdenes nuevas${prio ? `, ${conPrioridadN} con PRIORIDAD ALTA` : ''}.`;
             setToastMsg({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, duration: prio ? 9000 : 6000 });
-            onNotify?.({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto });
+            onNotify?.({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, ticketIds: nuevasAsignaciones.map(t => t.id) });
             (prio ? playPrioridadSound : playNuevaAsignacionSound)();
           }
 
@@ -495,7 +495,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           } else if (conPrioridadNueva.length > 1) {
             const texto = `${conPrioridadNueva.length} órdenes tienen PRIORIDAD ALTA. Atiéndelas primero.`;
             setToastMsg({ type: 'prioridad', text: texto, duration: 9000 });
-            onNotify?.({ type: 'prioridad', text: texto });
+            onNotify?.({ type: 'prioridad', text: texto, ticketIds: conPrioridadNueva.map(t => t.id) });
             playPrioridadSound();
           }
 
@@ -512,7 +512,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           } else if (conUbicacionNueva.length > 1) {
             const texto = `${conUbicacionNueva.length} órdenes recibieron ubicación.`;
             setToastMsg({ type: 'nuevaAsignacion', text: texto, duration: 6000 });
-            onNotify?.({ type: 'nuevaAsignacion', text: texto });
+            onNotify?.({ type: 'nuevaAsignacion', text: texto, ticketIds: conUbicacionNueva.map(t => t.id) });
             playNuevaAsignacionSound();
           }
 
@@ -555,7 +555,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
               ? `${t.codigo || 'Orden'} fue devuelta${motivo ? `: ${motivo}` : '. Revisa los detalles.'}`
               : `${devueltas.length} órdenes fueron devueltas. Revisa los detalles.`;
             setToastMsg({ type: 'devuelto', text: texto, duration: 9000 });
-            onNotify?.({ type: 'devuelto', text: texto, ...(devueltas.length === 1 && { ticketId: t.id }) });
+            onNotify?.({ type: 'devuelto', text: texto, ...(devueltas.length === 1 ? { ticketId: t.id } : { ticketIds: devueltas.map(d => d.id) }) });
             playDevueltaSound();
           }
 
@@ -589,7 +589,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           if (lista.length === 0) return;
           const texto = lista.length === 1 ? textoUno(lista[0]) : textoVarios(lista.length);
           setToastMsg({ type, text: texto, duration: 6000 });
-          onNotify?.({ type, text: texto, ...(lista.length === 1 && { ticketId: lista[0].id }) });
+          onNotify?.({ type, text: texto, ...(lista.length === 1 ? { ticketId: lista[0].id } : { ticketIds: lista.map(t => t.id) }) });
           sonido();
         };
         avisarViajes(enCamino, 'encamino', textoAvisoEnCamino, (n) => `${n} técnicos van en camino a sus órdenes.`, playTecnicoStatusSound);
@@ -604,7 +604,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           const textoUno = role === 'TECNICO' ? textoAvisoRespuesta : textoAvisoConsulta;
           const texto = lista.length === 1 ? textoUno(lista[0]) : (role === 'TECNICO' ? `${lista.length} consultas de cobro fueron respondidas.` : `${lista.length} técnicos preguntan el cobro de un recableado.`);
           setToastMsg({ type, text: texto, duration: 9000 });
-          onNotify?.({ type, text: texto, ...(lista.length === 1 && { ticketId: lista[0].id }) });
+          onNotify?.({ type, text: texto, ...(lista.length === 1 ? { ticketId: lista[0].id } : { ticketIds: lista.map(t => t.id) }) });
           (role === 'TECNICO' ? playAprobadoSound : playTecnicoStatusSound)();
         }
       }
@@ -621,7 +621,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           if (lista.length === 0) continue;
           const texto = lista.length === 1 ? textoUno(lista[0]) : textoVarios(lista.length);
           setToastMsg({ type: 'infraestructura', text: texto, duration: 9000 });
-          onNotify?.({ type: 'infraestructura', text: texto, ...(lista.length === 1 && { ticketId: lista[0].id }) });
+          onNotify?.({ type: 'infraestructura', text: texto, ...(lista.length === 1 ? { ticketId: lista[0].id } : { ticketIds: lista.map(t => t.id) }) });
           (role === 'TECNICO' ? playDevueltaSound : playTecnicoStatusSound)();
         }
       }

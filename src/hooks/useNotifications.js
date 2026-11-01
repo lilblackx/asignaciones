@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { avisoAtendido } from '../utils/avisoAtendido';
+import { avisoAtendidoEn } from '../utils/avisoAtendido';
 
 const MAX_NOTIFICATIONS = 50;
 const STORAGE_PREFIX = 'asignaciones:notifications:';
@@ -67,7 +67,7 @@ export function useNotifications(currentUser) {
   const quitarAtendidas = useCallback((tickets, esOficina) => {
     const porId = new Map(tickets.map(t => [t.id, t]));
     setNotifications(prev => {
-      const quedan = prev.filter(n => !avisoAtendido(n, porId.get(n.ticketId), esOficina));
+      const quedan = prev.filter(n => !avisoAtendidoEn(n, porId, esOficina));
       return quedan.length === prev.length ? prev : quedan;
     });
   }, []);
