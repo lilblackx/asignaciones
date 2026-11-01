@@ -1,0 +1,34 @@
+# Revisa cada cambio antes de que llegue a producción: lint, pruebas, compilación y auditoría de dependencias.
+# No despliega nada: los despliegues se hacen a mano.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      # Las pruebas que necesitan el emulador de Firestore (reglas, correlativo, respaldo...) quedan fuera: se corren en local con `npm test`.
+      - name: Pruebas
+        run: npm test -- --sin-emulador
+      - name: Compilación
+        run: npm run build
+      # Solo falla con vulnerabilidades críticas de producción. Quedan 4 altas conocidas de @grpc/grpc-js dentro de firebase
+      # (ruta de Node, no la del navegador) cuyo arreglo propuesto es bajar firebase a la 9: no se aplica.
+      - name: Auditoría de producción
+        run: npm audit --omit=dev --audit-level=critical
