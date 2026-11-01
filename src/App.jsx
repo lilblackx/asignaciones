@@ -118,6 +118,12 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   // Cuántos cobros esperan que Administración los suba al portal (contador del menú del ADMIN).
   const cobrosPorCargar = useCobrosPorCargar(firebaseUser, role === ROLES.ADMIN);
   const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
+  // Un aviso de una orden que ya se atendió se quita solo (y el contador baja). Corre también cuando entra un aviso o se cargan los guardados,
+  // no solo al cambiar las órdenes; sin cambios no hace nada, así que no hay vuelta.
+  const { notifications: listaAvisos, quitarAtendidas } = notifications;
+  useEffect(() => {
+    if (ticketsCargados && listaAvisos.length > 0) quitarAtendidas(tickets, canEditTickets);
+  }, [tickets, ticketsCargados, listaAvisos, canEditTickets, quitarAtendidas]);
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
   const filasCambiadas = useFilasCambiadas(tickets, ticketsCargados);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);

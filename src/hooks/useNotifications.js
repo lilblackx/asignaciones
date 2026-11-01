@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { avisoAtendido } from '../utils/avisoAtendido';
 
 const MAX_NOTIFICATIONS = 50;
 const STORAGE_PREFIX = 'asignaciones:notifications:';
@@ -62,7 +63,16 @@ export function useNotifications(currentUser) {
 
   const clearAll = useCallback(() => setNotifications([]), []);
 
+  // Quita los avisos cuya orden ya se atendió (ver utils/avisoAtendido). Sin cambios devuelve la misma lista: no vuelve a pintar.
+  const quitarAtendidas = useCallback((tickets, esOficina) => {
+    const porId = new Map(tickets.map(t => [t.id, t]));
+    setNotifications(prev => {
+      const quedan = prev.filter(n => !avisoAtendido(n, porId.get(n.ticketId), esOficina));
+      return quedan.length === prev.length ? prev : quedan;
+    });
+  }, []);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  return { notifications, unreadCount, isOpen, setIsOpen, addNotification, markAllRead, dismissNotification, clearAll };
+  return { notifications, unreadCount, isOpen, setIsOpen, addNotification, markAllRead, dismissNotification, clearAll, quitarAtendidas };
 }
