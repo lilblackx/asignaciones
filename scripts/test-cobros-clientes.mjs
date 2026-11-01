@@ -1,7 +1,7 @@
 // Prueba el cobro de cada orden para ADMINISTRACION (src/utils/cobrosClientes.js): cuándo se emite, qué lleva, cómo cambia si la orden cambia, lo que hace Administración
 // (cargar, devolver, confirmar un cambio de monto) y las listas y resúmenes. No necesita el emulador. Uso: `npm run test:cobroscliente`.
 import {
-  ESTADO_COBRO, cobroDesdePagoPendiente, armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, avisoDeCobro, cantidadPorCargar, cobrosDelPeriodo, diasEsperando, filtrarCobros, ordenarCobros, resumenCobros,
+  ESTADO_COBRO, cobroDesdePagoPendiente, armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, avisoDeCobro, cobrosDelPeriodo, diasEsperando, filtrarCobros, ordenarCobros, resumenCobros,
   sincronizarCobro, textoDeCobro, textoParaCopiar,
 } from '../src/utils/cobrosClientes.js';
 
@@ -77,7 +77,6 @@ check('filtros por estado, con cambio de monto, técnico y tipo', [filtrarCobros
 check('la búsqueda por código, cliente o cédula', [filtrarCobros(lista, { busqueda: 'io5' }).length, filtrarCobros(lista, { busqueda: 'gómez' }).length, filtrarCobros(lista, { busqueda: 'gomez' }).length, filtrarCobros(lista, { busqueda: '18.222' }).length], [1, 1, 1, 1]);
 check('el orden: con cambio de monto, pendientes del más viejo al más nuevo y cargados del más nuevo al más viejo', ordenarCobros(filtrarCobros(lista)).map((c) => c.codigo), ['AO4', 'AO1', 'AO2', 'IO5', 'AO3']);
 check('el resumen cuenta por estado, suma por moneda y cuenta las alertas', (({ PENDIENTE, CARGADO, alertas }) => [PENDIENTE.cantidad, PENDIENTE.montos.BS, CARGADO.cantidad, CARGADO.montos.BS, alertas])(resumenCobros(lista)), [3, 11392, 2, 11392, 1]);
-check('por cargar (el contador del menú): solo pendientes vigentes', cantidadPorCargar(lista), 3);
 check('los días que lleva esperando', [diasEsperando(lista[0], AHORA), diasEsperando(lista[4], AHORA)], [3, 0]);
 check('por período y técnico para Finanzas, los más nuevos primero', [cobrosDelPeriodo(lista, { desde: '2026-10-29', hasta: '2026-10-30' }).map((c) => c.codigo), cobrosDelPeriodo(lista, { desde: '2026-10-01', hasta: '2026-10-30' }, { tecnico: 'pedro' }).map((c) => c.codigo)], [['IO5', 'AO2'], ['IO5']]);
 

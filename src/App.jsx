@@ -35,7 +35,6 @@ import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
 import { useFormasPago } from './hooks/useFormasPago';
-import { useCobrosPorCargar } from './hooks/useCobrosClientes';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
 import { useCompletarPromotoras } from './hooks/useCompletarPromotoras';
 import { esProgramadaFutura } from './utils/programada';
@@ -115,8 +114,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  // Cuántos cobros esperan que Administración los suba al portal (contador del menú del ADMIN).
-  const cobrosPorCargar = useCobrosPorCargar(firebaseUser, role === ROLES.ADMIN);
   const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
   // Un aviso de una orden que ya se atendió se quita solo (y el contador baja). Corre también cuando entra un aviso o se cargan los guardados,
   // no solo al cambiar las órdenes; sin cambios no hace nada, así que no hay vuelta.
@@ -658,7 +655,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             veInventario={verInventario}
             veEstaciones={verEstaciones}
             alertasInventario={enviosInventario.length}
-            pagosPorCobrar={cobrosPorCargar}
             acciones={{ inicio: () => { onAbrirModulo(null); handleGoHome(); }, modulo: onAbrirModulo }}
           />
         )}

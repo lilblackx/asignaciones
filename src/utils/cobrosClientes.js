@@ -236,7 +236,6 @@ export function resumenCobros(cobros) {
   return resumen;
 }
 
-export const cantidadPorCargar = (cobros) => (cobros || []).filter((c) => estaVigente(c) && c.estado === ESTADO_COBRO.PENDIENTE).length;
 export const diasEsperando = (c, ahora = Date.now()) => Math.max(0, Math.floor((ahora - (Number(c?.creadoEn) || ahora)) / 86400000));
 
 // Las columnas de la tabla del reporte de Finanzas y su fila.

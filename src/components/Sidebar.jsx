@@ -13,7 +13,7 @@ const guardarColapsado = (valor) => { try { localStorage.setItem(CLAVE_COLAPSADO
 //   acciones: { inicio, modulo(id) }: `inicio` vuelve a la oficina y `modulo(id)` abre el módulo (CIERRE, REPORTES, HISTORIAL, REVISION, ADMINISTRACION, FINANZAS, TASA, TECNICOS, USUARIOS, ALMACEN, INFRAESTRUCTURA, INVENTARIO o PROMOTORA) como página dentro del marco.
 //   nombre, rol, isDarkMode, onCambiarTema, onSalir: el pie del menú (quién está conectado, el tema y cerrar sesión).
 //   activo: el módulo que está a la vista ('oficina', 'revision', 'finanzas', 'almacen' o 'ventas'); los demás son ventanas que se abren encima.
-export default function Sidebar({ acciones, veInventario = false, veEstaciones = false, alertasInventario = 0, pagosPorCobrar = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
+export default function Sidebar({ acciones, veInventario = false, veEstaciones = false, alertasInventario = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
   const [colapsado, setColapsado] = useState(leerColapsado);
   const alternar = () => setColapsado((c) => { guardarColapsado(!c); return !c; });
 
@@ -34,7 +34,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
     ] },
     { titulo: 'Dinero', items: [
       { id: 'revision', Icono: ClipboardCheck, nombre: 'Revisión de órdenes', accion: () => acciones.modulo('REVISION') },
-      ...(ADMINISTRACION_ACTIVA ? [{ id: 'administracion', Icono: Landmark, nombre: 'Administración', alertas: pagosPorCobrar, accion: () => acciones.modulo('ADMINISTRACION') }] : []),
+      ...(ADMINISTRACION_ACTIVA ? [{ id: 'administracion', Icono: Landmark, nombre: 'Administración', accion: () => acciones.modulo('ADMINISTRACION') }] : []),
       { id: 'finanzas', Icono: Wallet, nombre: 'Finanzas', accion: () => acciones.modulo('FINANZAS') },
       { id: 'tasa', Icono: Coins, nombre: 'Tasa y pagos', accion: () => acciones.modulo('TASA') },
     ] },

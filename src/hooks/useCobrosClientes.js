@@ -2,26 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { query, where } from 'firebase/firestore';
 import { getDocs, onSnapshot } from '../lib/medidorFirestore.js';
 import { coleccionCobros } from '../lib/cobrosClientes';
-import { ESTADO_COBRO, avisoDeCobro, cantidadPorCargar } from '../utils/cobrosClientes';
+import { ESTADO_COBRO, avisoDeCobro } from '../utils/cobrosClientes';
 import { playAprobadoSound } from '../utils/notificationSound';
 
 const aLista = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 const inicioDelDia = (iso) => Date.parse(`${iso}T00:00:00-04:00`);
 const finDelDia = (iso) => Date.parse(`${iso}T23:59:59.999-04:00`);
-
-// El contador de cobros por cargar (el menú del ADMIN): cuántos esperan que Administración los suba al portal.
-export function useCobrosPorCargar(firebaseUser, activo) {
-  const [pendientes, setPendientes] = useState([]);
-  useEffect(() => {
-    if (!firebaseUser || !activo) return undefined;
-    return onSnapshot(
-      query(coleccionCobros(), where('estado', '==', ESTADO_COBRO.PENDIENTE)),
-      (snap) => setPendientes(aLista(snap)),
-      (error) => console.error('No se pudieron leer los cobros por cargar:', error),
-    );
-  }, [firebaseUser, activo]);
-  return cantidadPorCargar(pendientes);
-}
 
 // El módulo de Administración: los cobros del rango de fechas (por el día en que se emitieron) y, siempre, todos los pendientes y los que tienen un cambio de monto por corregir
 // (cuentan aunque sean de antes del rango). Pide los dos índices de un solo campo que Firestore crea solo (estado y creadoEn) y `montoCambio != null`.
