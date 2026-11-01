@@ -75,9 +75,6 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
         <span className={TEXTO_SUAVE}>{actual ? `${horaCaracas(actual.hasta - 3600000)}–${horaCaracas(actual.hasta)}: ${numero(actual[campo])} ${unidad}` : `pico ${numero(pico?.[campo])}`}</span>
       </figcaption>
       <div className="relative h-24 mt-2" role="img" aria-label={resumen}>
-        <div className="absolute inset-x-0 border-t border-dashed border-red-500/70" style={{ bottom: `${(umbral / maximo) * 100}%` }} aria-hidden="true">
-          <span className="absolute left-0 -top-4 text-[10px] font-bold text-red-600 dark:text-red-400">umbral {numero(umbral)}</span>
-        </div>
         <div className="absolute inset-0 flex items-end gap-[2px]" onMouseLeave={() => setMarcada(null)}>
           {horas.map((h, i) => {
             const valor = h[campo] || 0;
@@ -90,6 +87,10 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
               </button>
             );
           })}
+        </div>
+        {/* Después de las columnas, para que no se pinten encima de la etiqueta; el fondo de la tarjeta la deja legible sobre una columna roja. */}
+        <div className="absolute inset-x-0 border-t border-dashed border-red-500/70 pointer-events-none" style={{ bottom: `${(umbral / maximo) * 100}%` }} aria-hidden="true">
+          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-white dark:bg-zinc-900 text-[10px] font-bold text-red-600 dark:text-red-400">umbral {numero(umbral)}</span>
         </div>
       </div>
       <div className={`flex justify-between mt-1 ${TEXTO_SUAVE}`} aria-hidden="true">
