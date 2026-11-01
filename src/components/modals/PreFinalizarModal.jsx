@@ -176,7 +176,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     <>
     {/* Con la confirmación abierta, Escape cierra solo la confirmación y no pierde lo escrito en el formulario. */}
     <Modal onClose={() => { if (!porConfirmar) onClose(); }} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
           <div>
             <div className="flex items-center gap-2">

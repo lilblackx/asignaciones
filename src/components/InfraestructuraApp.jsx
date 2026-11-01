@@ -125,7 +125,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Infraestructura" icono={Network} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 

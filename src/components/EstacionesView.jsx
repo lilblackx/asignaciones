@@ -229,7 +229,7 @@ export default function EstacionesView({ enPagina = false, onClose }) {
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-50" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={MonitorSmartphone} titulo="Estaciones" onClose={onClose} enPagina={enPagina} />
         <div className={`p-4 space-y-5 ${CENTRADO_ESTRECHO}`}>
           <p className={TEXTO_SUAVE}>

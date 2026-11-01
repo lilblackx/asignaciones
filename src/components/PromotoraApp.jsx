@@ -199,7 +199,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo={verTodasInstalaciones ? 'Instalaciones y LOS' : 'Instalaciones'} tituloCorto="Instalaciones" icono={Building2} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} accion={puedeCrearVentas ? { texto: 'Nuevo', onClick: () => setCreandoVenta(true), deshabilitado: !verTodasInstalaciones && promotoraClaves.length === 0, ayuda: !verTodasInstalaciones && promotoraClaves.length === 0 ? 'Tu usuario todavía no tiene un nombre de promotor asignado' : 'Nueva venta' } : null} />
 

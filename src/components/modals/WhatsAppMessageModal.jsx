@@ -4,7 +4,7 @@ import Modal from '../Modal';
 export default function WhatsAppMessageModal({ mensaje, onCopy, onClose }) {
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3 border-b-2 border-green-600 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" aria-hidden="true" />

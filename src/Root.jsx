@@ -28,7 +28,7 @@ export default function Root() {
   const Pantalla = PANTALLAS[auth.role];
   if (Pantalla) {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <Suspense fallback={<div className="min-h-dvh bg-zinc-950" />}>
         <Pantalla auth={auth} />
       </Suspense>
     );
@@ -39,7 +39,7 @@ export default function Root() {
   const renderModulo = (id, { onAbrirMenu }) => {
     const Modulo = MODULOS_ADMIN[id];
     return Modulo ? (
-      <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <Suspense fallback={<div className="min-h-dvh bg-zinc-950" />}>
         <Modulo auth={authDe(id)} onAbrirMenu={onAbrirMenu} />
       </Suspense>
     ) : null;

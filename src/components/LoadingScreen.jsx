@@ -2,8 +2,8 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 
 export default function LoadingScreen({ isDarkMode, connectionError }) {
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
-      <div className="min-h-screen bg-fondo flex flex-col items-center justify-center p-4 text-center transition-colors duration-200">
+    <div className={`min-h-dvh ${isDarkMode ? 'dark' : ''}`}>
+      <div className="min-h-dvh bg-fondo flex flex-col items-center justify-center p-4 text-center transition-colors duration-200">
         {connectionError ? (
           <>
             <AlertTriangle className="w-12 h-12 text-red-600 mb-4" />

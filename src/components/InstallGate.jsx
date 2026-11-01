@@ -49,7 +49,7 @@ export default function InstallGate({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-fondo flex items-center justify-center p-4 font-sans">
+    <div className="min-h-dvh bg-fondo flex items-center justify-center p-4 font-sans">
       <div className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full border border-zinc-300 dark:border-zinc-800 text-center">
         <div className="flex justify-center mb-5">
           <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full">

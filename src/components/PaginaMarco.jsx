@@ -6,7 +6,7 @@ import PieVersion from './PieVersion';
 //   encabezado: { nombre, rol, isDarkMode, setIsDarkMode, handleLogout, onAbrirMenu }
 export default function PaginaMarco({ titulo, Icono, encabezado, contexto = '', children }) {
   return (
-    <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+    <div className="flex-1 min-w-0 flex flex-col min-h-dvh">
       <EncabezadoSimple titulo={titulo} icono={Icono} contexto={contexto} {...encabezado} />
       <main className="flex-1 w-full">{children}</main>
       <PieVersion />

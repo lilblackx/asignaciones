@@ -7,7 +7,7 @@ import TablaReporte from './TablaReporte';
 export default function DetalleOrdenesModal({ titulo, subtitulo, columnas, filas, vacio = 'Ninguna orden en este periodo.', onClose }) {
   return (
     <Modal onClose={onClose} zIndexClass="z-[70]">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
         <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2"><ListChecks className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> <span className="truncate">{titulo}</span></h2>

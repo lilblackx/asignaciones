@@ -58,7 +58,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
       {abierto && <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={onCerrar} aria-hidden="true" />}
       <aside
         aria-label="Módulos"
-        className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-0 lg:h-screen lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-white dark:bg-black text-zinc-900 dark:text-white border-r border-zinc-300 dark:border-zinc-800 overflow-hidden`}
+        className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-0 lg:h-dvh lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-white dark:bg-black text-zinc-900 dark:text-white border-r border-zinc-300 dark:border-zinc-800 overflow-hidden`}
       >
         <div className={`flex items-center justify-between px-3 h-[62px] shrink-0 border-b-4 border-red-600 ${colapsado ? 'lg:justify-center' : ''}`}>
           <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" className={`font-black uppercase tracking-wide hover:text-red-600 dark:hover:text-red-500 transition-colors ${colapsado ? 'lg:hidden' : ''}`}>

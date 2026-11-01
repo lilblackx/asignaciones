@@ -255,7 +255,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[94dvh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={ShieldCheck} titulo="Usuarios" onClose={onClose} enPagina={enPagina} />
 
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>

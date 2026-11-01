@@ -7,7 +7,7 @@ import HistorialTimeline from '../HistorialTimeline';
 export default function HistorialOrdenModal({ ticket, onClose }) {
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
         <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2"><History className="w-4 h-4 text-red-500" aria-hidden="true" /> HISTORIAL DE LA ORDEN</h2>

@@ -129,7 +129,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
     <>
     {/* Con la plantilla abierta, Escape cierra solo la plantilla y no el historial. */}
     <Modal enPagina={enPagina} onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={History} titulo="Historial de órdenes" onClose={onClose} enPagina={enPagina} />
 
         <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>

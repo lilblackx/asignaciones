@@ -109,7 +109,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
 
   return marco(
     <>
-      <div className={enPagina ? 'w-full flex flex-col' : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? 'w-full flex flex-col' : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
         {!enPagina && <EncabezadoModulo Icono={ClipboardCheck} titulo="Revisión de órdenes" onClose={onClose} />}
 
         <div className={enPagina ? 'flex-1 min-w-0 bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm max-w-[1400px] mx-auto w-full' : `flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm ${CENTRADO_AMPLIO}`}>

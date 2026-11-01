@@ -183,7 +183,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
 
   // Como pantalla del almacén o del administrador (`enPagina`) es el contenido de la página, sin ventana ni encabezado propio (ya lo pone la app).
   const tarjeta = enPagina ? contenido : (
-      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full border border-zinc-300 dark:border-zinc-800 max-w-2xl max-h-[92vh] overflow-y-auto ${PANEL_COMPLETO}`}>
+      <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full border border-zinc-300 dark:border-zinc-800 max-w-2xl max-h-[92dvh] overflow-y-auto ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Cable} titulo="Materiales" onClose={onClose} />
         {contenido}
       </div>

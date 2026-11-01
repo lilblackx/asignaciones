@@ -12,7 +12,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
   if (!orden) return null;
   return (
     <Modal onClose={onClose} zIndexClass={zIndexClass}>
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92dvh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 shrink-0">
           <div className="min-w-0">
             <p className="text-[11px] max-lg:text-xs font-black uppercase tracking-wide text-red-500">{titulo}</p>

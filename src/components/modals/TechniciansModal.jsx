@@ -101,7 +101,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Users} titulo="Técnicos" onClose={onClose} enPagina={enPagina} />
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">

@@ -75,7 +75,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Coins} titulo="Tasa y pagos" onClose={onClose} enPagina={enPagina} />
 
         <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex border-b border-zinc-200 dark:border-zinc-800">

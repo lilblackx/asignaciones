@@ -6,7 +6,7 @@ import Modal from '../Modal';
 export default function VentanaFinanzas({ titulo, estado, onClose, pie, children, zIndexClass = 'z-[60]' }) {
   return (
     <Modal onClose={onClose} zIndexClass={zIndexClass}>
-      <div className="w-full max-w-lg max-h-[92vh] min-w-0 flex flex-col rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-2xl">
+      <div className="w-full max-w-lg max-h-[92dvh] min-w-0 flex flex-col rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-2xl">
         <div className="bg-black px-4 py-3 flex items-center gap-3 shrink-0">
           <h2 className="text-base font-bold text-white leading-tight truncate min-w-0">{titulo}</h2>
           {estado && <span key={estado.texto} className={`ml-auto shrink-0 text-xs font-bold rounded-md px-2.5 py-1 leading-none lg:animate-fade-in ${estado.clase}`}>{estado.texto}</span>}
