@@ -79,7 +79,8 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
   const saldoQueda = Math.max(0, (fila.adelantos ?? 0) + (fila.descuentosOrden ?? 0) + libres - descuento);
   // Lo que suma el renglón de descuentos: adelantos, garantías y descuentos con motivo.
   const clasesDescuento = [fila.adelantos > 0 && 'adelantos', fila.descuentosOrden > 0 && 'garantías', libres > 0 && 'descuentos con motivo'].filter(Boolean);
-  const etiquetaDescuento = clasesDescuento.length === 1 && fila.adelantos > 0 ? 'Adelantos descontados' : `Descuentos (${clasesDescuento.join(', ')})`;
+  const soloLibres = clasesDescuento.length === 1 && libres > 0;
+  const etiquetaDescuento = clasesDescuento.length === 1 && fila.adelantos > 0 ? 'Adelantos descontados' : soloLibres ? 'Descuentos' : `Descuentos (${clasesDescuento.join(', ')})`;
   const bonos = fila.bonos ?? 0;
   const pendientes = fila.pendientes.length;
   const estado = ESTADO[estadoDeFila(fila)];
