@@ -579,6 +579,18 @@ async function limpiarHistorialInstalaciones(env, accessToken, ahoraMs) {
   }
 }
 
+// Un documento de estaciones por navegador: uno nuevo cada vez que se borran los datos del navegador, se reinstala la app o se usa un equipo nuevo, y nada
+// los quitaba. Se borran los que no dan señal (`ultimaSenal`) hace más de 30 días; si ese equipo vuelve, se crea otra vez al abrir la app.
+const RETENCION_MS_ESTACIONES = 30 * 24 * 60 * 60 * 1000;
+
+async function limpiarEstacionesViejas(env, accessToken, ahoraMs) {
+  const viejas = await runQuery(env, accessToken, 'ultimaSenal', 'LESS_THAN', { integerValue: String(ahoraMs - RETENCION_MS_ESTACIONES) }, 'estaciones');
+  const borrados = viejas.map((d) => ({ delete: d.name }));
+  for (let i = 0; i < borrados.length; i += MAX_ESCRITURAS_COMMIT) {
+    await commitFirestore(env, accessToken, borrados.slice(i, i + MAX_ESCRITURAS_COMMIT));
+  }
+}
+
 // --- Totales del mes (colección estadisticasMensuales, un documento por mes "2026-10") ---
 // Ventas lleva la cuenta mensual de instalaciones y averías LOS finalizadas y canceladas. Se suman aquí, en el mismo commit que archiva
 // las órdenes (todo o nada, y un cierre que se reintenta no cuenta dos veces), para que ventas lea un solo documento por mes en vez
@@ -700,6 +712,7 @@ export async function cierreAutomatico(env, ahoraMs = Date.now()) {
   try {
     const { finalizadas, canceladas } = await archivarCierre(env, accessToken, ahoraMs, toca.fecha);
     await limpiarHistorialInstalaciones(env, accessToken, ahoraMs).catch((err) => console.error('No se pudo limpiar el historial de instalaciones:', err));
+    await limpiarEstacionesViejas(env, accessToken, ahoraMs).catch((err) => console.error('No se pudo limpiar el registro de estaciones:', err));
     const resumen = finalizadas + canceladas === 0
       ? 'No había órdenes FINALIZADO ni CANCELADO para cerrar.'
       : `${finalizadas} finalizadas y ${canceladas} canceladas archivadas.`;

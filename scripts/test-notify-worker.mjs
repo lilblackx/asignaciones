@@ -285,6 +285,7 @@ const FINALIZADAS = [
 ];
 const CANCELADAS = [ticketDoc('t-cancel', { codigo: 'IO6', nombre: 'ROSA DE LA CRUZ', direccion: 'CALLE 5 CASA 10b', estado: 'CANCELADO', tipoTrabajo: 'INSTALACIÓN', createdAt: 1200, promotora: 'Sariana', motivoCancelacion: '  El cliente | ya no  quiere el servicio ' })];
 const VENCIDA = { name: `${DOCS}/artifacts/${APP}/public/data/historialInstalaciones/vieja`, fields: { archivadoEn: { integerValue: String(AHORA - 40 * 86400000) } } };
+const ESTACION_VIEJA = { name: `${DOCS}/artifacts/${APP}/public/data/estaciones/equipoviejo12345`, fields: { ultimaSenal: { integerValue: String(AHORA - 45 * 86400000) } } };
 const consultas = [];
 globalThis.fetch = async (url, init = {}) => {
   const u = String(url);
@@ -298,6 +299,7 @@ globalThis.fetch = async (url, init = {}) => {
     const col = q.from[0].collectionId;
     if (col === 'tickets') return respuesta((q.where.fieldFilter.value.stringValue === 'FINALIZADO' ? FINALIZADAS : CANCELADAS).map((document) => ({ document })));
     if (col === 'historialInstalaciones') return respuesta([{ document: VENCIDA }]);
+    if (col === 'estaciones') return respuesta([{ document: ESTACION_VIEJA }]);
     return respuesta([{}]); // aprobadores: nadie a quien avisar
   }
   return fetchBase(url, init);
@@ -326,6 +328,9 @@ check('una instalación sin fecha de finalizado guarda null', historial.find((w)
 check('borra del historial lo de más de 30 días', escrituras.filter((w) => w.delete?.includes('/historialInstalaciones/')).map((w) => w.delete.split('/').pop()), ['vieja']);
 const corte = consultas.find((q) => q.from[0].collectionId === 'historialInstalaciones')?.where.fieldFilter;
 check('la limpieza pide lo anterior a hoy menos 30 días', [corte?.field.fieldPath, corte?.op, corte?.value.integerValue], ['archivadoEn', 'LESS_THAN', String(AHORA - 30 * 86400000)]);
+check('borra las estaciones que llevan más de 30 días sin dar señal', escrituras.filter((w) => w.delete?.includes('/estaciones/')).map((w) => w.delete.split('/').pop()), ['equipoviejo12345']);
+const corteEstaciones = consultas.find((q) => q.from[0].collectionId === 'estaciones')?.where.fieldFilter;
+check('la limpieza de estaciones pide lo anterior a hoy menos 30 días', [corteEstaciones?.field.fieldPath, corteEstaciones?.op, corteEstaciones?.value.integerValue], ['ultimaSenal', 'LESS_THAN', String(AHORA - 30 * 86400000)]);
 const reportes = escrituras.filter((w) => w.update?.name.includes('/reports/'));
 check('el cierre guarda UN solo reporte con todo (finalizadas, canceladas y también la avería)', [reportes.length, reportes[0]?.update.fields.tipoReporte, reportes[0]?.update.fields.ticketsDetalle.arrayValue.values.length], [1, { stringValue: 'CIERRE' }, 3]);
 check('el reporte lleva el total y cuántas finalizadas y canceladas', [reportes[0]?.update.fields.total, reportes[0]?.update.fields.finalizadas, reportes[0]?.update.fields.canceladas], [{ integerValue: '3' }, { integerValue: '2' }, { integerValue: '1' }]);
