@@ -4,8 +4,14 @@ import { doc } from 'firebase/firestore';
 import { onSnapshot } from '../lib/medidorFirestore.js';
 import { auth, db, appId, borrarCacheLocal } from '../lib/firebase';
 import { usernameToAuthEmail } from '../utils/authEmail';
+import { MENSAJE_SESION_VENCIDA, msParaVencer, sesionVencida } from '../utils/sesion';
 
 const GENERIC_LOGIN_ERROR = 'Usuario o clave incorrectos.';
+// Al vencer la sesión la página se recarga: esta marca (en la pestaña, no en el disco) le dice a la pantalla de inicio por qué se cerró.
+const CLAVE_SESION_VENCIDA = 'asignaciones:sesion-vencida';
+const motivoDelCierre = () => {
+  try { return sessionStorage.getItem(CLAVE_SESION_VENCIDA) ? MENSAJE_SESION_VENCIDA : ''; } catch { return ''; }
+};
 
 export function useAuth() {
   const [firebaseUser, setFirebaseUser] = useState(null);
@@ -13,7 +19,7 @@ export function useAuth() {
   const [authReady, setAuthReady] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [loginData, setLoginData] = useState({ usuario: '', clave: '' });
-  const [loginError, setLoginError] = useState('');
+  const [loginError, setLoginError] = useState(motivoDelCierre);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => setConnectionError(true), 10000);
@@ -72,6 +78,55 @@ export function useAuth() {
       unsubscribe();
     };
   }, []);
+
+  // La marca solo sirve para el mensaje de la pantalla de inicio: se borra al mostrarlo.
+  useEffect(() => {
+    try { sessionStorage.removeItem(CLAVE_SESION_VENCIDA); } catch { /* sin almacenamiento: no hay marca que borrar */ }
+  }, []);
+
+  // La sesión dura 24 horas desde que la persona escribió su clave, y 7 días si es técnico (ver utils/sesion.js). Al vencer se cierra igual que al salir: se borra la
+  // caché del dispositivo y se vuelve al inicio con un aviso. Se vigila con un temporizador y también al volver a la app (un teléfono con la
+  // pantalla apagada pausa los temporizadores, y a las reglas de Firestore ya no les vale esa sesión).
+  const rol = profile?.role || null;
+  useEffect(() => {
+    if (!firebaseUser || !rol) return undefined;
+    let cancelado = false;
+    let cerrando = false;
+    let temporizador = null;
+    let inicioDeSesion = null;
+    const cerrarPorVencimiento = async () => {
+      if (cerrando) return;
+      cerrando = true;
+      try { sessionStorage.setItem(CLAVE_SESION_VENCIDA, '1'); } catch { /* sin almacenamiento: se cierra igual, sin el aviso */ }
+      try { await signOut(auth); } catch { /* sin conexión: la caché se borra y se recarga igual */ }
+      await borrarCacheLocal();
+      window.location.reload();
+    };
+    const revisar = () => { if (inicioDeSesion !== null && sesionVencida(inicioDeSesion, rol)) cerrarPorVencimiento(); };
+    const alVolver = () => { if (document.visibilityState === 'visible') revisar(); };
+    const programar = (inicio) => {
+      if (cancelado) return;
+      inicioDeSesion = inicio;
+      const falta = msParaVencer(inicio, rol);
+      if (falta === null) return;
+      if (falta === 0) { cerrarPorVencimiento(); return; }
+      temporizador = setTimeout(cerrarPorVencimiento, falta);
+    };
+    // La hora del inicio de sesión viene en el token (refrescarlo no la cambia). Sin conexión puede no poder leerse: se usa la que guarda la cuenta.
+    firebaseUser.getIdTokenResult()
+      .then((r) => programar(r.authTime))
+      .catch(() => programar(firebaseUser.metadata?.lastSignInTime));
+    document.addEventListener('visibilitychange', alVolver);
+    window.addEventListener('focus', revisar);
+    window.addEventListener('online', revisar);
+    return () => {
+      cancelado = true;
+      clearTimeout(temporizador);
+      document.removeEventListener('visibilitychange', alVolver);
+      window.removeEventListener('focus', revisar);
+      window.removeEventListener('online', revisar);
+    };
+  }, [firebaseUser, rol]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
