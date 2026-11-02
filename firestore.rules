@@ -524,11 +524,38 @@ service cloud.firestore {
 
     // Revisión de pagos: la barrera entre las órdenes y Finanzas. Un documento por orden (el id es el de ordenesPagadas): el administrador la aprueba, retiene o excluye, y
     // puede corregir su técnico o su concepto de pago. Finanzas solo ve las aprobadas. Solo escribe el ADMIN, siempre a su nombre (por); retener y excluir exigen motivo; el
-    // administrador puede borrar el documento para volver a empezar. Lo leen ADMIN y FINANZAS.
+    // administrador puede borrar el documento para volver a empezar (salvo una orden ya pagada). Lo leen ADMIN y FINANZAS.
+    // `pendientePago` es true mientras la orden está APROBADA y sin pagar: así Finanzas pide solo lo que falta por pagar, de cualquier fecha, en una consulta. `pagoId` es el pago que la pagó. El ADMIN
+    // los deja coherentes con el estado al revisar (y no puede tocar el pago de una orden ya pagada); al pagar y al anular un pago los cambia Finanzas en el mismo lote que crea o anula el pago.
     match /artifacts/{appId}/public/data/revisionPagos/{docId} {
+      function pagoDeRevision(appId, pagoId) {
+        return /databases/$(database)/documents/artifacts/$(appId)/public/data/pagosTecnicos/$(pagoId);
+      }
+      // Pagar: pasa de pendiente a pagada y el pago se crea en este mismo lote. Anular: vuelve a pendiente y ese pago queda anulado en este mismo lote. Solo cambian esos dos campos y solo en una aprobada.
+      // Siempre es el mismo documento del pago (los accesos repetidos al mismo documento no suman al límite de 20 por lote), así que sirve aunque el lote traiga cientos de órdenes.
+      function marcaDePago(appId) {
+        let r = request.resource.data;
+        let antes = resource.data;
+        return r.diff(antes).affectedKeys().hasOnly(['pendientePago', 'pagoId'])
+          && antes.get('estado', '') == 'APROBADA'
+          && r.pendientePago is bool
+          && r.get('pagoId', '') is string && r.get('pagoId', '').size() <= 100
+          && (
+            (antes.get('pendientePago', false) == true && antes.get('pagoId', '') == ''
+              && r.pendientePago == false && r.get('pagoId', '').size() > 0
+              && !exists(pagoDeRevision(appId, r.pagoId)) && existsAfter(pagoDeRevision(appId, r.pagoId))
+              && getAfter(pagoDeRevision(appId, r.pagoId)).data.get('anulado', false) == false)
+            || (antes.get('pendientePago', false) == false && antes.get('pagoId', '') != ''
+              && r.pendientePago == true && r.get('pagoId', '') == ''
+              && exists(pagoDeRevision(appId, antes.pagoId)) && get(pagoDeRevision(appId, antes.pagoId)).data.get('anulado', false) == false
+              && getAfter(pagoDeRevision(appId, antes.pagoId)).data.get('anulado', false) == true)
+          );
+      }
       function revisionValida() {
         let r = request.resource.data;
-        return r.keys().hasOnly(['estado', 'motivo', 'firma', 'dia', 'codigo', 'tecnico', 'concepto', 'tecnicoCorregido', 'conceptoCorregido', 'descuento', 'descuentoDe', 'garantiaSinDescuento', 'por', 'en', 'historial'])
+        return r.keys().hasOnly(['estado', 'motivo', 'firma', 'dia', 'codigo', 'tecnico', 'concepto', 'tecnicoCorregido', 'conceptoCorregido', 'descuento', 'descuentoDe', 'garantiaSinDescuento', 'por', 'en', 'historial', 'pendientePago', 'pagoId'])
+          && r.pendientePago is bool
+          && (!('pagoId' in r) || (r.pagoId is string && r.pagoId.size() <= 100))
           && (!('descuento' in r) || ((r.descuento is int || r.descuento is float) && r.descuento >= 0 && r.descuento <= 100000))
           && (!('descuentoDe' in r) || (r.descuentoDe is map && r.descuentoDe.keys().hasOnly(['id', 'codigo', 'tecnico']) && r.descuentoDe.id is string && r.descuentoDe.id.size() > 0 && r.descuentoDe.id.size() <= 200
             && r.descuentoDe.codigo is string && r.descuentoDe.codigo.size() <= 40 && r.descuentoDe.tecnico is string && r.descuentoDe.tecnico.size() > 0 && r.descuentoDe.tecnico.size() <= 100))
@@ -548,8 +575,15 @@ service cloud.firestore {
           && r.historial is list && r.historial.size() <= 30;
       }
       allow read: if llevaFinanzas(appId);
-      allow create, update: if isAdminUser(appId) && revisionValida();
-      allow delete: if isAdminUser(appId);
+      allow create: if isAdminUser(appId) && revisionValida()
+        && request.resource.data.get('pagoId', '') == ''
+        && request.resource.data.pendientePago == (request.resource.data.estado == 'APROBADA');
+      allow update: if (isAdminUser(appId) && revisionValida()
+          && (resource.data.get('pagoId', '') == ''
+            ? (request.resource.data.get('pagoId', '') == '' && request.resource.data.pendientePago == (request.resource.data.estado == 'APROBADA'))
+            : (request.resource.data.get('pagoId', '') == resource.data.pagoId && request.resource.data.pendientePago == false)))
+        || (llevaFinanzas(appId) && marcaDePago(appId));
+      allow delete: if isAdminUser(appId) && resource.data.get('pagoId', '') == '';
     }
 
     // Descuentos y bonos por una orden que el administrador pasó de un técnico a otro al revisarla (siempre en dólares). Los crea el ADMIN al aprobar la orden (el id sale de la

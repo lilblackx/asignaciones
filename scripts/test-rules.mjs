@@ -1281,7 +1281,11 @@ await check('Descuento: el técnico lee solo los suyos; no escribe ni lee los de
 });
 
 // Revisión de pagos (la barrera antes de Finanzas): solo el ADMIN escribe; Finanzas la lee
-const revisionDe = (extra = {}) => ({ estado: 'APROBADA', motivo: '', firma: 'abc123', dia: '2026-10-27', codigo: 'IO1', tecnico: 'GERARDO MOLERO', concepto: 'INSTALACION', tecnicoCorregido: '', conceptoCorregido: '', por: 'admin', en: 10, historial: [{ estado: 'APROBADA', por: 'admin', en: 10 }], ...extra });
+// `pendientePago` va con el estado (true solo si está aprobada), salvo que la prueba lo pida de otra forma.
+const revisionDe = (extra = {}) => {
+  const r = { estado: 'APROBADA', motivo: '', firma: 'abc123', dia: '2026-10-27', codigo: 'IO1', tecnico: 'GERARDO MOLERO', concepto: 'INSTALACION', tecnicoCorregido: '', conceptoCorregido: '', por: 'admin', en: 10, historial: [{ estado: 'APROBADA', por: 'admin', en: 10 }], ...extra };
+  return { pendientePago: r.estado === 'APROBADA' && !r.pagoId, ...r };
+};
 await check('Revisión: el administrador aprueba a su nombre y Finanzas la lee', async () => {
   await assertSucceeds(fin(asAdmin(), 'revisionPagos').doc('rev-1').set(revisionDe()));
   await assertSucceeds(fin(asFinanzas(), 'revisionPagos').doc('rev-1').get());
