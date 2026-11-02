@@ -16,9 +16,22 @@ namespace_id = "1001"
   limit = 120
   period = 60
 
+# Tope de la consulta pública del cliente (POST /consulta/estado, sin usuario): 10 por minuto por IP, de sobra para una persona
+# y poco para quien recorra cédulas. El tiempo del límite solo puede ser 10 o 60 segundos.
+[[ratelimits]]
+name = "LIMITADOR_CONSULTA"
+namespace_id = "1002"
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
 [vars]
 FIREBASE_PROJECT_ID = "seguimientons-f2026"
 APP_ID = "default-app-id"
+# Páginas desde las que se puede hacer la consulta del cliente (la web de la empresa, su portal de pagos y, para probar, la app en local).
+CONSULTA_ORIGINS = "https://networkspeed.com.ve,https://www.networkspeed.com.ve,https://pagos.networkspeed.com.ve,http://localhost:5173"
+# Tope de consultas del cliente por día (hora de Venezuela) que llegan a leer Firestore; pasado el tope responde 503 hasta el día siguiente. Cada una cuesta ~2 lecturas y 1 escritura.
+CONSULTA_LIMITE_DIARIO = "500"
 # Orígenes que pueden llamar este Worker. Ajustar si cambia el dominio.
 ALLOWED_ORIGINS = "https://seguimientons-f2026.web.app,https://seguimientons-f2026.firebaseapp.com,http://localhost:5173"
 
@@ -32,5 +45,6 @@ TELECOM_API_KEY = "AIzaSyBRp5R1ifn27umc6Usvxjovi5XPDZYTT0A"
 #   wrangler secret put MATERIALES_API_KEY   (llave de GET /api/materiales; sin ella esa API responde 503)
 #   wrangler secret put TELECOM_EMAIL        (usuario con que el Worker entra al inventario del otro sistema)
 #   wrangler secret put TELECOM_PASSWORD
+#   wrangler secret put TURNSTILE_SECRET     (opcional: el secreto de Cloudflare Turnstile; si existe, la consulta del cliente exige su prueba)
 #   wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON
 # (pegar el JSON completo del service account descargado en Firebase Console).

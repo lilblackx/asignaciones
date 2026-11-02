@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from 'jose';
 import { manejarApiMateriales } from './materiales-api.js';
+import { manejarConsultaCliente, RUTA_CONSULTA } from './consulta-cliente.js';
 import { listarTecnicosInventario, manejarInventario, reenviarNotificacion, reintentarPendientes } from './inventario.js';
 import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
 import { inicioDeSesionVigente } from '../../src/utils/sesion.js';
@@ -784,6 +785,11 @@ export default {
     // API de Materiales para otra aplicación: se autentica con su propia llave, no con un usuario de Firebase.
     if (new URL(request.url).pathname === '/api/materiales') {
       return manejarApiMateriales(request, env, getGoogleAccessToken);
+    }
+
+    // Consulta del cliente en la web de la empresa: sin usuario de Firebase (lleva su propio tope por IP y sus propios orígenes permitidos).
+    if (new URL(request.url).pathname === RUTA_CONSULTA) {
+      return manejarConsultaCliente(request, env, getGoogleAccessToken);
     }
 
     const origin = request.headers.get('Origin') || '';
