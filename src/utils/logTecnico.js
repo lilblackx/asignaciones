@@ -14,6 +14,13 @@ export function eventoActivacion({ tecnicoId, tecnico, activo, por, rol }, ahora
   return { tecnicoId, tecnico, activo: Boolean(activo), en: ahora, dia: diaDe(ahora), por: por || null, rol: rol || null };
 }
 
+// Cuánto de la bitácora se lee al abrir Reportes. Se lee solo lo de los últimos DIAS_DE_LECTURA días (desde el inicio de ese día en Caracas, para que
+// la ventana no se mueva con cada lectura) más los ANTERIORES_AL_INICIO movimientos previos: de ellos sale en qué estado estaba cada técnico al empezar. Así
+// lo que se lee depende de cuánto se activa y desactiva en esos días, no de cuántos años lleva la bitácora (que solo crece y nunca se borra).
+export const DIAS_DE_LECTURA = 100;
+export const ANTERIORES_AL_INICIO = 50;
+export const inicioDeLectura = (ahora = Date.now()) => Date.parse(`${diaDe(ahora - DIAS_DE_LECTURA * DIA_MS)}T00:00:00-04:00`);
+
 // "2026-10-19" → inicio (ms) de ese día en Caracas (UTC-4, sin horario de verano).
 const inicioDia = (dia) => Date.parse(`${dia}T00:00:00-04:00`);
 

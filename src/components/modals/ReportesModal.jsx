@@ -272,7 +272,7 @@ export default function ReportesModal({
                   eventos={logTecnicos.eventos}
                   cargando={logTecnicos.cargando}
                   error={logTecnicos.error}
-                  truncado={logTecnicos.truncado}
+                  truncado={logTecnicos.truncado || Boolean(logTecnicos.desdeDia && rango.desde < logTecnicos.desdeDia)}
                   rango={rango}
                   tecnico={tecnico}
                   getTecnicoColor={getTecnicoColor}
