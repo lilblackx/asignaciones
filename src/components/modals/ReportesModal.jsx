@@ -189,7 +189,7 @@ export default function ReportesModal({
 
           {/* Como página dentro del marco el menú lateral de la app ya ocupa la izquierda: el reporte se elige en un dropdown arriba (no un segundo menú lateral). */}
           {enPagina && (
-            <div className="shrink-0 px-4 sm:px-6 lg:px-[max(1.5rem,calc((100%-80rem)/2))] pt-3">
+            <div className="shrink-0 px-4 sm:px-6 lg:px-[max(1.5rem,calc((100%-80rem)/2))] pt-3 pb-1">
               <label htmlFor="reporte-pagina" className="block text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400 mb-1 ml-1">Reporte</label>
               <div className="w-full sm:w-80">
                 <SelectMenu
