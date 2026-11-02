@@ -2,6 +2,7 @@
 // usa la app (utils/cobrosClientes), así se comprueba que lo que la app escribe es lo que las reglas aceptan. Uso: `node scripts/test-cobros-clientes-reglas.mjs`.
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { conSesionReciente } from './sesion-prueba.mjs';
 import { armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, sincronizarCobro } from '../src/utils/cobrosClientes.js';
 
 const APP_ID = 'default-app-id';
@@ -9,6 +10,7 @@ const testEnv = await initializeTestEnvironment({
   projectId: 'seguimientons-f2026-cobros-cliente-test',
   firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 },
 });
+conSesionReciente(testEnv);
 
 let failures = 0;
 async function check(name, fn) {

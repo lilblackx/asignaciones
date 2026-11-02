@@ -3,6 +3,7 @@
 // comprueba que lo que la app escribe es lo que las reglas aceptan. Uso: `node scripts/test-pagos-cliente-reglas.mjs`.
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { conSesionReciente } from './sesion-prueba.mjs';
 import { armarConciliacion, armarCorreccion, armarDevolucion, armarPagoPendiente, armarPagoRegistrado, armarSinCobrar, claveReferencia, parsePagoCliente } from '../src/utils/pagoCliente.js';
 
 const APP_ID = 'default-app-id';
@@ -10,6 +11,7 @@ const testEnv = await initializeTestEnvironment({
   projectId: 'seguimientons-f2026-pagos-cliente-test',
   firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 },
 });
+conSesionReciente(testEnv);
 
 let failures = 0;
 async function check(name, fn) {

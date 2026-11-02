@@ -4,6 +4,7 @@
 // hay un host de firestore configurado en firebase.json).
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { conSesionReciente } from './sesion-prueba.mjs';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
@@ -17,6 +18,7 @@ const testEnv = await initializeTestEnvironment({
     port: 8080
   }
 });
+conSesionReciente(testEnv);
 
 let failures = 0;
 
@@ -1409,6 +1411,59 @@ await check('al anular el pago la fila vuelve a ser de la oficina', async () => 
   await assertSucceeds(filaVnTa(asFinanzas(), 'pagable-1').update({ pagoId: '', pagadoEn: 0 }));
   await assertSucceeds(filaVnTa(asAdmin(), 'pagable-1').update({ tecnico: 'OTRO', observacion: 'corregida', actualizadoEn: 3, fecha: '2026-10-11', codigo: 'VAN07', trabajo: 'VN', operador: 'Renny Cova', creadoPor: 'admin', creadoEn: 1000 }));
   await assertSucceeds(filaVnTa(asAdmin(), 'pagable-1').delete());
+});
+
+// --- Sesión: hay que haber escrito la clave en las últimas 24 horas (7 días si es TECNICO), más 10 minutos de margen ---
+const horasAtras = (h, min = 0) => Math.floor(Date.now() / 1000) - h * 3600 - min * 60;
+const diasAtras = (d, min = 0) => horasAtras(d * 24, min);
+const conInicioDeSesion = (uid, authTime) => testEnv.authenticatedContext(uid, { auth_time: authTime }).firestore();
+const perfilPropio = (db, uid) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('users').doc(uid);
+
+await check('sesión: con el inicio de sesión de hace 23 horas todo sigue funcionando (oficina y técnico)', async () => {
+  for (const uid of ['usuario-uid', 'tecnico-uid']) {
+    await assertSucceeds(perfilPropio(conInicioDeSesion(uid, horasAtras(23)), uid).get());
+    await assertSucceeds(formasPagoPath(conInicioDeSesion(uid, horasAtras(23))).get());
+  }
+});
+await check('sesión: dentro del margen (24 h y 5 min) aún se permite, para que la app cierre la sesión primero', async () => {
+  await assertSucceeds(formasPagoPath(conInicioDeSesion('usuario-uid', horasAtras(24, 5))).get());
+});
+await check('sesión: pasadas 24 h y 10 min se rechaza todo a la oficina, también el perfil propio y las lecturas', async () => {
+  await assertFails(perfilPropio(conInicioDeSesion('usuario-uid', horasAtras(24, 15)), 'usuario-uid').get());
+  await assertFails(formasPagoPath(conInicioDeSesion('usuario-uid', horasAtras(25))).get());
+  await assertFails(ticketPath(conInicioDeSesion('admin-uid', horasAtras(48)), 'ticket-de-reinel').get());
+});
+await check('sesión: una sesión vencida no puede escribir (ni siquiera el ADMIN)', async () => {
+  await assertFails(conInicioDeSesion('admin-uid', horasAtras(30)).collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('config').doc('prueba-sesion').set({ x: 1 }));
+});
+await check('sesión técnico: con 3 y con 6 días desde el inicio de sesión sigue funcionando (lo suyo y su token de push)', async () => {
+  for (const dias of [3, 6]) {
+    const db = conInicioDeSesion('tecnico-uid', diasAtras(dias));
+    await assertSucceeds(perfilPropio(db, 'tecnico-uid').get());
+    await assertSucceeds(formasPagoPath(db).get());
+    await assertSucceeds(perfilPropio(db, 'tecnico-uid').update({ fcmTokens: ['token-de-prueba'] }));
+  }
+});
+await check('sesión técnico: pasados 7 días y 10 min se rechaza todo, también lo suyo', async () => {
+  const db = conInicioDeSesion('tecnico-uid', diasAtras(7, 15));
+  await assertFails(perfilPropio(db, 'tecnico-uid').get());
+  await assertFails(formasPagoPath(db).get());
+  await assertFails(perfilPropio(db, 'tecnico-uid').update({ fcmTokens: ['otro-token'] }));
+});
+await check('sesión: solo el técnico tiene los 7 días; con 3 días de sesión la oficina ya no entra', async () => {
+  for (const uid of ['admin-uid', 'usuario-uid', 'almacen-uid']) {
+    await assertFails(formasPagoPath(conInicioDeSesion(uid, diasAtras(3))).get());
+    await assertFails(perfilPropio(conInicioDeSesion(uid, diasAtras(3)), uid).get());
+  }
+});
+await check('sesión: los 7 días del técnico no le dan acceso al perfil de otro', async () => {
+  await assertFails(perfilPropio(conInicioDeSesion('tecnico-uid', diasAtras(3)), 'admin-uid').get());
+});
+await check('sesión: un token sin hora de inicio de sesión se rechaza', async () => {
+  await assertFails(testEnv.authenticatedContext('tecnico-uid', { auth_time: undefined }).firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('config').doc('formasPago').get());
+});
+await check('sesión: al volver a iniciar sesión (hora nueva) vuelve a funcionar', async () => {
+  await assertSucceeds(formasPagoPath(conInicioDeSesion('usuario-uid', horasAtras(0))).get());
 });
 
 await testEnv.cleanup();

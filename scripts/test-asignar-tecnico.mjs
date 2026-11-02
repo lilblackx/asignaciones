@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { conSesionReciente } from './sesion-prueba.mjs';
 import { guardarConNumeracion, obtenerCodigoMes } from '../src/utils/correlativo.js';
 
 const APP_ID = `test-asignar-${Date.now()}`;
@@ -12,6 +13,7 @@ const testEnv = await initializeTestEnvironment({
   projectId: 'seguimientons-f2026-rules-test',
   firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 },
 });
+conSesionReciente(testEnv);
 
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data')

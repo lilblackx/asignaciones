@@ -3,8 +3,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // La sesión dura 24 horas desde que la persona escribió su clave por última vez, y 7 días si es TECNICO (en campo y sin datos sensibles).
+    // `auth_time` es ese momento (en segundos): refrescar el token no lo cambia. Cada plazo lleva 10 minutos de margen (24 h = 87.000 s, 7 días = 605.400 s)
+    // para que la app cierre la sesión ella sola, con un aviso, antes de que las reglas empiecen a rechazar. Mantener igual que src/utils/sesion.js.
+    function inicioDeSesionDentroDe(segundos) {
+      return request.auth.token.auth_time > request.time.toMillis() / 1000 - segundos;
+    }
+
+    // Con sesión y dentro del plazo más largo (el del técnico). El plazo exacto del rol lo decide sesionVigente().
     function isSignedIn() {
-      return request.auth != null;
+      return request.auth != null && inicioDeSesionDentroDe(605400);
+    }
+
+    // El plazo de su rol: 24 h para todos; hasta 7 días solo si el perfil es TECNICO (la lectura del perfil es la misma que ya hacen las reglas de rol).
+    function sesionVigente(appId) {
+      return isSignedIn()
+        && (inicioDeSesionDentroDe(87000)
+          || (exists(profilePath(appId)) && get(profilePath(appId)).data.role == 'TECNICO'));
     }
 
     function profilePath(appId) {
@@ -12,7 +27,7 @@ service cloud.firestore {
     }
 
     function isActiveUser(appId) {
-      return isSignedIn()
+      return sesionVigente(appId)
         && exists(profilePath(appId))
         && get(profilePath(appId)).data.disabled != true;
     }
@@ -105,14 +120,14 @@ service cloud.firestore {
     }
 
     match /artifacts/{appId}/public/data/users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || isAdminUser(appId));
+      allow get: if (request.auth != null && request.auth.uid == userId && sesionVigente(appId)) || isAdminUser(appId);
       allow list: if isAdminUser(appId);
       allow create, delete: if isAdminUser(appId);
       // Registro de token de push: cada usuario puede agregar el suyo a su
       // propio perfil (arrayUnion), sin tocar ningún otro campo.
       allow update: if isAdminUser(appId)
         || (
-          isSignedIn() && request.auth.uid == userId
+          request.auth != null && request.auth.uid == userId && sesionVigente(appId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens'])
         );
     }
