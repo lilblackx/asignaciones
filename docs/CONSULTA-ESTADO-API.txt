@@ -1,0 +1,240 @@
+API DE CONSULTA DEL ESTADO DE UNA SOLICITUD
+Network Speed C.A.
+Version 1.0 - noviembre 2026
+==============================================================================
+
+DESCRIPCION
+
+Permite que un cliente vea en que va su instalacion o su servicio tecnico
+escribiendo solo su cedula. Devuelve las solicitudes de esa cedula con su
+estado, el tipo de trabajo, el tecnico y las fechas. No lleva usuario ni
+clave: lo protegen la verificacion de Cloudflare Turnstile, un tope de
+consultas y la poca informacion que devuelve (ver seccion 7).
+
+Network Speed tambien le entrega un formulario ya hecho, con comentarios y
+listo para pegar en una pagina de WordPress (archivo consulta-estado-web.html).
+Puede usarlo tal cual o tomarlo de ejemplo. Si arma el suyo propio, este
+documento es toda la informacion que necesita.
+
+
+1. DATOS DE CONEXION
+------------------------------------------------------------------------------
+
+URL:             https://asignaciones-notify.soportenetworkspeed.workers.dev/consulta/estado
+Metodo:          POST
+Encabezado:      Content-Type: application/json
+Autenticacion:   no lleva llave ni usuario, pero cada consulta debe incluir
+                 el token de verificacion de Cloudflare Turnstile (ver 2).
+Formato:         JSON, UTF-8, tanto la peticion como la respuesta.
+Navegador:       SI se puede llamar desde un navegador, pero solo desde las
+                 paginas autorizadas (CORS):
+                   https://networkspeed.com.ve
+                   https://www.networkspeed.com.ve
+                   https://pagos.networkspeed.com.ve
+                 Si su pagina esta en otra direccion, pidala para agregarla.
+                 La consulta esta pensada para hacerse desde la pagina, con
+                 la persona presente: no se puede llamar desde un servidor
+                 porque el token de Turnstile solo lo genera el navegador.
+
+
+2. LO QUE SE ENVIA
+------------------------------------------------------------------------------
+
+{
+  "cedula": "V-12.345.678",
+  "turnstile": "token-del-widget"
+}
+
+cedula     Obligatorio. Cadena. De 6 a 9 digitos. Se acepta con o sin puntos
+           y con o sin la letra de documento (V, E, J, G) y, en un RIF, con
+           su digito verificador. Todas estas son validas y equivalentes:
+             "12345678"   "12.345.678"   "V-12345678"   "J-12345678-9"
+           Cualquier otra cosa (letras, menos de 6 o mas de 9 digitos,
+           numeros con ceros a la izquierda como un telefono) devuelve 400.
+
+turnstile  Obligatorio. Token de Cloudflare Turnstile; sin el, o con uno
+           falso, vencido o ya usado, responde 403. Lo entrega el widget de
+           Turnstile al terminar su verificacion en la pagina:
+             - Clave publica del sitio (Site key): 0x4AAAAAAFxLV6i_nYzFrsuJ
+             - Cargue https://challenges.cloudflare.com/turnstile/v0/api.js
+               y dibuje el widget con esa clave (modo oscuro si la pagina
+               es oscura). La pagina donde lo dibuje debe estar en la lista
+               de dominios del widget en Cloudflare; si no esta, avise.
+             - Cada token sirve UNA sola consulta: despues de cada envio,
+               reinicie el widget (turnstile.reset) para obtener otro.
+           La clave secreta nunca va en la pagina; solo la tiene el servidor de Network Speed.
+
+
+3. LO QUE RESPONDE (codigo 200)
+------------------------------------------------------------------------------
+
+{
+  "solicitudes": [
+    {
+      "codigo": "AO9",
+      "tipo": "Avería",
+      "estado": "RECIBIDA",
+      "etiqueta": "Recibida, estamos asignando un técnico",
+      "tecnico": "",
+      "solicitadaEn": "2026-11-05",
+      "programadaPara": "",
+      "cerradaEn": ""
+    },
+    {
+      "codigo": "IO5",
+      "tipo": "Instalación",
+      "estado": "ASIGNADA",
+      "etiqueta": "Técnico asignado",
+      "tecnico": "Gerardo Molero",
+      "solicitadaEn": "2026-11-04",
+      "programadaPara": "2026-11-08",
+      "cerradaEn": ""
+    },
+    {
+      "codigo": "IO1",
+      "tipo": "Instalación",
+      "estado": "COMPLETADA",
+      "etiqueta": "Completada",
+      "tecnico": "Ana",
+      "solicitadaEn": "2026-10-24",
+      "programadaPara": "",
+      "cerradaEn": "2026-10-26"
+    }
+  ],
+  "diasDeConsulta": 30
+}
+
+Si la cedula no tiene solicitudes, responde 200 con una lista vacia:
+  { "solicitudes": [], "diasDeConsulta": 30 }
+Es a proposito que "no es cliente" y "no tiene solicitudes" respondan igual:
+asi nadie puede averiguar si una persona es cliente. Muestre en ese caso un
+mensaje como "No encontramos solicitudes con esa cedula en los ultimos 30
+dias" (use diasDeConsulta).
+
+Orden: la lista ya viene ordenada para mostrarse tal cual. Primero las
+abiertas (la mas reciente antes) y despues las cerradas (completadas o
+canceladas), tambien de la mas reciente a la mas antigua.
+
+Campos de cada solicitud (todas son cadenas; "" significa "no aplica"):
+
+codigo          Codigo de la orden (IO5, AO9...). El cliente puede citarlo
+                cuando hable con la empresa.
+tipo            Tipo de trabajo, ya redactado para el cliente: Instalación,
+                Avería, Reconexión, Mudanza, Garantía, Revisión de señal,
+                Retiro de equipo, Cambio de equipo, Visita técnica o Servicio
+                técnico.
+estado          Clave estable para la logica y los colores (ver abajo).
+etiqueta        Texto del estado listo para mostrar al cliente. Muestre este
+                texto, no la clave.
+tecnico         Nombre del tecnico (ya con mayusculas y minusculas
+                correctas). Viene vacio si todavia no hay uno asignado y
+                tambien en las canceladas.
+solicitadaEn    Dia en que se solicito, AAAA-MM-DD, hora de Venezuela.
+programadaPara  Dia programado, AAAA-MM-DD. Solo viene en PROGRAMADA y
+                ASIGNADA (si tiene fecha); en los demas casos "".
+cerradaEn       Dia en que se completo o se cancelo, AAAA-MM-DD. Solo en
+                COMPLETADA y CANCELADA.
+diasDeConsulta  (fuera de la lista) Cuantos dias despues de cerrada se sigue
+                mostrando una solicitud: 30.
+
+Valores de "estado", con su etiqueta y el color que usa el formulario:
+
+  RECIBIDA     "Recibida, estamos asignando un técnico"   ambar (en espera)
+  PROGRAMADA   "Programada"                               ambar (en espera)
+  ASIGNADA     "Técnico asignado"                         ambar (en espera)
+  EN_CAMINO    "Técnico en camino"                        rojo  (en curso)
+  EN_SITIO     "Técnico en el sitio"                      rojo  (en curso)
+  EN_REVISION  "Trabajo realizado, en verificación"       rojo  (en curso)
+  COMPLETADA   "Completada"                               verde (terminada)
+  CANCELADA    "Cancelada"                                gris
+
+Las fechas se muestran como DD/MM/AAAA (el formulario ya las convierte).
+
+
+4. ERRORES
+------------------------------------------------------------------------------
+
+Todos devuelven { "error": "mensaje listo para mostrar al cliente" }.
+
+400  Cedula invalida o cuerpo que no es JSON.
+403  Falta la verificacion Turnstile, o fallo o ya se uso ese token.
+405  Metodo distinto de POST (OPTIONS se usa para la consulta previa del
+     navegador y responde 204).
+429  Mas de 10 consultas por minuto desde la misma direccion IP. Trae el
+     encabezado Retry-After: 60 (segundos).
+503  Se alcanzo el tope de consultas del dia (500). Se restablece al dia
+     siguiente (hora de Venezuela). Trae Retry-After: 3600. Las cedulas
+     consultadas hace menos de 5 minutos se siguen respondiendo.
+500  Falla interna. Reintentar en unos minutos.
+
+Muestre siempre el campo "error" tal como llega. Si no hay respuesta de red,
+muestre un mensaje propio ("Revisa tu internet e intenta de nuevo").
+
+
+5. EJEMPLOS
+------------------------------------------------------------------------------
+
+JavaScript (navegador):
+
+  fetch('https://asignaciones-notify.soportenetworkspeed.workers.dev/consulta/estado', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cedula: '12.345.678', turnstile: tokenDelWidget }),
+  })
+    .then((res) => res.json().then((datos) => ({ ok: res.ok, datos })))
+    .then(({ ok, datos }) => {
+      if (!ok) return mostrarError(datos.error);
+      datos.solicitudes.forEach(dibujarSolicitud);
+    });
+
+curl (solo para ver la forma de la peticion: respondera 403 porque la linea
+de comandos no puede obtener el token de Turnstile):
+
+  curl -X POST https://asignaciones-notify.soportenetworkspeed.workers.dev/consulta/estado \
+    -H "Content-Type: application/json" \
+    -d '{"cedula":"12345678"}'
+
+
+6. LIMITES Y COPIA (lo que debe saber)
+------------------------------------------------------------------------------
+
+  - Maximo 10 consultas por minuto por IP (429).
+  - Maximo 500 consultas por dia en total que lleguen a la base de datos
+    (503 al pasarlo). No lo gaste con pruebas automaticas ni con recargas.
+  - Copia de 5 minutos por cedula: si la misma cedula se consulta otra vez
+    dentro de 5 minutos, se responde lo mismo sin volver a la base. Un
+    cambio de estado puede tardar hasta 5 minutos en verse.
+  - La respuesta lleva Cache-Control: no-store. No la guarde en cache ni la
+    registre: son datos de un cliente.
+  - Una solicitud ya cerrada se muestra hasta 30 dias despues de cerrada. Las
+    abiertas se muestran siempre, sin importar su antiguedad.
+  - Limitacion conocida: las averias terminadas (que no sean por perdida de
+    senal) dejan de verse cuando la empresa hace su cierre del dia. Las
+    instalaciones si se ven los 30 dias.
+
+
+7. PRIVACIDAD Y RECOMENDACIONES PARA SU PAGINA
+------------------------------------------------------------------------------
+
+  - La cedula no es un secreto, por eso la respuesta es deliberadamente
+    pobre: nunca trae el nombre del cliente, su direccion, su telefono, el
+    cobro, seriales de equipos ni el motivo de una cancelacion. Lo unico
+    personal que muestra es el nombre del tecnico.
+  - Escriba siempre lo que llega con textContent (o su equivalente), nunca
+    con innerHTML: ningun texto del servidor debe interpretarse como HTML.
+  - La consulta debe ir por POST (como esta) para que la cedula no quede en
+    la direccion, en el historial del navegador ni en registros.
+  - No consulte automaticamente al cargar la pagina ni en bucle: cada
+    consulta cuenta para los limites. Consulte solo cuando la persona pulse el
+    boton.
+  - Deshabilite el boton mientras espera la respuesta (evita doble envio).
+  - Pruebe en celular: la mayoria de los clientes entrara desde el telefono.
+
+
+8. CONTACTO
+------------------------------------------------------------------------------
+
+Para agregar una direccion de pagina a la lista autorizada (CORS), agregar un
+dominio al widget de Turnstile, cambiar los limites o reportar un error en
+la respuesta, escriba al equipo de operaciones de Network Speed e indique la
+direccion de su pagina, la hora y, si es posible, la cedula usada en la prueba.

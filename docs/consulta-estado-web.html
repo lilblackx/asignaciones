@@ -1,0 +1,195 @@
+<!--
+  =====================================================================================================================
+  CONSULTA DEL ESTADO DE LA SOLICITUD (bloque para pegar en la web de la empresa)
+  =====================================================================================================================
+  Qué hace: el cliente escribe su cédula, la web consulta al Worker de la empresa (POST /consulta/estado) y muestra sus solicitudes
+  (instalaciones, averías, etc.) con su estado, el técnico y las fechas. La documentación del endpoint está en docs/CONSULTA-ESTADO-API.txt.
+
+  Cómo ponerlo: en la página donde lo quieran (por ejemplo la del botón "Consulta tu solicitud"), agregar un bloque "HTML personalizado" y
+  pegar TODO este archivo. No necesita plugins ni librerías: trae su propio estilo y su propio código.
+
+  Qué hay que revisar antes de pegarlo (están dentro del <script>, al final):
+    - URL_CONSULTA: la dirección del Worker de la empresa. Ya apunta al de producción.
+    - SITIO_TURNSTILE: la clave PÚBLICA ("Site key") del widget de Cloudflare Turnstile. Ya está puesta. La dirección de la página donde se pegue
+      debe estar en los "Hostnames" de ese widget en Cloudflare, y también en CONSULTA_ORIGINS del Worker; si no, el navegador o Cloudflare lo rechazan.
+      Nunca se pone aquí la clave SECRETA (esa vive solo en el Worker).
+
+  Estilo: copia el del Portal del Cliente (tarjeta oscura, campo "Cédula o RIF", botón coral, estados con colores). Es una tarjeta independiente con su
+  propio fondo oscuro, así que se ve igual sobre cualquier página. Todos los estilos empiezan por ".ns-consulta" para no chocar con los del tema de WordPress.
+  Se probó en celular (390 px) y en pantalla de escritorio.
+-->
+<div id="ns-consulta" class="ns-consulta">
+  <!-- Tipografía Roboto, la misma del portal. Si la web ya la carga o prefieren no cargarla, se puede quitar: usa la tipografía del sistema como reserva. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+  <style>
+    /* Colores y medidas en un solo lugar (variables): para cambiar el tono del botón o del fondo basta con editar estas líneas. */
+    .ns-consulta { --ns-fondo: #1a1a1a; --ns-borde: #2e2e2e; --ns-campo: #2a2a2a; --ns-texto: #fff; --ns-suave: #a3a3a3; --ns-coral: #f96060; --ns-rojo: #dc2626;
+      max-width: 26rem; margin: 0 auto; font-family: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ns-texto); }
+    .ns-consulta * { box-sizing: border-box; }
+
+    /* La tarjeta oscura que contiene todo (formulario y resultados). */
+    .ns-consulta .ns-tarjeta { background: var(--ns-fondo); border: 1px solid var(--ns-borde); border-radius: 1.5rem; padding: 2rem 2.125rem; box-shadow: 0 20px 40px rgba(0, 0, 0, .35); }
+    .ns-consulta h3 { margin: 0 0 .25rem; font-size: 1.375rem; font-weight: 700; color: var(--ns-texto); }
+    .ns-consulta .ns-intro { margin: 0 0 1.25rem; font-size: .9rem; color: var(--ns-suave); }
+
+    /* El campo de la cédula. El resalte coral al enfocarlo también sirve de guía para quien navega con teclado. */
+    .ns-consulta label { display: block; margin-bottom: .5rem; font-size: .8125rem; font-weight: 700; color: var(--ns-texto); }
+    .ns-consulta input { width: 100%; min-width: 0; padding: .9rem 1.1rem; font: inherit; font-size: 1rem; font-weight: 500; color: var(--ns-texto); background: var(--ns-campo); border: 1px solid transparent; border-radius: 1rem; }
+    .ns-consulta input::placeholder { color: #737373; }
+    .ns-consulta input:focus { outline: none; border-color: var(--ns-coral); box-shadow: 0 0 0 3px rgba(249, 96, 96, .3); }
+    .ns-consulta .ns-ayuda { margin: .5rem 0 0; font-size: .7rem; color: var(--ns-suave); }
+
+    /* Donde Cloudflare dibuja su verificación (Turnstile), centrada entre el campo y el botón. */
+    .ns-consulta .ns-verificacion { display: flex; justify-content: center; margin-top: 1rem; min-height: 0; }
+
+    /* El botón. Mientras consulta queda deshabilitado (evita enviar dos veces). */
+    .ns-consulta button { width: 100%; margin-top: 1.25rem; padding: .95rem 1.25rem; font: inherit; font-size: 1rem; font-weight: 700; color: #1a1a1a; background: var(--ns-coral); border: 0; border-radius: 1rem; cursor: pointer; min-height: 3rem; }
+    .ns-consulta button:hover { filter: brightness(1.06); }
+    .ns-consulta button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    .ns-consulta button[disabled] { opacity: .65; cursor: wait; }
+
+    /* Mensajes ("Consultando…", "No encontramos solicitudes…", errores). */
+    .ns-consulta .ns-aviso { margin: 1rem 0 0; font-size: .9rem; color: var(--ns-suave); text-align: center; }
+    .ns-consulta .ns-error { color: #fca5a5; }
+
+    /* La lista de solicitudes: una tarjeta por solicitud, separadas del formulario por una línea. */
+    .ns-consulta ul { list-style: none; margin: 1.25rem 0 0; padding: 1.25rem 0 0; border-top: 1px solid var(--ns-borde); display: grid; gap: .75rem; }
+    .ns-consulta li { padding: 1rem 1.125rem; background: #242424; border: 1px solid var(--ns-borde); border-radius: 1rem; }
+    .ns-consulta .ns-cabecera { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; font-size: .8rem; color: var(--ns-suave); }
+
+    /* La etiqueta de estado (como "Servicio activo" del portal): un punto de color más el texto. La clase del color sale del campo "estado" de la respuesta. */
+    .ns-consulta .ns-estado { display: inline-flex; align-items: center; gap: .5rem; margin: .5rem 0 0; padding: .3rem .75rem; font-size: .9rem; font-weight: 700; border-radius: 999px; }
+    .ns-consulta .ns-estado::before { content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; flex: none; }
+    .ns-consulta .ns-e-completada { color: #86efac; background: rgba(34, 197, 94, .16); }                                                  /* verde: terminada */
+    .ns-consulta .ns-e-recibida, .ns-consulta .ns-e-programada, .ns-consulta .ns-e-asignada { color: #fde68a; background: rgba(245, 158, 11, .16); }  /* ámbar: en espera */
+    .ns-consulta .ns-e-en_camino, .ns-consulta .ns-e-en_sitio, .ns-consulta .ns-e-en_revision { color: #fca5a5; background: rgba(220, 38, 38, .22); } /* rojo: en curso */
+    .ns-consulta .ns-e-cancelada { color: #d4d4d4; background: rgba(163, 163, 163, .18); }                                                  /* gris: cancelada */
+    .ns-consulta .ns-detalle { margin: .5rem 0 0; font-size: .875rem; color: #d4d4d4; line-height: 1.45; }
+
+    /* En celulares angostos la tarjeta usa menos relleno para que quepa todo sin desplazarse hacia los lados. */
+    @media (max-width: 420px) { .ns-consulta .ns-tarjeta { padding: 1.5rem 1.25rem; } }
+  </style>
+
+  <div class="ns-tarjeta">
+    <h3>Consulta tu solicitud</h3>
+    <p class="ns-intro">Mira en qué va tu instalación o tu servicio técnico.</p>
+
+    <!-- novalidate: la validación la hace el código de abajo, que da mensajes propios. -->
+    <form id="ns-form" novalidate>
+      <label for="ns-cedula">Cédula o RIF</label>
+      <!-- La cédula se acepta con o sin puntos, con o sin la letra (V, E, J, G): el Worker la normaliza. -->
+      <input id="ns-cedula" name="cedula" type="text" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="Ej: 12345678" required>
+      <p class="ns-ayuda">Solo números, sin la letra V o J</p>
+      <!-- Aquí aparece la verificación de Cloudflare Turnstile (la dibuja el script de abajo). -->
+      <div id="ns-turnstile" class="ns-verificacion"></div>
+      <button type="submit" id="ns-boton">Consultar</button>
+    </form>
+
+    <!-- Aquí se escriben los resultados y los mensajes. role="status" + aria-live: los lectores de pantalla los anuncian cuando cambian. -->
+    <div id="ns-resultado" role="status" aria-live="polite"></div>
+  </div>
+
+  <script>
+  (function () {
+    // ---- Ajustes ----------------------------------------------------------------------------------------------------
+    // Dirección del endpoint de la empresa (ver docs/CONSULTA-ESTADO-API.txt).
+    var URL_CONSULTA = 'https://asignaciones-notify.soportenetworkspeed.workers.dev/consulta/estado';
+    // Clave PÚBLICA de Cloudflare Turnstile. Si se deja vacía, el formulario no muestra la verificación ni manda token
+    // (solo sirve mientras el Worker no tenga activado TURNSTILE_SECRET; con el secreto activo, sin token responde 403).
+    var SITIO_TURNSTILE = '0x4AAAAAAFxLV6i_nYzFrsuJ';
+
+    // ---- Elementos de la página -------------------------------------------------------------------------------------
+    var form = document.getElementById('ns-form');
+    var campo = document.getElementById('ns-cedula');
+    var boton = document.getElementById('ns-boton');
+    var salida = document.getElementById('ns-resultado');
+    // El "pase" que entrega Turnstile cuando la persona pasa la verificación; vale una sola consulta y vence en pocos minutos.
+    var tokenTurnstile = '';
+
+    // ---- Verificación de Cloudflare (Turnstile) -----------------------------------------------------------------------
+    // Se carga su script y se dibuja el widget en #ns-turnstile. Cuando termina, guarda el pase en tokenTurnstile; si vence, lo borra.
+    if (SITIO_TURNSTILE) {
+      var s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true;
+      s.onload = function () {
+        window.turnstile.render('#ns-turnstile', { sitekey: SITIO_TURNSTILE, theme: 'dark', callback: function (t) { tokenTurnstile = t; }, 'expired-callback': function () { tokenTurnstile = ''; } });
+      };
+      document.head.appendChild(s);
+    }
+
+    // ---- Utilidades -------------------------------------------------------------------------------------------------
+    // Crea un elemento con texto. SIEMPRE con textContent: nada de lo que llega del servidor se interpreta como HTML (así no hay forma de inyectar código).
+    function texto(tag, clase, contenido) {
+      var e = document.createElement(tag);
+      if (clase) e.className = clase;
+      e.textContent = contenido;
+      return e;
+    }
+    // "2026-11-05" -> "05/11/2026" (el servidor manda las fechas como AAAA-MM-DD, ya en hora de Venezuela).
+    function fecha(iso) { var p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
+    // Escribe un mensaje en lugar de los resultados anteriores.
+    function aviso(mensaje, esError) { salida.textContent = ''; salida.appendChild(texto('p', 'ns-aviso' + (esError ? ' ns-error' : ''), mensaje)); }
+
+    // La línea de detalle de una solicitud: fecha programada (si está programada o asignada), técnico y fecha de cierre (si ya terminó o se canceló).
+    function detalle(s) {
+      var partes = [];
+      if ((s.estado === 'PROGRAMADA' || s.estado === 'ASIGNADA') && s.programadaPara) partes.push('Fecha programada: ' + fecha(s.programadaPara));
+      if (s.tecnico) partes.push('Técnico: ' + s.tecnico);
+      if (s.cerradaEn) partes.push((s.estado === 'CANCELADA' ? 'Cancelada el ' : 'Completada el ') + fecha(s.cerradaEn));
+      return partes.join(' · ');
+    }
+
+    // ---- Mostrar la respuesta ---------------------------------------------------------------------------------------
+    // El servidor ya manda las solicitudes en el orden en que se deben mostrar (las abiertas primero); aquí solo se dibujan.
+    function mostrar(datos, dias) {
+      var lista = datos.solicitudes || [];
+      if (!lista.length) {
+        // Una cédula sin solicitudes y una que no existe responden igual a propósito: no se revela si alguien es cliente.
+        aviso('No encontramos solicitudes con esa cédula en los últimos ' + (dias || 30) + ' días. Si crees que es un error, escríbenos por WhatsApp.', false);
+        return;
+      }
+      salida.textContent = '';
+      var ul = document.createElement('ul');
+      lista.forEach(function (s) {
+        var li = document.createElement('li');
+        // Línea superior: tipo y código a la izquierda ("Instalación · IO5"), fecha de la solicitud a la derecha.
+        var cab = document.createElement('div');
+        cab.className = 'ns-cabecera';
+        cab.appendChild(texto('span', '', s.tipo + (s.codigo ? ' · ' + s.codigo : '')));
+        if (s.solicitadaEn) cab.appendChild(texto('span', '', 'Solicitada el ' + fecha(s.solicitadaEn)));
+        li.appendChild(cab);
+        // La etiqueta de estado: el texto es "etiqueta" (ya viene redactado para el cliente) y el color sale de la clave "estado".
+        li.appendChild(texto('p', 'ns-estado ns-e-' + String(s.estado).toLowerCase().replace(/[^a-z_]/g, ''), s.etiqueta));
+        var d = detalle(s);
+        if (d) li.appendChild(texto('p', 'ns-detalle', d));
+        ul.appendChild(li);
+      });
+      salida.appendChild(ul);
+    }
+
+    // ---- Enviar la consulta -----------------------------------------------------------------------------------------
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var cedula = campo.value.trim();
+      if (!cedula) { aviso('Escribe tu cédula.', true); return; }
+      // Con Turnstile activo no se puede consultar hasta que la verificación termine.
+      if (SITIO_TURNSTILE && !tokenTurnstile) { aviso('Espera un momento a que termine la verificación y vuelve a intentar.', true); return; }
+      boton.disabled = true;
+      aviso('Consultando…', false);
+      // POST con JSON: { cedula, turnstile }. Va por POST (no por la dirección) para que la cédula no quede en registros ni en el historial del navegador.
+      fetch(URL_CONSULTA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cedula: cedula, turnstile: tokenTurnstile }) })
+        // Se lee el cuerpo aunque el código no sea 200: los errores (400, 403, 429, 503…) traen { error: "mensaje listo para mostrar" }.
+        .then(function (res) { return res.json().catch(function () { return {}; }).then(function (datos) { return { ok: res.ok, datos: datos }; }); })
+        .then(function (r) { if (r.ok) mostrar(r.datos, r.datos.diasDeConsulta); else aviso(r.datos.error || 'No pudimos consultar en este momento. Intenta de nuevo.', true); })
+        // Sin internet o el servidor no respondió.
+        .catch(function () { aviso('No pudimos conectarnos. Revisa tu internet e intenta de nuevo.', true); })
+        .then(function () {
+          boton.disabled = false;
+          // El pase de Turnstile sirve una sola vez: se pide uno nuevo para la siguiente consulta.
+          if (SITIO_TURNSTILE && window.turnstile) { tokenTurnstile = ''; window.turnstile.reset('#ns-turnstile'); }
+        });
+    });
+  })();
+  </script>
+</div>
