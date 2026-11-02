@@ -9,12 +9,13 @@ import DetalleOrdenFinanzas from '../finanzas/DetalleOrdenFinanzas';
 import FilaRevision from './FilaRevision';
 import ResumenCifras from '../finanzas/ResumenCifras';
 import { BOTON, CHIP, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../finanzas/estilos';
-import { corteTodaviaNoLlega, textoFechaCorte, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoPagable } from '../../utils/finanzas';
+import { DIAS_POR_PAGAR, corteTodaviaNoLlega, textoFechaCorte, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoPagable, rangoPorRevisar } from '../../utils/finanzas';
 import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, garantiasPorResolver, itemsParaRevisar, resumenRevision, revisar } from '../../utils/revisionPagos';
-import { PERIODOS, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
+import { PERIODOS, diaLegible, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
 import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { diaDe } from '../../utils/totalesMes';
 import { useRevisionPagos } from '../../hooks/useRevisionPagos';
+import { useCargarHastaCubrir } from '../../hooks/useCargarHastaCubrir';
 import { useTasaDolar } from '../../hooks/useTasaDolar';
 import Chip from '../Chip';
 import Boton from '../Boton';
@@ -25,7 +26,8 @@ import RangoFechas from '../RangoFechas';
 // aparece. Respeta la misma fecha de corte de Finanzas (lo anterior no se cuenta). Las correcciones de técnico y de concepto valen para Finanzas aunque la orden esté en un cierre.
 
 export default function RevisionPagosModal({ technicians, tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onActualizar, usuario, firebaseUser, setToastMsg, onClose, enPagina = false }) {
-  const [periodo, setPeriodo] = useState('7_DIAS');
+  // Abre en "Pendientes": las órdenes de los últimos 35 días (con tope en el corte), para que ninguna quede sin revisar por no haber elegido fechas.
+  const [periodo, setPeriodo] = useState('POR_REVISAR');
   const [hoy] = useState(() => diaDe(Date.now()));
   const [personalizado, setPersonalizado] = useState(() => ({ desde: rangoDe('7_DIAS').desde, hasta: hoy }));
   const [tecnico, setTecnico] = useState('');
@@ -33,9 +35,11 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const [detalle, setDetalle] = useState(null);
   const [aprobando, setAprobando] = useState(null);
 
-  const rango = useMemo(() => rangoDe(periodo, personalizado), [periodo, personalizado]);
+  const rango = useMemo(() => (periodo === 'POR_REVISAR' ? rangoPorRevisar(Date.parse(`${hoy}T12:00:00-04:00`)) : rangoDe(periodo, personalizado)), [periodo, personalizado, hoy]);
   const rangoRevision = useMemo(() => rangoPagable(rango), [rango]);
   const datos = useRevisionPagos({ firebaseUser, activo: true, rango, setToastMsg });
+  // "Pendientes" tiene que ver todas las órdenes de la ventana: carga los cierres anteriores hasta cubrirla.
+  useCargarHastaCubrir({ activo: periodo === 'POR_REVISAR', reportes: reports, hayMas: hasMoreReports, cargando: isLoadingReports, onCargarMas: onLoadMoreReports, desdeDia: rangoRevision.desde });
   const bcv = useTasaDolar();
   const tasa = bcv.tasa;
 
@@ -117,8 +121,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           <AvisoHistorial hasMoreReports={hasMoreReports} isLoadingReports={isLoadingReports} onLoadMoreReports={onLoadMoreReports} />
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-            <div role="group" aria-label="Periodo" className="grid grid-cols-4 gap-2 w-full sm:flex sm:w-auto">
-              {PERIODOS.map(([id, texto]) => (
+            <div role="group" aria-label="Periodo" className="grid grid-cols-3 gap-2 w-full sm:flex sm:w-auto">
+              {[['POR_REVISAR', 'Pendientes'], ...PERIODOS].map(([id, texto]) => (
                 <Chip activo={periodo === id} tamano="angosto" key={id} type="button" onClick={() => setPeriodo(id)}>{texto}</Chip>
               ))}
             </div>
@@ -132,6 +136,12 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
               <button type="button" onClick={onActualizar} disabled={isLoadingReports} className={BOTON}><RefreshCw className={`w-4 h-4 ${isLoadingReports ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar</button>
             )}
           </div>
+
+          {periodo === 'POR_REVISAR' && (
+            <p role="status" className={`${TEXTO_SUAVE} rounded-lg border border-zinc-400 dark:border-zinc-700 bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
+              Pendientes muestra las órdenes de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
+            </p>
+          )}
 
           <ResumenCifras
             items={ESTADOS_REVISION.map((e) => ({ clave: e, etiqueta: e === 'PENDIENTE' ? 'Pendientes' : `${ETIQUETA_REVISION[e]}s`, valor: resumen[e].cantidad, detalle: dolares(resumen[e].total) }))}

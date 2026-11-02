@@ -62,10 +62,12 @@ export const textoFechaCorte = (corte = FECHA_CORTE) => {
 
 // El periodo elegido sin los días anteriores a la fecha de corte; si todo el periodo es anterior, queda vacío (desde mayor que hasta).
 export const rangoPagable = (rango, corte = FECHA_CORTE) => ({ desde: corte && rango.desde < corte ? corte : rango.desde, hasta: rango.hasta });
-// "Por pagar", el periodo con que abre Finanzas: lo aprobado y sin pagar de los últimos DIAS_POR_PAGAR días (hoy incluido), con tope en la fecha de corte. Es un límite a propósito: la
-// revisión y los pagos se leen por día, y leer todo desde el corte costaría más lecturas cada mes. Lo anterior se busca con un Rango.
+// "Por pagar", el periodo con que abre Finanzas, y "Por revisar", el de Revisión de órdenes: los últimos DIAS_POR_PAGAR días (hoy incluido), con tope en la fecha de corte, para ver lo aprobado
+// y sin pagar (Finanzas) o lo que falta por revisar (Revisión) sin elegir fechas. Es un límite a propósito: la revisión y los pagos se leen por día, y leer todo desde el corte costaría más lecturas
+// cada mes. Lo anterior se busca con un Rango.
 export const DIAS_POR_PAGAR = 35;
 export const rangoPorPagar = (ahoraMs = Date.now()) => ({ desde: diaDe(ahoraMs - (DIAS_POR_PAGAR - 1) * 24 * 60 * 60 * 1000), hasta: diaDe(ahoraMs) });
+export const rangoPorRevisar = rangoPorPagar;
 
 // Órdenes de antes del corte que, por esta vez, sí se revisan y se pagan (se terminaron antes del 26/10/2026 y quedaron sin pagar). Solo se ofrecen
 // cuando el periodo elegido incluye su día: la revisión y los pagos se leen por día, así que fuera de ese periodo no se vería si ya se aprobaron o pagaron.

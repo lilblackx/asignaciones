@@ -1,8 +1,9 @@
 // Prueba las cuentas del módulo de Finanzas (src/utils/finanzas.js): qué órdenes se le pagan al técnico, el total
 // por técnico con las tarifas, que una orden ya pagada no se cobre dos veces y cómo se arma un pago. No necesita el emulador.
 // Uso: `npm run test:finanzas`.
+import { ventanaCubierta } from '../src/hooks/useCargarHastaCubrir.js';
 import {
-  CONCEPTOS_PAGO, DIAS_POR_PAGAR, rangoPorPagar, FECHA_CORTE, textoFechaCorte, corteTodaviaNoLlega, rangoPagable, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
+  CONCEPTOS_PAGO, DIAS_POR_PAGAR, rangoPorPagar, rangoPorRevisar, FECHA_CORTE, textoFechaCorte, corteTodaviaNoLlega, rangoPagable, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
 } from '../src/utils/finanzas.js';
 import { ROLES, etiquetaRol } from '../src/constants.js';
 
@@ -226,7 +227,12 @@ check('Por pagar: a las 23:30 de Caracas sigue siendo el mismo día', rangoPorPa
 check('un periodo que cruza el corte empieza en el corte', rangoPagable({ desde: '2026-10-15', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-26', hasta: '2026-10-28' });
 check('un periodo posterior al corte no cambia', rangoPagable({ desde: '2026-10-27', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-27', hasta: '2026-10-28' });
 const antesDelCorte = rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }, '2026-10-26');
+check('Por revisar usa la misma ventana de 35 días que Por pagar', rangoPorRevisar(ahoraPP), rangoPorPagar(ahoraPP));
 check('un periodo anterior al corte queda vacío: ninguna orden ni fila se cuenta', [antesDelCorte.desde > antesDelCorte.hasta, ordenesPagables([averiaCobrada], antesDelCorte, { registros: [vnConTecnico] }).length], [true, 0]);
+const diaMs = (d, h = 12) => Date.parse(`${d}T${String(h).padStart(2, '0')}:00:00-04:00`);
+check('ventana cubierta: el reporte cargado más antiguo es de ese día o anterior', [ventanaCubierta([{ createdAt: diaMs('2026-10-27') }, { createdAt: diaMs('2026-10-25') }], '2026-10-26'), ventanaCubierta([{ createdAt: diaMs('2026-10-26', 0) }], '2026-10-26')], [true, true]);
+check('ventana sin cubrir: el reporte cargado más antiguo es posterior al primer día', ventanaCubierta([{ createdAt: diaMs('2026-10-30') }, { createdAt: diaMs('2026-11-01') }], '2026-10-26'), false);
+check('ventana sin reportes cargados no está cubierta, y sin día no hay nada que cubrir', [ventanaCubierta([], '2026-10-26'), ventanaCubierta([{ createdAt: diaMs('2026-11-01') }], '')], [false, true]);
 check('con el corte puesto en el rango, las órdenes de antes no cuentan y las de después sí', [ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-14')).length, ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-15')).length], [1, 0]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
