@@ -54,7 +54,7 @@ function Seccion({ titulo, nota, children }) {
   );
 }
 
-export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adelantos, descuentos = [], ajustes = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onDescuento, onVerOrden, onAnularPago, onAnularAdelanto, onAnularDescuento, onVolver }) {
+export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, pagos, adelantos, descuentos = [], ajustes = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onDescuento, onVerOrden, onAnularPago, onAnularAdelanto, onAnularDescuento, onVolver }) {
   const sinTarifa = conceptosSinTarifa(fila, tarifas);
   // Los descuentos que salen de esa orden (garantías de otro técnico por las que se le descuenta algo) y todavía no entraron en un pago.
   const descuentosDe = (item) => ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave && saldoAdelanto(a) > 0);
@@ -92,7 +92,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, pagos, adel
           <h2 className="text-lg font-bold text-zinc-900 dark:text-white break-words">{fila.tecnico}</h2>
           <span className={`${CHIP} ${estado.clase}`}>{estado.texto}</span>
         </div>
-        <p className={`${TEXTO_SUAVE} mt-1`}>{etiquetaRango(rango)}</p>
+        <p className={`${TEXTO_SUAVE} mt-1`}>{etiqueta || etiquetaRango(rango)}</p>
       </div>
 
       <div className="pb-1">

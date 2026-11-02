@@ -115,6 +115,10 @@ check('sin técnico no se paga', armarPago(filas.find((f) => f.tecnico === SIN_T
 check('sin tarifas el total es 0 y no se paga', armarPago(resumenPagos(items, tarifasCompletas({}), new Set())[0], rango, tarifasCompletas({}), { por: 'fina', ahora }).error !== undefined, true);
 check('sin órdenes pendientes no se paga', armarPago({ ...gerardo, pendientes: [] }, rango, tarifas, { por: 'fina', ahora }).error !== undefined, true);
 check('demasiadas órdenes para un lote se rechazan', armarPago({ ...gerardo, pendientes: Array.from({ length: 451 }, () => gerardo.pendientes[0]) }, rango, tarifas, { por: 'fina', ahora }).error !== undefined, true);
+check('cada orden pagada marca su revisión: ya no está pendiente de pago y guarda el pago', [pago.revisiones.length === pago.ordenes.length, pago.revisiones.every((r, i) => r.id === pago.ordenes[i].id && r.datos.pendientePago === false && r.datos.pagoId === pago.pagoId), pago.revisiones[0].datos], [true, true, { pendientePago: false, pagoId: pago.pagoId }]);
+const unaOrden = gerardo.pendientes[0];
+const conN = (n) => armarPago({ ...gerardo, pendientes: Array.from({ length: n }, () => unaOrden) }, rango, tarifas, { por: 'fina', ahora });
+check('el pago, sus órdenes y la marca de cada revisión caben en un lote de 500: 249 órdenes sí (499 escrituras), 250 no (501)', [conN(249).error, conN(250).error !== undefined], [undefined, true]);
 check('el id del pago no repite entre técnicos ni instantes', new Set([pago.pagoId, armarPago(filas.find((f) => f.tecnico === 'LUIS'), rango, tarifas, { por: 'fina', ahora }).pagoId, armarPago(gerardo, rango, tarifas, { por: 'fina', ahora: ahora + 1 }).pagoId]).size, 3);
 
 // --- Tarifas escritas a mano ---
@@ -223,16 +227,16 @@ const ahoraPP = Date.parse('2026-11-02T15:00:00-04:00');
 check('Por pagar: los últimos 35 días con hoy incluido', [DIAS_POR_PAGAR, rangoPorPagar(ahoraPP)], [35, { desde: '2026-09-29', hasta: '2026-11-02' }]);
 check('Por pagar: la orden del 26/10 queda dentro (los 7 días de antes la dejaban fuera) y el corte sigue recortando lo anterior al 26/10',
   [rangoPorPagar(ahoraPP).desde <= '2026-10-26', rangoPagable(rangoPorPagar(ahoraPP))], [true, { desde: '2026-10-26', hasta: '2026-11-02' }]);
-check('Por pagar: a las 23:30 de Caracas sigue siendo el mismo día', rangoPorPagar(Date.parse('2026-11-02T23:30:00-04:00')).hasta, '2026-11-02');
-check('un periodo que cruza el corte empieza en el corte', rangoPagable({ desde: '2026-10-15', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-26', hasta: '2026-10-28' });
-check('un periodo posterior al corte no cambia', rangoPagable({ desde: '2026-10-27', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-27', hasta: '2026-10-28' });
-const antesDelCorte = rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }, '2026-10-26');
 check('Por revisar usa la misma ventana de 35 días que Por pagar', rangoPorRevisar(ahoraPP), rangoPorPagar(ahoraPP));
-check('un periodo anterior al corte queda vacío: ninguna orden ni fila se cuenta', [antesDelCorte.desde > antesDelCorte.hasta, ordenesPagables([averiaCobrada], antesDelCorte, { registros: [vnConTecnico] }).length], [true, 0]);
+check('Por pagar: a las 23:30 de Caracas sigue siendo el mismo día', rangoPorPagar(Date.parse('2026-11-02T23:30:00-04:00')).hasta, '2026-11-02');
 const diaMs = (d, h = 12) => Date.parse(`${d}T${String(h).padStart(2, '0')}:00:00-04:00`);
 check('ventana cubierta: el reporte cargado más antiguo es de ese día o anterior', [ventanaCubierta([{ createdAt: diaMs('2026-10-27') }, { createdAt: diaMs('2026-10-25') }], '2026-10-26'), ventanaCubierta([{ createdAt: diaMs('2026-10-26', 0) }], '2026-10-26')], [true, true]);
 check('ventana sin cubrir: el reporte cargado más antiguo es posterior al primer día', ventanaCubierta([{ createdAt: diaMs('2026-10-30') }, { createdAt: diaMs('2026-11-01') }], '2026-10-26'), false);
 check('ventana sin reportes cargados no está cubierta, y sin día no hay nada que cubrir', [ventanaCubierta([], '2026-10-26'), ventanaCubierta([{ createdAt: diaMs('2026-11-01') }], '')], [false, true]);
+check('un periodo que cruza el corte empieza en el corte', rangoPagable({ desde: '2026-10-15', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-26', hasta: '2026-10-28' });
+check('un periodo posterior al corte no cambia', rangoPagable({ desde: '2026-10-27', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-27', hasta: '2026-10-28' });
+const antesDelCorte = rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }, '2026-10-26');
+check('un periodo anterior al corte queda vacío: ninguna orden ni fila se cuenta', [antesDelCorte.desde > antesDelCorte.hasta, ordenesPagables([averiaCobrada], antesDelCorte, { registros: [vnConTecnico] }).length], [true, 0]);
 check('con el corte puesto en el rango, las órdenes de antes no cuentan y las de después sí', [ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-14')).length, ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-15')).length], [1, 0]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }

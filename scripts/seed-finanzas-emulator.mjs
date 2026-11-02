@@ -161,8 +161,10 @@ const reinel = sinPagar.filter((i) => i.tecnico === TECNICOS[1]);
 const aprobarReinel = aprobarPendientes(reinel.slice(0, Math.ceil(reinel.length / 2)), { por: 'admin', ahora: ahora - HORA });
 const retenida = reinel.length > 2 ? armarRevision(reinel[reinel.length - 1], 'RETENER', { por: 'admin', ahora: ahora - 2 * HORA, motivo: 'Falta confirmar el cobro con el cliente' }) : null;
 const excluida = reinel.length > 3 ? armarRevision(reinel[reinel.length - 2], 'EXCLUIR', { por: 'admin', ahora: ahora - 2 * HORA, motivo: 'Orden de prueba' }) : null;
-for (const { id, datos } of [...aprobarGerardo.documentos, ...aprobarReinel.documentos, retenida, excluida].filter(Boolean)) { await base.collection('revisionPagos').doc(id).set(datos); await pausa(); }
-console.log(`OK  revisión de pagos: ${aprobarGerardo.documentos.length + aprobarReinel.documentos.length} aprobadas, ${retenida ? 1 : 0} retenida, ${excluida ? 1 : 0} excluida; el resto queda pendiente`);
+// Las órdenes del pago de GERARDO también pasaron por la revisión (así Finanzas solo paga lo aprobado): aprobadas y marcadas con ese pago, como las deja la app al pagar.
+const aprobadasYPagadas = revisados.filter((i) => pago.ordenes.some((o) => o.id === i.clave)).map((i) => armarRevision(i, 'APROBAR', { por: 'admin', ahora: ahora - 3 * HORA })).filter((r) => !r.error).map((r) => ({ id: r.id, datos: { ...r.datos, pendientePago: false, pagoId: pago.pagoId } }));
+for (const { id, datos } of [...aprobarGerardo.documentos, ...aprobarReinel.documentos, retenida, excluida, ...aprobadasYPagadas].filter(Boolean)) { await base.collection('revisionPagos').doc(id).set(datos); await pausa(); }
+console.log(`OK  revisión de pagos: ${aprobarGerardo.documentos.length + aprobarReinel.documentos.length} aprobadas sin pagar, ${aprobadasYPagadas.length} aprobadas y pagadas, ${retenida ? 1 : 0} retenida, ${excluida ? 1 : 0} excluida; el resto queda pendiente`);
 console.log(`OK  tasa ${TASA} × ${MONTO_BASE_EUR} € = ${VISITA_BS} Bs por visita; ${FORMAS.length} formas de pago`);
 console.log(`OK  ${ordenes.length} órdenes (finalizadas y canceladas) de los últimos 7 días, con una garantía de otro técnico (AS499, de la IO399) esperando decisión`);
 console.log(`OK  tarifas ${JSON.stringify(tarifas)} y un pago de ${pago.pago.total} $ a ${TECNICOS[0]} (${pago.pago.cantidadOrdenes} órdenes, ${rangoPagado.desde} a ${rangoPagado.hasta})`);

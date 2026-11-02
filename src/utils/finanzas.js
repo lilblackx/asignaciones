@@ -286,7 +286,8 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
   const registros = fila.pendientes.filter((item) => item.registro).length;
   const ajustes = fila.partesAjustes ?? [];
   const libres = fila.partesLibres ?? [];
-  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + fila.pendientes.length + registros + ajustes.length + libres.length + (fila.partes?.length ?? 0) > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
+  // Cada orden escribe dos documentos: la orden pagada y la marca de su revisión (pendientePago false y el pago); las filas de VN y TA, además, su propia marca. Todo en un lote de 500.
+  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + 2 * fila.pendientes.length + registros + ajustes.length + libres.length + (fila.partes?.length ?? 0) > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
   if (fila.pendientes.length > 0 && fila.total <= 0) return { error: 'Configura las tarifas antes de pagar: el total es 0.' };
   if (datos?.moneda === MONEDA_BS && !(tasa > 0)) return { error: 'No hay tasa BCV: elige dólares o actualiza la tasa.' };
   const descuento = fila.descuento ?? 0;
@@ -320,7 +321,9 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
   }));
   // Las filas de VN y TA que entran en el pago se marcan con él (así la oficina ve que ya se pagaron y no las cambia).
   const registrosMarcados = fila.pendientes.filter((item) => item.registro).map((item) => ({ id: item.registro.id, datos: { pagoId, pagadoEn: ahora } }));
-  return { pagoId, pago, ordenes, registros: registrosMarcados, adelantos: partes, ajustes, descuentosLibres: libres };
+  // La revisión de cada orden (el id es el mismo): deja de estar pendiente de pago y guarda con qué pago se pagó. Las reglas solo lo permiten en el mismo lote que crea el pago.
+  const revisiones = fila.pendientes.map((item) => ({ id: item.clave, datos: { pendientePago: false, pagoId } }));
+  return { pagoId, pago, ordenes, revisiones, registros: registrosMarcados, adelantos: partes, ajustes, descuentosLibres: libres };
 }
 
 // El desglose de lo que se paga, una fila por concepto con órdenes: [{ id, nombre, cantidad, precio, subtotal }] en dólares (los bolívares los pone la pantalla con la tasa).

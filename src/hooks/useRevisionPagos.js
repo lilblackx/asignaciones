@@ -11,13 +11,12 @@ const datos = (nombre) => collection(db, 'artifacts', appId, 'public', 'data', n
 const documento = (nombre, id) => doc(db, 'artifacts', appId, 'public', 'data', nombre, id);
 const aLista = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-// Lo que necesita el módulo Revisión de órdenes mientras está abierto (`activo`): las tarifas y los tipos de mudanza elegidos, y, del periodo, las órdenes ya pagadas, las filas de VN y TA y
-// las revisiones ya hechas. Y lo que escribe: guardar revisiones (una o varias en un lote) y deshacer una borrándola.
+// Lo que necesita el módulo Revisión de órdenes mientras está abierto (`activo`): las tarifas y los tipos de mudanza elegidos, y, del periodo, las filas de VN y TA y las revisiones ya hechas. Lo ya
+// pagado se sabe por la propia revisión (su `pagoId`), así que no se leen las órdenes pagadas. Y lo que escribe: guardar revisiones (una o varias en un lote) y deshacer una borrándola.
 //   guardar(documentos: [{ id, datos, ajustes?, borrarAjustes? }], exito) -> true si se guardó (con los descuentos y bonos que crea o borra al aprobar o deshacer, y el aviso a los técnicos); deshacer(item) -> true si se borró
 export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
   const [tarifasGuardadas, setTarifasGuardadas] = useState(null);
   const [tiposMudanza, setTiposMudanza] = useState({});
-  const [pagadas, setPagadas] = useState([]);
   const [registros, setRegistros] = useState([]);
   const [revisionesLista, setRevisionesLista] = useState([]);
   const [error, setError] = useState(false);
@@ -39,7 +38,6 @@ export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
     const alFallar = (que) => (e) => { console.error(`No se pudo leer ${que}:`, e); setError(true); };
     const porDia = (nombre) => query(datos(nombre), where('dia', '>=', desde), where('dia', '<=', hasta));
     const bajas = [
-      onSnapshot(porDia('ordenesPagadas'), (s) => setPagadas(aLista(s)), alFallar('las órdenes pagadas')),
       onSnapshot(porDia('revisionPagos'), (s) => setRevisionesLista(aLista(s)), alFallar('las revisiones')),
       onSnapshot(query(datos('registroVnTa'), where('fecha', '>=', desde), where('fecha', '<=', hasta)), (s) => setRegistros(aLista(s)), alFallar('el registro de VN y TA')),
     ];
@@ -47,8 +45,9 @@ export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
   }, [firebaseUser, activo, desde, hasta]);
 
   const tarifas = useMemo(() => tarifasCompletas(tarifasGuardadas), [tarifasGuardadas]);
-  const idsPagadas = useMemo(() => new Set(pagadas.map((p) => p.id)), [pagadas]);
   const revisiones = useMemo(() => Object.fromEntries(revisionesLista.map((r) => [r.id, r])), [revisionesLista]);
+  // Una orden ya pagada guarda en su revisión el pago que la pagó: se sale de la revisión.
+  const idsPagadas = useMemo(() => new Set(revisionesLista.filter((r) => r.pagoId).map((r) => r.id)), [revisionesLista]);
 
   const ejecutar = async (accion, exito, fallo) => {
     setOcupado(true);

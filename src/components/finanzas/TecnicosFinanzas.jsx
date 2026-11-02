@@ -22,7 +22,7 @@ import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 // al elegir uno, su pantalla con un botón para volver). "Pagar", "Adelanto" y "Descuento" abren su formulario en esa misma pantalla, no en una ventana.
 // `adelantos` y `descuentos`: los adelantos y los descuentos con motivo; `onPagar(fila, { datosPago, notificar, nota })`, `onAdelanto(tecnico, entrada, { notificar })`, `onDescuento(tecnico, entrada, { notificar })`,
 // `onAnularAdelanto(adelanto)` y `onAnularDescuento(descuento)` devuelven true si se guardó.
-export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento, tecnicosTodos = [] }) {
+export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, etiquetaPeriodo, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento, tecnicosTodos = [] }) {
   const grande = useEsPantallaGrande();
   const [elegido, setElegido] = useState(null);
   const [modo, setModo] = useState('detalle');
@@ -120,7 +120,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
 
       {!enDetalleMovil && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className={TITULO_SECCION}>Técnicos · {etiquetaRango(rango)}</h2>
+          <h2 className={TITULO_SECCION}>Técnicos · {etiquetaPeriodo || etiquetaRango(rango)}</h2>
           {!general && (
             <div className="flex flex-wrap gap-2">
               <Boton variante="secundario" tamano="normal" icono={MinusCircle} onClick={() => abrirGeneral('descuento')} disabled={ocupado}>Nuevo descuento</Boton>
@@ -160,7 +160,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
           {actual && (
             <div ref={zonaDetalle} className={`min-w-0 scroll-mt-4 ${TARJETA} p-4 sm:p-5`} key={`${actual.tecnico}-${modo}`}>
               {modo === 'pagar' ? (
-                <PanelPago fila={actual} rango={rango} tasa={tasa} ocupado={ocupado} onConfirmar={(opciones) => onPagar(actual, opciones)} onVolver={() => setModo('detalle')} />
+                <PanelPago fila={actual} rango={rango} etiqueta={etiquetaPeriodo} tasa={tasa} ocupado={ocupado} onConfirmar={(opciones) => onPagar(actual, opciones)} onVolver={() => setModo('detalle')} />
               ) : modo === 'adelanto' ? (
                 <PanelAdelanto tecnico={actual.tecnico} porDescontar={actual.adelantos} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onAdelanto(actual.tecnico, entrada, opciones)} onVolver={() => setModo('detalle')} />
               ) : modo === 'descuento' ? (
@@ -171,6 +171,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
                   tarifas={tarifas}
                   tasa={tasa}
                   rango={rango}
+                  etiqueta={etiquetaPeriodo}
                   pagos={registrados.filter((p) => p.tecnico === actual.tecnico)}
                   adelantos={adelantosVisibles.filter((a) => a.tecnico === actual.tecnico)}
                   descuentos={descuentos.filter((d) => d.tecnico === actual.tecnico)}

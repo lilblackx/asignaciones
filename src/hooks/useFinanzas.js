@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, doc, limit, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, documentId, limit, orderBy, query, where } from 'firebase/firestore';
 import { onSnapshot, getDocs, getDoc, setDoc, updateDoc, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { armarPago, avisoDeAdelanto, avisoDeAnulacion, avisoDeDescuento, avisoDePago, tarifasCompletas } from '../utils/finanzas';
@@ -20,7 +20,9 @@ const MAX_DESCUENTOS_VISIBLES = 300;
 const redondear = (valor) => Math.round((Number(valor) || 0) * 100) / 100;
 
 // Lo que lleva Finanzas, en vivo mientras la pantalla está abierta: las órdenes ya pagadas del periodo elegido, las filas del registro de VN y TA del periodo, las tarifas y los últimos pagos. Son pocos documentos (solo lo que Finanzas escribe), no las órdenes: esas se leen aparte (useDatosAlmacen).
-export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
+// `soloPendientes` ("Por pagar"): en vez de leer por periodo, lee solo las revisiones marcadas `pendientePago` (lo aprobado y sin pagar, de cualquier fecha) y, de ellas, las filas de VN y TA que le tocan.
+// No lee las órdenes pagadas (esas revisiones no están marcadas): `pagadas` e `idsPagadas` quedan vacíos. `desdePendientes` es el día más antiguo entre esas revisiones ('' si no hay ninguna).
+export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPendientes = false }) {
   const [tarifasGuardadas, setTarifasGuardadas] = useState(null);
   const [pagadas, setPagadas] = useState([]);
   const [registros, setRegistros] = useState([]);
@@ -51,7 +53,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
 
   const { desde, hasta } = rango;
   useEffect(() => {
-    if (!firebaseUser) return;
+    if (!firebaseUser || soloPendientes) return;
     const alFallar = (que) => (e) => { console.error(`No se pudo leer ${que}:`, e); setError(true); };
     const delPeriodo = (nombre) => query(datos(nombre), where('dia', '>=', desde), where('dia', '<=', hasta));
     const bajas = [
@@ -60,12 +62,37 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       onSnapshot(query(datos('registroVnTa'), where('fecha', '>=', desde), where('fecha', '<=', hasta)), (s) => setRegistros(aLista(s)), alFallar('el registro de VN y TA')),
     ];
     return () => bajas.forEach((baja) => baja());
-  }, [firebaseUser, desde, hasta]);
+  }, [firebaseUser, desde, hasta, soloPendientes]);
+
+  // "Por pagar": solo las aprobadas sin pagar (pendientePago), de cualquier fecha. Se guardan aparte de lo del periodo para no mezclar un modo con otro al cambiar.
+  const [revisionesPendientes, setRevisionesPendientes] = useState([]);
+  const [registrosPendientes, setRegistrosPendientes] = useState([]);
+  useEffect(() => {
+    if (!firebaseUser || !soloPendientes) return;
+    const alFallar = (que) => (e) => { console.error(`No se pudo leer ${que}:`, e); setError(true); };
+    return onSnapshot(query(datos('revisionPagos'), where('pendientePago', '==', true)), (s) => setRevisionesPendientes(aLista(s)), alFallar('lo aprobado por pagar'));
+  }, [firebaseUser, soloPendientes]);
+  // Las filas de VN y TA de esas aprobadas (su revisión se llama `vnta_<id de la fila>`): se piden por id, de 30 en 30, cuando cambia cuáles son. Las demás filas no hacen falta.
+  const idsFilasVnTa = useMemo(() => revisionesPendientes.filter((r) => r.id.startsWith('vnta_')).map((r) => r.id.slice(5)).sort().join(','), [revisionesPendientes]);
+  useEffect(() => {
+    if (!firebaseUser || !soloPendientes) return undefined;
+    const ids = idsFilasVnTa ? idsFilasVnTa.split(',') : [];
+    let vigente = true;
+    const grupos = [];
+    for (let i = 0; i < ids.length; i += 30) grupos.push(ids.slice(i, i + 30));
+    Promise.all(grupos.map((g) => getDocs(query(datos('registroVnTa'), where(documentId(), 'in', g)))))
+      .then((snaps) => { if (vigente) setRegistrosPendientes(snaps.flatMap(aLista)); })
+      .catch((e) => { console.error('No se pudo leer el registro de VN y TA:', e); if (vigente) setError(true); });
+    return () => { vigente = false; };
+  }, [firebaseUser, soloPendientes, idsFilasVnTa]);
+  const desdePendientes = useMemo(() => (soloPendientes ? revisionesPendientes.map((r) => r.dia).filter(Boolean).sort()[0] || '' : ''), [soloPendientes, revisionesPendientes]);
+  const pagadasVisibles = useMemo(() => (soloPendientes ? [] : pagadas), [soloPendientes, pagadas]);
+  const registrosVisibles = soloPendientes ? registrosPendientes : registros;
 
   const tarifas = useMemo(() => tarifasCompletas(tarifasGuardadas), [tarifasGuardadas]);
-  const idsPagadas = useMemo(() => new Set(pagadas.map((p) => p.id)), [pagadas]);
+  const idsPagadas = useMemo(() => new Set(pagadasVisibles.map((p) => p.id)), [pagadasVisibles]);
   // La revisión del administrador de lo que se puede pagar: { [clave de la orden]: documento }.
-  const revisiones = useMemo(() => Object.fromEntries(revisionesLista.map((r) => [r.id, r])), [revisionesLista]);
+  const revisiones = useMemo(() => Object.fromEntries((soloPendientes ? revisionesPendientes : revisionesLista).map((r) => [r.id, r])), [soloPendientes, revisionesPendientes, revisionesLista]);
 
   // Cada acción devuelve true si se guardó. Los errores salen como aviso, con el motivo cuando se sabe.
   const ejecutar = async (accion, exito, fallo) => {
@@ -120,6 +147,8 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
       const lote = writeBatch(db);
       lote.set(documento('pagosTecnicos', armado.pagoId), armado.pago);
       for (const { id, datos: d } of armado.ordenes) lote.set(documento('ordenesPagadas', id), d);
+      // La revisión de cada orden deja de estar pendiente de pago y guarda este pago (las reglas solo lo permiten en este mismo lote).
+      for (const { id, datos: d } of armado.revisiones) lote.update(documento('revisionPagos', id), d);
       for (const { id, datos: d } of armado.registros) lote.update(documento('registroVnTa', id), d);
       for (const { id, monto } of armado.adelantos) {
         const actual = adelantos.find((a) => a.id === id);
@@ -191,6 +220,9 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     lote.update(documento('pagosTecnicos', pago.id), { anulado: true, anuladoPor: usuario, anuladoEn: Date.now() });
     const ordenes = await getDocs(query(datos('ordenesPagadas'), where('pagoId', '==', pago.id)));
     ordenes.docs.forEach((d) => lote.delete(d.ref));
+    // Y la revisión de esas órdenes vuelve a estar pendiente de pago, sin el pago anulado (las reglas lo piden en este mismo lote).
+    const revisadas = await getDocs(query(datos('revisionPagos'), where('pagoId', '==', pago.id)));
+    revisadas.docs.forEach((d) => lote.update(d.ref, { pendientePago: true, pagoId: '' }));
     const marcadas = await getDocs(query(datos('registroVnTa'), where('pagoId', '==', pago.id)));
     marcadas.docs.forEach((d) => lote.update(d.ref, { pagoId: '', pagadoEn: 0 }));
     // Lo que ese pago descontó vuelve al saldo de cada adelanto (se lee lo que tiene ahora: otro pago pudo descontar más después).
@@ -211,5 +243,5 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg }) {
     await lote.commit();
   }, 'Pago anulado: las órdenes vuelven a estar por pagar y los adelantos y descuentos, por descontar.', 'No se pudo anular el pago.');
 
-  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas, registros, tiposMudanza, adelantos, ajustes, descuentos, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto, registrarDescuento, anularDescuento };
+  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas: pagadasVisibles, desdePendientes, registros: registrosVisibles, tiposMudanza, adelantos, ajustes, descuentos, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto, registrarDescuento, anularDescuento };
 }

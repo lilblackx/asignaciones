@@ -3,6 +3,7 @@ import { Banknote, RefreshCw } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { useTema } from '../hooks/useTema';
 import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
+import { useCargarHastaCubrir } from '../hooks/useCargarHastaCubrir';
 import { useFinanzas } from '../hooks/useFinanzas';
 import { usePagosFinanzas } from '../hooks/usePagosOrdenes';
 import { useCobrosFinanzas } from '../hooks/useCobrosClientes';
@@ -55,7 +56,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
 
   const [nivelLetra, setNivelLetra] = useTamanoLetra();
   const [seccion, setSeccion] = useState('PAGOS');
-  // Abre en "Por pagar" (solo en Técnicos): lo aprobado y sin pagar de los últimos 35 días, sin tener que elegir fechas.
+  // Abre en "Por pagar" (solo en Técnicos): todo lo aprobado y sin pagar, de cualquier fecha, sin tener que elegir fechas.
   const [periodo, setPeriodo] = useState('POR_PAGAR');
   const [hoy] = useState(() => diaDe(Date.now()));
   const [personalizado, setPersonalizado] = useState(() => ({ desde: rangoDe('7_DIAS').desde, hasta: hoy }));
@@ -66,7 +67,13 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   const rango = useMemo(() => (periodo === 'POR_PAGAR' ? rangoPorPagar(Date.parse(`${hoy}T12:00:00-04:00`)) : rangoDe(periodo, personalizado)), [periodo, personalizado, hoy]);
   // "Por pagar" solo existe en Técnicos: al pasar a otra sección vuelve a los 7 días de antes.
   const elegirSeccion = (id) => { setSeccion(id); if (id !== 'PAGOS' && periodo === 'POR_PAGAR') setPeriodo('7_DIAS'); };
-  const finanzas = useFinanzas({ firebaseUser, rango, usuario: currentUser, setToastMsg });
+  // "Por pagar": no se lee por fechas sino lo marcado como aprobado y sin pagar (pendientePago), sea de cuando sea; `rango` (los últimos 35 días) solo sirve ahí para lo ya pagado que se muestra.
+  const soloPendientes = periodo === 'POR_PAGAR' && seccion === 'PAGOS';
+  const finanzas = useFinanzas({ firebaseUser, rango, usuario: currentUser, setToastMsg, soloPendientes });
+  // El rango con que se arman las órdenes: con "Por pagar", del día más antiguo de lo aprobado sin pagar a hoy; en los demás periodos, el elegido.
+  const rangoItems = useMemo(() => (soloPendientes ? { desde: finanzas.desdePendientes || hoy, hasta: hoy } : rango), [soloPendientes, finanzas.desdePendientes, hoy, rango]);
+  // Para armar esas órdenes hacen falta sus cierres: se cargan los anteriores hasta cubrir el día más antiguo.
+  useCargarHastaCubrir({ activo: soloPendientes, reportes: reports, hayMas: hayMasReportes, cargando: cargandoReportes, onCargarMas: cargarReportesAnteriores, desdeDia: rangoItems.desde });
   // Lo que pagaron los clientes por instalaciones y cambios de equipo (lo registra el técnico); solo se lee cuando se abre esa sección.
   const pagosClientes = usePagosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
   const cobrosClientes = useCobrosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
@@ -78,15 +85,16 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   const historial = { hasMoreReports: hayMasReportes, isLoadingReports: cargandoReportes, onLoadMoreReports: cargarReportesAnteriores };
 
   // Lo que se debe cuenta desde la fecha de corte: lo anterior del periodo elegido no se muestra.
-  const rangoDeuda = useMemo(() => rangoPagable(rango), [rango]);
+  const rangoDeuda = useMemo(() => rangoPagable(rangoItems), [rangoItems]);
   // Finanzas solo ve lo que un administrador aprobó (ver el módulo Revisión de órdenes) y lo que ya se pagó. `revisados` trae todo con su estado de revisión.
   const revisados = useMemo(
-    () => revisar(itemsParaRevisar({ ordenes, rango: rangoDeuda, rangoElegido: rango, tecnico, registros: finanzas.registros, tiposMudanza: finanzas.tiposMudanza }), finanzas.revisiones),
-    [ordenes, rangoDeuda, rango, tecnico, finanzas.registros, finanzas.tiposMudanza, finanzas.revisiones],
+    () => revisar(itemsParaRevisar({ ordenes, rango: rangoDeuda, rangoElegido: rangoItems, tecnico, registros: finanzas.registros, tiposMudanza: finanzas.tiposMudanza }), finanzas.revisiones),
+    [ordenes, rangoDeuda, rangoItems, tecnico, finanzas.registros, finanzas.tiposMudanza, finanzas.revisiones],
   );
   const items = useMemo(() => paraFinanzas(revisados, finanzas.idsPagadas), [revisados, finanzas.idsPagadas]);
   // Lo que todavía espera la revisión del administrador (no está aprobado, retenido ni excluido).
-  const esperandoRevision = useMemo(() => revisados.filter((i) => i.estadoRevision === 'PENDIENTE' && !finanzas.idsPagadas.has(i.clave)).length, [revisados, finanzas.idsPagadas]);
+  // Con "Por pagar" solo se leen las aprobadas sin pagar: no se sabe cuáles de las demás esperan revisión (están sin leer), así que no se cuentan.
+  const esperandoRevision = useMemo(() => (soloPendientes ? 0 : revisados.filter((i) => i.estadoRevision === 'PENDIENTE' && !finanzas.idsPagadas.has(i.clave)).length), [soloPendientes, revisados, finanzas.idsPagadas]);
   // Las originales que tienen una garantía de otro técnico por revisar (todavía sin aprobar): su descuento puede llegar después de pagarlas.
   const garantiasPendientes = useMemo(() => new Set(revisados.filter((i) => i.garantiaDe?.id && i.estadoRevision !== 'APROBADA' && i.estadoRevision !== 'EXCLUIDA').map((i) => i.garantiaDe.id)), [revisados]);
   const sinTipo = [];
@@ -97,19 +105,21 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   // Los descuentos con motivo del técnico elegido (o de todos): se restan de su próximo pago.
   const descuentosVisibles = useMemo(() => finanzas.descuentos.filter((d) => !tecnico || String(d.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.descuentos, tecnico]);
   const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy]);
-  // Lo ya pagado en el periodo por técnico (respeta el técnico elegido arriba).
+  // Lo ya pagado en el periodo (los pagos hechos en esos días), por técnico y en total (respeta el técnico elegido arriba).
+  const pagado = useMemo(() => resumenPagado(finanzas.pagos, rango, { tecnico, tasa }), [finanzas.pagos, rango, tecnico, tasa]);
+  // Lo ya pagado en el periodo por técnico. Con "Por pagar" no se leen las órdenes pagadas: sale de los pagos hechos en los últimos 35 días.
   const pagadasPorTecnico = useMemo(
     () => {
+      if (soloPendientes) return Object.fromEntries(pagado.porTecnico.map((f) => [f.tecnico, { ordenes: f.ordenes, total: f.total, bs: f.bs }]));
       const tasaDe = (pagoId) => finanzas.pagos.find((p) => p.id === pagoId)?.tasa || tasa;
       return totalesPagados(finanzas.pagadas.filter((p) => !tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()), tasaDe);
     },
-    [finanzas.pagadas, finanzas.pagos, tecnico, tasa],
+    [soloPendientes, pagado, finanzas.pagadas, finanzas.pagos, tecnico, tasa],
   );
   const yaPagadas = useMemo(
     () => ordenesYaPagadas(finanzas.pagadas.filter((p) => !tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()), items),
     [finanzas.pagadas, items, tecnico],
   );
-  const pagado = useMemo(() => resumenPagado(finanzas.pagos, rango, { tecnico, tasa }), [finanzas.pagos, rango, tecnico, tasa]);
 
   const actual = SECCIONES.find((s) => s.id === seccion);
 
@@ -228,6 +238,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   pagos={finanzas.pagos}
                   adelantos={adelantosVisibles}
                   descuentos={descuentosVisibles}
+                  etiquetaPeriodo={soloPendientes ? 'Por pagar' : undefined}
                   ajustes={ajustesVisibles}
                   ajustesTodos={finanzas.ajustes}
                   garantiasPendientes={garantiasPendientes}

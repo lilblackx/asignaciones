@@ -3,6 +3,9 @@
 //   { estado, motivo, firma, dia, codigo, tecnico, concepto, tecnicoCorregido?, conceptoCorregido?, descuento?, descuentoDe?, garantiaSinDescuento?, por, en, historial: [{ estado, por, en, motivo }] }
 //   Garantía de otro técnico (ver garantia.js y ajustes.js): una orden con `garantiaDe` no se puede aprobar hasta decidir. `descuento` son los dólares que se descuentan de la orden original (`descuentoDe`:
 //   { id, codigo, tecnico }) y se le pagan al técnico de la garantía; `garantiaSinDescuento` es el motivo de no descontar nada. Con descuento la garantía no se paga como orden.
+//   pendientePago: true mientras la orden está APROBADA y sin pagar; es lo que lee Finanzas para ver "todo lo que falta por pagar" sin importar la fecha (una consulta por esta marca, en vez de leer los
+//   pagos de un periodo). pagoId: el pago que la pagó (sin ese campo, o vacío, no se ha pagado). Los pone la app al aprobar y al pagar o anular un pago (el pago los cambia en su mismo lote); las reglas
+//   de Firestore exigen que sean coherentes con el estado. Una orden ya pagada conserva su pagoId aunque se vuelva a guardar la revisión.
 //   estado: 'PENDIENTE' (solo con una corrección guardada), 'APROBADA' (pasa a Finanzas), 'RETENIDA' (no pasa por ahora, con motivo) o 'EXCLUIDA' (no se paga, con motivo).
 //   firma: huella de lo que decide el pago de esa orden (técnico, tipo de trabajo, cobro, estado, día y concepto). Si la orden cambia después, la firma ya no coincide y la
 //   aprobación (y las correcciones) dejan de valer: vuelve a "Pendiente".
@@ -155,6 +158,8 @@ export function armarRevision(item, accion, { por, ahora, motivo = '', correccio
   }
   const ajustes = estado === 'APROBADA' ? ajustesDeOrden(efectivo, { por, ahora, sinTecnico: SIN_TECNICO }) : [];
   const anterior = item.revisionAnterior || previo;
+  // Si la orden ya está pagada se conserva su pago (aunque la firma ya no valga: `anterior` es el documento que hubo). Una pagada nunca vuelve a estar pendiente de pago.
+  const pagoId = String(anterior?.pagoId || '');
   const viejos = ajustesVigentes(anterior) ? idsAjustesDeOrden(item.clave, anterior.firma) : [];
   const anotacion = { estado, por, en: ahora, ...(texto && { motivo: texto }), ...(correccion && { correccion: [tecnicoCorregido && `técnico ${tecnicoCorregido}`, conceptoCorregido && `concepto ${conceptoCorregido}`].filter(Boolean).join(', ') || 'sin cambios' }), ...(garantia && { garantia: descuento > 0 ? `descuento ${descuento} $ de ${descuentoDe.codigo} (${descuentoDe.tecnico})` : `sin descuento: ${sinDescuento}` }) };
   return {
@@ -172,6 +177,8 @@ export function armarRevision(item, accion, { por, ahora, motivo = '', correccio
       descuento,
       ...(descuento > 0 && { descuentoDe }),
       ...(sinDescuento && { garantiaSinDescuento: sinDescuento }),
+      pendientePago: estado === 'APROBADA' && !pagoId,
+      ...(pagoId && { pagoId }),
       por,
       en: ahora,
       historial: [...(previo?.historial || []), anotacion].slice(-MAX_HISTORIAL_REVISION),
@@ -202,3 +209,24 @@ export const borrarAlDeshacer = (item) => ({
 
 // Las garantías de otro técnico que todavía esperan la decisión del administrador (descontar de la original o no descontar). Las retenidas o excluidas no cuentan.
 export const garantiasPorResolver = (revisados) => revisados.filter((i) => i.garantiaDe?.id && !i.garantiaResuelta && (i.estadoRevision === 'PENDIENTE' || i.estadoRevision === 'APROBADA'));
+
+// Para poner la marca de pago (pendientePago y pagoId) a las revisiones que ya existían (scripts/marcar-pendientes-de-pago.mjs). `revisiones`: [{ id, ...documento }]; `ordenesPagadas`: [{ id, pagoId }] (solo hay
+// documento de una orden pagada mientras su pago está vigente: al anular el pago se borran). Devuelve lo que hay que escribir ({ id, datos: { pendientePago, pagoId } }, solo las que no están ya bien),
+// cuántas quedan pendientes de pago y pagadas, y las órdenes pagadas que no tienen revisión (se avisan, no se tocan).
+export function marcasDeRevision(revisiones, ordenesPagadas) {
+  const pagoDe = new Map(ordenesPagadas.map((o) => [o.id, String(o.pagoId || '')]));
+  const actualizar = [];
+  let pendientes = 0;
+  let pagadas = 0;
+  for (const r of revisiones) {
+    const pagoId = pagoDe.get(r.id) || '';
+    const pendientePago = r.estado === 'APROBADA' && !pagoId;
+    if (pendientePago) pendientes++;
+    if (pagoId) pagadas++;
+    const bien = r.pendientePago === pendientePago && String(r.pagoId || '') === pagoId;
+    if (!bien) actualizar.push({ id: r.id, datos: { pendientePago, pagoId } });
+  }
+  const conRevision = new Set(revisiones.map((r) => r.id));
+  const sinRevision = ordenesPagadas.filter((o) => !conRevision.has(o.id)).map((o) => o.id);
+  return { actualizar, pendientes, pagadas, sinRevision };
+}

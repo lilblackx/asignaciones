@@ -2,7 +2,7 @@
 // (aprobar, retener, excluir, corregir), qué pasa a Finanzas y los resúmenes. No necesita el emulador. Uso: `node scripts/test-revision-pagos.mjs`.
 import { SIN_TECNICO, claveOrden, ordenesFueraDelCorte, rangoPagable, tarifasCompletas } from '../src/utils/finanzas.js';
 import {
-  aprobarPendientes, armarRevision, firmaDeItem, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar,
+  aprobarPendientes, armarRevision, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar,
 } from '../src/utils/revisionPagos.js';
 
 let failures = 0;
@@ -71,6 +71,18 @@ const mudanzaCorregida = revisadas([corregirMudanza]).find((i) => i.orden.codigo
 const aprobarMudanza = armarRevision(mudanzaCorregida, 'APROBAR', { por: 'admin', ahora: 10 });
 check('a una mudanza sin tipo el administrador le elige el concepto y entonces se aprueba', [mudanzaCorregida.concepto, aprobarMudanza.error, paraFinanzas(revisadas([corregirMudanza, aprobarMudanza]).filter((i) => i.orden.codigo === 'IO4')).map((i) => i.concepto)], ['MUDANZA_EXTERNA', undefined, ['MUDANZA_EXTERNA']]);
 check('un concepto que no existe se rechaza', armarRevision(revisadoDe('IO4'), 'PENDIENTE', { por: 'admin', ahora: 1, correccion: { concepto: 'REGALO' } }).error, 'Ese concepto no existe.');
+
+// --- La marca de pago: pendientePago y pagoId ---
+const docDe = (accion, item, extra = {}) => armarRevision(item, accion, { por: 'admin', ahora: 50, motivo: 'por una razón', ...extra }).datos;
+check('aprobar deja la orden pendiente de pago, sin pagoId', [docDe('APROBAR', revisadoDe('IO1')).pendientePago, 'pagoId' in docDe('APROBAR', revisadoDe('IO1'))], [true, false]);
+check('retener, excluir y corregir (pendiente) no la dejan pendiente de pago', ['RETENER', 'EXCLUIR', 'PENDIENTE'].map((a) => docDe(a, revisadoDe('IO1')).pendientePago), [false, false, false]);
+const aprobadaIO1 = { ...revisadoDe('IO1'), revision: { ...docDe('APROBAR', revisadoDe('IO1')), firma: revisadoDe('IO1').firma }, estadoRevision: 'APROBADA' };
+check('al volver a guardar una aprobada sin pagar sigue pendiente de pago', docDe('APROBAR', aprobadaIO1).pendientePago, true);
+const pagadaIO1 = { ...aprobadaIO1, revision: { ...aprobadaIO1.revision, pendientePago: false, pagoId: 'pago-1' } };
+check('una orden ya pagada conserva su pagoId y nunca vuelve a pendiente de pago, aunque se apruebe o se corrija otra vez', ['APROBAR', 'PENDIENTE', 'RETENER'].map((a) => { const d = docDe(a, pagadaIO1); return [d.pendientePago, d.pagoId]; }), [[false, 'pago-1'], [false, 'pago-1'], [false, 'pago-1']]);
+const pagadaCambio = { ...pagadaIO1, revision: null, revisionAnterior: pagadaIO1.revision, estadoRevision: 'PENDIENTE', cambioDespues: true };
+check('aunque la orden haya cambiado después de pagarla (la firma ya no vale) se conserva el pagoId', [docDe('APROBAR', pagadaCambio).pendientePago, docDe('APROBAR', pagadaCambio).pagoId], [false, 'pago-1']);
+check('aprobar de golpe deja cada documento pendiente de pago', aprobarPendientes(revisar(items), { por: 'admin', ahora: 60 }).documentos.map((d) => d.datos.pendientePago).every(Boolean), true);
 const quitarCorreccion = armarRevision(conTecnicoCorregido, 'PENDIENTE', { por: 'admin', ahora: 11, correccion: { tecnico: '', concepto: '' } });
 check('quitar la corrección devuelve el técnico original', [quitarCorreccion.datos.tecnicoCorregido, revisadas([quitarCorreccion]).find((i) => i.orden.codigo === 'IO3').tecnico], ['', SIN_TECNICO]);
 
@@ -111,6 +123,29 @@ check('una vez revisada y aprobada pasa a Finanzas como cualquier otra', (() => 
   const aprobada = revisar([item], { [doc.id]: doc.datos });
   return paraFinanzas(aprobada).map((i) => i.orden.codigo);
 })(), ['AO268']);
+
+// --- Poner la marca a las revisiones que ya existían ---
+const revs = [
+  { id: 'a', estado: 'APROBADA' }, // aprobada, sin pagar, sin marca
+  { id: 'b', estado: 'APROBADA' }, // aprobada y pagada, sin marca
+  { id: 'c', estado: 'RETENIDA' }, // retenida
+  { id: 'd', estado: 'APROBADA', pendientePago: true }, // aprobada sin pagar, ya marcada
+  { id: 'e', estado: 'APROBADA', pendientePago: false, pagoId: 'p1' }, // pagada, ya marcada
+  { id: 'f', estado: 'APROBADA', pendientePago: true }, // marcada pendiente, pero ya está pagada (la marcó un cliente viejo)
+  { id: 'g', estado: 'APROBADA', pendientePago: false, pagoId: 'p-anulado' }, // marcada pagada, pero su pago se anuló (ya no hay orden pagada)
+  { id: 'h', estado: 'PENDIENTE' },
+];
+const m = marcasDeRevision(revs, [{ id: 'b', pagoId: 'p1' }, { id: 'e', pagoId: 'p1' }, { id: 'f', pagoId: 'p2' }, { id: 'huerfana', pagoId: 'p3' }]);
+check('marca cada revisión según su estado y si tiene orden pagada (y no toca las que ya están bien)', m.actualizar, [
+  { id: 'a', datos: { pendientePago: true, pagoId: '' } },
+  { id: 'b', datos: { pendientePago: false, pagoId: 'p1' } },
+  { id: 'c', datos: { pendientePago: false, pagoId: '' } },
+  { id: 'f', datos: { pendientePago: false, pagoId: 'p2' } },
+  { id: 'g', datos: { pendientePago: true, pagoId: '' } },
+  { id: 'h', datos: { pendientePago: false, pagoId: '' } },
+]);
+check('cuenta las que quedan pendientes de pago y las pagadas, y avisa de una orden pagada sin revisión', [m.pendientes, m.pagadas, m.sinRevision], [3, 3, ['huerfana']]);
+check('con todo ya marcado no hay nada que escribir (se puede correr de nuevo)', marcasDeRevision([{ id: 'x', estado: 'APROBADA', pendientePago: true }, { id: 'y', estado: 'EXCLUIDA', pendientePago: false }], []).actualizar, []);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');
