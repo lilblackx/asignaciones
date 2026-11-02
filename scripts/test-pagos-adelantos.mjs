@@ -73,7 +73,7 @@ check('un técnico con solo adelantos tiene tarjeta, sin órdenes ni descuento',
 check('un adelanto anulado o ya descontado no cuenta', resumenPagos(items, tarifas, new Set(), [adelanto('a1', 20, { anulado: true }), adelanto('a2', 20, { aplicado: 20 })])[0].adelantos, 0);
 
 // --- El desglose por concepto ---
-check('una fila por concepto con órdenes: cantidad, precio y subtotal', desglosePorConcepto(sinAdelanto.cantidades, tarifas), [{ id: 'INSTALACION', nombre: 'Instalación', cantidad: 2, precio: 25, subtotal: 50 }, { id: 'AVERIA', nombre: 'Visita / avería pagada', cantidad: 1, precio: 4, subtotal: 4 }]);
+check('una fila por concepto con órdenes: cantidad, precio y subtotal', desglosePorConcepto(sinAdelanto.cantidades, tarifas), [{ id: 'INSTALACION', nombre: 'Instalación', cantidad: 2, precio: 25, subtotal: 50 }, { id: 'AVERIA', nombre: 'Avería o visita técnica', cantidad: 1, precio: 4, subtotal: 4 }]);
 check('sin órdenes no hay desglose', desglosePorConcepto(resumenPagos([], tarifas, new Set(), [adelanto('a1', 30, { tecnico: 'LUIS' })])[0].cantidades, tarifas), []);
 
 // --- Armar el pago ---

@@ -14,7 +14,7 @@
 //                sin tipo (anterior a ese campo) no se paga hasta que la oficina le ponga el tipo: Finanzas las lista aparte (ver mudanzasSinTipo)
 //   VALIDACION_NAP y TRABAJO_ADICIONAL  no salen de una orden sino de una fila del registro de VN y TA (utils/registroVnTa) que tiene técnico: el técnico que
 //                apoyó. Una fila sin técnico (lo hizo infraestructura sola) no se paga a nadie. Cada una lleva su propia tarifa
-//   RECABLEADO   visita o avería pagada cuyo tipo de visita fue un recableado: lleva su propia tarifa en lugar de la de visita o avería
+//   RECABLEADO   avería o visita técnica (de las que se pagan) cuyo tipo de visita fue un recableado: lleva su propia tarifa en lugar de la de avería o visita técnica
 //   LOW_SIGNAL   trabajo de low signal (siempre exonerado): su propia tarifa
 //   CAMBIO_EQUIPO  cambio de equipo (el trabajo, o una visita cuyo tipo fue cambio de equipo): su propia tarifa
 // Para mostrar, todo lo que no es instalación, validación de NAP ni trabajo adicional se agrupa como avería (ver gruposDelReporte); los precios sí se distinguen.
@@ -32,7 +32,7 @@ import { MONEDA_BS } from './datosPago.js';
 
 export const CONCEPTOS_PAGO = [
   { id: 'INSTALACION', nombre: 'Instalación', singular: 'instalación', plural: 'instalaciones' },
-  { id: 'AVERIA', nombre: 'Visita / avería pagada', singular: 'avería', plural: 'averías' },
+  { id: 'AVERIA', nombre: 'Avería o visita técnica', singular: 'avería', plural: 'averías' },
   { id: 'MUDANZA_INTERNA', nombre: 'Mudanza interna', singular: 'mudanza interna', plural: 'mudanzas internas' },
   { id: 'MUDANZA_EXTERNA', nombre: 'Mudanza externa', singular: 'mudanza externa', plural: 'mudanzas externas' },
   { id: 'VALIDACION_NAP', nombre: 'Validación de NAP', singular: 'validación de NAP', plural: 'validaciones de NAP' },
@@ -136,7 +136,7 @@ const tipoDeMudanza = (t, tiposElegidos) => {
 };
 
 // El concepto con que se le paga una orden al técnico, o null si no se paga (o si es una mudanza todavía sin tipo).
-// Una visita o avería pagada que fue un recableado se paga con la tarifa de recableado, no con la de visita o avería; una mudanza, con la suya.
+// Una avería o visita técnica que se paga y fue un recableado se paga con la tarifa de recableado, no con la de avería o visita técnica; una mudanza, con la suya.
 export function conceptoDePago(t, hoja, tiposElegidos = null) {
   if (!t || t.estado !== 'FINALIZADO') return null;
   if (hoja === 'INSTALACIONES') return 'INSTALACION';

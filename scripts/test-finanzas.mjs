@@ -70,7 +70,7 @@ const visitaRecableado = orden({ tipoTrabajo: 'MUDANZA', tipoVisita: 'RECABLEADO
 const recableadoGarantia = orden({ tipoVisita: 'RECABLEADO', falla: 'GARANTIA' });
 const recableadoCancelado = orden({ tipoVisita: 'RECABLEADO', estado: 'CANCELADO', canceladaEn: DIA(14), finalizadoEn: null });
 const instalacionConRecableado = orden({ tipoTrabajo: 'INSTALACIÓN', tipoVisita: 'RECABLEADO', cobroBs: null, cobroTipo: null });
-check('una avería pagada que fue recableado se paga como recableado', conceptoDePago(averiaRecableado, 'AVERIAS'), 'RECABLEADO');
+check('una avería que se paga y fue recableado se paga como recableado', conceptoDePago(averiaRecableado, 'AVERIAS'), 'RECABLEADO');
 check('una visita exonerada que fue recableado también', conceptoDePago(visitaRecableado, 'VISITAS'), 'RECABLEADO');
 check('un recableado en garantía, cancelado o una instalación no cambian de concepto', [conceptoDePago(recableadoGarantia, 'AVERIAS'), conceptoDePago(recableadoCancelado, 'AVERIAS'), conceptoDePago(instalacionConRecableado, 'INSTALACIONES')], [null, null, 'INSTALACION']);
 const filasRec = resumenPagos(ordenesPagables([averiaRecableado, visitaRecableado, averiaCobrada], rango), tarifasCompletas({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 8 }), new Set());
@@ -98,7 +98,7 @@ const yaPagadas = new Set([claveOrden(averiaCobrada), claveOrden(lowSignal)]);
 const despues = resumenPagos(items, tarifas, yaPagadas).find((f) => f.tecnico === 'GERARDO');
 check('las ya pagadas salen de lo pendiente', [despues.cantidades.AVERIA, despues.total, despues.pagadas], [1, 28.5, 2]);
 check('si todo está pagado no queda nada por pagar', resumenPagos(items, tarifas, new Set(items.map((i) => i.clave))).every((f) => f.pendientes.length === 0 && f.total === 0), true);
-check('avisa de los conceptos sin tarifa', conceptosSinTarifa(gerardo, tarifasCompletas({ INSTALACION: 20 })), ['Visita / avería pagada', 'Mudanza interna', 'Low signal']);
+check('avisa de los conceptos sin tarifa', conceptosSinTarifa(gerardo, tarifasCompletas({ INSTALACION: 20 })), ['Avería o visita técnica', 'Mudanza interna', 'Low signal']);
 check('con todas las tarifas no avisa', conceptosSinTarifa(gerardo, tarifas), []);
 
 // --- Armar un pago ---
