@@ -385,7 +385,7 @@ export function cifrasPagos(filas, yaPagado, tasa = null) {
   return [
     { etiqueta: 'Total a pagar', valor: dolares(totalPendiente(filas)), detalle: tasa > 0 ? bolivares(aBs(totalPendiente(filas), tasa)) : 'con las tarifas de hoy' },
     { etiqueta: 'Técnicos por pagar', valor: conPendientes.length, detalle: `${textoOrdenes(conPendientes.reduce((s, f) => s + f.pendientes.length, 0))} por pagar` },
-    { etiqueta: 'Ya pagado', valor: dolares(yaPagado.monto), detalle: yaPagado.bs > 0 ? bolivares(yaPagado.bs) : `${textoOrdenes(yaPagado.ordenes)} del periodo` },
+    { etiqueta: 'Pagado', valor: dolares(yaPagado.monto), detalle: yaPagado.bs > 0 ? bolivares(yaPagado.bs) : `${textoOrdenes(yaPagado.ordenes)} del periodo` },
   ];
 }
 

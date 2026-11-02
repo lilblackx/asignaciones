@@ -9,9 +9,9 @@ import { usePagosFinanzas } from '../hooks/usePagosOrdenes';
 import { useCobrosFinanzas } from '../hooks/useCobrosClientes';
 import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
-import { diaLegible, rangoDe } from '../utils/periodoReporte';
+import { rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
-import { DIAS_POR_PAGAR, corteTodaviaNoLlega, textoFechaCorte, rangoPagable, rangoPorPagar, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { corteTodaviaNoLlega, textoFechaCorte, rangoPagable, rangoPorPagar, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
 import { itemsParaRevisar, paraFinanzas, revisar } from '../utils/revisionPagos';
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
@@ -221,11 +221,6 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   Comienza a contar a partir del {textoFechaCorte()}: lo anterior de este periodo no se muestra.
                 </p>
               )}
-              {seccion === 'PAGOS' && periodo === 'POR_PAGAR' && (
-                <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 rounded-lg px-4 py-3">
-                  Por pagar muestra lo aprobado y sin pagar de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
-                </p>
-              )}
               <div key={seccion} className="lg:animate-fade-in space-y-4">
               {seccion === 'PAGOS' && (
                 <TecnicosFinanzas
@@ -238,12 +233,12 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   pagos={finanzas.pagos}
                   adelantos={adelantosVisibles}
                   descuentos={descuentosVisibles}
-                  etiquetaPeriodo={soloPendientes ? 'Por pagar' : undefined}
                   ajustes={ajustesVisibles}
                   ajustesTodos={finanzas.ajustes}
                   garantiasPendientes={garantiasPendientes}
                   pagadasPorTecnico={pagadasPorTecnico}
                   rango={rango}
+                  etiquetaPeriodo={soloPendientes ? 'Por pagar' : undefined}
                   tasa={tasa}
                   ocupado={finanzas.ocupado}
                   historial={historial}

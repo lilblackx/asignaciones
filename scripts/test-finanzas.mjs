@@ -82,7 +82,7 @@ check('sin precio de recableado avisa y no suma', conceptosSinTarifa(filasRec[0]
 const ya = totalesPagados([{ tecnico: 'GERARDO', monto: 3.5 }, { tecnico: 'GERARDO', monto: 20 }, { tecnico: 'LUIS', monto: 5 }]);
 check('lo pagado por técnico', ya, { GERARDO: { ordenes: 2, total: 23.5, bs: 0 }, LUIS: { ordenes: 1, total: 5, bs: 0 } });
 check('suma de lo pagado', sumaPagado(Object.values(ya)), { ordenes: 3, monto: 28.5, bs: 0 });
-check('las cifras: total a pagar, técnicos por pagar y ya pagado', cifrasPagos(resumenPagos(items, tarifasCompletas({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, LOW_SIGNAL: 3.5 }), new Set()).filter((f) => f.tecnico !== SIN_TECNICO), { ordenes: 3, monto: 28.5 }).map((c) => [c.etiqueta, c.valor]), [['Total a pagar', dolares(55.5)], ['Técnicos por pagar', 2], ['Ya pagado', dolares(28.5)]]);
+check('las cifras: total a pagar, técnicos por pagar y pagado', cifrasPagos(resumenPagos(items, tarifasCompletas({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, LOW_SIGNAL: 3.5 }), new Set()).filter((f) => f.tecnico !== SIN_TECNICO), { ordenes: 3, monto: 28.5 }).map((c) => [c.etiqueta, c.valor]), [['Total a pagar', dolares(55.5)], ['Técnicos por pagar', 2], ['Pagado', dolares(28.5)]]);
 
 // --- Totales con tarifas ---
 const tarifas = tarifasCompletas({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, LOW_SIGNAL: 3.5 });

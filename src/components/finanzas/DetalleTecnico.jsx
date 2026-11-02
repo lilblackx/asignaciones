@@ -218,7 +218,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
       )}
 
       {pagado && (
-        <Seccion titulo="Ya pagado en el periodo">
+        <Seccion titulo="Pagado en el periodo">
           <p className="text-base text-zinc-900 dark:text-white">{dolares(pagado.total)}{pagado.bs > 0 ? ` (${bolivares(pagado.bs)})` : ''} · {textoOrdenes(pagado.ordenes)}</p>
         </Seccion>
       )}
