@@ -6,6 +6,7 @@ import { preFinalizadasPrimero } from '../utils/preFinalizadas';
 import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
 import { codigosAnteriores } from '../utils/correlativo';
+import { fechaDeOrden } from '../utils/fechaOrden';
 
 const PAGE_SIZE = 50;
 
@@ -73,6 +74,9 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
       result.sort((a, b) => (a.fechaProgramada || '9999-99-99').localeCompare(b.fechaProgramada || '9999-99-99'));
     } else if (sortBy === 'FECHA') {
       result.sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha));
+    } else if (statusFilter === 'FINALIZADO') {
+      // En Finalizados la lista va en el orden en que se cerraron (la última finalizada arriba), no en el que se crearon.
+      result.sort((a, b) => fechaDeOrden(b) - fechaDeOrden(a));
     }
 
     // Las órdenes con prioridad alta van primero, salvo que se haya pedido otro orden (técnico, tipo o programadas).
