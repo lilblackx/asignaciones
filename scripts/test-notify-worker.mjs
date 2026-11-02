@@ -25,7 +25,7 @@ const jwk = { ...(await exportJWK(firebaseKeys.publicKey)), kid: 'k1', alg: 'RS2
 const serviceKeys = await generateKeyPair('RS256', { extractable: true });
 const serviceAccount = { client_email: 'worker@proyecto-prueba.iam.gserviceaccount.com', private_key: await exportPKCS8(serviceKeys.privateKey) };
 
-const idTokenDe = (uid) => new SignJWT({})
+const idTokenDe = (uid, authTime = Math.floor(Date.now() / 1000)) => new SignJWT({ auth_time: authTime })
   .setProtectedHeader({ alg: 'RS256', kid: 'k1' })
   .setIssuer(`https://securetoken.google.com/${PROJECT}`)
   .setAudience(PROJECT)
@@ -116,6 +116,45 @@ reiniciar();
 let r = await enviar('admin-uid', aviso);
 check('responde 200 con 1 dispositivo enviado', [r.status, r.json], [200, { sent: 1, dispositivos: 1 }]);
 check('un solo envío a FCM', enviosFcm.length, 1);
+
+// Sesión: 24 horas desde que la persona escribió su clave (10 min de margen), y 7 días si es técnico. Aunque el token en sí no haya vencido.
+{
+  const llamar = async (uid, authTime, cuerpo = aviso) => {
+    const req = new Request('https://worker.test/', { method: 'POST', headers: { Authorization: `Bearer ${await idTokenDe(uid, authTime)}`, Origin: env.ALLOWED_ORIGINS, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+    const res = await worker.fetch(req, env);
+    return { status: res.status, texto: await res.text() };
+  };
+  const hace = (horas, minutos = 0) => Math.floor(Date.now() / 1000) - horas * 3600 - minutos * 60;
+  const dias = (d, minutos = 0) => hace(d * 24, minutos);
+  const alOficina = { target: { type: 'oficina' }, title: 'Consulta de cobro', body: 'x', tipo: 'consultaCobro', ticketId: 'abc123' };
+  const guardado = { busquedas, roles, conPermisoVentas, tokensDelTecnico, comportamientoFcm, enviosFcm, commits };
+  reiniciar();
+  const reciente = await llamar('admin-uid', hace(23));
+  const enviosAntes = enviosFcm.length;
+  const vencido = await llamar('admin-uid', hace(24, 15));
+  const sinHora = await llamar('admin-uid', null);
+  check('sesión: con el inicio de sesión de hace 23 h el aviso sale', reciente.status, 200);
+  check('sesión: la oficina con más de 24 h y 10 min responde 401 y no envía nada', [vencido.status, vencido.texto.includes('sesión venció'), enviosFcm.length - enviosAntes], [401, true, 0]);
+  check('sesión: un token sin hora de inicio de sesión responde 401', sinHora.status, 401);
+  const tecnico3 = await llamar('tecnico-uid', dias(3), alOficina);
+  const tecnico6 = await llamar('tecnico-uid', dias(6, 23 * 60), alOficina);
+  const tecnico8 = await llamar('tecnico-uid', dias(8), alOficina);
+  check('sesión técnico: con 3 días y con 6 días y 23 h el aviso sale', [tecnico3.status, tecnico6.status], [200, 200]);
+  check('sesión técnico: pasados 7 días responde 401', [tecnico8.status, tecnico8.texto.includes('sesión venció')], [401, true]);
+  const oficina3 = await llamar('admin-uid', dias(3));
+  check('sesión: la oficina con 3 días responde 401 (los 7 días son solo del técnico)', oficina3.status, 401);
+  // Una sesión de más de 24 h consulta el rol una vez más; una de menos de 24 h no lo consulta de más.
+  const consultasDeRol = [];
+  const fetchAnterior = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { if (String(url).includes('/users/')) consultasDeRol.push(String(url)); return fetchAnterior(url, init); };
+  await llamar('tecnico-uid', hace(1), alOficina);
+  const consultasConSesionReciente = consultasDeRol.length;
+  consultasDeRol.length = 0;
+  await llamar('tecnico-uid', dias(3), alOficina);
+  globalThis.fetch = fetchAnterior;
+  check('sesión: el Worker consulta una vez el rol de más solo cuando la sesión pasa de 24 h', consultasDeRol.length - consultasConSesionReciente, 1);
+  ({ busquedas, roles, conPermisoVentas, tokensDelTecnico, comportamientoFcm, enviosFcm, commits } = guardado);
+}
 
 // Tope de llamadas por usuario: si el binding dice que no, 429 sin tocar FCM; si dice que sí, pasa; sin binding, pasa.
 {

@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from 'jose';
 import { manejarApiMateriales } from './materiales-api.js';
 import { listarTecnicosInventario, manejarInventario, reenviarNotificacion, reintentarPendientes } from './inventario.js';
 import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
+import { inicioDeSesionVigente } from '../../src/utils/sesion.js';
 import { direccionCliente, nombrePersona } from '../../src/utils/datosCliente.js';
 import { actualizarUsoFirestore } from './usoFirestore.js';
 
@@ -32,6 +33,9 @@ async function verifyIdToken(idToken, projectId) {
     audience: projectId,
   });
   if (!payload.sub) throw new Error('Token sin sub');
+  // La sesión dura 24 horas desde que la persona escribió su clave (`auth_time`; refrescar el token no lo cambia), y 7 días si es técnico: los mismos plazos
+  // que exigen las reglas de Firestore. Aquí todavía no se sabe el rol, así que solo se rechaza lo que ni un técnico puede tener; las de más de 24 horas se revisan en fetch().
+  if (!inicioDeSesionVigente(payload.auth_time, 'TECNICO')) throw new Error('La sesión venció. Inicia sesión de nuevo.');
   return payload; // payload.sub = uid del usuario que hace la llamada
 }
 
@@ -797,6 +801,13 @@ export default {
     if (env.LIMITADOR) {
       const { success } = await env.LIMITADOR.limit({ key: payload.sub });
       if (!success) return new Response('Demasiadas solicitudes. Espera un momento e intenta de nuevo.', { status: 429, headers: { ...headers, 'Retry-After': '30' } });
+    }
+
+    // Con más de 24 horas desde el inicio de sesión solo vale la de un técnico (esa consulta del rol solo se hace en ese caso, no en cada llamada).
+    if (!inicioDeSesionVigente(payload.auth_time)) {
+      let rol = null;
+      try { rol = await rolActivo(env, await getGoogleAccessToken(env), payload.sub); } catch (err) { console.error(err); }
+      if (!inicioDeSesionVigente(payload.auth_time, rol)) return new Response('La sesión venció. Inicia sesión de nuevo.', { status: 401, headers });
     }
 
     const { pathname } = new URL(request.url);

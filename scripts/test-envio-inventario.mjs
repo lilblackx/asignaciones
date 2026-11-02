@@ -65,7 +65,7 @@ const firebaseKeys = await generateKeyPair('RS256', { extractable: true });
 const jwk = { ...(await exportJWK(firebaseKeys.publicKey)), kid: 'k1', alg: 'RS256', use: 'sig' };
 const serviceKeys = await generateKeyPair('RS256', { extractable: true });
 const serviceAccount = { client_email: 'worker@proyecto-prueba.iam.gserviceaccount.com', private_key: await exportPKCS8(serviceKeys.privateKey) };
-const idTokenDe = (uid) => new SignJWT({}).setProtectedHeader({ alg: 'RS256', kid: 'k1' }).setIssuer(`https://securetoken.google.com/${PROJECT}`).setAudience(PROJECT).setSubject(uid).setIssuedAt().setExpirationTime('1h').sign(firebaseKeys.privateKey);
+const idTokenDe = (uid) => new SignJWT({ auth_time: Math.floor(Date.now() / 1000) }).setProtectedHeader({ alg: 'RS256', kid: 'k1' }).setIssuer(`https://securetoken.google.com/${PROJECT}`).setAudience(PROJECT).setSubject(uid).setIssuedAt().setExpirationTime('1h').sign(firebaseKeys.privateKey);
 
 const env = {
   FIREBASE_PROJECT_ID: PROJECT, APP_ID: APP, ALLOWED_ORIGINS: 'https://x.test', FIREBASE_SERVICE_ACCOUNT_JSON: JSON.stringify(serviceAccount),
