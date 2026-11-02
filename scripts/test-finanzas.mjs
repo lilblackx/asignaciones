@@ -2,7 +2,7 @@
 // por técnico con las tarifas, que una orden ya pagada no se cobre dos veces y cómo se arma un pago. No necesita el emulador.
 // Uso: `npm run test:finanzas`.
 import {
-  CONCEPTOS_PAGO, FECHA_CORTE, textoFechaCorte, corteTodaviaNoLlega, rangoPagable, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
+  CONCEPTOS_PAGO, DIAS_POR_PAGAR, rangoPorPagar, FECHA_CORTE, textoFechaCorte, corteTodaviaNoLlega, rangoPagable, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
 } from '../src/utils/finanzas.js';
 import { ROLES, etiquetaRol } from '../src/constants.js';
 
@@ -218,6 +218,11 @@ check('la fecha de corte es el lunes 26/10/2026', [FECHA_CORTE, textoFechaCorte(
 check('el aviso del corte se muestra hasta el domingo 25 y se quita solo desde el lunes 26 (día de Caracas)', [corteTodaviaNoLlega(Date.parse('2026-10-22T12:00:00-04:00')), corteTodaviaNoLlega(Date.parse('2026-10-25T23:59:00-04:00')), corteTodaviaNoLlega(Date.parse('2026-10-26T00:01:00-04:00')), corteTodaviaNoLlega(Date.parse('2026-11-15T12:00:00-04:00')), corteTodaviaNoLlega(Date.parse('2026-10-22T12:00:00-04:00'), '')], [true, true, false, false, false]);
 check('sin corte no hay texto ni recorte', [textoFechaCorte(''), rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }, '')], ['', { desde: '2026-10-15', hasta: '2026-10-21' }]);
 check('con el corte de verdad, un periodo anterior queda vacío y uno que lo cruza empieza el lunes 26', [rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }), rangoPagable({ desde: '2026-10-20', hasta: '2026-10-30' })], [{ desde: '2026-10-26', hasta: '2026-10-21' }, { desde: '2026-10-26', hasta: '2026-10-30' }]);
+const ahoraPP = Date.parse('2026-11-02T15:00:00-04:00');
+check('Por pagar: los últimos 35 días con hoy incluido', [DIAS_POR_PAGAR, rangoPorPagar(ahoraPP)], [35, { desde: '2026-09-29', hasta: '2026-11-02' }]);
+check('Por pagar: la orden del 26/10 queda dentro (los 7 días de antes la dejaban fuera) y el corte sigue recortando lo anterior al 26/10',
+  [rangoPorPagar(ahoraPP).desde <= '2026-10-26', rangoPagable(rangoPorPagar(ahoraPP))], [true, { desde: '2026-10-26', hasta: '2026-11-02' }]);
+check('Por pagar: a las 23:30 de Caracas sigue siendo el mismo día', rangoPorPagar(Date.parse('2026-11-02T23:30:00-04:00')).hasta, '2026-11-02');
 check('un periodo que cruza el corte empieza en el corte', rangoPagable({ desde: '2026-10-15', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-26', hasta: '2026-10-28' });
 check('un periodo posterior al corte no cambia', rangoPagable({ desde: '2026-10-27', hasta: '2026-10-28' }, '2026-10-26'), { desde: '2026-10-27', hasta: '2026-10-28' });
 const antesDelCorte = rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }, '2026-10-26');

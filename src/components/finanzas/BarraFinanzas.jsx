@@ -9,11 +9,11 @@ import RangoFechas from '../RangoFechas';
 
 // Los filtros de Finanzas, con letra grande y controles de 48 px: chips con borde para el periodo, el desplegable propio de la app para el técnico y botones de borde grueso.
 // Periodo y técnico valen para las tres secciones.
-export default function BarraFinanzas({ periodo, onPeriodo, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar, onExportar, exportando }) {
+export default function BarraFinanzas({ periodo, onPeriodo, conPorPagar = false, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar, onExportar, exportando }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-      <div role="group" aria-label="Periodo" className="grid grid-cols-4 gap-2 w-full sm:flex sm:w-auto">
-        {PERIODOS.map(([id, texto]) => (
+      <div role="group" aria-label="Periodo" className={`grid ${conPorPagar ? 'grid-cols-3' : 'grid-cols-4'} gap-2 w-full sm:flex sm:w-auto`}>
+        {(conPorPagar ? [['POR_PAGAR', 'Por pagar'], ...PERIODOS] : PERIODOS).map(([id, texto]) => (
           <Chip activo={periodo === id} tamano="angosto" key={id} type="button" onClick={() => onPeriodo(id)}>
             {texto}
           </Chip>

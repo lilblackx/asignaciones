@@ -8,9 +8,9 @@ import { usePagosFinanzas } from '../hooks/usePagosOrdenes';
 import { useCobrosFinanzas } from '../hooks/useCobrosClientes';
 import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
-import { rangoDe } from '../utils/periodoReporte';
+import { diaLegible, rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
-import { corteTodaviaNoLlega, textoFechaCorte, rangoPagable, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { DIAS_POR_PAGAR, corteTodaviaNoLlega, textoFechaCorte, rangoPagable, rangoPorPagar, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
 import { itemsParaRevisar, paraFinanzas, revisar } from '../utils/revisionPagos';
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
@@ -55,14 +55,17 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
 
   const [nivelLetra, setNivelLetra] = useTamanoLetra();
   const [seccion, setSeccion] = useState('PAGOS');
-  const [periodo, setPeriodo] = useState('7_DIAS');
+  // Abre en "Por pagar" (solo en Técnicos): lo aprobado y sin pagar de los últimos 35 días, sin tener que elegir fechas.
+  const [periodo, setPeriodo] = useState('POR_PAGAR');
   const [hoy] = useState(() => diaDe(Date.now()));
   const [personalizado, setPersonalizado] = useState(() => ({ desde: rangoDe('7_DIAS').desde, hasta: hoy }));
   const [tecnico, setTecnico] = useState('');
   const [exportando, setExportando] = useState(null);
   const [errorExportar, setErrorExportar] = useState('');
 
-  const rango = useMemo(() => rangoDe(periodo, personalizado), [periodo, personalizado]);
+  const rango = useMemo(() => (periodo === 'POR_PAGAR' ? rangoPorPagar(Date.parse(`${hoy}T12:00:00-04:00`)) : rangoDe(periodo, personalizado)), [periodo, personalizado, hoy]);
+  // "Por pagar" solo existe en Técnicos: al pasar a otra sección vuelve a los 7 días de antes.
+  const elegirSeccion = (id) => { setSeccion(id); if (id !== 'PAGOS' && periodo === 'POR_PAGAR') setPeriodo('7_DIAS'); };
   const finanzas = useFinanzas({ firebaseUser, rango, usuario: currentUser, setToastMsg });
   // Lo que pagaron los clientes por instalaciones y cambios de equipo (lo registra el técnico); solo se lee cuando se abre esa sección.
   const pagosClientes = usePagosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
@@ -159,7 +162,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   type="button"
                   role="tab"
                   aria-selected={seccion === id}
-                  onClick={() => setSeccion(id)}
+                  onClick={() => elegirSeccion(id)}
                   className={`flex-1 md:flex-none min-w-0 h-9 px-1 sm:px-4 rounded-lg text-sm max-sm:text-[13px] font-semibold border transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 >
                   <span className="sm:hidden">{corto}</span><span className="hidden sm:inline">{nombre}</span>
@@ -186,6 +189,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                 <BarraFinanzas
                   periodo={periodo}
                   onPeriodo={setPeriodo}
+                  conPorPagar={seccion === 'PAGOS'}
                   personalizado={personalizado}
                   onPersonalizado={setPersonalizado}
                   hoy={hoy}
@@ -205,6 +209,11 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
               {seccion === 'PAGOS' && corteTodaviaNoLlega() && (
                 <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 rounded-lg px-4 py-3">
                   Comienza a contar a partir del {textoFechaCorte()}: lo anterior de este periodo no se muestra.
+                </p>
+              )}
+              {seccion === 'PAGOS' && periodo === 'POR_PAGAR' && (
+                <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 rounded-lg px-4 py-3">
+                  Por pagar muestra lo aprobado y sin pagar de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
                 </p>
               )}
               <div key={seccion} className="lg:animate-fade-in space-y-4">
