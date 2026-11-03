@@ -1,4 +1,6 @@
+import { Fragment } from 'react';
 import { esProgramadaFutura } from '../utils/programada';
+import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
 import { Ban, Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
@@ -46,6 +48,7 @@ export default function TicketsMobileList({
   onFinalizar,
   onTogglePrioridad,
   ahora,
+  cerradasEnBusqueda = 0,
   onIniciarViaje,
   onLlegue,
   onCancelarViaje
@@ -70,16 +73,24 @@ export default function TicketsMobileList({
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:hidden">
-      {filteredTickets.map(ticket => {
+      {filteredTickets.map((ticket, index) => {
         const hayTelefono = parseTelefonos(ticket.telefono).some(t => getEnlaceLlamada(t) || getEnlaceWhatsApp(t));
         const enlaceUbicacion = getEnlaceNavegacion(ticket.ubicacion);
         const enlaceNap = getEnlaceNavegacionNap(ticket.napCoordenadas);
         const prioritaria = esPrioritaria(ticket);
         const sinPlantilla = ordenSinPlantilla(ticket);
         const viaje = estadoViaje(ticket, ahora);
+        // Si la búsqueda trae órdenes ya cerradas, van al final bajo su propio encabezado.
+        const cerrada = cerradasEnBusqueda > 0 && esCerrada(ticket);
+        const archivada = Boolean(ticket._archivada);
+        const primeraCerrada = cerrada && !(index > 0 && esCerrada(filteredTickets[index - 1]));
         return (
-        <div key={ticket.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
-          <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-start sm:items-center bg-zinc-50 dark:bg-zinc-950">
+        <Fragment key={ticket._clave || ticket.id}>
+        {primeraCerrada && (
+          <h2 className="mt-2 px-3 py-2 rounded-lg bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">FINALIZADAS Y CANCELADAS ({cerradasEnBusqueda})</h2>
+        )}
+        <div className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-red-700/60 dark:border-red-800/60' : 'border-emerald-700/60 dark:border-emerald-800/60') : prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
+          <div className={`p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-start sm:items-center ${cerrada ? 'bg-zinc-200/70 dark:bg-zinc-800/60' : 'bg-zinc-50 dark:bg-zinc-950'}`}>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <div className="flex items-center gap-2">
                 <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} vacio="S/C" className="font-black text-lg text-zinc-900 dark:text-white leading-none" />
@@ -94,9 +105,16 @@ export default function TicketsMobileList({
                 {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
               </div>
             </div>
-            <span className={`self-center text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>
-              {ticket.estado}
-            </span>
+            <div className="self-center flex flex-col items-end gap-0.5">
+              <span className={`text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>
+                {ticket.estado}
+              </span>
+              {cerrada && (
+                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
+                  {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}
+                </span>
+              )}
+            </div>
           </div>
           <div className="p-4 flex-1 flex flex-col gap-3">
             <div>
@@ -216,7 +234,9 @@ export default function TicketsMobileList({
             </div>
           )}
 
-          {isTecnico ? (
+          {archivada ? (
+              <div className="py-3 text-center text-xs text-zinc-600 dark:text-zinc-400 font-medium bg-zinc-100 dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-800">Archivada por el cierre del día · solo consulta</div>
+            ) : isTecnico ? (
               <div className="bg-zinc-100 dark:bg-zinc-800 flex divide-x divide-zinc-200 dark:divide-zinc-700 border-t border-zinc-200 dark:border-zinc-800">
                 <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                   <ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}
@@ -263,6 +283,7 @@ export default function TicketsMobileList({
               </div>
             )}
         </div>
+        </Fragment>
         );
       })}
     </div>

@@ -7,6 +7,7 @@ import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
 import { codigosAnteriores } from '../utils/correlativo';
 import { fechaDeOrden } from '../utils/fechaOrden';
+import { buscaEnCerradas, buscarCerradas, esCerrada } from '../utils/ordenesCerradas';
 
 const PAGE_SIZE = 50;
 
@@ -18,7 +19,9 @@ function parseFecha(fechaStr) {
 // ocultarProgramadasFuturas: el técnico no ve en "Activas" las órdenes cuya
 // fecha programada aún no llega (las encuentra en el filtro "Programadas").
 // preFinalizadasArriba: la oficina ve primero lo que el técnico pre-finalizó, para aprobarlo sin buscarlo (con otro orden pedido, ese orden manda).
-export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false, preFinalizadasArriba = false, ahora } = {}) {
+// incluirCerradas: al buscar (3 letras o más) con el filtro en "Activas", debajo de las activas salen también las finalizadas y canceladas de hoy y las
+// ya archivadas por el cierre (`archivados`, las de los reportes cargados). Solo se leen datos que la app ya tiene.
+export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false, preFinalizadasArriba = false, incluirCerradas = false, archivados = [], ahora } = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('TODOS');
   const [tipoFilter, setTipoFilter] = useState('TODOS');
@@ -27,12 +30,13 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
 
   const filteredTickets = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-
-    let result = tickets.filter(t => {
-      const matchesSearch = String(t.nombre || '').toLowerCase().includes(searchLower) ||
+    const coincideBusqueda = (t) => String(t.nombre || '').toLowerCase().includes(searchLower) ||
                             String(t.codigo || '').toLowerCase().includes(searchLower) ||
                             (searchLower.length >= 3 && codigosAnteriores(t).some((c) => c.toLowerCase().includes(searchLower))) ||
                             String(t.cedula || '').toLowerCase().includes(searchLower);
+
+    let result = tickets.filter(t => {
+      const matchesSearch = coincideBusqueda(t);
 
       const matchesStatus = statusFilter === 'TODOS' ? (t.estado === 'PENDIENTE' || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA') && !(ocultarProgramadasFuturas && esProgramadaFutura(t))
         : statusFilter === 'PROG_HOY' ? t.estado === 'PENDIENTE' && ['hoy', 'vencida'].includes(categoriaProgramada(t.fechaProgramada))
@@ -85,8 +89,22 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
       if (preFinalizadasArriba) result = preFinalizadasPrimero(result);
     }
 
+    // Las cerradas van al final, aparte, y no cambian el orden de las activas.
+    if (incluirCerradas && statusFilter === 'TODOS' && buscaEnCerradas(searchTerm)) {
+      result = [...result, ...buscarCerradas({
+        vivas: tickets,
+        archivadas: archivados,
+        coincide: coincideBusqueda,
+        tipo: tipoFilter,
+        tecnico: sortBy.startsWith('TEC:') ? sortBy.substring(4) : ''
+      })];
+    }
+
     return result;
-  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas, preFinalizadasArriba, ahora]);
+  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas, preFinalizadasArriba, incluirCerradas, archivados, ahora]);
+
+  // Cuántas de las órdenes de la lista son de la sección de cerradas (0 si la búsqueda no la muestra). En "Activas" una cerrada solo llega por ahí.
+  const cantidadCerradas = incluirCerradas && statusFilter === 'TODOS' ? filteredTickets.filter(esCerrada).length : 0;
 
   const visibleTickets = filteredTickets.slice(0, visibleCount);
   const hasMore = filteredTickets.length > visibleCount;
@@ -103,6 +121,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
     tipoFilter, setTipoFilter: setTipoFilterAndReset,
     sortBy, setSortBy: setSortByAndReset,
     filteredTickets,
+    cantidadCerradas,
     visibleTickets,
     hasMore,
     loadMore

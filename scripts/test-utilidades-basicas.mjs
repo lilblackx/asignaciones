@@ -5,6 +5,7 @@ import { arrayUnion } from 'firebase/firestore';
 import { AUTH_EMAIL_DOMAIN } from '../src/constants.js';
 import { normalizeUsername, usernameToAuthEmail } from '../src/utils/authEmail.js';
 import { cambiosDeTicket } from '../src/utils/cambiosTicket.js';
+import { buscaEnCerradas, buscarCerradas, esCerrada } from '../src/utils/ordenesCerradas.js';
 import { fechaHoraLegible } from '../src/utils/formatoFecha.js';
 import { getPasswordPolicyError } from '../src/utils/passwordPolicy.js';
 import { diaLegible, enRango, etiquetaRango, rangoDe } from '../src/utils/periodoReporte.js';
@@ -85,6 +86,31 @@ check('si el historial no es el anterior más entradas, se escribe tal cual', ca
 // --- Fecha legible en hora de Caracas ---
 check('fecha y hora de Caracas', fechaHoraLegible(Date.parse('2026-10-19T11:35:00-04:00')), '19/10/2026 11:35');
 check('la hora no depende de la zona de la máquina (UTC de madrugada sigue siendo el día anterior en Caracas)', fechaHoraLegible(Date.parse('2026-10-20T03:30:00Z')), '19/10/2026 23:30');
+
+// --- Cerradas en la búsqueda del dashboard ---
+const T = Date.parse('2026-10-20T15:00:00Z');
+const vivas = [
+  { id: 'v1', codigo: 'AO1', estado: 'PENDIENTE', tipoTrabajo: 'AVERÍA', tecnico: 'ANA', createdAt: T },
+  { id: 'v2', codigo: 'AO2', estado: 'FINALIZADO', tipoTrabajo: 'AVERÍA', tecnico: 'ANA', finalizadoEn: T, createdAt: T - 1000 },
+];
+const archivadas = [
+  { id: 'v2', codigo: 'AO2', estado: 'FINALIZADO', tipoTrabajo: 'AVERÍA', tecnico: 'ANA', finalizadoEn: T },
+  { id: 'a1', codigo: 'AO3', estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', tecnico: 'LUIS', finalizadoEn: T - 5 * 86400000, archivadoEn: T - 4 * 86400000 },
+  { id: 'a2', codigo: 'AO4', estado: 'CANCELADO', tipoTrabajo: 'AVERÍA', tecnico: 'ANA', canceladaEn: T - 2 * 86400000, archivadoEn: T - 86400000 },
+  { id: 'a1', codigo: 'AO3', estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', tecnico: 'LUIS', finalizadoEn: T - 5 * 86400000 },
+  { id: 'a3', codigo: 'AO5', estado: 'PENDIENTE', createdAt: T },
+];
+const todas = () => true;
+const cerr = buscarCerradas({ vivas, archivadas, coincide: todas });
+check('sale la de hoy y las archivadas, la más reciente primero, sin repetir ni abiertas', cerr.map((t) => t.codigo), ['AO2', 'AO4', 'AO3']);
+check('la viva va tal cual y las archivadas llevan marca', cerr.map((t) => Boolean(t._archivada)), [false, true, true]);
+check('las claves de las archivadas no se repiten', new Set(cerr.map((t) => t._clave || t.id)).size, 3);
+check('filtra por tipo de trabajo', buscarCerradas({ vivas, archivadas, coincide: todas, tipo: 'INSTALACIÓN' }).map((t) => t.codigo), ['AO3']);
+check('filtra por técnico', buscarCerradas({ vivas, archivadas, coincide: todas, tecnico: 'LUIS' }).map((t) => t.codigo), ['AO3']);
+check('aplica la prueba del buscador', buscarCerradas({ vivas, archivadas, coincide: (t) => t.codigo === 'AO4' }).map((t) => t.codigo), ['AO4']);
+check('no toca las órdenes vivas', vivas.some((t) => '_archivada' in t || '_clave' in t), false);
+check('esCerrada: finalizada y cancelada sí, pendiente y pre-finalizada no', [esCerrada({ estado: 'FINALIZADO' }), esCerrada({ estado: 'CANCELADO' }), esCerrada({ estado: 'PENDIENTE' }), esCerrada({ estado: 'PRE-FINALIZADO' })], [true, true, false, false]);
+check('se busca en cerradas desde 3 letras (sin contar espacios de los lados)', [buscaEnCerradas('ab'), buscaEnCerradas('  ab '), buscaEnCerradas('AO1'), buscaEnCerradas('')], [false, false, true, false]);
 
 if (failures > 0) { console.error(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

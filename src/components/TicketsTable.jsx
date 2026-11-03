@@ -24,6 +24,7 @@ import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 import { useDeslizarPreFinalizadas } from '../hooks/useDeslizarPreFinalizadas';
+import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
 
 const COLUMNAS = 8;
 // Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
@@ -58,6 +59,7 @@ export default function TicketsTable({
   onTogglePrioridad,
   ahora,
   filasCambiadas,
+  cerradasEnBusqueda = 0,
   onIniciarViaje,
   onLlegue,
   onCancelarViaje
@@ -68,6 +70,8 @@ export default function TicketsTable({
   // Con orden "más recientes" o por fecha las órdenes de un mismo día quedan
   // juntas: se agrupan bajo un encabezado. Con otros órdenes la fecha va en la fila.
   const agrupado = sortBy === 'DEFECTO' || sortBy === 'FECHA';
+  // Si la búsqueda trae órdenes ya cerradas, van al final en su propio grupo (con encabezado, sea cual sea el orden pedido).
+  const enSeccionCerradas = (t) => cerradasEnBusqueda > 0 && esCerrada(t);
 
   return (
     <div className="hidden lg:block bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border border-zinc-300 dark:border-zinc-800 overflow-clip transition-colors w-full">
@@ -103,19 +107,22 @@ export default function TicketsTable({
             const sinPlantilla = ordenSinPlantilla(ticket);
             const enViaje = Boolean(estadoViaje(ticket, ahora));
             // Las órdenes con prioridad alta forman su propio grupo arriba; el resto, un grupo por día.
-            const grupoDe = (t) => (esPrioritaria(t) ? 'PRIORIDAD' : t.fecha);
-            const nuevoDia = agrupado && (index === 0 || grupoDe(filteredTickets[index - 1]) !== grupoDe(ticket));
-            const dia = nuevoDia ? (prioritaria ? { texto: 'PRIORIDAD ALTA', prioridad: true } : getEtiquetaDia(ticket.fecha, ticket.estado)) : null;
+            const cerrada = enSeccionCerradas(ticket);
+            const archivada = Boolean(ticket._archivada);
+            const grupoDe = (t) => (enSeccionCerradas(t) ? 'CERRADAS' : esPrioritaria(t) ? 'PRIORIDAD' : t.fecha);
+            const anterior = filteredTickets[index - 1];
+            const nuevoDia = (agrupado && (index === 0 || grupoDe(anterior) !== grupoDe(ticket))) || (cerrada && (index === 0 || !enSeccionCerradas(anterior)));
+            const dia = nuevoDia ? (cerrada ? { texto: `FINALIZADAS Y CANCELADAS (${cerradasEnBusqueda})`, cerradas: true } : prioritaria ? { texto: 'PRIORIDAD ALTA', prioridad: true } : getEtiquetaDia(ticket.fecha, ticket.estado)) : null;
             return [
               nuevoDia && (
-                <tr key={`dia-${ticket.id}`} className="border-b border-zinc-300 dark:border-zinc-800">
-                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] max-lg:text-xs font-black ${dia.prioridad ? 'bg-red-600' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                <tr key={`dia-${ticket._clave || ticket.id}`} className="border-b border-zinc-300 dark:border-zinc-800">
+                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] max-lg:text-xs font-black ${dia.prioridad ? 'bg-red-600' : dia.cerradas ? 'bg-zinc-700 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad || dia.cerradas ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
                     {dia.prioridad && <Flag className="inline w-3 h-3 mr-1 -mt-0.5 fill-current" aria-hidden="true" />}{dia.texto}
                   </td>
                 </tr>
               ),
-              <tr key={ticket.id} data-fila={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
-                <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
+              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
+                <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} />
@@ -232,13 +239,21 @@ export default function TicketsTable({
                 </td>
                 */}
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
-                  <div className="flex items-center justify-center h-full min-h-[2rem]">
+                  <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-0.5">
                     <span className={`inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
+                    {cerrada && (
+                      <span className="text-[11px] max-lg:text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
+                        {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-1.5 py-2 text-center align-middle">
                   <div className="flex flex-wrap items-center justify-center h-full min-h-[2rem] gap-1">
-                    {isTecnico ? (
+                    {archivada ? (
+                      // Una orden archivada ya no se trabaja: solo se consulta (el ojo junto al nombre abre su detalle).
+                      <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold" title="Archivada por el cierre del día: solo consulta">-</span>
+                    ) : isTecnico ? (
                       <>
                         <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {enlaceNavegacion && (

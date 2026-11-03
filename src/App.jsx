@@ -54,6 +54,7 @@ import PieVersion from './components/PieVersion';
 import PaginaMarco from './components/PaginaMarco';
 import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, MonitorSmartphone, PackageCheck, ShieldCheck, Users } from 'lucide-react';
 import { aplanarArchivados } from './utils/reincidencia';
+import { buscaEnCerradas } from './utils/ordenesCerradas';
 import { construirNapsConocidas } from './utils/napsConocidas';
 import FiltersBar from './components/FiltersBar';
 import TechnicianWorkload from './components/TechnicianWorkload';
@@ -250,7 +251,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     ? ticketsParaVer.some(t => (t.estado === 'PENDIENTE' && !esProgramadaFutura(t)) || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
     : tickets.length > 0;
 
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, ahora });
+  // Las órdenes de los cierres ya cargados: la búsqueda del dashboard también las encuentra (debajo de las activas, marcadas como archivadas).
+  const archivados = useMemo(() => aplanarArchivados(reports), [reports]);
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, cantidadCerradas, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, incluirCerradas: canEditTickets, archivados, ahora });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.
@@ -279,7 +282,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   };
   const { reportSearchTerm, setReportSearchTerm, archivedSearchResults } = useArchivedSearch(reports);
   // Coordenadas de NAP ya usadas en órdenes anteriores: evitan esperar a Tomodat.
-  const napsConocidas = useMemo(() => construirNapsConocidas(tickets, aplanarArchivados(reports)), [tickets, reports]);
+  const napsConocidas = useMemo(() => construirNapsConocidas(tickets, archivados), [tickets, archivados]);
 
   const [isAddTechModalOpen, setIsAddTechModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
@@ -768,6 +771,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onFinalizar={setFinalizarTarget}
               onTogglePrioridad={handleTogglePrioridad}
               ahora={ahora}
+              cerradasEnBusqueda={cantidadCerradas}
               onIniciarViaje={handleIniciarViaje}
               onLlegue={handleLlegue}
               onCancelarViaje={handleCancelarViaje}
@@ -798,11 +802,22 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onFinalizar={setFinalizarTarget}
               onTogglePrioridad={handleTogglePrioridad}
               ahora={ahora}
+              cerradasEnBusqueda={cantidadCerradas}
               onIniciarViaje={handleIniciarViaje}
               onLlegue={handleLlegue}
               onCancelarViaje={handleCancelarViaje}
             />
           </div>
+
+          {/* Al buscar, las archivadas solo llegan hasta los cierres cargados (los más recientes): este botón trae los anteriores. */}
+          {canEditTickets && canCerrar && hasMoreReports && statusFilter === 'TODOS' && buscaEnCerradas(searchTerm) && (
+            <div className="flex flex-col items-center gap-1 mt-4 text-center">
+              <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">¿No aparece la orden que buscas? Puede estar en un cierre más antiguo.</span>
+              <button type="button" onClick={loadMoreReports} disabled={isLoadingReports} className="min-h-11 px-5 py-2 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-sm disabled:opacity-60">
+                {isLoadingReports ? 'Buscando...' : 'Buscar en cierres anteriores'}
+              </button>
+            </div>
+          )}
 
           {hasMore && (
             <div className="flex justify-center mt-4">
