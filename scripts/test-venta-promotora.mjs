@@ -33,6 +33,13 @@ check('sin coordenadas de NAP queda vacío', venta.napCoordenadas, '');
 check('unas coordenadas de NAP inválidas impiden guardar', errorVentaPromotora({ ...datos, napCoordenadas: 'hola' }, propia).startsWith('Coordenadas de la NAP'), true);
 check('el aviso a la oficina solo dice "Nueva venta"', TEXTO_AVISO_NUEVA_VENTA, 'Nueva venta');
 
+// --- Observación de la venta ---
+check('sin observación la venta queda con la observación vacía', venta.observacion, '');
+const conObs = armarVentaPromotora({ ...datos, observacion: '  Prefiere la visita en la tarde  ' }, { username: 'sariana', nombre: 'Sariana' }, ahora);
+check('la observación se guarda sin espacios de los lados', conObs.observacion, 'Prefiere la visita en la tarde');
+check('es observación interna: no sale en el WhatsApp al cliente', [venta.observacionInterna, conObs.observacionInterna], [true, true]);
+check('de hasta 500 letras vale; con más no se guarda', [errorVentaPromotora({ ...datos, observacion: 'x'.repeat(500) }, propia), errorVentaPromotora({ ...datos, observacion: 'x'.repeat(501) }, propia) !== ''], ['', true]);
+
 // --- Validación ---
 check('una venta completa no tiene error', errorVentaPromotora(datos, propia), '');
 check('sin teléfono no se guarda', errorVentaPromotora({ ...datos, telefono: '  ' }, propia) !== '', true);

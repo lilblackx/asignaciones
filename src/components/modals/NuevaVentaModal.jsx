@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, MapPin, Star, X } from 'lucide-react';
 import { TIPOS_POR_TRABAJO } from '../../constants';
-import { TIPO_VENTA, camposDePlantillaVenta, instaladorDePlantilla, tecnicoRegistradoDePlantilla } from '../../utils/ventaPromotora';
+import { MAX_OBSERVACION, TIPO_VENTA, camposDePlantillaVenta, instaladorDePlantilla, tecnicoRegistradoDePlantilla } from '../../utils/ventaPromotora';
 import { leerTecnicos } from '../../hooks/useCrearVenta';
 import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import { construirNapsConocidas } from '../../utils/napsConocidas';
@@ -21,7 +21,7 @@ const TIPOS_ITEMS = [{ value: '', label: 'Seleccione...' }, ...(TIPOS_POR_TRABAJ
 const nombreBonito = (nombre) => nombre.toLowerCase().replace(/(^|\s)\S/g, (m) => m.toUpperCase());
 const ACTIVAS = new Set(['PENDIENTE', 'PRE-FINALIZADO']);
 
-const FORM_VACIO = (promotora) => ({ plantillaOriginal: '', cedula: '', tipoDocumento: 'V', nombre: '', telefono: '', direccion: '', falla: '', promotora, ubicacion: '', nap: '', napCoordenadas: '' });
+const FORM_VACIO = (promotora) => ({ plantillaOriginal: '', cedula: '', tipoDocumento: 'V', nombre: '', telefono: '', direccion: '', falla: '', promotora, ubicacion: '', nap: '', napCoordenadas: '', observacion: '' });
 
 // Nueva venta de una PROMOTORA con permiso de crear ventas: solo instalaciones. La plantilla pegada rellena el resto; la oficina
 // asigna el técnico después. Con "ve todas" (ventas) el promotor se escribe; si no, se elige entre los nombres de su usuario.
@@ -184,6 +184,12 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
             <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error} className={`${CAMPO_ORDEN} ${ubicacion.error ? 'border-red-500' : ''}`} />
             {ubicacion.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacion.error}</p>}
             {ubicacion.valor && <a href={ubicacion.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
+          </div>
+
+          <div className="col-span-2 space-y-0.5">
+            <label htmlFor="nv-observacion" className={ETIQUETA_ORDEN}>OBSERVACIÓN <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
+            <textarea id="nv-observacion" rows="2" maxLength={MAX_OBSERVACION} name="observacion" value={form.observacion} onChange={cambiar} aria-describedby="nv-observacion-ayuda" className={CAMPO_ORDEN} placeholder="Ej.: el cliente prefiere que lo visiten en la tarde" />
+            <p id="nv-observacion-ayuda" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">La ven la oficina y el técnico. No sale en el mensaje de WhatsApp al cliente.</p>
           </div>
 
           <div className="col-span-2 sticky bottom-0 -mx-4 -mb-4 mt-1 px-4 py-3 flex gap-2 justify-end rounded-b-2xl bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">

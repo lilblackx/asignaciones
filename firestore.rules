@@ -179,6 +179,8 @@ service cloud.firestore {
           && orden.keys().hasOnly(['fecha', 'fechaProgramada', 'codigo', 'nombre', 'cedula', 'tipoDocumento', 'direccion', 'telefono', 'nap', 'napCoordenadas', 'ubicacion', 'tipoTrabajo', 'falla', 'tecnico', 'ventaTecnico', 'ventaTecnicoId', 'observacion', 'observacionInterna', 'estado', 'plantillaOriginal', 'promotora', 'promotoraClave', 'creado', 'creadoNombre', 'createdAt', 'historialEdiciones', 'isAsignado', 'ventaPromotora'])
           && orden.tipoTrabajo == 'INSTALACIÓN'
           && orden.estado == 'PENDIENTE'
+          && orden.get('observacion', '') is string
+          && orden.get('observacion', '').size() <= 500
           && orden.get('ventaTecnico', '') == orden.get('tecnico', '')
           && (
             (orden.get('tecnico', '') == '' && orden.get('ventaTecnicoId', '') == '')

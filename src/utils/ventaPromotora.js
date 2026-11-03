@@ -11,6 +11,9 @@ import { esInstalacion } from './instalacion.js';
 // una INSTALACIÓN pendiente y sin técnico: la oficina la ve en su lista y le asigna el técnico, como cualquier otra.
 export const TIPO_VENTA = 'INSTALACIÓN';
 
+// Lo más que cabe en la observación de una orden (el mismo tope del formulario de la oficina y de las reglas de Firestore).
+export const MAX_OBSERVACION = 500;
+
 // Los campos de la plantilla que el formulario de la venta aplica (el resto de lo que lee el parser no lo pide).
 const CAMPOS_PLANTILLA = ['cedula', 'tipoDocumento', 'nombre', 'direccion', 'telefono', 'falla', 'ubicacion', 'nap', 'promotora'];
 
@@ -53,6 +56,7 @@ export function errorVentaPromotora(datos, { verTodas, promotoraClaves }) {
   if (ubicacion.error) return `Ubicación: ${ubicacion.error}`;
   const napCoordenadas = normalizarCoordenadasNap(datos.napCoordenadas);
   if (napCoordenadas.error) return `Coordenadas de la NAP: ${napCoordenadas.error}`;
+  if (String(datos.observacion || '').trim().length > MAX_OBSERVACION) return `La observación no puede pasar de ${MAX_OBSERVACION} letras.`;
   return '';
 }
 
@@ -76,8 +80,10 @@ export function armarVentaPromotora(datos, { username, nombre }, ahora = new Dat
     tecnico: datos.tecnico || '',
     // `ventaTecnicoId`: el documento del técnico registrado; las reglas comprueban con él que existe y que el nombre es el suyo.
     ...(datos.tecnico ? { ventaTecnico: datos.tecnico, ventaTecnicoId: datos.tecnicoId } : {}),
-    observacion: '',
-    observacionInterna: false,
+    // Nota de la promotora para la oficina y el técnico (opcional). Va como observación interna: se ve en el dashboard y en el detalle,
+    // pero no sale en el mensaje de WhatsApp al cliente.
+    observacion: String(datos.observacion || '').trim(),
+    observacionInterna: true,
     estado: 'PENDIENTE',
     plantillaOriginal: datos.plantillaOriginal || '',
     promotora: nombrePromotora(datos.promotora),

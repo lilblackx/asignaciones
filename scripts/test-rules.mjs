@@ -729,6 +729,13 @@ await check('PROMOTORA con permiso solo crea instalaciones pendientes, sin técn
   // Toda venta de una promotora lleva su marca (con ella la oficina recibe el aviso de nueva venta).
   await assertFails(nuevaVenta(asCreadora(), 'v12').set(ventaValida({ ventaPromotora: false })));
 });
+await check('PROMOTORA con permiso crea la venta con una observación (interna), de hasta 500 letras y solo texto', async () => {
+  await assertSucceeds(nuevaVenta(asCreadora(), 'vo1').set(ventaValida({ observacion: 'Prefiere la visita en la tarde', observacionInterna: true })));
+  await assertSucceeds(nuevaVenta(asCreadora(), 'vo2').set(ventaValida({ observacion: 'x'.repeat(500), observacionInterna: true })));
+  await assertFails(nuevaVenta(asCreadora(), 'vo3').set(ventaValida({ observacion: 'x'.repeat(501), observacionInterna: true })));
+  await assertFails(nuevaVenta(asCreadora(), 'vo4').set(ventaValida({ observacion: 123 })));
+  await assertFails(nuevaVenta(asCreadora(), 'vo5').set(ventaValida({ observacion: ['a'] })));
+});
 await check('PROMOTORA con permiso crea la venta con el técnico de la plantilla, marcada como venta suya', async () => {
   await assertSucceeds(nuevaVenta(asCreadora(), 'venta-con-tecnico').set(ventaValida({ tecnico: 'EDGAR MONTERO', ventaTecnico: 'EDGAR MONTERO', ventaTecnicoId: 'EDGAR MONTERO' })));
   // No depende de cómo se llame el documento del técnico (ids con guion de datos viejos o de pruebas).
