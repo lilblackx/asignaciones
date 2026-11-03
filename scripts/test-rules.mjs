@@ -823,7 +823,7 @@ await check('solo lfernandez ve (y puede borrar) las estaciones: ni otro ADMIN n
   await assertSucceeds(estacion(asLfEstaciones(), 'estacionusuario1').delete());
 });
 
-// --- Envío al inventario del otro sistema: telecomEnvios (el módulo es solo de lfernandez) ---
+// --- Envío al inventario del otro sistema: telecomEnvios (el módulo es de todo ADMIN y de lfernandez) ---
 const envios = (db) => datos(db).collection('telecomEnvios');
 const asCierra = () => testEnv.authenticatedContext('cierra-uid').firestore();
 const asLf = () => testEnv.authenticatedContext('lfernandez-uid').firestore();
@@ -851,13 +851,13 @@ await check('TECNICO, ALMACEN y PROMOTORA no crean marcas', async () => {
   await assertFails(envios(asAlmacenInv()).doc('orden-i').set(marcaOk('orden-i')));
   await assertFails(envios(asPromotora()).doc('orden-j').set(marcaOk('orden-j')));
 });
-await check('Solo lfernandez ve el módulo: ni otro ADMIN, ni quien cierra, ni nadie más', async () => {
+await check('Todo ADMIN y lfernandez ven el módulo: ni quien cierra, ni un USUARIO, ni nadie más', async () => {
   await assertSucceeds(envios(asLf()).where('estado', 'in', ['SERIAL_NO_ENCONTRADO', 'SERIAL_YA_INSTALADO', 'SIN_SERIAL', 'ERROR']).get());
   await assertSucceeds(envios(asLf()).orderBy('actualizadoEn', 'desc').limit(30).get());
   await assertSucceeds(envios(asLf()).doc('alerta-1').get());
-  await assertFails(envios(asAdmin()).doc('alerta-1').get());
-  await assertFails(envios(asAdmin()).where('estado', 'in', ['ERROR']).get());
-  await assertFails(envios(asAdmin()).orderBy('actualizadoEn', 'desc').limit(30).get());
+  await assertSucceeds(envios(asAdmin()).doc('alerta-1').get());
+  await assertSucceeds(envios(asAdmin()).where('estado', 'in', ['ERROR']).get());
+  await assertSucceeds(envios(asAdmin()).orderBy('actualizadoEn', 'desc').limit(30).get());
   await assertFails(envios(asCierra()).doc('alerta-1').get());
   await assertFails(envios(asUsuario()).doc('alerta-1').get());
   await assertFails(envios(asUsuario()).get());
@@ -865,13 +865,13 @@ await check('Solo lfernandez ve el módulo: ni otro ADMIN, ni quien cierra, ni n
   await assertFails(envios(asAlmacenInv()).doc('alerta-1').get());
   await assertFails(envios(asPromotora()).doc('alerta-1').get());
 });
-await check('lfernandez descarta una alerta (queda como DESCARTADO, con quién y cuándo); nadie más puede', async () => {
+await check('Un ADMIN y lfernandez descartan una alerta (queda como DESCARTADO, con quién y cuándo); nadie más puede', async () => {
   const descartar = { estado: 'DESCARTADO', actualizadoEn: 1700000000000, descartadoPor: 'lfernandez' };
-  await assertFails(envios(asAdmin()).doc('alerta-2').update(descartar));
+  await assertFails(envios(asUsuario()).doc('alerta-2').update(descartar));
   await assertFails(envios(asCierra()).doc('alerta-2').update(descartar));
   await assertFails(envios(asTecnico()).doc('alerta-2').update(descartar));
   await assertSucceeds(envios(asLf()).doc('alerta-2').update(descartar));
-  await assertSucceeds(envios(asLf()).doc('alerta-3').update(descartar));
+  await assertSucceeds(envios(asAdmin()).doc('alerta-3').update({ ...descartar, descartadoPor: 'admin' }));
 });
 await check('Descartar solo cambia el estado: no se puede tocar otro dato, poner otro estado ni descartar lo enviado', async () => {
   await assertFails(envios(asLf()).doc('alerta-1').update({ estado: 'DESCARTADO', serial: 'OTRO' }));

@@ -144,10 +144,10 @@ service cloud.firestore {
       // principal) también lo puede usar USUARIO (operativo, no estructural) y
       // cada TECNICO sobre su propio técnico vinculado, nunca sobre otro.
       // "Nombre en el inventario" (tecnicoInventario: con qué nombre conoce al técnico el inventario del almacén) solo lo
-      // escribe quien gestiona los envíos al inventario (veInventario, más abajo): ningún otro ADMIN lo pone ni lo cambia.
-      allow create: if isAdminUser(appId) && (!('tecnicoInventario' in request.resource.data) || veInventario(appId));
+      // escribe quien vincula técnicos con el inventario (vinculaInventario, más abajo): ningún otro ADMIN lo pone ni lo cambia.
+      allow create: if isAdminUser(appId) && (!('tecnicoInventario' in request.resource.data) || vinculaInventario(appId));
       allow delete: if isAdminUser(appId);
-      allow update: if (isAdminUser(appId) && (veInventario(appId) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tecnicoInventario'])))
+      allow update: if (isAdminUser(appId) && (vinculaInventario(appId) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tecnicoInventario'])))
         || (
           (isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.name == tecnicoAsociado(appId)))
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activo', 'activoUpdatedBy', 'activoUpdatedByRole', 'activoUpdatedAt'])
@@ -379,9 +379,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Quien ve y gestiona los envíos al inventario del otro sistema: solo estos usuarios (por nombre de usuario de la app).
-    // Mantener sincronizado con USUARIOS_INVENTARIO de src/utils/accesoInventario.js (lo comprueba `npm run test:inventario`).
+    // Quien ve y gestiona los envíos al inventario del otro sistema: todo ADMIN y estos usuarios (por nombre de usuario de la app).
+    // Mantener sincronizado con USUARIOS_INVENTARIO / veEnviosInventario de src/utils/accesoInventario.js (lo comprueba `npm run test:inventario`).
     function veInventario(appId) {
+      return isAdminUser(appId) || (isActiveUser(appId) && get(profilePath(appId)).data.get('username', '') in ['lfernandez']);
+    }
+
+    // Quien elige con qué nombre conoce el inventario a cada técnico ("Nombre en el inventario"): solo estos usuarios, no cualquier ADMIN.
+    function vinculaInventario(appId) {
       return isActiveUser(appId) && get(profilePath(appId)).data.get('username', '') in ['lfernandez'];
     }
 

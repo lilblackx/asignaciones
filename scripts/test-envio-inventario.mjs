@@ -6,7 +6,7 @@ import { SignJWT, exportJWK, exportPKCS8, generateKeyPair } from '../cf-worker/n
 import worker, { depsInventario } from '../cf-worker/src/index.js';
 import { MAX_INTENTOS, fechaHoraCaracas, idRegistro, olvidarSesionInventario, reintentarPendientes } from '../cf-worker/src/inventario.js';
 import { payloadEnvioInventario } from '../src/utils/envioInventario.js';
-import { USUARIOS_INVENTARIO, veEnviosInventario } from '../src/utils/accesoInventario.js';
+import { USUARIOS_INVENTARIO, veEnviosInventario, vinculaTecnicosInventario } from '../src/utils/accesoInventario.js';
 import { readFileSync } from 'node:fs';
 
 let failures = 0;
@@ -43,9 +43,10 @@ check('orden sin código: sale "S/C" en el motivo', payloadEnvioInventario({ ...
 check('instalación anterior (sin serial ni conectores): se envía con serial vacío y conectores en 0', (({ serial, apc, upc }) => [serial, apc, upc])(payloadEnvioInventario({ ...instalacion, instalacion: { metraje: 80 } })), ['', 0, 0]);
 
 // --- Quién ve el módulo ---
-check('solo lfernandez (sin importar mayúsculas ni espacios) ve el módulo', [veEnviosInventario('lfernandez'), veEnviosInventario(' LFernandez '), veEnviosInventario('admin'), veEnviosInventario(''), veEnviosInventario(null)], [true, true, false, false, false]);
+check('lfernandez (sin importar mayúsculas ni espacios) y todo ADMIN ven el módulo; nadie más', [veEnviosInventario('lfernandez'), veEnviosInventario(' LFernandez '), veEnviosInventario('otro', 'ADMIN'), veEnviosInventario('', 'ADMIN'), veEnviosInventario('otro', 'USUARIO'), veEnviosInventario('otro', 'TECNICO'), veEnviosInventario('admin'), veEnviosInventario(''), veEnviosInventario(null)], [true, true, true, true, false, false, false, false, false]);
+check('elegir el nombre de cada técnico en el inventario sigue siendo solo de la lista: ni un ADMIN cualquiera', [vinculaTecnicosInventario('lfernandez'), vinculaTecnicosInventario(' LFernandez '), vinculaTecnicosInventario('admin'), vinculaTecnicosInventario(null)], [true, true, false, false]);
 const reglas = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
-check('las reglas de Firestore permiten ver el módulo a los mismos usuarios que la app y el Worker', reglas.includes(`.get('username', '') in [${USUARIOS_INVENTARIO.map((u) => `'${u}'`).join(', ')}]`), true);
+check('las reglas de Firestore permiten ver el módulo a los mismos usuarios que la app y el Worker (los de la lista y todo ADMIN)', [reglas.includes(`.get('username', '') in [${USUARIOS_INVENTARIO.map((u) => `'${u}'`).join(', ')}]`), /function veInventario\(appId\) \{\s*return isAdminUser\(appId\) \|\|/.test(reglas), /function vinculaInventario\(appId\) \{\s*return isActiveUser\(appId\) && /.test(reglas)], [true, true, true]);
 
 // --- Fecha, hora e id con el formato del otro sistema ---
 check('fecha y hora de Venezuela de la orden (no de UTC)', fechaHoraCaracas(FIN), { fecha: '2026-10-15', fechaHora: '2026-10-15 14:05:09' });
@@ -82,6 +83,8 @@ let sinPermisoAuditoria = false; // sus reglas no dejan escribir auditLogs
 let sinPermisoNotificaciones = false; // sus reglas no dejan escribir syncNotifications
 let notificacionesTelecom = [];
 let reportes = []; // reportes de cierre: [{ createdAt, tickets: [orden] }]
+// Cada alerta le llega por push a todos los que ven el módulo (lfernandez y los ADMIN); `avisos()` cuenta las alertas avisadas (una por orden), no los envíos.
+const avisos = () => pushes.filter((p) => p.token === 'tok-lf').length;
 let roles, ordenes, envios, inventario, tecnicosNuestros, tecnicosTelecom, comportamientoTelecom, llamadasTelecom, commitsTelecom, loginsTelecom, pushes, consultasNuestras;
 const respuesta = (cuerpo, status = 200) => new Response(typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -157,8 +160,14 @@ globalThis.fetch = async (url, init = {}) => {
     }
     if (col === 'users') {
       // Los avisos se buscan por nombre de usuario; solo lfernandez tiene un dispositivo registrado.
-      const esDeInventario = q.where.fieldFilter.field.fieldPath === 'username' && q.where.fieldFilter.value.stringValue === 'lfernandez';
-      return respuesta(esDeInventario ? [{ document: { name: `${DOCS}/users/lf-uid`, fields: { fcmTokens: { arrayValue: { values: [s('tok-lf')] } } } } }] : [{}]);
+      // Los ADMIN también reciben los avisos: lfernandez (que es ADMIN) sale en las dos búsquedas y no debe avisarse dos veces.
+      const campo = q.where.fieldFilter.field.fieldPath;
+      const valor = q.where.fieldFilter.value.stringValue;
+      const lf = { document: { name: `${DOCS}/users/lf-uid`, fields: { fcmTokens: { arrayValue: { values: [s('tok-lf')] } } } } };
+      const otroAdmin = { document: { name: `${DOCS}/users/admin-uid`, fields: { fcmTokens: { arrayValue: { values: [s('tok-admin')] } } } } };
+      if (campo === 'username' && valor === 'lfernandez') return respuesta([lf]);
+      if (campo === 'role' && valor === 'ADMIN') return respuesta([lf, otroAdmin]);
+      return respuesta([{}]);
     }
   }
   if (u.includes('fcm.googleapis.com')) { pushes.push(cuerpo.message); return respuesta({ name: 'ok' }); }
@@ -222,7 +231,7 @@ check('entra con su usuario y clave y escribe con esa sesión', [loginsTelecom[0
   [{ email: 'api@tuempresa.com', password: 'clave-de-prueba', returnSecureToken: true }, true]);
 check('queda guardado como ENVIADO en nuestra base, con lo que se envió', (({ estado, intentos, accion, serial, apc, upc, dropMetros, codigo }) => ({ estado, intentos, accion, serial, apc, upc, dropMetros, codigo }))(envio('inst1')),
   { estado: 'ENVIADO', intentos: 1, accion: 'instalacion_nueva', serial: 'HWTC1A2B3C4D', apc: 2, upc: 1, dropMetros: 120, codigo: 'IS10' });
-check('un envío correcto no avisa a nadie', pushes.length, 0);
+check('un envío correcto no avisa a nadie', avisos(), 0);
 
 // 2) Reenviar no duplica
 llamadasTelecom = [];
@@ -236,15 +245,15 @@ r = await enviar('inst1');
 check('serial inexistente: no se envía nada de la orden (ni el material)', [r.json.estado, commitsTelecom.length], ['SERIAL_NO_ENCONTRADO', 0]);
 check('queda la alerta guardada con lo necesario para revisarla', (({ estado, codigo, serial, cliente, tecnico }) => ({ estado, codigo, serial, cliente, tecnico }))(envio('inst1')),
   { estado: 'SERIAL_NO_ENCONTRADO', codigo: 'IS10', serial: 'HWTC1A2B3C4D', cliente: 'Ana Pérez', tecnico: 'GERARDO MOLERO' });
-check('se avisa por push solo al usuario del módulo (lfernandez), de tipo inventario y con el serial', [pushes.length, pushes[0].token, pushes[0].data.title, pushes[0].data.tipo, pushes[0].data.body.includes('IS10') && pushes[0].data.body.includes('HWTC1A2B3C4D')], [1, 'tok-lf', 'Orden no enviada al inventario', 'inventario', true]);
+check('se avisa por push a quienes ven el módulo (lfernandez y los ADMIN, cada uno una vez), de tipo inventario y con el serial', [pushes.length, pushes.map((p) => p.token).sort(), pushes[0].data.title, pushes[0].data.tipo, pushes[0].data.body.includes('IS10') && pushes[0].data.body.includes('HWTC1A2B3C4D')], [2, ['tok-admin', 'tok-lf'], 'Orden no enviada al inventario', 'inventario', true]);
 await enviar('inst1');
-check('repetir sin que cambie nada no vuelve a avisar', pushes.length, 1);
+check('repetir sin que cambie nada no vuelve a avisar', avisos(), 1);
 
 // 3b) Reintentar cuando ya lo dieron de alta en el inventario
 inventario = { HWTC1A2B3C4D: { id: 'inv-1', campos: { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico' } } };
 r = await reintentar('inst1');
 check('reintentar tras ingresar el serial al almacén lo envía', [r.json.estado, commitsTelecom.length, envio('inst1').estado], ['ENVIADO', 1, 'ENVIADO']);
-check('reintentar es solo del usuario del módulo: ni un USUARIO, ni quien cierra, ni otro ADMIN pueden', [(await reintentar('inst1', 'usuario-uid')).status, (await reintentar('inst1', 'cierra-uid')).status, (await reintentar('inst1', 'admin-uid')).status], [403, 403, 403]);
+check('reintentar es de quienes ven el módulo (lfernandez y todo ADMIN): ni un USUARIO ni quien cierra pueden', [(await reintentar('inst1', 'usuario-uid')).status, (await reintentar('inst1', 'cierra-uid')).status, (await reintentar('inst1', 'tecnico-uid')).status], [403, 403, 403]);
 
 // 3c) La oficina corrige el serial de la orden (Editar orden) después de una alerta: reintentar envía el serial corregido
 reiniciar();
@@ -306,13 +315,13 @@ const registroNuevo = dec(escrituraDe(commitsTelecom[1], 'materialLogs').update.
 check('reenviar manda otra vez la orden con el serial corregido y deja el envío con ese serial', [r.json.estado, envio('inst1').serial, envio('inst1').estado, commitsTelecom.length], ['ENVIADO', 'HWTC9Z8Y7X6W', 'ENVIADO', 2]);
 check('el equipo corregido pasa a Instalado con el cliente de la orden', [escrituraDe(commitsTelecom[1], 'inventory').update.name.endsWith('/inv-9'), dec(escrituraDe(commitsTelecom[1], 'inventory').update.fields).estado, dec(escrituraDe(commitsTelecom[1], 'inventory').update.fields).cliente], [true, 'Instalado', 'Ana Pérez']);
 check('el registro de material tiene el mismo id (se sobrescribe, no se duplica) y ahora lleva el serial corregido', [escrituraDe(commitsTelecom[1], 'materialLogs').update.name === escrituraDe(commitsTelecom[0], 'materialLogs').update.name, registroViejo.equipoSerial, registroNuevo.equipoSerial, registroNuevo.drop === registroViejo.drop], [true, 'HWTC1A2B3C4D', 'HWTC9Z8Y7X6W', true]);
-check('reenviar es solo del usuario del módulo y pide que exista un envío', [(await reenviar('inst1', 'admin-uid')).status, (await reenviar('inst1', 'usuario-uid')).status, (await reenviar('noexiste')).status], [403, 403, 404]);
+check('reenviar es de quienes ven el módulo (todo ADMIN, no un USUARIO) y pide que exista un envío', [(await reenviar('inst1', 'usuario-uid')).status, (await reenviar('noexiste', 'admin-uid')).status, (await reenviar('noexiste')).status], [403, 404, 404]);
 
 // 4) Equipo ya instalado a otro cliente
 reiniciar();
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Otro Cliente' };
 r = await enviar('inst1');
-check('equipo ya instalado a otro cliente: no se toca y queda alerta', [r.json.estado, commitsTelecom.length, pushes.length], ['SERIAL_YA_INSTALADO', 0, 1]);
+check('equipo ya instalado a otro cliente: no se toca y queda alerta', [r.json.estado, commitsTelecom.length, avisos()], ['SERIAL_YA_INSTALADO', 0, 1]);
 reiniciar();
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Ana Pérez' };
 r = await enviar('inst1');
@@ -323,7 +332,7 @@ reiniciar();
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'En Almacén' };
 r = await enviar('inst1');
 check('equipo que sigue "En Almacén": no se toca nada de la orden y queda alerta con el motivo', [r.json.estado, commitsTelecom.length, envio('inst1').mensaje.includes('En Almacén')], ['EQUIPO_NO_ASIGNADO', 0, true]);
-check('y se avisa por push solo una vez', [pushes.length, pushes[0].token, (await enviar('inst1'), pushes.length)], [1, 'tok-lf', 1]);
+check('y se avisa por push solo una vez', [avisos(), pushes[0].token, (await enviar('inst1'), avisos())], [1, 'tok-lf', 1]);
 inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Con Técnico' };
 r = await reintentar('inst1');
 check('cuando el almacén lo asigna al técnico, reintentar lo envía', [r.json.estado, commitsTelecom.length], ['ENVIADO', 1]);
@@ -383,13 +392,13 @@ check('nada se escribió en el otro sistema por las que no correspondían', comm
 reiniciar();
 llamadasTelecom = [];
 r = await enviar('inst1', 'admin-uid', { ...env, TELECOM_PASSWORD: undefined });
-check('sin los secretos el envío está apagado: no escribe, no guarda estado ni avisa', [r.json.estado, llamadasTelecom.length, envio('inst1'), pushes.length], ['DESHABILITADO', 0, null, 0]);
+check('sin los secretos el envío está apagado: no escribe, no guarda estado ni avisa', [r.json.estado, llamadasTelecom.length, envio('inst1'), avisos()], ['DESHABILITADO', 0, null, 0]);
 
 // 9) Falla de red del otro sistema: queda PENDIENTE y el cron lo reintenta; tras varios fallos pide ayuda
 reiniciar();
 comportamientoTelecom = 'caido';
 r = await enviar('inst1');
-check('si el otro sistema no responde queda PENDIENTE, sin alerta ni aviso', [r.json.estado, envio('inst1').intentos, pushes.length], ['PENDIENTE', 1, 0]);
+check('si el otro sistema no responde queda PENDIENTE, sin alerta ni aviso', [r.json.estado, envio('inst1').intentos, avisos()], ['PENDIENTE', 1, 0]);
 const T0 = Date.parse('2026-10-15T18:00:00Z'); // minuto 0: toca reintentar
 check('el cron no reintenta fuera de los cuartos de hora', (await reintentarPendientes(env, depsInventario, Date.parse('2026-10-15T18:05:00Z'))).reintentados, 0);
 comportamientoTelecom = 'ok';
@@ -400,7 +409,7 @@ reiniciar();
 comportamientoTelecom = 'caido';
 await enviar('inst1');
 for (let i = 1; i < MAX_INTENTOS; i++) await reintentarPendientes(env, depsInventario, T0 + i * 900000);
-check(`tras ${MAX_INTENTOS} intentos fallidos pasa a ERROR y avisa una vez`, [envio('inst1').estado, envio('inst1').intentos, pushes.length], ['ERROR', MAX_INTENTOS, 1]);
+check(`tras ${MAX_INTENTOS} intentos fallidos pasa a ERROR y avisa una vez`, [envio('inst1').estado, envio('inst1').intentos, avisos()], ['ERROR', MAX_INTENTOS, 1]);
 check('lo que está en ERROR no se reintenta solo', (await reintentarPendientes(env, depsInventario, T0 + 10 * 900000)).reintentados, 0);
 comportamientoTelecom = 'ok';
 r = await reintentar('inst1');
@@ -419,11 +428,11 @@ check('si la app sí llama, la marca se envía al momento y queda ENVIADO', [r.j
 reiniciar();
 marca('fantasma');
 await reintentarPendientes(env, depsInventario, T0);
-check('una marca de una orden que ya no existe (archivada antes de enviarse) pasa a ERROR y avisa', [envio('fantasma').estado, envio('fantasma').mensaje.includes('archivó'), pushes.length, commitsTelecom.length], ['ERROR', true, 1, 0]);
+check('una marca de una orden que ya no existe (archivada antes de enviarse) pasa a ERROR y avisa', [envio('fantasma').estado, envio('fantasma').mensaje.includes('archivó'), avisos(), commitsTelecom.length], ['ERROR', true, 1, 0]);
 reiniciar();
 marca('otra1');
 await reintentarPendientes(env, depsInventario, T0);
-check('una marca de una orden que no corresponde enviar se borra, sin avisar', [envio('otra1'), pushes.length, commitsTelecom.length], [null, 0, 0]);
+check('una marca de una orden que no corresponde enviar se borra, sin avisar', [envio('otra1'), avisos(), commitsTelecom.length], [null, 0, 0]);
 reiniciar();
 marca('pre1');
 r = await enviar('pre1');
@@ -447,7 +456,7 @@ const orden = (id, tecnico) => { ordenes[id] = fieldsDe({ ...instalacion, estado
 reiniciar();
 tecnicosNuestros = {};
 r = await enviar('inst1');
-check('técnico sin nombre elegido en el inventario: no se envía nada (ni el equipo) y queda alerta con el técnico de la orden', [r.json.estado, commitsTelecom.length, llamadasTelecom.some((l) => l.url.endsWith(':runQuery')), envio('inst1').tecnicoOrden, envio('inst1').mensaje.includes('GERARDO MOLERO'), pushes.length], ['TECNICO_NO_VINCULADO', 0, false, 'GERARDO MOLERO', true, 1]);
+check('técnico sin nombre elegido en el inventario: no se envía nada (ni el equipo) y queda alerta con el técnico de la orden', [r.json.estado, commitsTelecom.length, llamadasTelecom.some((l) => l.url.endsWith(':runQuery')), envio('inst1').tecnicoOrden, envio('inst1').mensaje.includes('GERARDO MOLERO'), avisos()], ['TECNICO_NO_VINCULADO', 0, false, 'GERARDO MOLERO', true, 1]);
 tecnicosNuestros = { 'GERARDO MOLERO': { name: 'GERARDO MOLERO', tecnicoInventario: 'GERARDO MOLERO' } };
 check('al elegirlo, reintentar lo envía', [(await reintentar('inst1')).json.estado, commitsTelecom.length], ['ENVIADO', 1]);
 reiniciar();
@@ -470,12 +479,12 @@ check('el nombre elegido se compara sin mayúsculas ni espacios de más y se esc
 reiniciar();
 tecnicosNuestros = { 'GERARDO MOLERO': { name: 'GERARDO MOLERO', tecnicoInventario: 'GERARDO' } };
 r = await enviar('inst1');
-check('un nombre elegido que ya no está en la lista del inventario no se envía (no se inventa una cuenta nueva)', [r.json.estado, commitsTelecom.length, pushes.length], ['TECNICO_NO_ENCONTRADO', 0, 1]);
+check('un nombre elegido que ya no está en la lista del inventario no se envía (no se inventa una cuenta nueva)', [r.json.estado, commitsTelecom.length, avisos()], ['TECNICO_NO_ENCONTRADO', 0, 1]);
 
 reiniciar();
 tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Inactivo' }];
 r = await enviar('inst1');
-check('técnico activo en Asignaciones pero inactivo en el inventario: no se envía nada hasta confirmarlo, con aviso', [r.json.estado, commitsTelecom.length, envio('inst1').mensaje.includes('Inactivo'), pushes.length], ['TECNICO_INACTIVO', 0, true, 1]);
+check('técnico activo en Asignaciones pero inactivo en el inventario: no se envía nada hasta confirmarlo, con aviso', [r.json.estado, commitsTelecom.length, envio('inst1').mensaje.includes('Inactivo'), avisos()], ['TECNICO_INACTIVO', 0, true, 1]);
 check('mientras siga inactivo, reintentar sigue sin enviar', [(await reintentar('inst1')).json.estado, commitsTelecom.length], ['TECNICO_INACTIVO', 0]);
 tecnicosTelecom = [{ nombre: 'GERARDO MOLERO', estado: 'Activo' }];
 check('cuando lo activan en el inventario, reintentar lo envía', [(await reintentar('inst1')).json.estado, commitsTelecom.length], ['ENVIADO', 1]);
@@ -496,9 +505,9 @@ reiniciar();
 tecnicosTelecom = [{ nombre: 'OTRO TECNICO', estado: 'Activo' }, { nombre: 'ÁNGEL RUIZ', estado: 'Inactivo' }, { nombre: 'GERARDO MOLERO', estado: 'Activo' }];
 r = await llamar('/inventario/tecnicos', 'lf-uid', {});
 check('el usuario del módulo recibe la lista de técnicos del inventario, ordenada y con su estado', [r.status, r.json.tecnicos.map((x) => [x.nombre, x.activo])], [200, [['ÁNGEL RUIZ', false], ['GERARDO MOLERO', true], ['OTRO TECNICO', true]]]);
-check('nadie más la ve: ni otro ADMIN, ni un USUARIO', [(await llamar('/inventario/tecnicos', 'admin-uid', {})).status, (await llamar('/inventario/tecnicos', 'usuario-uid', {})).status], [403, 403]);
+check('nadie más la ve: ni otro ADMIN (es de quien elige el nombre de cada técnico), ni un USUARIO', [(await llamar('/inventario/tecnicos', 'admin-uid', {})).status, (await llamar('/inventario/tecnicos', 'usuario-uid', {})).status], [403, 403]);
 check('sin los secretos la lista viene vacía y apagada', (await llamar('/inventario/tecnicos', 'lf-uid', {}, { ...env, TELECOM_PASSWORD: undefined })).json, { estado: 'DESHABILITADO', tecnicos: [] });
-check('las reglas de Firestore dejan elegir el nombre en el inventario solo a quien ve el módulo (los demás ADMIN no lo ponen ni lo cambian)', reglas.includes("isAdminUser(appId) && (veInventario(appId) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tecnicoInventario']))"), true);
+check('las reglas de Firestore dejan elegir el nombre en el inventario solo a la lista (vinculaInventario; los demás ADMIN no lo ponen ni lo cambian)', reglas.includes("isAdminUser(appId) && (vinculaInventario(appId) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tecnicoInventario']))"), true);
 
 // Notificaciones para el módulo del otro sistema (syncNotifications)
 reiniciar();

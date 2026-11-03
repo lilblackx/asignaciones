@@ -27,7 +27,7 @@ import { useReports } from './hooks/useReports';
 import { useFilteredTickets } from './hooks/useFilteredTickets';
 import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
 import { useEnviosInventario } from './hooks/useEnviosInventario';
-import { veEnviosInventario } from './utils/accesoInventario';
+import { veEnviosInventario, vinculaTecnicosInventario } from './utils/accesoInventario';
 import { veEstaciones } from './utils/estaciones';
 import EstacionesView from './components/EstacionesView';
 import { listarTecnicosInventario } from './lib/inventario';
@@ -127,8 +127,10 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   // El técnico se entera de un pago o un adelanto que Finanzas le registra, también con la app abierta.
   useAvisosPagos({ firebaseUser, tecnico: isTecnico ? tecnicoAsociado : null, onNotify: notifications.addNotification, setToastMsg });
-  // Los envíos al inventario del otro sistema (alertas y módulo) son solo de los usuarios de utils/accesoInventario.
-  const verInventario = veEnviosInventario(currentUser);
+  // Los envíos al inventario del otro sistema (alertas y módulo) son de los ADMIN y de los usuarios de utils/accesoInventario; elegir el
+  // nombre de cada técnico en el inventario (Técnicos) sigue siendo solo de estos últimos.
+  const verInventario = veEnviosInventario(currentUser, role);
+  const vinculaInventario = vinculaTecnicosInventario(currentUser);
   const verEstaciones = veEstaciones(currentUser);
   const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviar: reenviarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
   useCompletarPromotoras(firebaseUser, role, tickets);
@@ -875,7 +877,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             handleAddTech={handleAddTechSubmit}
             handleDeleteTech={handleDeleteTechSeguro}
             onToggleActivo={toggleTechnicoActivoSeguro}
-            verInventario={verInventario}
+            verInventario={vinculaInventario}
             onCargarTecnicosInventario={listarTecnicosInventario}
             onVincularInventario={vincularTecnicoInventarioSeguro}
             ordenTurno={ordenTurno}

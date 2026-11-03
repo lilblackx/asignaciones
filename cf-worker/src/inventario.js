@@ -3,10 +3,10 @@
 // lógica que usa la app); aquí solo está el envío.
 //
 //   POST /inventario/enviar     { ticketId }  la app lo llama al aprobar/finalizar una orden (ADMIN, USUARIO o quien cierra)
-//   POST /inventario/reintentar { ticketId }  desde el módulo de la app, solo para los usuarios de USUARIOS_INVENTARIO
+//   POST /inventario/reintentar { ticketId }  desde el módulo de la app, para quienes ven el módulo (todo ADMIN y los de USUARIOS_INVENTARIO)
 //   POST /inventario/reenviar { ticketId }    lo mismo, pero también de una orden ya ENVIADA: se vuelve a enviar con lo que dice la orden ahora
 //                                             (por ejemplo, con el serial corregido). Escribe lo mismo en las mismas filas (no duplica material).
-//   POST /inventario/notificar  { ticketId }  vuelve a escribir el aviso de una orden con alerta en syncNotifications, solo para USUARIOS_INVENTARIO
+//   POST /inventario/notificar  { ticketId }  vuelve a escribir el aviso de una orden con alerta en syncNotifications, solo para quienes ven el módulo
 //   cron                        envía lo PENDIENTE: lo que no se pudo enviar (red caída, clave rechazada...) y lo que la app
 //                               marcó al aprobar pero no alcanzó a llamar al Worker; cada 15 minutos
 // Al aprobar, la app deja en telecomEnvios/{id} una marca mínima { ticketId, estado: PENDIENTE, intentos: 0 } (sin datos
@@ -19,11 +19,11 @@
 // serial no existe, o el equipo no está "Con Técnico" (p. ej. sigue "En Almacén"), no se envía nada de la orden: queda una
 // alerta en la app y un aviso push. El estado de cada envío vive en telecomEnvios/{id de la orden} (nuestro Firestore).
 //
-// Las alertas y los avisos push son solo de los usuarios de USUARIOS_INVENTARIO (src/utils/accesoInventario.js). Además, cada
+// Las alertas y los avisos push son de quienes ven el módulo: todo ADMIN y los usuarios de USUARIOS_INVENTARIO (src/utils/accesoInventario.js). Además, cada
 // alerta deja un documento en syncNotifications del otro sistema (notificarAlInventario) para su módulo de notificaciones.
 // Sin los secretos configurados el envío está apagado: no escribe nada ni genera alertas.
 import { ACCION_AVERIA, ACCION_INSTALACION, ESTADOS_CON_ALERTA, ESTADO_ENVIADO, ESTADO_PENDIENTE, TEXTO_ESTADO_ENVIO, payloadEnvioInventario } from '../../src/utils/envioInventario.js';
-import { veEnviosInventario } from '../../src/utils/accesoInventario.js';
+import { veEnviosInventario, vinculaTecnicosInventario } from '../../src/utils/accesoInventario.js';
 import { serialParaOlt } from '../../src/utils/serialOlt.js';
 import { camposAObjeto } from './materiales-api.js';
 
@@ -369,13 +369,15 @@ async function procesar(env, deps, accessToken, ticketId, p, existente, ahoraMs)
 
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
 
-// `enviar`: quien aprueba o finaliza órdenes (ADMIN, USUARIO o con permiso de cierre). `gestionar`: solo los usuarios del módulo.
+// `enviar`: quien aprueba o finaliza órdenes (ADMIN, USUARIO o con permiso de cierre). `gestionar`: los usuarios del módulo (todo ADMIN y la
+// lista de utils/accesoInventario). `vincular`: quien elige el nombre de cada técnico en el inventario (solo la lista, no cualquier ADMIN).
 async function permisos(env, deps, accessToken, uid) {
   const perfil = await deps.getUserDoc(env, accessToken, uid);
-  if (!perfil || perfil.fields?.disabled?.booleanValue === true) return { enviar: false, gestionar: false };
+  if (!perfil || perfil.fields?.disabled?.booleanValue === true) return { enviar: false, gestionar: false, vincular: false };
   const rol = perfil.fields?.role?.stringValue;
+  const username = perfil.fields?.username?.stringValue;
   const aprueba = rol === 'ADMIN' || rol === 'USUARIO' || perfil.fields?.puedeCerrar?.booleanValue === true;
-  return { enviar: aprueba, gestionar: veEnviosInventario(perfil.fields?.username?.stringValue) };
+  return { enviar: aprueba, gestionar: veEnviosInventario(username, rol), vincular: vinculaTecnicosInventario(username) };
 }
 
 export async function manejarInventario(request, env, headers, uid, deps, ahoraMs = Date.now()) {
@@ -415,11 +417,11 @@ export async function manejarInventario(request, env, headers, uid, deps, ahoraM
 }
 
 //   POST /inventario/tecnicos   la lista de técnicos del inventario, para elegir con cuál se corresponde cada técnico de la app
-//                               (solo los usuarios de USUARIOS_INVENTARIO)
+//                               (solo los usuarios de USUARIOS_INVENTARIO: es parte de elegir el nombre de cada técnico, no de gestionar los envíos)
 export async function listarTecnicosInventario(env, headers, uid, deps, ahoraMs = Date.now()) {
   try {
     const accessToken = await deps.getGoogleAccessToken(env);
-    if (!(await permisos(env, deps, accessToken, uid)).gestionar) return new Response('Sin permiso.', { status: 403, headers });
+    if (!(await permisos(env, deps, accessToken, uid)).vincular) return new Response('Sin permiso.', { status: 403, headers });
     if (!inventarioActivo(env)) return json({ estado: 'DESHABILITADO', tecnicos: [] }, 200, headers);
     return json({ tecnicos: (await leerTecnicosTelecom(env, ahoraMs)).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')) }, 200, headers);
   } catch (err) {

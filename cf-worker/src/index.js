@@ -120,8 +120,11 @@ async function resolveTokens(env, accessToken, target) {
   if (target?.type === 'tecnico' && target.name) {
     docs = await runQuery(env, accessToken, 'tecnicoAsociado', 'EQUAL', { stringValue: target.name });
   } else if (target?.type === 'usuarios') {
-    // Por nombre de usuario de la app (campo `username` del perfil).
-    docs = (await Promise.all((target.usernames || []).map((u) => runQuery(env, accessToken, 'username', 'EQUAL', { stringValue: String(u) })))).flat();
+    // Por nombre de usuario de la app (campo `username` del perfil) y, si se pide, también por rol (`roles`), sin repetir a nadie.
+    const porNombre = (target.usernames || []).map((u) => runQuery(env, accessToken, 'username', 'EQUAL', { stringValue: String(u) }));
+    const porRol = (target.roles || []).map((r) => runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: String(r) }));
+    const seen = new Set();
+    docs = (await Promise.all([...porNombre, ...porRol])).flat().filter((d) => (seen.has(d.name) ? false : (seen.add(d.name), true)));
   } else if (target?.type === 'oficina') {
     // Quien crea y atiende órdenes: ADMIN y USUARIO (p. ej. responder la consulta de cobro de un técnico).
     const oficina = await Promise.all(['ADMIN', 'USUARIO'].map((r) => runQuery(env, accessToken, 'role', 'EQUAL', { stringValue: r })));
@@ -695,9 +698,9 @@ async function avisarAprobadores(env, accessToken, title, body) {
   await enviarADestinos(env, accessToken, destinos, title, body, { tipo: 'cierreAutomatico', tag: 'cierreAutomatico' });
 }
 
-// Las alertas del envío al inventario solo les llegan a los usuarios de USUARIOS_INVENTARIO.
+// Las alertas del envío al inventario les llegan a quienes ven el módulo: los ADMIN y los usuarios de USUARIOS_INVENTARIO.
 async function avisarInventario(env, accessToken, title, body, extra) {
-  const destinos = await resolveTokens(env, accessToken, { type: 'usuarios', usernames: USUARIOS_INVENTARIO });
+  const destinos = await resolveTokens(env, accessToken, { type: 'usuarios', usernames: USUARIOS_INVENTARIO, roles: ['ADMIN'] });
   await enviarADestinos(env, accessToken, destinos, title, body, extra);
 }
 
