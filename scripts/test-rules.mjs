@@ -1455,6 +1455,14 @@ await check('sesión técnico: con 3 y con 6 días desde el inicio de sesión si
     await assertSucceeds(perfilPropio(db, 'tecnico-uid').update({ fcmTokens: ['token-de-prueba'] }));
   }
 });
+await check('sesión técnico: con más de 24 h (27 h y 6 días) todavía lee sus órdenes y su técnico (las reglas no se pasan de las 1.000 expresiones)', async () => {
+  for (const horas of [27, 24 * 6]) {
+    const db = conInicioDeSesion('tecnico-uid', horasAtras(horas));
+    const datos = db.collection('artifacts').doc(APP_ID).collection('public').doc('data');
+    await assertSucceeds(datos.collection('tickets').where('tecnico', '==', 'GERARDO MOLERO').get());
+    await assertSucceeds(datos.collection('technicians').where('name', '==', 'GERARDO MOLERO').get());
+  }
+});
 await check('sesión técnico: pasados 7 días y 10 min se rechaza todo, también lo suyo', async () => {
   const db = conInicioDeSesion('tecnico-uid', diasAtras(7, 15));
   await assertFails(perfilPropio(db, 'tecnico-uid').get());

@@ -32,36 +32,45 @@ service cloud.firestore {
         && get(profilePath(appId)).data.disabled != true;
     }
 
+    // El rol se compara ANTES de revisar la sesión: las reglas de lectura (órdenes, técnicos...) prueban un rol tras otro y Firestore corta cada petición
+    // a las 1.000 expresiones evaluadas. Revisar la sesión completa por cada rol que no es el de la persona (cuando pasan de 24 h y el técnico entra por su
+    // plazo de 7 días, es lo más caro) se comía ese tope y le rechazaba al técnico sus órdenes y su técnico. Así un rol ajeno cuesta unas pocas expresiones.
+    function esRol(appId, rol) {
+      return exists(profilePath(appId))
+        && get(profilePath(appId)).data.role == rol
+        && isActiveUser(appId);
+    }
+
     function isAdminUser(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'ADMIN';
+      return esRol(appId, 'ADMIN');
     }
 
     function isUsuarioRole(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'USUARIO';
+      return esRol(appId, 'USUARIO');
     }
 
     function isTecnicoRole(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'TECNICO';
+      return esRol(appId, 'TECNICO');
     }
 
     // ALMACEN y PROMOTORA solo leen: ninguna regla de escritura los incluye.
     function isAlmacenRole(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'ALMACEN';
+      return esRol(appId, 'ALMACEN');
     }
 
     function isPromotoraRole(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'PROMOTORA';
+      return esRol(appId, 'PROMOTORA');
     }
 
     // INFRAESTRUCTURA solo lee: las instalaciones y los reportes de cierre donde quedan las ya archivadas (nada más).
     function isInfraestructuraRole(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'INFRAESTRUCTURA';
+      return esRol(appId, 'INFRAESTRUCTURA');
     }
 
     // FINANZAS lee las órdenes, los técnicos y los reportes (sin escribir nada de eso) y lleva sus propias colecciones: la conciliación de
     // cobros, las tarifas y los pagos a técnicos (más abajo). El ADMIN también las escribe.
     function isFinanzasRole(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'FINANZAS';
+      return esRol(appId, 'FINANZAS');
     }
 
     function llevaFinanzas(appId) {
@@ -71,7 +80,7 @@ service cloud.firestore {
     // ADMINISTRACION concilia los pagos que los clientes hacen por las órdenes (pagosOrdenes, más abajo): lee las órdenes, los técnicos y los reportes (sin
     // escribir nada de eso) y escribe solo esos pagos. El ADMIN también los trabaja.
     function isAdministracionRole(appId) {
-      return isActiveUser(appId) && get(profilePath(appId)).data.role == 'ADMINISTRACION';
+      return esRol(appId, 'ADMINISTRACION');
     }
 
     function llevaAdministracion(appId) {
