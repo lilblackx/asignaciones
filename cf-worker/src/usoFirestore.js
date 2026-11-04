@@ -20,10 +20,13 @@ const FILTROS = {
 const iso = (ms) => new Date(ms).toISOString();
 
 // Los puntos de una métrica sumada por periodos de `alineacionS` segundos entre `desde` y `hasta`: [{ hasta, valor }] del más viejo al más nuevo.
+// El periodo se redondea HACIA ARRIBA: para el total del día se pide un solo periodo del largo del intervalo, y si quedara más corto que el intervalo
+// (por una fracción de segundo) Monitoring devuelve un segundo punto cuyo periodo empieza ANTES del inicio y suma lecturas del día anterior (el panel
+// de Estaciones llegó a mostrar 21.440 cuando eran 16.700).
 async function serie(env, token, filtro, desde, hasta, alineacionS, { alineador = 'ALIGN_SUM' } = {}) {
   const parametros = new URLSearchParams({
     filter: filtro, 'interval.startTime': iso(desde), 'interval.endTime': iso(hasta),
-    'aggregation.alignmentPeriod': `${Math.max(60, Math.round(alineacionS))}s`, 'aggregation.perSeriesAligner': alineador, 'aggregation.crossSeriesReducer': 'REDUCE_SUM',
+    'aggregation.alignmentPeriod': `${Math.max(60, Math.ceil(alineacionS))}s`, 'aggregation.perSeriesAligner': alineador, 'aggregation.crossSeriesReducer': 'REDUCE_SUM',
   });
   const res = await fetch(`${MONITORING}/${env.FIREBASE_PROJECT_ID}/timeSeries?${parametros}`, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) {

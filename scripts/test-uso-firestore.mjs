@@ -46,6 +46,24 @@ const estado = await calcularUsoFirestore(env, deps, AHORA);
 check('del día de la cuota: lecturas, escrituras y borrados', estado.hoy, { lecturas: 10000, escrituras: 500, borrados: 50 });
 check('24 horas, de la más vieja a la más nueva, con las cuatro métricas', [estado.porHora.length, estado.porHora[23].hasta === AHORA, estado.porHora[0]], [24, true, { hasta: AHORA - 23 * 3600 * 1000, lecturas: 1000, escrituras: 50, borrados: 5, rechazos: 2 }]);
 check('escuchadores y conexiones abiertos ahora (enteros)', [estado.escuchadores, estado.conexiones], [40, 8]);
+
+// El total del día se pide en UN solo periodo que cubra todo el intervalo (redondeado hacia arriba): si fuera más corto por una fracción de segundo,
+// Monitoring devolvería un segundo punto con lecturas de antes del inicio del día y el panel se inflaba (21.440 en vez de 16.700).
+const periodosDelDia = [];
+for (const fraccion of [0, 100, 477, 999]) {
+  const instante = AHORA + fraccion;
+  const delta = (instante - inicioDiaCuota(instante)) / 1000;
+  periodosDelDia.length = 0;
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const periodo = Number(new URL(url).searchParams.get('aggregation.alignmentPeriod').replace('s', ''));
+    if (periodo !== 3600 && periodo !== 300) periodosDelDia.push(periodo);
+    return original(url);
+  };
+  await calcularUsoFirestore(env, deps, instante);
+  globalThis.fetch = original;
+  check(`el periodo del día cubre todo el intervalo (+${fraccion} ms)`, periodosDelDia.length > 0 && periodosDelDia.every((p) => p >= delta), true);
+}
 check('las reglas rechazadas se cuentan sin las permitidas', llamadas.some((f) => f.includes('evaluation_count') && f.includes('result!="ALLOW"')), true);
 
 globalThis.fetch = async () => ({ ok: false, status: 403, json: async () => ({}) });
