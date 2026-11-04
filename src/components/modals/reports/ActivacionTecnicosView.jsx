@@ -52,8 +52,8 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
 
   return (
     <div>
-      {error && <p className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">No se pudo cargar el registro. Intenta actualizar.</p>}
-      {truncado && <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-4">Solo se leyeron los últimos movimientos; los más antiguos no cuentan.</p>}
+      {error && <p className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">No se pudo cargar el registro. Intenta actualizar.</p>}
+      {truncado && <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2 mb-4">Solo se leyeron los últimos movimientos; los más antiguos no cuentan.</p>}
 
       <Cifras items={cifrasActivacion(activacion)} />
 
@@ -94,7 +94,7 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
           ) : (
             <ul className="flex flex-col gap-1.5">
               {movimientos.map((m, i) => (
-                <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs">
+                <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs">
                   <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${m.accion === 'ACTIVADO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{m.accion}</span>
                   <span className="font-bold">{m.tecnico}</span>
                   <span className="text-zinc-600 dark:text-zinc-400">{m.fechaHora}</span>

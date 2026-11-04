@@ -223,7 +223,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                           <button
                             type="button"
                             onClick={() => setPlantillaAbierta(o)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                           >
                             <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
                           </button>
@@ -257,11 +257,11 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
 
         {totalPages > 1 && (
           <div className={`px-4 sm:px-6 py-2.5 lg:py-1.5 shrink-0 border-t border-zinc-300 dark:border-zinc-800 bg-fondo flex items-center justify-between gap-3 text-xs max-lg:text-sm font-bold text-zinc-700 dark:text-zinc-300 ${CENTRADO_AMPLIO}`}>
-            <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} aria-label="Página anterior" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} aria-label="Página anterior" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <ChevronLeft className="w-4 h-4 lg:w-3.5 lg:h-3.5" aria-hidden="true" /> <span className="max-sm:hidden">Anterior</span>
             </button>
             <span className="text-center whitespace-nowrap">Página {currentPage + 1} de {totalPages}</span>
-            <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages - 1} aria-label="Página siguiente" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages - 1} aria-label="Página siguiente" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <span className="max-sm:hidden">Siguiente</span> <ChevronRight className="w-4 h-4 lg:w-3.5 lg:h-3.5" aria-hidden="true" />
             </button>
           </div>

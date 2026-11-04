@@ -26,7 +26,7 @@ function Dato({ clave, etiqueta, valor, copiable = true, copiado, onCopiar, chil
       <div className="flex flex-wrap items-center gap-2 mt-0.5">
         <span className="text-sm font-bold text-zinc-900 dark:text-white break-words">{valor}</span>
         {copiable && (
-          <button type="button" onClick={() => onCopiar(clave, String(valor))} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+          <button type="button" onClick={() => onCopiar(clave, String(valor))} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
             {copiado === clave ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />} {copiado === clave ? 'Copiado' : 'Copiar'}
           </button>
         )}
@@ -80,7 +80,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
 
         <div className="p-4 space-y-4">
           {cambio && (
-            <div role="alert" className="rounded-lg border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1">
+            <div role="alert" className="rounded-xl border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1">
               <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}</p>
               <p className="text-xs text-amber-900 dark:text-amber-200">Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</p>
             </div>
@@ -93,9 +93,9 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
             <Dato copiado={copiado} onCopiar={copiar} clave="cedula" etiqueta="Cédula" valor={cobro.cedula ? formatCedula(cobro.cedula) : ''} />
             <div className="col-span-2">
               <Dato copiado={copiado} onCopiar={copiar} clave="telefono" etiqueta="Teléfono del cliente" valor={cobro.telefono} copiable={false}>
-                <TelefonoAccion telefono={cobro.telefono} tipo="llamar" nombre={cobro.nombre} className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
-                <button type="button" onClick={() => copiar('telefono', cobro.telefono)} className="max-lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">{copiado === 'telefono' ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />} {copiado === 'telefono' ? 'Copiado' : 'Copiar'}</button>
-                <TelefonoAccion telefono={cobro.telefono} tipo="chat" nombre={cobro.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
+                <TelefonoAccion telefono={cobro.telefono} tipo="llamar" nombre={cobro.nombre} className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
+                <button type="button" onClick={() => copiar('telefono', cobro.telefono)} className="max-lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">{copiado === 'telefono' ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />} {copiado === 'telefono' ? 'Copiado' : 'Copiar'}</button>
+                <TelefonoAccion telefono={cobro.telefono} tipo="chat" nombre={cobro.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
               </Dato>
             </div>
             <Dato copiado={copiado} onCopiar={copiar} clave="trabajo" etiqueta="Trabajo" valor={[cobro.tipoTrabajo, cobro.falla].filter(Boolean).join(' · ')} copiable={false} />
@@ -106,7 +106,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
 
           {!soloLectura && <Boton variante="secundario" tamano="normal" icono={copiado === 'todo' ? Check : Copy} onClick={() => copiar('todo', textoParaCopiar(cobro))}>{copiado === 'todo' ? 'Copiado' : 'Copiar todos los datos'}</Boton>}
 
-          <details className="rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <details className="rounded-xl border border-zinc-200 dark:border-zinc-800">
             <summary className="px-3 py-2 text-xs font-black tracking-wide text-zinc-700 dark:text-zinc-300 cursor-pointer">HISTORIAL ({(cobro.historial || []).length})</summary>
             <ul className="px-3 pb-2 space-y-1.5">
               {[...(cobro.historial || [])].reverse().map((h, i) => (
@@ -116,7 +116,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
           </details>
 
           {pideMonto && (
-            <div className="space-y-2 rounded-lg border border-zinc-300 dark:border-zinc-700 p-3">
+            <div className="space-y-2 rounded-xl border border-zinc-300 dark:border-zinc-700 p-3">
               <p className="text-xs text-zinc-600 dark:text-zinc-400">Esta instalación no trae monto: escribe el que subes al portal.</p>
               <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
                 <div>

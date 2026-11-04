@@ -1,3 +1,4 @@
+import { observacionParaTecnico } from '../utils/observacion';
 import { Fragment } from 'react';
 import { esProgramadaFutura } from '../utils/programada';
 import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
@@ -87,7 +88,7 @@ export default function TicketsMobileList({
         return (
         <Fragment key={ticket._clave || ticket.id}>
         {primeraCerrada && (
-          <h2 className="mt-2 px-3 py-2 rounded-lg bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">FINALIZADAS Y CANCELADAS ({cerradasEnBusqueda})</h2>
+          <h2 className="mt-2 px-3 py-2 rounded-xl bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">FINALIZADAS Y CANCELADAS ({cerradasEnBusqueda})</h2>
         )}
         <div className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-red-700/60 dark:border-red-800/60' : 'border-emerald-700/60 dark:border-emerald-800/60') : prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
           <div className={`p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-start sm:items-center ${cerrada ? 'bg-zinc-200/70 dark:bg-zinc-800/60' : 'bg-zinc-50 dark:bg-zinc-950'}`}>
@@ -144,11 +145,11 @@ export default function TicketsMobileList({
             </div>
             {instalacionSinUbicacion(ticket) && (
               canEditTickets ? (
-                <button type="button" onClick={() => onPegarUbicacion(ticket)} className="self-start inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                <button type="button" onClick={() => onPegarUbicacion(ticket)} className="self-start inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-2.5 py-1.5 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
                   <MapPinOff className="w-4 h-4" aria-hidden="true" /> Sin ubicación · pegar
                 </button>
               ) : (
-                <span className="self-start inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
+                <span className="self-start inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
                   <MapPinOff className="w-4 h-4" aria-hidden="true" /> Sin ubicación todavía
                 </span>
               )
@@ -158,17 +159,17 @@ export default function TicketsMobileList({
               // aria-label completo para no gastar dos filas de alto por tarjeta.
               <div className="flex gap-2">
                 {enlaceUbicacion && (
-                  <a href={enlaceUbicacion} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar" className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-lg bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 text-xs font-bold hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors">
+                  <a href={enlaceUbicacion} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar" className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 text-xs font-bold hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors">
                     <Navigation className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">Llegar</span>
                   </a>
                 )}
                 {enlaceNap && (
-                  <a href={enlaceNap} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la NAP de la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar a la NAP" className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 text-xs font-bold hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
+                  <a href={enlaceNap} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la NAP de la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar a la NAP" className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 text-xs font-bold hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors">
                     <Network className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">NAP</span>
                   </a>
                 )}
-                <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 min-h-11 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
-                <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 min-h-11 py-2.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
+                <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 min-h-11 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
+                <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 min-h-11 py-2.5 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
               </div>
             )}
             <div className="flex items-start gap-2 text-sm">
@@ -192,14 +193,14 @@ export default function TicketsMobileList({
             <ConsultaCobroAviso ticket={ticket} onResponder={onResponderCobro} />
             <InfraestructuraAviso ticket={ticket} onResolver={canEditTickets ? onResolverInfra : undefined} />
             {canEditTickets && onEscalar && puedeEscalar(ticket) && (
-              <button type="button" onClick={() => onEscalar(ticket)} className="self-start inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
+              <button type="button" onClick={() => onEscalar(ticket)} className="self-start inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-2.5 py-1.5 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
                 <HardHat className="w-4 h-4" aria-hidden="true" /> Escalar a infraestructura
               </button>
             )}
-            {ticket.observacion && (
+            {(isTecnico ? observacionParaTecnico(ticket) : ticket.observacion) && (
               <div className="flex items-start gap-2 text-sm">
                 <MessageSquareText className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" aria-label="Observación" role="img" />
-                <span className="text-zinc-700 dark:text-zinc-300 leading-tight">{ticket.observacion}</span>
+                <span className="text-zinc-700 dark:text-zinc-300 leading-tight">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
               </div>
             )}
             {ticket.observacionTecnico && (

@@ -100,7 +100,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
 
           <CedulaField variant="edit" wrapperClassName="col-span-2 space-y-0.5" idPrefix="nv" tipoDocumento={form.tipoDocumento} cedula={form.cedula} onChange={cambiar} />
           {duplicada && (
-            <div role="status" className="col-span-2 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded-lg px-2.5 py-2 text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300">
+            <div role="status" className="col-span-2 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded-xl px-2.5 py-2 text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
               <span>Ya hay una orden <strong>{duplicada.estado}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</span>
             </div>
@@ -189,7 +189,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           <div className="col-span-2 space-y-0.5">
             <label htmlFor="nv-observacion" className={ETIQUETA_ORDEN}>OBSERVACIÓN <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
             <textarea id="nv-observacion" rows="2" maxLength={MAX_OBSERVACION} name="observacion" value={form.observacion} onChange={cambiar} aria-describedby="nv-observacion-ayuda" className={CAMPO_ORDEN} placeholder="Ej.: el cliente prefiere que lo visiten en la tarde" />
-            <p id="nv-observacion-ayuda" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">La ven la oficina y el técnico. No sale en el mensaje de WhatsApp al cliente.</p>
+            <p id="nv-observacion-ayuda" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Es interna: solo la ve la oficina (ni el técnico ni el cliente). No sale en el mensaje de WhatsApp.</p>
           </div>
 
           <div className="col-span-2 sticky bottom-0 -mx-4 -mb-4 mt-1 px-4 py-3 flex gap-2 justify-end rounded-b-2xl bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">

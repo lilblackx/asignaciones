@@ -4,7 +4,7 @@ import { CAMPOS_POR_TIPO, FORMAS_PAGO_INICIALES, TIPOS_AGREGABLES, TITULO_POR_TI
 import { ICONO_POR_TIPO } from './formasPagoIconos';
 import Spinner from '../Spinner';
 
-const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
+const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
 const LABEL_CLASS = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 
 // Sin nada guardado todavía (el documento no existe) se precarga con los datos de
@@ -56,7 +56,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
                 onClick={() => quitar(i)}
                 aria-label={`Quitar ${titulo} ${forma.banco || i + 1}`}
                 title="Quitar"
-                className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="p-1.5 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <Trash2 className="w-4 h-4" aria-hidden="true" />
               </button>

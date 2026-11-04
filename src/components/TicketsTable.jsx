@@ -1,3 +1,4 @@
+import { observacionParaTecnico } from '../utils/observacion';
 import { useRef } from 'react';
 import { ArrowDownAZ, Ban, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 // Para reactivar la columna ENVIADO: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
@@ -151,10 +152,10 @@ export default function TicketsTable({
                     {isTecnico && ticket.estado === 'PENDIENTE' && (
                       <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
                     )}
-                    {ticket.observacion && (
-                      <span className="flex items-start gap-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400" title={ticket.observacion}>
+                    {(isTecnico ? observacionParaTecnico(ticket) : ticket.observacion) && (
+                      <span className="flex items-start gap-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400" title={isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}>
                         <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />
-                        <span className="line-clamp-2">{ticket.observacion}</span>
+                        <span className="line-clamp-2">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
                       </span>
                     )}
                     {ticket.observacionTecnico && (
@@ -196,7 +197,7 @@ export default function TicketsTable({
                     {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
                     {instalacionSinUbicacion(ticket) && (
                       canEditTickets ? (
-                        <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Copia el enlace de ubicación y haz clic para guardarlo" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                        <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Copia el enlace de ubicación y haz clic para guardarlo" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
                           <MapPinOff className="w-3 h-3" aria-hidden="true" /> Sin ubicación · pegar
                         </button>
                       ) : (
@@ -255,32 +256,32 @@ export default function TicketsTable({
                       <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold" title="Archivada por el cierre del día: solo consulta">-</span>
                     ) : isTecnico ? (
                       <>
-                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp'}><MessageCircle className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {enlaceNavegacion && (
                           <a href={enlaceNavegacion} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar" className="p-1 text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 hover:bg-sky-200 dark:hover:bg-sky-900/50 rounded transition-colors"><Navigation className="w-3.5 h-3.5" /></a>
                         )}
                         {ticket.estado === 'PENDIENTE' ? (
-                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`Pre-finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-black bg-amber-500 hover:bg-amber-400 rounded font-bold transition-colors" title="Pre-finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`Pre-finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-xl font-bold transition-colors" title="Pre-finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
                         ) : null}
                         {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
                             comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.
                         {onEscalar && puedeEscalar(ticket) && (
-                          <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="p-1 text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded transition-colors" title="Escalar a infraestructura"><HardHat className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="p-1 text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-xl transition-colors" title="Escalar a infraestructura"><HardHat className="w-3.5 h-3.5" /></button>
                         )}
                         */}
                       </>
                     ) : (
                       <>
-                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp (marca como enviada)'}><MessageCircle className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp (marca como enviada)'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {canEditTickets ? (
                           <>
                             {ticket.estado === 'PENDIENTE' && !enInfraestructura(ticket) && (
-                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-700 hover:bg-emerald-600 rounded transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-700 hover:bg-emerald-600 rounded-xl transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
                             )}
                             {ticket.estado === 'PRE-FINALIZADO' && (
-                              <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-xl transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>
                             )}
                             <RowMenu
                               label={`Más acciones de orden ${ticket.codigo || ticket.id}`}

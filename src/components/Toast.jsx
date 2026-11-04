@@ -84,7 +84,7 @@ export default function Toast({ toastMsg: entrante, onClose }) {
           <button
             type="button"
             onClick={() => { onClose?.(); accion.onClick(); }}
-            className="shrink-0 ml-1 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-black transition-colors pointer-events-auto"
+            className="shrink-0 ml-1 px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-black transition-colors pointer-events-auto"
           >
             {accion.label}
           </button>

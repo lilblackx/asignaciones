@@ -74,13 +74,13 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           )}
 
           {!registro && (esInstalacion(orden.tipoTrabajo) || esCambioDeEquipo(orden)) && (
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
               <p className={ETIQUETA}>{esInstalacion(orden.tipoTrabajo) ? 'Cobro al cliente por la instalación' : 'Cobro al cliente por el cambio de equipo'}</p>
               <CobroClienteDetalle ticketId={orden.id ?? item.clave} paraFinanzas />
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 rounded-md bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
             <div className="min-w-0">
               <p className={ETIQUETA}>{item.pagada ? 'Se le pagó al técnico como' : 'Se le paga al técnico como'}</p>
               <p className="text-base font-bold text-zinc-900 dark:text-white">{grupoDePago(concepto)}{TIPO_DE_AVERIA[concepto] ? ` · ${TIPO_DE_AVERIA[concepto]}` : ''}</p>
@@ -92,13 +92,13 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           </div>
 
           {garantiaDe && (
-            <div className="rounded-md border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-100">
+            <div className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-100">
               <p className="font-bold">Garantía de otro técnico</p>
               <p>De la orden {garantiaDe.codigo || 's/c'} ({garantiaDe.tecnico}).{dePago.length > 0 ? ` Se le paga ${dolares(dePago[0].monto)} al técnico de esta garantía, descontados de la orden original; esta orden no se paga como orden.` : ''}</p>
             </div>
           )}
           {delDescuento.map((a) => (
-            <div key={a.id} className="rounded-md border border-sky-500 bg-sky-50 dark:bg-sky-950/30 px-3 py-2.5 text-sm text-sky-900 dark:text-sky-100">
+            <div key={a.id} className="rounded-xl border border-sky-500 bg-sky-50 dark:bg-sky-950/30 px-3 py-2.5 text-sm text-sky-900 dark:text-sky-100">
               <p className="font-bold">Descuento por garantía: − {dolares(a.monto)}</p>
               <p>Por la garantía {a.codigo || 's/c'} hecha por {a.a}. A esta orden le quedan {dolares(Math.max(0, precio - a.monto))} de los {dolares(precio)}.{Number(a.aplicado) > 0 ? ` Ya se descontó ${dolares(a.aplicado)} en un pago.` : ''}</p>
             </div>

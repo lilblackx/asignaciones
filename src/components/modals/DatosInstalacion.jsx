@@ -14,7 +14,7 @@ const claseEtiqueta = 'text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1';
 // conecta el cliente (iguales que en la visita de conector externo), metraje del drop, posteadura (uno o varios
 // postes) y puertos disponibles en la NAP. Todo es obligatorio. Si se cambia el orden aquí, también el del
 // modal de revisión y el del foco al validar (PreFinalizarModal): lo vigila la prueba de utils/instalacion.
-export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, metraje, onMetraje, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
+export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, metraje, onMetraje, metrajeExistente = false, onMetrajeExistente, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
   const cambiarPoste = (i, valor) => onPostes(postes.map((p, j) => (j === i ? valor : p)));
   // Recuadro del serial: verde si es correcto; rojo si no (el rojo sale al salir del campo, salvo "GOPN", que se avisa de una vez).
   const [serialTocado, setSerialTocado] = useState(false);
@@ -84,15 +84,25 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
             autoComplete="off"
             maxLength={MAX_LARGO_METRAJE}
             placeholder="Ej. 120"
-            value={metraje}
+            value={metrajeExistente ? '' : metraje}
+            disabled={metrajeExistente}
             onChange={(e) => onMetraje(e.target.value.replace(/\D/g, ''))}
             aria-invalid={!!errores.metraje}
             aria-describedby={errores.metraje ? 'pf-metraje-error' : undefined}
-            className={`flex-1 min-w-0 ${claseInput(errores.metraje)}`}
+            className={`flex-1 min-w-0 ${claseInput(errores.metraje)} disabled:opacity-50 disabled:cursor-not-allowed`}
           />
           <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400" aria-hidden="true">m</span>
         </div>
         {errores.metraje && <p id="pf-metraje-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
+        {onMetrajeExistente && (
+          <label htmlFor="pf-metraje-existente" className="flex items-start gap-2.5 min-h-11 py-1.5 cursor-pointer">
+            <input id="pf-metraje-existente" type="checkbox" checked={metrajeExistente} onChange={(e) => onMetrajeExistente(e.target.checked)} className="mt-0.5 w-5 h-5 shrink-0 accent-red-600" />
+            <span className="text-xs text-zinc-700 dark:text-zinc-300">
+              <span className="font-bold">Metraje existente</span>
+              <span className="block text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">Marca esto si el cliente ya tenía el drop y lo usaste tal cual: no se descuenta cable.</span>
+            </span>
+          </label>
+        )}
       </div>
 
       <div className="space-y-1.5" role="group" aria-labelledby="pf-postes-etiqueta" aria-describedby={errores.posteadura ? 'pf-postes-error' : undefined}>
@@ -118,7 +128,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
                 type="button"
                 onClick={() => onPostes(postes.filter((_, j) => j !== i))}
                 aria-label={`Quitar poste ${i + 1}`}
-                className="shrink-0 p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                className="shrink-0 p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               >
                 <X className="w-4 h-4" aria-hidden="true" />
               </button>

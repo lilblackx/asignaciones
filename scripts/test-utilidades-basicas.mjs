@@ -12,6 +12,7 @@ import { fechaHoraLegible } from '../src/utils/formatoFecha.js';
 import { getPasswordPolicyError } from '../src/utils/passwordPolicy.js';
 import { diaLegible, enRango, etiquetaRango, rangoDe } from '../src/utils/periodoReporte.js';
 import { stripEmojis } from '../src/utils/sanitizeInput.js';
+import { observacionEsInterna, observacionParaTecnico } from '../src/utils/observacion.js';
 import { esperarConLimite } from '../src/utils/tiempoLimite.js';
 import { grupoDeTrabajo, normalizarTipo } from '../src/utils/tiposDeTrabajo.js';
 
@@ -118,6 +119,25 @@ check('se busca en cerradas desde 3 letras (sin contar espacios de los lados)', 
 const archivosJsx = (dir) => readdirSync(dir).flatMap((n) => { const r = join(dir, n); return statSync(r).isDirectory() ? archivosJsx(r) : r.endsWith('.jsx') ? [r] : []; });
 const conAvisoPropio = archivosJsx(new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')).filter((r) => !r.endsWith('AvisoCargarAnteriores.jsx') && /más antiguos sin cargar|'cargar más'|Cargar reportes anteriores/.test(readFileSync(r, 'utf8')));
 check('el aviso de cargar cierres anteriores sale solo de AvisoCargarAnteriores', conAvisoPropio, []);
+
+// --- Y el aviso va al FINAL de cada pantalla (reportes, estadísticas, Finanzas, Revisión, búsqueda de reportes), nunca arriba: arriba se toca sin querer y cada pulsación gasta lecturas ---
+const PATRON_AVISO = /<AvisoHistorial\b|<AvisoCargarAnteriores variante="(reporte|busqueda)"/;
+const conAviso = archivosJsx(new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')).filter((r) => PATRON_AVISO.test(readFileSync(r, 'utf8')) && !r.endsWith('AvisoHistorial.jsx') && !r.endsWith('AvisoCargarAnteriores.jsx'));
+const arriba = conAviso.filter((r) => {
+  const lineas = readFileSync(r, 'utf8').split('\n');
+  return lineas.findIndex((l) => PATRON_AVISO.test(l)) / lineas.length < 0.6;
+});
+check('hay pantallas con el aviso al final (se revisaron al menos 10)', conAviso.length >= 10, true);
+check('el aviso de cargar cierres no queda arriba de ninguna pantalla', arriba, []);
+
+// --- Observación interna: el técnico no la ve ---
+check('observación marcada como interna: el técnico no ve nada', observacionParaTecnico({ observacion: 'Cliente difícil', observacionInterna: true }), '');
+check('observación sin marcar como interna: el técnico la ve (sin espacios de más)', observacionParaTecnico({ observacion: '  Llamar antes de ir ', observacionInterna: false }), 'Llamar antes de ir');
+check('una orden vieja sin la marca cuenta como interna (igual que la casilla y la plantilla de WhatsApp)', [observacionEsInterna({ observacion: 'x' }), observacionParaTecnico({ observacion: 'x' })], [true, '']);
+check('sin observación no hay nada que ver', [observacionParaTecnico({ observacionInterna: false }), observacionParaTecnico(null)], ['', '']);
+// Las pantallas del técnico leen la observación solo por esa función.
+const pantallasTecnico = ['src/components/TicketsMobileList.jsx', 'src/components/TicketsTable.jsx', 'src/components/modals/PreFinalizarModal.jsx', 'src/components/modals/EditTicketModal.jsx', 'src/components/modals/DetalleOrdenModal.jsx'];
+check('las pantallas que ve el técnico usan observacionParaTecnico', pantallasTecnico.filter((f) => !readFileSync(new URL('../' + f, import.meta.url), 'utf8').includes('observacionParaTecnico')), []);
 
 if (failures > 0) { console.error(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

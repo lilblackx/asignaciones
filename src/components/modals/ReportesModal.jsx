@@ -216,7 +216,7 @@ export default function ReportesModal({
                       <button
                         onClick={() => setReporteId(id)}
                         aria-current={reporteId === id ? 'page' : undefined}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm font-bold transition-colors ${reporteId === id ? 'bg-red-600 text-white shadow' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm font-bold transition-colors ${reporteId === id ? 'bg-red-600 text-white shadow' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                       >
                         <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {nombre}
                       </button>
@@ -245,7 +245,7 @@ export default function ReportesModal({
               onExportar={exportar}
               exportando={exportando}
             />
-            {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{errorExportar}</p>}
+            {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">{errorExportar}</p>}
             <div key={reporteId} className="lg:animate-fade-in">
               {reporteId === 'RESUMEN' && <ResumenEjecutivoView ordenes={ordenes} eventos={logTecnicos.eventos} contadores={totalesMensuales.contadores} tickets={tickets} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'REGISTRO' && <RegistroEstadisticasView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} onDetalleAbierto={setDetalleAbierto} vnta={{ ...vnta, tecnicos: nombresTecnicos, hoy, puedeBorrar: (r) => esAdmin || r.creadoPor === usuario }} />}

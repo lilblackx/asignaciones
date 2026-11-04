@@ -191,6 +191,14 @@ input[type="search"]::-webkit-search-decoration {
   background-color: #dc2626;
 }
 
+/* La lista de módulos del menú lateral va sin barra de desplazamiento (ni flechas): un degradado sobre el pie avisa de que sigue, y la rueda, el dedo y el teclado la mueven. */
+.lista-menu {
+  scrollbar-width: none;
+}
+.lista-menu::-webkit-scrollbar {
+  display: none;
+}
+
 /* Infraestructura: la fila que deja de cumplir el filtro (se marcó en "Por anotar" o se desmarcó en "Anotadas") se encoge y sale en vez de
    desaparecer de golpe. Cada celda pierde su alto (texto, relleno y lo que lleva dentro) y la lista de abajo sube sin saltos. Solo en la tabla. */
 @media (prefers-reduced-motion: no-preference) {

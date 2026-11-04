@@ -17,7 +17,6 @@ export default function ProductividadView({ ordenes, eventos, rango, tecnico, ge
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
       <Cifras items={cifrasProductividad(filas)} />
       <TablaReporte
         titulo="Productividad por técnico"
@@ -32,6 +31,7 @@ export default function ProductividadView({ ordenes, eventos, rango, tecnico, ge
         ])}
         vacio="Sin órdenes finalizadas ni actividad registrada en este periodo."
       />
+      <AvisoHistorial {...historial} />
     </div>
   );
 }

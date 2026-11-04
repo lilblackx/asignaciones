@@ -61,11 +61,10 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   const confirmarAnularAdelanto = async () => { await onAnularAdelanto(anulandoAdelanto); setAnulandoAdelanto(null); };
   const confirmarAnularDescuento = async () => { await onAnularDescuento(anulandoDescuento); setAnulandoDescuento(null); };
 
-  const alerta = 'rounded-lg border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
+  const alerta = 'rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
 
   return (
     <div className="space-y-5">
-      {!enDetalleMovil && <AvisoHistorial {...historial} />}
       {!enDetalleMovil && <ResumenCifras items={cifrasPagos(tecnicos, sumaPagado(Object.values(pagadasPorTecnico)), tasa)} />}
 
       {!enDetalleMovil && esperandoRevision > 0 && (
@@ -228,6 +227,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
           onConfirm={confirmarAnular}
         />
       )}
+      {!enDetalleMovil && <AvisoHistorial {...historial} />}
     </div>
   );
 }

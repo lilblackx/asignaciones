@@ -234,7 +234,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   type="button"
                   aria-pressed={categoria === clave}
                   onClick={() => { setCategoria(clave); setFiltro('TODAS'); }}
-                  className={`flex-1 min-w-fit whitespace-nowrap px-2 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                  className={`flex-1 min-w-fit whitespace-nowrap px-2 py-2 rounded-xl text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
                 >
                   <span>{texto}</span>
                   <Contador n={n} tono={categoria === clave ? 'bg-zinc-200 dark:bg-zinc-700' : 'bg-zinc-300/70 dark:bg-zinc-800'} />
@@ -308,7 +308,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
               {hayMasCerradas && <span className="text-zinc-600 dark:text-zinc-400"> · faltan cerradas por cargar</span>}
               {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-600 dark:text-red-400 hover:underline">Limpiar filtros</button>}
             </p>
-            <div role="group" aria-label="Cómo ver las órdenes" className="ml-auto flex gap-0.5 p-0.5 rounded-lg bg-zinc-300 dark:bg-zinc-900">
+            <div role="group" aria-label="Cómo ver las órdenes" className="ml-auto flex gap-0.5 p-0.5 rounded-xl bg-zinc-300 dark:bg-zinc-900">
               {[['TARJETAS', 'Tarjetas', LayoutGrid], ['LISTA', 'Lista', List]].map(([clave, texto, Icono]) => (
                 <button
                   key={clave}
@@ -317,7 +317,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   aria-label={texto}
                   title={texto}
                   onClick={() => setFormato(clave)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${formato === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${formato === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
                 >
                   <Icono className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">{texto}</span>
                 </button>

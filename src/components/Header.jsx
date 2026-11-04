@@ -59,7 +59,7 @@ export default function Header({
       <div className="px-3 min-[360px]:px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <button onClick={onOpenSidebar} aria-label="Abrir menú" title="Menú" className="relative inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
+            <button onClick={onOpenSidebar} aria-label="Abrir menú" title="Menú" className="relative inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
               <Menu className="w-4 h-4" aria-hidden="true" />
               {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black" aria-hidden="true" />}
             </button>
@@ -91,7 +91,7 @@ export default function Header({
           )}
 
           {!isAdmin && (
-            <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="inline-flex items-center justify-center p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
+            <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="inline-flex items-center justify-center p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white transition-colors">
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           )}
@@ -117,7 +117,7 @@ export default function Header({
               onClick={onOpenFormasPago}
               aria-label="Formas de pago"
               title="Formas de pago"
-              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 flex items-center justify-center gap-1.5 text-sm font-bold"
+              className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 flex items-center justify-center gap-1.5 text-sm font-bold"
             >
               <Landmark className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Pagos</span>
             </button>
@@ -133,7 +133,7 @@ export default function Header({
                 aria-label="Más acciones"
                 aria-expanded={menuOpen}
                 title="Más acciones"
-                className="relative inline-flex items-center justify-center p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700"
+                className="relative inline-flex items-center justify-center p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700"
               >
                 <MoreVertical className="w-4 h-4" />
                 {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black" aria-hidden="true" />}
@@ -165,7 +165,7 @@ export default function Header({
           )}
 
           {canEditTickets && (
-            <button onClick={onOpenCreate} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 max-lg:min-w-11 max-lg:min-h-11 max-lg:justify-center rounded-lg flex items-center gap-1 text-sm font-bold transition-colors">
+            <button onClick={onOpenCreate} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 max-lg:min-w-11 max-lg:min-h-11 max-lg:justify-center rounded-xl flex items-center gap-1 text-sm font-bold transition-colors">
               <Plus className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Nuevo</span>
             </button>
           )}
@@ -174,7 +174,7 @@ export default function Header({
             <>
               <div className="w-px h-8 bg-zinc-800 hidden sm:block mx-1"></div>
 
-              <button onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg inline-flex items-center justify-center transition-colors border border-zinc-700">
+              <button onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-xl inline-flex items-center justify-center transition-colors border border-zinc-700">
                 <LogOut className="w-4 h-4" />
               </button>
             </>

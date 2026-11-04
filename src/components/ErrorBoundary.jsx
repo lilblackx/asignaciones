@@ -72,7 +72,7 @@ export default class ErrorBoundary extends Component {
     return (
       <div role="alert" className="min-h-dvh bg-fondo flex flex-col">
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-sm rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+        <div className="w-full max-w-sm rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
           <div className="bg-black px-4 py-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
             <h1 className="text-sm font-black uppercase tracking-wide text-white">Algo salió mal</h1>
@@ -82,10 +82,10 @@ export default class ErrorBoundary extends Component {
               La pantalla no se pudo mostrar. Recarga la app para seguir; lo que ya estaba guardado no se pierde.
             </p>
             <div className="flex flex-col gap-2">
-              <button type="button" onClick={this.recargar} className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white transition-colors">
+              <button type="button" onClick={this.recargar} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white transition-colors">
                 <RefreshCw className="w-4 h-4" aria-hidden="true" /> Recargar
               </button>
-              <button type="button" onClick={this.copiar} className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-400 dark:border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+              <button type="button" onClick={this.copiar} className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-400 dark:border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                 <ClipboardCopy className="w-4 h-4" aria-hidden="true" /> {copiado === true ? 'Detalle copiado' : 'Copiar detalle del error'}
               </button>
             </div>

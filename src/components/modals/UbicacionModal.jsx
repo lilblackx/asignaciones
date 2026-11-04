@@ -48,14 +48,14 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               aria-invalid={!!parseada.error}
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2 rounded-lg outline-none text-xs text-zinc-900 dark:text-white ${parseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-sky-500'}`}
+              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2 rounded-xl outline-none text-xs text-zinc-900 dark:text-white ${parseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-sky-500'}`}
             />
             {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
             {parseada.valor && <a href={parseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
           <div className="flex gap-2 justify-end">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">Cancelar</button>
-            <button type="submit" disabled={!parseada.valor || isSubmitting} className="px-4 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-lg transition-colors">{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
+            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">Cancelar</button>
+            <button type="submit" disabled={!parseada.valor || isSubmitting} className="px-4 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-xl transition-colors">{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
       </div>

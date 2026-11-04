@@ -19,7 +19,7 @@ function ColaDeEspera({ titulo, nota, cola, vacio }) {
       ) : (
         <ul className="mt-3 flex flex-col gap-1.5">
           {cola.lista.map(({ orden, esperaMs }) => (
-            <li key={orden.id ?? orden.codigo} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs">
+            <li key={orden.id ?? orden.codigo} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs">
               <span className="font-black text-red-600 dark:text-red-400">{orden.codigo}</span>
               <span className="font-bold truncate max-w-[14rem]">{orden.nombre}</span>
               <span className="text-zinc-600 dark:text-zinc-400">{orden.tipoTrabajo}</span>
@@ -49,7 +49,6 @@ export default function EsperasCicloView({ ordenes, rango, tecnico, getTecnicoCo
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
       <Cifras items={[
         { etiqueta: 'Órdenes finalizadas', valor: esperas.finalizadas, detalle: 'en el periodo' },
         { etiqueta: 'Con horas registradas', valor: esperas.conHoras, detalle: 'miden al menos un tramo' },
@@ -88,6 +87,7 @@ export default function EsperasCicloView({ ordenes, rango, tecnico, getTecnicoCo
         ])}
         vacio="Ninguna orden con horas del técnico en este periodo."
       />
+      <AvisoHistorial {...historial} />
     </div>
   );
 }

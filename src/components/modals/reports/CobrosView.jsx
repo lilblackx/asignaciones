@@ -11,7 +11,6 @@ export default function CobrosView({ ordenes, rango, tecnico, getTecnicoColor, h
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
       <Cifras items={cifrasCobros(resumen)} />
       <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 -mt-1 mb-4">{NOTA_COBROS}</p>
 
@@ -24,6 +23,7 @@ export default function CobrosView({ ordenes, rango, tecnico, getTecnicoColor, h
         filas={resumen.porTecnico.map((f) => [<NombreTecnico key={f.nombre} nombre={f.nombre} getTecnicoColor={getTecnicoColor} />, ...filaDesglose(f).slice(1)])}
         vacio="Ninguna orden con cobro en este periodo."
       />
+      <AvisoHistorial {...historial} />
     </div>
   );
 }

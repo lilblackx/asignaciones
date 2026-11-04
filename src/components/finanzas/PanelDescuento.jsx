@@ -100,7 +100,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
         </div>
 
         <Colapsable>{plan.length > 0 && (
-          <ul aria-label="Cuándo se descuenta" className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul aria-label="Cuándo se descuenta" className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-3 divide-y divide-zinc-200 dark:divide-zinc-800">
             {plan.map((c) => (
               <li key={c.cuota} className="py-2 flex items-baseline justify-between gap-3 text-sm">
                 <span className="font-bold">{plan.length > 1 ? `Cuota ${c.cuota} de ${c.cuotas}` : 'Descuento'} <span className="font-normal text-zinc-600 dark:text-zinc-300">· desde el {fechaCorta(c.desde)}</span></span>

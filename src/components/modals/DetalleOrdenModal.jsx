@@ -1,3 +1,4 @@
+import { observacionEsInterna, observacionParaTecnico } from '../../utils/observacion';
 import { Cable, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import HistorialTimeline from '../HistorialTimeline';
@@ -52,6 +53,8 @@ const ENLACE = 'inline-flex items-center gap-1 max-lg:min-h-11 text-sky-700 dark
 // aprobar o finalizar siguen en el menú de la fila. `onCopy(texto, mensaje)` copia y avisa con el toast.
 // `verCobro` (la oficina): muestra el cobro de la orden al cliente (pendiente o cargado en el portal) en solo lectura.
 export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = false }) {
+  // La observación marcada como interna solo la ve la oficina (quien ve el cobro); el técnico no.
+  const observacionDeOficina = verCobro ? ticket.observacion : observacionParaTecnico(ticket);
   const { copiado, copiar } = useCopiado(onCopy);
   const instalacion = esInstalacion(ticket.tipoTrabajo);
   const datos = ticket.instalacion || {};
@@ -61,7 +64,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
   const conectores = textoConectoresInstalacion(datos.conectores);
   const promotora = instalacion ? promotoraDeOrden(ticket) : '';
   const plantilla = instalacion ? generarMensajeWhatsAppInstalacion(ticket) : '';
-  const hayDatosTecnico = Boolean(datos.serial || datos.vlan || datos.puerto || datos.metraje || datos.puertosDisponibles || datos.posteadura?.length || conectores || ticket.potenciaDbm != null);
+  const hayDatosTecnico = Boolean(datos.serial || datos.vlan || datos.puerto || datos.metraje || datos.metrajeExistente === true || datos.puertosDisponibles || datos.posteadura?.length || conectores || ticket.potenciaDbm != null);
   const cobro = estaExonerado(ticket) ? 'Exonerado' : ticket.cobroBs ? textoMonto(ticket.cobroBs, monedaDe(ticket)) : '';
 
   return (
@@ -104,8 +107,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               {ticket.telefono && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span>{ticket.telefono}</span>
-                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
-                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
                 </div>
               )}
             </Dato>
@@ -137,7 +140,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               <Dato etiqueta="NAP y puerto">{napConPuerto(ticket.nap, datos.puerto)}</Dato>
               <Dato etiqueta="Serial">{datos.serial}</Dato>
               <Dato etiqueta="VLAN">{datos.vlan}</Dato>
-              <Dato etiqueta="Metraje del drop">{datos.metraje && `${datos.metraje} m`}</Dato>
+              <Dato etiqueta="Metraje del drop">{datos.metrajeExistente === true ? 'Existente' : datos.metraje && `${datos.metraje} m`}</Dato>
               <Dato etiqueta="Posteadura">{datos.posteadura?.length ? datos.posteadura.join(', ') : ''}</Dato>
               <Dato etiqueta="Puertos disponibles">{datos.puertosDisponibles}</Dato>
               <Dato etiqueta="Conectores">{conectores}</Dato>
@@ -147,9 +150,9 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
 
           {valoresGuardados(ticket) && <ValoresClienteTarjeta valores={ticket.valoresCliente} onCopy={onCopy} />}
 
-          {(ticket.observacion || ticket.observacionTecnico) && (
+          {(observacionDeOficina || ticket.observacionTecnico) && (
             <Seccion icono={MessageSquareText} titulo="Observaciones">
-              <Dato etiqueta={ticket.observacionInterna ? 'De la oficina (interna)' : 'De la oficina'}>{ticket.observacion}</Dato>
+              <Dato etiqueta={observacionEsInterna(ticket) ? 'De la oficina (interna)' : 'De la oficina'}>{observacionDeOficina}</Dato>
               <Dato etiqueta="Del técnico">{ticket.observacionTecnico}</Dato>
             </Seccion>
           )}
@@ -163,7 +166,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
                   copiado={copiado === 'plantilla'}
                   onClick={() => copiar('plantilla', plantilla, 'Plantilla copiada, lista para WhatsApp.')}
                   etiqueta="Copiar la plantilla"
-                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] max-lg:text-xs font-bold"
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] max-lg:text-xs font-bold"
                   tono="bg-zinc-800 text-white hover:bg-zinc-700"
                   iconoClase="w-3 h-3"
                 >

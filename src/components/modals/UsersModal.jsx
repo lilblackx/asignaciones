@@ -334,7 +334,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                             onKeyDown={(e) => e.key === 'Enter' && saveNombre(u.id)}
                             className={CAMPO}
                           />
-                          <button type="button" onClick={() => saveNombre(u.id)} aria-label="Guardar nombre" className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg"><Check className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => saveNombre(u.id)} aria-label="Guardar nombre" className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-xl"><Check className="w-4 h-4" /></button>
                         </div>
                       ) : (
                         <p className="text-sm font-black text-zinc-900 dark:text-white flex items-center gap-1.5 break-words">
@@ -370,7 +370,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   <div className="col-span-full grid grid-cols-2 gap-2 md:contents">
                   <div className="min-w-0 md:col-start-2 md:row-start-1">
                     {u.username === currentUsername ? (
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${claseRol(u.role)}`} title="No puedes cambiar tu propio rol">
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-xl ${claseRol(u.role)}`} title="No puedes cambiar tu propio rol">
                         {etiquetaRol(u.role)}
                       </span>
                     ) : (
@@ -381,7 +381,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                         ariaLabel={`Rol de ${u.username}`}
                         items={ROL_ITEMS}
                         chevronClassName="w-3 h-3 right-1.5"
-                        className={`text-xs font-bold pl-2.5 pr-6 py-1 rounded-lg border-0 cursor-pointer disabled:opacity-50 ${claseRol(roleEditId === u.id ? roleDraft : u.role)}`}
+                        className={`text-xs font-bold pl-2.5 pr-6 py-1 rounded-xl border-0 cursor-pointer disabled:opacity-50 ${claseRol(roleEditId === u.id ? roleDraft : u.role)}`}
                       />
                     )}
                   </div>
@@ -393,7 +393,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   {(roleEditId === u.id && (roleDraft === ROLES.PROMOTORA || roleDraft === ROLES.TECNICO)) || resettingId === u.id ? (
                     <div className="col-span-full space-y-3">
                       {roleEditId === u.id && roleDraft === ROLES.PROMOTORA && (
-                    <div className="rounded-lg border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-3 space-y-2.5">
+                    <div className="rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-3 space-y-2.5">
                       <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
                         <input type="checkbox" checked={verTodasDraft} onChange={(e) => { setVerTodasDraft(e.target.checked); setPromError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                         Ver todas las instalaciones
@@ -416,14 +416,14 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   )}
 
                   {roleEditId === u.id && roleDraft === ROLES.TECNICO && (
-                    <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2.5">
+                    <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2.5">
                       <SelectMenu
                         value={techDraft}
                         onChange={setTechDraft}
                         ariaLabel={`Técnico asociado de ${u.username}`}
                         items={techItemsInline}
                         chevronClassName="w-3 h-3 right-2"
-                        className="w-full text-sm font-bold pl-3 pr-7 py-2 rounded-lg bg-white dark:bg-zinc-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-900/60"
+                        className="w-full text-sm font-bold pl-3 pr-7 py-2 rounded-xl bg-white dark:bg-zinc-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-900/60"
                       />
                       <div className="flex gap-2">
                         <Boton variante="principal" tamano="compacto" type="button" onClick={() => saveTechRole(u.id)} disabled={!techDraft || togglingId === u.id} aria-label={`Confirmar rol de ${u.username}`}><Check className="w-3.5 h-3.5" /> Guardar</Boton>
@@ -445,8 +445,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                             placeholder="nueva clave"
                             className={CAMPO}
                           />
-                          <button type="button" onClick={() => saveResetPassword(u.id)} disabled={isResetting} aria-label={`Guardar clave de ${u.username}`} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg disabled:opacity-50"><Check className="w-4 h-4" /></button>
-                          <button type="button" onClick={() => setResettingId(null)} aria-label="Cancelar" className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"><X className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => saveResetPassword(u.id)} disabled={isResetting} aria-label={`Guardar clave de ${u.username}`} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-xl disabled:opacity-50"><Check className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setResettingId(null)} aria-label="Cancelar" className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"><X className="w-4 h-4" /></button>
                         </div>
                         {resetError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{resetError}</p>}
                       </div>

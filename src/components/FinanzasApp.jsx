@@ -153,7 +153,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   type="button"
                   onClick={actualizar}
                   disabled={actualizando}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white disabled:opacity-60 transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white disabled:opacity-60 transition-colors whitespace-nowrap"
                 >
                   <RefreshCw className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
                 </button>
@@ -173,7 +173,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   role="tab"
                   aria-selected={seccion === id}
                   onClick={() => elegirSeccion(id)}
-                  className={`flex-1 md:flex-none min-w-0 h-9 px-1 sm:px-4 rounded-lg text-sm max-sm:text-[13px] font-semibold border transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={`flex-1 md:flex-none min-w-0 h-9 px-1 sm:px-4 rounded-xl text-sm max-sm:text-[13px] font-semibold border transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 >
                   <span className="sm:hidden">{corto}</span><span className="hidden sm:inline">{nombre}</span>
                 </button>
@@ -213,11 +213,11 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   exportando={exportando}
                 />
               )}
-              {errorExportar && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg px-4 py-3">{errorExportar}</p>}
-              {finanzas.error && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg px-4 py-3">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
+              {errorExportar && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-xl px-4 py-3">{errorExportar}</p>}
+              {finanzas.error && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-xl px-4 py-3">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
 
               {seccion === 'PAGOS' && corteTodaviaNoLlega() && (
-                <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 rounded-lg px-4 py-3">
+                <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 rounded-xl px-4 py-3">
                   Comienza a contar a partir del {textoFechaCorte()}: lo anterior de este periodo no se muestra.
                 </p>
               )}

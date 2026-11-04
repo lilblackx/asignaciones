@@ -19,11 +19,11 @@ export default function TendenciaMensualView({ contadores, cargando, error, tick
 
   return (
     <div>
-      {error && <p className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">No se pudieron cargar los totales. Intenta actualizar.</p>}
+      {error && <p className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">No se pudieron cargar los totales. Intenta actualizar.</p>}
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Meses a mostrar</span>
-        <div role="group" aria-label="Meses a mostrar" className="flex rounded-lg border border-zinc-400 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900">
+        <div role="group" aria-label="Meses a mostrar" className="flex rounded-xl border border-zinc-400 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900">
           {VENTANAS_MESES.map((n) => (
             <button key={n} type="button" aria-pressed={ventana === n} onClick={() => onVentana(n)} className={`px-3 py-1.5 text-xs font-bold transition-colors ${ventana === n ? 'bg-red-600 text-white' : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>{n}</button>
           ))}
@@ -34,7 +34,7 @@ export default function TendenciaMensualView({ contadores, cargando, error, tick
       <Cifras items={cifrasTendencia(filas)} />
 
       {filas.length === 1 && (
-        <p className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 mb-4">
+        <p className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 mb-4">
           Por ahora solo hay datos de {etiquetaMes(actual.mes)}. La comparación aparece sola a medida que se cierren más meses.
         </p>
       )}

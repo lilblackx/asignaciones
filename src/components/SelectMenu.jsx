@@ -138,7 +138,7 @@ export default function SelectMenu({
         data-index={i}
         role="option"
         aria-selected={isSelected}
-        className={`flex items-center justify-between gap-2 px-3 py-2 mx-1 rounded-lg text-sm normal-case font-medium cursor-pointer transition-colors ${
+        className={`flex items-center justify-between gap-2 px-3 py-2 mx-1 rounded-xl text-sm normal-case font-medium cursor-pointer transition-colors ${
           i === activeIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
         } ${isSelected ? '!font-bold text-red-600 dark:text-red-400' : 'text-zinc-700 dark:text-zinc-200'}`}
         onPointerEnter={() => setActiveIndex(i)}
@@ -177,7 +177,7 @@ export default function SelectMenu({
             aria-label={iconLabel}
             title={iconLabel}
             disabled={disabled}
-            className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-red-600 outline-none transition-colors disabled:opacity-50"
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-red-600 outline-none transition-colors disabled:opacity-50"
           >
             <Icon className="w-4 h-4" aria-hidden="true" />
           </button>

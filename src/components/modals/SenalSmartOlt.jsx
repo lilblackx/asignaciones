@@ -97,7 +97,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
           <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Escribe la potencia a mano.</p>
         )}
         {estado?.tipo === 'opciones' && (
-          <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-2">
+          <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-2">
             <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
               Esta cédula tiene {estado.opciones.length} servicios. Elige cuál es:
@@ -108,7 +108,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
                   key={onu.idExterno || onu.nombre}
                   type="button"
                   onClick={() => mostrar(onu)}
-                  className="w-full text-left rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                  className="w-full text-left rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{onu.zona || onu.nombre || 'Servicio'}</span>

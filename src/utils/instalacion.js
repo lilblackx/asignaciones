@@ -8,6 +8,9 @@
 // aparte (utils/conectoresInstalacion) y no entran en instalacionCompleta: las instalaciones anteriores no los
 // tienen y no deben quedar bloqueadas al aprobarlas.
 // El metraje cuenta como cable gastado en el módulo Materiales (ver utils/consumoMateriales).
+// "Metraje existente": si el cliente ya tenía su drop y el técnico lo reutiliza, marca esa casilla en vez de escribir metros. Se guarda
+// `metrajeExistente: true` y `metraje: null`: no gasta cable (ni en Materiales ni en el envío al inventario) y en la plantilla queda el
+// metraje que ya traía la original.
 
 import { napSinDato } from './napPuerto.js';
 import { textoConectoresInstalacion } from './conectoresInstalacion.js';
@@ -36,6 +39,9 @@ export const metrajeInstalacion = (ticket) => {
   const metros = Number(ticket?.instalacion?.metraje);
   return Number.isFinite(metros) && metros > 0 ? metros : null;
 };
+
+// ¿La instalación reutiliza el drop que el cliente ya tenía? (no gasta cable: ver arriba)
+export const metrajeExistente = (ticket) => ticket?.instalacion?.metrajeExistente === true;
 
 // Serial de la ONU ("HWTC1A2B3C4D"): letras y números (y guiones), sin espacios y en mayúsculas.
 // Vacío no da error aquí: que sea obligatorio lo exige validarInstalacion.
@@ -72,15 +78,17 @@ export function napConPuerto(nap, puerto) {
 }
 
 export const tieneDatosInstalacion = (datos) =>
-  Boolean(datos) && Boolean(datos.serial || datos.vlan || datos.nap || datos.puerto || datos.puertosDisponibles || datos.posteadura?.length || datos.metraje || textoConectoresInstalacion(datos.conectores));
+  Boolean(datos) && Boolean(datos.serial || datos.vlan || datos.nap || datos.puerto || datos.puertosDisponibles || datos.posteadura?.length || datos.metraje || datos.metrajeExistente === true || textoConectoresInstalacion(datos.conectores));
 
 // Lo que escribió el técnico -> { datos, errores, error }: `datos` listo para guardar en
 // `ticket.instalacion` (serial y VLAN normalizados, postes limpios) y `errores` por campo
 // (serial, vlan, posteadura, metraje, puertosDisponibles): falta o no es válido. La NAP y el puerto los exige el formulario.
-export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, nap, puerto, puertosDisponibles } = {}) {
+export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, metrajeExistente: existente, nap, puerto, puertosDisponibles } = {}) {
   const serialParseado = parseSerial(serial);
   const vlanParseada = parseVlan(vlan);
-  const metrajeParseado = parseMetraje(metraje);
+  const usaExistente = existente === true;
+  // Con "metraje existente" no se escriben metros: se ignora lo que haya en el campo.
+  const metrajeParseado = usaExistente ? { valor: null } : parseMetraje(metraje);
   const lista = limpiarPostes(postes ?? posteadura);
   const errores = {};
   if (serialParseado.error) errores.serial = serialParseado.error;
@@ -89,7 +97,7 @@ export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, 
   else if (!vlanParseada.valor) errores.vlan = 'Escribe la VLAN.';
   if (lista.length === 0) errores.posteadura = 'Agrega al menos un poste.';
   if (metrajeParseado.error) errores.metraje = metrajeParseado.error;
-  else if (!metrajeParseado.valor) errores.metraje = 'Indica el metraje de cable usado en la instalación.';
+  else if (!usaExistente && !metrajeParseado.valor) errores.metraje = 'Indica el metraje de cable usado en la instalación.';
   const disponibles = String(puertosDisponibles ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_LARGO_PUERTOS_DISPONIBLES);
   if (!disponibles) errores.puertosDisponibles = 'Indica los puertos disponibles de la NAP. Si no queda ninguno, escribe 0.';
   return {
@@ -98,6 +106,7 @@ export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, 
       vlan: vlanParseada.valor ?? '',
       posteadura: lista,
       metraje: metrajeParseado.valor ?? null,
+      ...(usaExistente && { metrajeExistente: true }),
       nap: String(nap || '').trim(),
       puerto: String(puerto || '').replace(/\D/g, ''),
       // Texto libre: normalmente cuántos quedan ("6", o "0" si ninguno), pero pueden ser cuáles ("3, 5, 8").
@@ -140,7 +149,8 @@ export function detalleInstalacion(datos) {
   if (datos.serial) detalle += ` | Serial: ${datos.serial}`;
   if (datos.vlan) detalle += ` | VLAN: ${datos.vlan}`;
   if (datos.posteadura?.length) detalle += ` | Posteadura: ${datos.posteadura.join(', ')}`;
-  if (datos.metraje) detalle += ` | Metraje: ${datos.metraje} m`;
+  if (datos.metrajeExistente === true) detalle += ' | Metraje: existente';
+  else if (datos.metraje) detalle += ` | Metraje: ${datos.metraje} m`;
   if (datos.puerto) detalle += ` | Puerto: ${datos.puerto}`;
   if (datos.puertosDisponibles) detalle += ` | Puertos disponibles: ${datos.puertosDisponibles}`;
   const conectores = textoConectoresInstalacion(datos.conectores);

@@ -24,11 +24,11 @@ export default function Calendario({ valor, min, max, hoy: hoyElegido, onElegir,
   return (
     <div role="group" aria-label="Calendario" className={`w-full ${grande ? 'max-w-sm p-4' : 'max-w-xs p-3'} bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl shadow-sm`}>
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={() => ir(-1)} disabled={!hayAnterior} aria-label="Mes anterior" className={`${grande ? 'p-2.5' : 'p-1.5'} rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed`}>
+        <button type="button" onClick={() => ir(-1)} disabled={!hayAnterior} aria-label="Mes anterior" className={`${grande ? 'p-2.5' : 'p-1.5'} rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed`}>
           <ChevronLeft className={grande ? 'w-6 h-6' : 'w-4 h-4'} aria-hidden="true" />
         </button>
         <p className={`${grande ? 'text-xl' : 'text-sm'} font-bold text-zinc-900 dark:text-white`} aria-live="polite">{MESES[vista.mes - 1]} {vista.anio}</p>
-        <button type="button" onClick={() => ir(1)} disabled={!haySiguiente} aria-label="Mes siguiente" className={`${grande ? 'p-2.5' : 'p-1.5'} rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed`}>
+        <button type="button" onClick={() => ir(1)} disabled={!haySiguiente} aria-label="Mes siguiente" className={`${grande ? 'p-2.5' : 'p-1.5'} rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed`}>
           <ChevronRight className={grande ? 'w-6 h-6' : 'w-4 h-4'} aria-hidden="true" />
         </button>
       </div>
@@ -47,7 +47,7 @@ export default function Calendario({ valor, min, max, hoy: hoyElegido, onElegir,
               aria-pressed={elegido}
               aria-label={nombreDelDia(iso)}
               onClick={() => onElegir(iso)}
-              className={`${grande ? 'h-11 text-base' : 'h-9 text-sm'} rounded-lg tabular-nums transition-colors ${elegido ? 'bg-red-600 text-white font-bold' : bloqueado ? 'text-zinc-300 dark:text-zinc-700 cursor-not-allowed' : `font-medium text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 ${iso === hoy ? 'ring-1 ring-inset ring-red-500/70' : ''}`}`}
+              className={`${grande ? 'h-11 text-base' : 'h-9 text-sm'} rounded-xl tabular-nums transition-colors ${elegido ? 'bg-red-600 text-white font-bold' : bloqueado ? 'text-zinc-300 dark:text-zinc-700 cursor-not-allowed' : `font-medium text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 ${iso === hoy ? 'ring-1 ring-inset ring-red-500/70' : ''}`}`}
             >
               {Number(iso.slice(8))}
             </button>
@@ -56,9 +56,9 @@ export default function Calendario({ valor, min, max, hoy: hoyElegido, onElegir,
       </div>
 
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-        <button type="button" onClick={() => onElegir(hoy)} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-lg font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors`}>Hoy</button>
-        {onBorrar && <button type="button" onClick={onBorrar} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-lg font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`}>Borrar</button>}
-        <button type="button" onClick={onCerrar} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-lg font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`}>Cerrar</button>
+        <button type="button" onClick={() => onElegir(hoy)} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-xl font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors`}>Hoy</button>
+        {onBorrar && <button type="button" onClick={onBorrar} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-xl font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`}>Borrar</button>}
+        <button type="button" onClick={onCerrar} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-xl font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`}>Cerrar</button>
       </div>
     </div>
   );

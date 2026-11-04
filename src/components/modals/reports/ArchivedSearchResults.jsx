@@ -5,7 +5,6 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
   return (
     <div>
       <h3 className="text-sm font-bold text-zinc-600 dark:text-zinc-400 mb-2">Resultados de Búsqueda ({archivedSearchResults.length})</h3>
-      <AvisoCargarAnteriores variante="busqueda" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} className="mb-4" />
 
       <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-xl border border-zinc-300 dark:border-zinc-800 overflow-hidden shadow-sm">
         <table className="w-full text-left border-collapse text-xs">
@@ -77,6 +76,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
           <div className="text-center text-zinc-600 dark:text-zinc-400 py-8 text-sm">No se encontraron resultados.</div>
         )}
       </div>
+      <AvisoCargarAnteriores variante="busqueda" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} className="mt-4" />
     </div>
   );
 }

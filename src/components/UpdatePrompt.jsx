@@ -21,7 +21,7 @@ export default function UpdatePrompt() {
         <p className="text-sm font-bold leading-tight">Actualización disponible</p>
         <p className="text-[11px] max-lg:text-xs text-zinc-400 leading-tight">Recarga para ver los últimos cambios.</p>
       </div>
-      <button type="button" onClick={handleClick} disabled={aplicando} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-60 text-xs font-bold transition-colors">
+      <button type="button" onClick={handleClick} disabled={aplicando} className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-xs font-bold transition-colors">
         {aplicando && <Spinner />}{aplicando ? 'Actualizando…' : 'Actualizar'}
       </button>
     </div>

@@ -105,7 +105,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
         {fila.descuentosOrden > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuento por garantías: {dolares(fila.descuentosOrden)}</p>}
         {libres > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuentos: {dolares(libres)}</p>}
         {sinTarifa.length > 0 && (
-          <p role="alert" className="mt-3 inline-flex items-start gap-2 rounded-md bg-amber-400 text-black text-sm font-bold px-3 py-2">
+          <p role="alert" className="mt-3 inline-flex items-start gap-2 rounded-xl bg-amber-400 text-black text-sm font-bold px-3 py-2">
             <TriangleAlert className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" /> Sin precio: {sinTarifa.join(', ')}. Ponlo en el Tabulador de precios antes de pagar.
           </p>
         )}
@@ -129,7 +129,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
           )}
         </div>
         <Colapsable>{verDescuentos && descuentos.length > 0 && (
-          <div id="descuentos-del-tecnico" className="mt-4 rounded-lg border border-zinc-300 dark:border-zinc-700 p-3 sm:p-4 space-y-4">
+          <div id="descuentos-del-tecnico" className="mt-4 rounded-xl border border-zinc-300 dark:border-zinc-700 p-3 sm:p-4 space-y-4">
             {gruposDescuentos.map((g) => (
               <section key={g.id} aria-label={g.titulo}>
                 <h3 className="flex flex-wrap items-baseline justify-between gap-2 text-sm font-bold text-zinc-900 dark:text-white">
@@ -180,7 +180,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
                 <dd className="text-right"><span className="block text-sm font-bold tabular-nums text-emerald-800 dark:text-emerald-300 whitespace-nowrap">− {dolares(descuento)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">− {montoBs(descuento, tasa)}</span>}</dd>
               </div>
             )}
-            <div className="py-3 flex items-center justify-between gap-4 bg-zinc-100 dark:bg-zinc-900 px-3 -mx-3 rounded-lg"><dt className="text-sm font-bold text-zinc-900 dark:text-white">Total pendiente por pagar</dt><dd><Monto usd={neto} tasa={tasa} grande /></dd></div>
+            <div className="py-3 flex items-center justify-between gap-4 bg-zinc-100 dark:bg-zinc-900 px-3 -mx-3 rounded-xl"><dt className="text-sm font-bold text-zinc-900 dark:text-white">Total pendiente por pagar</dt><dd><Monto usd={neto} tasa={tasa} grande /></dd></div>
           </dl>
           {saldoQueda > 0 && <p className={`${TEXTO_SUAVE} mt-2`}>Le quedan {dolares(saldoQueda)} por descontar en un próximo pago.</p>}
         </Seccion>

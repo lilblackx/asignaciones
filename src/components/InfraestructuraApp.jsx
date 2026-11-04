@@ -215,7 +215,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                             <p className="text-xs text-zinc-600 dark:text-zinc-400">{dato(f.codigo)} · {fechaHora(f.fecha)}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 rounded-lg bg-zinc-100 dark:bg-zinc-950 p-2">
+                        <div className="grid grid-cols-2 gap-2 rounded-xl bg-zinc-100 dark:bg-zinc-950 p-2">
                           <div className="min-w-0"><p className={ETIQUETA}>NAP</p><p className="text-sm font-black break-words">{dato(f.nap)}</p></div>
                           <div className="min-w-0"><p className={ETIQUETA}>Puerto</p><p className="text-sm font-black">{dato(f.puerto)}</p></div>
                         </div>

@@ -69,7 +69,7 @@ export default function DatosParaAutorizar({ ticket, onCopy }) {
         <BotonCopiar
           copiado={copiado === 'todo'}
           onClick={() => copiar('todo', texto, 'Datos copiados.')}
-          className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black"
+          className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black"
           tono="bg-blue-600 hover:bg-blue-700 text-white"
           iconoClase="w-3.5 h-3.5"
         >
@@ -109,7 +109,7 @@ export default function DatosParaAutorizar({ ticket, onCopy }) {
             <BotonCopiar
               copiado={copiado === 'plantilla'}
               onClick={() => copiar('plantilla', ticket.plantillaOriginal, 'Plantilla copiada.')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
               tono="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700"
               iconoClase="w-3.5 h-3.5"
             >

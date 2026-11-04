@@ -98,6 +98,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
                   )}
                 </div>
                 {o.metros != null && <span className="shrink-0 font-black text-zinc-900 dark:text-white">{numero(o.metros)} m</span>}
+                {o.metrajeExistente && <span className="shrink-0 text-xs font-bold text-zinc-600 dark:text-zinc-400">Drop existente</span>}
               </li>
             ))}
           </ul>
@@ -151,7 +152,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
           </div>
 
           {porAprobarTotal > 0 && (
-            <p role="status" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-2">
+            <p role="status" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl px-3 py-2">
               {textoPorAprobar} espera{porAprobarTotal === 1 ? '' : 'n'} aprobación y todavía no se suma{porAprobarTotal === 1 ? '' : 'n'}.
             </p>
           )}

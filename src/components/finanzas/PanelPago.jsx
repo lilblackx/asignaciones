@@ -64,7 +64,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, ocupado, onConf
                   aria-pressed={form.moneda === id}
                   disabled={id === MONEDA_BS && !(tasa > 0)}
                   onClick={() => cambiarMoneda(id)}
-                  className={`flex-1 h-9 rounded-lg text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
+                  className={`flex-1 h-9 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
                 >{etiqueta}</button>
               ))}
             </div>
@@ -72,7 +72,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, ocupado, onConf
             <Colapsable>{error?.campo === 'moneda' && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{error.texto}</p>}</Colapsable>
           </div>
 
-          <div className="border border-zinc-400 dark:border-zinc-700 rounded-lg px-4 py-3">
+          <div className="border border-zinc-400 dark:border-zinc-700 rounded-xl px-4 py-3">
             <p className={ETIQUETA}>Monto a entregar</p>
             <p className="text-lg font-bold tabular-nums text-zinc-900 dark:text-white"><NumeroPulso valor={entregar} /></p>
             {form.moneda === MONEDA_BS && tasa > 0 && <p className={`${TEXTO_SUAVE} tabular-nums`}>{dolares(neto)} a {tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs por dólar</p>}

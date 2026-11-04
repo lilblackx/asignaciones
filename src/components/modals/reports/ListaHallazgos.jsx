@@ -29,9 +29,9 @@ export default function ListaHallazgos({ titulo = 'Puntos de atención', items }
           return (
             <li key={i}>
               {item.ordenes?.length > 0 ? (
-                <button type="button" onClick={() => setAbierto(i)} aria-label={`${item.texto} Ver las ${item.ordenes.length} órdenes`} className={`w-full text-left flex items-start gap-2.5 rounded-lg px-3 py-2 text-xs leading-snug transition-colors hover:brightness-95 dark:hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 ${color}`}>{contenido}</button>
+                <button type="button" onClick={() => setAbierto(i)} aria-label={`${item.texto} Ver las ${item.ordenes.length} órdenes`} className={`w-full text-left flex items-start gap-2.5 rounded-xl px-3 py-2 text-xs leading-snug transition-colors hover:brightness-95 dark:hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 ${color}`}>{contenido}</button>
               ) : (
-                <div className={`flex items-start gap-2.5 rounded-lg px-3 py-2 text-xs leading-snug ${color}`}>{contenido}</div>
+                <div className={`flex items-start gap-2.5 rounded-xl px-3 py-2 text-xs leading-snug ${color}`}>{contenido}</div>
               )}
             </li>
           );

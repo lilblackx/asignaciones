@@ -1,3 +1,4 @@
+import { observacionParaTecnico } from '../../utils/observacion';
 import { useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, MapPin, Plug, Tag, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
@@ -35,6 +36,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const [serial, setSerial] = useState(ticket?.instalacion?.serial || '');
   const [vlan, setVlan] = useState(ticket?.instalacion?.vlan || '');
   const [metraje, setMetraje] = useState(ticket?.instalacion?.metraje ? String(ticket.instalacion.metraje) : '');
+  const [metrajeExiste, setMetrajeExiste] = useState(ticket?.instalacion?.metrajeExistente === true);
   const [puertosDisponibles, setPuertosDisponibles] = useState(ticket?.instalacion?.puertosDisponibles || '');
   const [postes, setPostes] = useState(ticket?.instalacion?.posteadura?.length ? ticket.instalacion.posteadura : ['']);
   const [instalacionErrores, setInstalacionErrores] = useState({});
@@ -114,7 +116,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const errorFormatoEquipo = serialEquipoLeido && !serialEquipoLeido.error ? errorSerialCaja(serialEquipo) : '';
     const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
     const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipo);
-    const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, nap, puerto, puertosDisponibles }) : null;
+    const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, metrajeExistente: metrajeExiste, nap, puerto, puertosDisponibles }) : null;
     const errorFormatoSerial = instalacionLeida && !instalacionLeida.errores.serial ? errorSerialCaja(serial) : '';
     const instalacion = errorFormatoSerial ? { ...instalacionLeida, errores: { ...instalacionLeida.errores, serial: errorFormatoSerial }, error: true } : instalacionLeida;
     const conectoresInst = esInstalacion ? parseConectoresInstalacion({ externoVerde: instExternoVerde, internoVerde: instInternoVerde, internoAzul: instInternoAzul }) : null;
@@ -320,6 +322,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onPostes={(v) => { setPostes(v); if (instalacionErrores.posteadura) setInstalacionErrores((e) => ({ ...e, posteadura: undefined })); }}
               metraje={metraje}
               onMetraje={(v) => { setMetraje(v); if (instalacionErrores.metraje) setInstalacionErrores((e) => ({ ...e, metraje: undefined })); }}
+              metrajeExistente={metrajeExiste}
+              onMetrajeExistente={(v) => { setMetrajeExiste(v); if (v) setMetraje(''); if (instalacionErrores.metraje) setInstalacionErrores((e) => ({ ...e, metraje: undefined })); }}
               nap={nap}
               onNap={(v) => { setNap(v); if (napError) setNapError(''); }}
               puerto={puerto}
@@ -380,10 +384,10 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
             {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={capturarSenal} />}
           </div>
 
-          {ticket.observacion?.trim() && (
+          {observacionParaTecnico(ticket) && (
             <div className="space-y-1">
               <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA DE LA OFICINA</span>
-              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{ticket.observacion}</p>
+              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{observacionParaTecnico(ticket)}</p>
             </div>
           )}
 

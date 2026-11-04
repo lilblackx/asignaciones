@@ -41,7 +41,7 @@ function TarjetaForma({ forma, indice, copiado, onCopiar }) {
           copiado={tarjetaCopiada}
           onClick={() => onCopiar(idTarjeta, textoForma(forma), `Datos de ${nombre} copiados.`)}
           etiqueta={`Copiar todos los datos de ${nombre}`}
-          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] max-lg:text-xs font-bold"
+          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] max-lg:text-xs font-bold"
           tono="bg-zinc-800 text-white hover:bg-zinc-700"
           iconoClase="w-3 h-3"
         >

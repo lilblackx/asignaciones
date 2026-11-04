@@ -79,7 +79,7 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
         >
           {sinNada && <p className="px-2.5 py-2 text-xs text-zinc-600 dark:text-zinc-400">{vacio}</p>}
           {opciones.map((o) => (
-            <label key={o.clave} className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-sm ${o.deshabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+            <label key={o.clave} className={`flex items-start gap-2.5 rounded-xl px-2.5 py-2 text-sm ${o.deshabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
               <input
                 type="checkbox"
                 checked={o.marcado}
@@ -102,7 +102,7 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
               key={a.clave}
               type="button"
               onClick={() => { setAbierto(false); a.onClick(); }}
-              className="w-full text-left rounded-lg px-2.5 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="w-full text-left rounded-xl px-2.5 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <span className="block font-bold text-zinc-800 dark:text-zinc-100">{a.etiqueta}</span>
               {a.detalle && <span className="block text-[11px] max-lg:text-xs leading-snug text-zinc-600 dark:text-zinc-400 break-words">{a.detalle}</span>}

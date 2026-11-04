@@ -127,7 +127,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       {error && !abierto && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
 
       <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR') && (
-        <div className="mt-1 rounded-lg border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
+        <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
           <div>
             <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : 'Por qué se excluye (no se paga)'}</label>
             <input id={`motivo-${item.clave}`} value={motivo} onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
@@ -141,7 +141,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       )}</Colapsable>
 
       <Colapsable>{abierto === 'CORREGIR' && (
-        <div className="mt-1 rounded-lg border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
+        <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
           <p className={TEXTO_SUAVE}>La corrección vale para Finanzas aunque la orden esté en un cierre. Si la orden estaba aprobada, vuelve a pendiente para aprobarla ya corregida.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -162,7 +162,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       )}</Colapsable>
 
       <Colapsable>{abierto === 'GARANTIA' && (
-        <div className="mt-1 rounded-lg border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
+        <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
           <p className={TEXTO_SUAVE}>
             {esGarantiaDeOtro
               ? `La oficina marcó esta orden como garantía de la ${item.garantiaDe.codigo || 'orden'} (técnico ${item.garantiaDe.tecnico}). Decide si se le descuenta algo a ese técnico: el monto que escribas se le paga a ${item.tecnico} y la garantía no se paga como orden.`

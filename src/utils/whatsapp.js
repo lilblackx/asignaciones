@@ -394,7 +394,8 @@ function camposLlenosDeInstalacion(instalacion) {
     serial: instalacion.serial,
     vlan: instalacion.vlan,
     posteadura: (instalacion.posteadura || []).join(', '),
-    metraje: instalacion.metraje ? `${instalacion.metraje} m` : '',
+    // "Metraje existente": si la plantilla original ya trae el drop se respeta (etiquetaTieneValor); si lo trae vacío, queda "Existente".
+    metraje: instalacion.metrajeExistente === true ? 'Existente' : instalacion.metraje ? `${instalacion.metraje} m` : '',
     nap: instalacion.nap,
     puerto: instalacion.puerto,
     puertosDisponibles: instalacion.puertosDisponibles,

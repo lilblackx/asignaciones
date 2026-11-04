@@ -71,7 +71,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
         aria-label={`Notificaciones${contador > 0 ? ` (${contador} pendientes)` : ''}`}
         aria-expanded={isOpen}
         title="Notificaciones"
-        className="relative inline-flex items-center justify-center p-2 max-lg:min-w-11 max-lg:min-h-11 rounded-lg transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700"
+        className="relative inline-flex items-center justify-center p-2 max-lg:min-w-11 max-lg:min-h-11 rounded-xl transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700"
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
         {contador > 0 && (
@@ -86,7 +86,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
           <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
             <span className="text-xs font-black text-white uppercase tracking-wide">Notificaciones</span>
             {notifications.length > 0 && (
-              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="text-zinc-400 hover:text-red-400 transition-colors p-1 rounded hover:bg-zinc-800">
+              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="text-zinc-400 hover:text-red-400 transition-colors p-1 rounded-xl hover:bg-zinc-800">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}

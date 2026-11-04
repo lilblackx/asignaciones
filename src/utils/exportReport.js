@@ -44,7 +44,7 @@ const COLUMNAS = [
   ['Tipo equipo nuevo', t => t.tipoEquipoNuevo],
   ['Serial equipo nuevo', t => t.serialEquipo],
   // Recableado: los metros de la visita; instalación: el metraje registrado al instalar.
-  ['Metros de cable', t => t.metrosCable ?? t.instalacion?.metraje ?? ''],
+  ['Metros de cable', t => t.metrosCable ?? (t.instalacion?.metrajeExistente === true ? 'Existente' : (t.instalacion?.metraje ?? ''))],
   ['Conector externo', t => ETIQUETA_COLOR[t.conectorExterno] || ''],
   ['Conector interno', t => ETIQUETA_COLOR[t.conectorInterno] || ''],
   // Cantidad de conectores usados por color (visitas de conector y recableados); vacío si no hubo.

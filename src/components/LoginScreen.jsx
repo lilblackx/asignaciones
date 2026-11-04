@@ -4,7 +4,7 @@ import { stripEmojis } from '../utils/sanitizeInput';
 import PieVersion from './PieVersion';
 
 // Campos de 48 px (el dedo) y borde que se distingue del fondo en los dos temas (3:1). Con el contorno quitado, el foco se ve por el borde rojo y el aro.
-const inputClass = 'w-full h-12 px-3 bg-white dark:bg-zinc-950 border-2 border-zinc-500 text-zinc-900 dark:text-white text-base rounded-md focus:border-red-600 focus-visible:ring-4 focus-visible:ring-red-600/30 outline-none';
+const inputClass = 'w-full h-12 px-3 bg-white dark:bg-zinc-950 border-2 border-zinc-500 text-zinc-900 dark:text-white text-base rounded-xl focus:border-red-600 focus-visible:ring-4 focus-visible:ring-red-600/30 outline-none';
 const labelClass = 'block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-1.5';
 
 export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setLoginData, loginError, handleLogin }) {
@@ -27,7 +27,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
           type="button"
           onClick={() => setIsDarkMode(!isDarkMode)}
           aria-label="Cambiar tema"
-          className="absolute top-3 right-3 z-10 w-11 h-11 flex items-center justify-center rounded-md border border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+          className="absolute top-3 right-3 z-10 w-11 h-11 flex items-center justify-center rounded-xl border border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
         >
           {isDarkMode ? <Sun className="w-5 h-5" aria-hidden="true" /> : <Moon className="w-5 h-5" aria-hidden="true" />}
         </button>
@@ -104,14 +104,14 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
                 </div>
               </div>
               {loginError && (
-                <div id="login-error" role="alert" className="flex items-start gap-2 p-3 rounded-md border-2 border-red-700 bg-red-50 dark:bg-red-950/40 text-sm font-medium text-red-800 dark:text-red-200">
+                <div id="login-error" role="alert" className="flex items-start gap-2 p-3 rounded-xl border-2 border-red-700 bg-red-50 dark:bg-red-950/40 text-sm font-medium text-red-800 dark:text-red-200">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" /> {loginError}
                 </div>
               )}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-12 flex items-center justify-center gap-2 rounded-md bg-red-600 hover:bg-red-700 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white text-base font-black"
+                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white text-base font-black"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                 {isSubmitting ? 'Entrando...' : 'Entrar'}

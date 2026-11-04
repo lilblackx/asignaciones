@@ -13,7 +13,7 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar }) 
       </span>
       {tasa && fecha && <span className="text-zinc-600 dark:text-zinc-300">actualizada {fechaHoraLegible(fecha)}</span>}
       {error && <span role="alert" className="font-bold text-amber-800 dark:text-amber-300">{tasa ? 'No se pudo actualizar la tasa.' : 'No se pudo consultar la tasa: los bolívares no se muestran.'}</span>}
-      <button type="button" onClick={onActualizar} disabled={cargando} aria-label="Actualizar la tasa BCV" title="Actualizar la tasa BCV" className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 transition-colors">
+      <button type="button" onClick={onActualizar} disabled={cargando} aria-label="Actualizar la tasa BCV" title="Actualizar la tasa BCV" className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-red-600 disabled:opacity-50 transition-colors">
         <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" />
       </button>
     </div>

@@ -25,7 +25,6 @@ export default function ResumenEjecutivoView({ ordenes, eventos, contadores, tic
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
       <CifrasDestacadas items={grandes} />
       <CifrasLista items={resto} />
       <ListaHallazgos items={r.hallazgos} />
@@ -50,6 +49,7 @@ export default function ResumenEjecutivoView({ ordenes, eventos, contadores, tic
         ])}
         vacio="Sin órdenes finalizadas ni actividad en este periodo."
       />
+      <AvisoHistorial {...historial} />
     </div>
   );
 }

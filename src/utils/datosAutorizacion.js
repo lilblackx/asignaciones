@@ -7,7 +7,7 @@
 // Cada dato es { clave, etiqueta, valor, copia?, tipo? }: `valor` es lo que se ve, `copia` lo que se copia si
 // es distinto (el drop se ve "120 m" y se copia "120"), `tipo` el aspecto especial ('cedula', 'ubicacion').
 import { formatCedula } from './cedula.js';
-import { esInstalacion, metrajeInstalacion } from './instalacion.js';
+import { esInstalacion, metrajeExistente, metrajeInstalacion } from './instalacion.js';
 import { parseTelefonos } from './telefono.js';
 import { esCambioEquipo } from './tipoVisita.js';
 import { getUbicacionUrl } from './ubicacion.js';
@@ -38,6 +38,7 @@ export function datosAutorizacion(ticket) {
   }
   const metros = metrajeInstalacion(t);
   if (metros != null) agregar(equipo, 'drop', 'Drop', `${metros} m`, { copia: String(metros) });
+  else if (metrajeExistente(t)) agregar(equipo, 'drop', 'Drop', 'Existente');
   agregar(equipo, 'posteadura', 'Posteadura', (inst.posteadura || []).join(', '));
   agregar(equipo, 'puertosDisponibles', 'Puertos disponibles', inst.puertosDisponibles);
 

@@ -34,7 +34,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
   const motivo = vista.clave === 'CANCELADA' ? motivoCancelacion(orden) : '';
 
   return (
-    <li className="h-full flex flex-col min-w-0 rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+    <li className="h-full flex flex-col min-w-0 rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="bg-black px-3 py-2 flex items-center gap-2">
         <span className="text-lg font-black text-white tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
         {mostrarTipo && <span className={`text-[11px] max-lg:text-xs font-black px-2 py-1 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}

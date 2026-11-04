@@ -1,11 +1,14 @@
 // Prueba los datos que el técnico llena al instalar (src/utils/instalacion.js) y cómo se escriben en
 // la plantilla de la promotora (src/utils/whatsapp.js). No necesita el emulador. Uso: `npm run test:instalacion`.
 import {
-  detalleInstalacion, esInstalacion, faltantesInstalacion, instalacionCompleta, limpiarPostes, metrajeInstalacion, napConPuerto, parseMetraje, parseSerial, parseVlan, tieneDatosInstalacion, validarInstalacion,
+  detalleInstalacion, esInstalacion, faltantesInstalacion, instalacionCompleta, limpiarPostes, metrajeExistente, metrajeInstalacion, napConPuerto, parseMetraje, parseSerial, parseVlan, tieneDatosInstalacion, validarInstalacion,
 } from '../src/utils/instalacion.js';
 import { readFileSync } from 'node:fs';
 import { conectoresDeInstalacion, errorConectoresInstalacion, normalizarConectoresInstalacion, parseConectoresInstalacion, textoConectoresInstalacion } from '../src/utils/conectoresInstalacion.js';
 import { datosAutorizacion } from '../src/utils/datosAutorizacion.js';
+import { consumoPorTecnico } from '../src/utils/consumoMateriales.js';
+import { payloadEnvioInventario } from '../src/utils/envioInventario.js';
+import { cambiosDatosTecnico, formularioDatosTecnico, validarDatosTecnico } from '../src/utils/edicionDatosTecnico.js';
 import { TEXTO_SIN_PLANTILLA, generarMensajeDesdePlantilla, generarMensajeWhatsAppInstalacion, ordenSinPlantilla } from '../src/utils/whatsapp.js';
 
 let failures = 0;
@@ -252,6 +255,47 @@ check('salto del cursor al validar: mismo orden (con el puerto detrás de la NAP
 check('rótulo del serial en el formulario', /SERIAL <span/.test(formulario), true);
 check('el rótulo del drop en el formulario no cambia', /METRAJE DEL DROP <span/.test(formulario), true);
 check('rótulos en el modal de revisión', datosAutorizacion({ ...instalacionOk, nombre: 'Ana' }).equipo.map(d => d.etiqueta).slice(0, 5), ['Serial', 'VLAN', 'NAP', 'Puerto del cliente', 'Drop']);
+
+// --- "Metraje existente": el cliente ya tenía el drop y el técnico lo reutiliza ---
+const baseExistente = { serial: 'HWTC1A2B3C4D', vlan: '100', postes: ['P1'], nap: 'M05F11', puerto: '3', puertosDisponibles: '5' };
+const existente = validarInstalacion({ ...baseExistente, metrajeExistente: true });
+check('con "metraje existente" no se pide el número de metros', [existente.error, existente.errores.metraje], [false, undefined]);
+check('con "metraje existente" se guarda la marca y el metraje queda vacío', [existente.datos.metraje, existente.datos.metrajeExistente], [null, true]);
+check('lo escrito en el campo de metros se ignora si se marcó "existente"', validarInstalacion({ ...baseExistente, metraje: '120', metrajeExistente: true }).datos.metraje, null);
+check('sin marcar, el metraje sigue siendo obligatorio', validarInstalacion(baseExistente).errores.metraje, 'Indica el metraje de cable usado en la instalación.');
+check('sin marcar no se guarda la marca', 'metrajeExistente' in validarInstalacion({ ...baseExistente, metraje: '90' }).datos, false);
+check('una instalación con metraje existente está completa', instalacionCompleta({ tipoTrabajo: 'INSTALACIÓN', instalacion: existente.datos }), true);
+check('una instalación con metraje existente no tiene faltantes', faltantesInstalacion({ tipoTrabajo: 'INSTALACIÓN', instalacion: existente.datos }), []);
+check('metrajeExistente: solo si la marca es true', [metrajeExistente({ instalacion: { metrajeExistente: true } }), metrajeExistente({ instalacion: { metraje: 5 } }), metrajeExistente({})], [true, false, false]);
+check('metrajeInstalacion es null con metraje existente (no hay metros)', metrajeInstalacion({ instalacion: existente.datos }), null);
+check('con metraje existente la instalación cuenta como datos del técnico', tieneDatosInstalacion({ metrajeExistente: true }), true);
+check('el historial dice "Metraje: existente"', detalleInstalacion(existente.datos).includes('Metraje: existente'), true);
+
+// La plantilla: lo que la original ya trae en "Drop" se respeta; si lo trae vacío, queda "Existente".
+const conExistente = (plantilla) => generarMensajeWhatsAppInstalacion({ ...orden, plantillaOriginal: plantilla, instalacion: existente.datos });
+check('metraje existente: la plantilla conserva el metraje que ya traía la original', conExistente(PLANTILLA.replace('*Drop:*', '*Drop:* 150 m')).split('\n')[19], '*Drop:* 150 m');
+check('metraje existente: si la original trae "Drop" vacío, queda "Existente"', conExistente(PLANTILLA).split('\n')[19], '*Drop:* Existente');
+
+// Materiales y envío al inventario: suma la instalación y su serial, pero 0 metros de cable.
+const conectoresExistente = { externo: { verde: 1 }, interno: { verde: 0, azul: 0 } };
+const ordenExistente = { id: 'e1', codigo: 'IS0050', tecnico: 'LUIS PEREZ', estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', finalizadoEn: Date.now(), instalacion: { ...existente.datos, conectores: conectoresExistente } };
+const consumo = consumoPorTecnico([ordenExistente]);
+check('Materiales cuenta la instalación con metraje existente pero 0 metros', [consumo.totales.instalaciones, consumo.totales.metros], [1, 0]);
+const detalleExistente = consumo.filas[0]?.detalle[0];
+check('el detalle marca el drop existente, sin metros, y trae el serial', [detalleExistente?.metros, detalleExistente?.metrajeExistente, detalleExistente?.serial], [null, true, 'HWTC1A2B3C4D']);
+const envio = payloadEnvioInventario(ordenExistente);
+check('el envío al inventario lleva el serial y 0 metros de drop', [envio?.accion, envio?.dropMetros, Boolean(envio?.serial)], ['instalacion_nueva', 0, true]);
+check('la revisión muestra el Drop como "Existente"', datosAutorizacion({ ...ordenExistente, nombre: 'Ana' }).equipo.find(d => d.clave === 'drop')?.valor, 'Existente');
+
+// Editar los datos del técnico (también en órdenes ya cerradas): marcar y desmarcar la casilla.
+const ordenConMetros = { ...ordenExistente, instalacion: { ...baseExistente, posteadura: ['P1'], metraje: 120, conectores: conectoresExistente } };
+const marcado = validarDatosTecnico(ordenConMetros, { ...formularioDatosTecnico(ordenConMetros), metrajeExistente: true, metraje: '' });
+check('al editar, marcar "existente" quita los metros sin pedir un número', [marcado.error, marcado.datos?.instalacion?.metraje, marcado.datos?.instalacion?.metrajeExistente], [false, null, true]);
+check('al editar, el historial dice "Metraje: existente"', cambiosDatosTecnico(ordenConMetros, { ...ordenConMetros, instalacion: marcado.datos?.instalacion }).filter(l => l.startsWith('Metraje')), ['Metraje: existente']);
+const desmarcado = validarDatosTecnico(ordenExistente, { ...formularioDatosTecnico(ordenExistente), metrajeExistente: false, metraje: '' });
+check('al editar, desmarcar "existente" exige escribir los metros', [desmarcado.error, Boolean(desmarcado.errores.metraje)], [true, true]);
+const conNumero = validarDatosTecnico(ordenExistente, { ...formularioDatosTecnico(ordenExistente), metrajeExistente: false, metraje: '80' });
+check('al editar, desmarcar con metros guarda el número y quita la marca', [conNumero.error, conNumero.datos?.instalacion?.metraje, 'metrajeExistente' in (conNumero.datos?.instalacion || {})], [false, 80, false]);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

@@ -31,7 +31,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
       />
 
       <div className={`p-6 overflow-y-auto flex-1 bg-fondo ${CENTRADO_AMPLIO}`}>
-        <button onClick={onBack} className="lg:hidden mb-4 text-xs font-bold bg-white border border-zinc-300 dark:border-transparent dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-800 dark:text-white px-3 py-1.5 rounded-lg border border-zinc-400 dark:border-zinc-700 transition-colors">← Volver al Historial</button>
+        <button onClick={onBack} className="lg:hidden mb-4 text-xs font-bold bg-white border border-zinc-300 dark:border-transparent dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-800 dark:text-white px-3 py-1.5 rounded-xl border border-zinc-400 dark:border-zinc-700 transition-colors">← Volver al Historial</button>
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h3 className="font-black text-zinc-900 dark:text-white text-lg">Resumen de Jornada</h3>

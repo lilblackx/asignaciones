@@ -24,8 +24,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
-      <div role="tablist" aria-label="Hoja del registro" className="inline-flex flex-wrap rounded-lg border border-zinc-400 dark:border-zinc-700 overflow-hidden mb-4">
+      <div role="tablist" aria-label="Hoja del registro" className="inline-flex flex-wrap rounded-xl border border-zinc-400 dark:border-zinc-700 overflow-hidden mb-4">
         {HOJAS.map(({ id, nombre }) => (
           <button
             key={id}
@@ -45,7 +44,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
       <>
       <Cifras items={hoja.cifras.map((c) => (c.id ? { ...c, detalle: c.detalle ? `${c.detalle} · ver detalle` : 'ver detalle', onClick: () => setDetalle({ tipo: 'CIFRA', id: c.id }) } : c))} />
       <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 -mt-1 mb-4">{hoja.nota}</p>
-      {hoja.aviso && <p role="status" className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-4">{hoja.aviso}</p>}
+      {hoja.aviso && <p role="status" className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2 mb-4">{hoja.aviso}</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">
         <TablaReporte titulo={hoja.tituloEstadistica} columnas={hoja.columnasEstadistica} filas={hoja.filasEstadistica} />
@@ -58,7 +57,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
             // Los equipos siempre se pueden abrir (a veces piden saber en qué órdenes se usaron, aunque sea ninguna); los conectores y el drop, solo si se usaron.
             return [
               equipo || cantidad > 0 ? (
-                <button key={id} type="button" onClick={() => setDetalle({ tipo: 'MATERIAL', material: id })} aria-label={`Ver las órdenes donde se usó ${nombre}`} className="inline-flex items-center gap-1.5 text-left font-bold hover:text-red-600 dark:hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 rounded">
+                <button key={id} type="button" onClick={() => setDetalle({ tipo: 'MATERIAL', material: id })} aria-label={`Ver las órdenes donde se usó ${nombre}`} className="inline-flex items-center gap-1.5 text-left font-bold hover:text-red-600 dark:hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 rounded-xl">
                   {nombre} <ChevronRight className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
                 </button>
               ) : nombre,
@@ -102,6 +101,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
           onClose={() => setDetalle(null)}
         />
       )}
+      <AvisoHistorial {...historial} />
     </div>
   );
 }

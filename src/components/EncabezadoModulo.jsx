@@ -8,7 +8,7 @@ export default function EncabezadoModulo({ Icono, titulo, onClose, onVolver, acc
   return (
     <div className={`bg-black px-4 sm:px-6 py-3.5 border-b-2 border-red-600 flex items-center gap-3 shrink-0 sticky top-0 z-10 ${className}`}>
       {onVolver && (
-        <button onClick={onVolver} className="hidden lg:inline-flex items-center gap-1.5 shrink-0 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-white pl-2.5 pr-3 py-1.5 rounded-lg border border-zinc-700 transition-colors">
+        <button onClick={onVolver} className="hidden lg:inline-flex items-center gap-1.5 shrink-0 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-white pl-2.5 pr-3 py-1.5 rounded-xl border border-zinc-700 transition-colors">
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Volver
         </button>
       )}

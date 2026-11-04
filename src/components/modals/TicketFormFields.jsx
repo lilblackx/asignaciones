@@ -23,11 +23,11 @@ const STYLES = {
     label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
     labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
     labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
-    selectTipoDoc: 'w-14 shrink-0 appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-1 pr-5 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-center text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    inputCedula: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    selectTecnico: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none uppercase text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    selectTipoTrabajo: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    textarea: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors',
+    selectTipoDoc: 'w-14 shrink-0 appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-1 pr-5 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-center text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+    inputCedula: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+    selectTecnico: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none uppercase text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+    selectTipoTrabajo: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+    textarea: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors',
     hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
     checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
@@ -136,7 +136,7 @@ export function ObservacionField({ variant, wrapperClassName, idPrefix, value, c
         </label>
       </div>
       <textarea id={`${idPrefix}-observacion`} name="observacion" maxLength="500" value={value} onChange={onChange} rows="2" className={s.textarea}></textarea>
-      <p className={s.hint}>{checked ? 'Solo visible en el dashboard, no sale en la plantilla de WhatsApp.' : 'Se agrega en la plantilla de WhatsApp, después del aviso de cobro.'}</p>
+      <p className={s.hint}>{checked ? 'Solo la ve la oficina: no sale en la plantilla de WhatsApp ni la ven los técnicos.' : 'Se agrega en la plantilla de WhatsApp, después del aviso de cobro, y el técnico la ve.'}</p>
     </div>
   );
 }

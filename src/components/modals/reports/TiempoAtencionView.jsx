@@ -19,11 +19,10 @@ export default function TiempoAtencionView({ ordenes, rango, tecnico, metaHoras,
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Meta de atención</span>
-        <div role="group" aria-label="Meta de atención" className="flex rounded-lg border border-zinc-400 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900">
+        <div role="group" aria-label="Meta de atención" className="flex rounded-xl border border-zinc-400 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900">
           {META_HORAS.map((h) => (
             <button key={h} type="button" aria-pressed={metaHoras === h} onClick={() => onMeta(h)} className={`px-3 py-1.5 text-xs font-bold transition-colors ${metaHoras === h ? 'bg-red-600 text-white' : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
               {h < 72 ? `${h} h` : `${h / 24} días`}
@@ -56,7 +55,7 @@ export default function TiempoAtencionView({ ordenes, rango, tecnico, metaHoras,
         ) : (
           <ul className="mt-3 flex flex-col gap-1.5">
             {pendientes.map(({ orden, esperaMs }) => (
-              <li key={orden.id ?? orden.codigo} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs">
+              <li key={orden.id ?? orden.codigo} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs">
                 <span className="font-black text-red-600 dark:text-red-400">{orden.codigo}</span>
                 <span className="font-bold truncate max-w-[14rem]">{orden.nombre}</span>
                 <span className="text-zinc-600 dark:text-zinc-400">{orden.tipoTrabajo}{orden.estado === 'PRE-FINALIZADO' ? ' · por aprobar' : ''}</span>
@@ -67,6 +66,7 @@ export default function TiempoAtencionView({ ordenes, rango, tecnico, metaHoras,
           </ul>
         )}
       </section>
+      <AvisoHistorial {...historial} />
     </div>
   );
 }

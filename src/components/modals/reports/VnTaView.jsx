@@ -97,7 +97,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
           </div>
           <div className="space-y-1">
             <label htmlFor="vnta-fecha" className={ETIQUETA}>Fecha</label>
-            <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase="w-full h-10 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-lg px-3 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600" />
+            <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase="w-full h-10 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl px-3 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600" />
           </div>
           <div className="space-y-1 sm:col-span-2 lg:col-span-4">
             <label htmlFor="vnta-observacion" className={ETIQUETA}>Observación <span className="font-normal normal-case">(opcional)</span></label>
@@ -114,7 +114,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         </div>
       </form>}
 
-      {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{error}</p>}
+      {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">{error}</p>}
       <Cifras items={cifrasVnTa(estadistica)} />
       <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 -mt-1 mb-4">{NOTA_VNTA}</p>
 

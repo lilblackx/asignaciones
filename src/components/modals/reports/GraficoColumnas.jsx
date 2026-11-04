@@ -32,7 +32,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
           <h3 className="text-sm font-bold text-zinc-900 dark:text-white">{titulo}</h3>
           {subtitulo && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{subtitulo}</p>}
         </div>
-        <button type="button" onClick={() => setTabla((v) => !v)} className="shrink-0 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold px-2.5 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+        <button type="button" onClick={() => setTabla((v) => !v)} className="shrink-0 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold px-2.5 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
           {tabla ? <BarChart3 className="w-3.5 h-3.5" aria-hidden="true" /> : <Table2 className="w-3.5 h-3.5" aria-hidden="true" />} {tabla ? 'Ver gráfico' : 'Ver tabla'}
         </button>
       </header>
@@ -106,7 +106,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
               </div>
               {activo !== null && (
                 <div
-                  className="pointer-events-none absolute z-10 top-0 -translate-x-1/2 min-w-[8.5rem] rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 shadow-lg"
+                  className="pointer-events-none absolute z-10 top-0 -translate-x-1/2 min-w-[8.5rem] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 shadow-lg"
                   style={{ left: `clamp(4.5rem, ${((activo + 0.5) / meses.length) * 100}%, calc(100% - 4.5rem))` }}
                   role="status"
                 >

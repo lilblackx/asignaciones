@@ -9,7 +9,7 @@ import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/seria
 
 const claseEtiqueta = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 const claseInput = (error, correcto = false) =>
-  `w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-lg focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`;
+  `w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-xl focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`;
 
 function Campo({ id, etiqueta, error, ayuda, className = 'col-span-1', children }) {
   return (
@@ -76,9 +76,13 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             <label htmlFor="ed-vlan" className={`${claseEtiqueta} col-start-1 row-start-1`}>VLAN</label>
             <label htmlFor="ed-metraje" className={`${claseEtiqueta} col-start-2 row-start-1`}>METRAJE DEL DROP (m)</label>
             <input id="ed-vlan" type="text" inputMode="numeric" autoComplete="off" maxLength="4" placeholder="Ej. 100" value={form.vlan} onChange={(e) => onChange({ vlan: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.vlan} aria-describedby={errores.vlan ? 'ed-vlan-error' : undefined} className={`${claseInput(errores.vlan)} col-start-1 row-start-2`} />
-            <input id="ed-metraje" type="text" inputMode="numeric" autoComplete="off" maxLength={MAX_LARGO_METRAJE} placeholder="Ej. 120" value={form.metraje} onChange={(e) => onChange({ metraje: soloDigitos(e.target.value, MAX_LARGO_METRAJE) })} aria-invalid={!!errores.metraje} aria-describedby={errores.metraje ? 'ed-metraje-error' : undefined} className={`${claseInput(errores.metraje)} col-start-2 row-start-2`} />
+            <input id="ed-metraje" type="text" inputMode="numeric" autoComplete="off" maxLength={MAX_LARGO_METRAJE} placeholder="Ej. 120" value={form.metrajeExistente ? '' : form.metraje} disabled={form.metrajeExistente} onChange={(e) => onChange({ metraje: soloDigitos(e.target.value, MAX_LARGO_METRAJE) })} aria-invalid={!!errores.metraje} aria-describedby={errores.metraje ? 'ed-metraje-error' : undefined} className={`${claseInput(errores.metraje)} disabled:opacity-50 disabled:cursor-not-allowed col-start-2 row-start-2`} />
             {errores.vlan && <p id="ed-vlan-error" role="alert" className="col-start-1 row-start-3 self-start text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
             {errores.metraje && <p id="ed-metraje-error" role="alert" className="col-start-2 row-start-3 self-start text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
+            <label htmlFor="ed-metraje-existente" className="col-start-2 row-start-4 flex items-center gap-2.5 min-h-11 cursor-pointer">
+              <input id="ed-metraje-existente" type="checkbox" checked={form.metrajeExistente === true} onChange={(e) => onChange({ metrajeExistente: e.target.checked, ...(e.target.checked ? { metraje: '' } : {}) })} className="w-5 h-5 shrink-0 accent-red-600" />
+              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Metraje existente</span>
+            </label>
           </div>
           <Campo id="ed-nap" etiqueta="NAP" error={errores.nap}>
             <input id="ed-nap" type="text" maxLength="40" placeholder="Ej. NAP 08" value={form.nap} onChange={(e) => onChange({ nap: stripEmojis(e.target.value) })} aria-invalid={!!errores.nap} aria-describedby={errores.nap ? 'ed-nap-error' : undefined} className={claseInput(errores.nap)} />
@@ -93,13 +97,13 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               <div key={i} className="flex items-center gap-2">
                 <input id={`ed-poste-${i + 1}`} type="text" autoComplete="off" maxLength={MAX_LARGO_POSTE} placeholder={i === 0 ? 'Ej. DM SN N01B01' : `Poste ${i + 1}`} aria-label={`Poste ${i + 1}`} aria-invalid={i === 0 && !!errores.posteadura} value={poste} onChange={(e) => cambiarPoste(i, stripEmojis(e.target.value))} className={`flex-1 ${claseInput(i === 0 && errores.posteadura)}`} />
                 {form.postes.length > 1 && (
-                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                     <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 )}
               </div>
             ))}
-            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-400 dark:border-zinc-600 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
+            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-zinc-400 dark:border-zinc-600 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
               <Plus className="w-3 h-3" aria-hidden="true" /> Agregar otro poste
             </button>
             {errores.posteadura && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
@@ -130,7 +134,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               value={tipoVisita}
               onChange={(v) => onChange({ tipoVisita: v })}
               items={TIPOS_VISITA}
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-lg focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
               chevronClassName="w-3.5 h-3.5 right-2"
             />
           </div>

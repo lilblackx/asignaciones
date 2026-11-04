@@ -118,7 +118,6 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
 
         <div className={enPagina ? 'flex-1 min-w-0 bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm max-w-[1400px] mx-auto w-full' : `flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm ${CENTRADO_AMPLIO}`}>
           <p className={TEXTO_SUAVE}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{corteTodaviaNoLlega() ? ` Comienza a contar a partir del ${textoFechaCorte()}.` : ''}</p>
-          <AvisoHistorial hasMoreReports={hasMoreReports} isLoadingReports={isLoadingReports} onLoadMoreReports={onLoadMoreReports} />
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
             <div role="group" aria-label="Periodo" className="grid grid-cols-3 gap-2 w-full sm:flex sm:w-auto">
@@ -138,7 +137,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           </div>
 
           {periodo === 'POR_REVISAR' && (
-            <p role="status" className={`${TEXTO_SUAVE} rounded-lg border border-zinc-400 dark:border-zinc-700 bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
+            <p role="status" className={`${TEXTO_SUAVE} rounded-xl border border-zinc-400 dark:border-zinc-700 bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
               Pendientes muestra las órdenes de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
             </p>
           )}
@@ -150,7 +149,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           />
 
           {porResolver.length > 0 && (
-            <p role="status" className="rounded-lg border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
               {porResolver.length === 1 ? '1 garantía de otro técnico espera' : `${porResolver.length} garantías de otro técnico esperan`} tu decisión ({porResolver.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{porResolver.length > 4 ? '...' : ''}): descuenta de la orden original o déjala sin descuento. No se pueden aprobar hasta decidir.
             </p>
           )}
@@ -193,6 +192,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
               </section>
             );
           })}
+          <AvisoHistorial hasMoreReports={hasMoreReports} isLoadingReports={isLoadingReports} onLoadMoreReports={onLoadMoreReports} />
         </div>
       </div>
 

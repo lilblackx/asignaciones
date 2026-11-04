@@ -10,7 +10,7 @@
 // Las instalaciones y los cambios de equipo llevan en su detalle el serial (`serial`): el de la ONU instalada y el
 // del equipo nuevo.
 import { conectoresDeInstalacion } from './conectoresInstalacion.js';
-import { esInstalacion, metrajeInstalacion } from './instalacion.js';
+import { esInstalacion, metrajeExistente, metrajeInstalacion } from './instalacion.js';
 import { TIPO_RECABLEADO, COLOR_AZUL, COLOR_VERDE, cantidadesConector, esCambioEquipo, esVisitaConector } from './tipoVisita.js';
 
 export const PERIODOS = [
@@ -42,11 +42,12 @@ const pendienteDeAprobar = (t) => t.estado === 'PRE-FINALIZADO' || t.estado === 
 const esRecableado = (t) => t?.tipoVisita === TIPO_RECABLEADO;
 const esCambio = (t) => esCambioEquipo(t?.tipoVisita);
 const tieneMetros = (t) => esRecableado(t) && t.metrosCable != null && Number(t.metrosCable) > 0;
-// Una instalación con su metraje registrado. Las anteriores a que se pidiera no lo tienen y no suman.
-const tieneMetraje = (t) => !esCambio(t) && esInstalacion(t?.tipoTrabajo) && metrajeInstalacion(t) != null;
+// Una instalación con su metraje registrado (o con "metraje existente": el drop ya estaba puesto, así que suma la instalación, su serial y sus
+// conectores, pero 0 metros). Las anteriores a que se pidiera el metraje no lo tienen y no suman.
+const tieneMetraje = (t) => !esCambio(t) && esInstalacion(t?.tipoTrabajo) && (metrajeInstalacion(t) != null || metrajeExistente(t));
 // Gasta cable: recableado o instalación. Si no, es una visita de conector (que no gasta cable).
-const gastaCable = (t) => tieneMetros(t) || tieneMetraje(t);
-const metrosDe = (t) => (esRecableado(t) ? Number(t.metrosCable) : metrajeInstalacion(t));
+const gastaCable = (t) => tieneMetros(t) || (tieneMetraje(t) && !metrajeExistente(t));
+const metrosDe = (t) => (esRecableado(t) ? Number(t.metrosCable) : (metrajeInstalacion(t) ?? 0));
 // Tipo de la orden para mostrarla: 'RECABLEADO', 'CAMBIO_EQUIPO', 'INSTALACION' o 'VISITA' (de conector).
 const claseDe = (t) => (esRecableado(t) ? 'RECABLEADO' : esCambio(t) ? 'CAMBIO_EQUIPO' : esInstalacion(t?.tipoTrabajo) ? 'INSTALACION' : 'VISITA');
 // Serial del equipo: el de la ONU de una instalación o el del equipo nuevo de un cambio de equipo ('' si no hay).
@@ -156,6 +157,7 @@ export function consumoPorTecnico(ordenes, { desde = 0, hasta = Infinity, tecnic
       tipo: t.tipoVisita,
       clase: claseDe(t),
       metros: gastaCable(t) ? metrosDe(t) : null,
+      metrajeExistente: !esRecableado(t) && tieneMetraje(t) && metrajeExistente(t),
       serial: serialDe(t),
       ...conectoresPorColor(t),
     });

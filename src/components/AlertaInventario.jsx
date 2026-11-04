@@ -50,7 +50,7 @@ export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
               ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
               : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
           </p>
-          <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-lg text-white font-black ${urgente ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}>Ver</button>
+          <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-xl text-white font-black ${urgente ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}>Ver</button>
         </div>
       )}
     </Colapsable>
@@ -200,7 +200,7 @@ function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorr
       <Colapsable>
         {abierta && (
           <div className="px-3 pb-3 space-y-2">
-            <dl className="rounded-lg bg-zinc-100 dark:bg-zinc-800/60 p-2.5 text-[11px] max-lg:text-xs leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
+            <dl className="rounded-xl bg-zinc-100 dark:bg-zinc-800/60 p-2.5 text-[11px] max-lg:text-xs leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
               {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
             </dl>
             <div className="flex flex-wrap gap-2">

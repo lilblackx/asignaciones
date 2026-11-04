@@ -14,7 +14,6 @@ export default function CausasAveriaView({ ordenes, rango, tecnico, historial })
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
       <Cifras items={cifrasCausas(causas)} />
       <ListaHallazgos items={causas.napsSospechosas.map((n) => ({ nivel: 'aviso', texto: textoNapSospechosa(n), ordenes: n.ordenes, datoTitulo: 'Falla' }))} />
       <BarrasReporte
@@ -35,6 +34,7 @@ export default function CausasAveriaView({ ordenes, rango, tecnico, historial })
         {...tablas.porNap}
         vacio="Ninguna avería tiene NAP registrada."
       />
+      <AvisoHistorial {...historial} />
     </div>
   );
 }

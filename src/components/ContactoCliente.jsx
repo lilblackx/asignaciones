@@ -3,7 +3,7 @@ import { parseTelefonos, getEnlaceLlamada, getEnlaceWhatsApp } from '../utils/te
 import TelefonoAccion from './TelefonoAccion';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap } from '../utils/ubicacion';
 
-const base = 'flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-bold transition-colors';
+const base = 'flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-colors';
 
 // Accesos rápidos al cliente de una orden, para usar dentro de los modales:
 // cómo llegar (ubicación), llamar y WhatsApp (teléfono). Llamar y WhatsApp solo

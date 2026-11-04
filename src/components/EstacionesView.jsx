@@ -30,14 +30,14 @@ const refEstado = () => doc(db, 'artifacts', appId, 'public', 'data', 'estadoFir
 
 function Alerta({ children }) {
   return (
-    <p className="flex items-start gap-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
+    <p className="flex items-start gap-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>{children}</span>
     </p>
   );
 }
 function Aviso({ children }) {
   return (
-    <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900 px-2.5 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+    <p className="flex items-start gap-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900 px-2.5 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>{children}</span>
     </p>
   );

@@ -25,20 +25,19 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
     <div>
     <Cifras items={cifrasEstadisticas(estadisticas)} />
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <AvisoCargarAnteriores variante="reporte" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} className="lg:col-span-2" />
       <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
             <Award className="w-4 h-4 text-amber-500" /> Productividad por Técnico
           </h3>
-          <div role="group" aria-label="Tipo de trabajo" className="flex gap-1 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+          <div role="group" aria-label="Tipo de trabajo" className="flex gap-1 p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800">
             {pestañas.map(([clave, texto]) => (
               <button
                 key={clave}
                 type="button"
                 aria-pressed={tipoProductividad === clave}
                 onClick={() => setTipoProductividad(clave)}
-                className={`px-2.5 py-1 rounded-md text-[11px] max-lg:text-xs font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-xl text-[11px] max-lg:text-xs font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
               >
                 {texto}
               </button>
@@ -92,7 +91,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {reincidentes.map(({ cedula, nombre, count }) => (
-              <div key={cedula} className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-lg px-3 py-2">
+              <div key={cedula} className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl px-3 py-2">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-zinc-900 dark:text-white truncate">{nombre}</div>
                   <div className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">C.I: {cedula}</div>
@@ -104,6 +103,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
         )}
       </div>
     </div>
+    <AvisoCargarAnteriores variante="reporte" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} />
     </div>
   );
 }

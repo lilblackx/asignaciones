@@ -38,6 +38,7 @@ export function formularioDatosTecnico(ticket) {
     nap: texto(inst.nap || separado.nap),
     puerto: texto(inst.puerto || separado.puerto),
     metraje: numero(inst.metraje),
+    metrajeExistente: inst.metrajeExistente === true,
     postes: inst.posteadura?.length ? [...inst.posteadura] : [''],
     puertosDisponibles: texto(inst.puertosDisponibles),
     extVerde: numero(conectores.externo.verde),
@@ -74,12 +75,12 @@ const ORDEN_INSTALACION = [
 ];
 
 function validarInstalacionEditada(ticket, f) {
-  const reporte = validarInstalacion({ serial: f.serial, vlan: f.vlan, postes: f.postes, metraje: f.metraje, nap: f.nap, puerto: f.puerto, puertosDisponibles: f.puertosDisponibles });
+  const reporte = validarInstalacion({ serial: f.serial, vlan: f.vlan, postes: f.postes, metraje: f.metraje, metrajeExistente: f.metrajeExistente === true, nap: f.nap, puerto: f.puerto, puertosDisponibles: f.puertosDisponibles });
   // Lo que la orden ya tenía no se puede dejar vacío; lo que nunca tuvo puede seguir vacío (solo se revisa si se escribió).
   const inicial = formularioDatosTecnico(ticket);
   const exige = {
     serial: Boolean(inicial.serial.trim()), vlan: Boolean(inicial.vlan.trim()), posteadura: limpiarPostes(inicial.postes).length > 0,
-    metraje: Boolean(inicial.metraje.trim()), puertosDisponibles: Boolean(inicial.puertosDisponibles.trim()),
+    metraje: Boolean(inicial.metraje.trim()) || inicial.metrajeExistente === true, puertosDisponibles: Boolean(inicial.puertosDisponibles.trim()),
   };
   const vacios = {
     serial: !texto(f.serial).trim(), vlan: !texto(f.vlan).trim(), posteadura: limpiarPostes(f.postes).length === 0,
@@ -149,7 +150,7 @@ export function cambiosDatosTecnico(antes, despues) {
   si(texto(a.serial) !== texto(d.serial), `Serial: ${d.serial || 'Vacío'}`);
   si(texto(a.vlan) !== texto(d.vlan), `VLAN: ${d.vlan || 'Vacía'}`);
   si(JSON.stringify(a.posteadura || []) !== JSON.stringify(d.posteadura || []), `Posteadura: ${(d.posteadura || []).join(', ') || 'Vacía'}`);
-  si(numero(a.metraje) !== numero(d.metraje), `Metraje: ${d.metraje ? `${d.metraje} m` : 'Vacío'}`);
+  si(numero(a.metraje) !== numero(d.metraje) || (a.metrajeExistente === true) !== (d.metrajeExistente === true), d.metrajeExistente === true ? 'Metraje: existente' : `Metraje: ${d.metraje ? `${d.metraje} m` : 'Vacío'}`);
   si(texto(a.puertosDisponibles) !== texto(d.puertosDisponibles), `Puertos disponibles: ${d.puertosDisponibles || 'Vacío'}`);
   const conectoresAntes = textoConectoresInstalacion(a.conectores);
   const conectoresDespues = textoConectoresInstalacion(d.conectores);

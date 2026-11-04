@@ -79,7 +79,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
             onClick={ejecutar(onLlegue)}
             disabled={ocupado}
             aria-label={`Avisar que llegaste a la orden ${orden}`}
-            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-700 hover:bg-teal-600 text-white font-black transition-colors disabled:opacity-60 ${boton}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-black transition-colors disabled:opacity-60 ${boton}`}
           >
             <MapPin className={icono} aria-hidden="true" /> Llegué
           </button>
@@ -89,7 +89,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
           onClick={ejecutar(onCancelar)}
           disabled={ocupado}
           aria-label={enSitio ? `Deshacer la llegada a la orden ${orden}` : `Cancelar el viaje a la orden ${orden}`}
-          className={`${enSitio ? 'flex-1' : ''} inline-flex items-center justify-center gap-1.5 rounded-lg bg-white/70 dark:bg-zinc-900/60 border border-current/30 font-bold hover:bg-white dark:hover:bg-zinc-900 transition-colors disabled:opacity-60 ${boton}`}
+          className={`${enSitio ? 'flex-1' : ''} inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/70 dark:bg-zinc-900/60 border border-current/30 font-bold hover:bg-white dark:hover:bg-zinc-900 transition-colors disabled:opacity-60 ${boton}`}
         >
           {enSitio ? <><Undo2 className={icono} aria-hidden="true" /> Deshacer</> : <><X className={icono} aria-hidden="true" /> Cancelar</>}
         </button>

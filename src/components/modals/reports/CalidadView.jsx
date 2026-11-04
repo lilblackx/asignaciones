@@ -14,7 +14,6 @@ export default function CalidadView({ ordenes, rango, tecnico, getTecnicoColor, 
 
   return (
     <div>
-      <AvisoHistorial {...historial} />
       <Cifras items={cifrasCalidad(cal)} />
       <TablaReporte
         titulo="Calidad por técnico"
@@ -42,6 +41,7 @@ export default function CalidadView({ ordenes, rango, tecnico, getTecnicoColor, 
         ])}
         vacio="Ningún cliente reincidió."
       />
+      <AvisoHistorial {...historial} />
     </div>
   );
 }
