@@ -254,9 +254,10 @@ export function mapearSenal(o) {
   };
 }
 
-// El listado de SmartOLT guarda cada señal por separado y a veces falta una (en ~1 % de las ONU en línea falta
-// la de 1490 nm). Su consulta de señal en vivo (la que usa su pantalla de detalle) sí trae las dos, aunque de vez
-// en cuando responde "-" en ambas. Solo se usa cuando al listado le falta algo y la ONU está en línea.
+// El listado de SmartOLT guarda la ÚLTIMA señal que midió la OLT, no la de este instante: tras una reparación (drop atenuado, conector,
+// recableado) puede seguir mostrando la de antes por un buen rato. Su consulta de señal en vivo (la que usa su pantalla de detalle) trae la
+// real y las dos juntas, aunque de vez en cuando responde "-" en ambas. Por eso, con la ONU en línea, SIEMPRE se pide en vivo y manda esa; el
+// listado solo sirve de respaldo si la consulta en vivo falla o no trae el dato (y, además, a veces le falta el 1490).
 const tieneNumero = (v) => /\d/.test(String(v ?? ''));
 const estaEnLinea = (estado) => !String(estado ?? '').trim() || /^online$/i.test(String(estado).trim());
 const numeroDeSenal = (v) => String(v ?? '').match(/-?\d+(?:[.,]\d+)?/)?.[0] ?? null; // "-33.01 dBm" -> "-33.01"; "-" -> null
@@ -274,20 +275,21 @@ async function senalEnVivo(env, idExterno) {
   return { senal1310: numeroDeSenal(d.onu_signal_1310), senal1490: numeroDeSenal(d.onu_signal_1490) };
 }
 
-// Completa la señal que le falte a una ONU en línea. Lo que trajo el listado no se cambia; si la consulta en vivo
-// falla o no trae el dato, se devuelve la ONU como estaba (la app avisa de lo que falte).
+// Pone la señal en vivo de una ONU en línea. Cada valor que SmartOLT entregue en vivo reemplaza al del listado; el que no entregue se queda
+// como estaba. Reintenta (hasta 3 veces) mientras en vivo falte alguno. Si la consulta falla, devuelve la ONU como estaba (la app avisa de lo que falte).
 export async function completarSenal(env, onu, { pausa = PAUSA_REINTENTO_MS } = {}) {
   if (!onu.idExterno || !estaEnLinea(onu.estado)) return onu;
   let actual = onu;
-  for (let intento = 0; intento < REINTENTOS_SENAL_EN_VIVO && !(tieneNumero(actual.senal1310) && tieneNumero(actual.senal1490)); intento++) {
+  for (let intento = 0; intento < REINTENTOS_SENAL_EN_VIVO; intento++) {
     if (intento > 0 && pausa) await new Promise((r) => setTimeout(r, pausa));
     try {
       const vivo = await senalEnVivo(env, onu.idExterno);
       actual = {
         ...actual,
-        senal1310: tieneNumero(actual.senal1310) ? actual.senal1310 : (vivo.senal1310 ?? actual.senal1310),
-        senal1490: tieneNumero(actual.senal1490) ? actual.senal1490 : (vivo.senal1490 ?? actual.senal1490),
+        senal1310: tieneNumero(vivo.senal1310) ? vivo.senal1310 : actual.senal1310,
+        senal1490: tieneNumero(vivo.senal1490) ? vivo.senal1490 : actual.senal1490,
       };
+      if (tieneNumero(vivo.senal1310) && tieneNumero(vivo.senal1490)) break;
     } catch (err) {
       console.error('No se pudo leer la señal en vivo de SmartOLT:', err.message);
     }

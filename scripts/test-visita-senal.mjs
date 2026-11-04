@@ -72,7 +72,7 @@ check('solo la ONU con esa cédula, con su señal',
   res, [{ idExterno: 'A', nombre: 'JUAN PEREZ CI 12.345.678', direccion: 'Calle 1', zona: 'Z1', estado: 'Power fail', senal1310: '-19.456', senal1490: null, calidad: 'Very good' }]);
 check('pide los campos de señal a SmartOLT', pedidos[0].searchParams.get('fields'), CAMPOS);
 
-// --- Señal en vivo: si al listado le falta un valor, se completa con la consulta en vivo de SmartOLT ---
+// --- Señal en vivo: con la ONU en línea SIEMPRE manda la consulta en vivo de SmartOLT; el listado solo es respaldo (guarda la última medición, no la actual) ---
 let vivo; let llamadasVivo; // vivo: lista de respuestas (o 'error') que se van entregando
 globalThis.fetch = async (url) => {
   const u = String(url);
@@ -90,18 +90,21 @@ const NADA = { onu_signal_1310: '-', onu_signal_1490: '-' };
 let o = await completar(base, [OK]);
 check('al listado le falta el 1490: se completa con la consulta en vivo', [o.senal1310, o.senal1490, llamadasVivo], ['-27.8', '-22.84', ['ONU1']]);
 check('lo demás de la ONU no cambia', [o.calidad, o.estado, o.idExterno], ['Very good', 'Online', 'ONU1']);
+// El caso real (cliente 23.740.228): el listado seguía con la señal de antes de reparar el drop (-28.61 / -35.22) y en vivo era otra (-23.89 / -22.67).
+o = await completar({ ...base, senal1310: '-28.61', senal1490: '-35.22' }, [{ onu_signal_1310: '-23.89 dBm', onu_signal_1490: '-22.67 dBm' }]);
+check('aunque el listado traiga los dos valores, manda la señal en vivo (el listado puede ser de antes de la reparación)', [o.senal1310, o.senal1490, llamadasVivo.length], ['-23.89', '-22.67', 1]);
 o = await completar({ ...base, senal1490: '-23.1' }, [OK]);
-check('con los dos valores no se hace ninguna consulta extra', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', '-23.1', 0]);
-o = await completar(base, [{ onu_signal_1310: '-30.00 dBm', onu_signal_1490: '-22.84 dBm' }]);
-check('lo que trajo el listado no se pisa con el valor en vivo', [o.senal1310, o.senal1490], ['-27.8', '-22.84']);
+check('con los dos valores en el listado también se consulta en vivo y se usa lo de en vivo', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', '-22.84', 1]);
 o = await completar({ ...base, senal1310: null, senal1490: '-22.1' }, [OK]);
-check('también completa el 1310 si es el que falta', [o.senal1310, o.senal1490], ['-27.8', '-22.1']);
+check('también completa el 1310 si es el que falta', [o.senal1310, o.senal1490], ['-27.8', '-22.84']);
 o = await completar(base, [NADA, OK]);
 check('si responde "-" reintenta una vez y lo completa', [o.senal1490, llamadasVivo.length], ['-22.84', 2]);
+o = await completar({ ...base, senal1490: '-23.1' }, [NADA]);
+check('si en vivo siempre responde "-" se queda el valor del listado (3 intentos)', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', '-23.1', 3]);
 o = await completar(base, [NADA]);
-check('si sigue en "-" se queda como estaba (3 intentos)', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', null, 3]);
-o = await completar(base, ['error']);
-check('si SmartOLT falla no se rompe: devuelve lo del listado', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', null, 3]);
+check('sin valor en el listado y en "-" en vivo, queda vacío (3 intentos)', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', null, 3]);
+o = await completar({ ...base, senal1490: '-23.1' }, ['error']);
+check('si SmartOLT falla no se rompe: devuelve lo del listado', [o.senal1310, o.senal1490, llamadasVivo.length], ['-27.8', '-23.1', 3]);
 o = await completar(base, ['error', OK]);
 check('un fallo y luego respuesta buena: se completa', o.senal1490, '-22.84');
 o = await completar({ ...base, estado: 'Power fail', senal1310: null }, [OK]);
@@ -116,6 +119,8 @@ o = await completar(base, [NADA, NADA, OK]);
 check('puede necesitar hasta el tercer intento', [o.senal1490, llamadasVivo.length], ['-22.84', 3]);
 o = await completar({ ...base, senal1310: null, senal1490: null }, [OK]);
 check('si faltan los dos se completan los dos', [o.senal1310, o.senal1490], ['-27.8', '-22.84']);
+o = await completar({ ...base, senal1310: '-28.61', senal1490: '-35.22' }, [{ onu_signal_1310: '-23.89 dBm', onu_signal_1490: '-' }]);
+check('si en vivo solo llega un valor, ese reemplaza al del listado y el otro se queda', [o.senal1310, o.senal1490], ['-23.89', '-35.22']);
 
 // --- Cuando SmartOLT falla: un tropiezo rápido se reintenta una vez; el resto se explica en palabras claras ---
 const ONU_OK = { unique_external_id: 'A', name: 'JUAN PEREZ CI 12.345.678', signal_1310: '-19.4', signal_1490: '-22.1' };
