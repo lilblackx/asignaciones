@@ -21,6 +21,7 @@ import { BUSCADOR } from './estilos';
 import Chip from './Chip';
 import Boton from './Boton';
 import RangoFechas from './RangoFechas';
+import HistorialInfra from './HistorialInfra';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 const dato = (valor) => valor || '-';
@@ -32,7 +33,12 @@ const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-z
 // Pantalla de INFRAESTRUCTURA: las instalaciones realizadas, con la NAP y el puerto donde quedó conectado cada cliente nuevo. Solo lee las órdenes; lo único que escribe es el check de "ya la anoté".
 // `onAbrirMenu`: cuando un administrador está aquí dentro del menú lateral, el botón ☰ que lo abre en el celular.
 export default function InfraestructuraApp({ auth, onAbrirMenu }) {
-  const { firebaseUser, currentUserName, currentUser, role, handleLogout } = auth;
+  const { firebaseUser, currentUserName, currentUser, role, handleLogout, puedeVerHistorial } = auth;
+  // Con el permiso de historial hay dos pestañas: Instalaciones y el historial de órdenes (que se lee la primera vez que se abre y queda montado).
+  const [pestana, setPestana] = useState('instalaciones');
+  const [historialAbierto, setHistorialAbierto] = useState(false);
+  const verHistorial = puedeVerHistorial === true && pestana === 'historial';
+  const elegirPestana = (valor) => { setPestana(valor); if (valor === 'historial') setHistorialAbierto(true); };
   const [isDarkMode, setIsDarkMode] = useTema(currentUser);
   const { toastMsg, setToastMsg } = useToast();
   const ahora = useAhora();
@@ -125,11 +131,20 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      {/* Con el historial a la vista la pantalla es una columna de alto fijo: la lista del historial es la que se desplaza, con la búsqueda y las pestañas siempre arriba. */}
+      <div className={`${verHistorial ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200`}>
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Infraestructura" icono={Network} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
-        <main className="p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
+        {puedeVerHistorial === true && (
+          <div className="px-4 sm:px-6 pt-3 pb-3 max-w-[1400px] mx-auto w-full flex flex-wrap gap-2" role="group" aria-label="Sección">
+            <Chip activo={!verHistorial} onClick={() => elegirPestana('instalaciones')}>Instalaciones</Chip>
+            <Chip activo={verHistorial} onClick={() => elegirPestana('historial')}>Historial</Chip>
+          </div>
+        )}
+        {puedeVerHistorial === true && historialAbierto && <HistorialInfra auth={auth} visible={verHistorial} copiar={copiar} setToastMsg={setToastMsg} />}
+
+        <main className={`p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3${verHistorial ? ' hidden' : ''}`}>
           {!cargado ? (
             <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando instalaciones...</p>
           ) : error && !actualizadoEn ? (

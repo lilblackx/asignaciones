@@ -71,6 +71,11 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await base.collection('reports').doc('reporte-cancelados').set({ total: 1, tipoReporte: 'CANCELADOS', createdAt: 2 });
   await base.collection('users').doc('infra-uid').set({ role: 'INFRAESTRUCTURA', disabled: false, username: 'infra' });
   await base.collection('users').doc('infra-off-uid').set({ role: 'INFRAESTRUCTURA', disabled: true, username: 'infra-off' });
+  // Con el permiso de historial (puedeVerHistorial): ve todas las órdenes y reportes. Desactivado no ve nada; y el permiso no vale en otro rol.
+  await base.collection('users').doc('infra-historial-uid').set({ role: 'INFRAESTRUCTURA', disabled: false, username: 'infrahist', puedeVerHistorial: true });
+  await base.collection('users').doc('infra-historial-off-uid').set({ role: 'INFRAESTRUCTURA', disabled: true, username: 'infrahist-off', puedeVerHistorial: true });
+  await base.collection('users').doc('almacen-con-historial-uid').set({ role: 'ALMACEN', disabled: false, username: 'almhist', puedeVerHistorial: true });
+  await base.collection('users').doc('tecnico-con-historial-uid').set({ role: 'TECNICO', disabled: false, username: 'techist', tecnicoAsociado: 'GERARDO MOLERO', puedeVerHistorial: true });
   await base.collection('tickets').doc('instalacion-final').set({ codigo: 'IO9', tipoTrabajo: 'INSTALACIÓN', estado: 'FINALIZADO', nombre: 'Cliente instalado', cedula: '9', tecnico: 'GERARDO MOLERO', nap: 'NAP O02D10 - Puerto 3' });
   await base.collection('historialInstalaciones').doc('hist-1').set({ codigo: 'IO0', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Sariana', promotoraClave: 'sariana' });
   await base.collection('historialInstalaciones').doc('hist-otra').set({ codigo: 'IO9', estado: 'FINALIZADO', archivadoEn: Date.now(), promotora: 'Maria', promotoraClave: 'maria' });
@@ -596,6 +601,39 @@ await check('Quien no es INFRAESTRUCTURA ni ADMIN no lee ni escribe las marcas d
 });
 await check('INFRAESTRUCTURA desactivado no lee nada', async () => {
   await assertFails(instalacionesInfra(testEnv.authenticatedContext('infra-off-uid').firestore()).get());
+});
+
+// --- INFRAESTRUCTURA con permiso de historial: lee todas las órdenes, todos los reportes y los técnicos (solo lectura) ---
+const asInfraHistorial = () => testEnv.authenticatedContext('infra-historial-uid').firestore();
+await check('INFRAESTRUCTURA con permiso de historial lee todas las órdenes, todos los reportes y los técnicos', async () => {
+  await assertSucceeds(datos(asInfraHistorial()).collection('tickets').get());
+  await assertSucceeds(ticketPath(asInfraHistorial(), 'averia-los').get());
+  await assertSucceeds(ticketPath(asInfraHistorial(), 'instalacion-1').get());
+  await assertSucceeds(datos(asInfraHistorial()).collection('reports').get());
+  await assertSucceeds(datos(asInfraHistorial()).collection('reports').doc('reporte-cancelados').get());
+  await assertSucceeds(datos(asInfraHistorial()).collection('reports').orderBy('createdAt', 'desc').limit(30).get());
+  await assertSucceeds(datos(asInfraHistorial()).collection('technicians').get());
+  await assertSucceeds(datos(asInfraHistorial()).collection('config').doc('tasaBcv').get());
+});
+await check('INFRAESTRUCTURA con permiso de historial sigue sin leer usuarios, historial de ventas ni Finanzas, y sigue sin escribir', async () => {
+  await assertFails(datos(asInfraHistorial()).collection('users').get());
+  await assertFails(datos(asInfraHistorial()).collection('historialInstalaciones').get());
+  await assertFails(datos(asInfraHistorial()).collection('pagosTecnicos').get());
+  await assertFails(ticketPath(asInfraHistorial(), 'instalacion-1').update({ observacion: 'x' }));
+  await assertFails(datos(asInfraHistorial()).collection('tickets').doc('nueva').set({ codigo: 'X', tipoTrabajo: 'INSTALACIÓN' }));
+  await assertFails(ticketPath(asInfraHistorial(), 'instalacion-1').delete());
+  await assertFails(datos(asInfraHistorial()).collection('reports').doc('reporte-1').update({ total: 9 }));
+  await assertFails(datos(asInfraHistorial()).collection('technicians').doc('GERARDO MOLERO').update({ activo: false }));
+  await assertFails(datos(asInfraHistorial()).collection('users').doc('infra-historial-uid').update({ puedeVerHistorial: false }));
+});
+await check('El permiso de historial no sirve desactivado, sin ser INFRAESTRUCTURA ni sin marcarlo', async () => {
+  await assertFails(datos(testEnv.authenticatedContext('infra-historial-off-uid').firestore()).collection('tickets').get());
+  await assertFails(datos(testEnv.authenticatedContext('infra-historial-off-uid').firestore()).collection('reports').get());
+  await assertFails(datos(testEnv.authenticatedContext('almacen-con-historial-uid').firestore()).collection('users').get());
+  await assertFails(datos(testEnv.authenticatedContext('tecnico-con-historial-uid').firestore()).collection('tickets').get());
+  await assertFails(datos(testEnv.authenticatedContext('tecnico-con-historial-uid').firestore()).collection('technicians').get());
+  await assertFails(datos(asInfra()).collection('tickets').get());
+  await assertFails(datos(asInfra()).collection('technicians').get());
 });
 
 const asPromotora2 = () => testEnv.authenticatedContext('promotora2-uid').firestore();

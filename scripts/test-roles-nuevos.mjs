@@ -165,6 +165,12 @@ check('FINANZAS solo escribe en las colecciones de Finanzas', /allow (create|upd
 check('las colecciones de Finanzas se escriben con llevaFinanzas', ['tarifasPago', 'pagosTecnicos', 'ordenesPagadas'].every((c) => new RegExp(`match /artifacts/\\{appId\\}/public/data/${c}/[^}]*\\}[\\s\\S]*?allow (create|update|delete)[^;]*llevaFinanzas`).test(reglas)), true);
 const worker = leer('../cf-worker/src/index.js');
 check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \['ADMIN', 'USUARIO', 'TECNICO', 'ALMACEN', 'PROMOTORA', 'FINANZAS', 'INFRAESTRUCTURA', 'ADMINISTRACION'\]/.test(worker), true);
+// INFRAESTRUCTURA con permiso de historial (puedeVerHistorial): el permiso solo vale en ese rol, en la sesión, en el Worker y en las reglas.
+check('el permiso de historial viene de la sesión y solo vale para INFRAESTRUCTURA', /puedeVerHistorial: profile\?\.role === 'INFRAESTRUCTURA' && profile\?\.puedeVerHistorial === true/.test(leer('../src/hooks/useAuth.js')), true);
+check('el Worker guarda el permiso de historial solo en INFRAESTRUCTURA', /puedeVerHistorial: \{ booleanValue: role === 'INFRAESTRUCTURA' && puedeVerHistorial === true \}/.test(worker), true);
+check('las reglas dan el historial solo a INFRAESTRUCTURA con el permiso', /function infraVeHistorial\(appId\) \{\s*return isInfraestructuraRole\(appId\) && get\(profilePath\(appId\)\)\.data\.get\('puedeVerHistorial', false\) == true;/.test(reglas), true);
+check('el historial de Infraestructura se lee sin listeners de órdenes', !/onSnapshot/.test(leer('../src/hooks/useHistorialOrdenes.js')) && /getDocs/.test(leer('../src/hooks/useHistorialOrdenes.js')), true);
+check('Infraestructura muestra las pestañas solo con el permiso', /puedeVerHistorial === true && \(\s*<div[^>]*role="group" aria-label="Sección"/.test(leer('../src/components/InfraestructuraApp.jsx')), true);
 check('Finanzas tiene su pantalla y no importa hooks de la oficina', /FinanzasApp/.test(root) && !/useTickets'|usePushToken|useUsers/.test(leer('../src/components/FinanzasApp.jsx')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');

@@ -253,7 +253,7 @@ async function handleCreateUser(request, env, headers, callerUid) {
     return new Response('JSON inválido', { status: 400, headers });
   }
 
-  const { email, password, username, nombre, role, tecnicoAsociado, puedeCerrar, promotoraNombres, verTodasInstalaciones, puedeCrearVentas, createdBy } = body || {};
+  const { email, password, username, nombre, role, tecnicoAsociado, puedeCerrar, promotoraNombres, verTodasInstalaciones, puedeCrearVentas, puedeVerHistorial, createdBy } = body || {};
   const nombreLimpio = String(nombre || '').trim();
   if (!USERNAME_VALIDO.test(username || '') || !email || !nombreLimpio || !ROLES_VALIDOS.includes(role)) {
     return new Response('Datos de usuario inválidos.', { status: 400, headers });
@@ -295,6 +295,7 @@ async function handleCreateUser(request, env, headers, callerUid) {
       promotoraClaves: { arrayValue: { values: nombresPromotora.claves.map((c) => ({ stringValue: c })) } },
       verTodasInstalaciones: { booleanValue: veTodas },
       puedeCrearVentas: { booleanValue: role === 'PROMOTORA' && puedeCrearVentas === true },
+      puedeVerHistorial: { booleanValue: role === 'INFRAESTRUCTURA' && puedeVerHistorial === true },
       disabled: { booleanValue: false },
       createdAt: { integerValue: String(Date.now()) },
       createdBy: { stringValue: String(createdBy || '') },

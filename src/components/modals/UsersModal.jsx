@@ -41,9 +41,9 @@ const claseRol = (rol) => (rol === ROLES.ADMIN
       ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
       : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300');
 
-const EMPTY_NEW_USER = { usuario: '', nombre: '', clave: '', role: ROLES.USUARIO, puedeCerrar: false, tecnicoAsociado: '', promotoraNombres: '', verTodasInstalaciones: false, puedeCrearVentas: false };
+const EMPTY_NEW_USER = { usuario: '', nombre: '', clave: '', role: ROLES.USUARIO, puedeCerrar: false, tecnicoAsociado: '', promotoraNombres: '', verTodasInstalaciones: false, puedeCrearVentas: false, puedeVerHistorial: false };
 
-export default function UsersModal({ users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, adminResetPassword, currentUsername, onClose, technicians = [], enPagina = false }) {
+export default function UsersModal({ users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, setUserPuedeVerHistorial, adminResetPassword, currentUsername, onClose, technicians = [], enPagina = false }) {
   const [roleEditId, setRoleEditId] = useState(null);
   const [roleDraft, setRoleDraft] = useState('');
   const [techDraft, setTechDraft] = useState('');
@@ -195,6 +195,12 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     setTogglingId(null);
   };
 
+  const onTogglePuedeVerHistorial = async (id, puedeVerHistorial) => {
+    setTogglingId(id);
+    await setUserPuedeVerHistorial(id, puedeVerHistorial);
+    setTogglingId(null);
+  };
+
   const onTogglePuedeCerrar = async (id, puedeCerrar) => {
     setTogglingId(id);
     await setUserPuedeCerrar(id, puedeCerrar);
@@ -233,6 +239,14 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
           { clave: 'ventas', etiqueta: 'Crear ventas', ayuda: 'Puede crear instalaciones nuevas desde su pantalla.', marcado: creaVentas, deshabilitado: ocupado, onCambiar: (v) => onTogglePuedeCrearVentas(u.id, v) },
         ],
         acciones: [{ clave: 'nombres', etiqueta: 'Nombres en las plantillas', detalle: nombres.length ? nombres.join(' · ') : verTodas ? 'Sin nombre' : 'Sin nombre: no ve nada', onClick: () => startPromEdit(u) }],
+      };
+    }
+    if (u.role === ROLES.INFRAESTRUCTURA) {
+      const veHistorial = u.puedeVerHistorial === true;
+      return {
+        resumen: veHistorial ? 'Ve el historial' : 'Sin permisos',
+        opciones: [{ clave: 'historial', etiqueta: 'Ver el historial de órdenes', ayuda: 'Ve todas las órdenes y cierres (con cédula, teléfono y cobros), como el administrador, solo para mirar.', marcado: veHistorial, deshabilitado: ocupado, onCambiar: (v) => onTogglePuedeVerHistorial(u.id, v) }],
+        acciones: [],
       };
     }
     if (u.role === ROLES.TECNICO) {
@@ -499,6 +513,16 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     chevronClassName="w-4 h-4 right-3"
                   />
                   <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
+                </div>
+              )}
+
+              {newUser.role === ROLES.INFRAESTRUCTURA && (
+                <div className="space-y-3 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
+                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                    <input type="checkbox" checked={newUser.puedeVerHistorial} onChange={(e) => setNewUser({ ...newUser, puedeVerHistorial: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
+                    Ver el historial de órdenes
+                  </label>
+                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Ve todas las órdenes y cierres (con cédula, teléfono y cobros), solo para mirar.</p>
                 </div>
               )}
 

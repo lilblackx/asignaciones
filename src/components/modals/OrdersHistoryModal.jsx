@@ -38,7 +38,7 @@ const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-
 // `puedeVerPlantilla` (solo ADMIN y usuarios con permiso de cierre, los que llegan a este historial) muestra en cada orden con
 // plantilla (de cualquier trabajo y estado) el botón "Ver plantilla"; `plantillaDe(orden)` arma el texto (vacío si no hay) y
 // `onCopy(texto, mensaje)` copia y avisa con el toast.
-export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose, enPagina = false }) {
+export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose, enPagina = false, clasePagina = PANEL_PAGINA }) {
   const [search, setSearch] = useState('');
   const [estado, setEstado] = useState('');
   const [tipo, setTipo] = useState('');
@@ -129,7 +129,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
     <>
     {/* Con la plantilla abierta, Escape cierra solo la plantilla y no el historial. */}
     <Modal enPagina={enPagina} onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? clasePagina : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={History} titulo="Historial de órdenes" onClose={onClose} enPagina={enPagina} />
 
         <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>

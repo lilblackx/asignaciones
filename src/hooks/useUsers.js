@@ -47,7 +47,7 @@ export function useUsers(firebaseUser, setToastMsg, role) {
     return () => unsub();
   }, [firebaseUser, role]);
 
-  const createUser = async ({ usuario, clave, role, nombre, puedeCerrar, tecnicoAsociado, promotoraNombres, verTodasInstalaciones, puedeCrearVentas }, createdBy) => {
+  const createUser = async ({ usuario, clave, role, nombre, puedeCerrar, tecnicoAsociado, promotoraNombres, verTodasInstalaciones, puedeCrearVentas, puedeVerHistorial }, createdBy) => {
     const username = normalizeUsername(usuario);
     const nombreCompleto = (nombre || '').trim();
     if (!username || !clave || !nombreCompleto) return;
@@ -66,6 +66,7 @@ export function useUsers(firebaseUser, setToastMsg, role) {
       ...datosPromotora(role, promotoraNombres),
       verTodasInstalaciones: role === 'PROMOTORA' && verTodasInstalaciones === true,
       puedeCrearVentas: role === 'PROMOTORA' && puedeCrearVentas === true,
+      puedeVerHistorial: role === 'INFRAESTRUCTURA' && puedeVerHistorial === true,
     };
 
     // Producción: el alta la hace el Worker (cuenta + perfil), porque el registro
@@ -135,7 +136,9 @@ export function useUsers(firebaseUser, setToastMsg, role) {
         // Dejar de ser PROMOTORA quita el "ve todas"; siéndolo, se guarda lo que marcó el administrador.
         verTodasInstalaciones: role === 'PROMOTORA' && verTodas === true,
         // Dejar de ser PROMOTORA también quita el permiso de crear ventas; siéndolo, no se toca aquí (va aparte, en su botón).
-        ...(role !== 'PROMOTORA' && { puedeCrearVentas: false })
+        ...(role !== 'PROMOTORA' && { puedeCrearVentas: false }),
+        // Dejar de ser INFRAESTRUCTURA también quita el permiso de historial; siéndolo, no se toca aquí (va aparte, en su casilla).
+        ...(role !== 'INFRAESTRUCTURA' && { puedeVerHistorial: false })
       });
       setToastMsg({ type: 'success', text: 'Rol actualizado.' });
     } catch {
@@ -148,6 +151,16 @@ export function useUsers(firebaseUser, setToastMsg, role) {
     try {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), { puedeCrearVentas });
       setToastMsg({ type: 'success', text: puedeCrearVentas ? 'Ahora puede crear ventas.' : 'Ya no puede crear ventas.' });
+    } catch {
+      setToastMsg({ type: 'error', text: 'No se pudo cambiar el permiso.' });
+    }
+  };
+
+  // Solo INFRAESTRUCTURA: puede ver el historial de órdenes completo, como el administrador (solo lectura).
+  const setUserPuedeVerHistorial = async (userId, puedeVerHistorial) => {
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), { puedeVerHistorial });
+      setToastMsg({ type: 'success', text: puedeVerHistorial ? 'Ahora puede ver el historial de órdenes.' : 'Ya no puede ver el historial de órdenes.' });
     } catch {
       setToastMsg({ type: 'error', text: 'No se pudo cambiar el permiso.' });
     }
@@ -177,5 +190,5 @@ export function useUsers(firebaseUser, setToastMsg, role) {
     }
   };
 
-  return { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, setUserTecnicoAsociado, adminResetPassword };
+  return { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, setUserPuedeVerHistorial, setUserTecnicoAsociado, adminResetPassword };
 }

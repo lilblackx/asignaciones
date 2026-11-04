@@ -163,6 +163,8 @@ export function useAuth() {
     verTodasInstalaciones: profile?.role === 'PROMOTORA' && profile?.verTodasInstalaciones === true,
     // PROMOTORA con permiso de crear ventas (instalaciones nuevas, nada más): lo marca el ADMIN en Usuarios.
     puedeCrearVentas: profile?.role === 'PROMOTORA' && profile?.puedeCrearVentas === true,
+    // INFRAESTRUCTURA con permiso de historial: además de las instalaciones ve el historial de órdenes como el administrador (lo marca el ADMIN en Usuarios).
+    puedeVerHistorial: profile?.role === 'INFRAESTRUCTURA' && profile?.puedeVerHistorial === true,
     isTecnico: profile?.role === 'TECNICO',
     canCerrar: profile?.role === 'ADMIN' || profile?.puedeCerrar === true,
     authReady,

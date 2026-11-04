@@ -21,6 +21,16 @@ await base.collection('users').doc(uid).set({ username: 'infra', nombre: 'Infrae
 console.log('OK  usuario infra / Infra1234');
 await pausa();
 
+// Una segunda cuenta de INFRAESTRUCTURA con el permiso de historial (infrahist / Infra1234): además de las instalaciones, ve el historial de órdenes como el administrador.
+const emailHist = 'infrahist@usuarios.seguimientons-f2026.internal';
+let uidHist;
+try { uidHist = (await auth.getUserByEmail(emailHist)).uid; await auth.updateUser(uidHist, { password: 'Infra1234' }); } catch { uidHist = (await auth.createUser({ email: emailHist, password: 'Infra1234', emailVerified: true })).uid; }
+await base.collection('users').doc(uidHist).set({ username: 'infrahist', nombre: 'Infra con historial', role: 'INFRAESTRUCTURA', tecnicoAsociado: null, promotoraNombres: [], promotoraClaves: [], puedeCerrar: false, puedeVerHistorial: true, disabled: false, createdAt: Date.now(), createdBy: 'seed-script' });
+await base.collection('technicians').doc('GERARDO MOLERO').set({ name: 'GERARDO MOLERO', color: 'bg-fuchsia-500 text-white', activo: true });
+await base.collection('technicians').doc('REINEL BRAVO').set({ name: 'REINEL BRAVO', color: 'bg-green-500 text-white', activo: true });
+console.log('OK  usuario infrahist / Infra1234 (con permiso de historial)');
+await pausa();
+
 const MIN = 60000;
 const DIA = 24 * 60 * MIN;
 const ahora = Date.now();
