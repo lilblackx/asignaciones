@@ -3,7 +3,7 @@ import BotonExportar from '../../BotonExportar';
 import AccionesEncabezado from '../../AccionesEncabezado';
 import { exportReportToCsv } from '../../../utils/exportReport';
 import CierreAutomaticoConfig from './CierreAutomaticoConfig';
-import Spinner from '../../Spinner';
+import AvisoCargarAnteriores from '../../AvisoCargarAnteriores';
 import Boton from '../../Boton';
 
 function todayIsoDate() {
@@ -90,17 +90,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
         </div>
       )}
 
-      {hasMoreReports && (
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={onLoadMoreReports}
-            disabled={isLoadingReports}
-            className="px-5 py-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl text-xs border border-zinc-200 dark:border-zinc-700 transition-colors disabled:opacity-50"
-          >
-            {isLoadingReports && <Spinner />}{isLoadingReports ? 'Cargando...' : 'Cargar reportes anteriores'}
-          </button>
-        </div>
-      )}
+      <AvisoCargarAnteriores variante="cierres" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} className="mt-4" />
     </>
   );
 }

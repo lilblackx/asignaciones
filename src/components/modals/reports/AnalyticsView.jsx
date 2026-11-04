@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import NombreTecnico from '../../NombreTecnico';
+import AvisoCargarAnteriores from '../../AvisoCargarAnteriores';
 import { Award, MapPinned, Repeat } from 'lucide-react';
 import { estadisticasOperativas } from '../../../utils/estadisticasOperativas';
 import { cifrasEstadisticas } from '../../../utils/modelosReporte';
@@ -24,15 +25,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
     <div>
     <Cifras items={cifrasEstadisticas(estadisticas)} />
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {hasMoreReports && (
-        <div className="lg:col-span-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-          Estas estadísticas solo cuentan el historial ya cargado (los cierres más recientes). Hay reportes más antiguos sin cargar -{' '}
-          <button onClick={onLoadMoreReports} disabled={isLoadingReports} className="font-bold underline disabled:opacity-50">
-            {isLoadingReports ? 'cargando...' : 'cargar más'}
-          </button>{' '}
-          para incluirlos.
-        </div>
-      )}
+      <AvisoCargarAnteriores variante="reporte" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} className="lg:col-span-2" />
       <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">

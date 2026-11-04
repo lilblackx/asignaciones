@@ -170,7 +170,7 @@ check('el permiso de historial viene de la sesión y solo vale para INFRAESTRUCT
 check('el Worker guarda el permiso de historial solo en INFRAESTRUCTURA', /puedeVerHistorial: \{ booleanValue: role === 'INFRAESTRUCTURA' && puedeVerHistorial === true \}/.test(worker), true);
 check('las reglas dan el historial solo a INFRAESTRUCTURA con el permiso', /function infraVeHistorial\(appId\) \{\s*return isInfraestructuraRole\(appId\) && get\(profilePath\(appId\)\)\.data\.get\('puedeVerHistorial', false\) == true;/.test(reglas), true);
 check('el historial de Infraestructura se lee sin listeners de órdenes', !/onSnapshot/.test(leer('../src/hooks/useHistorialOrdenes.js')) && /getDocs/.test(leer('../src/hooks/useHistorialOrdenes.js')), true);
-check('Infraestructura muestra las pestañas solo con el permiso', /puedeVerHistorial === true && \(\s*<div[^>]*role="group" aria-label="Sección"/.test(leer('../src/components/InfraestructuraApp.jsx')), true);
+check('Infraestructura muestra las pestañas solo con el permiso', /puedeVerHistorial === true && \(\s*<div[^>]*>\s*<div[^>]*role="group" aria-label="Sección"/.test(leer('../src/components/InfraestructuraApp.jsx')), true);
 check('Finanzas tiene su pantalla y no importa hooks de la oficina', /FinanzasApp/.test(root) && !/useTickets'|usePushToken|useUsers/.test(leer('../src/components/FinanzasApp.jsx')), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');

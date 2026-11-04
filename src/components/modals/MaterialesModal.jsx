@@ -5,10 +5,9 @@ import EncabezadoModulo from '../EncabezadoModulo';
 import { PERIODOS, consumoPorTecnico, inicioPeriodo, totalConectores } from '../../utils/consumoMateriales';
 import { aplanarArchivados } from '../../utils/reincidencia';
 import { ETIQUETA_COLOR, etiquetaTipoVisita } from '../../utils/tipoVisita';
-import Spinner from '../Spinner';
+import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
 import Colapsable from '../Colapsable';
 import Chip from '../Chip';
-import Boton from '../Boton';
 import { TARJETA } from '../estilos';
 
 const numero = (n) => Number(n).toLocaleString('es-VE');
@@ -172,12 +171,8 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
 
           <div className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 flex flex-wrap items-center justify-between gap-2">
             <span>Incluye las órdenes activas y {reports.length} reporte{reports.length === 1 ? '' : 's'} de cierre cargado{reports.length === 1 ? '' : 's'}.</span>
-            {hasMoreReports && (
-              <Boton variante="secundario" tamano="compacto" type="button" onClick={onLoadMore} disabled={isLoadingReports}>
-                {isLoadingReports && <Spinner />}{isLoadingReports ? 'Cargando...' : 'Cargar reportes anteriores'}
-              </Boton>
-            )}
           </div>
+          <AvisoCargarAnteriores variante="reporte" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMore} />
         </div>
   );
 

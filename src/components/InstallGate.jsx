@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Download, Share, SquarePlus } from 'lucide-react';
+import PieVersion from './PieVersion';
 
 const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isMobileUA = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
@@ -49,7 +50,8 @@ export default function InstallGate({ children }) {
   };
 
   return (
-    <div className="min-h-dvh bg-fondo flex items-center justify-center p-4 font-sans">
+    <div className="min-h-dvh bg-fondo flex flex-col font-sans">
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full border border-zinc-300 dark:border-zinc-800 text-center">
         <div className="flex justify-center mb-5">
           <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full">
@@ -88,6 +90,8 @@ export default function InstallGate({ children }) {
           Ya la instalé, continuar
         </button>
       </div>
+      </div>
+      <PieVersion />
     </div>
   );
 }

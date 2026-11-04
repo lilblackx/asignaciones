@@ -1,18 +1,11 @@
 import { formatCedula, getEstadoColor } from '../../../utils/ticketDisplay';
+import AvisoCargarAnteriores from '../../AvisoCargarAnteriores';
 
 export default function ArchivedSearchResults({ archivedSearchResults, hasMoreReports, isLoadingReports, onLoadMoreReports }) {
   return (
     <div>
       <h3 className="text-sm font-bold text-zinc-600 dark:text-zinc-400 mb-2">Resultados de Búsqueda ({archivedSearchResults.length})</h3>
-      {hasMoreReports && (
-        <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-4">
-          Esta búsqueda solo cubre el historial ya cargado. Hay reportes más antiguos sin cargar -{' '}
-          <button onClick={onLoadMoreReports} disabled={isLoadingReports} className="font-bold underline disabled:opacity-50">
-            {isLoadingReports ? 'cargando...' : 'cargar más'}
-          </button>{' '}
-          para ampliar la búsqueda.
-        </p>
-      )}
+      <AvisoCargarAnteriores variante="busqueda" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} className="mb-4" />
 
       <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-xl border border-zinc-300 dark:border-zinc-800 overflow-hidden shadow-sm">
         <table className="w-full text-left border-collapse text-xs">

@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import { AlertTriangle, ClipboardCopy, RefreshCw } from 'lucide-react';
 import { medidor } from '../lib/medidorFirestore.js';
+import PieVersion from './PieVersion';
 
 // Atrapa los errores al pintar la app. Sin esto, un fallo en cualquier componente deja la pantalla en blanco y quien está en campo
 // no tiene cómo salir salvo cerrar la app. No atrapa errores de eventos ni de código asíncrono: esos siguen yendo a la consola.
@@ -69,7 +70,8 @@ export default class ErrorBoundary extends Component {
     if (!error) return this.props.children;
 
     return (
-      <div role="alert" className="min-h-dvh bg-fondo flex items-center justify-center px-4 py-8">
+      <div role="alert" className="min-h-dvh bg-fondo flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-sm rounded-md border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
           <div className="bg-black px-4 py-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
@@ -93,6 +95,8 @@ export default class ErrorBoundary extends Component {
             )}
           </div>
         </div>
+        </div>
+        <PieVersion />
       </div>
     );
   }

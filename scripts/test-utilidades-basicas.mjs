@@ -1,6 +1,8 @@
 // Prueba las utilidades pequeñas que no tenían prueba propia: la política de claves, el usuario que se vuelve correo de Firebase Auth, el filtro de emojis, el periodo de los reportes,
 // el límite de espera al guardar, el grupo de cada tipo de trabajo, los campos que cambian al editar una orden y la fecha legible. No necesita el emulador.
 // Uso: `npm run test:utilidades`.
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { arrayUnion } from 'firebase/firestore';
 import { AUTH_EMAIL_DOMAIN } from '../src/constants.js';
 import { normalizeUsername, usernameToAuthEmail } from '../src/utils/authEmail.js';
@@ -111,6 +113,11 @@ check('aplica la prueba del buscador', buscarCerradas({ vivas, archivadas, coinc
 check('no toca las órdenes vivas', vivas.some((t) => '_archivada' in t || '_clave' in t), false);
 check('esCerrada: finalizada y cancelada sí, pendiente y pre-finalizada no', [esCerrada({ estado: 'FINALIZADO' }), esCerrada({ estado: 'CANCELADO' }), esCerrada({ estado: 'PENDIENTE' }), esCerrada({ estado: 'PRE-FINALIZADO' })], [true, true, false, false]);
 check('se busca en cerradas desde 3 letras (sin contar espacios de los lados)', [buscaEnCerradas('ab'), buscaEnCerradas('  ab '), buscaEnCerradas('AO1'), buscaEnCerradas('')], [false, false, true, false]);
+
+// --- El aviso de "cargar cierres anteriores" se redacta en un solo archivo (AvisoCargarAnteriores): ningún otro pinta el texto ni un enlace "cargar más" suelto ---
+const archivosJsx = (dir) => readdirSync(dir).flatMap((n) => { const r = join(dir, n); return statSync(r).isDirectory() ? archivosJsx(r) : r.endsWith('.jsx') ? [r] : []; });
+const conAvisoPropio = archivosJsx(new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')).filter((r) => !r.endsWith('AvisoCargarAnteriores.jsx') && /más antiguos sin cargar|'cargar más'|Cargar reportes anteriores/.test(readFileSync(r, 'utf8')));
+check('el aviso de cargar cierres anteriores sale solo de AvisoCargarAnteriores', conAvisoPropio, []);
 
 if (failures > 0) { console.error(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

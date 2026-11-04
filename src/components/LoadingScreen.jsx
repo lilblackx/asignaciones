@@ -1,9 +1,11 @@
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import PieVersion from './PieVersion';
 
 export default function LoadingScreen({ isDarkMode, connectionError }) {
   return (
     <div className={`min-h-dvh ${isDarkMode ? 'dark' : ''}`}>
-      <div className="min-h-dvh bg-fondo flex flex-col items-center justify-center p-4 text-center transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo flex flex-col transition-colors duration-200">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
         {connectionError ? (
           <>
             <AlertTriangle className="w-12 h-12 text-red-600 mb-4" />
@@ -17,6 +19,8 @@ export default function LoadingScreen({ isDarkMode, connectionError }) {
             <h2 className="text-zinc-700 dark:text-zinc-300 font-bold">Conectando a la nube...</h2>
           </>
         )}
+        </div>
+        <PieVersion />
       </div>
     </div>
   );

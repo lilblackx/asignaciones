@@ -10,7 +10,7 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea:not([disab
 export const PANEL_COMPLETO = 'lg:max-w-none lg:h-dvh lg:max-h-dvh lg:rounded-none lg:border-0';
 // Rellena los costados del cuerpo para centrar el contenido con un ancho máximo (80 rem / 48 rem), sin tocar el relleno en móvil.
 // El mismo módulo como página dentro del marco del administrador (`enPagina`): ocupa el alto de la pantalla bajo el encabezado de la app, sin ventana ni borde.
-export const PANEL_PAGINA = 'w-full h-[calc(100dvh-62px-2.5rem)] overflow-y-auto bg-fondo flex flex-col';
+export const PANEL_PAGINA = 'w-full h-[calc(100dvh-62px-2rem)] overflow-y-auto bg-fondo flex flex-col';
 export const CENTRADO_AMPLIO = 'lg:px-[max(1.5rem,calc((100%-80rem)/2))]';
 export const CENTRADO_ESTRECHO = 'lg:px-[max(1.5rem,calc((100%-48rem)/2))]';
 

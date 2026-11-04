@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { RefreshCw } from 'lucide-react';
 import { useAhora } from '../hooks/useAhora';
 import { useHistorialOrdenes } from '../hooks/useHistorialOrdenes';
@@ -10,12 +11,12 @@ import Boton from './Boton';
 import OrdersHistoryModal from './modals/OrdersHistoryModal';
 
 // El historial como página: ocupa lo que queda de la pantalla bajo el encabezado y las franjas de arriba (la pantalla de Infraestructura es una columna de alto fijo mientras se ve).
-const CLASE_PAGINA = 'w-full flex-1 min-h-0 overflow-y-auto bg-fondo flex flex-col border-t border-zinc-300 dark:border-zinc-800';
+const CLASE_PAGINA = 'w-full flex-1 min-h-0 overflow-y-auto bg-fondo flex flex-col';
 
 // El historial de órdenes de INFRAESTRUCTURA con permiso: el mismo que ve el administrador (todas las órdenes, vivas y archivadas en cierres), solo para mirar.
 // Quien la pinta lo monta la primera vez que se abre la pestaña (ahí se leen los datos) y lo deja montado, oculto (`visible`), al cambiar de pestaña.
-// `copiar(texto, mensaje)` copia y avisa con el toast.
-export default function HistorialInfra({ auth, visible, copiar, setToastMsg }) {
+// `copiar(texto, mensaje)` copia y avisa con el toast. `ranura` es el hueco (en la fila de pestañas) donde se pinta "Actualizado hace…" y el botón Actualizar, para no gastar otra fila de pantalla.
+export default function HistorialInfra({ auth, visible, copiar, setToastMsg, ranura }) {
   const { firebaseUser, currentUser, role } = auth;
   const ahora = useAhora();
   const { tickets, reports, cargado, error, actualizadoEn, actualizando, actualizar, hayMasReportes, cargandoReportes, cargarReportesAnteriores } = useHistorialOrdenes(firebaseUser, true);
@@ -34,12 +35,15 @@ export default function HistorialInfra({ auth, visible, copiar, setToastMsg }) {
 
   return (
     <div className={visible ? 'flex-1 min-h-0 flex flex-col' : 'hidden'}>
-      <div className="px-4 sm:px-6 pb-3 flex items-center justify-between gap-2 text-xs text-zinc-600 dark:text-zinc-400 max-w-[1400px] mx-auto w-full shrink-0">
-        <span aria-live="polite">{!cargado ? '' : error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</span>
-        <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando}>
-          {actualizando ? 'Actualizando...' : 'Actualizar'}
-        </Boton>
-      </div>
+      {visible && ranura && createPortal(
+        <>
+          <span aria-live="polite" className="hidden sm:inline text-xs text-zinc-600 dark:text-zinc-400 truncate">{!cargado ? '' : error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</span>
+          <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando} aria-label="Actualizar" title={actualizadoEn ? `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.` : 'Actualizar'}>
+            <span className="hidden sm:inline">{actualizando ? 'Actualizando...' : 'Actualizar'}</span>
+          </Boton>
+        </>,
+        ranura,
+      )}
       {!cargado ? (
         <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando el historial...</p>
       ) : error && !actualizadoEn ? (

@@ -6,6 +6,7 @@ import { motivoCancelacion } from '../../utils/cancelacion';
 import { fechaDeOrden } from '../../utils/fechaOrden';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
+import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import HistorialTimeline from '../HistorialTimeline';
@@ -175,14 +176,6 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             </span>
             {hasFilters && <button type="button" onClick={clearFilters} className="font-bold underline hover:text-zinc-800 dark:hover:text-zinc-200">Limpiar filtros</button>}
           </div>
-          {hasMoreReports && (
-            <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-              Búsqueda sobre el historial ya cargado. Hay cierres más antiguos sin cargar -{' '}
-              <button type="button" onClick={onLoadMoreReports} disabled={isLoadingReports} className="font-bold underline disabled:opacity-50">
-                {isLoadingReports ? 'cargando...' : 'cargar más'}
-              </button>
-            </p>
-          )}
         </div>
 
         <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-fondo space-y-3 ${CENTRADO_AMPLIO}`}>
@@ -250,20 +243,26 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             );
           })}
 
+          {/* Los cierres más antiguos se leen solo a pedido (cada tanda son lecturas de Firestore): el botón sale al final de la lista, o en lugar de ella si lo buscado no aparece. */}
           {filtered.length === 0 && (
-            <div className="text-center text-zinc-600 dark:text-zinc-400 py-10 text-sm">No se encontraron órdenes.</div>
+            <div className="text-center text-zinc-600 dark:text-zinc-400 pt-10 pb-6 text-sm">
+              <p>No se encontraron órdenes.</p>
+              <AvisoCargarAnteriores variante="vacio" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} />
+            </div>
           )}
-
+          {filtered.length > 0 && currentPage >= totalPages - 1 && (
+            <AvisoCargarAnteriores variante="lista" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} />
+          )}
         </div>
 
         {totalPages > 1 && (
-          <div className="px-6 py-3 shrink-0 border-t border-zinc-300 dark:border-zinc-800 bg-fondo flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
-            <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-              <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Anterior
+          <div className={`px-4 sm:px-6 py-2.5 lg:py-1.5 shrink-0 border-t border-zinc-300 dark:border-zinc-800 bg-fondo flex items-center justify-between gap-3 text-xs max-lg:text-sm font-bold text-zinc-700 dark:text-zinc-300 ${CENTRADO_AMPLIO}`}>
+            <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} aria-label="Página anterior" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              <ChevronLeft className="w-4 h-4 lg:w-3.5 lg:h-3.5" aria-hidden="true" /> <span className="max-sm:hidden">Anterior</span>
             </button>
-            <span>Página {currentPage + 1} de {totalPages}</span>
-            <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages - 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-              Siguiente <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+            <span className="text-center whitespace-nowrap">Página {currentPage + 1} de {totalPages}</span>
+            <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages - 1} aria-label="Página siguiente" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              <span className="max-sm:hidden">Siguiente</span> <ChevronRight className="w-4 h-4 lg:w-3.5 lg:h-3.5" aria-hidden="true" />
             </button>
           </div>
         )}

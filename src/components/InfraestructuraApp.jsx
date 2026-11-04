@@ -37,6 +37,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
   // Con el permiso de historial hay dos pestañas: Instalaciones y el historial de órdenes (que se lee la primera vez que se abre y queda montado).
   const [pestana, setPestana] = useState('instalaciones');
   const [historialAbierto, setHistorialAbierto] = useState(false);
+  const [ranuraHistorial, setRanuraHistorial] = useState(null);
   const verHistorial = puedeVerHistorial === true && pestana === 'historial';
   const elegirPestana = (valor) => { setPestana(valor); if (valor === 'historial') setHistorialAbierto(true); };
   const [isDarkMode, setIsDarkMode] = useTema(currentUser);
@@ -137,12 +138,16 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Infraestructura" icono={Network} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
         {puedeVerHistorial === true && (
-          <div className="px-4 sm:px-6 pt-3 pb-3 max-w-[1400px] mx-auto w-full flex flex-wrap gap-2" role="group" aria-label="Sección">
-            <Chip activo={!verHistorial} onClick={() => elegirPestana('instalaciones')}>Instalaciones</Chip>
-            <Chip activo={verHistorial} onClick={() => elegirPestana('historial')}>Historial</Chip>
+          <div className="px-4 sm:px-6 pt-3 pb-3 max-w-[1400px] mx-auto w-full flex items-center gap-2 shrink-0">
+            <div className="flex gap-2" role="group" aria-label="Sección">
+              <Chip activo={!verHistorial} onClick={() => elegirPestana('instalaciones')}>Instalaciones</Chip>
+              <Chip activo={verHistorial} onClick={() => elegirPestana('historial')}>Historial</Chip>
+            </div>
+            {/* Hueco a la derecha de las pestañas: el historial pinta aquí "Actualizado hace…" y su botón Actualizar. */}
+            <div ref={setRanuraHistorial} className="ml-auto min-w-0 flex items-center gap-3" />
           </div>
         )}
-        {puedeVerHistorial === true && historialAbierto && <HistorialInfra auth={auth} visible={verHistorial} copiar={copiar} setToastMsg={setToastMsg} />}
+        {puedeVerHistorial === true && historialAbierto && <HistorialInfra auth={auth} visible={verHistorial} copiar={copiar} setToastMsg={setToastMsg} ranura={ranuraHistorial} />}
 
         <main className={`p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3${verHistorial ? ' hidden' : ''}`}>
           {!cargado ? (
