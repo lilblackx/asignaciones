@@ -222,13 +222,17 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   const handleActualizarTasaAutomatica = async () => {
     const ok = await actualizarAutomatica();
-    setToastMsg({ type: ok ? 'success' : 'error', text: ok ? 'Tasa actualizada automáticamente.' : 'No se pudo obtener la tasa automática.' });
-    return ok;
+    setToastMsg(ok === true
+      ? { type: 'success', text: 'Tasa actualizada automáticamente.' }
+      : { type: 'error', text: ok === 'invalida' ? 'La tasa automática llegó con un valor imposible y se descartó. Se mantiene la anterior: ponla a mano.' : 'No se pudo obtener la tasa automática.' });
+    return ok === true;
   };
 
   const handleActualizarTasaManual = conAviso(async (tasa, montoBaseEUR) => {
-    await actualizarManual(tasa, montoBaseEUR, currentUserName || currentUser);
-    setToastMsg({ type: 'success', text: 'Tasa actualizada manualmente.' });
+    const ok = await actualizarManual(tasa, montoBaseEUR, currentUserName || currentUser);
+    setToastMsg(ok === 'invalida'
+      ? { type: 'error', text: 'Esa tasa es menor que la del dólar oficial, no puede ser la del euro. Revísala y escríbela completa (ej. 1006,03).' }
+      : { type: 'success', text: 'Tasa actualizada manualmente.' });
   }, 'No se pudo guardar la tasa.');
 
   const handleGuardarFormasPago = conAviso(async (formas) => {

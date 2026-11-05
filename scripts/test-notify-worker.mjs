@@ -376,6 +376,39 @@ check('tareas que arrancan juntas comparten un solo token de Google', peticiones
   check('un cierre manual de otro día no lo frena', debeEjecutar({ ...config, cierreManualFecha: '2026-10-12' }, AHORA)?.fecha, '2026-10-13');
   check('y al día siguiente vuelve a tocar aunque ayer se cerrara a mano', debeEjecutar({ ...config, cierreManualFecha: '2026-10-13' }, AHORA + 86400000)?.fecha, '2026-10-14');
 }
+// Tasa del euro: si DolarAPI trae un valor imposible (1.006 en vez de 1.006,03) se rechaza, queda la anterior y se avisa una vez por día.
+{
+  const { tasaEuroPlausible } = await import('../cf-worker/src/index.js');
+  check('el euro de 1.006,03 Bs con el dólar a 894,89 es creíble', tasaEuroPlausible(1006.03, 894.8876), true);
+  check('el euro en 1.006 (mal leído como 1,006) con el dólar a 894,89 se rechaza', tasaEuroPlausible(1.006, 894.8876), false);
+  check('sin tasa del dólar con qué comparar, se rechaza', [tasaEuroPlausible(1006.03, NaN), tasaEuroPlausible(NaN, 894), tasaEuroPlausible(0, 894)], [false, false, false]);
+
+  let configTasa; let cotizaciones; let guardadosTasa; let avisosTasa;
+  globalThis.fetchDelCierre = async (url, init = {}) => {
+    const u = String(url);
+    if (u.includes('/config/tasaBcv')) {
+      if (init.method === 'PATCH') { guardadosTasa.push(JSON.parse(init.body).fields); return respuesta({}); }
+      return configTasa ? respuesta({ fields: configTasa }) : respuesta('no existe', 404);
+    }
+    if (u.includes('dolarapi.com')) return respuesta(cotizaciones);
+    if (u.includes('fcm.googleapis.com')) { avisosTasa.push(JSON.parse(init.body).message.notification?.title ?? JSON.parse(init.body).message.data?.title); return respuesta({ name: 'ok' }); }
+    return fetchBase(url, init);
+  };
+  const oficial = (moneda, promedio) => ({ moneda, fuente: 'oficial', promedio });
+  const HOY_10AM = Date.parse('2026-11-05T10:00:00-04:00');
+  const ayer = { tasa: { doubleValue: 1000 }, montoBaseEUR: { integerValue: '1' }, actualizadoEn: { integerValue: String(HOY_10AM - 86400000) } };
+
+  reiniciar(); guardadosTasa = []; avisosTasa = []; configTasa = ayer; cotizaciones = [oficial('USD', 894.8876), oficial('EUR', 1.006)];
+  const malaPrimera = await tasaDelDia(env, HOY_10AM);
+  check('con el euro mal leído no guarda la tasa (queda la de ayer)', [malaPrimera.actualizada, malaPrimera.rechazada, guardadosTasa.some((f) => 'tasa' in f)], [false, true, false]);
+  check('deja marcado que hoy ya se avisó y avisa a los aprobadores', [guardadosTasa[0]?.rechazoAvisado, avisosTasa.length > 0], [{ stringValue: '2026-11-05' }, true]);
+  guardadosTasa = []; avisosTasa = []; configTasa = { ...ayer, rechazoAvisado: { stringValue: '2026-11-05' } };
+  await tasaDelDia(env, HOY_10AM + 300000);
+  check('el reintento del siguiente cron no vuelve a avisar ni a guardar nada', [guardadosTasa.length, avisosTasa.length], [0, 0]);
+  guardadosTasa = []; configTasa = ayer; cotizaciones = [oficial('USD', 894.8876), oficial('EUR', 1006.03)];
+  const buena = await tasaDelDia(env, HOY_10AM);
+  check('con la tasa bien leída sí la guarda, redondeada a 2 decimales', [buena.actualizada, guardadosTasa[0]?.tasa, guardadosTasa[0]?.fuente], [true, { doubleValue: 1006.03 }, { stringValue: 'automatica' }]);
+}
 delete globalThis.fetchDelCierre;
 globalThis.fetch = fetchBase;
 

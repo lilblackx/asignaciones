@@ -751,7 +751,16 @@ export async function cierreAutomatico(env, ahoraMs = Date.now()) {
 // ---------------------------------------------------------------------------
 
 const HORA_TASA = '07:00';
-const API_TASA_EUR_BCV = 'https://ve.dolarapi.com/v1/euros/oficial';
+const API_TASAS_BCV = 'https://ve.dolarapi.com/v1/cotizaciones';
+
+// La tasa del euro en Bs nunca puede ser menor que la del dólar. El 2026-11-05 DolarAPI
+// publicó el euro como 1.006 (leyó "1.006,03" con la coma como decimal) y el cobro de 5,80 EUR
+// salió en 6 Bs. Si llega algo así se rechaza y queda la tasa anterior. Mantener sincronizado
+// con tasaEuroPlausible de src/utils/tasa.js.
+export function tasaEuroPlausible(euro, dolar) {
+  if (!Number.isFinite(euro) || euro <= 0) return false;
+  return Number.isFinite(dolar) && dolar > 0 && euro >= dolar;
+}
 
 // ¿Toca actualizar la tasa ahora? true si ya pasó la hora de hoy y la tasa
 // guardada no es de hoy (o no existe).
@@ -769,10 +778,25 @@ export async function actualizarTasaBcv(env, ahoraMs = Date.now()) {
   const config = await leerConfig(env, accessToken, 'tasaBcv');
   if (!debeActualizarTasa(config, ahoraMs)) return { actualizada: false };
 
-  const res = await fetch(API_TASA_EUR_BCV);
+  const res = await fetch(API_TASAS_BCV);
   if (!res.ok) throw new Error(`DolarAPI respondió ${res.status}`);
-  const tasa = Number((await res.json())?.promedio);
-  if (!Number.isFinite(tasa) || tasa <= 0) throw new Error('DolarAPI no trajo una tasa válida');
+  const lista = await res.json();
+  const oficial = (moneda) => Number((Array.isArray(lista) ? lista : []).find((c) => c?.moneda === moneda && c?.fuente === 'oficial')?.promedio);
+  const tasa = oficial('EUR');
+  const dolar = oficial('USD');
+
+  if (!tasaEuroPlausible(tasa, dolar)) {
+    // Se deja la tasa anterior. El aviso sale una sola vez por día (el cron reintenta cada pocos minutos).
+    const { fecha } = fechaCaracas(ahoraMs);
+    console.error(`Tasa BCV rechazada: euro ${tasa}, dólar ${dolar}`);
+    if (config?.rechazoAvisado !== fecha) {
+      await guardarConfig(env, accessToken, 'tasaBcv', { rechazoAvisado: { stringValue: fecha } });
+      await avisarAprobadores(env, accessToken, 'Tasa BCV no actualizada',
+        'La tasa automática del euro llegó con un valor imposible y se descartó. Se mantiene la anterior: pon la tasa a mano en Tasa BCV.',
+      ).catch((err) => console.error('No se pudo avisar de la tasa rechazada:', err));
+    }
+    return { actualizada: false, rechazada: true };
+  }
 
   await guardarConfig(env, accessToken, 'tasaBcv', {
     tasa: { doubleValue: Math.round(tasa * 100) / 100 },

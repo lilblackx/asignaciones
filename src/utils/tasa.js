@@ -30,3 +30,11 @@ export function avisoTasaDesactualizada(config) {
   if (nivel === 'sin') return 'la tasa BCV no está configurada, el monto en Bs puede salir vacío.';
   return `la tasa BCV ${dias === 1 ? 'es de ayer' : `tiene ${dias} días`}, revisa el monto en Bs.`;
 }
+
+// La tasa del euro en Bs nunca puede ser menor que la del dólar. El 2026-11-05 DolarAPI publicó el
+// euro como 1.006 (leyó "1.006,03" con la coma como decimal) y el cobro de 5,80 EUR salió en 6 Bs.
+// Mantener sincronizado con tasaEuroPlausible de cf-worker/src/index.js.
+export function tasaEuroPlausible(euro, dolar) {
+  if (!Number.isFinite(euro) || euro <= 0) return false;
+  return Number.isFinite(dolar) && dolar > 0 && euro >= dolar;
+}
