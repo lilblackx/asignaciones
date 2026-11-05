@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, MapPin, Repeat, Star, X } from 'lucide-react';
-import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
+import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchivados, buscarHistorialCliente, textoHace } from '../../utils/reincidencia';
 import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
@@ -135,6 +135,9 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   // El tipo es obligatorio cuando el trabajo tiene opciones (instalación o avería).
   const faltaTipo = opcionesTipo.length > 0 && !formData.falla;
   const mostrarFaltaTipo = faltaTipo && intentoGuardar;
+  // En una instalación la ubicación del cliente es obligatoria (la de la NAP sigue como estaba).
+  const faltaUbicacion = esInstalacion && ubicacionParseada.vacio;
+  const mostrarFaltaUbicacion = faltaUbicacion && intentoGuardar;
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -150,8 +153,9 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
       return;
     }
     // Un dato con error: el cursor va al primero, en el orden del formulario.
-    const campoConError = napCoordenadasParseadas.error ? 'tk-nap-coords' : ubicacionParseada.error ? 'tk-ubicacion' : null;
+    const campoConError = napCoordenadasParseadas.error ? 'tk-nap-coords' : ubicacionParseada.error || faltaUbicacion ? 'tk-ubicacion' : null;
     if (campoConError) {
+      setIntentoGuardar(true);
       document.getElementById(campoConError)?.focus();
       return;
     }
@@ -376,8 +380,9 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           />
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, opcional)</span></label>
-            <input id="tk-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={formData.ubicacion} onChange={handleCreateChange} aria-invalid={!!ubicacionParseada.error} className={`w-full bg-white dark:bg-zinc-950 border px-2 py-1.5 rounded-xl text-xs ${ubicacionParseada.error ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-700'}`} />
+            <label htmlFor="tk-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas{esInstalacion ? ', obligatoria' : ', opcional'})</span></label>
+            <input id="tk-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={formData.ubicacion} onChange={handleCreateChange} aria-invalid={!!ubicacionParseada.error || mostrarFaltaUbicacion} aria-required={esInstalacion} className={`w-full bg-white dark:bg-zinc-950 border px-2 py-1.5 rounded-xl text-xs ${ubicacionParseada.error || mostrarFaltaUbicacion ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-700'}`} />
+            {mostrarFaltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
             {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>

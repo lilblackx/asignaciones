@@ -1,7 +1,7 @@
 import { observacionParaTecnico } from '../../utils/observacion';
 import { useMemo, useState } from 'react';
 import { MapPin, X } from 'lucide-react';
-import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
+import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion, ubicacionObligatoria } from '../../utils/ubicacion';
 import ContactoCliente from '../ContactoCliente';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
@@ -31,6 +31,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   const [saltoCodigo, setSaltoCodigo] = useState(null);
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
   const [errorMotivo, setErrorMotivo] = useState('');
+  const [intentoSinUbicacion, setIntentoSinUbicacion] = useState(false);
 
   const esInstalacion = editingTicket.tipoTrabajo?.toUpperCase().includes('INSTAL');
   // Instalación o reconexión que se creó sin la plantilla de la promotora: aquí se puede pegar. Si ya la tiene, no se
@@ -60,6 +61,8 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   const opcionesTipo = TIPOS_POR_TRABAJO[editingTicket.tipoTrabajo] || [];
   const ubicacionParseada = normalizarUbicacion(editingTicket.ubicacion);
   const napCoordenadasParseadas = normalizarCoordenadasNap(editingTicket.napCoordenadas);
+  // Una instalación abierta no se guarda sin ubicación del cliente (los técnicos no: ellos solo pre-finalizan).
+  const faltaUbicacion = !isTecnico && ubicacionObligatoria(editingTicket) && ubicacionParseada.vacio;
   const potenciaParseada = parsePotencia(editingTicket.potenciaDbm);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
 
@@ -121,8 +124,9 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
       }
     }
     // Un dato con error: el cursor va al primero, en el orden del formulario.
-    const campoConError = napCoordenadasParseadas.error ? 'ed-nap-coords' : ubicacionParseada.error ? 'ed-ubicacion' : potenciaParseada.error ? 'ed-potencia' : null;
+    const campoConError = napCoordenadasParseadas.error ? 'ed-nap-coords' : ubicacionParseada.error || faltaUbicacion ? 'ed-ubicacion' : potenciaParseada.error ? 'ed-potencia' : null;
     if (campoConError) {
+      setIntentoSinUbicacion(true);
       document.getElementById(campoConError)?.focus();
       return;
     }
@@ -306,8 +310,9 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             napsConocidas={napsConocidas}
           />
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN (Google Maps)</label>
-            <input id="ed-ubicacion" disabled={isTecnico} type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={editingTicket.ubicacion || ''} onChange={handleEditChange} aria-invalid={!!ubicacionParseada.error} className={`w-full bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-xl focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${ubicacionParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`} />
+            <label htmlFor="ed-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN (Google Maps){!isTecnico && ubicacionObligatoria(editingTicket) && <span className="font-normal normal-case text-zinc-400"> obligatoria</span>}</label>
+            <input id="ed-ubicacion" disabled={isTecnico} type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={editingTicket.ubicacion || ''} onChange={handleEditChange} aria-invalid={!!ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion)} className={`w-full bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-xl focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion) ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`} />
+            {faltaUbicacion && intentoSinUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
             {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Cómo llegar</a>}
           </div>

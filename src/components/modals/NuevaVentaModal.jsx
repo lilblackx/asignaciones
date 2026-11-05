@@ -3,7 +3,7 @@ import { AlertTriangle, MapPin, Star, X } from 'lucide-react';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { MAX_OBSERVACION, TIPO_VENTA, camposDePlantillaVenta, instaladorDePlantilla, tecnicoRegistradoDePlantilla } from '../../utils/ventaPromotora';
 import { leerTecnicos } from '../../hooks/useCrearVenta';
-import { normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
+import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import { construirNapsConocidas } from '../../utils/napsConocidas';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
@@ -61,6 +61,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
   const ubicacion = normalizarUbicacion(form.ubicacion);
   const duplicada = form.cedula && tickets.find((t) => t.cedula === form.cedula && ACTIVAS.has(t.estado));
   const faltaTipo = intento && !form.falla;
+  const faltaUbicacion = intento && ubicacion.vacio;
 
   const napCoordenadas = normalizarCoordenadasNap(form.napCoordenadas);
   // Con NAP escrita pero sin coordenadas, avisa y deja que decida (igual que al crear la orden en la oficina).
@@ -71,7 +72,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
     setIntento(true);
     if (!form.falla) { document.getElementById('nv-falla')?.focus(); return; }
     if (napCoordenadas.error) { document.getElementById('nv-nap-coords')?.focus(); return; }
-    if (ubicacion.error) { document.getElementById('nv-ubicacion')?.focus(); return; }
+    if (ubicacion.error || ubicacion.vacio) { document.getElementById('nv-ubicacion')?.focus(); return; }
     if (faltanNapCoordenadas) { setSinCoordenadas(true); return; }
     guardar();
   };
@@ -180,8 +181,9 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           <NapCoordenadasField variant="edit" idPrefix="nv" wrapperClassName="col-span-2 space-y-0.5" nap={form.nap} value={form.napCoordenadas} onChange={(v) => poner('napCoordenadas', v)} autoBuscar napsConocidas={napsConocidas} />
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-ubicacion" className={ETIQUETA_ORDEN}>UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps, opcional)</span></label>
-            <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error} className={`${CAMPO_ORDEN} ${ubicacion.error ? 'border-red-500' : ''}`} />
+            <label htmlFor="nv-ubicacion" className={ETIQUETA_ORDEN}>UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, obligatoria)</span></label>
+            <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error || faltaUbicacion} aria-required="true" className={`${CAMPO_ORDEN} ${ubicacion.error || faltaUbicacion ? 'border-red-500' : ''}`} />
+            {faltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
             {ubicacion.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacion.error}</p>}
             {ubicacion.valor && <a href={ubicacion.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>

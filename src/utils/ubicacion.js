@@ -119,6 +119,13 @@ export const instalacionSinUbicacion = (ticket) =>
   && ['PENDIENTE', 'PRE-FINALIZADO', 'PRE-FINALIZADA'].includes(ticket.estado)
   && !ticket.ubicacion;
 
+// Toda instalación abierta lleva la ubicación del cliente (la de la NAP se pide aparte y no cambia). Las ya cerradas o
+// canceladas no se bloquean: no se puede corregir otro dato de una orden vieja por no tener ubicación.
+export const MENSAJE_UBICACION_OBLIGATORIA = 'Escribe la ubicación del cliente: enlace de Google Maps o coordenadas.';
+export const ubicacionObligatoria = (ticket) =>
+  String(ticket?.tipoTrabajo || '').toUpperCase().includes('INSTAL')
+  && ['PENDIENTE', 'PRE-FINALIZADO', 'PRE-FINALIZADA'].includes(ticket.estado);
+
 // Para renderizar: href seguro o null (también revalida datos ya guardados).
 export function getUbicacionUrl(ubicacion) {
   return normalizarUbicacion(ubicacion).valor || null;

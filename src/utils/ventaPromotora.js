@@ -1,7 +1,7 @@
 import { esCodigoSinNumero, generarCodigoBase } from './correlativo.js';
 import { claveNombre, nombrePromotora } from './promotora.js';
 import { direccionCliente, nombrePersona } from './datosCliente.js';
-import { normalizarCoordenadasNap, normalizarUbicacion } from './ubicacion.js';
+import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion } from './ubicacion.js';
 import { tieneTelefono } from './telefono.js';
 import { parseInstalacionTemplate } from './whatsapp.js';
 import { buscarTecnicoPorNombre } from './tecnicoVenta.js';
@@ -53,6 +53,7 @@ export function errorVentaPromotora(datos, { verTodas, promotoraClaves }) {
   if (!clave) return 'Escribe el nombre del promotor.';
   if (!verTodas && !promotoraClaves.includes(clave)) return 'El promotor tiene que ser uno de los nombres de tu usuario.';
   const ubicacion = normalizarUbicacion(datos.ubicacion);
+  if (ubicacion.vacio) return MENSAJE_UBICACION_OBLIGATORIA;
   if (ubicacion.error) return `Ubicación: ${ubicacion.error}`;
   const napCoordenadas = normalizarCoordenadasNap(datos.napCoordenadas);
   if (napCoordenadas.error) return `Coordenadas de la NAP: ${napCoordenadas.error}`;

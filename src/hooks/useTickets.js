@@ -13,7 +13,7 @@ import { MENSAJE_PROMOTOR_OBLIGATORIO, claveNombre, nombrePromotora } from '../u
 import { direccionCliente, nombrePersona } from '../utils/datosCliente';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
-import { normalizarCoordenadasNap, normalizarUbicacion } from '../utils/ubicacion';
+import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion, ubicacionObligatoria } from '../utils/ubicacion';
 import { errorGarantia, esTipoGarantia } from '../utils/garantia';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { ConflictoOrdenError, verificarEstado } from '../utils/concurrencia';
@@ -719,6 +719,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       setToastMsg({ type: 'error', text: MENSAJE_PROMOTOR_OBLIGATORIO });
       return false;
     }
+    // Toda instalación lleva la ubicación del cliente: el formulario lo exige y aquí se vuelve a comprobar (la de la NAP no).
+    if (formData.tipoTrabajo?.toUpperCase().includes('INSTAL') && !normalizarUbicacion(formData.ubicacion).valor) {
+      setToastMsg({ type: 'error', text: MENSAJE_UBICACION_OBLIGATORIA });
+      return false;
+    }
     // Garantía de otro técnico: con el check marcado hace falta la orden original, de un técnico distinto.
     const errorDeGarantia = errorGarantia(formData.garantiaDe, { tecnico: formData.tecnico });
     if (errorDeGarantia) {
@@ -842,6 +847,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const ubicacion = normalizarUbicacion(editingTicket.ubicacion);
     if (ubicacion.error) {
       setToastMsg({ type: 'error', text: `Ubicación: ${ubicacion.error}` });
+      return false;
+    }
+    // Una instalación abierta no se guarda sin ubicación (el técnico solo pre-finaliza y no se frena por esto).
+    if (role !== 'TECNICO' && ubicacionObligatoria(editingTicket) && ubicacion.vacio) {
+      setToastMsg({ type: 'error', text: MENSAJE_UBICACION_OBLIGATORIA });
       return false;
     }
 

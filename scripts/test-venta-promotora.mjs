@@ -2,6 +2,7 @@
 // código "IS" sin número), lo que se valida antes de guardar y cómo la plantilla pegada rellena el formulario. No necesita el
 // emulador (las reglas se prueban en `npm run test:rules`). Uso: `npm run test:venta`.
 import { readFileSync } from 'node:fs';
+import { MENSAJE_UBICACION_OBLIGATORIA, ubicacionObligatoria } from '../src/utils/ubicacion.js';
 import { armarVentaPromotora, camposDePlantillaVenta, errorVentaPromotora, esVentaPorNumerar, tecnicoDePlantilla, TEXTO_AVISO_NUEVA_VENTA } from '../src/utils/ventaPromotora.js';
 import { esVentaDelTecnico } from '../src/utils/tecnicoVenta.js';
 
@@ -14,7 +15,7 @@ function check(name, actual, esperado) {
   else { failures++; console.log(`FAIL  ${name}\n      esperado ${e}\n      llegó    ${a}`); }
 }
 
-const datos = { cedula: '12.345.678', tipoDocumento: 'V', nombre: 'ana pérez', telefono: '0414-1234567', direccion: 'Av. 5', falla: 'MRTV', promotora: 'sariana', ubicacion: '', nap: '', plantillaOriginal: 'texto' };
+const datos = { cedula: '12.345.678', tipoDocumento: 'V', nombre: 'ana pérez', telefono: '0414-1234567', direccion: 'Av. 5', falla: 'MRTV', promotora: 'sariana', ubicacion: 'https://maps.app.goo.gl/abc', nap: '', plantillaOriginal: 'texto' };
 const propia = { verTodas: false, promotoraClaves: ['sariana'] };
 
 const ahora = new Date('2026-10-19T10:00:00-04:00');
@@ -44,6 +45,13 @@ check('de hasta 500 letras vale; con más no se guarda', [errorVentaPromotora({ 
 check('una venta completa no tiene error', errorVentaPromotora(datos, propia), '');
 check('sin teléfono no se guarda', errorVentaPromotora({ ...datos, telefono: '  ' }, propia) !== '', true);
 check('sin tipo de instalación no se guarda', errorVentaPromotora({ ...datos, falla: '' }, propia) !== '', true);
+check('sin ubicación del cliente no se guarda (ni con espacios)', [errorVentaPromotora({ ...datos, ubicacion: '' }, propia), errorVentaPromotora({ ...datos, ubicacion: '   ' }, propia)], [MENSAJE_UBICACION_OBLIGATORIA, MENSAJE_UBICACION_OBLIGATORIA]);
+check('unas coordenadas escritas a mano valen como ubicación', errorVentaPromotora({ ...datos, ubicacion: '10.4806, -66.9036' }, propia), '');
+check('la ubicación de la NAP sigue siendo opcional', errorVentaPromotora({ ...datos, napCoordenadas: '' }, propia), '');
+check('ubicacionObligatoria: instalación abierta sí; cerrada, cancelada y otros trabajos no', [
+  ubicacionObligatoria({ tipoTrabajo: 'INSTALACIÓN', estado: 'PENDIENTE' }), ubicacionObligatoria({ tipoTrabajo: 'INSTALACIÓN', estado: 'PRE-FINALIZADO' }),
+  ubicacionObligatoria({ tipoTrabajo: 'INSTALACIÓN', estado: 'FINALIZADO' }), ubicacionObligatoria({ tipoTrabajo: 'INSTALACIÓN', estado: 'CANCELADO' }), ubicacionObligatoria({ tipoTrabajo: 'AVERÍA', estado: 'PENDIENTE' }),
+], [true, true, false, false, false]);
 check('sin promotor no se guarda', errorVentaPromotora({ ...datos, promotora: 'N/A' }, propia) !== '', true);
 check('el promotor de otra persona no vale (no la vería después)', errorVentaPromotora({ ...datos, promotora: 'María' }, propia) !== '', true);
 check('ventas (ve todas) puede poner cualquier promotor', errorVentaPromotora({ ...datos, promotora: 'María' }, { verTodas: true, promotoraClaves: [] }), '');
