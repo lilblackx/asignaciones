@@ -22,7 +22,7 @@ export default function ListaTecnicos({ filas, elegido, tasa, onElegir }) {
                 <span className="block text-sm font-bold text-zinc-900 dark:text-white break-words">{fila.tecnico}</span>
                 <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className={`${CHIP} ${ESTADO[estado].clase}`}>{ESTADO[estado].texto}</span>
-                  <span className={TEXTO_SUAVE}>{fila.pendientes.length > 0 ? `${textoOrdenes(fila.pendientes.length)}${fila.bonos > 0 ? ` · garantía ${dolares(fila.bonos)}` : ''}` : fila.bonos > 0 ? `Garantía ${dolares(fila.bonos)}` : fila.adelantos > 0 ? `Adelanto ${dolares(fila.adelantos)}` : fila.descuentosOrden > 0 ? `Descuento ${dolares(fila.descuentosOrden)}` : 'Nada por pagar'}</span>
+                  <span className={TEXTO_SUAVE}>{fila.pendientes.length > 0 ? `${textoOrdenes(fila.pendientes.length)}${fila.bonosGarantia > 0 ? ` · garantía ${dolares(fila.bonosGarantia)}` : ''}${fila.adicionales > 0 ? ` · adicional ${dolares(fila.adicionales)}` : ''}` : fila.bonos > 0 ? [fila.bonosGarantia > 0 && `Garantía ${dolares(fila.bonosGarantia)}`, fila.adicionales > 0 && `Adicional ${dolares(fila.adicionales)}`].filter(Boolean).join(' · ') : fila.adelantos > 0 ? `Adelanto ${dolares(fila.adelantos)}` : fila.descuentosOrden > 0 ? `Descuento ${dolares(fila.descuentosOrden)}` : 'Nada por pagar'}</span>
                 </span>
               </span>
               <span className="text-right shrink-0">

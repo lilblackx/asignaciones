@@ -493,6 +493,12 @@ service cloud.firestore {
         && (!('CAMBIO_EQUIPO' in request.resource.data) || tarifaValida('CAMBIO_EQUIPO'))
         && request.resource.data.por == usuarioFinanzas(appId)
         && request.resource.data.en is int;
+      // Los ítems de pagos adicionales (nombre y precio en dólares): un solo documento, "adicionales". Cada pago adicional que se registra a un técnico guarda el nombre y el precio de ese momento.
+      allow create, update: if llevaFinanzas(appId) && docId == 'adicionales'
+        && request.resource.data.keys().hasOnly(['items', 'por', 'en'])
+        && request.resource.data.items is list && request.resource.data.items.size() <= 30
+        && request.resource.data.por == usuarioFinanzas(appId)
+        && request.resource.data.en is int;
       allow delete: if false;
     }
 
@@ -512,7 +518,7 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/pagosTecnicos/{docId} {
       function pagoValido() {
         let p = request.resource.data;
-        return p.keys().hasOnly(['tecnico', 'desde', 'hasta', 'cantidades', 'tarifas', 'total', 'cantidadOrdenes', 'nota', 'por', 'creadoEn', 'anulado', 'tasa', 'descuento', 'neto', 'bonos', 'adelantos', 'ajustes', 'descuentosManuales', 'moneda', 'forma', 'banco', 'referencia', 'pagadoEn', 'montoPagado', 'notificado'])
+        return p.keys().hasOnly(['tecnico', 'desde', 'hasta', 'cantidades', 'tarifas', 'total', 'cantidadOrdenes', 'nota', 'por', 'creadoEn', 'anulado', 'tasa', 'descuento', 'neto', 'bonos', 'adelantos', 'ajustes', 'descuentosManuales', 'adicionales', 'moneda', 'forma', 'banco', 'referencia', 'pagadoEn', 'montoPagado', 'notificado'])
           && (!('tasa' in p) || ((p.tasa is int || p.tasa is float) && p.tasa > 0 && p.tasa < 100000000))
           && (!('bonos' in p) || ((p.bonos is int || p.bonos is float) && p.bonos > 0 && p.bonos <= 100000))
           && (!('descuento' in p) || ((p.descuento is int || p.descuento is float) && p.descuento >= 0 && p.descuento <= p.total + p.get('bonos', 0)))
@@ -520,6 +526,7 @@ service cloud.firestore {
           && (!('adelantos' in p) || (p.adelantos is list && p.adelantos.size() <= 50))
           && (!('ajustes' in p) || (p.ajustes is list && p.ajustes.size() <= 50))
           && (!('descuentosManuales' in p) || (p.descuentosManuales is list && p.descuentosManuales.size() <= 50))
+          && (!('adicionales' in p) || (p.adicionales is list && p.adicionales.size() <= 50))
           && (!('moneda' in p) || p.moneda in ['BS', 'USD'])
           && (!('forma' in p) || (p.forma is string && p.forma.size() > 0 && p.forma.size() <= 40))
           && (!('banco' in p) || (p.banco is string && p.banco.size() <= 40))
@@ -674,6 +681,43 @@ service cloud.firestore {
           && request.resource.data.aplicado >= 0 && request.resource.data.aplicado <= resource.data.monto
           && resource.data.anulado == false
           && aplicaEnPago(appId, 'adelantos'))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn'])
+          && resource.data.aplicado == 0 && resource.data.anulado == false
+          && request.resource.data.anulado == true
+          && request.resource.data.anuladoPor == usuarioFinanzas(appId)
+          && request.resource.data.anuladoEn is int));
+      allow delete: if false;
+    }
+
+    // Pagos adicionales que Finanzas o el ADMIN le suman a un técnico (un ítem del tabulador por su cantidad, siempre en dólares, sin orden asociada): se suman enteros a su próximo pago, igual que un bono.
+    // Guardan el nombre y el precio del ítem de ese momento. `aplicado` es lo que ya entró en pagos (sube al pagar, baja al anular el pago, nunca pasa de `monto`); solo se anula si no entró en ningún pago.
+    // El técnico lee solo los suyos.
+    match /artifacts/{appId}/public/data/pagosAdicionales/{docId} {
+      function adicionalValido() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['tecnico', 'concepto', 'nombre', 'precio', 'cantidad', 'monto', 'aplicado', 'nota', 'por', 'creadoEn', 'anulado', 'notificado'])
+          && d.tecnico is string && d.tecnico.size() > 0 && d.tecnico.size() <= 100
+          && d.concepto is string && d.concepto.size() > 0 && d.concepto.size() <= 40
+          && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 60
+          && (d.precio is int || d.precio is float) && d.precio > 0 && d.precio <= 100000
+          && d.cantidad is int && d.cantidad >= 1 && d.cantidad <= 99
+          && (d.monto is int || d.monto is float) && d.monto > 0 && d.monto <= 100000
+          && d.monto - d.precio * d.cantidad < 0.01 && d.precio * d.cantidad - d.monto < 0.01
+          && d.aplicado == 0
+          && d.nota is string && d.nota.size() <= 300
+          && d.por == usuarioFinanzas(appId) && d.por != ''
+          && d.creadoEn is int
+          && d.anulado == false
+          && d.notificado is bool;
+      }
+      allow read: if llevaFinanzas(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
+      allow create: if llevaFinanzas(appId) && adicionalValido();
+      allow update: if llevaFinanzas(appId) && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['aplicado', 'pagoId'])
+          && (request.resource.data.aplicado is int || request.resource.data.aplicado is float)
+          && request.resource.data.aplicado >= 0 && request.resource.data.aplicado <= resource.data.monto
+          && resource.data.anulado == false
+          && aplicaEnPago(appId, 'adicionales'))
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn'])
           && resource.data.aplicado == 0 && resource.data.anulado == false
           && request.resource.data.anulado == true

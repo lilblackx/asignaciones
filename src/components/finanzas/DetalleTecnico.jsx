@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ArrowLeft, ChevronDown, HandCoins, CheckCircle2, ListChecks, MinusCircle, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, ChevronDown, HandCoins, CheckCircle2, ListChecks, MinusCircle, PlusCircle, TriangleAlert } from 'lucide-react';
 import Colapsable from '../Colapsable';
 import { BOTON, BOTON_FILA, BOTON_GRANDE, CHIP, ESTADO, ETIQUETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { aBs, agruparOrdenes, bolivares, conceptosSinTarifa, desglosePorConcepto, dolares, estadoDeAdelanto, estadoDeFila, fechaHoraLegiblePago, grupoDePago, textoDatosPago, textoGrupos, textoOrdenes, tienePorPagar } from '../../utils/finanzas';
 import { saldoAdelanto, sePuedeAnularAdelanto } from '../../utils/adelantos';
 import { estaProgramado, sePuedeAnularDescuento, textoCuota, textoDesde } from '../../utils/descuentos';
+import { sePuedeAnularAdicional, textoAdicional } from '../../utils/adicionales';
 import { diaDe } from '../../utils/totalesMes';
 import { useAhora } from '../../hooks/useAhora';
 import InsigniaJM from '../InsigniaJM';
@@ -54,7 +55,7 @@ function Seccion({ titulo, nota, children }) {
   );
 }
 
-export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, pagos, adelantos, descuentos = [], ajustes = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onDescuento, onVerOrden, onAnularPago, onAnularAdelanto, onAnularDescuento, onVolver }) {
+export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, pagos, adelantos, descuentos = [], ajustes = [], adicionales = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onDescuento, onAdicional, onVerOrden, onAnularPago, onAnularAdelanto, onAnularDescuento, onAnularAdicional, onVolver }) {
   const sinTarifa = conceptosSinTarifa(fila, tarifas);
   // Los descuentos que salen de esa orden (garantías de otro técnico por las que se le descuenta algo) y todavía no entraron en un pago.
   const descuentosDe = (item) => ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave && saldoAdelanto(a) > 0);
@@ -81,7 +82,9 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
   const clasesDescuento = [fila.adelantos > 0 && 'adelantos', fila.descuentosOrden > 0 && 'garantías', libres > 0 && 'descuentos con motivo'].filter(Boolean);
   const soloLibres = clasesDescuento.length === 1 && libres > 0;
   const etiquetaDescuento = clasesDescuento.length === 1 && fila.adelantos > 0 ? 'Adelantos descontados' : soloLibres ? 'Descuentos' : `Descuentos (${clasesDescuento.join(', ')})`;
-  const bonos = fila.bonos ?? 0;
+  // `bonos` es todo lo que se le suma al pago: las garantías de otro técnico y los pagos adicionales.
+  const bonos = fila.bonosGarantia ?? fila.bonos ?? 0;
+  const extras = fila.adicionales ?? 0;
   const pendientes = fila.pendientes.length;
   const estado = ESTADO[estadoDeFila(fila)];
 
@@ -102,6 +105,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
         {tasa > 0 && <p className="text-base font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
         {fila.adelantos > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Adelanto: {dolares(fila.adelantos)}</p>}
         {bonos > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Pago por garantías: {dolares(bonos)}</p>}
+        {extras > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Pagos adicionales: {dolares(extras)}</p>}
         {fila.descuentosOrden > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuento por garantías: {dolares(fila.descuentosOrden)}</p>}
         {libres > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuentos: {dolares(libres)}</p>}
         {sinTarifa.length > 0 && (
@@ -120,6 +124,9 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
           </button>
           <button type="button" onClick={onDescuento} disabled={ocupado} className={`${BOTON_GRANDE} border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
             <MinusCircle className="w-5 h-5" aria-hidden="true" /> Descuento
+          </button>
+          <button type="button" onClick={onAdicional} disabled={ocupado} className={`${BOTON_GRANDE} border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
+            <PlusCircle className="w-5 h-5" aria-hidden="true" /> Pago adicional
           </button>
           {descuentos.length > 0 && (
             <button type="button" onClick={() => setVerDescuentos((v) => !v)} aria-expanded={verDescuentos} aria-controls="descuentos-del-tecnico" className={`${BOTON_GRANDE} border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
@@ -147,7 +154,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
       </div>
 
       {tienePorPagar(fila) ? (
-        <Seccion titulo="Lo que se paga" nota={pendientes > 0 ? `${textoOrdenes(pendientes)}: ${textoGrupos(fila.cantidades)}` : 'Solo tiene el pago de una garantía de otro técnico.'}>
+        <Seccion titulo="Lo que se paga" nota={pendientes > 0 ? `${textoOrdenes(pendientes)}: ${textoGrupos(fila.cantidades)}` : 'Solo tiene pagos sumados: garantías de otro técnico o pagos adicionales.'}>
           {pendientes > 0 && <div className="hidden lg:grid grid-cols-[1fr_4rem_6rem_7rem_9rem] gap-x-4 pb-2 border-b border-zinc-400 dark:border-zinc-700 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
             <span>Concepto</span><span className="text-right">Cantidad</span><span className="text-right">Precio</span><span className="text-right">Subtotal $</span><span className="text-right">Subtotal Bs</span>
           </div>}
@@ -172,6 +179,12 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
               <div className="py-3 flex items-center justify-between gap-4">
                 <dt className="text-sm font-bold text-zinc-900 dark:text-white">Pago por garantías de otro técnico</dt>
                 <dd className="text-right"><span className="block text-sm font-bold tabular-nums text-zinc-900 dark:text-white whitespace-nowrap">+ {dolares(bonos)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">+ {montoBs(bonos, tasa)}</span>}</dd>
+              </div>
+            )}
+            {extras > 0 && (
+              <div className="py-3 flex items-center justify-between gap-4">
+                <dt className="min-w-0"><span className="block text-sm font-bold text-zinc-900 dark:text-white">Pagos adicionales</span><span className={`block ${TEXTO_SUAVE} break-words`}>{(fila.partesAdicionales ?? []).map(textoAdicional).join(', ')}</span></dt>
+                <dd className="text-right shrink-0"><span className="block text-sm font-bold tabular-nums text-zinc-900 dark:text-white whitespace-nowrap">+ {dolares(extras)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">+ {montoBs(extras, tasa)}</span>}</dd>
               </div>
             )}
             {descuento > 0 && (
@@ -238,6 +251,26 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
                 <span className="flex items-center gap-4">
                   <Monto usd={p.neto ?? p.total} tasa={p.tasa > 0 ? p.tasa : tasa} className={p.anulado ? 'line-through' : ''} />
                   {!p.anulado && <button type="button" onClick={() => onAnularPago(p)} disabled={ocupado} className={BOTON_FILA}>Anular</button>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Seccion>
+      )}
+
+      {adicionales.length > 0 && (
+        <Seccion titulo="Pagos adicionales por pagar" nota="Se suman enteros en su próximo pago. Se pueden anular mientras no hayan entrado en un pago.">
+          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {adicionales.map((a) => (
+              <li key={a.id} className="py-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-zinc-900 dark:text-white break-words">{textoAdicional(a)}</span><span className={`${CHIP} ${ESTADO.PAGADO.clase}`}>Por pagar</span></span>
+                  <span className={`block ${TEXTO_SUAVE}`}>Lo registró {a.por} · {fechaHoraLegiblePago(Number(a.creadoEn))}{Number(a.cantidad) > 1 ? ` · ${dolares(a.precio)} cada uno` : ''}</span>
+                  {a.nota && <span className={`block ${TEXTO_SUAVE} break-words`}>{a.nota}</span>}
+                </span>
+                <span className="flex items-center gap-4">
+                  <Monto usd={a.monto} tasa={tasa} />
+                  {sePuedeAnularAdicional(a) && <button type="button" onClick={() => onAnularAdicional(a)} disabled={ocupado} className={BOTON_FILA}>Anular</button>}
                 </span>
               </li>
             ))}

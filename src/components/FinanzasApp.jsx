@@ -30,6 +30,7 @@ import { useTamanoLetra } from '../hooks/useTamanoLetra';
 import ResumenPagado from './finanzas/ResumenPagado';
 import PagosClientes from './finanzas/PagosClientes';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
+import TabuladorAdicionales from './finanzas/TabuladorAdicionales';
 
 // "3:45 p. m." (hora de Caracas) de cuando se leyeron las órdenes por última vez.
 const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(ms));
@@ -104,7 +105,9 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   const ajustesVisibles = useMemo(() => finanzas.ajustes.filter((a) => !tecnico || String(a.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.ajustes, tecnico]);
   // Los descuentos con motivo del técnico elegido (o de todos): se restan de su próximo pago.
   const descuentosVisibles = useMemo(() => finanzas.descuentos.filter((d) => !tecnico || String(d.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.descuentos, tecnico]);
-  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy]);
+  // Los pagos adicionales del técnico elegido (o de todos): se suman a su próximo pago.
+  const adicionalesVisibles = useMemo(() => finanzas.adicionales.filter((a) => !tecnico || String(a.tecnico).toUpperCase() === tecnico.toUpperCase()), [finanzas.adicionales, tecnico]);
+  const filasPagos = useMemo(() => resumenPagos(items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy, adicionalesVisibles), [items, finanzas.tarifas, finanzas.idsPagadas, adelantosVisibles, ajustesVisibles, descuentosVisibles, hoy, adicionalesVisibles]);
   // Lo ya pagado en el periodo (los pagos hechos en esos días), por técnico y en total (respeta el técnico elegido arriba).
   const pagado = useMemo(() => resumenPagado(finanzas.pagos, rango, { tecnico, tasa }), [finanzas.pagos, rango, tecnico, tasa]);
   // Lo ya pagado en el periodo por técnico. Con "Por pagar" no se leen las órdenes pagadas: sale de los pagos hechos en los últimos 35 días.
@@ -233,6 +236,8 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   pagos={finanzas.pagos}
                   adelantos={adelantosVisibles}
                   descuentos={descuentosVisibles}
+                  adicionales={adicionalesVisibles}
+                  itemsAdicionales={finanzas.itemsPagoAdicional}
                   ajustes={ajustesVisibles}
                   ajustesTodos={finanzas.ajustes}
                   garantiasPendientes={garantiasPendientes}
@@ -249,10 +254,17 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onAnularAdelanto={finanzas.anularAdelanto}
                   onDescuento={finanzas.registrarDescuento}
                   onAnularDescuento={finanzas.anularDescuento}
+                  onAdicional={finanzas.registrarAdicional}
+                  onAnularAdicional={finanzas.anularAdicional}
                 />
               )}
               {seccion === 'CLIENTES' && <PagosClientes cobros={cobrosClientes} pagos={pagosClientes} rango={rango} tecnico={tecnico} />}
-              {seccion === 'PRECIOS' && <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />}
+              {seccion === 'PRECIOS' && (
+                <div className="space-y-10">
+                  <TabuladorPrecios tasa={tasa} tarifas={finanzas.tarifas} tarifasCargadas={finanzas.tarifasCargadas} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarTarifas} />
+                  <TabuladorAdicionales tasa={tasa} items={finanzas.itemsPagoAdicional} cargado={finanzas.catalogoCargado} ocupado={finanzas.ocupado} onGuardar={finanzas.guardarItemsAdicionales} />
+                </div>
+              )}
               {seccion === 'REPORTE' && <ResumenPagado resumen={pagado} rango={rango} ordenesPagadas={yaPagadas} tarifas={finanzas.tarifas} tasa={tasa} />}
               </div>
             </>

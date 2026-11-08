@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { HandCoins, MinusCircle, TriangleAlert } from 'lucide-react';
+import { HandCoins, MinusCircle, PlusCircle, TriangleAlert } from 'lucide-react';
 import ResumenCifras from './ResumenCifras';
 import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
@@ -11,10 +11,12 @@ import DetalleTecnico from './DetalleTecnico';
 import PanelPago from './PanelPago';
 import PanelAdelanto from './PanelAdelanto';
 import PanelDescuento from './PanelDescuento';
+import PanelAdicional from './PanelAdicional';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
 import { BOTON_FILA, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
 import { saldoAdelanto } from '../../utils/adelantos';
+import { textoAdicional } from '../../utils/adicionales';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 
@@ -22,7 +24,7 @@ import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 // al elegir uno, su pantalla con un botón para volver). "Pagar", "Adelanto" y "Descuento" abren su formulario en esa misma pantalla, no en una ventana.
 // `adelantos` y `descuentos`: los adelantos y los descuentos con motivo; `onPagar(fila, { datosPago, notificar, nota })`, `onAdelanto(tecnico, entrada, { notificar })`, `onDescuento(tecnico, entrada, { notificar })`,
 // `onAnularAdelanto(adelanto)` y `onAnularDescuento(descuento)` devuelven true si se guardó.
-export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, etiquetaPeriodo, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento, tecnicosTodos = [] }) {
+export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], adicionales = [], itemsAdicionales = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, etiquetaPeriodo, tasa, ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento, onAdicional, onAnularAdicional, tecnicosTodos = [] }) {
   const grande = useEsPantallaGrande();
   const [elegido, setElegido] = useState(null);
   const [modo, setModo] = useState('detalle');
@@ -30,10 +32,11 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   const [anulando, setAnulando] = useState(null);
   const [anulandoAdelanto, setAnulandoAdelanto] = useState(null);
   const [anulandoDescuento, setAnulandoDescuento] = useState(null);
+  const [anulandoAdicional, setAnulandoAdicional] = useState(null);
   const [verSinTecnico, setVerSinTecnico] = useState(false);
   const [verSinTipo, setVerSinTipo] = useState(false);
   // "Descuento" y "Adelanto" generales: a cualquier técnico, tenga o no órdenes por pagar (no dependen de que exista su tarjeta).
-  const [general, setGeneral] = useState(null); // null | 'descuento' | 'adelanto'
+  const [general, setGeneral] = useState(null); // null | 'descuento' | 'adelanto' | 'adicional'
   const [tecnicoGeneral, setTecnicoGeneral] = useState('');
   const cerrarGeneral = () => { setGeneral(null); setTecnicoGeneral(''); };
   const abrirGeneral = (tipo) => { setGeneral(tipo); setTecnicoGeneral(''); };
@@ -60,6 +63,9 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   const confirmarAnular = async () => { await onAnular(anulando); setAnulando(null); };
   const confirmarAnularAdelanto = async () => { await onAnularAdelanto(anulandoAdelanto); setAnulandoAdelanto(null); };
   const confirmarAnularDescuento = async () => { await onAnularDescuento(anulandoDescuento); setAnulandoDescuento(null); };
+  const confirmarAnularAdicional = async () => { await onAnularAdicional(anulandoAdicional); setAnulandoAdicional(null); };
+  // Lo que tiene un técnico por pagar en pagos adicionales (para avisarlo en el formulario).
+  const adicionalDe = (tecnico) => filas.find((f) => f.tecnico === tecnico)?.adicionales ?? 0;
 
   const alerta = 'rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
 
@@ -124,6 +130,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
             <div className="flex flex-wrap gap-2">
               <Boton variante="secundario" tamano="normal" icono={MinusCircle} onClick={() => abrirGeneral('descuento')} disabled={ocupado}>Nuevo descuento</Boton>
               <Boton variante="secundario" tamano="normal" icono={HandCoins} onClick={() => abrirGeneral('adelanto')} disabled={ocupado}>Nuevo adelanto</Boton>
+              <Boton variante="secundario" tamano="normal" icono={PlusCircle} onClick={() => abrirGeneral('adicional')} disabled={ocupado}>Nuevo pago adicional</Boton>
             </div>
           )}
         </div>
@@ -132,19 +139,21 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
       {general ? (
         <div className={`${TARJETA} p-4 sm:p-5 space-y-4 max-w-3xl`}>
           <div className="space-y-1">
-            <h3 className={TITULO_SECCION}>{general === 'descuento' ? 'Nuevo descuento' : 'Nuevo adelanto'}</h3>
-            <p className={TEXTO_SUAVE}>Elige a quién. No hace falta que tenga órdenes por pagar: queda por descontar de su próximo pago.</p>
+            <h3 className={TITULO_SECCION}>{general === 'descuento' ? 'Nuevo descuento' : general === 'adicional' ? 'Nuevo pago adicional' : 'Nuevo adelanto'}</h3>
+            <p className={TEXTO_SUAVE}>{general === 'adicional' ? 'Elige a quién. No hace falta que tenga órdenes por pagar: se suma a su próximo pago.' : 'Elige a quién. No hace falta que tenga órdenes por pagar: queda por descontar de su próximo pago.'}</p>
           </div>
           <div>
             <label htmlFor="general-tecnico" className={ETIQUETA}>Técnico</label>
             <div className="mt-1">
-              <SelectMenu id="general-tecnico" ariaLabel={general === 'descuento' ? 'Técnico del descuento' : 'Técnico del adelanto'} className={SELECTOR} value={tecnicoGeneral} onChange={setTecnicoGeneral} items={[{ value: '', label: 'Elige el técnico' }, ...tecnicosTodos.map((t) => ({ value: t, label: t }))]} />
+              <SelectMenu id="general-tecnico" ariaLabel={general === 'descuento' ? 'Técnico del descuento' : general === 'adicional' ? 'Técnico del pago adicional' : 'Técnico del adelanto'} className={SELECTOR} value={tecnicoGeneral} onChange={setTecnicoGeneral} items={[{ value: '', label: 'Elige el técnico' }, ...tecnicosTodos.map((t) => ({ value: t, label: t }))]} />
             </div>
           </div>
           {!tecnicoGeneral ? (
             <Boton variante="secundario" tamano="normal" onClick={cerrarGeneral}>Cancelar</Boton>
           ) : general === 'descuento' ? (
             <PanelDescuento key={`d-${tecnicoGeneral}`} tecnico={tecnicoGeneral} neto={filas.find((f) => f.tecnico === tecnicoGeneral)?.neto ?? filas.find((f) => f.tecnico === tecnicoGeneral)?.total ?? 0} porDescontar={filas.find((f) => f.tecnico === tecnicoGeneral)?.descuentosLibres ?? 0} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onDescuento(tecnicoGeneral, entrada, opciones)} onVolver={cerrarGeneral} volverTexto="Cancelar" />
+          ) : general === 'adicional' ? (
+            <PanelAdicional key={`p-${tecnicoGeneral}`} tecnico={tecnicoGeneral} items={itemsAdicionales} porPagar={adicionalDe(tecnicoGeneral)} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onAdicional(tecnicoGeneral, entrada, opciones)} onVolver={cerrarGeneral} volverTexto="Cancelar" />
           ) : (
             <PanelAdelanto key={`a-${tecnicoGeneral}`} tecnico={tecnicoGeneral} porDescontar={filas.find((f) => f.tecnico === tecnicoGeneral)?.adelantos ?? 0} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onAdelanto(tecnicoGeneral, entrada, opciones)} onVolver={cerrarGeneral} volverTexto="Cancelar" />
           )}
@@ -164,6 +173,8 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
                 <PanelAdelanto tecnico={actual.tecnico} porDescontar={actual.adelantos} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onAdelanto(actual.tecnico, entrada, opciones)} onVolver={() => setModo('detalle')} />
               ) : modo === 'descuento' ? (
                 <PanelDescuento tecnico={actual.tecnico} neto={actual.neto ?? actual.total} porDescontar={actual.descuentosLibres} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onDescuento(actual.tecnico, entrada, opciones)} onVolver={() => setModo('detalle')} />
+              ) : modo === 'adicional' ? (
+                <PanelAdicional tecnico={actual.tecnico} items={itemsAdicionales} porPagar={actual.adicionales ?? 0} tasa={tasa} ocupado={ocupado} onGuardar={(entrada, opciones) => onAdicional(actual.tecnico, entrada, opciones)} onVolver={() => setModo('detalle')} />
               ) : (
                 <DetalleTecnico
                   fila={actual}
@@ -175,16 +186,19 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
                   adelantos={adelantosVisibles.filter((a) => a.tecnico === actual.tecnico)}
                   descuentos={descuentos.filter((d) => d.tecnico === actual.tecnico)}
                   ajustes={ajustes.filter((a) => a.tecnico === actual.tecnico && saldoAdelanto(a) > 0)}
+                  adicionales={adicionales.filter((a) => a.tecnico === actual.tecnico && saldoAdelanto(a) > 0)}
                   garantiasPendientes={garantiasPendientes}
                   pagado={pagadasPorTecnico[actual.tecnico]}
                   ocupado={ocupado}
                   onPagar={() => setModo('pagar')}
                   onAdelanto={() => setModo('adelanto')}
                   onDescuento={() => setModo('descuento')}
+                  onAdicional={() => setModo('adicional')}
                   onVerOrden={setDetalleOrden}
                   onAnularPago={setAnulando}
                   onAnularAdelanto={setAnulandoAdelanto}
                   onAnularDescuento={setAnulandoDescuento}
+                  onAnularAdicional={setAnulandoAdicional}
                   onVolver={volverALaLista}
                 />
               )}
@@ -214,6 +228,17 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
           processingLabel="Anulando..."
           onCancel={() => setAnulandoDescuento(null)}
           onConfirm={confirmarAnularDescuento}
+        />
+      )}
+      {anulandoAdicional && (
+        <ConfirmModal
+          color="red"
+          title="¿Anular este pago adicional?"
+          description={`El pago adicional de ${dolares(anulandoAdicional.monto)} (${textoAdicional(anulandoAdicional)}) a ${anulandoAdicional.tecnico} queda anulado y ya no se suma a sus pagos.`}
+          confirmLabel="Sí, anular"
+          processingLabel="Anulando..."
+          onCancel={() => setAnulandoAdicional(null)}
+          onConfirm={confirmarAnularAdicional}
         />
       )}
       {anulando && (

@@ -43,7 +43,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, ocupado, onConf
           <h2 className="text-base font-bold text-zinc-900 dark:text-white">Registrar el pago a {fila.tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.POR_PAGAR.clase}`}>Paso 2 de 2</span>
         </div>
-        <p className={`${TEXTO_SUAVE} mt-1`}>{[etiqueta || etiquetaRango(rango), fila.pendientes.length > 0 && textoOrdenes(fila.pendientes.length), fila.bonos > 0 && `garantías ${dolares(fila.bonos)}`, descuento > 0 && `descuentos ${dolares(descuento)}`].filter(Boolean).join(' · ')}</p>
+        <p className={`${TEXTO_SUAVE} mt-1`}>{[etiqueta || etiquetaRango(rango), fila.pendientes.length > 0 && textoOrdenes(fila.pendientes.length), fila.bonosGarantia > 0 && `garantías ${dolares(fila.bonosGarantia)}`, fila.adicionales > 0 && `adicionales ${dolares(fila.adicionales)}`, descuento > 0 && `descuentos ${dolares(descuento)}`].filter(Boolean).join(' · ')}</p>
       </div>
 
       <div className="border-y border-zinc-400 dark:border-zinc-700 py-4">

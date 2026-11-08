@@ -1196,7 +1196,7 @@ await check('Adelanto: sin monto, con una forma inventada, ya descontado, a nomb
 // Lo que ya se descontó (`aplicado`) de un adelanto, un descuento o un bono solo cambia junto a un pago, en el mismo lote: al pagar, el pago nuevo del mismo técnico (con ese adelanto o ajuste en
 // su lista); al anular, el pago que se anula. `pagoId` dice cuál.
 const aplicarEnPago = (db, pagoId, coleccion, id, aplicado, { campos = {}, ...extraPago } = {}) => {
-  const lista = coleccion === 'ajustesTecnicos' ? 'ajustes' : coleccion === 'descuentosTecnicos' ? 'descuentosManuales' : 'adelantos';
+  const lista = coleccion === 'ajustesTecnicos' ? 'ajustes' : coleccion === 'descuentosTecnicos' ? 'descuentosManuales' : coleccion === 'pagosAdicionales' ? 'adicionales' : 'adelantos';
   const lote = db.batch();
   lote.set(fin(db, 'pagosTecnicos').doc(pagoId), pagoDe({ [lista]: [{ id, monto: aplicado }], ...extraPago }));
   lote.update(fin(db, coleccion).doc(id), { aplicado, pagoId, ...campos });
@@ -1253,6 +1253,66 @@ await check('Cada técnico lee solo sus pagos y sus adelantos (para ver el aviso
   await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-3').set(adelantoDe({ por: 'tecnico' })));
   await assertFails(fin(asTecnico(), 'adelantosTecnicos').doc('adel-1').update({ aplicado: 0 }));
   await assertFails(fin(asOtroTecnico(), 'adelantosTecnicos').doc('adel-1').get());
+});
+
+// Pagos adicionales (un ítem del tabulador por su cantidad, en dólares): Finanzas y ADMIN los suman a un técnico; entran enteros en su próximo pago
+const adicionalDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', concepto: 'dom', nombre: 'Domingo trabajado', precio: 10, cantidad: 3, monto: 30, aplicado: 0, nota: '', por: 'fina', creadoEn: 6, anulado: false, notificado: true, ...extra });
+await check('Pago adicional: Finanzas lo registra a su nombre (ítem, precio, cantidad y monto que cuadran, sin aplicar), con o sin nota; el ADMIN también', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'pagosAdicionales').doc('adic-1').set(adicionalDe()));
+  await assertSucceeds(fin(asFinanzas(), 'pagosAdicionales').doc('adic-2').set(adicionalDe({ cantidad: 1, monto: 10, nota: 'Domingo 2 de noviembre', notificado: false })));
+  await assertSucceeds(fin(asFinanzas(), 'pagosAdicionales').doc('adic-dec').set(adicionalDe({ precio: 15.5, cantidad: 3, monto: 46.5 })));
+  await assertSucceeds(fin(asAdmin(), 'pagosAdicionales').doc('adic-admin').set(adicionalDe({ por: 'admin' })));
+});
+await check('Pago adicional: con el monto que no es precio por cantidad, sin ítem, con precio o cantidad malos, nota larga, ya aplicado, a nombre de otro, con campos de más o ya anulado no se guarda', async () => {
+  const intentos = [{ monto: 31 }, { monto: 0 }, { monto: 100001, precio: 100000, cantidad: 2 }, { cantidad: 0, monto: 0 }, { cantidad: 100, monto: 1000 }, { cantidad: 1.5, monto: 15 }, { precio: 0, monto: 0 }, { precio: -10, monto: -30 }, { nombre: '' }, { nombre: 'x'.repeat(61) }, { concepto: '' }, { nota: 'x'.repeat(301) }, { aplicado: 10 }, { por: 'otro' }, { extra: 1 }, { anulado: true }, { tecnico: '' }, { notificado: 'si' }, { creadoEn: 'hoy' }];
+  for (const [i, extra] of intentos.entries()) await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc(`adic-mal-${i}`).set(adicionalDe(extra)));
+  await assertFails(fin(asUsuario(), 'pagosAdicionales').doc('adic-usuario').set(adicionalDe({ por: 'usuario' })));
+  await assertFails(fin(asTecnico(), 'pagosAdicionales').doc('adic-tecnico').set(adicionalDe({ por: 'tecnico' })));
+});
+await check('Pago adicional: al pagar entra (solo cambia aplicado, sin pasar del monto, con su pago en el mismo lote), al anular el pago se devuelve', async () => {
+  await assertSucceeds(aplicarEnPago(asFinanzas(), 'p-pa1', 'pagosAdicionales', 'adic-1', 30));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-pa-x1', 'pagosAdicionales', 'adic-2', 11));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-pa-x2', 'pagosAdicionales', 'adic-2', -1));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-pa-x3', 'pagosAdicionales', 'adic-2', 5, { campos: { monto: 99 } }));
+  // Sin el pago en el lote, con el pago de otro técnico, o con un pago que no lo trae en su lista de pagos adicionales, no entra nada.
+  await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc('adic-2').update({ aplicado: 5 }));
+  await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc('adic-2').update({ aplicado: 5, pagoId: 'p-pa1' }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-pa-x4', 'pagosAdicionales', 'adic-2', 5, { tecnico: 'REINEL BRAVO' }));
+  await assertFails(aplicarEnPago(asFinanzas(), 'p-pa-x5', 'pagosAdicionales', 'adic-2', 5, { adicionales: [] }));
+  // Devolverlo sin anular el pago tampoco.
+  await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc('adic-1').update({ aplicado: 0, pagoId: 'p-pa1' }));
+  await assertSucceeds(anularConPago(asFinanzas(), 'p-pa1', 'pagosAdicionales', 'adic-1', 0));
+});
+await check('Pago adicional: se anula solo si no entró en ningún pago, a nombre de quien lo hace, y no se borra', async () => {
+  await assertSucceeds(aplicarEnPago(asFinanzas(), 'p-pa2', 'pagosAdicionales', 'adic-1', 30));
+  await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc('adic-1').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc('adic-2').update({ anulado: true, anuladoPor: 'otro', anuladoEn: 9 }));
+  await assertSucceeds(fin(asFinanzas(), 'pagosAdicionales').doc('adic-2').update({ anulado: true, anuladoPor: 'fina', anuladoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc('adic-2').update({ aplicado: 5 }));
+  await assertFails(fin(asFinanzas(), 'pagosAdicionales').doc('adic-1').delete());
+});
+await check('Pago adicional: cada técnico lee solo los suyos; no escribe ni lee los de otro', async () => {
+  const propios = (db) => db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('pagosAdicionales').where('tecnico', '==', 'GERARDO MOLERO').get();
+  await assertSucceeds(propios(asTecnico()));
+  await assertFails(fin(asTecnico(), 'pagosAdicionales').get());
+  await assertFails(fin(asOtroTecnico(), 'pagosAdicionales').doc('adic-1').get());
+  await assertFails(fin(asTecnico(), 'pagosAdicionales').doc('adic-1').update({ aplicado: 0 }));
+  await assertSucceeds(fin(asFinanzas(), 'pagosAdicionales').doc('adic-1').get());
+});
+// Los ítems del tabulador: un solo documento, "adicionales", junto a las tarifas
+const catalogoDe = (extra = {}) => ({ items: [{ id: 'dom', nombre: 'Domingo trabajado', precio: 10 }], por: 'fina', en: 1, ...extra });
+await check('Ítems de pagos adicionales: Finanzas y ADMIN los guardan en tarifasPago/adicionales a su nombre; nadie más, ni con otro id ni con campos de más', async () => {
+  await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('adicionales').set(catalogoDe()));
+  await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('adicionales').set(catalogoDe({ items: [] })));
+  await assertSucceeds(fin(asAdmin(), 'tarifasPago').doc('adicionales').set(catalogoDe({ por: 'admin' })));
+  await assertSucceeds(fin(asFinanzas(), 'tarifasPago').doc('adicionales').get());
+  const intentos = [{ por: 'otro' }, { en: 'hoy' }, { items: 'x' }, { items: Array.from({ length: 31 }, (_, i) => ({ id: `i${i}`, nombre: `Ítem ${i}`, precio: 1 })) }, { extra: 1 }];
+  for (const extra of intentos) await assertFails(fin(asFinanzas(), 'tarifasPago').doc('adicionales').set(catalogoDe(extra)));
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('otro').set(catalogoDe()));
+  await assertFails(fin(asUsuario(), 'tarifasPago').doc('adicionales').set(catalogoDe({ por: 'usuario' })));
+  await assertFails(fin(asTecnico(), 'tarifasPago').doc('adicionales').set(catalogoDe({ por: 'tecnico' })));
+  await assertFails(fin(asTecnico(), 'tarifasPago').doc('adicionales').get());
+  await assertFails(fin(asFinanzas(), 'tarifasPago').doc('adicionales').delete());
 });
 
 // Descuentos con motivo a los técnicos (Finanzas y ADMIN los crean; siempre con motivo; se restan del próximo pago como un adelanto)

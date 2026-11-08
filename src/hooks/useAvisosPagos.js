@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { collection, query, where } from 'firebase/firestore';
 import { onSnapshot } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
-import { avisoDeAdelanto, avisoDeAjuste, avisoDeAnulacion, avisoDeDescuento, avisoDePago } from '../utils/finanzas';
+import { avisoDeAdelanto, avisoDeAdicional, avisoDeAjuste, avisoDeAnulacion, avisoDeDescuento, avisoDePago } from '../utils/finanzas';
 import { playAprobadoSound } from '../utils/notificationSound';
 
 // Cuántos días hacia atrás se escuchan los pagos, adelantos, descuentos y ajustes del técnico (un pago anulado después de ese plazo ya no se le avisa).
@@ -56,6 +56,8 @@ export function useAvisosPagos({ firebaseUser, tecnico, onNotify, setToastMsg })
       escuchar('pagosTecnicos', 'pagoTecnico', avisoDePago),
       escuchar('adelantosTecnicos', 'adelantoTecnico', avisoDeAdelanto),
       escuchar('descuentosTecnicos', 'descuentoTecnico', avisoDeDescuento),
+      // Un pago adicional que Finanzas le suma (usa el tipo de aviso de pagos: el Worker y la campana ya lo conocen).
+      escuchar('pagosAdicionales', 'pagoTecnico', avisoDeAdicional),
       // Un descuento o un bono por una orden que el administrador pasó de un técnico a otro (se avisa al aprobarla).
       escuchar('ajustesTecnicos', 'ajusteTecnico', avisoDeAjuste),
     ];

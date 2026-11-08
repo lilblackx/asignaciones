@@ -27,6 +27,7 @@ import { TRABAJOS_VNTA } from './registroVnTa.js';
 import { adelantosConSaldo, repartirAdelantos, saldoAdelanto } from './adelantos.js';
 import { bonosConSaldo, descuentosConSaldo } from './ajustes.js';
 import { aplicaYa, estaProgramado, textoCuota } from './descuentos.js';
+import { adicionalesConSaldo, textoAdicional } from './adicionales.js';
 import { fechaCorta } from './calendario.js';
 import { MONEDA_BS } from './datosPago.js';
 
@@ -194,8 +195,8 @@ const vacio = () => Object.fromEntries(CONCEPTOS_PAGO.map(({ id }) => [id, 0]));
 // Lo que se le debe a cada técnico: las órdenes pagables que todavía no están en ningún pago (`pagadas`: ids de ordenesPagadas).
 // [{ tecnico, cantidades, total, pendientes: [item], pagadas: n }] de más a menos por pagar. El total son dólares.
 // `adelantos`: los adelantos; `ajustes`: los descuentos y bonos por órdenes corregidas (un bono se suma al pago; un descuento se resta, igual que un adelanto);
-// `descuentosLibres`: los descuentos con motivo que se le ponen a un técnico (se restan igual).
-export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = [], todosLosDescuentos = [], hoy = diaDe(Date.now())) {
+// `descuentosLibres`: los descuentos con motivo que se le ponen a un técnico (se restan igual); `adicionales`: los pagos adicionales que Finanzas le suma (como un bono, entran enteros).
+export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = [], todosLosDescuentos = [], hoy = diaDe(Date.now()), adicionales = []) {
   // Un descuento programado no cuenta hasta su fecha.
   const descuentosLibres = todosLosDescuentos.filter((d) => aplicaYa(d, hoy));
   const ya = pagadas instanceof Set ? pagadas : new Set(pagadas);
@@ -209,7 +210,7 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
     fila.pendientes.push(item);
   }
   // Un técnico con adelantos, descuentos (también los programados) o bonos por aplicar tiene tarjeta aunque no tenga órdenes por pagar.
-  for (const a of [...adelantos, ...ajustes, ...todosLosDescuentos]) {
+  for (const a of [...adelantos, ...ajustes, ...todosLosDescuentos, ...adicionales]) {
     if (saldoAdelanto(a) > 0 && !mapa.has(a.tecnico)) mapa.set(a.tecnico, { tecnico: a.tecnico, cantidades: vacio(), total: 0, pendientes: [], pagadas: 0 });
   }
   const suma = (lista) => redondear(lista.reduce((s, a) => s + saldoAdelanto(a), 0));
@@ -222,7 +223,11 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
       const libres = adelantosConSaldo(descuentosLibres, f.tecnico);
       const bonos = bonosConSaldo(ajustes, f.tecnico);
       const programados = todosLosDescuentos.filter((d) => d.tecnico === f.tecnico && estaProgramado(d, hoy));
-      const montoBonos = suma(bonos);
+      const montoGarantias = suma(bonos);
+      const extras = adicionalesConSaldo(adicionales, f.tecnico);
+      const montoExtras = suma(extras);
+      // `bonos` es todo lo que se le suma al pago (garantías y pagos adicionales); cada clase tiene además su propio monto.
+      const montoBonos = redondear(montoGarantias + montoExtras);
       // Lo que se resta (adelantos y descuentos, del más viejo al más nuevo) sale de las órdenes más los bonos, y nunca es más que eso: lo que sobra queda como saldo.
       const { descuento, partes: todas } = repartirAdelantos([...delAdelanto, ...descuentos, ...libres].sort((a, b) => marca(a) - marca(b)), redondear(total + montoBonos));
       const idsDescuentos = new Set(descuentos.map((a) => a.id));
@@ -236,6 +241,9 @@ export function resumenPagos(items, tarifas, pagadas, adelantos = [], ajustes = 
         descuentosLibres: suma(libres),
         descuentosProgramados: suma(programados),
         bonos: montoBonos,
+        bonosGarantia: montoGarantias,
+        adicionales: montoExtras,
+        partesAdicionales: extras.map((a) => ({ id: a.id, monto: saldoAdelanto(a), nombre: a.nombre, cantidad: Number(a.cantidad) || 1 })),
         descuento,
         partes: todas.filter((p) => !idsDescuentos.has(p.id) && !idsLibres.has(p.id)),
         partesLibres: todas.filter((p) => idsLibres.has(p.id)),
@@ -286,8 +294,9 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
   const registros = fila.pendientes.filter((item) => item.registro).length;
   const ajustes = fila.partesAjustes ?? [];
   const libres = fila.partesLibres ?? [];
+  const adicionales = fila.partesAdicionales ?? [];
   // Cada orden escribe dos documentos: la orden pagada y la marca de su revisión (pendientePago false y el pago); las filas de VN y TA, además, su propia marca. Todo en un lote de 500.
-  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + 2 * fila.pendientes.length + registros + ajustes.length + libres.length + (fila.partes?.length ?? 0) > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
+  if (fila.pendientes.length > MAX_ORDENES_POR_PAGO || 1 + 2 * fila.pendientes.length + registros + ajustes.length + libres.length + adicionales.length + (fila.partes?.length ?? 0) > MAX_ESCRITURAS_POR_PAGO) return { error: 'Son demasiadas órdenes para un solo pago. Elige un periodo más corto.' };
   if (fila.pendientes.length > 0 && fila.total <= 0) return { error: 'Configura las tarifas antes de pagar: el total es 0.' };
   if (datos?.moneda === MONEDA_BS && !(tasa > 0)) return { error: 'No hay tasa BCV: elige dólares o actualiza la tasa.' };
   const descuento = fila.descuento ?? 0;
@@ -307,6 +316,7 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
     ...(partes.length > 0 && { adelantos: partes.map(({ id, monto }) => ({ id, monto })) }),
     ...(ajustes.length > 0 && { ajustes: ajustes.map(({ id, monto, tipo }) => ({ id, monto, tipo })) }),
     ...(libres.length > 0 && { descuentosManuales: libres.map(({ id, monto }) => ({ id, monto })) }),
+    ...(adicionales.length > 0 && { adicionales: adicionales.map(({ id, monto, nombre, cantidad }) => ({ id, monto, nombre: String(nombre || '').slice(0, 60), cantidad })) }),
     ...(datos && { moneda: datos.moneda, forma: datos.forma, banco: datos.banco || '', referencia: datos.referencia, pagadoEn: datos.pagadoEn, montoPagado: datos.moneda === MONEDA_BS ? aBs(neto, tasa) : neto, notificado: Boolean(notificar) }),
     cantidadOrdenes: fila.pendientes.length,
     nota: String(nota || '').replace(/\s+/g, ' ').trim().slice(0, 300),
@@ -323,7 +333,7 @@ export function armarPago(fila, rango, tarifas, { por, ahora, nota = '', tasa = 
   const registrosMarcados = fila.pendientes.filter((item) => item.registro).map((item) => ({ id: item.registro.id, datos: { pagoId, pagadoEn: ahora } }));
   // La revisión de cada orden (el id es el mismo): deja de estar pendiente de pago y guarda con qué pago se pagó. Las reglas solo lo permiten en el mismo lote que crea el pago.
   const revisiones = fila.pendientes.map((item) => ({ id: item.clave, datos: { pendientePago: false, pagoId } }));
-  return { pagoId, pago, ordenes, revisiones, registros: registrosMarcados, adelantos: partes, ajustes, descuentosLibres: libres };
+  return { pagoId, pago, ordenes, revisiones, registros: registrosMarcados, adelantos: partes, ajustes, descuentosLibres: libres, adicionales };
 }
 
 // El desglose de lo que se paga, una fila por concepto con órdenes: [{ id, nombre, cantidad, precio, subtotal }] en dólares (los bolívares los pone la pantalla con la tasa).
@@ -355,7 +365,7 @@ export const dolares = (valor) => `${(Number(valor) || 0).toLocaleString('es-VE'
 const COLUMNAS_GRUPOS = [{ titulo: 'Instalaciones', derecha: true }, { titulo: 'Averías', derecha: true }, { titulo: 'Val. NAP', derecha: true }, { titulo: 'Trab. adicional', derecha: true }];
 const celdasGrupos = (cantidades) => { const g = gruposDelReporte(cantidades); return [g.instalaciones, g.averias, g.validacionesNap, g.adicionales].map(String); };
 
-export const columnasPagosTecnico = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total órdenes', derecha: true }, { titulo: 'Bonos', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Total por pagar', derecha: true }, { titulo: 'En Bs', derecha: true }];
+export const columnasPagosTecnico = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total órdenes', derecha: true }, { titulo: 'Bonos y adicionales', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Total por pagar', derecha: true }, { titulo: 'En Bs', derecha: true }];
 export const filaPagoTecnico = (f, tasa = null) => [f.tecnico, String(f.pendientes.length), ...celdasGrupos(f.cantidades), dolares(f.total), dolares(f.bonos || 0), dolares(f.descuento || 0), dolares(f.neto ?? f.total), bolivares(aBs(f.neto ?? f.total, tasa))];
 
 // Cómo se nombra el trabajo de una orden pagada: instalación, validación de NAP, trabajo adicional o avería (todo lo demás es avería).
@@ -389,7 +399,7 @@ export function cifrasPagos(filas, yaPagado, tasa = null) {
   ];
 }
 
-export const columnasPagosRegistrados = () => [{ titulo: 'Fecha' }, { titulo: 'Técnico' }, { titulo: 'Periodo' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total', derecha: true }, { titulo: 'Bonos', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Pago' }, { titulo: 'Estado' }, { titulo: 'Nota' }];
+export const columnasPagosRegistrados = () => [{ titulo: 'Fecha' }, { titulo: 'Técnico' }, { titulo: 'Periodo' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total', derecha: true }, { titulo: 'Bonos y adicionales', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Pago' }, { titulo: 'Estado' }, { titulo: 'Nota' }];
 
 // "Pago móvil · Ref. 1234 · 21/10/2026 3:45 p. m. · Bs" ('—' en los pagos de antes, que no guardaron estos datos).
 export function textoDatosPago(p) {
@@ -454,7 +464,7 @@ export function textoGrupos(cantidades) {
   return [texto(instalaciones, 'instalación', 'instalaciones'), texto(averias, 'avería', 'averías'), texto(validacionesNap, 'validación de NAP', 'validaciones de NAP'), texto(adicionales, 'trabajo adicional', 'trabajos adicionales')].filter(Boolean).join(' · ');
 }
 
-export const columnasResumenPagado = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes pagadas', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total pagado', derecha: true }, { titulo: 'Bonos', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto pagado', derecha: true }, { titulo: 'Total en Bs', derecha: true }];
+export const columnasResumenPagado = () => [{ titulo: 'Técnico' }, { titulo: 'Órdenes pagadas', derecha: true }, ...COLUMNAS_GRUPOS, { titulo: 'Total pagado', derecha: true }, { titulo: 'Bonos y adicionales', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto pagado', derecha: true }, { titulo: 'Total en Bs', derecha: true }];
 export const filaResumenPagado = (f) => [f.tecnico, String(f.ordenes), ...celdasGrupos(f.cantidades), dolares(f.total), dolares(f.bonos || 0), dolares(f.descuento || 0), dolares(f.neto ?? f.total), bolivares(f.bs || null)];
 
 // "Se pagó 245,00 $ por 15 órdenes a REINEL BRAVO".
@@ -470,7 +480,7 @@ export function avisoDePago(pago) {
   const descuento = pago.descuento > 0 ? ` Se descontaron ${dolares(pago.descuento)} de adelantos y descuentos.` : '';
   return {
     title: 'Pago recibido',
-    body: `Se te registró un pago de ${monto} por ${textoOrdenes(pago.cantidadOrdenes)}: ${textoGrupos(pago.cantidades) || 'sin detalle'}.${descuento}${pago.forma ? ` ${textoReferencia(pago.forma, pago.referencia, pago.banco)}.` : ''}`,
+    body: `Se te registró un pago de ${monto} por ${pago.cantidadOrdenes > 0 ? `${textoOrdenes(pago.cantidadOrdenes)}: ${textoGrupos(pago.cantidades) || 'sin detalle'}` : 'pagos adicionales'}.${(pago.adicionales ?? []).length > 0 ? ` Incluye: ${pago.adicionales.map(textoAdicional).join(', ')}.` : ''}${descuento}${pago.forma ? ` ${textoReferencia(pago.forma, pago.referencia, pago.banco)}.` : ''}`,
   };
 }
 
@@ -484,6 +494,12 @@ export const avisoDeAnulacion = (pago) => ({
 export const avisoDeAjuste = (a) => (a.tipo === 'BONO'
   ? { title: 'Pago por garantía', body: `Se te suman ${dolares(a.monto)} por la garantía ${a.codigo || 's/c'} de la orden ${a.codigoOrigen || 's/c'} (de ${a.de}). Entran en tu próximo pago.` }
   : { title: 'Descuento por garantía', body: `Se te descuentan ${dolares(a.monto)} de la orden ${a.codigoOrigen || 's/c'} por la garantía ${a.codigo || 's/c'} (hecha por ${a.a}). Se restan de tu próximo pago.` });
+
+// El aviso de un pago adicional registrado.
+export const avisoDeAdicional = (a) => ({
+  title: 'Pago adicional',
+  body: `Se te suman ${dolares(a.monto)} por ${textoAdicional(a)}${a.nota ? ` (${a.nota})` : ''}. Entran en tu próximo pago.`,
+});
 
 // El aviso de un adelanto registrado.
 export const avisoDeAdelanto = (adelanto) => ({
