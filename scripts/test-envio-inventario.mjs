@@ -4,8 +4,8 @@
 // Uso: `npm run test:inventario` (corre con --conditions=workerd, igual que test:notify).
 import { SignJWT, exportJWK, exportPKCS8, generateKeyPair } from '../cf-worker/node_modules/jose/dist/browser/index.js';
 import worker, { depsInventario } from '../cf-worker/src/index.js';
-import { MAX_INTENTOS, fechaHoraCaracas, idRegistro, olvidarSesionInventario, reintentarPendientes } from '../cf-worker/src/inventario.js';
-import { payloadEnvioInventario } from '../src/utils/envioInventario.js';
+import { MAX_INTENTOS, distintoDeLoEscrito, escritoDe, fechaHoraCaracas, idCorreccion, idRegistro, olvidarSesionInventario, reintentarPendientes } from '../cf-worker/src/inventario.js';
+import { avisoOrdenReabierta, payloadEnvioInventario } from '../src/utils/envioInventario.js';
 import { USUARIOS_INVENTARIO, veEnviosInventario, vinculaTecnicosInventario } from '../src/utils/accesoInventario.js';
 import { readFileSync } from 'node:fs';
 
@@ -39,6 +39,7 @@ check('lo que no es de estos tipos, o no está aprobado, no envía nada', [
 ].map(payloadEnvioInventario), [null, null, null, null, null]);
 check('configuración de router y fuente averiada, ya finalizadas, no envían nada al inventario',
   ['CONFIG_ROUTER', 'FUENTE_AVERIADA'].map((tipoVisita) => payloadEnvioInventario({ ...base, tipoTrabajo: 'VISITA', tipoVisita })), [null, null]);
+check('devolver una orden finalizada que envía al inventario avisa a la oficina; las demás órdenes y los demás cambios, no', [avisoOrdenReabierta(instalacion, { ...instalacion, estado: 'PENDIENTE' }) !== '', avisoOrdenReabierta(instalacion, { ...instalacion, estado: 'PRE-FINALIZADO' }) !== '', avisoOrdenReabierta(instalacion, { ...instalacion, estado: 'CANCELADO' }), avisoOrdenReabierta(instalacion, { ...instalacion }), avisoOrdenReabierta({ ...instalacion, estado: 'PENDIENTE' }, { ...instalacion, estado: 'PENDIENTE' }), avisoOrdenReabierta({ ...base, tipoTrabajo: 'AVERÍA' }, { ...base, tipoTrabajo: 'AVERÍA', estado: 'PENDIENTE' })], [true, true, '', '', '', '']);
 check('orden sin código: sale "S/C" en el motivo', payloadEnvioInventario({ ...recableado, codigo: '' }).motivo, 'Recableado - Orden #S/C');
 check('instalación anterior (sin serial ni conectores): se envía con serial vacío y conectores en 0', (({ serial, apc, upc }) => [serial, apc, upc])(payloadEnvioInventario({ ...instalacion, instalacion: { metraje: 80 } })), ['', 0, 0]);
 
@@ -79,6 +80,9 @@ const enc = (v) => (typeof v === 'string' ? s(v) : typeof v === 'number' ? n(v) 
 const fieldsDe = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, enc(v)]));
 const dec = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, 'stringValue' in v ? v.stringValue : 'integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : v]));
 
+let materialLogsTelecom = []; // registros de material del almacén: [{ id, campos }]
+let existentesTelecom = new Set(); // ids de materialLogs que ya existen (por ejemplo, una corrección ya hecha)
+let aplicarEscriturasDeEquipo = false; // los commits cambian el inventario simulado (para probar un envío tras liberar)
 let sinPermisoAuditoria = false; // sus reglas no dejan escribir auditLogs
 let sinPermisoNotificaciones = false; // sus reglas no dejan escribir syncNotifications
 let notificacionesTelecom = [];
@@ -105,6 +109,13 @@ globalThis.fetch = async (url, init = {}) => {
     if (comportamientoTelecom === 'caido') return respuesta('caído', 503);
     if (comportamientoTelecom === 'vencida' && init.headers?.Authorization === 'Bearer TOKEN-1') return respuesta('vencida', 401);
     if (u.includes('/tecnicos?')) return respuesta({ documents: tecnicosTelecom.map((x, i) => ({ name: `${DOCS_TELECOM}/tecnicos/${i}`, fields: fieldsDe({ nombre: x.nombre, estado: x.estado }) })) });
+    if (u.endsWith(':runQuery') && cuerpo.structuredQuery.from[0].collectionId === 'materialLogs') {
+      const serial = cuerpo.structuredQuery.where.fieldFilter.value.stringValue;
+      return respuesta(materialLogsTelecom.filter((l) => l.campos.equipoSerial === serial).map((l) => ({ document: { name: `${DOCS_TELECOM}/materialLogs/${l.id}`, fields: fieldsDe(l.campos) } })).concat([{}]));
+    }
+    if (u.includes('/materialLogs/') && (!init.method || init.method === 'GET')) {
+      return existentesTelecom.has(u.split('/materialLogs/')[1]) ? respuesta({ name: u, fields: {} }) : respuesta('no existe', 404);
+    }
     if (u.endsWith(':runQuery')) {
       const serial = cuerpo.structuredQuery.where.fieldFilter.value.stringValue;
       const item = inventario[serial];
@@ -118,6 +129,14 @@ globalThis.fetch = async (url, init = {}) => {
         return respuesta({});
       }
       commitsTelecom.push(cuerpo.writes);
+      if (aplicarEscriturasDeEquipo) {
+        for (const w of cuerpo.writes.filter((x) => x.update?.name.includes('/inventory/'))) {
+          const item = Object.values(inventario).find((x) => w.update.name.endsWith(`/${x.id}`));
+          if (!item) continue;
+          const nuevos = dec(w.update.fields);
+          for (const campo of w.updateMask.fieldPaths) { if (campo in nuevos) item.campos[campo] = nuevos[campo]; else delete item.campos[campo]; }
+        }
+      }
       return respuesta({});
     }
   }
@@ -151,8 +170,9 @@ globalThis.fetch = async (url, init = {}) => {
     consultasNuestras.push(q);
     const col = q.from[0].collectionId;
     if (col === 'telecomEnvios') {
-      const estado = q.where.fieldFilter.value.stringValue;
-      return respuesta(Object.entries(envios).filter(([, f]) => f.estado.stringValue === estado).map(([id, f]) => ({ document: { name: `${DOCS}/telecomEnvios/${id}`, fields: f } })));
+      const campo = q.where.fieldFilter.field.fieldPath;
+      const valor = q.where.fieldFilter.value.stringValue;
+      return respuesta(Object.entries(envios).filter(([, f]) => f[campo]?.stringValue === valor).map(([id, f]) => ({ document: { name: `${DOCS}/telecomEnvios/${id}`, fields: f } })));
     }
     if (col === 'reports') {
       const desde = Number(q.where.fieldFilter.value.integerValue);
@@ -196,6 +216,7 @@ const reiniciar = () => {
   comportamientoTelecom = 'ok';
   sinPermisoNotificaciones = false; notificacionesTelecom = [];
   llamadasTelecom = []; commitsTelecom = []; loginsTelecom = []; pushes = []; consultasNuestras = []; reportes = [];
+  materialLogsTelecom = []; existentesTelecom = new Set(); aplicarEscriturasDeEquipo = false;
 };
 
 async function llamar(ruta, uid, cuerpo, e = env) {
@@ -316,6 +337,152 @@ check('reenviar manda otra vez la orden con el serial corregido y deja el envío
 check('el equipo corregido pasa a Instalado con el cliente de la orden', [escrituraDe(commitsTelecom[1], 'inventory').update.name.endsWith('/inv-9'), dec(escrituraDe(commitsTelecom[1], 'inventory').update.fields).estado, dec(escrituraDe(commitsTelecom[1], 'inventory').update.fields).cliente], [true, 'Instalado', 'Ana Pérez']);
 check('el registro de material tiene el mismo id (se sobrescribe, no se duplica) y ahora lleva el serial corregido', [escrituraDe(commitsTelecom[1], 'materialLogs').update.name === escrituraDe(commitsTelecom[0], 'materialLogs').update.name, registroViejo.equipoSerial, registroNuevo.equipoSerial, registroNuevo.drop === registroViejo.drop], [true, 'HWTC1A2B3C4D', 'HWTC9Z8Y7X6W', true]);
 check('reenviar es de quienes ven el módulo (todo ADMIN, no un USUARIO) y pide que exista un envío', [(await reenviar('inst1', 'usuario-uid')).status, (await reenviar('noexiste', 'admin-uid')).status, (await reenviar('noexiste')).status], [403, 404, 404]);
+
+// 3f) La orden se envía con un serial mal escrito, se devuelve, se corrige y se aprueba otra vez (el caso IN34 / IN33): el equipo y el material del primer envío no pueden quedarse en el almacén.
+reiniciar();
+inventario.HWTC9Z8Y7X6W = { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } };
+await enviar('inst1');
+// El almacén ya tiene el equipo malo instalado a este cliente (nuestro simulador no lo cambia solo).
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Ana Pérez', tecnico: 'GERARDO MOLERO', fechaInstalacion: '2026-10-15', fechaHoraInstalacion: '2026-10-15 14:05:09' };
+const idPrimero = idRegistro('inst1', FIN);
+check('el envío guarda lo que dejó escrito en el almacén (serial, material y hora)', [envio('inst1').escritoSerial, envio('inst1').escritoCliente, envio('inst1').escritoApc, envio('inst1').escritoUpc, envio('inst1').escritoDrop, envio('inst1').escritoFinalizadoEn], ['HWTC1A2B3C4D', 'Ana Pérez', 2, 1, 120, FIN]);
+const nuevaFin = FIN + 3600000;
+const ordenCorregida = (extra = {}, instalacionExtra = {}) => fieldsDe({ ...instalacion, estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', finalizadoEn: nuevaFin, ...extra, instalacion: { ...instalacion.instalacion, ...instalacionExtra } });
+ordenes.inst1 = ordenCorregida();
+llamadasTelecom = []; commitsTelecom = [];
+r = await enviar('inst1');
+check('aprobar otra vez la misma orden, solo con otra hora de finalización, no reenvía nada ni toca el almacén', [r.json.estado, r.json.repetido, llamadasTelecom.length, commitsTelecom.length], ['ENVIADO', true, 0, 0]);
+ordenes.inst1 = ordenCorregida({}, { serial: 'HWTC9Z8Y7X6W' });
+llamadasTelecom = []; commitsTelecom = [];
+r = await enviar('inst1');
+check('aprobar otra vez con el serial corregido envía lo nuevo y corrige lo anterior en un solo commit', [r.json.estado, commitsTelecom.length, envio('inst1').serial, envio('inst1').escritoSerial], ['ENVIADO', 1, 'HWTC9Z8Y7X6W', 'HWTC9Z8Y7X6W']);
+const escrituras = commitsTelecom[0];
+const equipos = escrituras.filter((w) => w.update.name.includes('/inventory/'));
+const liberado = equipos.find((w) => w.update.name.endsWith('/inv-1'));
+check('el equipo nuevo pasa a Instalado con el cliente', [equipos.find((w) => w.update.name.endsWith('/inv-9')).update.fields.estado.stringValue, dec(equipos.find((w) => w.update.name.endsWith('/inv-9')).update.fields).cliente], ['Instalado', 'Ana Pérez']);
+check('el equipo del serial malo se libera: vuelve a "Con Técnico" y se le quitan el cliente y las fechas', [dec(liberado.update.fields), liberado.updateMask.fieldPaths, liberado.currentDocument], [{ estado: 'Con Técnico' }, ['estado', 'cliente', 'fechaInstalacion', 'fechaHoraInstalacion'], { exists: true }]);
+const materiales = escrituras.filter((w) => w.update.name.includes('/materialLogs/'));
+const nuevoMaterial = materiales.find((w) => w.update.name.endsWith(`/${idRegistro('inst1', nuevaFin)}`));
+const correccion = materiales.find((w) => w.update.name.endsWith(`/${idCorreccion(idPrimero)}`));
+check('el registro de material nuevo lleva el serial corregido y va en negativo', [Boolean(nuevoMaterial), dec(nuevoMaterial.update.fields).equipoSerial, dec(nuevoMaterial.update.fields).apc, dec(nuevoMaterial.update.fields).drop], [true, 'HWTC9Z8Y7X6W', -2, -0.12]);
+check('el material del primer envío se devuelve con un registro de corrección en positivo, que solo se puede crear y sin serial', [Boolean(correccion), dec(correccion.update.fields).apc, dec(correccion.update.fields).upc, dec(correccion.update.fields).drop, dec(correccion.update.fields).grapas, 'equipoSerial' in correccion.update.fields, correccion.currentDocument], [true, 2, 1, 0.12, 'Corrección', false, { exists: false }]);
+check('el registro de corrección es del mismo técnico y dice a qué orden corresponde', [dec(correccion.update.fields).tecnico, dec(correccion.update.fields).cliente.includes('Corrección') && dec(correccion.update.fields).cliente.includes('IS10')], ['GERARDO MOLERO', true]);
+const auditorias = escrituras.filter((w) => w.update.name.includes('/auditLogs/'));
+check('la auditoría lleva dos líneas: la del envío nuevo y la de la corrección, con el equipo liberado y el material devuelto', [auditorias.length, auditorias.map((w) => dec(w.update.fields).accion), dec(auditorias.find((w) => w.update.name.endsWith(`/${idCorreccion(idPrimero)}`)).update.fields).detalle.includes('[HWTC1A2B3C4D]')], [2, ['Instalación a Cliente', 'Corrección de envío'], true]);
+check('el envío queda ENVIADO y su mensaje cuenta lo que se limpió', [envio('inst1').estado, envio('inst1').mensaje.includes('HWTC1A2B3C4D'), envio('inst1').mensaje.includes('material')], ['ENVIADO', true, true]);
+llamadasTelecom = []; commitsTelecom = [];
+r = await enviar('inst1');
+check('aprobar una tercera vez sin cambios no vuelve a corregir nada', [r.json.repetido, llamadasTelecom.length, commitsTelecom.length], [true, 0, 0]);
+
+// 3g) Reenviar a mano desde el módulo (Corregir la orden + Reenviar): igual que arriba, con la misma hora de finalización no hay registro de corrección (el material se sobrescribe), pero el equipo malo sí se libera.
+reiniciar();
+inventario.HWTC9Z8Y7X6W = { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } };
+await enviar('inst1');
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Ana Pérez', tecnico: 'GERARDO MOLERO' };
+ordenes.inst1 = fieldsDe({ ...instalacion, estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN', instalacion: { ...instalacion.instalacion, serial: 'HWTC9Z8Y7X6W' } });
+commitsTelecom = [];
+r = await llamar('/inventario/reenviar', 'lf-uid', { ticketId: 'inst1' });
+check('reenviar con la misma hora de finalización: libera el equipo viejo y sobrescribe el material sin crear corrección', [r.json.estado, commitsTelecom[0].some((w) => w.update.name.endsWith('/inv-1')), commitsTelecom[0].filter((w) => w.update.name.includes('/materialLogs/')).length, commitsTelecom[0].some((w) => w.update.name.endsWith(`/${idCorreccion(idRegistro('inst1', FIN))}`) && w.update.name.includes('/materialLogs/'))], ['ENVIADO', true, 1, false]);
+
+// 3h) Si el equipo del envío anterior ya no figura instalado a este cliente (otra persona lo cambió en el almacén), no se toca y se avisa en el mensaje.
+reiniciar();
+inventario.HWTC9Z8Y7X6W = { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } };
+await enviar('inst1');
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Otro Cliente', tecnico: 'GERARDO MOLERO' };
+ordenes.inst1 = ordenCorregida({}, { serial: 'HWTC9Z8Y7X6W' });
+commitsTelecom = [];
+r = await enviar('inst1');
+check('un equipo anterior que ya figura con otro cliente no se libera, y el mensaje lo dice', [r.json.estado, commitsTelecom[0].some((w) => w.update.name.endsWith('/inv-1')), envio('inst1').mensaje.includes('revísalo')], ['ENVIADO', false, true]);
+
+// 3i) Un reenvío que falla no borra lo que ya quedó escrito: cuando por fin sale, se limpia lo del primer envío.
+reiniciar();
+await enviar('inst1');
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Ana Pérez', tecnico: 'GERARDO MOLERO' };
+ordenes.inst1 = ordenCorregida({}, { serial: 'HWTC9Z8Y7X6W' });
+commitsTelecom = [];
+r = await enviar('inst1');
+check('aprobar otra vez con un serial que el almacén no tiene: queda la alerta y no se toca nada', [r.json.estado, commitsTelecom.length, envio('inst1').serial, envio('inst1').escritoSerial], ['SERIAL_NO_ENCONTRADO', 0, 'HWTC9Z8Y7X6W', 'HWTC1A2B3C4D']);
+inventario.HWTC9Z8Y7X6W = { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } };
+commitsTelecom = [];
+r = await reintentar('inst1');
+check('cuando el almacén lo tiene, reintentar envía lo nuevo y libera el equipo del primer envío', [r.json.estado, commitsTelecom[0].some((w) => w.update.name.endsWith('/inv-1')), commitsTelecom[0].some((w) => w.update.name.endsWith(`/${idCorreccion(idRegistro('inst1', FIN))}`)), envio('inst1').escritoSerial], ['ENVIADO', true, true, 'HWTC9Z8Y7X6W']);
+
+// 3j) Un envío ENVIADO de antes de este cambio (sin los campos "escrito...") también se limpia, con lo que tiene guardado.
+reiniciar();
+inventario.HWTC9Z8Y7X6W = { id: 'inv-9', campos: { serial: 'HWTC9Z8Y7X6W', estado: 'Con Técnico', tecnico: 'GERARDO MOLERO' } };
+inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: 'Instalado', cliente: 'Ana Pérez', tecnico: 'GERARDO MOLERO' };
+envios.inst1 = fieldsDe({ ticketId: 'inst1', estado: 'ENVIADO', mensaje: '', intentos: 1, accion: 'instalacion_nueva', codigo: 'IS10', tecnico: 'GERARDO MOLERO', tecnicoOrden: 'GERARDO MOLERO', cliente: 'Ana Pérez', serial: 'HWTC1A2B3C4D', apc: 2, upc: 1, dropMetros: 120, motivo: '', finalizadoEn: FIN });
+ordenes.inst1 = ordenCorregida({}, { serial: 'HWTC9Z8Y7X6W' });
+commitsTelecom = [];
+r = await enviar('inst1');
+check('un envío anterior sin los campos nuevos se limpia igual', [r.json.estado, commitsTelecom[0].some((w) => w.update.name.endsWith('/inv-1')), envio('inst1').escritoSerial], ['ENVIADO', true, 'HWTC9Z8Y7X6W']);
+check('escritoDe y distintoDeLoEscrito: sin envío no hay nada escrito, y la hora de finalización no cuenta como cambio', [escritoDe(null), escritoDe({ estado: 'PENDIENTE', serial: 'X' }), distintoDeLoEscrito({ accion: 'a', serial: 'X', cliente: 'Ana Pérez', tecnico: 'T', apc: 1, upc: 0, dropMetros: 5, finalizadoEn: 9 }, { accion: 'a', serial: 'X', cliente: ' ANA PEREZ ', tecnico: 'T', apc: 1, upc: 0, dropMetros: 5, finalizadoEn: 1 }), distintoDeLoEscrito({ accion: 'a', serial: 'Y', cliente: 'Ana', tecnico: 'T', apc: 1, upc: 0, dropMetros: 5 }, { accion: 'a', serial: 'X', cliente: 'Ana', tecnico: 'T', apc: 1, upc: 0, dropMetros: 5 })], [null, null, false, true]);
+
+// 3k) Liberar un equipo que un envío anterior dejó "Instalado" a otro cliente (el caso IN33 / IN34): se comprueba antes de tocar nada, y si se comprueba se libera, se devuelve el material viejo y se reintenta la orden.
+const liberar = (ticketId, uid = 'lf-uid') => llamar('/inventario/liberar', uid, { ticketId });
+const prepararCasoLiberar = ({ envioDelOtro = true, serialDelOtro = 'HWTC9Z8Y7X6W', estadoEquipo = 'Instalado', clienteEquipo = 'Nancy Pineda', tecnicoEquipo = 'GERARDO MOLERO' } = {}) => {
+  reiniciar();
+  aplicarEscriturasDeEquipo = true;
+  inventario.HWTC1A2B3C4D.campos = { serial: 'HWTC1A2B3C4D', estado: estadoEquipo, cliente: clienteEquipo, tecnico: tecnicoEquipo, fechaInstalacion: '2026-11-06', fechaHoraInstalacion: '2026-11-06 14:09:45' };
+  envios.inst1 = fieldsDe({ ticketId: 'inst1', estado: 'SERIAL_YA_INSTALADO', mensaje: 'ocupado', intentos: 1, accion: 'instalacion_nueva', codigo: 'IS10', tecnico: 'GERARDO MOLERO', tecnicoOrden: 'GERARDO MOLERO', cliente: 'Ana Pérez', serial: 'HWTC1A2B3C4D', apc: 2, upc: 1, dropMetros: 120, motivo: '', finalizadoEn: FIN });
+  if (envioDelOtro) envios.nancy = fieldsDe({ ticketId: 'nancy', estado: 'ENVIADO', mensaje: '', intentos: 1, accion: 'instalacion_nueva', codigo: 'IS11', tecnico: 'GERARDO MOLERO', tecnicoOrden: 'GERARDO MOLERO', cliente: 'Nancy Pineda', serial: serialDelOtro, apc: 1, upc: 1, dropMetros: 85, motivo: '', finalizadoEn: FIN - 7200000 });
+  materialLogsTelecom = [
+    { id: '1793988585597.123', campos: { equipoSerial: 'HWTC1A2B3C4D', cliente: 'Nancy Pineda', tecnico: 'GERARDO MOLERO', apc: -2, upc: -1, drop: -0.085, grapas: 'Instalación Nueva' } },
+    { id: '1793988585000.5', campos: { equipoSerial: 'HWTC1A2B3C4D', cliente: 'Otro Cliente', tecnico: 'GERARDO MOLERO', apc: -1, upc: 0, drop: -0.01, grapas: 'Instalación Nueva' } },
+  ];
+};
+prepararCasoLiberar();
+r = await liberar('inst1');
+const commitLiberar = commitsTelecom[0] || [];
+check('liberar: se comprueba, se libera, se devuelve el material y la orden queda enviada (dos commits: la liberación y el envío)', [r.json.estado, commitsTelecom.length, envio('inst1').estado], ['ENVIADO', 2, 'ENVIADO']);
+const equipoLiberado = commitLiberar.find((w) => w.update.name.endsWith('/inv-1'));
+check('el equipo vuelve a "Con Técnico" sin cliente ni fechas, tocando solo esos campos', [dec(equipoLiberado.update.fields), equipoLiberado.updateMask.fieldPaths, equipoLiberado.currentDocument], [{ estado: 'Con Técnico' }, ['estado', 'cliente', 'fechaInstalacion', 'fechaHoraInstalacion'], { exists: true }]);
+const correcciones = commitLiberar.filter((w) => w.update.name.includes('/materialLogs/'));
+check('solo se devuelve el material del registro de ese serial y ese cliente (no el de otro cliente), en positivo y solo creando', [correcciones.length, correcciones[0].update.name.endsWith(`/${idCorreccion(1793988585597.123)}`), correcciones[0].currentDocument, (({ apc, upc, drop, grapas, tecnico }) => ({ apc, upc, drop, grapas, tecnico }))(dec(correcciones[0].update.fields)), 'equipoSerial' in correcciones[0].update.fields], [1, true, { exists: false }, { apc: 2, upc: 1, drop: 0.085, grapas: 'Corrección', tecnico: 'GERARDO MOLERO' }, false]);
+check('la auditoría explica la liberación', (({ accion, usuario, detalle }) => [accion, usuario, detalle.includes('[HWTC1A2B3C4D]') && detalle.includes('Nancy Pineda') && detalle.includes('IS11') && detalle.includes('IS10')])(dec(commitLiberar.find((w) => w.update.name.includes('/auditLogs/')).update.fields)), ['Corrección de envío', 'Usuario Asignaciones', true]);
+check('después se envía la orden: el equipo queda instalado a su cliente', [inventario.HWTC1A2B3C4D.campos.estado, inventario.HWTC1A2B3C4D.campos.cliente], ['Instalado', 'Ana Pérez']);
+check('la respuesta cuenta lo que se hizo', [r.json.liberado, r.json.devueltos, r.json.mensaje.includes('Se liberó el equipo HWTC1A2B3C4D'), r.json.mensaje.includes('material de 1 registro')], ['HWTC1A2B3C4D', 1, true, true]);
+
+prepararCasoLiberar();
+existentesTelecom.add(String(idCorreccion(1793988585597.123)));
+r = await liberar('inst1');
+check('un registro que ya tiene su corrección no se vuelve a compensar', [r.json.estado, r.json.devueltos, (commitsTelecom[0] || []).filter((w) => w.update.name.includes('/materialLogs/')).length], ['ENVIADO', 0, 0]);
+
+prepararCasoLiberar({ envioDelOtro: false });
+r = await liberar('inst1');
+check('sin una orden del otro cliente ya enviada con otro serial no se puede comprobar: no se escribe nada', [r.json.estado, commitsTelecom.length, r.json.mensaje.includes('no puedo comprobar'), inventario.HWTC1A2B3C4D.campos.estado, envio('inst1').estado], ['NO_LIBERADO', 0, true, 'Instalado', 'SERIAL_YA_INSTALADO']);
+
+prepararCasoLiberar({ serialDelOtro: 'HWTC1A2B3C4D' });
+r = await liberar('inst1');
+check('si el otro cliente se envió con ese mismo serial, el equipo es suyo y no se libera', [r.json.estado, commitsTelecom.length, r.json.mensaje.includes('es de Nancy Pineda')], ['NO_LIBERADO', 0, true]);
+
+prepararCasoLiberar();
+envios.nancy = fieldsDe({ ticketId: 'nancy', estado: 'SERIAL_NO_ENCONTRADO', accion: 'instalacion_nueva', codigo: 'IS11', cliente: 'Nancy Pineda', serial: 'HWTC9Z8Y7X6W', apc: 1, upc: 1, dropMetros: 85, finalizadoEn: FIN });
+r = await liberar('inst1');
+check('una orden del otro cliente que no se llegó a enviar no sirve de prueba', [r.json.estado, commitsTelecom.length], ['NO_LIBERADO', 0]);
+
+prepararCasoLiberar({ clienteEquipo: 'Ana Pérez' });
+r = await liberar('inst1');
+check('el equipo ya figura con este mismo cliente: no hay nada que liberar', [r.json.estado, commitsTelecom.length, r.json.mensaje.includes('Reintentar')], ['NO_LIBERADO', 0, true]);
+
+prepararCasoLiberar({ estadoEquipo: 'Con Técnico', clienteEquipo: '' });
+r = await liberar('inst1');
+check('el equipo ya no figura instalado: no hay nada que liberar', [r.json.estado, commitsTelecom.length, r.json.mensaje.includes('Reintentar')], ['NO_LIBERADO', 0, true]);
+
+prepararCasoLiberar();
+envios.inst1 = fieldsDe({ ...dec(envios.inst1), estado: 'SERIAL_NO_ENCONTRADO' });
+r = await liberar('inst1');
+check('solo vale para la alerta "Ya instalado"', [r.json.estado, commitsTelecom.length], ['NO_LIBERADO', 0]);
+
+prepararCasoLiberar({ tecnicoEquipo: 'OTRO TECNICO' });
+r = await liberar('inst1');
+check('si tras liberar el reintento topa con otra alerta, se dice lo liberado y el motivo, y la alerta nueva queda guardada', [r.json.estado, r.json.mensaje.startsWith('Se liberó el equipo HWTC1A2B3C4D'), r.json.mensaje.includes('otro técnico') || r.json.mensaje.includes('OTRO TECNICO'), envio('inst1').estado, inventario.HWTC1A2B3C4D.campos.estado], ['EQUIPO_OTRO_TECNICO', true, true, 'EQUIPO_OTRO_TECNICO', 'Con Técnico']);
+
+prepararCasoLiberar();
+check('liberar es de quienes ven el módulo (todo ADMIN, no un USUARIO ni quien cierra ni un técnico) y pide un envío y un id válido', [(await liberar('inst1', 'usuario-uid')).status, (await liberar('inst1', 'cierra-uid')).status, (await liberar('inst1', 'tecnico-uid')).status, (await liberar('noexiste')).status, (await liberar('../x')).status, commitsTelecom.length], [403, 403, 403, 404, 400, 0]);
+reiniciar();
+r = await liberar('inst1', 'lf-uid');
+check('sin un envío guardado para esa orden: 404 y no escribe nada', [r.status, commitsTelecom.length], [404, 0]);
 
 // 4) Equipo ya instalado a otro cliente
 reiniciar();

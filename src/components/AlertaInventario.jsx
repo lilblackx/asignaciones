@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, Pencil, RefreshCw, Search, Send } from 'lucide-react';
+import { Bell, ChevronDown, ClipboardCopy, PackageCheck, PackageX, Pencil, RefreshCw, Search, Send, Unlock } from 'lucide-react';
 import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
@@ -78,10 +78,11 @@ function Serial({ serial }) {
   );
 }
 
-function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCorregir }) {
+function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCorregir, onLiberar }) {
   const [ocupado, setOcupado] = useState(false);
   const [avisando, setAvisando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  const [confirmandoLiberar, setConfirmandoLiberar] = useState(false);
   const motivo = envio.mensaje || TEXTO_ESTADO_ENVIO[envio.estado] || '';
 
   const reintentar = async () => {
@@ -93,6 +94,13 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCo
     setAvisando(true);
     await onReenviarAviso(envio);
     setAvisando(false);
+  };
+  // "Ya instalado": el equipo quedó ocupado por un envío anterior de otra orden. El Worker comprueba que sea así antes de liberarlo.
+  const liberar = async () => {
+    setOcupado(true);
+    await onLiberar(envio);
+    setOcupado(false);
+    setConfirmandoLiberar(false);
   };
   const descartar = async () => {
     setOcupado(true);
@@ -125,6 +133,19 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCo
             Descartar
           </Boton>
         )}
+        {envio.estado === 'SERIAL_YA_INSTALADO' && onLiberar && (confirmandoLiberar ? (
+          <div className="w-full rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2.5 space-y-2">
+            <p className="text-xs text-amber-900 dark:text-amber-100 leading-snug">Se comprueba que ese equipo quedó ocupado por un envío anterior de otra orden del cliente que figura (que después se envió con otro serial). Si es así, el equipo vuelve a «Con Técnico», se devuelve el material duplicado de ese envío viejo y se reintenta esta orden. Si no se puede comprobar, no se cambia nada.</p>
+            <div className="flex gap-2">
+              <Boton variante="principal" tamano="grande" className="flex-1" type="button" onClick={liberar} disabled={ocupado}>{ocupado ? 'Liberando...' : 'Sí, liberar y reintentar'}</Boton>
+              <Boton variante="secundario" tamano="grande" type="button" onClick={() => setConfirmandoLiberar(false)} disabled={ocupado}>No</Boton>
+            </div>
+          </div>
+        ) : (
+          <Boton variante="secundario" tamano="compacto" className="w-full" type="button" onClick={() => setConfirmandoLiberar(true)} disabled={ocupado}>
+            <Unlock className="w-3.5 h-3.5" aria-hidden="true" /> Liberar equipo y reintentar
+          </Boton>
+        ))}
         <Boton variante="secundario" tamano="compacto" className="w-full" type="button" onClick={() => onCorregir(envio)} disabled={ocupado}>
           <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Corregir la orden (serial, metraje, conectores)
         </Boton>
@@ -247,7 +268,7 @@ const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u03
 // Módulo "Envíos al inventario" (solo para los usuarios de utils/accesoInventario): arriba, las órdenes aprobadas que no se
 // pudieron descontar del inventario del almacén, con "Reintentar" (por ejemplo, después de que el almacén ingresó el serial)
 // y "Descartar" (se da por resuelta sin enviar; queda guardada); abajo, la actividad reciente de los envíos.
-export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReenviar, onReenviarAviso, onReintentarTodas, onBuscar, onDescartar, onClose, usuario = '', enPagina = false }) {
+export default function EnviosInventarioModal({ envios, pendientes = [], recientes, cargando, hayMas, onCargar, onCargarMas, onActualizar, onReintentar, onReenviar, onLiberar, onReenviarAviso, onReintentarTodas, onBuscar, onDescartar, onClose, usuario = '', enPagina = false }) {
   useEffect(() => { onCargar(); }, [onCargar]);
   const [filtro, setFiltro] = useState('TODOS');
   const [texto, setTexto] = useState('');
@@ -316,7 +337,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-4 rounded-xl border border-dashed border-zinc-400 dark:border-zinc-700">No hay órdenes pendientes de revisar.</p>
             ) : (
               <ul className="space-y-2.5">
-                {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} onDescartar={onDescartar} onCorregir={setCorrigiendo} />)}
+                {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} onDescartar={onDescartar} onCorregir={setCorrigiendo} onLiberar={onLiberar} />)}
               </ul>
             )}
           </section>

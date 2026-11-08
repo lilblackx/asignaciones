@@ -50,6 +50,13 @@ export const TEXTO_ESTADO_ENVIO = {
   ERROR: 'No se pudo enviar después de varios intentos.',
 };
 
+// Aviso para la oficina al devolver a PENDIENTE (o PRE-FINALIZADO) una orden finalizada que envía algo al inventario: si ya se había enviado, el almacén tiene lo de antes hasta que se apruebe de nuevo.
+// Al aprobarla otra vez, el Worker compara con lo que quedó escrito y corrige allá el equipo y el material que hayan cambiado. Devuelve '' si no corresponde avisar.
+export function avisoOrdenReabierta(antes, despues) {
+  if (antes?.estado !== 'FINALIZADO' || !['PENDIENTE', 'PRE-FINALIZADO'].includes(despues?.estado) || !payloadEnvioInventario(antes)) return '';
+  return 'Esta orden puede estar ya enviada al inventario del almacén: al aprobarla de nuevo, lo que haya cambiado (serial o material) se corrige allá solo.';
+}
+
 const soloLetrasYNumeros = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
 
 // Lo que hay que enviar de una orden aprobada, o null si no corresponde enviar nada.

@@ -132,7 +132,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const verInventario = veEnviosInventario(currentUser, role);
   const vinculaInventario = vinculaTecnicosInventario(currentUser);
   const verEstaciones = veEstaciones(currentUser);
-  const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviar: reenviarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
+  const { envios: enviosInventario, pendientes: enviosPendientes, recientes: enviosRecientes, cargandoRecientes, hayMas: hayMasEnvios, cargarRecientes, cargarMas: cargarMasEnvios, actualizarRecientes, reintentar: reintentarEnvio, reenviar: reenviarEnvio, liberar: liberarEnvio, reenviarAviso: reenviarAvisoEnvio, reintentarTodas: reintentarTodasEnvios, buscar: buscarEnvios, descartar: descartarEnvio } = useEnviosInventario(firebaseUser, verInventario, currentUser, setToastMsg);
   useCompletarPromotoras(firebaseUser, role, tickets);
   const { reports, isProcessing, cerrarDia, hasMoreReports, isLoadingReports, loadMoreReports, refreshReports } = useReports(firebaseUser, canCerrar, currentUser, tickets, setToastMsg);
   const { config: tasaConfig, loading: tasaLoading, actualizarAutomatica, actualizarManual } = useTasaBcv(firebaseUser);
@@ -1137,6 +1137,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onActualizar={actualizarRecientes}
             onReintentar={reintentarEnvio}
             onReenviar={reenviarEnvio}
+            onLiberar={liberarEnvio}
             usuario={currentUser}
             onReenviarAviso={reenviarAvisoEnvio}
             onReintentarTodas={reintentarTodasEnvios}

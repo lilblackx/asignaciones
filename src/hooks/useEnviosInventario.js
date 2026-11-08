@@ -86,15 +86,28 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
   }, [cargarRecientes, setToastMsg]);
 
   // Vuelve a enviar una orden con lo que dice ahora, también si ya estaba enviada (se corrigió el serial u otro dato). Lo que ya está en el
-  // almacén se sobrescribe, no se duplica. Devuelve true si quedó enviada.
+  // almacén se corrige: el equipo del serial anterior se libera y el material del envío anterior se devuelve (el Worker lo cuenta en el mensaje). Devuelve true si quedó enviada.
   const reenviar = useCallback(async (envio) => {
     const r = await llamarInventario('/inventario/reenviar', envio.id);
     await cargarRecientes();
     if (r.ok && r.estado === 'ENVIADO') {
-      setToastMsg?.({ type: 'success', text: `La orden ${envio.codigo || 'S/C'} se reenvió al inventario con los datos corregidos.` });
+      setToastMsg?.({ type: 'success', text: `La orden ${envio.codigo || 'S/C'} se reenvió al inventario con los datos corregidos.${r.mensaje ? ` ${r.mensaje}` : ''}`, ...(r.mensaje ? { duration: 10000 } : {}) });
       return true;
     }
     setToastMsg?.({ type: 'error', text: r.ok ? (r.mensaje || 'No se pudo reenviar. Revisa el detalle de la alerta.') : (r.mensaje || 'No se pudo reenviar la orden.') });
+    return false;
+  }, [cargarRecientes, setToastMsg]);
+
+  // Libera el equipo que quedó "Instalado" a otro cliente por un envío anterior (de una orden del cliente que figura, ya corregida a otro serial), devuelve ese material y reintenta esta orden.
+  // El Worker comprueba antes de tocar nada; si no puede comprobarlo, no cambia nada y dice por qué. Devuelve true si la orden quedó enviada.
+  const liberar = useCallback(async (envio) => {
+    const r = await llamarInventario('/inventario/liberar', envio.id);
+    await cargarRecientes();
+    if (r.ok && (r.estado === ESTADO_ENVIADO || r.estado === 'LIBERADO')) {
+      setToastMsg?.({ type: 'success', text: `${r.mensaje}${r.estado === ESTADO_ENVIADO ? ` La orden ${envio.codigo || 'S/C'} se envió al inventario.` : ''}`, duration: 12000 });
+      return true;
+    }
+    setToastMsg?.({ type: 'error', duration: 12000, text: r.ok ? (r.mensaje || 'No se pudo liberar el equipo.') : (r.mensaje || 'No se pudo liberar el equipo.') });
     return false;
   }, [cargarRecientes, setToastMsg]);
 
@@ -154,5 +167,5 @@ export function useEnviosInventario(firebaseUser, puedeVer, usuario, setToastMsg
     }
   }, [cargarRecientes, setToastMsg, usuario]);
 
-  return { envios, pendientes, recientes, cargandoRecientes, hayMas, cargarRecientes, cargarMas, actualizarRecientes, reintentar, reenviar, reenviarAviso, reintentarTodas, buscar, descartar };
+  return { envios, pendientes, recientes, cargandoRecientes, hayMas, cargarRecientes, cargarMas, actualizarRecientes, reintentar, reenviar, liberar, reenviarAviso, reintentarTodas, buscar, descartar };
 }

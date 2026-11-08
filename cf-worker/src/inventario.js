@@ -6,6 +6,8 @@
 //   POST /inventario/reintentar { ticketId }  desde el módulo de la app, para quienes ven el módulo (todo ADMIN y los de USUARIOS_INVENTARIO)
 //   POST /inventario/reenviar { ticketId }    lo mismo, pero también de una orden ya ENVIADA: se vuelve a enviar con lo que dice la orden ahora
 //                                             (por ejemplo, con el serial corregido). Escribe lo mismo en las mismas filas (no duplica material).
+//   POST /inventario/liberar    { ticketId }  una orden con la alerta "Ya instalado" cuyo equipo quedó ocupado por un envío anterior de otra orden del cliente que figura (que se corrigió a otro serial):
+//                                             lo libera, devuelve ese material y reintenta la orden (solo si se comprueba; ver liberarEquipoInventario)
 //   POST /inventario/notificar  { ticketId }  vuelve a escribir el aviso de una orden con alerta en syncNotifications, solo para quienes ven el módulo
 //   cron                        envía lo PENDIENTE: lo que no se pudo enviar (red caída, clave rechazada...) y lo que la app
 //                               marcó al aprobar pero no alcanzó a llamar al Worker; cada 15 minutos
@@ -53,6 +55,9 @@ export function idRegistro(ticketId, finalizadoEn) {
   for (const c of String(ticketId)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
   return Number(finalizadoEn) + (h % 1000) / 1000;
 }
+
+// El id de la corrección de un registro ya escrito: el mismo número con el milisegundo siguiente (así es siempre el mismo para el mismo registro y no choca con él).
+export const idCorreccion = (id) => Number(id) + 1;
 
 // Estado del equipo en su inventario cuando lo tiene asignado un técnico: el único del que se descuenta y pasa a "Instalado".
 const ESTADO_INSTALADO = 'INSTALADO';
@@ -188,8 +193,100 @@ async function buscarTecnicoTelecom(env, nombre, ahoraMs) {
   return (await leerTecnicosTelecom(env, ahoraMs)).find((t) => normalizarNombre(t.nombre) === buscado) || null;
 }
 
+// --- Lo que ya quedó escrito en el almacén por una orden ---
+// Cada envío correcto guarda en telecomEnvios lo que escribió (campos "escrito...") y los intentos que fallan después no lo borran: así, si la orden se reenvía con otro serial u
+// otro material, se puede dejar el almacén como si el envío anterior no hubiera existido (ver limpiezaDelEnvioAnterior). Un envío ENVIADO de antes de este cambio no trae esos campos: se usa lo que tiene guardado.
+export const camposEscrito = (p) => ({ escritoAccion: p.accion, escritoSerial: p.serial, escritoCliente: p.cliente, escritoTecnico: p.tecnico, escritoApc: p.apc, escritoUpc: p.upc, escritoDrop: p.dropMetros, escritoFinalizadoEn: p.finalizadoEn });
+
+export function escritoDe(existente) {
+  if (!existente) return null;
+  if (existente.escritoAccion) {
+    return {
+      accion: existente.escritoAccion, serial: String(existente.escritoSerial || ''), cliente: String(existente.escritoCliente || ''), tecnico: String(existente.escritoTecnico || ''),
+      apc: Number(existente.escritoApc) || 0, upc: Number(existente.escritoUpc) || 0, dropMetros: Number(existente.escritoDrop) || 0, finalizadoEn: Number(existente.escritoFinalizadoEn) || 0,
+    };
+  }
+  if (existente.estado === ESTADO_ENVIADO && existente.accion) {
+    return { accion: existente.accion, serial: String(existente.serial || ''), cliente: String(existente.cliente || ''), tecnico: String(existente.tecnico || ''), apc: Number(existente.apc) || 0, upc: Number(existente.upc) || 0, dropMetros: Number(existente.dropMetros) || 0, finalizadoEn: Number(existente.finalizadoEn) || 0 };
+  }
+  return null;
+}
+
+// ¿Lo que dice la orden ahora es distinto de lo que quedó escrito? No cuenta la hora en que se finalizó: aprobar otra vez la misma orden sin cambios no reenvía nada.
+export function distintoDeLoEscrito(nuevo, escrito) {
+  if (!escrito) return false;
+  return nuevo.accion !== escrito.accion || nuevo.serial !== escrito.serial || normalizarNombre(nuevo.cliente) !== normalizarNombre(escrito.cliente) || normalizarNombre(nuevo.tecnico) !== normalizarNombre(escrito.tecnico)
+    || Number(nuevo.apc) !== Number(escrito.apc) || Number(nuevo.upc) !== Number(escrito.upc) || Number(nuevo.dropMetros) !== Number(escrito.dropMetros);
+}
+
+// Al reenviar una orden que ya se había enviado con otros datos, lo anterior no puede quedarse en el almacén: el equipo del serial viejo (que sigue "Instalado" a este cliente) vuelve a
+// "Con Técnico" y el material del registro viejo se devuelve con un registro de corrección (sus reglas solo dejan crear registros, no cambiarlos) y su línea de auditoría.
+// Va en el mismo commit que el envío nuevo. Un equipo que ya no figura instalado a este cliente (otra persona lo cambió) no se toca.
+// Devuelve { escrituras, auditorias, nota }: la nota cuenta lo que se limpió (queda en el mensaje del envío).
+async function limpiezaDelEnvioAnterior(env, ticketId, previo, p, escribeMaterial, fechaHora, ahoraMs) {
+  const resultado = { escrituras: [], auditorias: [], nota: '' };
+  if (!previo) return resultado;
+  const notas = [];
+  const acciones = [];
+
+  if (previo.accion !== ACCION_AVERIA && previo.serial && previo.serial !== p.serial) {
+    const equipo = await buscarEquipo(env, previo.serial, ahoraMs);
+    const actual = equipo ? camposAObjeto(equipo.fields) : null;
+    if (actual && normalizarNombre(actual.estado) === ESTADO_INSTALADO && normalizarNombre(actual.cliente) === normalizarNombre(previo.cliente)) {
+      // Vuelve a como estaba antes de instalarse: se quitan el cliente y las fechas que puso el envío.
+      resultado.escrituras.push({
+        update: { name: equipo.name, fields: campos({ estado: 'Con Técnico' }) },
+        updateMask: { fieldPaths: ['estado', 'cliente', 'fechaInstalacion', 'fechaHoraInstalacion'] },
+        currentDocument: { exists: true },
+      });
+      notas.push(`se liberó el equipo ${previo.serial} (figuraba instalado a ${previo.cliente || 'este cliente'})`);
+      acciones.push(`el equipo [${previo.serial}] vuelve a "Con Técnico"`);
+    } else if (actual) {
+      notas.push(`el equipo ${previo.serial} del envío anterior ya no figura instalado a ${previo.cliente || 'este cliente'}: revísalo en el almacén`);
+    }
+  }
+
+  const habiaMaterial = previo.accion === ACCION_AVERIA || previo.apc > 0 || previo.upc > 0 || previo.dropMetros > 0;
+  if (habiaMaterial && previo.finalizadoEn > 0) {
+    const idViejo = idRegistro(ticketId, previo.finalizadoEn);
+    const idNuevo = escribeMaterial ? idRegistro(ticketId, p.finalizadoEn) : null;
+    // Con el mismo id el envío nuevo sobrescribe al viejo; con otro (la orden se volvió a finalizar) el viejo seguiría descontando: se devuelve.
+    if (idViejo !== idNuevo) {
+      const id = idCorreccion(idViejo);
+      const dropKm = Math.abs(previo.dropMetros) / 1000;
+      resultado.escrituras.push({
+        update: {
+          name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/materialLogs/${id}`,
+          fields: { id: { doubleValue: id }, ...campos({
+            fecha: fechaHora.slice(0, 10), fechaHora, tecnico: previo.tecnico,
+            apc: Math.abs(previo.apc), upc: Math.abs(previo.upc), drop: dropKm,
+            grapas: 'Corrección',
+            cliente: `${previo.cliente} (Corrección: se devuelve el material del envío anterior de ${p.codigo || 'la orden'})`,
+          }) },
+        },
+        currentDocument: { exists: false },
+      });
+      notas.push('se devolvió el material del envío anterior');
+      acciones.push(`se devuelve el material del registro ${idViejo} (${Math.abs(previo.apc)} APC, ${Math.abs(previo.upc)} UPC, ${Number(Math.abs(previo.dropMetros).toFixed(2))}m Drop)`);
+    }
+  }
+
+  if (acciones.length > 0) {
+    const id = idCorreccion(idRegistro(ticketId, previo.finalizadoEn));
+    resultado.auditorias.push({
+      update: {
+        name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/auditLogs/${id}`,
+        fields: { id: { doubleValue: id }, ...campos({ fechaHora, usuario: USUARIO_AUDITORIA, accion: 'Corrección de envío', detalle: `CORRECCIÓN DE ENVÍO: la orden ${p.codigo || 'S/C'} de '${p.cliente}' se reenvió con otros datos: ${acciones.join('; ')}.` }) },
+      },
+    });
+  }
+  resultado.nota = notas.length > 0 ? `${notas.join('; ').replace(/^./, (c) => c.toUpperCase())}.` : '';
+  return resultado;
+}
+
 // Envía una orden. Devuelve { estado, mensaje }; si no se pudo llegar al otro sistema, lanza el error (queda PENDIENTE).
-export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.now()) {
+// `previo`: lo que ya quedó escrito en el almacén por esta orden (escritoDe), si se envió antes: se limpia en el mismo commit.
+export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.now(), previo = null) {
   const conEquipo = orden.accion !== ACCION_AVERIA;
   const escrituras = [];
   const { fecha, fechaHora } = fechaHoraCaracas(orden.finalizadoEn || ahoraMs);
@@ -233,7 +330,8 @@ export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.no
   // Material usado, en negativo como lo guarda su sistema (el drop en km). En una instalación o un cambio de equipo solo
   // se registra si hubo material; una avería siempre lleva su registro, con el motivo pegado al nombre del cliente.
   const dropKm = Math.abs(p.dropMetros) / 1000;
-  if (!conEquipo || p.apc > 0 || p.upc > 0 || dropKm > 0) {
+  const escribeMaterial = !conEquipo || p.apc > 0 || p.upc > 0 || dropKm > 0;
+  if (escribeMaterial) {
     const id = idRegistro(ticketId, p.finalizadoEn);
     const registro = {
       fecha, fechaHora, tecnico: p.tecnico,
@@ -247,15 +345,18 @@ export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.no
 
   // Su historial de auditoría: una línea por orden enviada, aunque no hubiera material (el cambio de equipo no gasta). Va en el
   // mismo commit que el resto; si sus reglas no nos dejan escribirla (403), el descuento del inventario no se frena por eso.
+  const limpieza = await limpiezaDelEnvioAnterior(env, ticketId, previo, p, escribeMaterial, fechaHora, ahoraMs);
+  escrituras.push(...limpieza.escrituras);
+  const auditorias = [escrituraAuditoria(env, ticketId, p, fechaHora), ...limpieza.auditorias];
   const url = `${docsTelecom(env)}:commit`;
   try {
-    await llamarTelecom(env, url, { writes: [...escrituras, escrituraAuditoria(env, ticketId, p, fechaHora)] }, ahoraMs);
+    await llamarTelecom(env, url, { writes: [...escrituras, ...auditorias] }, ahoraMs);
   } catch (err) {
     if (!String(err.message).includes(' 403:')) throw err;
     console.error(`No se pudo escribir la auditoría de ${ticketId}; se envía sin ella:`, err);
     await llamarTelecom(env, url, { writes: escrituras }, ahoraMs);
   }
-  return { estado: ESTADO_ENVIADO, mensaje: '' };
+  return { estado: ESTADO_ENVIADO, mensaje: limpieza.nota };
 }
 
 // --- Estado de cada envío (nuestro Firestore) ---
@@ -343,8 +444,9 @@ async function procesar(env, deps, accessToken, ticketId, p, existente, ahoraMs)
   const intentos = (existente?.intentos || 0) + 1;
   let estado;
   let mensaje = '';
+  const previo = escritoDe(existente);
   try {
-    ({ estado, mensaje } = await enviarAlInventario(env, ticketId, p, ahoraMs));
+    ({ estado, mensaje } = await enviarAlInventario(env, ticketId, p, ahoraMs, previo));
   } catch (err) {
     console.error(`Envío al inventario de ${ticketId} falló (intento ${intentos}):`, err);
     estado = intentos >= MAX_INTENTOS ? 'ERROR' : ESTADO_PENDIENTE;
@@ -353,7 +455,7 @@ async function procesar(env, deps, accessToken, ticketId, p, existente, ahoraMs)
   const datos = {
     ticketId, estado, mensaje, intentos, ...camposPayload(p),
     creadoEn: existente?.creadoEn || ahoraMs, actualizadoEn: ahoraMs,
-    ...(estado === ESTADO_ENVIADO ? { enviadoEn: ahoraMs } : {}),
+    ...(estado === ESTADO_ENVIADO ? { enviadoEn: ahoraMs, ...camposEscrito(p) } : previo ? camposEscrito(previo) : {}),
   };
   await guardarEnvio(env, deps, accessToken, ticketId, datos);
   if (ESTADOS_CON_ALERTA.includes(estado) && existente?.estado !== estado) {
@@ -397,18 +499,26 @@ export async function manejarInventario(request, env, headers, uid, deps, ahoraM
     if (!inventarioActivo(env)) return json({ estado: 'DESHABILITADO' }, 200, headers);
 
     const existente = await leerDocumento(env, deps, accessToken, 'telecomEnvios', ticketId);
-    if (existente?.estado === ESTADO_ENVIADO && !reenvio) return json({ estado: ESTADO_ENVIADO, repetido: true }, 200, headers);
+    // Una orden ya ENVIADA que se aprueba otra vez (se devolvió, se corrigió y se volvió a finalizar): si lo que dice ahora es distinto de lo que quedó escrito en el almacén (otro serial, otro
+    // material, otro cliente o técnico), se corrige allá solo, igual que al reenviar; si no cambió nada, no se toca. Reintentar una ENVIADA sigue sin hacer nada.
+    let aEnviar = null;
+    if (existente?.estado === ESTADO_ENVIADO && !reenvio) {
+      if (reintento) return json({ estado: ESTADO_ENVIADO, repetido: true }, 200, headers);
+      aEnviar = await payloadAEnviar(env, deps, accessToken, ticketId, existente, false);
+      if (!aEnviar.payload || !distintoDeLoEscrito(camposPayloadDe(aEnviar.payload), escritoDe(existente))) return json({ estado: ESTADO_ENVIADO, repetido: true }, 200, headers);
+    }
+    const corrige = Boolean(aEnviar);
 
     if (reintento && !existente) return new Response('No hay un envío para reintentar.', { status: 404, headers });
     // Se envía lo que dice la orden ahora; solo si ya se archivó, reintentar usa lo que quedó guardado.
-    const aEnviar = await payloadAEnviar(env, deps, accessToken, ticketId, existente, reintento);
+    aEnviar = aEnviar || await payloadAEnviar(env, deps, accessToken, ticketId, existente, reintento);
     if (aEnviar.archivada) return new Response('Orden no encontrada.', { status: 404, headers });
     if (aEnviar.omitir) {
       if (existente && !reenvio) await borrarEnvio(env, deps, accessToken, ticketId);
       return json({ estado: 'OMITIDO' }, 200, headers);
     }
     const payload = aEnviar.payload;
-    const resultado = await procesar(env, deps, accessToken, ticketId, camposPayloadDe(payload), reintento ? { ...existente, intentos: 0 } : existente, ahoraMs);
+    const resultado = await procesar(env, deps, accessToken, ticketId, camposPayloadDe(payload), reintento || corrige ? { ...existente, intentos: 0 } : existente, ahoraMs);
     return json(resultado, 200, headers);
   } catch (err) {
     console.error(err);
@@ -427,6 +537,120 @@ export async function listarTecnicosInventario(env, headers, uid, deps, ahoraMs 
   } catch (err) {
     console.error(err);
     return new Response('No se pudo leer la lista de técnicos del inventario.', { status: 500, headers });
+  }
+}
+
+// --- Liberar un equipo que quedó "Instalado" por un envío anterior ---
+
+// El serial que una orden dejó escrito en el almacén (el de su último envío correcto), o '' si no tiene.
+const serialEscrito = (o) => o.escritoSerial || (o.estado === ESTADO_ENVIADO ? String(o.serial || '') : '');
+
+async function documentoTelecomExiste(env, coleccion, id, ahoraMs) {
+  try {
+    await llamarTelecom(env, `${docsTelecom(env)}/${rutaTelecom(env)}/${coleccion}/${id}`, null, ahoraMs);
+    return true;
+  } catch (err) {
+    if (String(err.message).includes(' 404:')) return false;
+    throw err;
+  }
+}
+
+// Los registros de material que llevan el serial de un equipo (el material de una instalación guarda el serial instalado).
+async function registrosDeMaterialDelEquipo(env, serial, ahoraMs) {
+  const filas = await llamarTelecom(env, `${docsTelecom(env)}/${rutaTelecom(env)}:runQuery`, {
+    structuredQuery: { from: [{ collectionId: 'materialLogs' }], where: { fieldFilter: { field: { fieldPath: 'equipoSerial' }, op: 'EQUAL', value: { stringValue: serial } } }, limit: 20 },
+  }, ahoraMs);
+  return filas.filter((f) => f.document).map((f) => ({ ...camposAObjeto(f.document.fields), id: f.document.name.split('/').pop() }));
+}
+
+//   POST /inventario/liberar { ticketId }   para una orden con la alerta "Ya instalado": el equipo figura instalado a otro cliente porque un envío anterior de ESA orden (que después se corrigió a otro
+//                                           serial) lo dejó así. Antes de tocar nada se comprueba que el otro cliente tiene un envío nuestro ya enviado con OTRO serial (y ninguno con este): si no se puede
+//                                           comprobar, no se escribe nada. Si se comprueba, en un solo commit el equipo vuelve a "Con Técnico" (sin cliente ni fechas), el material de los registros viejos que
+//                                           llevan ese serial y ese cliente se devuelve con registros de corrección (solo crear, nunca modificar) y queda una línea de auditoría; luego se reintenta la orden.
+export async function liberarEquipoInventario(request, env, headers, uid, deps, ahoraMs = Date.now()) {
+  let body;
+  try { body = await request.json(); } catch { return new Response('JSON inválido', { status: 400, headers }); }
+  const ticketId = String(body?.ticketId || '');
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(ticketId)) return new Response('Falta ticketId.', { status: 400, headers });
+  try {
+    const accessToken = await deps.getGoogleAccessToken(env);
+    if (!(await permisos(env, deps, accessToken, uid)).gestionar) return new Response('Sin permiso.', { status: 403, headers });
+    if (!inventarioActivo(env)) return json({ estado: 'DESHABILITADO' }, 200, headers);
+    const existente = await leerDocumento(env, deps, accessToken, 'telecomEnvios', ticketId);
+    if (!existente) return new Response('No hay un envío con ese id.', { status: 404, headers });
+    const noLiberado = (mensaje) => json({ estado: 'NO_LIBERADO', mensaje }, 200, headers);
+
+    if (existente.estado !== 'SERIAL_YA_INSTALADO') return noLiberado('Esta orden ya no tiene la alerta de equipo instalado a otro cliente. Usa Reintentar.');
+    const serial = String(existente.serial || '');
+    const equipo = serial ? await buscarEquipo(env, serial, ahoraMs) : null;
+    if (!equipo) return noLiberado('El serial no existe en el inventario del almacén.');
+    const actual = camposAObjeto(equipo.fields);
+    if (normalizarNombre(actual.estado) !== ESTADO_INSTALADO) return noLiberado('El equipo ya no figura instalado: usa Reintentar.');
+    if (normalizarNombre(actual.cliente) === normalizarNombre(existente.cliente)) return noLiberado('El equipo figura instalado a este mismo cliente: usa Reintentar.');
+    const clienteActual = String(actual.cliente || '').trim();
+    if (!clienteActual) return noLiberado('El equipo figura instalado sin cliente: revísalo en el almacén.');
+
+    // La prueba de que es un resto: el cliente que figura tiene una orden nuestra ya enviada con otro serial, y ninguna con este.
+    const otros = (await deps.runQuery(env, accessToken, 'cliente', 'EQUAL', { stringValue: clienteActual }, 'telecomEnvios'))
+      .map((d) => ({ id: d.name.split('/').pop(), ...camposAObjeto(d.fields) }))
+      .filter((o) => o.id !== ticketId);
+    const delCliente = otros.filter((o) => o.estado === ESTADO_ENVIADO && o.accion !== ACCION_AVERIA && serialEscrito(o));
+    if (delCliente.some((o) => serialEscrito(o) === serial)) return noLiberado(`El equipo es de ${clienteActual}: su orden ${delCliente.find((o) => serialEscrito(o) === serial).codigo || 's/c'} se envió con ese serial. No se libera.`);
+    if (delCliente.length === 0) return noLiberado(`El equipo figura con ${clienteActual}, pero no encuentro una orden suya ya enviada con otro serial que lo explique, así que no puedo comprobar que sea un resto de un envío anterior. Revísalo en el almacén antes de liberarlo.`);
+    const propia = delCliente[0];
+
+    const { fecha, fechaHora } = fechaHoraCaracas(ahoraMs);
+    const escrituras = [{
+      update: { name: equipo.name, fields: campos({ estado: 'Con Técnico' }) },
+      updateMask: { fieldPaths: ['estado', 'cliente', 'fechaInstalacion', 'fechaHoraInstalacion'] },
+      currentDocument: { exists: true },
+    }];
+    const registros = (await registrosDeMaterialDelEquipo(env, serial, ahoraMs))
+      .filter((l) => normalizarNombre(l.cliente) === normalizarNombre(clienteActual) && (Number(l.apc) < 0 || Number(l.upc) < 0 || Number(l.drop) < 0));
+    let devueltos = 0;
+    for (const registro of registros) {
+      const id = idCorreccion(registro.id);
+      if (await documentoTelecomExiste(env, 'materialLogs', id, ahoraMs)) continue;
+      escrituras.push({
+        update: {
+          name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/materialLogs/${id}`,
+          fields: { id: { doubleValue: id }, ...campos({
+            fecha, fechaHora, tecnico: String(registro.tecnico || ''),
+            apc: Math.abs(Number(registro.apc) || 0), upc: Math.abs(Number(registro.upc) || 0), drop: Math.abs(Number(registro.drop) || 0),
+            grapas: 'Corrección',
+            cliente: `${registro.cliente} (Corrección: se devuelve el material de un envío anterior; el equipo ${serial} pasa a ${existente.cliente})`,
+          }) },
+        },
+        currentDocument: { exists: false },
+      });
+      devueltos++;
+    }
+
+    const idAuditoria = idRegistro(`${ticketId}:liberar`, ahoraMs);
+    const auditoria = {
+      update: {
+        name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/auditLogs/${idAuditoria}`,
+        fields: { id: { doubleValue: idAuditoria }, ...campos({ fechaHora, usuario: USUARIO_AUDITORIA, accion: 'Corrección de envío', detalle: `CORRECCIÓN DE ENVÍO: el equipo [${serial}] figuraba instalado a '${clienteActual}' por un envío anterior (su orden ${propia.codigo || 'S/C'} se envió después con el serial [${serialEscrito(propia)}]); vuelve a "Con Técnico" para la orden ${existente.codigo || 'S/C'} de '${existente.cliente}'.${devueltos > 0 ? ` Se devuelve el material de ${devueltos} registro${devueltos === 1 ? '' : 's'}.` : ''}` }) },
+      },
+    };
+    const url = `${docsTelecom(env)}:commit`;
+    try {
+      await llamarTelecom(env, url, { writes: [...escrituras, auditoria] }, ahoraMs);
+    } catch (err) {
+      if (!String(err.message).includes(' 403:')) throw err;
+      console.error(`No se pudo escribir la auditoría de la liberación de ${ticketId}; se libera sin ella:`, err);
+      await llamarTelecom(env, url, { writes: escrituras }, ahoraMs);
+    }
+    const nota = `Se liberó el equipo ${serial} (figuraba con ${clienteActual})${devueltos > 0 ? ` y se devolvió el material de ${devueltos} registro${devueltos === 1 ? '' : 's'}` : ''}.`;
+
+    // Ya liberado, se reintenta la orden con lo que dice ahora.
+    const aEnviar = await payloadAEnviar(env, deps, accessToken, ticketId, existente, true);
+    if (!aEnviar.payload) return json({ estado: 'LIBERADO', mensaje: `${nota} La orden ya no tiene nada que enviar.`, liberado: serial, devueltos }, 200, headers);
+    const resultado = await procesar(env, deps, accessToken, ticketId, camposPayloadDe(aEnviar.payload), { ...existente, intentos: 0 }, ahoraMs);
+    return json({ estado: resultado.estado, mensaje: resultado.estado === ESTADO_ENVIADO ? nota : `${nota} ${resultado.mensaje}`.trim(), liberado: serial, devueltos }, 200, headers);
+  } catch (err) {
+    console.error(err);
+    return new Response('No se pudo liberar el equipo.', { status: 500, headers });
   }
 }
 

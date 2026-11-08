@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from 'jose';
 import { manejarApiMateriales } from './materiales-api.js';
 import { manejarConsultaCliente, RUTA_CONSULTA } from './consulta-cliente.js';
-import { listarTecnicosInventario, manejarInventario, reenviarNotificacion, reintentarPendientes } from './inventario.js';
+import { liberarEquipoInventario, listarTecnicosInventario, manejarInventario, reenviarNotificacion, reintentarPendientes } from './inventario.js';
 import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
 import { inicioDeSesionVigente } from '../../src/utils/sesion.js';
 import { direccionCliente, nombrePersona } from '../../src/utils/datosCliente.js';
@@ -866,6 +866,9 @@ export default {
     }
     if (pathname === '/inventario/tecnicos') {
       return listarTecnicosInventario(env, headers, payload.sub, depsInventario);
+    }
+    if (pathname === '/inventario/liberar') {
+      return liberarEquipoInventario(request, env, headers, payload.sub, depsInventario);
     }
     if (pathname === '/inventario/notificar') {
       return reenviarNotificacion(request, env, headers, payload.sub, depsInventario);

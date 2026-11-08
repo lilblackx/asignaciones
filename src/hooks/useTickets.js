@@ -28,7 +28,7 @@ import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalacion } from '../utils/instalacion';
 import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
-import { payloadEnvioInventario } from '../utils/envioInventario';
+import { avisoOrdenReabierta, payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { emitirCobro, sincronizarCobroDeOrden } from '../lib/cobrosClientes';
 import { avisoDeCobro } from '../utils/cobrosClientes';
@@ -977,7 +977,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       );
     }
 
-    setToastMsg({ type: 'success', text: 'Orden actualizada correctamente.' });
+    const avisoInventario = avisoOrdenReabierta(originalTicket, ticketToSave);
+    setToastMsg({ type: 'success', text: avisoInventario ? `Orden actualizada correctamente. ${avisoInventario}` : 'Orden actualizada correctamente.', ...(avisoInventario ? { duration: 10000 } : {}) });
     notifyTicketChange(originalTicket, ticketToSave);
     if (originalTicket?.estado === 'FINALIZADO') sincronizarCobro(ticketToSave);
     return true;
