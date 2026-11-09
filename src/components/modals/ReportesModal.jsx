@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ClipboardList, ClipboardPen, Gauge, Hourglass, Receipt, LayoutDashboard, LineChart, ShieldCheck, Timer, TrendingUp, UserCheck, Wrench } from 'lucide-react';
 import AnalyticsView from './reports/AnalyticsView';
 import ActivacionTecnicosView from './reports/ActivacionTecnicosView';
@@ -114,6 +114,7 @@ export default function ReportesModal({
   onLoadMoreReports,
   getTecnicoColor,
   logTecnicos,
+  necesitaBitacora,
   totalesMensuales,
   onActualizarCierres,
   usuario,
@@ -132,6 +133,9 @@ export default function ReportesModal({
 
   const reporte = REPORTES.find((r) => r.id === reporteId);
   const rango = useMemo(() => rangoDe(periodo, personalizado), [periodo, personalizado]);
+  // El registro de técnicos se lee solo desde el inicio del periodo elegido (ver useLogTecnicos): se le avisa a App al abrir y cada vez que el periodo empieza antes; al cerrar se olvida.
+  useEffect(() => { necesitaBitacora?.(rango.desde); }, [necesitaBitacora, rango.desde]);
+  useEffect(() => () => necesitaBitacora?.(null), [necesitaBitacora]);
   const nombresTecnicos = useMemo(() => technicians.map((t) => t.name).filter(Boolean).sort(), [technicians]);
 
   // El registro de VN y TA se llena a mano: solo se escucha mientras se ve el Registro de estadísticas.

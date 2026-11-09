@@ -313,7 +313,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isReportesOpen, setIsReportesOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const logTecnicos = useLogTecnicos(firebaseUser, isReportesOpen || moduloActivo === 'REPORTES');
+  // El registro de técnicos se lee solo desde el primer día que pide Reportes (el inicio del periodo elegido): lo avisa el propio modal (necesitaBitacora) al abrirse y al cambiar de periodo.
+  const [bitacoraDesde, setBitacoraDesde] = useState(null);
+  const logTecnicos = useLogTecnicos(firebaseUser, isReportesOpen || moduloActivo === 'REPORTES', bitacoraDesde);
   const totalesMensuales = useTotalesMensuales(firebaseUser, isReportesOpen || moduloActivo === 'REPORTES');
   const [selectedReportForDetails, setSelectedReportForDetails] = useState(null);
 
@@ -961,6 +963,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onLoadMoreReports={loadMoreReports}
             getTecnicoColor={getTecnicoColor}
             logTecnicos={logTecnicos}
+            necesitaBitacora={setBitacoraDesde}
             totalesMensuales={totalesMensuales}
             onActualizarCierres={() => refreshReports(true)}
             usuario={currentUser}

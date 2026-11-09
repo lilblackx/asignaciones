@@ -4,6 +4,7 @@
 import { diaDe } from './totalesMes.js';
 import { celda } from './csvReporte.js';
 import { enRango } from './periodoReporte.js';
+import { lecturaVigente } from './lecturaVigente.js';
 
 const MIN_MS = 60 * 1000;
 const HORA_MS = 60 * MIN_MS;
@@ -20,6 +21,18 @@ export function eventoActivacion({ tecnicoId, tecnico, activo, por, rol }, ahora
 export const DIAS_DE_LECTURA = 100;
 export const ANTERIORES_AL_INICIO = 50;
 export const inicioDeLectura = (ahora = Date.now()) => Date.parse(`${diaDe(ahora - DIAS_DE_LECTURA * DIA_MS)}T00:00:00-04:00`);
+
+// Reportes lee solo desde el primer día que alguna vista pide (el periodo elegido) y no desde siempre DIAS_DE_LECTURA días atrás: con "7 días" son unas 80 lecturas en vez de unas 500. Pero nunca
+// más atrás que esa ventana de siempre: un periodo anterior se avisa como incompleto en vez de leerse. `dia`: "AAAA-MM-DD" del primer día pedido; devuelve el primer día que se lee.
+export const primerDiaDeLectura = (dia, ahora = Date.now()) => {
+  const tope = diaDe(inicioDeLectura(ahora));
+  return dia && dia > tope ? dia : tope;
+};
+
+// ¿Lo que ya se leyó sirve para lo que se pide? `previa`: { uid, version, en, desdeDia } de la última lectura buena. Sirve si es del mismo usuario y de la misma versión (cada "Actualizar" sube la versión),
+// sigue vigente (15 minutos) y empieza ese día o antes.
+export const lecturaSirve = (previa, { uid, version, desdeDia, ahora = Date.now() }) => Boolean(previa)
+  && previa.uid === uid && previa.version === version && lecturaVigente(previa.en, ahora) && Boolean(previa.desdeDia) && previa.desdeDia <= desdeDia;
 
 // "2026-10-19" → inicio (ms) de ese día en Caracas (UTC-4, sin horario de verano).
 const inicioDia = (dia) => Date.parse(`${dia}T00:00:00-04:00`);

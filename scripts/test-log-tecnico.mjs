@@ -1,7 +1,7 @@
 // Prueba el registro de activación de técnicos (src/utils/logTecnico.js): el evento que se guarda, cuánto tiempo estuvo
 // activo cada técnico por día (hora de Caracas) y las filas del reporte. No necesita el emulador.
 // Uso: `npm run test:logtecnico`.
-import { DIAS_DE_LECTURA, duracionActivaPorDia, eventoActivacion, inicioDeLectura, filasDuracionDiaria, filasLogTecnico, formatoDuracion } from '../src/utils/logTecnico.js';
+import { DIAS_DE_LECTURA, duracionActivaPorDia, eventoActivacion, inicioDeLectura, filasDuracionDiaria, filasLogTecnico, formatoDuracion, lecturaSirve, primerDiaDeLectura } from '../src/utils/logTecnico.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -71,6 +71,18 @@ check('la lectura empieza al inicio (Caracas) del día de hace DIAS_DE_LECTURA d
 check('la ventana no se mueve durante el día: a las 00:05 y a las 23:55 empieza igual', inicioDeLectura(caracas('2026-11-02', 0, 5)) === inicioDeLectura(caracas('2026-11-02', 23, 55)), true);
 check('al día siguiente la ventana avanza un día', inicioDeLectura(caracas('2026-11-03', 9)) - inicioDeLectura(caracas('2026-11-02', 9)), 24 * HORA);
 check('son 100 días', DIAS_DE_LECTURA, 100);
+
+// --- Se lee desde el inicio del periodo que pide Reportes, no siempre 100 días: con "7 días" son muchas menos lecturas ---
+check('el primer día que se lee es el que pide Reportes, si está dentro de la ventana de siempre', [primerDiaDeLectura('2026-10-27', hoyLectura), primerDiaDeLectura('2026-11-02', hoyLectura)], ['2026-10-27', '2026-11-02']);
+check('un periodo más viejo que la ventana de siempre no se lee más atrás (se avisa como incompleto)', primerDiaDeLectura('2026-01-01', hoyLectura), '2026-07-25');
+check('sin día pedido se usa el de la ventana de siempre', [primerDiaDeLectura('', hoyLectura), primerDiaDeLectura(null, hoyLectura)], ['2026-07-25', '2026-07-25']);
+const ahoraLectura = Date.parse('2026-11-02T15:30:00-04:00');
+const previa = { uid: 'u1', version: 0, en: ahoraLectura - 5 * 60000, desdeDia: '2026-10-27' };
+const pide = (extra) => lecturaSirve(previa, { uid: 'u1', version: 0, desdeDia: '2026-10-27', ahora: ahoraLectura, ...extra });
+check('lo leído sirve si es del mismo usuario y versión, está vigente y llega tan atrás como lo pedido', [pide({}), pide({ desdeDia: '2026-11-02' })], [true, true]);
+check('no sirve si lo pedido empieza antes de lo leído (hay que leer más días)', pide({ desdeDia: '2026-10-20' }), false);
+check('no sirve con otro usuario, tras "Actualizar" (otra versión) ni vencido (más de 15 minutos)', [pide({ uid: 'u2' }), pide({ version: 1 }), lecturaSirve({ ...previa, en: ahoraLectura - 16 * 60000 }, { uid: 'u1', version: 0, desdeDia: '2026-10-27', ahora: ahoraLectura })], [false, false, false]);
+check('sin lectura previa o sin día leído no sirve', [lecturaSirve(null, { uid: 'u1', version: 0, desdeDia: '2026-10-27' }), lecturaSirve({ ...previa, desdeDia: '' }, { uid: 'u1', version: 0, desdeDia: '2026-10-27', ahora: ahoraLectura })], [false, false]);
 
 if (failures > 0) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas del registro de técnicos pasaron.');
