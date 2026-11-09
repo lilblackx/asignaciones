@@ -31,3 +31,10 @@ export function etiquetaRango({ desde, hasta }) {
 }
 
 export const enRango = (dia, { desde, hasta }) => dia >= desde && dia <= hasta;
+
+// La ventana más chica que cubre la que ya se leía (`ventana`, o null si todavía no hay ninguna) y el periodo pedido (`rango`), sin huecos. Con ella una pantalla puede leer una sola vez de Firestore
+// y filtrar el periodo en pantalla: cada vez que lo que se lee cambia, Firestore cobra otra vez todos sus documentos.
+export function ensancharRango(ventana, rango) {
+  if (!ventana) return { desde: rango.desde, hasta: rango.hasta };
+  return { desde: rango.desde < ventana.desde ? rango.desde : ventana.desde, hasta: rango.hasta > ventana.hasta ? rango.hasta : ventana.hasta };
+}

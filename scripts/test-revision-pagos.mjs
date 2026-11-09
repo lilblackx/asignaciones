@@ -1,6 +1,9 @@
 // Prueba la barrera de revisión de pagos (src/utils/revisionPagos.js): qué se revisa, la firma que invalida una aprobación cuando la orden cambia, las acciones del administrador
 // (aprobar, retener, excluir, corregir), qué pasa a Finanzas y los resúmenes. No necesita el emulador. Uso: `node scripts/test-revision-pagos.mjs`.
-import { SIN_TECNICO, agruparOrdenes, claveOrden, ordenesFueraDelCorte, rangoPagable, tarifasCompletas } from '../src/utils/finanzas.js';
+import { SIN_TECNICO, agruparOrdenes, claveOrden, ordenesFueraDelCorte, rangoDeLectura, rangoPagable, rangoPorRevisar, tarifasCompletas } from '../src/utils/finanzas.js';
+import { ensancharRango, rangoDe } from '../src/utils/periodoReporte.js';
+import { planDeLectura } from '../src/utils/ventanaLectura.js';
+import { idsPagadas, marcadorDeInicio, marcadorDeLectura, mensajeDePagadas, pagadasCoinciden } from '../src/utils/pagadasRevision.js';
 import {
   aprobarPendientes, armarRevision, filtrarPorBusqueda, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar, textoEscaladaRevision,
 } from '../src/utils/revisionPagos.js';
@@ -196,6 +199,49 @@ check('el texto de la alerta dice cuándo, quién, cómo va y el motivo', textoE
 check('la alerta de una escalada sin terminar avisa que sigue esperando; una orden normal no tiene alerta', [textoEscaladaRevision(avisoDe(escEsperando.codigo)), textoEscaladaRevision(avisoDe(ave.codigo))],
   ['Escalada a infraestructura el 27/10 por rcova. Sigue esperando a infraestructura: todavía no está terminada. Motivo: Falta un splitter en el poste.', null]);
 
+
+// --- Lo que Revisión lee de Firestore: cambiar de periodo no debe cambiarlo (cada cambio cobra de nuevo todos los documentos de la ventana) ---
+const AHORA_LECTURA = Date.parse('2026-11-09T12:00:00-04:00');
+const ventanaPendientes = rangoPorRevisar(AHORA_LECTURA);
+check('la ventana de Pendientes son los últimos 35 días', ventanaPendientes, { desde: '2026-10-06', hasta: '2026-11-09' });
+check('Pendientes, Hoy, 7 días y Este mes leen exactamente lo mismo (pasar de uno a otro no vuelve a leer)',
+  [ventanaPendientes, rangoDe('HOY', null, AHORA_LECTURA), rangoDe('7_DIAS', null, AHORA_LECTURA), rangoDe('MES', null, AHORA_LECTURA)].map((r) => rangoDeLectura(r, AHORA_LECTURA)),
+  [ventanaPendientes, ventanaPendientes, ventanaPendientes, ventanaPendientes]);
+check('un Rango dentro de los 35 días tampoco cambia lo que se lee', rangoDeLectura({ desde: '2026-10-20', hasta: '2026-10-25' }, AHORA_LECTURA), ventanaPendientes);
+check('un Rango que empieza antes amplía la lectura solo por ese lado', rangoDeLectura({ desde: '2026-09-20', hasta: '2026-10-02' }, AHORA_LECTURA), { desde: '2026-09-20', hasta: '2026-11-09' });
+check('un Rango que empieza antes y llega a hoy amplía solo el inicio', rangoDeLectura({ desde: '2026-10-01', hasta: '2026-11-09' }, AHORA_LECTURA), { desde: '2026-10-01', hasta: '2026-11-09' });
+
+
+// --- Revisión se queda leyendo mientras la sesión siga abierta: entrar de nuevo a Revisión, o cambiar de periodo, no debe volver a leer lo que ya se lee ---
+const dia35 = { desde: '2026-10-06', hasta: '2026-11-09' };
+const leyendo = { uid: 'u1', dia: '2026-11-09', ventana: dia35 };
+check('ensancharRango: sin ventana previa es el periodo pedido; con ventana, la unión sin huecos', [ensancharRango(null, { desde: '2026-11-01', hasta: '2026-11-09' }), ensancharRango(dia35, { desde: '2026-11-09', hasta: '2026-11-09' }), ensancharRango(dia35, { desde: '2026-09-20', hasta: '2026-10-02' })],
+  [{ desde: '2026-11-01', hasta: '2026-11-09' }, dia35, { desde: '2026-09-20', hasta: '2026-11-09' }]);
+check('la primera vez hay que empezar a leer lo pedido', planDeLectura(null, { uid: 'u1', hoy: '2026-11-09', rango: dia35 }), { cambiar: true, ventana: dia35, conservarDatos: false });
+check('volver a entrar con la misma ventana no cambia nada', planDeLectura(leyendo, { uid: 'u1', hoy: '2026-11-09', rango: dia35 }).cambiar, false);
+check('pedir un periodo más corto, dentro de lo que ya se lee, tampoco cambia nada (y no encoge la ventana)', planDeLectura(leyendo, { uid: 'u1', hoy: '2026-11-09', rango: { desde: '2026-11-09', hasta: '2026-11-09' } }), { cambiar: false, ventana: dia35, conservarDatos: true });
+check('pedir algo fuera de lo que se lee amplía la ventana y conserva lo leído mientras llega lo nuevo', planDeLectura(leyendo, { uid: 'u1', hoy: '2026-11-09', rango: { desde: '2026-09-20', hasta: '2026-10-02' } }), { cambiar: true, ventana: { desde: '2026-09-20', hasta: '2026-11-09' }, conservarDatos: true });
+check('otro usuario empieza de cero: no hereda la ventana ni los datos', planDeLectura(leyendo, { uid: 'u2', hoy: '2026-11-09', rango: { desde: '2026-11-01', hasta: '2026-11-09' } }), { cambiar: true, ventana: { desde: '2026-11-01', hasta: '2026-11-09' }, conservarDatos: false });
+check('al cambiar el día la ventana vuelve a ser la pedida (no se ensancha para siempre), conservando los datos mientras tanto', planDeLectura(leyendo, { uid: 'u1', hoy: '2026-11-10', rango: { desde: '2026-10-07', hasta: '2026-11-10' } }), { cambiar: true, ventana: { desde: '2026-10-07', hasta: '2026-11-10' }, conservarDatos: true });
+check('tras un error (ventana en null) se vuelve a leer', planDeLectura({ ...leyendo, ventana: null }, { uid: 'u1', hoy: '2026-11-09', rango: dia35 }).cambiar, true);
+
+
+// --- Cómo sabe Revisión qué está pagado sin leerlo todo cada vez: el pagoId lleva la hora, la caché aporta lo conocido y el servidor confirma con un conteo ---
+const INICIO = marcadorDeInicio('2026-10-06');
+check('el inicio de la ventana es la hora en que empieza ese día en Caracas, en ms', [INICIO, Number(INICIO) === Date.parse('2026-10-06T04:00:00Z'), marcadorDeInicio('basura')], ['1791259200000', true, '']);
+check('los pagoId de pagos hechos después del inicio ordenan después del marcador (texto de 13 dígitos)', ['1793652152321-EDGAR' >= INICIO, '1791259199999-EDGAR' >= INICIO], [true, false]);
+const conocidas = new Map([['a', '1793652152321-EDGAR'], ['b', '1794264175401-EDGAR'], ['c', '1793700000000-LUIS']]);
+check('sin nada conocido se pide desde el inicio de la ventana', marcadorDeLectura(new Map(), INICIO), INICIO);
+check('con lo conocido se pide desde el pago más reciente (se vuelve a pedir ese mismo)', marcadorDeLectura(conocidas, INICIO), '1794264175401-EDGAR');
+check('un pago conocido más viejo que la ventana no mueve el marcador', marcadorDeLectura(new Map([['x', '1700000000000-EDGAR']]), INICIO), INICIO);
+check('pagadas = lo conocido más lo que llega en vivo, sin repetir', idsPagadas(new Map([['a', 'p1'], ['b', 'p2']]), new Map([['b', 'p2'], ['c', 'p3']]), new Map(), []).sort(), ['a', 'b', 'c']);
+check('una orden con el pago anulado (otra vez aprobada sin pagar) deja de figurar pagada aunque la caché la recuerde', idsPagadas(new Map([['a', 'p1'], ['b', 'p2']]), new Map(), new Map(), ['a']), ['b']);
+check('una revisión retenida o excluida que conserva su pago cuenta como pagada si es de la ventana', idsPagadas(new Map(), new Map(), new Map([['r', '1793700000000-LUIS'], ['vieja', '1700000000000-LUIS']]), [], INICIO), ['r']);
+check('el conteo del servidor coincide solo si no falta ni sobra ninguna', [pagadasCoinciden(118, 118), pagadasCoinciden(118, 117), pagadasCoinciden(118, 119), pagadasCoinciden('118', 118)], [true, false, false, true]);
+check('el aviso de órdenes ya pagadas dice cuáles', [mensajeDePagadas(['AO268']), mensajeDePagadas(['AO268', 'AO270', 'IO101', 'AN1', 'AN2'])], [
+  'La orden AO268 ya está pagada: no se puede cambiar. Se actualizó la lista.',
+  '5 de esas órdenes ya estaban pagadas (AO268, AO270, IO101, AN1...): no se pueden cambiar. Se actualizó la lista.',
+]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

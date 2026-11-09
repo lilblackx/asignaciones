@@ -5,7 +5,8 @@
 // navegador no se cobra y no se cuenta); una consulta vacía cuenta uno, como la cobra Firestore. Medir nunca rompe nada: un error al contar se
 // ignora, y los errores de Firestore siguen llegando a quien llamó igual que antes.
 import {
-  addDoc as addDocFirestore, deleteDoc as deleteDocFirestore, getDoc as getDocFirestore, getDocs as getDocsFirestore, onSnapshot as onSnapshotFirestore,
+  addDoc as addDocFirestore, deleteDoc as deleteDocFirestore, getCountFromServer as getCountFromServerFirestore, getDoc as getDocFirestore, getDocs as getDocsFirestore,
+  getDocsFromServer as getDocsFromServerFirestore, onSnapshot as onSnapshotFirestore,
   runTransaction as runTransactionFirestore, setDoc as setDocFirestore, updateDoc as updateDocFirestore, writeBatch as writeBatchFirestore,
 } from 'firebase/firestore';
 import { crearMedidor } from '../utils/estaciones.js';
@@ -72,6 +73,24 @@ export async function getDocs(consulta) {
   try {
     const snap = await getDocsFirestore(consulta);
     if (!snap.metadata?.fromCache) lecturas(coleccionDe(consulta), Math.max(1, snap.size));
+    return snap;
+  } catch (error) { errorLectura(error); throw error; }
+}
+
+// Lecturas que eligen de dónde leer. Desde el servidor siempre (falla sin conexión en vez de contestar con lo que haya en la caché): se cuenta como cualquier lectura. El conteo del servidor
+// (`getCountFromServer`) cobra una lectura por cada mil entradas del índice, mínimo una: se cuenta una. Las lecturas desde la caché del navegador no se cobran: se importan directo (ver lib/reportesLocales).
+export async function getDocsFromServer(consulta) {
+  try {
+    const snap = await getDocsFromServerFirestore(consulta);
+    lecturas(coleccionDe(consulta), Math.max(1, snap.size));
+    return snap;
+  } catch (error) { errorLectura(error); throw error; }
+}
+
+export async function getCountFromServer(consulta) {
+  try {
+    const snap = await getCountFromServerFirestore(consulta);
+    lecturas(coleccionDe(consulta), 1);
     return snap;
   } catch (error) { errorLectura(error); throw error; }
 }

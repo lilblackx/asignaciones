@@ -1,25 +1,34 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { collection, doc } from 'firebase/firestore';
 import { onSnapshot, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { avisoDeAjuste, tarifasCompletas } from '../utils/finanzas';
 import { MAX_REVISIONES_POR_LOTE, borrarAlDeshacer } from '../utils/revisionPagos';
 import { sendPush } from '../lib/notify';
 import { esperarConLimite } from '../utils/tiempoLimite';
+import { diaDe } from '../utils/totalesMes';
+import { leerRevisiones, pagadasEnServidor, revisionesEnVivo, suscribirseARevisiones, validarPagadas } from '../lib/revisionesEnVivo';
+import { mensajeDePagadas } from '../utils/pagadasRevision';
 
 const datos = (nombre) => collection(db, 'artifacts', appId, 'public', 'data', nombre);
 const documento = (nombre, id) => doc(db, 'artifacts', appId, 'public', 'data', nombre, id);
-const aLista = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-// Lo que necesita el módulo Revisión de órdenes mientras está abierto (`activo`): las tarifas y los tipos de mudanza elegidos, y, del periodo, las filas de VN y TA y las revisiones ya hechas. Lo ya
+// Pregunta al servidor si alguna de esas órdenes ya está pagada; si sí, no se cambia nada y se avisa cuáles eran (la lista ya queda actualizada). `ordenes`: [{ id, codigo }].
+async function confirmarSinPagar(ordenes) {
+  const pagadas = await pagadasEnServidor(ordenes.map((o) => o.id));
+  if (pagadas.length === 0) return;
+  const codigos = pagadas.map((id) => ordenes.find((o) => o.id === id)?.codigo || 's/c');
+  throw Object.assign(new Error('Orden ya pagada'), { paraElUsuario: mensajeDePagadas(codigos) });
+}
+
+// Lo que necesita el módulo Revisión de órdenes mientras está abierto (`activo`): las tarifas y los tipos de mudanza elegidos, y, de la ventana `rango` (la que arma rangoDeLectura: los últimos 35 días o más,
+// para que cambiar de periodo no vuelva a leer todo), las filas de VN y TA y las revisiones ya hechas; el filtro por periodo lo hace la pantalla. Lo ya
 // pagado se sabe por la propia revisión (su `pagoId`), así que no se leen las órdenes pagadas. Y lo que escribe: guardar revisiones (una o varias en un lote) y deshacer una borrándola.
 //   guardar(documentos: [{ id, datos, ajustes?, borrarAjustes? }], exito) -> true si se guardó (con los descuentos y bonos que crea o borra al aprobar o deshacer, y el aviso a los técnicos); deshacer(item) -> true si se borró
 export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
   const [tarifasGuardadas, setTarifasGuardadas] = useState(null);
   const [tiposMudanza, setTiposMudanza] = useState({});
-  const [registros, setRegistros] = useState([]);
-  const [revisionesLista, setRevisionesLista] = useState([]);
-  const [error, setError] = useState(false);
+  const [errorLocal, setError] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const { desde, hasta } = rango;
 
@@ -33,21 +42,20 @@ export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
     return () => bajas.forEach((baja) => baja());
   }, [firebaseUser, activo]);
 
+  // Las revisiones y las filas de VN y TA no se leen aquí: viven en un almacén de la sesión (ver lib/revisionesEnVivo) para no volver a pagar todos sus documentos cada vez que se entra a Revisión.
+  const { sinPagar, pagadas, registros, error: errorEnVivo } = useSyncExternalStore(suscribirseARevisiones, revisionesEnVivo);
+  const uid = firebaseUser?.uid || '';
   useEffect(() => {
-    if (!firebaseUser || !activo) return undefined;
-    const alFallar = (que) => (e) => { console.error(`No se pudo leer ${que}:`, e); setError(true); };
-    const porDia = (nombre) => query(datos(nombre), where('dia', '>=', desde), where('dia', '<=', hasta));
-    const bajas = [
-      onSnapshot(porDia('revisionPagos'), (s) => setRevisionesLista(aLista(s)), alFallar('las revisiones')),
-      onSnapshot(query(datos('registroVnTa'), where('fecha', '>=', desde), where('fecha', '<=', hasta)), (s) => setRegistros(aLista(s)), alFallar('el registro de VN y TA')),
-    ];
-    return () => bajas.forEach((baja) => baja());
-  }, [firebaseUser, activo, desde, hasta]);
+    if (!uid || !activo) return;
+    leerRevisiones({ uid, hoy: diaDe(Date.now()), rango: { desde, hasta } });
+    validarPagadas();
+  }, [uid, activo, desde, hasta]);
+  const error = errorLocal || errorEnVivo;
 
   const tarifas = useMemo(() => tarifasCompletas(tarifasGuardadas), [tarifasGuardadas]);
-  const revisiones = useMemo(() => Object.fromEntries(revisionesLista.map((r) => [r.id, r])), [revisionesLista]);
-  // Una orden ya pagada guarda en su revisión el pago que la pagó: se sale de la revisión.
-  const idsPagadas = useMemo(() => new Set(revisionesLista.filter((r) => r.pagoId).map((r) => r.id)), [revisionesLista]);
+  // Las revisiones que se trabajan (sin pagar). Las pagadas no hacen falta: solo se necesita saber cuáles son para sacarlas de la revisión.
+  const revisiones = useMemo(() => Object.fromEntries(sinPagar.map((r) => [r.id, r])), [sinPagar]);
+  const idsPagadas = useMemo(() => new Set(pagadas), [pagadas]);
 
   const ejecutar = async (accion, exito, fallo) => {
     setOcupado(true);
@@ -60,8 +68,8 @@ export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
       if (exito) setToastMsg?.({ type: 'success', text: exito });
       return true;
     } catch (e) {
-      console.error(fallo, e);
-      setToastMsg?.({ type: 'error', text: fallo });
+      if (!e?.paraElUsuario) console.error(fallo, e);
+      setToastMsg?.({ type: 'error', duration: e?.paraElUsuario ? 9000 : undefined, text: e?.paraElUsuario || fallo });
       return false;
     } finally {
       setOcupado(false);
@@ -86,6 +94,8 @@ export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
   const guardar = useCallback(async (documentos, exito) => {
     const nuevos = [];
     const guardado = await ejecutar(async () => {
+      // Antes de escribir, el servidor confirma que ninguna de esas órdenes ya se pagó: no se depende de lo que recuerde esta PC.
+      await confirmarSinPagar(documentos.map((d) => ({ id: d.id, codigo: d.datos?.codigo })));
       const grupos = [];
       let actual = [];
       let escrituras = 0;
@@ -114,6 +124,7 @@ export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
   // Deshacer una revisión: se borra el documento y, si la orden estaba aprobada con descuento, sus dos ajustes.
   const deshacer = useCallback((item) => ejecutar(async () => {
     const { id, borrarAjustes } = borrarAlDeshacer(item);
+    await confirmarSinPagar([{ id, codigo: item.orden?.codigo }]);
     const lote = writeBatch(db);
     lote.delete(documento('revisionPagos', id));
     for (const idAjuste of borrarAjustes) lote.delete(documento('ajustesTecnicos', idAjuste));

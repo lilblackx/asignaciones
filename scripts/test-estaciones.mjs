@@ -102,7 +102,7 @@ const archivos = [];
 const recorrer = (dir) => { for (const f of readdirSync(dir)) { const p = join(dir, f); if (statSync(p).isDirectory()) recorrer(p); else if (/\.(js|jsx)$/.test(f)) archivos.push(p); } };
 recorrer(fileURLToPath(new URL('../src', import.meta.url)));
 const sinMedir = archivos.filter((p) => !p.replace(/\\/g, '/').endsWith('lib/medidorFirestore.js'))
-  .filter((p) => /import \{[^}]*\b(onSnapshot|getDocs|getDoc|setDoc|updateDoc|deleteDoc|addDoc|writeBatch|runTransaction)\b[^}]*\} from 'firebase\/firestore'/.test(readFileSync(p, 'utf8')));
+  .filter((p) => /import \{[^}]*\b(onSnapshot|getDocs|getDocsFromServer|getCountFromServer|getDoc|setDoc|updateDoc|deleteDoc|addDoc|writeBatch|runTransaction)\b[^}]*\} from 'firebase\/firestore'/.test(readFileSync(p, 'utf8')));
 check('ningún archivo lee ni escribe directo con firebase/firestore', sinMedir.map((p) => p.split(/[\\/]src[\\/]/)[1]), []);
 check('la estación se reporta desde la raíz (todos los roles)', fuente('Root.jsx').includes('useEstacion(auth)'), true);
 

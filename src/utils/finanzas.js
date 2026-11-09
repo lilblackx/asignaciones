@@ -21,7 +21,7 @@
 // Para mostrar, todo lo que no es instalación, validación de NAP ni trabajo adicional se agrupa como avería (ver gruposDelReporte); los precios sí se distinguen.
 // Las canceladas y las sin cobro registrado no entran. Lo escalado a infraestructura sí llega a Revisión de órdenes (con una alerta, `escalada`) para que un administrador decida si se paga.
 import { diaDe } from './totalesMes.js';
-import { enRango } from './periodoReporte.js';
+import { enRango, ensancharRango } from './periodoReporte.js';
 import { fechaDeHoja, hojaPorTipo, ordenesDeHoja, tipoDeAveria, tipoDeVisita } from './reporteMensual.js';
 import { RESULTADO_CERRADA, infraestructuraDe } from './infraestructura.js';
 import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO } from './tipoVisita.js';
@@ -71,6 +71,11 @@ export const rangoPagable = (rango, corte = FECHA_CORTE) => ({ desde: corte && r
 export const DIAS_POR_PAGAR = 35;
 export const rangoPorPagar = (ahoraMs = Date.now()) => ({ desde: diaDe(ahoraMs - (DIAS_POR_PAGAR - 1) * 24 * 60 * 60 * 1000), hasta: diaDe(ahoraMs) });
 export const rangoPorRevisar = rangoPorPagar;
+
+// Lo que Revisión de órdenes lee de Firestore (las revisiones y las filas de VN y TA): siempre la ventana de "Pendientes" (los últimos 35 días) y, si se elige un Rango que sale de ella, lo que
+// haga falta. Cada vez que cambia lo que se lee, Firestore cobra otra vez todos los documentos de esa ventana (221 revisiones el 9/11/2026, y crecen cada día), así que pasar de Pendientes a
+// Hoy, 7 días o Este mes no debe cambiarlo: el periodo se filtra en pantalla. `rango`: el periodo elegido; `ahoraMs`: el día de la ventana de Pendientes.
+export const rangoDeLectura = (rango, ahoraMs = Date.now()) => ensancharRango(rangoPorRevisar(ahoraMs), rango);
 
 // Órdenes de antes del corte que, por esta vez, sí se revisan y se pagan (se terminaron antes del 26/10/2026 y quedaron sin pagar). Solo se ofrecen
 // cuando el periodo elegido incluye su día: la revisión y los pagos se leen por día, así que fuera de ese periodo no se vería si ya se aprobaron o pagaron.

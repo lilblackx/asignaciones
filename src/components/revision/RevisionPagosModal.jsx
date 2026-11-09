@@ -11,7 +11,7 @@ import ResumenCifras from '../finanzas/ResumenCifras';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import { BUSCADOR } from '../estilos';
 import { BOTON, CHIP, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../finanzas/estilos';
-import { DIAS_POR_PAGAR, corteTodaviaNoLlega, textoFechaCorte, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoPagable, rangoPorRevisar } from '../../utils/finanzas';
+import { DIAS_POR_PAGAR, corteTodaviaNoLlega, textoFechaCorte, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoDeLectura, rangoPagable, rangoPorRevisar } from '../../utils/finanzas';
 import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, filtrarPorBusqueda, garantiasPorResolver, itemsParaRevisar, resumenRevision, revisar } from '../../utils/revisionPagos';
 import { PERIODOS, diaLegible, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
 import { todasLasOrdenes } from '../../utils/gestionTecnicos';
@@ -51,7 +51,9 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
 
   const rango = useMemo(() => (periodo === 'POR_REVISAR' ? rangoPorRevisar(Date.parse(`${hoy}T12:00:00-04:00`)) : rangoDe(periodo, personalizado)), [periodo, personalizado, hoy]);
   const rangoRevision = useMemo(() => rangoPagable(rango), [rango]);
-  const datos = useRevisionPagos({ firebaseUser, activo: true, rango, setToastMsg });
+  // Lo que se lee de Firestore no cambia al pasar entre Pendientes, Hoy, 7 días y Este mes (cada cambio costaría releer todas las revisiones de la ventana): el periodo se filtra aquí, en pantalla.
+  const rangoLectura = useMemo(() => rangoDeLectura(rango, Date.parse(`${hoy}T12:00:00-04:00`)), [rango, hoy]);
+  const datos = useRevisionPagos({ firebaseUser, activo: true, rango: rangoLectura, setToastMsg });
   // "Pendientes" tiene que ver todas las órdenes de la ventana: carga los cierres anteriores hasta cubrirla.
   useCargarHastaCubrir({ activo: periodo === 'POR_REVISAR', reportes: reports, hayMas: hasMoreReports, cargando: isLoadingReports, onCargarMas: onLoadMoreReports, desdeDia: rangoRevision.desde });
   const bcv = useTasaDolar();
