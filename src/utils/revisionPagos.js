@@ -9,8 +9,11 @@
 //   estado: 'PENDIENTE' (solo con una corrección guardada), 'APROBADA' (pasa a Finanzas), 'RETENIDA' (no pasa por ahora, con motivo) o 'EXCLUIDA' (no se paga, con motivo).
 //   firma: huella de lo que decide el pago de esa orden (técnico, tipo de trabajo, cobro, estado, día y concepto). Si la orden cambia después, la firma ya no coincide y la
 //   aprobación (y las correcciones) dejan de valer: vuelve a "Pendiente".
-import { CONCEPTOS_PAGO, SIN_TECNICO, mudanzasSinTipo, ordenesFueraDelCorte, ordenesPagables } from './finanzas.js';
+import { CONCEPTOS_PAGO, SIN_TECNICO, escaladasSinConcepto, mudanzasSinTipo, ordenesFueraDelCorte, ordenesPagables } from './finanzas.js';
 import { ajustesDeOrden, idsAjustesDeOrden } from './ajustes.js';
+import { RESULTADO_CERRADA, RESULTADO_DEVUELTA } from './infraestructura.js';
+import { diaLegible } from './periodoReporte.js';
+import { diaDe } from './totalesMes.js';
 
 export const ESTADOS_REVISION = ['PENDIENTE', 'APROBADA', 'RETENIDA', 'EXCLUIDA'];
 export const ETIQUETA_REVISION = { PENDIENTE: 'Pendiente', APROBADA: 'Aprobada', RETENIDA: 'Retenida', EXCLUIDA: 'Excluida' };
@@ -41,7 +44,7 @@ export function firmaDeItem(item) {
   const o = item.orden || {};
   const partes = item.registro
     ? ['R', item.registro.trabajo, item.registro.tecnico, item.registro.fecha, item.registro.id]
-    : ['O', o.tecnico, o.estado, o.tipoTrabajo, o.falla, o.tipoVisita, o.cobroTipo, o.cobroBs, o.cobroMoneda, item.dia];
+    : ['O', o.tecnico, o.estado, o.tipoTrabajo, o.falla, o.tipoVisita, o.cobroTipo, o.cobroBs, o.cobroMoneda, item.dia, ...(item.escalada ? ['E', item.escalada.activa, item.escalada.resultado] : [])];
   return huella([...partes, item.concepto ?? ''].map((v) => String(v ?? '')).join('|'));
 }
 
@@ -53,7 +56,9 @@ export function itemsParaRevisar({ ordenes, rango, rangoElegido = null, tecnico 
   const claves = new Set(pagables.map((i) => i.clave));
   pagables.push(...ordenesFueraDelCorte(ordenes, rangoElegido, { tecnico, tiposMudanza }).filter((i) => !claves.has(i.clave)));
   const sinTipo = mudanzasSinTipo(ordenes, rango, { tecnico, tiposMudanza }).map((i) => ({ ...i, concepto: null }));
-  return [...pagables, ...sinTipo].sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
+  // Lo escalado a infraestructura que todavía no se terminó también se revisa (con su alerta); sin concepto no se puede aprobar hasta que el administrador lo elija.
+  const escaladas = escaladasSinConcepto(ordenes, rango, { tecnico, tiposMudanza });
+  return [...pagables, ...sinTipo, ...escaladas].sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
 }
 
 // Cada item con su estado de revisión y con las correcciones del administrador aplicadas (técnico y concepto efectivos). `revisiones`: { [clave]: documento }.
@@ -209,10 +214,28 @@ export function aprobarPendientes(revisados, { por, ahora }) {
   const omitidas = [];
   for (const item of revisados) {
     if (item.estadoRevision !== 'PENDIENTE') continue;
+    // Lo escalado a infraestructura se aprueba una por una: quien revisa tiene que ver su alerta.
+    if (item.escalada) { omitidas.push({ item, motivo: 'Está escalada a infraestructura: apruébala una por una.', escalada: true }); continue; }
     const r = armarRevision(item, 'APROBAR', { por, ahora });
     if (r.error) omitidas.push({ item, motivo: r.error }); else documentos.push(r);
   }
   return { documentos, omitidas };
+}
+
+// La alerta de una orden escalada a infraestructura, para quien revisa: cuándo y quién la escaló, cómo va y el motivo. null si la orden nunca se escaló.
+const sinPuntoFinal = (texto) => String(texto ?? '').replace(/[.\s]+$/, '');
+export function textoEscaladaRevision(item) {
+  const infra = item?.escalada;
+  if (!infra) return null;
+  const finalizada = item.orden?.estado === 'FINALIZADO';
+  const cuando = Number(infra.en) > 0 ? ` el ${diaLegible(diaDe(Number(infra.en))).slice(0, 5)}` : '';
+  const quien = infra.por ? ` por ${infra.por}` : '';
+  const hoy = infra.resultado === RESULTADO_CERRADA ? 'Se cerró como trabajo adicional (TA).'
+    : infra.resultado === RESULTADO_DEVUELTA ? (finalizada ? 'Volvió al técnico y se finalizó.' : 'Volvió al técnico y sigue pendiente.')
+      : finalizada ? 'Sigue marcada en infraestructura aunque ya se finalizó.' : 'Sigue esperando a infraestructura: todavía no está terminada.';
+  const motivo = infra.motivo ? ` Motivo: ${sinPuntoFinal(infra.motivo)}.` : '';
+  const nota = infra.nota ? ` Nota: ${sinPuntoFinal(infra.nota)}.` : '';
+  return `Escalada a infraestructura${cuando}${quien}. ${hoy}${motivo}${nota}`;
 }
 
 // Lo que hay que borrar al deshacer la revisión de una orden: el documento de revisión y, si estaba aprobada con descuento, sus ajustes.

@@ -12,16 +12,18 @@
 //                tenía precio aparte guardan su cantidad en VISITA: al sumarlos cuenta como avería
 //   MUDANZA_INTERNA, MUDANZA_EXTERNA  mudanza exonerada o cobrada: cada tipo (el que se elige en el campo TIPO de la orden) con su propia tarifa; una mudanza
 //                sin tipo (anterior a ese campo) no se paga hasta que la oficina le ponga el tipo: Finanzas las lista aparte (ver mudanzasSinTipo)
-//   VALIDACION_NAP y TRABAJO_ADICIONAL  no salen de una orden sino de una fila del registro de VN y TA (utils/registroVnTa) que tiene técnico: el técnico que
+//   VALIDACION_NAP  una orden de tipo VALIDACION NAP finalizada (con el técnico de la orden) o una fila del registro de VN y TA (utils/registroVnTa) que tiene técnico: el técnico que
 //                apoyó. Una fila sin técnico (lo hizo infraestructura sola) no se paga a nadie. Cada una lleva su propia tarifa
+//   TRABAJO_ADICIONAL  una fila del registro de VN y TA con técnico o una orden escalada a infraestructura que la oficina cerró como trabajo adicional (ver conceptoDeEscalada)
 //   RECABLEADO   avería o visita técnica (de las que se pagan) cuyo tipo de visita fue un recableado: lleva su propia tarifa en lugar de la de avería o visita técnica
 //   LOW_SIGNAL   trabajo de low signal (siempre exonerado): su propia tarifa
 //   CAMBIO_EQUIPO  cambio de equipo (el trabajo, o una visita cuyo tipo fue cambio de equipo): su propia tarifa
 // Para mostrar, todo lo que no es instalación, validación de NAP ni trabajo adicional se agrupa como avería (ver gruposDelReporte); los precios sí se distinguen.
-// Las canceladas, las sin cobro registrado, las validaciones de NAP y lo escalado a infraestructura no entran.
+// Las canceladas y las sin cobro registrado no entran. Lo escalado a infraestructura sí llega a Revisión de órdenes (con una alerta, `escalada`) para que un administrador decida si se paga.
 import { diaDe } from './totalesMes.js';
 import { enRango } from './periodoReporte.js';
-import { fechaDeHoja, ordenesDeHoja, tipoDeAveria, tipoDeVisita } from './reporteMensual.js';
+import { fechaDeHoja, hojaPorTipo, ordenesDeHoja, tipoDeAveria, tipoDeVisita } from './reporteMensual.js';
+import { RESULTADO_CERRADA, infraestructuraDe } from './infraestructura.js';
 import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO } from './tipoVisita.js';
 import { TRABAJOS_VNTA } from './registroVnTa.js';
 import { adelantosConSaldo, repartirAdelantos, saldoAdelanto } from './adelantos.js';
@@ -143,6 +145,8 @@ const tipoDeMudanza = (t, tiposElegidos) => {
 export function conceptoDePago(t, hoja, tiposElegidos = null) {
   if (!t || t.estado !== 'FINALIZADO') return null;
   if (hoja === 'INSTALACIONES') return 'INSTALACION';
+  // Una validación de NAP finalizada se paga con su propia tarifa, tenga o no cobro (es un trabajo interno). Lo escalado a infraestructura se decide aparte (conceptoDeEscalada).
+  if (hoja === 'VNTA') return String(t.tipoTrabajo || '').trim().toUpperCase() === 'VALIDACION NAP' ? 'VALIDACION_NAP' : null;
   const pagada = hoja === 'VISITAS' ? ['EX', 'AC'].includes(tipoDeVisita(t)) : hoja === 'AVERIAS' ? ['EX', 'AC'].includes(tipoDeAveria(t)) : false;
   if (!pagada) return null;
   if (t.tipoVisita === TIPO_RECABLEADO) return 'RECABLEADO';
@@ -152,6 +156,31 @@ export function conceptoDePago(t, hoja, tiposElegidos = null) {
   if (trabajo === 'MUDANZA') return TIPOS_MUDANZA[tipoDeMudanza(t, tiposElegidos)] || null;
   return 'AVERIA';
 }
+
+// El concepto con que se pagaría una orden escalada a infraestructura, para que un administrador la apruebe, la corrija o la excluya al revisarla: cerrada como trabajo adicional →
+// TRABAJO_ADICIONAL; finalizada de otra forma (volvió al técnico y la terminó) → el que le tocaría por su tipo si nunca se hubiera escalado; sin terminar → null (se elige al corregirla).
+export function conceptoDeEscalada(t, tiposElegidos = null) {
+  if (!t || t.estado !== 'FINALIZADO') return null;
+  if (infraestructuraDe(t)?.resultado === RESULTADO_CERRADA) return 'TRABAJO_ADICIONAL';
+  return conceptoDePago(t, hojaPorTipo(t), tiposElegidos);
+}
+
+// Las validaciones de NAP finalizadas y las órdenes escaladas a infraestructura del periodo (las dos van en la hoja 'VNTA'): [{ orden, clave, concepto, tecnico, dia, escalada? }]. Las escaladas llevan
+// `escalada` (la marca de la orden) para que Revisión las avise, cuentan el día en que se escalaron y, si todavía no se pueden pagar (sin terminar), su `concepto` es null. Las canceladas no cuentan.
+function vnYEscaladas(ordenes, rango, { tecnico, tiposMudanza = null } = {}) {
+  const lista = [];
+  for (const orden of ordenesDeHoja(ordenes, 'VNTA', rango, { tecnico })) {
+    if (orden.estado === 'CANCELADO') continue;
+    const escalada = infraestructuraDe(orden);
+    const concepto = escalada ? conceptoDeEscalada(orden, tiposMudanza) : conceptoDePago(orden, 'VNTA');
+    if (!concepto && !escalada) continue;
+    lista.push({ orden, clave: claveOrden(orden), concepto, tecnico: String(orden.tecnico || '').trim() || SIN_TECNICO, dia: diaDe(fechaDeHoja(orden)), ...(escalada && { escalada }) });
+  }
+  return lista;
+}
+
+// Las escaladas que todavía no tienen concepto de pago (siguen sin terminar): Revisión las lista, con su alerta, para que el administrador las retenga, las excluya o les elija el concepto.
+export const escaladasSinConcepto = (ordenes, rango, opciones) => vnYEscaladas(ordenes, rango, opciones).filter((i) => !i.concepto);
 
 // Las filas del registro de VN y TA que se le pagan al técnico que apoyó: [{ orden, registro, clave, concepto, tecnico, dia }] con el mismo formato que las
 // órdenes (`orden` trae el código y el trabajo para listarla). Las filas sin técnico no se pagan a nadie y no salen. El día es la fecha de la fila.
@@ -179,6 +208,7 @@ export function ordenesPagables(ordenes, rango, { tecnico, registros = [], tipos
       if (concepto) lista.push({ orden, clave: claveOrden(orden), concepto, tecnico: String(orden.tecnico || '').trim() || SIN_TECNICO, dia: diaDe(fechaDeHoja(orden)) });
     }
   }
+  lista.push(...vnYEscaladas(ordenes, rango, { tecnico, tiposMudanza }).filter((i) => i.concepto));
   return lista.sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
 }
 

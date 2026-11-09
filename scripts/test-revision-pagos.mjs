@@ -2,7 +2,7 @@
 // (aprobar, retener, excluir, corregir), qué pasa a Finanzas y los resúmenes. No necesita el emulador. Uso: `node scripts/test-revision-pagos.mjs`.
 import { SIN_TECNICO, agruparOrdenes, claveOrden, ordenesFueraDelCorte, rangoPagable, tarifasCompletas } from '../src/utils/finanzas.js';
 import {
-  aprobarPendientes, armarRevision, filtrarPorBusqueda, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar,
+  aprobarPendientes, armarRevision, filtrarPorBusqueda, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar, textoEscaladaRevision,
 } from '../src/utils/revisionPagos.js';
 
 let failures = 0;
@@ -165,6 +165,37 @@ check('nada que coincida devuelve una lista vacía', codigosDe('zzz'), []);
 const ordenado = agruparOrdenes([itemB('IO9', 'a', {}, 'G', '2026-10-25'), itemB('IO10', 'b', {}, 'G', '2026-10-27'), itemB('IO100', 'c', {}, 'G', '2026-10-27'), itemB('IO8', 'd', {}, 'G', '2026-10-26')], { masNuevasPrimero: true });
 check('con masNuevasPrimero cada grupo va del día más nuevo al más antiguo y, el mismo día, el código mayor primero', ordenado[0].items.map((i) => i.orden.codigo), ['IO100', 'IO10', 'IO8', 'IO9']);
 check('sin la opción el orden sigue siendo del más antiguo al más nuevo (Finanzas no cambia)', agruparOrdenes([itemB('IO9', 'a', {}, 'G', '2026-10-25'), itemB('IO10', 'b', {}, 'G', '2026-10-27')])[0].items.map((i) => i.orden.codigo), ['IO9', 'IO10']);
+
+// --- Validación de NAP y lo escalado a infraestructura: cuentan en la revisión, lo escalado con una alerta ---
+const vnOrden = orden({ tipoTrabajo: 'VALIDACION NAP', cobroTipo: 'EXONERADO', tecnico: 'REINEL' });
+const marcaInfra = (extra) => ({ activa: false, motivo: 'Falta un splitter en el poste.', por: 'rcova', origen: 'OFICINA', en: DIA(27), tecnico: 'GERARDO', ...extra });
+const escCerrada = averia({ tecnico: '', infraestructura: marcaInfra({ resultado: 'CERRADA', nota: 'Se instaló el splitter.' }) });
+const escEsperando = averia({ estado: 'PENDIENTE', finalizadoEn: null, infraestructura: marcaInfra({ activa: true }) });
+const escCancelada = averia({ estado: 'CANCELADO', canceladaEn: DIA(27), finalizadoEn: null, infraestructura: marcaInfra({ resultado: 'DEVUELTA' }) });
+const avisos = revisar(itemsParaRevisar({ ordenes: [vnOrden, escCerrada, escEsperando, escCancelada, ave], rango }), {});
+const avisoDe = (codigo) => avisos.find((i) => i.orden.codigo === codigo);
+check('la validación de NAP y lo escalado (terminado o no) entran a la revisión; lo cancelado no', avisos.map((i) => [i.orden.codigo, i.concepto, i.tecnico, Boolean(i.escalada)]).sort(),
+  [[vnOrden.codigo, 'VALIDACION_NAP', 'REINEL', false], [escCerrada.codigo, 'TRABAJO_ADICIONAL', SIN_TECNICO, true], [escEsperando.codigo, null, 'GERARDO', true], [ave.codigo, 'AVERIA', 'GERARDO', false]].sort());
+check('lo escalado sin terminar no se aprueba hasta elegirle el concepto; el que no tiene técnico, hasta corregirlo', [motivoNoAprobable(avisoDe(escEsperando.codigo)), motivoNoAprobable(avisoDe(escCerrada.codigo))],
+  ['Elige el concepto con que se paga (Corregir).', 'La orden no tiene técnico: corrígelo antes de aprobarla.']);
+const loteInfra = aprobarPendientes(avisos, { por: 'admin', ahora: 1 });
+check('aprobar todas las pendientes deja fuera lo escalado (se aprueba una por una) y aprueba lo demás', [loteInfra.documentos.map((d) => d.id).sort(), loteInfra.omitidas.filter((o) => o.escalada).map((o) => o.item.orden.codigo).sort()],
+  [[vnOrden, ave].map((o) => claveOrden(o)).sort(), [escCerrada.codigo, escEsperando.codigo].sort()]);
+const esperaConcepto = armarRevision(avisoDe(escEsperando.codigo), 'PENDIENTE', { por: 'admin', ahora: 2, correccion: { tecnico: '', concepto: 'AVERIA' } });
+const esperaCorregida = revisar(itemsParaRevisar({ ordenes: [escEsperando], rango }), { [esperaConcepto.id]: esperaConcepto.datos })[0];
+check('el administrador le elige el concepto a lo escalado y entonces se puede aprobar, ya con su alerta', [esperaCorregida.concepto, motivoNoAprobable(esperaCorregida), armarRevision(esperaCorregida, 'APROBAR', { por: 'admin', ahora: 3 }).error, Boolean(esperaCorregida.escalada)], ['AVERIA', '', undefined, true]);
+const aprobadaVn = armarRevision(avisoDe(vnOrden.codigo), 'APROBAR', { por: 'admin', ahora: 4 });
+check('una validación de NAP aprobada llega a Finanzas con su concepto', paraFinanzas(revisar(itemsParaRevisar({ ordenes: [vnOrden], rango }), { [aprobadaVn.id]: aprobadaVn.datos })).map((i) => [i.orden.codigo, i.concepto]), [[vnOrden.codigo, 'VALIDACION_NAP']]);
+
+const itemEsc = avisoDe(escCerrada.codigo);
+check('la firma de lo escalado cambia si cambia su estado en infraestructura; la de una orden normal no lleva nada extra', [
+  firmaDeItem({ ...itemEsc, escalada: { ...itemEsc.escalada, resultado: 'DEVUELTA' } }) !== firmaDeItem(itemEsc),
+  firmaDeItem({ ...itemEsc, escalada: null }) === firmaDeItem({ ...itemEsc, escalada: undefined }),
+], [true, true]);
+check('el texto de la alerta dice cuándo, quién, cómo va y el motivo', textoEscaladaRevision(itemEsc), 'Escalada a infraestructura el 27/10 por rcova. Se cerró como trabajo adicional (TA). Motivo: Falta un splitter en el poste. Nota: Se instaló el splitter.');
+check('la alerta de una escalada sin terminar avisa que sigue esperando; una orden normal no tiene alerta', [textoEscaladaRevision(avisoDe(escEsperando.codigo)), textoEscaladaRevision(avisoDe(ave.codigo))],
+  ['Escalada a infraestructura el 27/10 por rcova. Sigue esperando a infraestructura: todavía no está terminada. Motivo: Falta un splitter en el poste.', null]);
+
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

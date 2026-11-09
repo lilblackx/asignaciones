@@ -27,6 +27,17 @@ import RangoFechas from '../RangoFechas';
 // Revisión de órdenes (solo ADMIN): la barrera entre las órdenes y Finanzas. Aquí un administrador revisa lo que se va a pagar y solo lo que aprueba llega a Finanzas. Lo ya pagado no
 // aparece. Respeta la misma fecha de corte de Finanzas (lo anterior no se cuenta). Las correcciones de técnico y de concepto valen para Finanzas aunque la orden esté en un cierre.
 
+// Lo que no se aprueba de golpe: las que necesitan una corrección (sin técnico o sin concepto) y las escaladas a infraestructura, que se aprueban una por una.
+function textoOmitidas(omitidas, verbo) {
+  const escaladas = omitidas.filter((o) => o.escalada).length;
+  const otras = omitidas.length - escaladas;
+  const partes = [
+    otras > 0 && `${otras} ${verbo} una corrección primero (sin técnico o sin concepto)`,
+    escaladas > 0 && `${escaladas} ${escaladas === 1 ? 'está escalada' : 'están escaladas'} a infraestructura y se ${escaladas === 1 ? 'aprueba' : 'aprueban'} una por una`,
+  ].filter(Boolean);
+  return partes.length > 0 ? ` ${partes.join('; ')}.` : '';
+}
+
 export default function RevisionPagosModal({ technicians, tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onActualizar, usuario, firebaseUser, setToastMsg, onClose, enPagina = false }) {
   // Abre en "Pendientes": las órdenes de los últimos 35 días (con tope en el corte), para que ninguna quede sin revisar por no haber elegido fechas.
   const [periodo, setPeriodo] = useState('POR_REVISAR');
@@ -62,6 +73,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const resumen = useMemo(() => resumenRevision(delTecnico, precio), [delTecnico, datos.tarifas]); // eslint-disable-line react-hooks/exhaustive-deps
   // Garantías de otro técnico que esperan decisión: no se pueden aprobar hasta decidir si se descuenta de la orden original.
   const porResolver = useMemo(() => garantiasPorResolver(delTecnico), [delTecnico]);
+  // Lo escalado a infraestructura que espera revisión: tiene su alerta en la fila y se aprueba una por una.
+  const escaladasPendientes = useMemo(() => delTecnico.filter((i) => i.escalada && i.estadoRevision === 'PENDIENTE'), [delTecnico]);
 
   // La original de una garantía se busca entre todas las órdenes; su técnico es el efectivo en la revisión (el corregido, si lo hay) y su precio, lo que paga el tabulador por ella.
   const tecnicoDe = (o) => datos.revisiones[claveOrden(o)]?.tecnicoCorregido || o.tecnico;
@@ -165,6 +178,12 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
             </p>
           )}
 
+          {escaladasPendientes.length > 0 && (
+            <p role="status" className="rounded-xl border border-orange-500 bg-orange-50 dark:bg-orange-950/30 px-4 py-3 text-sm text-orange-900 dark:text-orange-100">
+              {escaladasPendientes.length === 1 ? '1 orden escalada a infraestructura espera' : `${escaladasPendientes.length} órdenes escaladas a infraestructura esperan`} tu revisión ({escaladasPendientes.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{escaladasPendientes.length > 4 ? '...' : ''}): llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
+            </p>
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className={TEXTO_SUAVE}>Pulsa una cifra para ver esas órdenes; vuelve a pulsarla para verlas todas.</p>
             {resumen.PENDIENTE.cantidad > 0 && (
@@ -213,8 +232,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           color="blue"
           title={`¿Aprobar ${aprobando.titulo}?`}
           description={aprobando.documentos.length === 0
-            ? `No hay nada que se pueda aprobar ahora.${aprobando.omitidas.length > 0 ? ` ${aprobando.omitidas.length} necesitan una corrección primero (sin técnico o sin concepto).` : ''}`
-            : `Se aprueban ${aprobando.documentos.length} ${aprobando.documentos.length === 1 ? 'orden' : 'órdenes'} y pasan a Finanzas.${aprobando.omitidas.length > 0 ? ` ${aprobando.omitidas.length} quedan pendientes porque necesitan una corrección (sin técnico o sin concepto).` : ''}`}
+            ? `No hay nada que se pueda aprobar ahora.${textoOmitidas(aprobando.omitidas, 'necesitan')}`
+            : `Se aprueban ${aprobando.documentos.length} ${aprobando.documentos.length === 1 ? 'orden' : 'órdenes'} y pasan a Finanzas.${textoOmitidas(aprobando.omitidas, 'quedan pendientes porque necesitan')}`}
           confirmLabel={aprobando.documentos.length === 0 ? 'Entendido' : 'Sí, aprobar'}
           processingLabel="Guardando..."
           onCancel={() => setAprobando(null)}

@@ -5,7 +5,7 @@ import SelectMenu from '../SelectMenu';
 import Colapsable from '../Colapsable';
 import { BOTON, BOTON_FILA, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
-import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable } from '../../utils/revisionPagos';
+import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable, textoEscaladaRevision } from '../../utils/revisionPagos';
 import { parseMontoAjuste } from '../../utils/ajustes';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
 import { diaLegible } from '../../utils/periodoReporte';
@@ -91,6 +91,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
             <button type="button" onClick={() => onVerOrden(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button>
             {item.orden.nombre ? ` · ${item.orden.nombre}` : ''}
             <InsigniaJM orden={item.orden} className="ml-2" />
+            {item.escalada && <span title={textoEscaladaRevision(item)} className={`${CHIP} ml-2 align-middle bg-orange-600 text-white`}>Infraestructura</span>}
           </p>
           <p className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {item.concepto ? nombreConcepto(item.concepto) : <span className="font-bold text-amber-700 dark:text-amber-300">Sin concepto: corrígela</span>}</p>
           {esGarantiaDeOtro && item.descuento <= 0 && !item.garantiaSinDescuento && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Garantía de otro técnico: de la orden {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}). Decide si se le descuenta algo antes de aprobarla.</p>}

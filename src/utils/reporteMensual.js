@@ -47,7 +47,14 @@ const trabajoDe = (t) => String(t?.tipoTrabajo || '').trim().toUpperCase();
 // cambios de equipo). 'VNTA' (validaciones de NAP y lo escalado a infraestructura) es la hoja manual: esas órdenes no entran en las otras.
 export function hojaDe(t) {
   if (esInstalacion(t?.tipoTrabajo)) return 'INSTALACIONES';
-  if (fueEscalada(t) || trabajoDe(t) === 'VALIDACION NAP') return 'VNTA';
+  if (fueEscalada(t)) return 'VNTA';
+  return hojaPorTipo(t);
+}
+
+// La hoja que le tocaría por su tipo de trabajo, sin mirar si se escaló (Finanzas la usa para saber con qué concepto se pagaría una escalada que el técnico terminó).
+export function hojaPorTipo(t) {
+  if (esInstalacion(t?.tipoTrabajo)) return 'INSTALACIONES';
+  if (trabajoDe(t) === 'VALIDACION NAP') return 'VNTA';
   if (TRABAJOS_VISITA.includes(trabajoDe(t))) return 'VISITAS';
   return 'AVERIAS';
 }

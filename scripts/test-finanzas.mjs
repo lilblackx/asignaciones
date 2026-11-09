@@ -3,7 +3,7 @@
 // Uso: `npm run test:finanzas`.
 import { ventanaCubierta } from '../src/hooks/useCargarHastaCubrir.js';
 import {
-  CONCEPTOS_PAGO, DIAS_POR_PAGAR, rangoPorPagar, rangoPorRevisar, FECHA_CORTE, textoFechaCorte, corteTodaviaNoLlega, rangoPagable, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDePago, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
+  CONCEPTOS_PAGO, DIAS_POR_PAGAR, rangoPorPagar, rangoPorRevisar, FECHA_CORTE, textoFechaCorte, corteTodaviaNoLlega, rangoPagable, ordenesYaPagadas, mudanzasSinTipo, claveRegistro, registrosPagables, MAX_ESCRITURAS_POR_PAGO, SIN_TECNICO, aBs, armarPago, bolivares, columnasPagosTecnico, columnasResumenPagado, cifrasPagos, cifrasResumenPagado, claveOrden, conceptoDeEscalada, conceptoDePago, escaladasSinConcepto, conceptosSinTarifa, dolares, filaPagoTecnico, filaResumenPagado, frasePagado, grupoDePago, gruposDelReporte, ordenesPagables, parseTarifa, parseTasaDolar, resumenPagado, resumenPagos, sumaPagado, textoGrupos, tarifasCompletas, totalesPagados, totalPendiente,
 } from '../src/utils/finanzas.js';
 import { ROLES, etiquetaRol } from '../src/constants.js';
 
@@ -35,7 +35,7 @@ const otroTecnico = orden({ tecnico: 'LUIS', tipoTrabajo: 'INSTALACIÓN', cobroB
 const sinTecnico = orden({ tecnico: '', tipoTrabajo: 'INSTALACIÓN', cobroBs: null, cobroTipo: null });
 const fueraDeRango = orden({ finalizadoEn: Date.UTC(2026, 8, 20, 16), tipoTrabajo: 'INSTALACIÓN', cobroBs: null, cobroTipo: null });
 const pendiente = orden({ estado: 'PENDIENTE', finalizadoEn: null });
-const todas = [instalacion, averiaCobrada, averiaExonerada, lowSignal, averiaSinCobro, averiaGarantia, averiaCancelada, mudanza, garantiaVisita, validacion, otroTecnico, sinTecnico, fueraDeRango, pendiente];
+const todas = [instalacion, averiaCobrada, averiaExonerada, lowSignal, averiaSinCobro, averiaGarantia, averiaCancelada, mudanza, garantiaVisita, otroTecnico, sinTecnico, fueraDeRango, pendiente];
 
 // --- El rol ---
 check('el rol existe y se muestra tal cual', [ROLES.FINANZAS, etiquetaRol('FINANZAS')], ['FINANZAS', 'FINANZAS']);
@@ -56,7 +56,7 @@ check('el tipo de la propia orden gana al que eligió Finanzas', conceptoDePago(
 check('un tipo elegido que no es interna ni externa no cuenta', conceptoDePago(mudanzaSinTipo, 'VISITAS', { [claveOrden(mudanzaSinTipo)]: 'OTRA' }), null);
 check('un retiro de equipo se paga con el mismo precio de la avería', conceptoDePago(orden({ tipoTrabajo: 'RETIRO EQUIPO' }), 'VISITAS'), 'AVERIA');
 check('un pago hecho cuando la visita tenía precio aparte cuenta como avería', resumenPagado([{ tecnico: 'GERARDO', desde: '2026-10-01', hasta: '2026-10-31', creadoEn: DIA(14), total: 8.5, cantidadOrdenes: 2, cantidades: { VISITA: 1, AVERIA: 1 } }], rango).porTecnico[0].cantidades.AVERIA, 2);
-check('la validación de NAP (hoja manual) no se paga aquí', conceptoDePago(validacion, 'VNTA'), null);
+check('una validación de NAP finalizada se paga con su propia tarifa, tenga cobro o no', [conceptoDePago(validacion, 'VNTA'), conceptoDePago(orden({ tipoTrabajo: 'VALIDACION NAP', cobroBs: null, cobroTipo: null }), 'VNTA')], ['VALIDACION_NAP', 'VALIDACION_NAP']);
 
 const items = ordenesPagables(todas, rango);
 check('las órdenes pagables del periodo', items.map((i) => [i.orden.id, i.concepto, i.tecnico]).sort(), [
@@ -238,6 +238,34 @@ check('un periodo posterior al corte no cambia', rangoPagable({ desde: '2026-10-
 const antesDelCorte = rangoPagable({ desde: '2026-10-15', hasta: '2026-10-21' }, '2026-10-26');
 check('un periodo anterior al corte queda vacío: ninguna orden ni fila se cuenta', [antesDelCorte.desde > antesDelCorte.hasta, ordenesPagables([averiaCobrada], antesDelCorte, { registros: [vnConTecnico] }).length], [true, 0]);
 check('con el corte puesto en el rango, las órdenes de antes no cuentan y las de después sí', [ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-14')).length, ordenesPagables([averiaCobrada], rangoPagable(rango, '2026-10-15')).length], [1, 0]);
+
+// --- Validaciones de NAP y lo escalado a infraestructura (cuentan en Revisión, lo escalado con una alerta) ---
+const infra = (extra) => ({ activa: false, motivo: 'Falta un splitter en el poste.', por: 'rcova', origen: 'OFICINA', en: DIA(10), tecnico: 'GERARDO', ...extra });
+const vnFinalizada = orden({ tipoTrabajo: 'VALIDACION NAP', cobroBs: null, cobroTipo: 'EXONERADO', finalizadoEn: DIA(14) });
+const vnPendiente = orden({ tipoTrabajo: 'VALIDACION NAP', estado: 'PENDIENTE', finalizadoEn: null });
+const vnCancelada = orden({ tipoTrabajo: 'VALIDACION NAP', estado: 'CANCELADO', canceladaEn: DIA(14), finalizadoEn: null });
+const escCerrada = orden({ cobroBs: null, cobroTipo: null, finalizadoEn: DIA(12), infraestructura: infra({ resultado: 'CERRADA', resueltaPor: 'rcova', resueltaEn: DIA(12) }) });
+const escDevuelta = orden({ finalizadoEn: DIA(13), infraestructura: infra({ resultado: 'DEVUELTA', resueltaPor: 'rcova', resueltaEn: DIA(11) }) });
+const escEsperando = orden({ estado: 'PENDIENTE', finalizadoEn: null, cobroBs: null, cobroTipo: null, infraestructura: infra({ activa: true }) });
+const escCancelada = orden({ estado: 'CANCELADO', canceladaEn: DIA(14), finalizadoEn: null, infraestructura: infra({ resultado: 'DEVUELTA' }) });
+const escSinTecnico = orden({ tecnico: '', cobroBs: null, cobroTipo: null, finalizadoEn: DIA(12), infraestructura: infra({ resultado: 'CERRADA', tecnico: '' }) });
+const vnYEsc = [vnFinalizada, vnPendiente, vnCancelada, escCerrada, escDevuelta, escEsperando, escCancelada, escSinTecnico];
+
+check('una validación pendiente o cancelada no se paga', [conceptoDePago(vnPendiente, 'VNTA'), conceptoDePago(vnCancelada, 'VNTA'), conceptoDePago(averiaCobrada, 'VNTA')], [null, null, null]);
+check('escalada y cerrada como trabajo adicional: se revisa como TRABAJO_ADICIONAL', conceptoDeEscalada(escCerrada), 'TRABAJO_ADICIONAL');
+check('escalada que volvió al técnico y la terminó: el concepto que le tocaría por su tipo', conceptoDeEscalada(escDevuelta), 'AVERIA');
+check('escalada sin terminar o cancelada: todavía sin concepto', [conceptoDeEscalada(escEsperando), conceptoDeEscalada(escCancelada)], [null, null]);
+
+const paga = ordenesPagables(vnYEsc, rango);
+check('en las pagables entran la validación finalizada y las escaladas ya terminadas (no las pendientes ni las canceladas)', paga.map((i) => [i.orden.id, i.concepto, i.tecnico]).sort(), [
+  [vnFinalizada.id, 'VALIDACION_NAP', 'GERARDO'], [escCerrada.id, 'TRABAJO_ADICIONAL', 'GERARDO'], [escDevuelta.id, 'AVERIA', 'GERARDO'], [escSinTecnico.id, 'TRABAJO_ADICIONAL', SIN_TECNICO],
+].sort());
+check('lo escalado cuenta el día en que se escaló y lleva su alerta; la validación, el día en que se terminó y sin alerta', [paga.find((i) => i.orden.id === escDevuelta.id).dia, Boolean(paga.find((i) => i.orden.id === escDevuelta.id).escalada), paga.find((i) => i.orden.id === vnFinalizada.id).dia, 'escalada' in paga.find((i) => i.orden.id === vnFinalizada.id)], ['2026-10-10', true, '2026-10-14', false]);
+const aparte = escaladasSinConcepto(vnYEsc, rango);
+check('la escalada sin terminar se lista aparte, sin concepto y con su alerta', aparte.map((i) => [i.orden.id, i.concepto, i.escalada.activa]), [[escEsperando.id, null, true]]);
+check('filtrar por técnico también aplica a la validación y a lo escalado', [ordenesPagables(vnYEsc, rango, { tecnico: 'gerardo' }).length, ordenesPagables(vnYEsc, rango, { tecnico: 'luis' }).length], [3, 0]);
+check('lo escalado ya no se cuela dos veces en las otras hojas (averías)', ordenesPagables([escDevuelta], rango).filter((i) => i.orden.id === escDevuelta.id).length, 1);
+check('una orden que ya no es de esta ventana no entra', ordenesPagables(vnYEsc, { desde: '2026-10-20', hasta: '2026-10-31' }).length, 0);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');
