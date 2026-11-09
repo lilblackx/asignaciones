@@ -142,8 +142,8 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   const inactivoAlla = Boolean(elegido) && !noEstaEnLista && (tecnicosInventario || []).some(o => normalizar(o.nombre) === normalizar(elegido) && !o.activo);
                   const cargandoInv = tecnicosInventario === null && !errorInventario;
                   return (
-                    <li key={t.id} className={`grid ${columnas} gap-x-3 gap-y-2 px-4 py-3 items-center`}>
-                      <span className={`order-1 inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                    <li key={t.id} className={`grid ${columnas} gap-x-3 gap-y-2 px-4 py-3 items-center ${verInventario ? 'md:items-start' : ''}`}>
+                      <span className={`order-1 ${verInventario ? 'md:mt-0.5' : ''} inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ring-2 ring-white dark:ring-zinc-950 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
                         <span className="truncate">{t.name}</span>
                       </span>
@@ -152,7 +152,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                         onClick={() => onToggleActivo(t.id, !activo)}
                         aria-label={`Marcar ${t.name} como ${activo ? 'inactivo' : 'activo'}`}
                         title={activo ? 'Marcar como inactivo' : 'Marcar como activo'}
-                        className={`order-2 w-fit ${activo ? '!border-emerald-600 !text-emerald-700 dark:!text-emerald-300' : ''}`}
+                        className={`order-2 w-fit ${verInventario ? 'md:mt-0.5' : ''} ${activo ? '!border-emerald-600 !text-emerald-700 dark:!text-emerald-300' : ''}`}
                       >
                         {activo ? 'Activo' : 'Inactivo'}
                       </Boton>
@@ -172,7 +172,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                           </span>
                         </div>
                       )}
-                      <Boton variante="peligro" tamano="compacto" icono={Trash2} onClick={() => onDelete(t.id)} disabled={deletingId === t.id} aria-label={`Eliminar técnico ${t.name}`} title="Eliminar técnico" className="order-3 md:order-4 w-9 !px-0 justify-self-end" />
+                      <Boton variante="peligro" tamano="compacto" icono={Trash2} onClick={() => onDelete(t.id)} disabled={deletingId === t.id} aria-label={`Eliminar técnico ${t.name}`} title="Eliminar técnico" className={`order-3 md:order-4 w-9 !px-0 justify-self-end ${verInventario ? 'md:mt-0.5' : ''}`} />
                     </li>
                   );
                 })}
@@ -186,7 +186,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                 <section aria-label="Turno para instalaciones" className={`${TARJETA} p-4 space-y-3`}>
                   <h3 className={`${TITULO_SECCION} flex items-center gap-1.5`}><ListOrdered className="w-4 h-4" aria-hidden="true" /> Turno para instalaciones</h3>
                   <p className={TEXTO_SUAVE}>
-                    Orden semanal manual. Al asignar una instalación, el turno pasa al siguiente de la lista (saltando a los inactivos).
+                    Orden semanal manual. Al asignar una instalación, el turno pasa al siguiente de la lista (saltando a los inactivos). Al guardar un orden nuevo, el turno vuelve al primero de la lista.
                     {tecnicoSugerido
                       ? <> Turno actual: <strong className="text-zinc-800 dark:text-zinc-100">{tecnicoSugerido}</strong>.</>
                       : <> No hay técnicos activos en el orden.</>}

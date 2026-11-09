@@ -23,23 +23,18 @@ export function useTurnoInstalaciones(firebaseUser, technicians, setToastMsg) {
     return () => unsub();
   }, [firebaseUser]);
 
-  // No resetea el puntero a 0: si el técnico que tenía el turno sigue en la
-  // lista nueva, el puntero se mueve con él (evita que reordenar regale el
-  // turno de vuelta al primero de la lista). Solo cae a 0 si ese técnico
-  // ya no está (lo quitaron del orden).
+  // Un orden nuevo es el de la semana: el turno vuelve al primero de la lista (tecnicoSugerido salta
+  // a los inactivos). Antes el puntero se quedaba con quien tenía el turno y, al reordenar, la
+  // primera instalación de la semana se le asignaba a alguien del final de la lista.
   const guardarOrden = useCallback(async (nuevoOrden, usuario) => {
-    const tecnicoActual = orden[turnoActualIndex];
-    const nuevoIndex = tecnicoActual
-      ? Math.max(0, nuevoOrden.findIndex(n => n.toUpperCase() === tecnicoActual.toUpperCase()))
-      : 0;
     await setDoc(TURNO_REF(), {
       orden: nuevoOrden,
-      turnoActualIndex: nuevoIndex,
+      turnoActualIndex: 0,
       actualizadoPor: usuario || null,
       actualizadoEn: Date.now()
     });
     setToastMsg({ type: 'success', text: 'Orden de turno guardado.' });
-  }, [setToastMsg, orden, turnoActualIndex]);
+  }, [setToastMsg]);
 
   // Se llama al crear una INSTALACIÓN con técnico asignado (haya sido el
   // sugerido o no): el puntero pasa a la posición siguiente a ESE técnico,
