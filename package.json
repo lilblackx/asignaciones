@@ -26,6 +26,7 @@
     "test:cobroscliente": "node scripts/test-cobros-clientes.mjs",
     "test:llenarolt": "node scripts/test-llenar-olt.mjs",
     "test:revisionpagos": "node scripts/test-revision-pagos.mjs",
+    "test:avisoorden": "node scripts/test-aviso-orden.mjs",
     "seed:emulator": "node scripts/seed-emulator.mjs",
     "seed:ventas": "node scripts/seed-ventas-emulator.mjs",
     "seed:esperas": "node scripts/seed-esperas-emulator.mjs",
