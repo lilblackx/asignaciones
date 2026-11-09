@@ -13,6 +13,7 @@ import { buildSmartOltUrl } from '../../utils/smartolt';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap } from '../../utils/ubicacion';
 import { esInstalacion, napConPuerto } from '../../utils/instalacion';
 import { textoConectoresInstalacion } from '../../utils/conectoresInstalacion';
+import { InsigniasConectoresInstalacion } from '../InsigniaConector';
 import { estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../../utils/whatsapp';
 import { valoresGuardados } from '../../utils/valoresCliente';
@@ -143,7 +144,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               <Dato etiqueta="Metraje del drop">{datos.metrajeExistente === true ? 'Existente' : datos.metraje && `${datos.metraje} m`}</Dato>
               <Dato etiqueta="Posteadura">{datos.posteadura?.length ? datos.posteadura.join(', ') : ''}</Dato>
               <Dato etiqueta="Puertos disponibles">{datos.puertosDisponibles}</Dato>
-              <Dato etiqueta="Conectores">{conectores}</Dato>
+              <Dato etiqueta="Conectores">{conectores && <InsigniasConectoresInstalacion conectores={datos.conectores} />}</Dato>
               <Dato etiqueta="Potencia">{ticket.potenciaDbm != null && `${ticket.potenciaDbm} dBm`}</Dato>
             </Seccion>
           )}

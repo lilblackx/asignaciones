@@ -1,14 +1,10 @@
 import { Check } from 'lucide-react';
-import { COLORES_CONECTOR_EXTERNO, COLORES_CONECTOR_INTERNO, ETIQUETA_COLOR, MAX_CONECTORES_POR_COLOR } from '../../utils/tipoVisita';
+import { COLORES_CONECTOR_EXTERNO, COLORES_CONECTOR_INTERNO, MAX_CONECTORES_POR_COLOR } from '../../utils/tipoVisita';
+import InsigniaConector from '../InsigniaConector';
 import { claseCampo } from '../estilos';
 
-const ESTILO_COLOR = {
-  VERDE: { punto: 'bg-emerald-500', activo: 'bg-emerald-700 border-emerald-700 text-white' },
-  AZUL: { punto: 'bg-blue-500', activo: 'bg-blue-600 border-blue-600 text-white' },
-};
-
 // Un conector con sus colores posibles. Tocar el color lo marca; volver a tocarlo lo quita
-// (los conectores son opcionales). El color se lee también en el texto, no solo en el punto.
+// (los conectores son opcionales). Cada color es siempre su insignia (InsigniaConector): elegido va entera y con el visto; sin elegir, apagada.
 function GrupoConector({ id, etiqueta, ayuda, colores, valor, onChange }) {
   return (
     <div role="group" aria-labelledby={`${id}-etiqueta`} className="space-y-1.5">
@@ -24,12 +20,11 @@ function GrupoConector({ id, etiqueta, ayuda, colores, valor, onChange }) {
               type="button"
               aria-pressed={activo}
               onClick={() => onChange(activo ? '' : color)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
-                activo ? ESTILO_COLOR[color].activo : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-amber-500'
+              className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                activo ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-amber-500'
               }`}
             >
-              <span className={`w-3.5 h-3.5 rounded-full ${ESTILO_COLOR[color].punto} ${activo ? 'ring-2 ring-white' : ''}`} aria-hidden="true" />
-              {ETIQUETA_COLOR[color]}
+              <InsigniaConector color={color} apagada={!activo} />
               {activo && <Check className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>
           );
@@ -66,7 +61,7 @@ function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
   return (
     <div className="flex-1 min-w-[9.5rem] flex flex-col justify-between gap-1.5">
       <label htmlFor={id} className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-        <span className={`w-3.5 h-3.5 rounded-full ${ESTILO_COLOR[color].punto}`} aria-hidden="true" /> {etiqueta}
+        <InsigniaConector color={color}>{etiqueta}</InsigniaConector>
       </label>
       <div className="flex items-center gap-1.5">
         <button type="button" aria-label={`Quitar un conector ${etiqueta.toLowerCase()}`} disabled={n <= 0} onClick={() => poner(n - 1)} className={boton}>−</button>

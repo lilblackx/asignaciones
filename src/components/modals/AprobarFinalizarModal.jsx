@@ -5,12 +5,13 @@ import ConfirmModal from './ConfirmModal';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { faltantesInstalacion } from '../../utils/instalacion';
 import { evaluarPotencia } from '../../utils/potencia';
-import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, partesRecableado } from '../../utils/tipoVisita';
+import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, tieneDatosRecableado } from '../../utils/tipoVisita';
 import { COBRO_INICIAL, conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
 import { cobroPrecargado, consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
 import DatosParaAutorizar from './DatosParaAutorizar';
 import CobroSelector from './CobroSelector';
 import ConectorColocado from './ConectorColocado';
+import InsigniaConector from '../InsigniaConector';
 import ValoresClienteAdmin from './ValoresClienteAdmin';
 import { exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../../utils/valoresCliente';
 import Spinner from '../Spinner';
@@ -168,8 +169,15 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           {ticket.tipoVisita === TIPO_RECABLEADO && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
               <p className="flex items-center gap-2 font-black"><Cable className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> RECABLEADO</p>
-              {partesRecableado(ticket).length > 0
-                ? partesRecableado(ticket).map((parte) => <p key={parte} className="font-bold ml-6">{parte}</p>)
+              {tieneDatosRecableado(ticket)
+                ? (
+                  <div className="ml-6 space-y-1.5">
+                    {ticket.metrosCable != null && <p className="font-bold">{ticket.metrosCable} m de cable</p>}
+                    {[['Conector externo', ticket.conectorExterno], ['Conector interno', ticket.conectorInterno]].filter(([, color]) => color).map(([nombre, color]) => (
+                      <p key={nombre} className="flex flex-wrap items-center gap-2 font-bold">{nombre} <InsigniaConector color={color} /></p>
+                    ))}
+                  </div>
+                )
                 : <p className="ml-6 italic">Sin datos del recableado.</p>}
               {ticket.metrosCable != null && !ticket.conectorExterno && !ticket.conectorInterno && <p className="ml-6 text-[11px] max-lg:text-xs opacity-80">Sin conectores registrados.</p>}
             </div>

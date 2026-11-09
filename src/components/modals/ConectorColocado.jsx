@@ -2,8 +2,7 @@ import { Plug } from 'lucide-react';
 import { conectorDeVisita } from '../../utils/tipoVisita';
 import { esInstalacion } from '../../utils/instalacion';
 import { normalizarConectoresInstalacion } from '../../utils/conectoresInstalacion';
-
-const ESTILO_COLOR = { VERDE: 'bg-emerald-700 text-white', AZUL: 'bg-blue-600 text-white' };
+import InsigniaConector from '../InsigniaConector';
 
 // Los conectores que se colocaron en una visita de conector: su tipo (externo o interno) y cuántos de cada color, en un bloque
 // propio, aparte del cobro de la visita (que sale en su recuadro, con el concepto y el selector de cobro).
@@ -27,9 +26,7 @@ function ConectoresInstalacion({ ticket }) {
             <span className="w-16 text-sm font-black">{f.tipo}</span>
             <span className="flex flex-wrap items-center gap-2">
               {['VERDE', 'AZUL'].filter((c) => f.cantidades[c.toLowerCase()] > 0).map((c) => (
-                <span key={c} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${ESTILO_COLOR[c]}`}>
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/90" aria-hidden="true" /> {c === 'VERDE' ? 'Verde' : 'Azul'} ×{f.cantidades[c.toLowerCase()]}
-                </span>
+                <InsigniaConector key={c} color={c} cantidad={f.cantidades[c.toLowerCase()]} />
               ))}
             </span>
           </li>
@@ -60,9 +57,7 @@ export default function ConectorColocado({ ticket }) {
           {conector.cantidades.verde + conector.cantidades.azul > 0 ? (
             <span className="mt-0.5 flex flex-wrap items-center gap-2">
               {['VERDE', 'AZUL'].filter((c) => conector.cantidades[c.toLowerCase()] > 0).map((c) => (
-                <span key={c} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${ESTILO_COLOR[c]}`}>
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/90" aria-hidden="true" /> {c === 'VERDE' ? 'Verde' : 'Azul'} ×{conector.cantidades[c.toLowerCase()]}
-                </span>
+                <InsigniaConector key={c} color={c} cantidad={conector.cantidades[c.toLowerCase()]} />
               ))}
             </span>
           ) : (

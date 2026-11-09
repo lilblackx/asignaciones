@@ -5,6 +5,7 @@ import EncabezadoModulo from '../EncabezadoModulo';
 import { PERIODOS, consumoPorTecnico, inicioPeriodo, totalConectores } from '../../utils/consumoMateriales';
 import { aplanarArchivados } from '../../utils/reincidencia';
 import { ETIQUETA_COLOR, etiquetaTipoVisita } from '../../utils/tipoVisita';
+import InsigniaConector from '../InsigniaConector';
 import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
 import Colapsable from '../Colapsable';
 import Chip from '../Chip';
@@ -13,7 +14,6 @@ import { TARJETA } from '../estilos';
 const numero = (n) => Number(n).toLocaleString('es-VE');
 const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-');
 
-const PUNTO = { VERDE: 'bg-emerald-500', AZUL: 'bg-blue-500' };
 const PLURAL_COLOR = { VERDE: 'verdes', AZUL: 'azules' };
 
 // Los conectores se cuentan solo por color (verde o azul), sin distinguir externo de interno.
@@ -21,15 +21,8 @@ const PLURAL_COLOR = { VERDE: 'verdes', AZUL: 'azules' };
 const textoConectores = (cantidad, color) =>
   `${cantidad} conector${cantidad === 1 ? '' : 'es'} ${cantidad === 1 ? ETIQUETA_COLOR[color].toLowerCase() : PLURAL_COLOR[color]}`;
 
-// Cantidad de conectores de un color: el color se lee en el texto, no solo en el punto.
-function ChipConector({ color, cantidad }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] max-lg:text-xs font-bold ${cantidad > 0 ? 'border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100' : 'border-zinc-300 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'}`}>
-      <span className={`w-2.5 h-2.5 rounded-full ${PUNTO[color]} ${cantidad > 0 ? '' : 'opacity-40'}`} aria-hidden="true" />
-      Conector {ETIQUETA_COLOR[color].toLowerCase()}: <span className="font-black">{cantidad}</span>
-    </span>
-  );
-}
+// Cantidad de conectores de un color: la misma insignia de toda la app, apagada si no se usó ninguno.
+const ChipConector = ({ color, cantidad }) => <InsigniaConector color={color} cantidad={cantidad} apagada={cantidad === 0} />;
 
 function Conectores({ fila }) {
   return (
