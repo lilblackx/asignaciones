@@ -688,7 +688,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               hasMoreReports={hasMoreReports}
               isLoadingReports={isLoadingReports}
               onLoadMoreReports={loadMoreReports}
-              onActualizar={refreshReports}
+              onActualizar={() => refreshReports(true)}
               usuario={currentUser}
               firebaseUser={firebaseUser}
               setToastMsg={setToastMsg}
@@ -962,6 +962,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             getTecnicoColor={getTecnicoColor}
             logTecnicos={logTecnicos}
             totalesMensuales={totalesMensuales}
+            onActualizarCierres={() => refreshReports(true)}
             usuario={currentUser}
             nombreUsuario={currentUserName || currentUser}
             esAdmin={isAdmin}

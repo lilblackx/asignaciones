@@ -115,6 +115,7 @@ export default function ReportesModal({
   getTecnicoColor,
   logTecnicos,
   totalesMensuales,
+  onActualizarCierres,
   usuario,
   nombreUsuario,
   esAdmin = false,
@@ -241,11 +242,14 @@ export default function ReportesModal({
               onTecnico={setTecnico}
               tecnicos={nombresTecnicos}
               cargando={Boolean((reporte.usaLog && logTecnicos.cargando) || (reporte.usaTotales && totalesMensuales.cargando))}
-              onRecargar={reporte.usaLog || reporte.usaTotales ? () => { if (reporte.usaLog) logTecnicos.recargar(); if (reporte.usaTotales) totalesMensuales.recargar(); } : undefined}
+              onRecargar={reporte.usaLog || reporte.usaTotales ? () => { if (reporte.usaLog) logTecnicos.recargar(); if (reporte.usaTotales) totalesMensuales.recargar(); onActualizarCierres?.(); } : undefined}
               formatosExportar={formatosExportar}
               onExportar={exportar}
               exportando={exportando}
             />
+            <p className="-mt-2 mb-3 text-[11px] max-lg:text-xs text-zinc-500 dark:text-zinc-400">
+              Los datos de Reportes se actualizan cada 15 minutos{reporte.usaLog || reporte.usaTotales ? '; usa Actualizar para ver lo último' : ''}.
+            </p>
             {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">{errorExportar}</p>}
             <div key={reporteId} className="lg:animate-fade-in">
               {reporteId === 'RESUMEN' && <ResumenEjecutivoView ordenes={ordenes} eventos={logTecnicos.eventos} contadores={totalesMensuales.contadores} tickets={tickets} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}

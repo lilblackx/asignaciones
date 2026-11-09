@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { collection, doc, increment, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import { getDocs, setDoc, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { RETENCION_MS_HISTORIAL_VENTAS, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
 import { diaDe, incrementosDeCierre } from '../utils/totalesMes';
+import { lecturaVigente } from '../utils/lecturaVigente';
 
 const REPORTS_PAGE_SIZE = 30;
 const MAX_ESCRITURAS_LOTE = 450; // Firestore admite 500 por lote
@@ -69,19 +70,24 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Cuándo terminó la última lectura buena de la primera página: al abrir Reportes, Historial o Cierre dentro de 15 min no se vuelve a leer (solo con `refreshReports(true)`).
+  const leidaEn = useRef({ uid: '', en: 0 });
+
   const reportsRef = () => collection(db, 'artifacts', appId, 'public', 'data', 'reports');
 
   // Recarga la primera página. También se llama al abrir Reportes/Historial: el
   // cierre automático crea reportes desde el Worker y esta lista no tiene listener,
   // así que una sesión abierta desde ayer no los vería.
-  const refreshReports = useCallback(async () => {
+  const refreshReports = useCallback(async (forzar = false) => {
     if (!firebaseUser || !canCerrar) return;
+    if (forzar !== true && leidaEn.current.uid === firebaseUser.uid && lecturaVigente(leidaEn.current.en)) return;
     setIsLoadingReports(true);
     try {
       const snap = await getDocs(query(reportsRef(), orderBy('createdAt', 'desc'), limit(REPORTS_PAGE_SIZE)));
       setReports(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMoreReports(snap.docs.length === REPORTS_PAGE_SIZE);
+      leidaEn.current = { uid: firebaseUser.uid, en: Date.now() };
     } catch (error) {
       console.error('Error al cargar el historial de reportes:', error);
     } finally {

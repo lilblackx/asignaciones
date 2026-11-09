@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { collection } from 'firebase/firestore';
 import { getDocs } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
+import { lecturaVigente } from '../utils/lecturaVigente';
 
 const SIN_LEER = { version: -1, contadores: {}, error: false };
 
@@ -10,12 +11,16 @@ const SIN_LEER = { version: -1, contadores: {}, error: false };
 export function useTotalesMensuales(firebaseUser, activo) {
   const [version, setVersion] = useState(0);
   const [lectura, setLectura] = useState(SIN_LEER);
+  // Última lectura buena: si sigue vigente (15 min) no se vuelve a leer al reabrir el reporte; `recargar` sube la versión y la fuerza.
+  const leida = useRef({ uid: '', version: -1, en: 0 });
 
   useEffect(() => {
     if (!activo || !firebaseUser) return undefined;
+    if (leida.current.uid === firebaseUser.uid && leida.current.version === version && lecturaVigente(leida.current.en)) return undefined;
     let vigente = true;
     getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'estadisticasMensuales'))
       .then((snap) => {
+        if (vigente) leida.current = { uid: firebaseUser.uid, version, en: Date.now() };
         if (vigente) setLectura({ version, contadores: Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])), error: false });
       })
       .catch((e) => {
