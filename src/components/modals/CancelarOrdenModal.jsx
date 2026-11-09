@@ -6,6 +6,7 @@ import AvisoCambioDeOrden from '../AvisoCambioDeOrden';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { MAX_LARGO_MOTIVO_CANCELACION, parseMotivoCancelacion } from '../../utils/cancelacion';
 import { cambioMientrasAbierta } from '../../utils/concurrencia';
+import { claseArea } from '../estilos';
 
 // Cancelar una orden (el único estado de "baja" que existe: ya no hay eliminadas). Pide el motivo, que se ve en la lista, el historial, ventas y los
 // reportes. `ticket` es la orden en vivo: si otra persona la cancela o la finaliza mientras se escribe el motivo, se avisa y no se deja cancelar.
@@ -58,7 +59,7 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
               autoFocus
               aria-invalid={!!error}
               placeholder="Ej. El cliente ya no quiere el servicio, no hay cobertura en la zona, la orden se cargó por error..."
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              className={`${claseArea('normal')} resize-none`}
             />
             {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{error}</p>}
             <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">

@@ -5,6 +5,7 @@ import Spinner from '../Spinner';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import AvisoRevision from '../AvisoRevision';
 import { MAX_LARGO_MOTIVO, RESULTADO_CERRADA, RESULTADO_DEVUELTA, enInfraestructura, infraestructuraDe, textoOrigen } from '../../utils/infraestructura';
+import { claseArea } from '../estilos';
 
 const OPCIONES = [
   {
@@ -86,7 +87,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
                   rows={2}
                   maxLength={MAX_LARGO_MOTIVO}
                   placeholder="Ej. Poste instalado, ya puedes tender el cable."
-                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                  className={`${claseArea('normal')} resize-none`}
                 />
               </div>
 

@@ -1,4 +1,5 @@
 import SelectMenu from './SelectMenu';
+import { claseSelector } from './estilos';
 
 // El campo de hora de la app (el reloj del navegador se ve distinto en cada equipo): tres controles con el estilo de la app, la hora (1 a 12), los minutos (00 a 59) y a. m. o p. m.
 // En pantallas angostas los selectores se reparten el ancho (y los botones de a. m. / p. m. se achican un poco) para que todo quede en una sola fila desde 320 px; si aun así no cabe, a. m. / p. m. pasa a la línea de abajo. Desde `sm` miden lo de siempre.
@@ -7,9 +8,9 @@ const dos = (n) => String(n).padStart(2, '0');
 const HORAS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: dos(i + 1) }));
 const MINUTOS = Array.from({ length: 60 }, (_, i) => ({ value: String(i), label: dos(i) }));
 
-const CLASE_SELECTOR = 'w-full h-10 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-xl pl-3 pr-8 text-sm font-bold text-zinc-900 dark:text-white focus:ring-0 focus:border-red-600 outline-none disabled:opacity-60';
+const CLASE_SELECTOR = claseSelector('grande');
 
-export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', claseSelector = CLASE_SELECTOR, claseBoton = 'px-2.5 min-[380px]:px-3 text-sm', alto = 'h-10', disabled = false }) {
+export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', claseSelector = CLASE_SELECTOR, claseBoton = 'px-2.5 min-[380px]:px-3 text-sm', alto = 'h-11', disabled = false }) {
   const m = /^(\d{2}):(\d{2})$/.exec(valor || '');
   const hora24 = m ? Number(m[1]) : 0;
   const minuto = m ? Number(m[2]) : 0;

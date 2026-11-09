@@ -6,6 +6,7 @@ import FormasPagoEditor from './FormasPagoEditor';
 import { diasDesactualizada } from '../../utils/tasa';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
+import { claseCampo } from '../estilos';
 
 // Convierte una tasa/monto (número) a los dígitos que representarían sus centavos,
 // para poder editarlos como una calculadora: cada dígito que se escribe entra por la derecha.
@@ -29,7 +30,7 @@ function digitsToNumber(digits) {
   return num / 100;
 }
 
-const NUMBER_INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm text-right font-mono';
+const NUMBER_INPUT_CLASS = `${claseCampo('grande')} text-right font-mono`;
 
 const PESTANAS = [
   { id: 'tasa', etiqueta: 'Tasa BCV' },

@@ -22,6 +22,7 @@ import { devolucionPendiente } from '../../utils/devolucion';
 import { MAX_LARGO_MOTIVO_CANCELACION, cancelaAhora, parseMotivoCancelacion } from '../../utils/cancelacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import Spinner from '../Spinner';
+import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, SELECTOR_ORDEN, SELECTOR_ORDEN_NORMAL, claseCampo } from '../estilos';
 import CampoFecha from '../CampoFecha';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, tickets = [], reports = [], napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
@@ -169,7 +170,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-nombre" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="ed-nombre" disabled={isTecnico} required type="text" maxLength="100" name="nombre" value={editingTicket.nombre || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
+            <input id="ed-nombre" disabled={isTecnico} required type="text" maxLength="100" name="nombre" value={editingTicket.nombre || ''} onChange={handleEditChange} className={CAMPO_ORDEN} />
           </div>
           <CedulaField
             variant="edit"
@@ -182,15 +183,15 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           />
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-direccion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="ed-direccion" disabled={isTecnico} required type="text" maxLength="200" name="direccion" value={editingTicket.direccion || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
+            <input id="ed-direccion" disabled={isTecnico} required type="text" maxLength="200" name="direccion" value={editingTicket.direccion || ''} onChange={handleEditChange} className={CAMPO_ORDEN} />
           </div>
           <div className="col-span-1 space-y-1">
             <label htmlFor="ed-fechaprog" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">F. PROG (Opcional)</label>
-            <CampoFecha id="ed-fechaprog" ariaLabel="Fecha programada" vacio="Sin fecha" disabled={isTecnico} valor={editingTicket.fechaProgramada || ''} onChange={(v) => handleEditChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-1 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-2 rounded-xl focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
+            <CampoFecha id="ed-fechaprog" ariaLabel="Fecha programada" vacio="Sin fecha" disabled={isTecnico} valor={editingTicket.fechaProgramada || ''} onChange={(v) => handleEditChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase={CAMPO_FECHA_ORDEN} />
           </div>
           <div className="col-span-1 space-y-1">
             <label htmlFor="ed-codigo" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="ed-codigo" disabled={isTecnico} required type="text" maxLength="7" name="codigo" value={editingTicket.codigo} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none uppercase text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
+            <input id="ed-codigo" disabled={isTecnico} required type="text" maxLength="7" name="codigo" value={editingTicket.codigo} onChange={handleEditChange} className={`${CAMPO_ORDEN} uppercase`} />
           </div>
           <TipoTrabajoField
             variant="edit"
@@ -209,7 +210,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               value={editingTicket.falla || ''}
               onChange={(v) => handleEditChange({ target: { name: 'falla', value: v, type: 'text' } })}
               items={tipoItems}
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className={SELECTOR_ORDEN_NORMAL}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
           </div>
@@ -222,7 +223,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               value={editingTicket.estado}
               onChange={(v) => handleEditChange({ target: { name: 'estado', value: v, type: 'text' } })}
               items={estadoItems}
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className={SELECTOR_ORDEN}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
             {isTecnico && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Usa el botón "Pre-finalizar" de la lista para cambiar el estado.</p>}
@@ -242,7 +243,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
                 maxLength={MAX_LARGO_MOTIVO_CANCELACION}
                 aria-invalid={!!errorMotivo}
                 placeholder="Ej. El cliente ya no quiere el servicio, no hay cobertura en la zona..."
-                className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-2 focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm resize-none"
+                className={`${CAMPO_ORDEN} resize-none`}
               />
               {errorMotivo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{errorMotivo}</p>}
               <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Se ve en la lista, el historial, ventas y los reportes.</p>
@@ -289,18 +290,17 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               disabled={isTecnico}
               value={editingTicket.telefono || ''}
               onChange={(value) => handleEditChange({ target: { name: 'telefono', value, type: 'text' } })}
-              inputClassName="bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              inputClassName={CAMPO_ORDEN}
             />
           </div>
           <ContactoCliente telefono={editingTicket.telefono} nombre={editingTicket.nombre} className="col-span-2" />
           {!napEnSeccion && (
             <div className="col-span-2 space-y-1">
               <label htmlFor="ed-nap" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NAP</label>
-              <input id="ed-nap" type="text" maxLength="50" name="nap" value={editingTicket.nap || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors" />
+              <input id="ed-nap" type="text" maxLength="50" name="nap" value={editingTicket.nap || ''} onChange={handleEditChange} className={CAMPO_ORDEN} />
             </div>
           )}
           <NapCoordenadasField
-            variant="edit"
             idPrefix="ed"
             wrapperClassName="col-span-2 space-y-1"
             nap={napActual}
@@ -311,14 +311,14 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           />
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN (Google Maps){!isTecnico && ubicacionObligatoria(editingTicket) && <span className="font-normal normal-case text-zinc-400"> obligatoria</span>}</label>
-            <input id="ed-ubicacion" disabled={isTecnico} type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={editingTicket.ubicacion || ''} onChange={handleEditChange} aria-invalid={!!ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion)} className={`w-full bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-xl focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion) ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`} />
+            <input id="ed-ubicacion" disabled={isTecnico} type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={editingTicket.ubicacion || ''} onChange={handleEditChange} aria-invalid={!!ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion)} className={claseCampo('compacto', ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion) ? 'error' : 'normal')} />
             {faltaUbicacion && intentoSinUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
             {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Cómo llegar</a>}
           </div>
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-potencia" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">POTENCIA ÓPTICA (dBm)</label>
-            <input id="ed-potencia" type="text" inputMode="decimal" maxLength="7" name="potenciaDbm" placeholder="Ej. -19.5" value={editingTicket.potenciaDbm ?? ''} onChange={(e) => handleEditChange({ target: { name: 'potenciaDbm', value: e.target.value.replace(/[^0-9.,-]/g, ''), type: 'text' } })} aria-invalid={!!potenciaParseada.error} aria-describedby="ed-potencia-hint" className={`w-full bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-xl focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`} />
+            <input id="ed-potencia" type="text" inputMode="decimal" maxLength="7" name="potenciaDbm" placeholder="Ej. -19.5" value={editingTicket.potenciaDbm ?? ''} onChange={(e) => handleEditChange({ target: { name: 'potenciaDbm', value: e.target.value.replace(/[^0-9.,-]/g, ''), type: 'text' } })} aria-invalid={!!potenciaParseada.error} aria-describedby="ed-potencia-hint" className={claseCampo('compacto', potenciaParseada.error ? 'error' : 'normal')} />
             {(potenciaParseada.error || potenciaEval) && (
               <p id="ed-potencia-hint" className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
             )}
@@ -340,14 +340,14 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               onChange={handleEditChange}
               wrapperClassName="col-span-2 space-y-1"
               labelClassName="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1"
-              inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+              inputClassName={CAMPO_ORDEN}
               ayuda="(con él lo ve el promotor)"
             />
           )}
           {faltabaPlantilla && (
             <div className="col-span-2 space-y-1">
               <label htmlFor="ed-plantilla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
-              <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-2 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs font-mono text-zinc-900 dark:text-white shadow-sm transition-colors" placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
+              <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className={`${CAMPO_ORDEN} font-mono`} placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
             </div>
           )}
           {isTecnico ? (

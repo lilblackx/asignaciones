@@ -4,9 +4,9 @@ import NapPuertoCampos from './NapPuertoCampos';
 import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { evaluarSerialCaja } from '../../utils/serialOlt';
+import { claseCampo } from '../estilos';
 
-const claseInput = (error, correcto = false) =>
-  `w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`;
+const claseInput = (error, correcto = false) => claseCampo('grande', error ? 'error' : correcto ? 'ok' : 'normal');
 const claseEtiqueta = 'text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1';
 
 // Lo que el técnico llena al instalar y la plantilla de la promotora trae vacío. Los campos van en el mismo orden

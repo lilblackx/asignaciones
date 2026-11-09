@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import Modal from '../Modal';
 import Spinner from '../Spinner';
 import CampoFecha from '../CampoFecha';
+import { claseFecha } from '../estilos';
 
 const THEMES = {
   red: {
@@ -73,7 +74,7 @@ export default function ConfirmModal({
           {dateInput !== undefined && setDateInput && (
             <div className="w-full space-y-1 text-left">
               <label htmlFor="confirm-fecha" className="text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA DEL REPORTE</label>
-              <CampoFecha id="confirm-fecha" ariaLabel="Fecha del reporte" valor={dateInput} onChange={(v) => v && setDateInput(v)} clase={`w-full flex items-center justify-between gap-2 bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 px-4 py-2.5 rounded-xl ${theme.inputFocus} outline-none text-zinc-900 dark:text-white`} />
+              <CampoFecha id="confirm-fecha" ariaLabel="Fecha del reporte" valor={dateInput} onChange={(v) => v && setDateInput(v)} clase={claseFecha('grande')} />
             </div>
           )}
         </div>

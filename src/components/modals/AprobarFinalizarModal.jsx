@@ -18,6 +18,7 @@ import Colapsable from '../Colapsable';
 import AvisoCambioDeOrden from '../AvisoCambioDeOrden';
 import AvisoRevision from '../AvisoRevision';
 import { cambioMientrasAbierta } from '../../utils/concurrencia';
+import { claseArea } from '../estilos';
 
 // Revisión de una orden antes de cerrarla. Sirve para los dos cierres de la oficina: aprobar una orden que el
 // técnico pre-finalizó (con "Devolver" si algo no está bien) y finalizar directo una orden pendiente, sin que
@@ -269,7 +270,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                   maxLength={500}
                   autoFocus
                   placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
-                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                  className={`${claseArea('compacto')} resize-none`}
                 />
                 {motivoError && <p className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{motivoError}</p>}
                 <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">

@@ -3,6 +3,7 @@ import { TIPOS_DE_EQUIPO } from '../../constants';
 import SelectMenu from '../SelectMenu';
 import { MAX_LARGO_SERIAL } from '../../utils/instalacion';
 import { evaluarSerialCaja } from '../../utils/serialOlt';
+import { claseCampo } from '../estilos';
 
 // Equipo nuevo en una visita de "Cambio de equipo": su tipo (MRTV, MTV, MR o SM) y su serial, los dos obligatorios. El serial tiene el mismo
 // formato que el de la ONU de una instalación: letras y números, en mayúsculas.
@@ -44,7 +45,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
         onBlur={() => setTocado(true)}
         aria-invalid={!!error || rojo}
         aria-describedby={error || rojo || verde ? 'pf-serial-equipo-error' : undefined}
-        className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error || rojo ? 'border-red-500' : verde ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
+        className={claseCampo('grande', error || rojo ? 'error' : verde ? 'ok' : 'normal')}
       />
       {error || rojo
         ? <p id="pf-serial-equipo-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>

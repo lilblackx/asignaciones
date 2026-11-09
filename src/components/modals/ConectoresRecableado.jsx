@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { COLORES_CONECTOR_EXTERNO, COLORES_CONECTOR_INTERNO, ETIQUETA_COLOR, MAX_CONECTORES_POR_COLOR } from '../../utils/tipoVisita';
+import { claseCampo } from '../estilos';
 
 const ESTILO_COLOR = {
   VERDE: { punto: 'bg-emerald-500', activo: 'bg-emerald-700 border-emerald-700 text-white' },
@@ -78,7 +79,7 @@ function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
           value={valor}
           aria-invalid={!!error}
           onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
-          className={`w-full min-w-0 text-center bg-white dark:bg-zinc-950 border-2 ${error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700'} px-2 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-base font-black text-zinc-900 dark:text-white`}
+          className={`${claseCampo('grande', error ? 'error' : 'normal')} min-w-0 text-center font-black`}
         />
         <button type="button" aria-label={`Agregar un conector ${etiqueta.toLowerCase()}`} disabled={n >= MAX_CONECTORES_POR_COLOR} onClick={() => poner(n + 1)} className={boton}>+</button>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, MONEDA_BS, MONEDA_USD } from '../../utils/cobro';
+import { claseCampo } from '../estilos';
 
 // Qué cobro se le informa al técnico al finalizar la orden: "Visita técnica" (el monto de
 // siempre), "Otro monto" (escrito a mano; es el que verá el técnico en su aviso final) o
@@ -87,7 +88,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
             onChange={(e) => onChange({ ...seleccion, otro: e.target.value.replace(/[^\d,]/g, '') })}
             aria-invalid={!!error}
             aria-describedby={error ? `${idBase}-error` : undefined}
-            className={`w-full bg-white dark:bg-zinc-950 border-2 px-3 py-2.5 rounded-xl outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm focus:ring-0 ${error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-sky-500'}`}
+            className={`${claseCampo('grande', error ? 'error' : 'normal')} font-bold`}
           />
           {error && <p id={`${idBase}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
         </div>

@@ -4,19 +4,9 @@ import { normalizarCoordenadasNap } from '../../utils/ubicacion';
 import { extraerCodigoNap } from '../../utils/whatsapp';
 import { buscarNapTomodat } from '../../lib/tomodat';
 import { buscarNapConocida } from '../../utils/napsConocidas';
+import { claseCampo } from '../estilos';
 
-const ESTILOS = {
-  create: {
-    label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
-    input: 'w-full bg-white dark:bg-zinc-950 border px-2 py-1.5 rounded text-xs',
-    ok: 'border-zinc-200 dark:border-zinc-700',
-  },
-  edit: {
-    label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
-    input: 'w-full bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-xl focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors',
-    ok: 'border-zinc-400 dark:border-zinc-700 focus:border-red-600',
-  },
-};
+const ETIQUETA_NAP = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 
 // Coordenadas que ya se usaron en órdenes anteriores con el mismo código de NAP
 // (`conocidas`, la más reciente primero). Si todas coinciden se usan de una vez,
@@ -63,8 +53,8 @@ async function consultar(codigo, signal, aplicar, setEstado, conocidas = [], sal
 // Coordenadas de la NAP. Al pegar "Lat: X / Lng: Y" el campo queda solo con
 // "X, Y". Si el campo NAP trae un código (ej. N10D14), las coordenadas se piden
 // a Tomodat: solas al crear (autoBuscar, si el campo está vacío) o con el botón.
-export default function NapCoordenadasField({ variant, idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false, napsConocidas }) {
-  const estilo = ESTILOS[variant];
+export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false, napsConocidas }) {
+  
   const codigo = extraerCodigoNap(nap);
   // Cajas sin código en su nombre ("NAP EDIF A-3", "NAP EBANO"): se busca el texto
   // tal cual, solo con el botón (nunca sola, para no consultar mientras se escribe).
@@ -106,14 +96,14 @@ export default function NapCoordenadasField({ variant, idPrefix, wrapperClassNam
   return (
     <div className={wrapperClassName}>
       <div className="flex items-end justify-between gap-2">
-        <label htmlFor={`${idPrefix}-nap-coords`} className={estilo.label}>COORDENADAS NAP <span className="font-normal normal-case text-zinc-400">(Lat / Lng, opcional)</span></label>
+        <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>COORDENADAS NAP <span className="font-normal normal-case text-zinc-400">(Lat / Lng, opcional)</span></label>
         {consulta && (
           <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 hover:underline disabled:opacity-60">
             {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat
           </button>
         )}
       </div>
-      <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error} className={`${estilo.input} ${parseada.error ? 'border-red-500' : estilo.ok}`} />
+      <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error} className={claseCampo('compacto', parseada.error ? 'error' : 'normal')} />
       {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
       {mensaje?.tipo === 'buscando' && <p role="status" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Buscando {consulta} en Tomodat...</p>}
       {mensaje?.tipo === 'listo' && value && <p role="status" className="text-[11px] max-lg:text-xs font-bold text-emerald-700 dark:text-emerald-400 ml-1">{mensaje.origen === 'historial' ? `Coordenadas tomadas de órdenes anteriores (${mensaje.nombre}). Usa "Buscar en Tomodat" para verificarlas.` : `Coordenadas tomadas de Tomodat (${mensaje.nombre}).`}</p>}

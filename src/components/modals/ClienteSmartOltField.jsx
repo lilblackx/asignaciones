@@ -3,54 +3,48 @@ import { limpiarNombre } from '../../utils/clienteSmartolt';
 import { nombrePersona } from '../../utils/datosCliente';
 
 // Estado de la búsqueda de cliente en SmartOLT (ver useClienteSmartOlt) con dos piezas:
-// <ClienteSmartOltIcono> junto al campo de cédula (un icono de estado y el botón de
-// volver a buscar) y <ClienteSmartOltMensaje> debajo, que solo escribe algo cuando no
+// <ClienteSmartOltEstado> dentro del campo de cédula y <ClienteSmartOltBoton> junto a él (volver a buscar) y <ClienteSmartOltMensaje> debajo, que solo escribe algo cuando no
 // hay resultado, hay error o hay que elegir entre varias ONU.
 
-const BOTON = 'shrink-0 w-8 h-8 inline-flex items-center justify-center rounded border transition-colors';
-
-// Icono de estado + botón de volver a buscar, para ir al lado del campo de cédula.
-export function ClienteSmartOltIcono({ cliente }) {
-  const { estado } = cliente;
-  // Sin cédula suficiente se reserva el mismo espacio (invisible): si no, el campo de cédula se achica y se mueve al aparecer el spinner.
-  if (!cliente.visible) return (
-    <>
-      <span aria-hidden="true" className={`${BOTON} invisible`} />
-      <span aria-hidden="true" className={`${BOTON} invisible`} />
-    </>
-  );
-  const buscando = estado?.tipo === 'buscando';
-
-  let icono = null;
-  if (buscando) icono = { Icono: Loader2, clase: 'text-zinc-400 animate-spin', titulo: 'Buscando en SmartOLT...' };
-  else if (estado?.tipo === 'listo') icono = estado.llenados > 0
+// El estado de la búsqueda va DENTRO del campo de cédula, a la derecha y sin ocupar sitio, y el botón de volver a buscar está siempre (apagado mientras no haya cédula):
+// así el campo mide lo mismo antes, durante y después de buscar y no se mueve al aparecer el spinner.
+function iconoDe(estado) {
+  if (estado?.tipo === 'buscando') return { Icono: Loader2, clase: 'text-zinc-400 animate-spin', titulo: 'Buscando en SmartOLT...' };
+  if (estado?.tipo === 'listo') return estado.llenados > 0
     ? { Icono: Check, clase: 'text-emerald-600 dark:text-emerald-400', titulo: 'Datos tomados de SmartOLT' }
     : { Icono: Check, clase: 'text-zinc-400', titulo: 'Cliente encontrado en SmartOLT (no había campos vacíos que llenar)' };
-  else if (estado?.tipo === 'vacio') icono = { Icono: SearchX, clase: 'text-amber-600 dark:text-amber-400', titulo: 'No se encontró un cliente con esta cédula en SmartOLT' };
-  else if (estado?.tipo === 'error') icono = { Icono: AlertTriangle, clase: 'text-red-600 dark:text-red-400', titulo: 'SmartOLT no respondió' };
-  else if (estado?.tipo === 'opciones') icono = { Icono: AlertTriangle, clase: 'text-amber-600 dark:text-amber-400', titulo: 'Varias ONU con esta cédula: elige una' };
+  if (estado?.tipo === 'vacio') return { Icono: SearchX, clase: 'text-amber-600 dark:text-amber-400', titulo: 'No se encontró un cliente con esta cédula en SmartOLT' };
+  if (estado?.tipo === 'error') return { Icono: AlertTriangle, clase: 'text-red-600 dark:text-red-400', titulo: 'SmartOLT no respondió' };
+  if (estado?.tipo === 'opciones') return { Icono: AlertTriangle, clase: 'text-amber-600 dark:text-amber-400', titulo: 'Varias ONU con esta cédula: elige una' };
+  return null;
+}
 
+// Icono de estado, para ir dentro del campo de cédula (el contenedor del campo es `relative`).
+export function ClienteSmartOltEstado({ cliente }) {
+  const icono = cliente.visible ? iconoDe(cliente.estado) : null;
+  if (!icono) return null;
   return (
-    <>
-      {icono ? (
-        <span role="status" title={icono.titulo} className={`${BOTON} border-transparent`}>
-          <icono.Icono className={`w-4 h-4 ${icono.clase}`} aria-hidden="true" />
-          <span className="sr-only">{icono.titulo}</span>
-        </span>
-      ) : (
-        <span aria-hidden="true" className={`${BOTON} border-transparent`} />
-      )}
-      <button
-        type="button"
-        onClick={cliente.buscarAhora}
-        disabled={buscando}
-        title="Buscar cliente en SmartOLT"
-        aria-label="Buscar cliente en SmartOLT"
-        className={`${BOTON} border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 disabled:opacity-50`}
-      >
-        <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
-      </button>
-    </>
+    <span role="status" title={icono.titulo} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+      <icono.Icono className={`w-4 h-4 ${icono.clase}`} aria-hidden="true" />
+      <span className="sr-only">{icono.titulo}</span>
+    </span>
+  );
+}
+
+// Botón de volver a buscar, al lado del campo de cédula.
+export function ClienteSmartOltBoton({ cliente }) {
+  const buscando = cliente.estado?.tipo === 'buscando';
+  return (
+    <button
+      type="button"
+      onClick={cliente.buscarAhora}
+      disabled={!cliente.visible || buscando}
+      title="Buscar cliente en SmartOLT"
+      aria-label="Buscar cliente en SmartOLT"
+      className="shrink-0 w-9 h-9 max-lg:w-11 max-lg:h-11 inline-flex items-center justify-center rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 transition-colors disabled:opacity-40 disabled:hover:text-zinc-600 disabled:hover:border-zinc-400"
+    >
+      <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+    </button>
   );
 }
 

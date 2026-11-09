@@ -3,6 +3,7 @@ import { MapPin, X } from 'lucide-react';
 import Modal from '../Modal';
 import { normalizarUbicacion } from '../../utils/ubicacion';
 import Spinner from '../Spinner';
+import { claseCampo } from '../estilos';
 
 // Pegado manual de la ubicación de una orden. Se abre cuando el portapapeles no
 // tenía un enlace válido, o para cambiar una ubicación ya guardada.
@@ -48,7 +49,7 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               aria-invalid={!!parseada.error}
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2 rounded-xl outline-none text-xs text-zinc-900 dark:text-white ${parseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-sky-500'}`}
+              className={claseCampo('grande', parseada.error ? 'error' : 'normal')}
             />
             {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
             {parseada.valor && <a href={parseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}

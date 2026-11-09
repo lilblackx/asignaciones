@@ -1,5 +1,6 @@
 import { CheckCircle2, Copy, X } from 'lucide-react';
 import Modal from '../Modal';
+import { claseArea } from '../estilos';
 
 export default function WhatsAppMessageModal({ mensaje, onCopy, onClose }) {
   return (
@@ -20,7 +21,7 @@ export default function WhatsAppMessageModal({ mensaje, onCopy, onClose }) {
             readOnly
             value={mensaje}
             rows="10"
-            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 px-3 py-2 rounded-xl text-xs text-zinc-900 dark:text-white whitespace-pre-wrap"
+            className={`${claseArea('compacto')} whitespace-pre-wrap`}
           />
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={onClose} className="px-4 py-1.5 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-xs transition-colors">Cerrar</button>

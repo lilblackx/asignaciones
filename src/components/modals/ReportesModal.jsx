@@ -25,6 +25,7 @@ import { documentoActivacion, documentoCalidad, documentoCausasAveria, documento
 import { diaDe } from '../../utils/totalesMes';
 import { useRegistroVnTa } from '../../hooks/useRegistroVnTa';
 import { rangoDe } from '../../utils/periodoReporte';
+import { claseCampo } from '../estilos';
 
 // Los reportes, agrupados por tema. Para sumar uno: agrega aquí su entrada y su vista más abajo.
 //   documento(contexto): el contenido del PDF y del Word (ver modelosReporte.js). contexto = { eventos, ordenes, rango, tecnico, metaHoras, contadores, tickets, ventana, ahora, generadoPor }.
@@ -177,7 +178,7 @@ export default function ReportesModal({
               id="reporte-elegido"
               value={reporteId}
               onChange={(e) => setReporteId(e.target.value)}
-              className="w-full bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:border-red-600"
+              className={`${claseCampo('grande')} font-bold`}
             >
               {GRUPOS.map((g) => (
                 <optgroup key={g.titulo} label={g.titulo}>

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { AlertCircle, Loader2, Moon, Sun } from 'lucide-react';
 import { stripEmojis } from '../utils/sanitizeInput';
 import PieVersion from './PieVersion';
+import { CAMPO_LOGIN } from './estilos';
 
 // Campos de 48 px (el dedo) y borde que se distingue del fondo en los dos temas (3:1). Con el contorno quitado, el foco se ve por el borde rojo y el aro.
-const inputClass = 'w-full h-12 px-3 bg-white dark:bg-zinc-950 border-2 border-zinc-500 text-zinc-900 dark:text-white text-base rounded-xl focus:border-red-600 focus-visible:ring-4 focus-visible:ring-red-600/30 outline-none';
 const labelClass = 'block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-1.5';
 
 export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setLoginData, loginError, handleLogin }) {
@@ -72,7 +72,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
                   autoCorrect="off"
                   spellCheck={false}
                   aria-describedby={loginError ? 'login-error' : undefined}
-                  className={inputClass}
+                  className={CAMPO_LOGIN}
                   value={loginData.usuario}
                   onChange={e => setLoginData({ ...loginData, usuario: stripEmojis(e.target.value) })}
                 />
@@ -89,7 +89,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
                     autoCorrect="off"
                     spellCheck={false}
                     aria-describedby={loginError ? 'login-error' : undefined}
-                    className={`${inputClass} pr-24`}
+                    className={`${CAMPO_LOGIN} pr-24`}
                     value={loginData.clave}
                     onChange={e => setLoginData({ ...loginData, clave: stripEmojis(e.target.value) })}
                   />

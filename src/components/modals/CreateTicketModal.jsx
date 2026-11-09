@@ -11,7 +11,7 @@ import SelectMenu from '../SelectMenu';
 import CampoFecha from '../CampoFecha';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
 import ConfirmSinCoordenadasModal from './ConfirmSinCoordenadasModal';
-import { ClienteSmartOltIcono, ClienteSmartOltMensaje } from './ClienteSmartOltField';
+import { ClienteSmartOltBoton, ClienteSmartOltEstado, ClienteSmartOltMensaje } from './ClienteSmartOltField';
 import { useClienteSmartOlt } from '../../hooks/useClienteSmartOlt';
 import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import NapCoordenadasField from './NapCoordenadasField';
@@ -19,6 +19,7 @@ import TelefonosField from './TelefonosField';
 import PromotorField from './PromotorField';
 import { CedulaField, GarantiaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import Spinner from '../Spinner';
+import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, claseCampo, claseSelector } from '../estilos';
 
 export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -203,15 +204,15 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-fecha" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA</label>
-            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className="w-full bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 px-1.5 py-1.5 rounded-xl text-[11px] max-lg:text-xs tracking-tight text-zinc-600 dark:text-zinc-400 cursor-default" />
+            <input id="tk-fecha" readOnly type="text" name="fecha" value={formData.fecha} className={`${claseCampo('compacto', 'lectura').replace('px-3', 'px-2')} tracking-tight`} />
           </div>
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-codigo" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO</label>
-            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={esGarantiaTipo && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded-xl text-xs uppercase placeholder:normal-case placeholder:text-zinc-400" />
+            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={esGarantiaTipo && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className={`${CAMPO_ORDEN} uppercase placeholder:normal-case placeholder:text-zinc-400`} />
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-fecha-prog" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
-            <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase="w-full h-8 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 rounded text-xs" />
+            <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase={CAMPO_FECHA_ORDEN} />
           </div>
           <CedulaField
             variant="create"
@@ -220,7 +221,8 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             tipoDocumento={formData.tipoDocumento}
             cedula={formData.cedula}
             onChange={handleCreateChange}
-            extra={<ClienteSmartOltIcono cliente={clienteSmartOlt} />}
+            extra={<ClienteSmartOltBoton cliente={clienteSmartOlt} />}
+            dentro={<ClienteSmartOltEstado cliente={clienteSmartOlt} />}
           />
           <ClienteSmartOltMensaje cliente={clienteSmartOlt} wrapperClassName="col-span-2 sm:col-span-5 -mt-1 space-y-0.5" />
 
@@ -256,7 +258,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
             <label htmlFor="tk-nombre" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded-xl text-xs" />
+            <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className={CAMPO_ORDEN} />
           </div>
 
           <TipoTrabajoField
@@ -326,7 +328,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           {tipoUsaPlantillaPromotora(formData.tipoTrabajo) && (
             <div className="col-span-2 sm:col-span-5 space-y-0.5">
               <label htmlFor="tk-plantilla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
-              <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded-xl text-xs font-mono" placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
+              <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className={`${CAMPO_ORDEN} font-mono`} placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
               {!formData.plantillaOriginal?.trim() && (esInstalacion
                 ? <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>
                 : <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Sin la plantilla de la promotora, la plantilla de esta orden se arma con el formato de la app.</p>)}
@@ -340,7 +342,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               onChange={handleCreateChange}
               wrapperClassName="col-span-2 sm:col-span-5 space-y-0.5"
               labelClassName="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1"
-              inputClassName="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs"
+              inputClassName={CAMPO_ORDEN}
               ayuda="(se llena con la plantilla)"
             />
           )}
@@ -354,14 +356,14 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               value={formData.falla}
               onChange={(v) => handleCreateChange({ target: { name: 'falla', value: v, type: 'text' } })}
               items={tipoItems}
-              className={`w-full bg-white dark:bg-zinc-950 border ${mostrarFaltaTipo ? 'border-red-600' : 'border-zinc-200 dark:border-zinc-700'} pl-2 pr-7 py-1.5 rounded text-xs disabled:opacity-60 disabled:cursor-not-allowed`}
+              className={claseSelector('compacto', mostrarFaltaTipo ? 'error' : 'normal').replace(' font-bold', '')}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
             {mostrarFaltaTipo && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
           </div>
           <div className="col-span-1 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-direccion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded-xl text-xs" />
+            <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className={CAMPO_ORDEN} />
           </div>
 
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
@@ -371,16 +373,15 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               required
               value={formData.telefono}
               onChange={(value) => handleCreateChange({ target: { name: 'telefono', value, type: 'text' } })}
-              inputClassName="bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs"
+              inputClassName={CAMPO_ORDEN}
             />
           </div>
           <div className="col-span-2 sm:col-span-2 space-y-0.5">
             <label htmlFor="tk-nap" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">NAP</label>
-            <input id="tk-nap" type="text" maxLength="50" name="nap" value={formData.nap} onChange={handleCreateChange} className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded-xl text-xs" />
+            <input id="tk-nap" type="text" maxLength="50" name="nap" value={formData.nap} onChange={handleCreateChange} className={CAMPO_ORDEN} />
           </div>
 
           <NapCoordenadasField
-            variant="create"
             idPrefix="tk"
             wrapperClassName="col-span-2 sm:col-span-5 space-y-0.5"
             nap={formData.nap}
@@ -392,7 +393,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
             <label htmlFor="tk-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas{esInstalacion ? ', obligatoria' : ', opcional'})</span></label>
-            <input id="tk-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={formData.ubicacion} onChange={handleCreateChange} aria-invalid={!!ubicacionParseada.error || mostrarFaltaUbicacion} aria-required={esInstalacion} className={`w-full bg-white dark:bg-zinc-950 border px-2 py-1.5 rounded-xl text-xs ${ubicacionParseada.error || mostrarFaltaUbicacion ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-700'}`} />
+            <input id="tk-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={formData.ubicacion} onChange={handleCreateChange} aria-invalid={!!ubicacionParseada.error || mostrarFaltaUbicacion} aria-required={esInstalacion} className={claseCampo('compacto', ubicacionParseada.error || mostrarFaltaUbicacion ? 'error' : 'normal')} />
             {mostrarFaltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
             {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}

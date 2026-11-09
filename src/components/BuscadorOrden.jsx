@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, X } from 'lucide-react';
+import { claseCampo } from './estilos';
 
 // Elige una orden buscándola: un campo de texto y debajo los resultados (`buscar(texto)` devuelve las órdenes que coinciden). Elegida una, se muestra resumida con un botón para cambiarla.
 // `valor`: la elegida ({ codigo, tecnico, cliente }) o null; `onElegir(orden | null)`; `detalle(orden)`: un texto extra por resultado (el precio, el tipo de trabajo...); `vacio`: qué decir si no hay resultados.
@@ -23,7 +24,7 @@ export default function BuscadorOrden({ id, etiqueta, valor, onElegir, buscar, d
     <div className={className}>
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" aria-hidden="true" />
-        <input id={id} type="search" aria-label={etiqueta} value={texto} onChange={(e) => setTexto(e.target.value)} autoComplete="off" placeholder="Buscar orden..." className="w-full h-9 pl-9 pr-3 rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-white focus:ring-0 focus:border-red-600 outline-none" />
+        <input id={id} type="search" aria-label={etiqueta} value={texto} onChange={(e) => setTexto(e.target.value)} autoComplete="off" placeholder="Buscar orden..." className={claseCampo('normal').replace('px-3', 'pl-9 pr-3')} />
       </div>
       {resultados.length > 0 ? (
         <ul role="listbox" aria-label="Resultados" className="mt-1 max-h-56 overflow-y-auto rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-800">

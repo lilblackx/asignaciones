@@ -14,7 +14,7 @@ import PromotorField from './PromotorField';
 import { CedulaField } from './TicketFormFields';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
-import { CAMPO_ORDEN, ETIQUETA_ORDEN, SELECTOR_ORDEN } from '../estilos';
+import { CAMPO_ORDEN, ETIQUETA_ORDEN, SELECTOR_ORDEN, claseCampo } from '../estilos';
 
 const TIPOS_ITEMS = [{ value: '', label: 'Seleccione...' }, ...(TIPOS_POR_TRABAJO[TIPO_VENTA] || []).map((t) => ({ value: t, label: t }))];
 // "GERARDO MOLERO" -> "Gerardo Molero" (los técnicos se guardan en mayúsculas).
@@ -119,7 +119,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
 
           <div className="col-span-2 space-y-0.5">
             <label htmlFor="nv-instalador" className={ETIQUETA_ORDEN}>INSTALADOR <span className="font-normal normal-case text-zinc-400">(de la plantilla; define el técnico)</span></label>
-            <input id="nv-instalador" readOnly type="text" value={instalador} placeholder="Sin instalador" className={`${CAMPO_ORDEN} bg-zinc-100 dark:bg-zinc-900/60 text-zinc-700 dark:text-zinc-300 cursor-default`} />
+            <input id="nv-instalador" readOnly type="text" value={instalador} placeholder="Sin instalador" className={claseCampo('compacto', 'lectura')} />
             {tecnico ? (
               <p role="status" className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-300 ml-1">
                 <Star className="w-3 h-3 shrink-0 fill-current" aria-hidden="true" /> Venta de: {nombreBonito(tecnico)}
@@ -163,7 +163,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
                   chevronClassName="w-3.5 h-3.5 right-2"
                 />
               ) : (
-                <input id="nv-promotora" readOnly type="text" value={form.promotora} className={`${CAMPO_ORDEN} bg-zinc-100 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 cursor-default`} />
+                <input id="nv-promotora" readOnly type="text" value={form.promotora} className={claseCampo('compacto', 'lectura')} />
               )}
             </div>
           )}
@@ -178,7 +178,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
             <input id="nv-nap" type="text" maxLength="50" name="nap" value={form.nap} onChange={cambiar} className={CAMPO_ORDEN} />
           </div>
 
-          <NapCoordenadasField variant="edit" idPrefix="nv" wrapperClassName="col-span-2 space-y-0.5" nap={form.nap} value={form.napCoordenadas} onChange={(v) => poner('napCoordenadas', v)} autoBuscar napsConocidas={napsConocidas} />
+          <NapCoordenadasField idPrefix="nv" wrapperClassName="col-span-2 space-y-0.5" nap={form.nap} value={form.napCoordenadas} onChange={(v) => poner('napCoordenadas', v)} autoBuscar napsConocidas={napsConocidas} />
 
           <div className="col-span-2 space-y-0.5">
             <label htmlFor="nv-ubicacion" className={ETIQUETA_ORDEN}>UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, obligatoria)</span></label>

@@ -6,10 +6,10 @@ import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_
 import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, esVisitaConector } from '../../utils/tipoVisita';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
+import { SELECTOR_ORDEN, claseCampo } from '../estilos';
 
 const claseEtiqueta = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
-const claseInput = (error, correcto = false) =>
-  `w-full min-w-0 bg-white dark:bg-zinc-950 border px-3 py-1.5 rounded-xl focus:ring-0 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : correcto ? 'border-emerald-500 focus:border-emerald-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-600'}`;
+const claseInput = (error, correcto = false) => `min-w-0 ${claseCampo('compacto', error ? 'error' : correcto ? 'ok' : 'normal')}`;
 
 function Campo({ id, etiqueta, error, ayuda, className = 'col-span-1', children }) {
   return (
@@ -134,7 +134,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               value={tipoVisita}
               onChange={(v) => onChange({ tipoVisita: v })}
               items={TIPOS_VISITA}
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors"
+              className={SELECTOR_ORDEN}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
           </div>

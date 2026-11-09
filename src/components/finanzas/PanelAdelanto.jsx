@@ -75,7 +75,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
           </div>
           <div>
             <label htmlFor="adelanto-hora" className={ETIQUETA}>Hora</label>
-            <div className="mt-1"><CampoHora id="adelanto-hora" ariaLabel="Hora del adelanto" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} claseBoton="px-2.5 min-[400px]:px-4 text-sm" /></div>
+            <div className="mt-1"><CampoHora id="adelanto-hora" ariaLabel="Hora del adelanto" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} claseBoton="px-2.5 min-[400px]:px-4 text-sm" alto="h-9" /></div>
           </div>
           <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
 

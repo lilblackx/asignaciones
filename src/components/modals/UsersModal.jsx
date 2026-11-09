@@ -12,7 +12,7 @@ import Colapsable from '../Colapsable';
 import Spinner from '../Spinner';
 import BotonFiltros from '../BotonFiltros';
 import MenuPermisos from '../MenuPermisos';
-import { BUSCADOR, CAMPO, CAMPO_FORMULARIO, ETIQUETA as ETIQUETA_TABLA, TARJETA, TITULO_SECCION } from '../estilos';
+import { BUSCADOR, CAMPO, CAMPO_FORMULARIO, ETIQUETA as ETIQUETA_TABLA, TARJETA, TITULO_SECCION, claseSelector } from '../estilos';
 import Boton from '../Boton';
 import Chip from '../Chip';
 
@@ -29,7 +29,7 @@ const ROL_NUEVO_ITEMS = [
   ...(ADMINISTRACION_ACTIVA ? [{ value: ROLES.ADMINISTRACION, label: 'ADMINISTRACIÓN (concilia los pagos de los clientes; no toca las órdenes)' }] : []),
   { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
 ];
-const SELECT_FORM_CLASS = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white pl-4 pr-9 py-3 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold transition-colors shadow-sm';
+const SELECT_FORM_CLASS = claseSelector('grande');
 
 const ORDEN_ROLES = [ROLES.ADMIN, ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ROLES.ADMINISTRACION];
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -423,7 +423,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                         ariaLabel={`Técnico asociado de ${u.username}`}
                         items={techItemsInline}
                         chevronClassName="w-3 h-3 right-2"
-                        className="w-full text-sm font-bold pl-3 pr-7 py-2 rounded-xl bg-white dark:bg-zinc-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-900/60"
+                        className={claseSelector('normal')}
                       />
                       <div className="flex gap-2">
                         <Boton variante="principal" tamano="compacto" type="button" onClick={() => saveTechRole(u.id)} disabled={!techDraft || togglingId === u.id} aria-label={`Confirmar rol de ${u.username}`}><Check className="w-3.5 h-3.5" /> Guardar</Boton>

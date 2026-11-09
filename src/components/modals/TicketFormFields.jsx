@@ -3,31 +3,25 @@ import { TIPOS_TRABAJO } from '../../constants';
 import SelectMenu from '../SelectMenu';
 import BuscadorOrden from '../BuscadorOrden';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
+import { CAMPO_ORDEN, SELECTOR_ORDEN, SELECTOR_TECNICO_ORDEN, SELECTOR_TIPO_DOC_ORDEN } from '../estilos';
 
 // Estilos por variante: 'create' (CreateTicketModal) y 'edit' (EditTicketModal).
-// Reproducen exactamente las clases originales de cada modal.
+// Los campos (CAMPOS) son los mismos en los dos: vienen de estilos.js. Aquí solo quedan las etiquetas y los textos que sí difieren.
+const CAMPOS = { selectTipoDoc: SELECTOR_TIPO_DOC_ORDEN, inputCedula: CAMPO_ORDEN, selectTecnico: SELECTOR_TECNICO_ORDEN, selectTipoTrabajo: SELECTOR_ORDEN, textarea: CAMPO_ORDEN };
 const STYLES = {
   create: {
+    ...CAMPOS,
     label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
     labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
     labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
-    selectTipoDoc: 'w-16 shrink-0 appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none pl-1 pr-5 py-1.5 rounded text-xs text-center',
-    inputCedula: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs',
-    selectTecnico: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none pl-2 pr-7 py-1.5 rounded text-xs uppercase',
-    selectTipoTrabajo: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none pl-2 pr-7 py-1.5 rounded text-xs font-bold',
-    textarea: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 focus:ring-0 focus:border-red-600 outline-none px-2 py-1.5 rounded text-xs',
     hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
     checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
   edit: {
+    ...CAMPOS,
     label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
     labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
     labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
-    selectTipoDoc: 'w-14 shrink-0 appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-1 pr-5 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-center text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    inputCedula: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    selectTecnico: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none uppercase text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    selectTipoTrabajo: 'w-full appearance-none bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 pl-3 pr-8 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none font-bold text-xs text-zinc-900 dark:text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
-    textarea: 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 px-3 py-1.5 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors',
     hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
     checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
@@ -42,7 +36,7 @@ function formatCedulaValue(rawValue) {
 }
 
 // `extra`: controles opcionales a la derecha del campo (p. ej. el estado de SmartOLT).
-export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento, cedula, onChange, disabled = false, extra = null }) {
+export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento, cedula, onChange, disabled = false, extra = null, dentro = null }) {
   const s = STYLES[variant];
   const handleCedulaChange = (e) => {
     e.target.value = formatCedulaValue(e.target.value);
@@ -64,18 +58,22 @@ export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento
             chevronClassName="w-3 h-3 right-1.5"
           />
         </div>
-        <input
-          id={`${idPrefix}-cedula`}
-          disabled={disabled}
-          required
-          type="text"
-          inputMode="numeric"
-          maxLength="20"
-          name="cedula"
-          value={cedula}
-          onChange={handleCedulaChange}
-          className={s.inputCedula}
-        />
+        <div className="relative flex-1 min-w-0">
+          <input
+            id={`${idPrefix}-cedula`}
+            disabled={disabled}
+            required
+            type="text"
+            inputMode="numeric"
+            maxLength="20"
+            name="cedula"
+            value={cedula}
+            onChange={handleCedulaChange}
+            className={s.inputCedula}
+            style={dentro ? { paddingRight: '2.25rem' } : undefined}
+          />
+          {dentro}
+        </div>
         {extra}
       </div>
     </div>

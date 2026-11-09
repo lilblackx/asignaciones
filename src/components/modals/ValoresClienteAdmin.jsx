@@ -2,6 +2,7 @@ import { CheckCircle2, Loader2, Radio, Save } from 'lucide-react';
 import SenalSmartOlt from './SenalSmartOlt';
 import { calidadValor } from '../../utils/valoresCliente';
 import { parsePotencia } from '../../utils/potencia';
+import { claseCampo } from '../estilos';
 
 const NOTA_SMARTOLT = 'Los valores quedaron en los campos de abajo. Es la última medición de SmartOLT; puedes corregirlos y luego guardarlos.';
 
@@ -23,7 +24,7 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligat
         onChange={(e) => onChange(e.target.value.replace(/[^0-9.,-]/g, ''))}
         aria-invalid={!!error}
         aria-describedby={`${id}-nota`}
-        className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-xs font-mono text-zinc-900 dark:text-white shadow-sm transition-colors ${error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-red-500'}`}
+        className={`${claseCampo('grande', error ? 'error' : 'normal')} font-mono`}
       />
       <p id={`${id}-nota`} role={error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${error ? 'text-red-600 dark:text-red-400' : calidad ? calidad.clase : 'text-zinc-400 font-normal'}`}>
         {error || (calidad ? calidad.texto : 'En dBm. Sin signo se toma como negativo.')}

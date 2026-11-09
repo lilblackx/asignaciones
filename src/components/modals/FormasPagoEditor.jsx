@@ -3,8 +3,9 @@ import { Plus, Trash2 } from 'lucide-react';
 import { CAMPOS_POR_TIPO, FORMAS_PAGO_INICIALES, TIPOS_AGREGABLES, TITULO_POR_TIPO, formaVacia, normalizarFormasPago } from '../../utils/formasPago';
 import { ICONO_POR_TIPO } from './formasPagoIconos';
 import Spinner from '../Spinner';
+import { claseCampo } from '../estilos';
 
-const INPUT_CLASS = 'w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white px-3 py-2 rounded-xl focus:ring-0 focus:border-red-600 outline-none text-sm shadow-sm';
+const INPUT_CLASS = claseCampo('grande');
 const LABEL_CLASS = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
 
 // Sin nada guardado todavía (el documento no existe) se precarga con los datos de

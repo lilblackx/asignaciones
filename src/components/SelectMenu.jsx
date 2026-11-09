@@ -2,8 +2,9 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { usePresencia } from '../hooks/usePresencia';
+import { claseSelector } from './estilos';
 
-const DEFAULT_CLASS = 'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl py-2.5 pl-3 pr-9 focus:ring-2 focus:ring-red-600 outline-none font-medium text-sm shadow-sm transition-colors aria-expanded:border-red-600 disabled:opacity-60 disabled:cursor-not-allowed';
+const DEFAULT_CLASS = `${claseSelector('normal')} aria-expanded:border-red-600`;
 const PANEL_MAX_HEIGHT = 288;
 const PANEL_MAX_WIDTH = 320;
 const VIEWPORT_MARGIN = 8;

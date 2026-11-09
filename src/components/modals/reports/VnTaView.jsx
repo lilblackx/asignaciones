@@ -6,7 +6,7 @@ import Cifras from './Cifras';
 import TablaReporte from './TablaReporte';
 import Spinner from '../../Spinner';
 import CampoFecha from '../../CampoFecha';
-import { CAMPO } from '../../estilos';
+import { CAMPO, claseFecha } from '../../estilos';
 import Boton from '../../Boton';
 
 const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
@@ -97,7 +97,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
           </div>
           <div className="space-y-1">
             <label htmlFor="vnta-fecha" className={ETIQUETA}>Fecha</label>
-            <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase="w-full h-10 flex items-center justify-between gap-2 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl px-3 text-sm text-zinc-900 dark:text-white outline-none focus:border-red-600" />
+            <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase={claseFecha('normal')} />
           </div>
           <div className="space-y-1 sm:col-span-2 lg:col-span-4">
             <label htmlFor="vnta-observacion" className={ETIQUETA}>Observación <span className="font-normal normal-case">(opcional)</span></label>

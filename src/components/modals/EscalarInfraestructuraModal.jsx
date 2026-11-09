@@ -7,6 +7,7 @@ import { MAX_LARGO_MOTIVO, parseMotivo, puedeEscalar } from '../../utils/infraes
 import { cambioMientrasAbierta } from '../../utils/concurrencia';
 import AvisoCambioDeOrden from '../AvisoCambioDeOrden';
 import AvisoRevision from '../AvisoRevision';
+import { claseArea } from '../estilos';
 
 // El técnico (o la oficina) deja la orden esperando a infraestructura, con el motivo (ver utils/infraestructura).
 // `onConfirmar(ticket, motivo)` guarda y avisa; devuelve true si se pudo. `esTecnico` solo cambia lo que se explica.
@@ -60,7 +61,7 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
               autoFocus
               aria-invalid={!!error}
               placeholder="Ej. Falta un poste frente a la casa, la NAP está sin puertos..."
-              className="w-full bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-xl p-3 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              className={`${claseArea('normal')} resize-none`}
             />
             {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{error}</p>}
             <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">

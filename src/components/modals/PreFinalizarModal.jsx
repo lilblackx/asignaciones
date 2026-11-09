@@ -25,6 +25,7 @@ import { errorSerialCaja } from '../../utils/serialOlt';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
 import Spinner from '../Spinner';
+import { claseArea, claseCampo } from '../estilos';
 
 export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
   // La NAP y el puerto van en dos campos y son obligatorios con conector externo, drop atenuado y en las instalaciones (ver pideNapPuertoVisita); ahí una NAP "SN" (o vacía) no sirve: el técnico debe escribir la real.
@@ -277,7 +278,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                     onChange={(e) => { setMetros(e.target.value.replace(/\D/g, '').slice(0, 4)); if (metrosError) setMetrosError(''); }}
                     aria-invalid={!!metrosError}
                     aria-describedby={metrosError ? 'pf-metros-error' : undefined}
-                    className={`w-full min-w-0 bg-white dark:bg-zinc-950 border pl-3 pr-9 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold text-zinc-900 dark:text-white shadow-sm transition-colors ${metrosError ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
+                    className={`${claseCampo('grande', metrosError ? 'error' : 'normal').replace('px-3', 'pl-3 pr-9')} min-w-0 font-bold`}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
                 </div>
@@ -376,7 +377,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onChange={(e) => setPotencia(e.target.value.replace(/[^0-9.,-]/g, ''))}
               aria-invalid={!!potenciaParseada.error}
               aria-describedby="pf-potencia-hint"
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors ${potenciaParseada.error ? 'border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
+              className={claseCampo('grande', potenciaParseada.error ? 'error' : 'normal')}
             />
             <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
@@ -411,7 +412,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               value={observacion}
               onChange={(e) => { setObservacion(stripEmojis(e.target.value)); if (obsError) setObsError(''); }}
               aria-invalid={!!obsError}
-              className={`w-full bg-white dark:bg-zinc-950 border px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-xs text-zinc-900 dark:text-white shadow-sm transition-colors resize-none ${obsError ? 'border-red-500 focus:border-red-500' : 'border-zinc-400 dark:border-zinc-700 focus:border-amber-500'}`}
+              className={`${claseArea('grande', obsError ? 'error' : 'normal')} resize-none`}
             />
             {obsError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{obsError}</p>}
           </div>
