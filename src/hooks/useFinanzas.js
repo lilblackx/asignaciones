@@ -9,6 +9,7 @@ import { armarPlanDescuentos } from '../utils/descuentos';
 import { diaDe } from '../utils/totalesMes';
 import { sendPush } from '../lib/notify';
 import { esperarConLimite } from '../utils/tiempoLimite';
+import { useVentanaLectura } from './useVentanaLectura';
 
 const datos = (nombre) => collection(db, 'artifacts', appId, 'public', 'data', nombre);
 const documento = (nombre, id) => doc(db, 'artifacts', appId, 'public', 'data', nombre, id);
@@ -22,6 +23,7 @@ const MAX_ADICIONALES_VISIBLES = 300;
 const redondear = (valor) => Math.round((Number(valor) || 0) * 100) / 100;
 
 // Lo que lleva Finanzas, en vivo mientras la pantalla está abierta: las órdenes ya pagadas del periodo elegido, las filas del registro de VN y TA del periodo, las tarifas y los últimos pagos. Son pocos documentos (solo lo que Finanzas escribe), no las órdenes: esas se leen aparte (useDatosAlmacen).
+// Lo del periodo se lee de una ventana que solo crece mientras se está en un periodo (ver useVentanaLectura): pasar a uno más corto o volver a uno ya visto no vuelve a leer nada; aquí se filtra lo del periodo elegido.
 // `soloPendientes` ("Por pagar"): en vez de leer por periodo, lee solo las revisiones marcadas `pendientePago` (lo aprobado y sin pagar, de cualquier fecha) y, de ellas, las filas de VN y TA que le tocan.
 // No lee las órdenes pagadas (esas revisiones no están marcadas): `pagadas` e `idsPagadas` quedan vacíos. `desdePendientes` es el día más antiguo entre esas revisiones ('' si no hay ninguna).
 export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPendientes = false }) {
@@ -59,17 +61,25 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
   }, [firebaseUser]);
 
   const { desde, hasta } = rango;
+  // Lo que se lee de Firestore: el periodo elegido o uno más ancho si antes se eligió uno mayor (no se encoge hasta que se vuelve a "Por pagar" o se sale de Finanzas).
+  const ventana = useVentanaLectura(rango, !soloPendientes);
+  const lecturaDesde = ventana?.desde ?? '';
+  const lecturaHasta = ventana?.hasta ?? '';
   useEffect(() => {
-    if (!firebaseUser || soloPendientes) return;
+    if (!firebaseUser || soloPendientes || !lecturaDesde) return;
     const alFallar = (que) => (e) => { console.error(`No se pudo leer ${que}:`, e); setError(true); };
-    const delPeriodo = (nombre) => query(datos(nombre), where('dia', '>=', desde), where('dia', '<=', hasta));
+    const delPeriodo = (nombre) => query(datos(nombre), where('dia', '>=', lecturaDesde), where('dia', '<=', lecturaHasta));
     const bajas = [
       onSnapshot(delPeriodo('ordenesPagadas'), (s) => setPagadas(aLista(s)), alFallar('las órdenes pagadas')),
       onSnapshot(delPeriodo('revisionPagos'), (s) => setRevisionesLista(aLista(s)), alFallar('la revisión de pagos')),
-      onSnapshot(query(datos('registroVnTa'), where('fecha', '>=', desde), where('fecha', '<=', hasta)), (s) => setRegistros(aLista(s)), alFallar('el registro de VN y TA')),
+      onSnapshot(query(datos('registroVnTa'), where('fecha', '>=', lecturaDesde), where('fecha', '<=', lecturaHasta)), (s) => setRegistros(aLista(s)), alFallar('el registro de VN y TA')),
     ];
     return () => bajas.forEach((baja) => baja());
-  }, [firebaseUser, desde, hasta, soloPendientes]);
+  }, [firebaseUser, lecturaDesde, lecturaHasta, soloPendientes]);
+  // Lo leído puede abarcar más días que el periodo elegido: solo cuenta lo de ese periodo (lo mismo que leía antes).
+  const pagadasDelPeriodo = useMemo(() => pagadas.filter((d) => d.dia >= desde && d.dia <= hasta), [pagadas, desde, hasta]);
+  const revisionesDelPeriodo = useMemo(() => revisionesLista.filter((d) => d.dia >= desde && d.dia <= hasta), [revisionesLista, desde, hasta]);
+  const registrosDelPeriodo = useMemo(() => registros.filter((d) => d.fecha >= desde && d.fecha <= hasta), [registros, desde, hasta]);
 
   // "Por pagar": solo las aprobadas sin pagar (pendientePago), de cualquier fecha. Se guardan aparte de lo del periodo para no mezclar un modo con otro al cambiar.
   const [revisionesPendientes, setRevisionesPendientes] = useState([]);
@@ -93,14 +103,14 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
     return () => { vigente = false; };
   }, [firebaseUser, soloPendientes, idsFilasVnTa]);
   const desdePendientes = useMemo(() => (soloPendientes ? revisionesPendientes.map((r) => r.dia).filter(Boolean).sort()[0] || '' : ''), [soloPendientes, revisionesPendientes]);
-  const pagadasVisibles = useMemo(() => (soloPendientes ? [] : pagadas), [soloPendientes, pagadas]);
-  const registrosVisibles = soloPendientes ? registrosPendientes : registros;
+  const pagadasVisibles = useMemo(() => (soloPendientes ? [] : pagadasDelPeriodo), [soloPendientes, pagadasDelPeriodo]);
+  const registrosVisibles = soloPendientes ? registrosPendientes : registrosDelPeriodo;
 
   const tarifas = useMemo(() => tarifasCompletas(tarifasGuardadas), [tarifasGuardadas]);
   const itemsPagoAdicional = useMemo(() => itemsAdicionales(catalogoAdicionales), [catalogoAdicionales]);
   const idsPagadas = useMemo(() => new Set(pagadasVisibles.map((p) => p.id)), [pagadasVisibles]);
   // La revisión del administrador de lo que se puede pagar: { [clave de la orden]: documento }.
-  const revisiones = useMemo(() => Object.fromEntries((soloPendientes ? revisionesPendientes : revisionesLista).map((r) => [r.id, r])), [soloPendientes, revisionesPendientes, revisionesLista]);
+  const revisiones = useMemo(() => Object.fromEntries((soloPendientes ? revisionesPendientes : revisionesDelPeriodo).map((r) => [r.id, r])), [soloPendientes, revisionesPendientes, revisionesDelPeriodo]);
 
   // Cada acción devuelve true si se guardó. Los errores salen como aviso, con el motivo cuando se sabe.
   const ejecutar = async (accion, exito, fallo) => {

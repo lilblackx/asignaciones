@@ -4,6 +4,7 @@ import { getDocs, onSnapshot } from '../lib/medidorFirestore.js';
 import { coleccionCobros } from '../lib/cobrosClientes';
 import { ESTADO_COBRO, avisoDeCobro } from '../utils/cobrosClientes';
 import { playAprobadoSound } from '../utils/notificationSound';
+import { useVentanaLectura } from './useVentanaLectura';
 
 const aLista = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 const inicioDelDia = (iso) => Date.parse(`${iso}T00:00:00-04:00`);
@@ -64,13 +65,18 @@ export function useAvisosCobros({ firebaseUser, activo, onNotify, setToastMsg })
   }, [firebaseUser, activo]);
 }
 
-// Finanzas: los cobros emitidos en el rango (días de Caracas "AAAA-MM-DD"), leídos al abrir, al cambiar el rango y con "recargar" (sin listener, como el resto de sus datos).
+// Finanzas: los cobros emitidos en el rango (días de Caracas "AAAA-MM-DD"), leídos al abrir, al ampliar el rango y con "recargar" (sin listener, como el resto de sus datos).
 export function useCobrosFinanzas(firebaseUser, rango) {
   const [estado, setEstado] = useState({ clave: '', cobros: [], error: false });
   const [version, setVersion] = useState(0);
-  const desde = inicioDelDia(rango.desde);
-  const hasta = finDelDia(rango.hasta);
+  // Se lee de una ventana que solo crece mientras la sección está abierta (ver useVentanaLectura): pasar a un periodo más corto o volver a uno ya visto no lee nada; abajo se filtra el periodo elegido.
+  const ventana = useVentanaLectura(rango, Boolean(rango.desde && rango.hasta));
+  const desde = ventana ? inicioDelDia(ventana.desde) : NaN;
+  const hasta = ventana ? finDelDia(ventana.hasta) : NaN;
   const clave = `${desde}|${hasta}|${version}`;
+  const inicioPeriodo = inicioDelDia(rango.desde);
+  const finPeriodo = finDelDia(rango.hasta);
+  const cobros = useMemo(() => estado.cobros.filter((c) => Number(c.creadoEn) >= inicioPeriodo && Number(c.creadoEn) <= finPeriodo), [estado.cobros, inicioPeriodo, finPeriodo]);
 
   useEffect(() => {
     if (!firebaseUser || !Number.isFinite(desde) || !Number.isFinite(hasta)) return undefined;
@@ -85,5 +91,5 @@ export function useCobrosFinanzas(firebaseUser, rango) {
   }, [firebaseUser, desde, hasta, clave]);
 
   const recargar = useCallback(() => setVersion((v) => v + 1), []);
-  return { cobros: estado.cobros, cargado: estado.clave === clave, error: estado.error, recargar };
+  return { cobros, cargado: estado.clave === clave, error: estado.error, recargar };
 }
