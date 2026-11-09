@@ -556,8 +556,11 @@ export const GRUPOS_ORDENES = [
 export const grupoDeConcepto = (concepto) => (concepto === 'INSTALACION' ? 'instalaciones' : concepto === 'VALIDACION_NAP' ? 'validacionesNap' : concepto === 'TRABAJO_ADICIONAL' ? 'adicionales' : 'averias');
 
 // Las órdenes de un pago en los grupos del reporte, solo los que tienen órdenes y cada uno de la más antigua a la más nueva: [{ id, titulo, items }].
-export function agruparOrdenes(items) {
+// `masNuevasPrimero`: cada grupo de la más nueva a la más antigua (y, el mismo día, el código mayor primero), como en Revisión.
+export function agruparOrdenes(items, { masNuevasPrimero = false } = {}) {
+  const ascendente = (a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo));
+  const descendente = (a, b) => b.dia.localeCompare(a.dia) || String(b.orden.codigo).localeCompare(String(a.orden.codigo), 'es', { numeric: true });
   return GRUPOS_ORDENES
-    .map((g) => ({ ...g, items: items.filter((i) => grupoDeConcepto(i.concepto) === g.id).sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo))) }))
+    .map((g) => ({ ...g, items: items.filter((i) => grupoDeConcepto(i.concepto) === g.id).sort(masNuevasPrimero ? descendente : ascendente) }))
     .filter((g) => g.items.length > 0);
 }

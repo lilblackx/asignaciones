@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ClipboardCheck, RefreshCw } from 'lucide-react';
+import { ClipboardCheck, RefreshCw, Search } from 'lucide-react';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import SelectMenu from '../SelectMenu';
@@ -8,9 +8,11 @@ import ConfirmModal from '../modals/ConfirmModal';
 import DetalleOrdenFinanzas from '../finanzas/DetalleOrdenFinanzas';
 import FilaRevision from './FilaRevision';
 import ResumenCifras from '../finanzas/ResumenCifras';
+import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
+import { BUSCADOR } from '../estilos';
 import { BOTON, CHIP, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../finanzas/estilos';
 import { DIAS_POR_PAGAR, corteTodaviaNoLlega, textoFechaCorte, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoPagable, rangoPorRevisar } from '../../utils/finanzas';
-import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, garantiasPorResolver, itemsParaRevisar, resumenRevision, revisar } from '../../utils/revisionPagos';
+import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, filtrarPorBusqueda, garantiasPorResolver, itemsParaRevisar, resumenRevision, revisar } from '../../utils/revisionPagos';
 import { PERIODOS, diaLegible, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
 import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { diaDe } from '../../utils/totalesMes';
@@ -31,6 +33,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const [hoy] = useState(() => diaDe(Date.now()));
   const [personalizado, setPersonalizado] = useState(() => ({ desde: rangoDe('7_DIAS').desde, hasta: hoy }));
   const [tecnico, setTecnico] = useState('');
+  const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('PENDIENTE');
   const [detalle, setDetalle] = useState(null);
   const [aprobando, setAprobando] = useState(null);
@@ -51,7 +54,9 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
     () => revisar(itemsParaRevisar({ ordenes, rango: rangoRevision, rangoElegido: rango, registros: datos.registros, tiposMudanza: datos.tiposMudanza }), datos.revisiones).filter((i) => !datos.idsPagadas.has(i.clave)),
     [ordenes, rangoRevision, rango, datos.registros, datos.tiposMudanza, datos.revisiones, datos.idsPagadas],
   );
-  const delTecnico = useMemo(() => todos.filter((i) => !tecnico || i.tecnico === tecnico), [todos, tecnico]);
+  // La búsqueda recorta lo mismo que el técnico: las cifras de arriba y los botones de aprobar valen para lo que se busca.
+  const delTecnico = useMemo(() => filtrarPorBusqueda(todos.filter((i) => !tecnico || i.tecnico === tecnico), busqueda), [todos, tecnico, busqueda]);
+  const buscando = busqueda.trim() !== '';
   // Una orden con descuento no se paga como orden a nadie: solo mueve ese monto de un técnico a otro (se ve en su fila).
   const precio = (i) => (i.concepto && !(i.descuento > 0) ? datos.tarifas[i.concepto] || 0 : 0);
   const resumen = useMemo(() => resumenRevision(delTecnico, precio), [delTecnico, datos.tarifas]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -136,6 +141,12 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
             )}
           </div>
 
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+            <input type="search" aria-label="Buscar por código, cliente, cédula o técnico" placeholder="Código, cliente, cédula o técnico" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} autoComplete="off" className={BUSCADOR} />
+            <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
+          </div>
+
           {periodo === 'POR_REVISAR' && (
             <p role="status" className={`${TEXTO_SUAVE} rounded-xl border border-zinc-400 dark:border-zinc-700 bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
               Pendientes muestra las órdenes de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
@@ -157,7 +168,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className={TEXTO_SUAVE}>Pulsa una cifra para ver esas órdenes; vuelve a pulsarla para verlas todas.</p>
             {resumen.PENDIENTE.cantidad > 0 && (
-              <Boton variante="principal" tamano="normal" type="button" onClick={() => prepararAprobacion(delTecnico, 'todas las pendientes')} disabled={datos.ocupado}>Aprobar todas las pendientes ({resumen.PENDIENTE.cantidad})</Boton>
+              <Boton variante="principal" tamano="normal" type="button" onClick={() => prepararAprobacion(delTecnico, buscando ? 'las pendientes de la búsqueda' : 'todas las pendientes')} disabled={datos.ocupado}>{buscando ? 'Aprobar las pendientes de la búsqueda' : 'Aprobar todas las pendientes'} ({resumen.PENDIENTE.cantidad})</Boton>
             )}
           </div>
 
@@ -165,7 +176,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           {datos.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">No se pudieron leer algunos datos de la revisión. Recarga la página.</p>}
 
           {secciones.length === 0 ? (
-            <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{rangoRevision.desde > rangoRevision.hasta ? `Este periodo es anterior al corte: se cuenta a partir del ${textoFechaCorte()}.` : filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar en este periodo.' : 'No hay órdenes con ese estado en este periodo.'}</p>
+            <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{rangoRevision.desde > rangoRevision.hasta ? `Este periodo es anterior al corte: se cuenta a partir del ${textoFechaCorte()}.` : buscando ? (delTecnico.length > 0 ? 'Lo que buscas está en otro estado: pulsa otra de las cifras de arriba para verlo.' : 'Ninguna orden de este periodo coincide con lo que buscas. La búsqueda solo recorre el periodo y el técnico elegidos.') : filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar en este periodo.' : 'No hay órdenes con ese estado en este periodo.'}</p>
           ) : secciones.map(([nombre, lista]) => {
             const pendientes = lista.filter((i) => i.estadoRevision === 'PENDIENTE');
             return (
@@ -179,7 +190,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
                     <button type="button" onClick={() => prepararAprobacion(lista, `las pendientes de ${nombre}`)} disabled={datos.ocupado} className={BOTON}>Aprobar las {pendientes.length} pendientes</button>
                   )}
                 </div>
-                {agruparOrdenes(lista.map((i) => (i.concepto ? i : { ...i, concepto: 'AVERIA' }))).map((g) => (
+                {agruparOrdenes(lista.map((i) => (i.concepto ? i : { ...i, concepto: 'AVERIA' })), { masNuevasPrimero: true }).map((g) => (
                   <div key={g.id}>
                     <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-900 dark:text-white pb-1 border-b border-zinc-400 dark:border-zinc-700"><span>{g.titulo} · {g.items.length}</span></h4>
                     <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">

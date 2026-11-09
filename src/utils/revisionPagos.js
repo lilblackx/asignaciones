@@ -111,6 +111,20 @@ export function resumenRevision(revisados, precio = () => 0, pagadas = new Set()
   return resumen;
 }
 
+// Busca entre lo que se revisa por código, cliente, cédula, teléfono o técnico (el de ahora y el que traía la orden). Sin tildes ni mayúsculas; una cédula o teléfono se compara solo por sus
+// dígitos y con al menos 3, para que "12" no traiga media lista. Sin texto devuelve todo.
+const sinTildesBusqueda = (texto) => String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+export function filtrarPorBusqueda(items, busqueda) {
+  const buscado = sinTildesBusqueda(busqueda).trim();
+  if (!buscado) return items;
+  const digitos = buscado.replace(/\D/g, '');
+  return items.filter((i) => {
+    const texto = sinTildesBusqueda([i.orden?.codigo, i.orden?.nombre, i.tecnico, i.tecnicoOriginal].filter(Boolean).join(' '));
+    if (texto.includes(buscado)) return true;
+    return digitos.length >= 3 && [i.orden?.cedula, i.orden?.telefono].some((v) => String(v ?? '').replace(/\D/g, '').includes(digitos));
+  });
+}
+
 // ¿Esa revisión aprobó una orden con descuento (o sea, creó ajustes)?
 const ajustesVigentes = (rev) => rev?.estado === 'APROBADA' && Number(rev.descuento) > 0 && Boolean(rev.descuentoDe?.id);
 

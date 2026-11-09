@@ -1,8 +1,8 @@
 // Prueba la barrera de revisión de pagos (src/utils/revisionPagos.js): qué se revisa, la firma que invalida una aprobación cuando la orden cambia, las acciones del administrador
 // (aprobar, retener, excluir, corregir), qué pasa a Finanzas y los resúmenes. No necesita el emulador. Uso: `node scripts/test-revision-pagos.mjs`.
-import { SIN_TECNICO, claveOrden, ordenesFueraDelCorte, rangoPagable, tarifasCompletas } from '../src/utils/finanzas.js';
+import { SIN_TECNICO, agruparOrdenes, claveOrden, ordenesFueraDelCorte, rangoPagable, tarifasCompletas } from '../src/utils/finanzas.js';
 import {
-  aprobarPendientes, armarRevision, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar,
+  aprobarPendientes, armarRevision, filtrarPorBusqueda, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar,
 } from '../src/utils/revisionPagos.js';
 
 let failures = 0;
@@ -146,6 +146,25 @@ check('marca cada revisión según su estado y si tiene orden pagada (y no toca 
 ]);
 check('cuenta las que quedan pendientes de pago y las pagadas, y avisa de una orden pagada sin revisión', [m.pendientes, m.pagadas, m.sinRevision], [3, 3, ['huerfana']]);
 check('con todo ya marcado no hay nada que escribir (se puede correr de nuevo)', marcasDeRevision([{ id: 'x', estado: 'APROBADA', pendientePago: true }, { id: 'y', estado: 'EXCLUIDA', pendientePago: false }], []).actualizar, []);
+
+// --- Buscador y orden de la lista ---
+const itemB = (codigo, nombre, extra = {}, tecnico = 'GERARDO', dia = '2026-10-27') => ({ clave: codigo, dia, concepto: 'INSTALACION', tecnico, tecnicoOriginal: tecnico, orden: { codigo, nombre, ...extra } });
+const lista = [
+  itemB('IO101', 'María Pérez', { cedula: 'V-12.345.678', telefono: '0414-1112233' }),
+  itemB('IO99', 'José Núñez', { cedula: '9876543' }, 'LUIS'),
+  { ...itemB('AO7', 'Ana Gil'), tecnico: 'REINEL', tecnicoOriginal: 'LUIS' },
+];
+const codigosDe = (t) => filtrarPorBusqueda(lista, t).map((i) => i.orden.codigo);
+check('buscar sin texto devuelve todo', codigosDe('   '), ['IO101', 'IO99', 'AO7']);
+check('busca por código, sin importar mayúsculas', codigosDe('io10'), ['IO101']);
+check('busca por cliente sin tildes', codigosDe('maria perez'), ['IO101']);
+check('busca por técnico, el de ahora y el que traía la orden', [codigosDe('reinel'), codigosDe('luis')], [['AO7'], ['IO99', 'AO7']]);
+check('busca por cédula con o sin puntos y por teléfono, pero solo con 3 dígitos o más', [codigosDe('12345678'), codigosDe('v-12.345'), codigosDe('1112233'), codigosDe('12')], [['IO101'], ['IO101'], ['IO101'], []]);
+check('nada que coincida devuelve una lista vacía', codigosDe('zzz'), []);
+
+const ordenado = agruparOrdenes([itemB('IO9', 'a', {}, 'G', '2026-10-25'), itemB('IO10', 'b', {}, 'G', '2026-10-27'), itemB('IO100', 'c', {}, 'G', '2026-10-27'), itemB('IO8', 'd', {}, 'G', '2026-10-26')], { masNuevasPrimero: true });
+check('con masNuevasPrimero cada grupo va del día más nuevo al más antiguo y, el mismo día, el código mayor primero', ordenado[0].items.map((i) => i.orden.codigo), ['IO100', 'IO10', 'IO8', 'IO9']);
+check('sin la opción el orden sigue siendo del más antiguo al más nuevo (Finanzas no cambia)', agruparOrdenes([itemB('IO9', 'a', {}, 'G', '2026-10-25'), itemB('IO10', 'b', {}, 'G', '2026-10-27')])[0].items.map((i) => i.orden.codigo), ['IO9', 'IO10']);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');
