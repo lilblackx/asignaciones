@@ -55,7 +55,7 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
           </div>
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">Cancelar</button>
-            <button type="submit" disabled={!parseada.valor || isSubmitting} className="px-4 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-xl transition-colors">{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
+            <button type="submit" disabled={!parseada.valor || isSubmitting} className="min-w-[8.5rem] px-4 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-xl transition-colors">{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
       </div>

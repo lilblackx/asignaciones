@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, MapPin, Repeat, Star, X } from 'lucide-react';
 import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchivados, buscarHistorialCliente, textoHace } from '../../utils/reincidencia';
 import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
-import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia } from '../../utils/garantia';
+import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia, tecnicoDeOriginal } from '../../utils/garantia';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import CampoFecha from '../CampoFecha';
@@ -95,6 +95,17 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   // Reincidencia: solo tiene sentido si esto no es una instalación nueva.
   const reincidencias = esInstalacion ? [] : historial.recientes;
   const reincidenciaMuyReciente = reincidencias.some(r => r.dias <= REINCIDENCIA_MUY_RECIENTE_DIAS);
+
+  // Al elegir o escribir el código de la orden original, la garantía se asigna al técnico de esa orden (si sigue en la lista de técnicos). Se aplica una vez por código: después se puede cambiar a mano.
+  const codigoAsignado = useRef('');
+  useEffect(() => {
+    const codigo = esGarantiaTipo ? formData.codigo.trim().toUpperCase() : '';
+    if (codigo === codigoAsignado.current) return;
+    codigoAsignado.current = codigo;
+    const nombre = tecnicoDeOriginal(ordenesGarantia, codigo, formData.cedula);
+    const tecnicoOriginal = nombre && technicians.find((t) => t.name === nombre);
+    if (tecnicoOriginal && tecnicoOriginal.name !== formData.tecnico) handleCreateChange({ target: { name: 'tecnico', value: tecnicoOriginal.name, type: 'text' } });
+  }, [esGarantiaTipo, formData.codigo, formData.cedula, formData.tecnico, ordenesGarantia, technicians, handleCreateChange]);
 
   const doSubmit = async () => {
     setIsSubmitting(true);
@@ -272,7 +283,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             <div className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-1.5 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200">
               {codigosOriginales.length > 0 ? (
                 <>
-                  <p>La garantía lleva el código de la orden original, no un número nuevo. Elige la del cliente:</p>
+                  <p>La garantía lleva el código de la orden original, no un número nuevo. Elige la del cliente o escribe el código; la garantía se asigna al técnico de esa orden:</p>
                   <div role="group" aria-label="Código de la orden original" className="flex flex-wrap gap-1.5">
                     {codigosOriginales.map((o) => (
                       <button key={o.codigo} type="button" onClick={() => handleCreateChange({ target: { name: 'codigo', value: o.codigo, type: 'text' } })} aria-pressed={formData.codigo.trim().toUpperCase() === o.codigo} className="max-lg:min-h-11 px-2.5 py-1 rounded-xl border border-zinc-300 dark:border-zinc-600 font-bold aria-pressed:bg-black aria-pressed:text-white aria-pressed:border-black">
@@ -398,7 +409,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           <div className="col-span-2 sm:col-span-5 pt-1 flex gap-2 justify-end mt-1">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-xs transition-colors">Cancelar</button>
-            <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`px-4 py-1.5 text-white font-bold rounded-xl text-xs shadow-md transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
+            <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`min-w-[8.5rem] px-4 py-1.5 text-white font-bold rounded-xl text-xs shadow-md transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
       </div>

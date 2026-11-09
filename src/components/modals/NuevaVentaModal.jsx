@@ -196,7 +196,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
 
           <div className="col-span-2 sticky bottom-0 -mx-4 -mb-4 mt-1 px-4 py-3 flex gap-2 justify-end rounded-b-2xl bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
             <Boton variante="secundario" onClick={onClose} disabled={guardando}>Cancelar</Boton>
-            <Boton variante="principal" type="submit" disabled={guardando || esperandoTecnicos || (Boolean(instalador) && tecnicos === 'error')}>
+            <Boton variante="principal" className="min-w-[8.5rem]" type="submit" disabled={guardando || esperandoTecnicos || (Boolean(instalador) && tecnicos === 'error')}>
               {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar'}
             </Boton>
           </div>

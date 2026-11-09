@@ -11,8 +11,14 @@ const BOTON = 'shrink-0 w-8 h-8 inline-flex items-center justify-center rounded 
 
 // Icono de estado + botón de volver a buscar, para ir al lado del campo de cédula.
 export function ClienteSmartOltIcono({ cliente }) {
-  if (!cliente.visible) return null;
   const { estado } = cliente;
+  // Sin cédula suficiente se reserva el mismo espacio (invisible): si no, el campo de cédula se achica y se mueve al aparecer el spinner.
+  if (!cliente.visible) return (
+    <>
+      <span aria-hidden="true" className={`${BOTON} invisible`} />
+      <span aria-hidden="true" className={`${BOTON} invisible`} />
+    </>
+  );
   const buscando = estado?.tipo === 'buscando';
 
   let icono = null;
@@ -26,11 +32,13 @@ export function ClienteSmartOltIcono({ cliente }) {
 
   return (
     <>
-      {icono && (
+      {icono ? (
         <span role="status" title={icono.titulo} className={`${BOTON} border-transparent`}>
           <icono.Icono className={`w-4 h-4 ${icono.clase}`} aria-hidden="true" />
           <span className="sr-only">{icono.titulo}</span>
         </span>
+      ) : (
+        <span aria-hidden="true" className={`${BOTON} border-transparent`} />
       )}
       <button
         type="button"

@@ -143,7 +143,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
             })}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Boton variante="principal" onClick={onGuardar} disabled={!draft || !!error || guardando}>
+            <Boton variante="principal" className="min-w-[10rem]" onClick={onGuardar} disabled={!draft || !!error || guardando}>
               {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar cambios'}
             </Boton>
             {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:underline">Descartar</button>}

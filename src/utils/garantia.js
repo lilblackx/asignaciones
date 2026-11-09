@@ -25,6 +25,18 @@ export function codigosParaGarantia(ordenes, cedula, limite = 5) {
     .map((o) => ({ codigo: String(o.codigo).toUpperCase(), tipoTrabajo: o.tipoTrabajo || '', estado: o.estado || '', tecnico: o.tecnico || '' }));
 }
 
+// El técnico de la orden original cuyo código se eligió o se escribió (exacto, sin importar mayúsculas). Las del mismo cliente (`cedula`) van primero y luego la más reciente; ignora garantías y órdenes sin técnico.
+export function tecnicoDeOriginal(ordenes, codigo, cedula = '') {
+  const cod = String(codigo || '').trim().toUpperCase();
+  if (!cod || esCodigoSinNumero(cod)) return '';
+  const ced = String(cedula || '').replace(/\D/g, '');
+  const delCliente = (o) => ced.length > 0 && String(o.cedula || '').replace(/\D/g, '') === ced;
+  const original = ordenes
+    .filter((o) => String(o.codigo || '').trim().toUpperCase() === cod && !esTipoGarantia(o.tipoTrabajo) && o.tecnico && o.tecnico !== SIN_TECNICO)
+    .sort((a, b) => Number(delCliente(b)) - Number(delCliente(a)) || (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0))[0];
+  return original ? original.tecnico : '';
+}
+
 // Al crear una GARANTIA del cliente con \u00f3rdenes anteriores el c\u00f3digo es obligatorio (el de la original). Sin \u00f3rdenes anteriores del cliente en la app, puede quedar vac\u00edo y toma un n\u00famero nuevo.
 export function errorCodigoGarantia(tipoTrabajo, codigo, candidatas) {
   if (!esTipoGarantia(tipoTrabajo) || String(codigo || '').trim() || !candidatas.length) return '';

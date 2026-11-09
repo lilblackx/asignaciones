@@ -27,7 +27,7 @@ export default function AvisoNotificaciones({ permiso, registro, detalleError, b
         <div role="status" className="mb-3 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 p-3 flex items-center gap-3 text-xs text-amber-900 dark:text-amber-200">
           <BellRing className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
           <p className="flex-1 font-bold leading-snug">{esMovil() ? 'Activa las notificaciones para enterarte al instante de tus órdenes, incluso con el teléfono bloqueado.' : 'Activa las notificaciones para enterarte al instante de las órdenes, aunque la pestaña esté cerrada.'}</p>
-          <button type="button" onClick={activar} disabled={activando} className="shrink-0 px-3 py-2 max-lg:min-h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black disabled:opacity-60">
+          <button type="button" onClick={activar} disabled={activando} className="shrink-0 min-w-[8.5rem] px-3 py-2 max-lg:min-h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black disabled:opacity-60">
             {activando && <Spinner />}{activando ? 'Activando...' : 'Activar'}
           </button>
         </div>
@@ -59,7 +59,7 @@ export default function AvisoNotificaciones({ permiso, registro, detalleError, b
             )}
             {detalleError && <span className="block font-normal opacity-80 mt-1">Detalle: {detalleError}</span>}
           </div>
-          <button type="button" onClick={activar} disabled={activando} className="shrink-0 px-3 py-2 max-lg:min-h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black disabled:opacity-60">
+          <button type="button" onClick={activar} disabled={activando} className="shrink-0 min-w-[8.5rem] px-3 py-2 max-lg:min-h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black disabled:opacity-60">
             {activando && <Spinner />}{activando ? 'Reintentando...' : 'Reintentar'}
           </button>
         </div>

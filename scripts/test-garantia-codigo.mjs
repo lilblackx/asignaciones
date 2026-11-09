@@ -1,5 +1,5 @@
 // Prueba que una garantía toma el código de la orden original (src/utils/garantia.js) y que el código anterior de una orden se puede recuperar del historial (src/utils/correlativo.js).
-import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia } from '../src/utils/garantia.js';
+import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia, tecnicoDeOriginal } from '../src/utils/garantia.js';
 import { codigosAnteriores } from '../src/utils/correlativo.js';
 
 let failures = 0;
@@ -32,6 +32,11 @@ check('garantía sin código y con órdenes del cliente: pide el código', error
 check('con el código escrito, no hay error', errorCodigoGarantia('GARANTIA', 'AO275', candidatas), '');
 check('garantía de un cliente sin órdenes anteriores: puede quedar vacío (número nuevo)', errorCodigoGarantia('GARANTIA', '', []), '');
 check('otros tipos de trabajo no piden código', errorCodigoGarantia('AVERÍA', '', candidatas), '');
+
+check('el técnico de la original sale del código, sin importar mayúsculas', tecnicoDeOriginal(ordenes, ' ao275 ', '18395753'), 'REINEL');
+check('ignora garantías: IO96 es de ABRAHAM', tecnicoDeOriginal(ordenes, 'IO96', ''), 'ABRAHAM');
+check('prefiere la orden del mismo cliente', tecnicoDeOriginal([...ordenes, { id: '8', codigo: 'IO96', tipoTrabajo: 'INSTALACIÓN', cedula: '999999999', createdAt: 900, tecnico: 'OTRO' }], 'IO96', '18395753'), 'ABRAHAM');
+check('código sin número, vacío o inexistente: sin técnico', [tecnicoDeOriginal(ordenes, 'IO', ''), tecnicoDeOriginal(ordenes, '', ''), tecnicoDeOriginal(ordenes, 'ZZ1', '')], ['', '', '']);
 
 const orden = {
   historialEdiciones: [

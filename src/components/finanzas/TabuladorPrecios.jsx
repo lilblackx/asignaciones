@@ -54,7 +54,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
       </ul>
 
       <div className="flex flex-wrap items-center gap-4">
-        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
+        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} min-w-[10rem] bg-red-600 hover:bg-red-700 text-white`}>
           {ocupado && <Spinner />}Guardar precios
         </button>
         <span className={`${ETIQUETA} text-sm`}>{cambiado ? 'Hay cambios sin guardar' : 'Precios al día'}</span>
