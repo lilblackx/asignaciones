@@ -73,6 +73,35 @@ export async function registrarPagoPendiente(ticket, { nota, compartidoCon = nul
   return guardarPago(ticket, documento, { por, ahora });
 }
 
+// El ADMIN registra el pago de una orden a nombre del técnico (Revisión: la orden espera el pago y el técnico no lo registra). `valor` es lo que devuelve parsePagoCliente (con la nota que explica por qué) o, con `pagaDespues`,
+// solo la nota. Queda a nombre del técnico de la orden, marcado como registrado por la oficina. La orden puede estar ya archivada en un Cierre: entonces solo se guarda el documento de pago (la orden ya no está para
+// llevar la copia; Revisión lo lee de aquí). Devuelve { ok: true, documento, resumen, enCola } o { repetida } si la referencia ya está en otra orden.
+export async function registrarPagoPorAdmin(ticket, { valor = null, nota = '', pagaDespues = false }, { por, ahora = Date.now() }) {
+  const documento = pagaDespues
+    ? armarPagoPendiente(ticket, { nota }, { por, ahora, aNombreDelTecnico: true })
+    : armarPagoRegistrado(ticket, { ...valor, nota: nota || valor?.nota || '' }, { por, ahora, aNombreDelTecnico: true });
+  const clave = documento.referenciaClave;
+  const previa = await estadoReferencia(clave, ticket.id);
+  if (previa.estado === 'ajena') return { repetida: { ticketId: previa.ticketId, codigo: previa.codigo } };
+  const resumen = resumenDePago(documento);
+  const orden = await getDoc(docOrden(ticket.id));
+  const lote = writeBatch(db);
+  lote.set(docPago(ticket.id), documento);
+  if (clave) lote.set(docReferencia(clave), reservaDe(documento, por, ahora));
+  if (orden.exists()) lote.update(docOrden(ticket.id), { pagoCliente: resumen, historialEdiciones: arrayUnion(entradaHistorialPago(resumen, { fecha: fechaCorta(), operador: por })) });
+  const aTiempo = await esperarConLimite(lote.commit());
+  copiarAlCobro(ticket.id, resumen);
+  return { ok: true, documento, resumen, enCola: !aTiempo };
+}
+
+// El pago que hay guardado de una orden (el resumen que ven las pantallas) o null si no hay. Revisión lo usa para las órdenes archivadas, cuya copia no se actualiza.
+export async function leerResumenDePago(ticketId) {
+  const snap = await getDoc(docPago(ticketId));
+  if (!snap.exists()) return null;
+  const d = snap.data();
+  return resumenDePago(d, d.corregidoPor ? { corregidoPor: d.corregidoPor, corregidoEn: d.corregidoEn } : {});
+}
+
 // El ADMIN corrige el pago de una orden (o registra el que el técnico dejó como "paga después"). Todo dentro de una transacción que vuelve a leer el pago (dos personas a la vez no se pisan): actualiza el
 // documento de pago, la reserva de su referencia (si cambió: la nueva se reserva y la vieja se libera; si ya está en otra orden se puede repetir porque la nota explica por qué), la copia en la orden y la
 // del cobro. Una orden ya archivada en un Cierre conserva su copia anterior. Devuelve { ok: true } o { error, campo }.

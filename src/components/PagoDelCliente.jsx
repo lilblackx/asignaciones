@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { ETIQUETA } from './estilos';
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
+import { faltaElPago } from '../utils/pagoCliente';
 import { TIPO_PAGO, avisosDePago, lineaDePago, pagoClienteDe, pagoVisibleEnFinanzas } from '../utils/pagoEnOrden';
 
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
@@ -68,7 +69,7 @@ export function FichaDelPago({ pago: p, copiable = false }) {
         <p className="text-base font-black text-zinc-900 dark:text-white break-words">{lineaDePago(p)}</p>
       )}
       {avisos.map((a) => <p key={a} role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">{a}</p>)}
-      {p.nota && <div className="min-w-0"><Fila etiqueta={p.tipo === TIPO_PAGO.PAGO ? 'Nota del técnico' : 'Nota'}>{p.nota}</Fila></div>}
+      {p.nota && <div className="min-w-0"><Fila etiqueta={p.aNombreDelTecnico ? 'Por qué lo registró la oficina' : p.tipo === TIPO_PAGO.PAGO ? 'Nota del técnico' : 'Nota'}>{p.nota}</Fila></div>}
     </div>
   );
 }
@@ -76,14 +77,18 @@ export function FichaDelPago({ pago: p, copiable = false }) {
 // El pago que el técnico registró por una orden o un cobro (ver utils/pagoEnOrden), sin ícono: una línea para las listas o, con `bloque`, una caja con todos sus datos para los detalles.
 // No muestra nada si no hay pago. `tamano`: 'normal', 'compacto' (tablas: dos líneas como máximo, el texto completo en el título) o 'grande' (tarjetas del celular).
 // `paraFinanzas`: en Finanzas solo se ve el pago de las instalaciones y los cambios de equipo (lo mismo que Finanzas ya ve de los pagos de clientes); en las demás órdenes no se muestra.
-export default function PagoDelCliente({ orden, bloque = false, tamano = 'normal', paraFinanzas = false, className = '' }) {
+export default function PagoDelCliente({ orden, bloque = false, tamano = 'normal', paraFinanzas = false, avisarFalta = false, className = '' }) {
   const p = pagoClienteDe(orden);
+  // `avisarFalta` (las listas de órdenes): una orden finalizada que debe pago y todavía no lo tiene lo dice, para que se vea cuáles están pendientes de registrarlo.
+  if (!p && avisarFalta && !paraFinanzas && faltaElPago(orden)) {
+    return <div className={`min-w-0 break-words font-bold ${TAMANO[tamano]} ${TONO.atencion.linea} ${className}`}>Falta registrar el pago del cliente</div>;
+  }
   if (!p || (paraFinanzas && !pagoVisibleEnFinanzas(orden))) return null;
   const tono = TONO[tonoDe(p)];
   if (bloque) {
     return (
       <div className={`rounded-xl border px-3 py-2.5 ${tono.caja} ${className}`}>
-        <p className="text-sm font-black text-zinc-900 dark:text-white">Pago del cliente <span className="font-bold text-zinc-700 dark:text-zinc-300">(registrado por {orden.tecnico || p.registradoPor || 'el técnico'})</span></p>
+        <p className="text-sm font-black text-zinc-900 dark:text-white">Pago del cliente <span className="font-bold text-zinc-700 dark:text-zinc-300">({p.aNombreDelTecnico ? `registrado por la oficina (${p.registradoPor || 'administrador'}) a nombre de ${orden.tecnico || 'el técnico'}` : `registrado por ${orden.tecnico || p.registradoPor || 'el técnico'}`})</span></p>
         <div className="mt-2"><FichaDelPago pago={p} copiable /></div>
         <p className="mt-2 text-xs text-zinc-700 dark:text-zinc-300">
           {p.registradoEn ? `Registrado el ${fechaHora(p.registradoEn)}` : ''}
@@ -92,7 +97,7 @@ export default function PagoDelCliente({ orden, bloque = false, tamano = 'normal
       </div>
     );
   }
-  const texto = [p.tipo === TIPO_PAGO.PAGO ? `Pagó: ${lineaDePago(p)}` : lineaDePago(p), p.nota && `Nota: ${p.nota}`].filter(Boolean).join(' · ');
+  const texto = [p.tipo === TIPO_PAGO.PAGO ? `Pagó: ${lineaDePago(p)}` : lineaDePago(p), p.nota && `Nota: ${p.nota}`, p.aNombreDelTecnico && 'Registrado por la oficina'].filter(Boolean).join(' · ');
   return (
     <div className={`min-w-0 break-words font-semibold ${TAMANO[tamano]} ${tono.linea} ${tamano === 'compacto' ? 'line-clamp-2' : ''} ${className}`} title={tamano === 'compacto' ? texto : undefined}>
       {texto}

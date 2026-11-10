@@ -5,7 +5,7 @@ import { ensancharRango, rangoDe } from '../src/utils/periodoReporte.js';
 import { planDeLectura } from '../src/utils/ventanaLectura.js';
 import { idsPagadas, marcadorDeInicio, marcadorDeLectura, mensajeDePagadas, pagadasCoinciden } from '../src/utils/pagadasRevision.js';
 import {
-  aprobarPendientes, armarRevision, filtrarPorBusqueda, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, paraFinanzas, parseMotivoRevision, resumenRevision, revisar, textoEscaladaRevision,
+  aprobarPendientes, armarRevision, filtrarPorBusqueda, firmaDeItem, marcasDeRevision, itemsParaRevisar, motivoNoAprobable, motivoSinPago, paraFinanzas, parseMotivoRevision, resumenRevision, revisar, textoEscaladaRevision,
 } from '../src/utils/revisionPagos.js';
 
 let failures = 0;
@@ -242,6 +242,28 @@ check('el aviso de órdenes ya pagadas dice cuáles', [mensajeDePagadas(['AO268'
   'La orden AO268 ya está pagada: no se puede cambiar. Se actualizó la lista.',
   '5 de esas órdenes ya estaban pagadas (AO268, AO270, IO101, AN1...): no se pueden cambiar. Se actualizó la lista.',
 ]);
+
+// --- Barrera del pago del cliente: no se aprueba hasta que el técnico (o la oficina por él) registre el pago ---
+const NOV = (d) => Date.UTC(2026, 10, d, 16, 0, 0);
+const rangoNov = { desde: '2026-11-10', hasta: '2026-11-20' };
+const finNov = (extra) => orden({ createdAt: NOV(11), finalizadoEn: NOV(12), ...extra });
+const instNov = finNov({ codigo: 'IN1' });
+const instConPago = finNov({ codigo: 'IN2', pagoCliente: { tipo: 'PAGO', pago: { moneda: 'BS', forma: 'Efectivo', monto: 10, banco: '', cuentaEmpresa: '', referencia: '', pagadoEn: NOV(12) }, nota: '', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'tecnico1', registradoEn: NOV(12) } });
+const aveNov = finNov({ codigo: 'AV1', tipoTrabajo: 'AVERÍA', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' });
+const aveExonerada = finNov({ codigo: 'AV2', tipoTrabajo: 'AVERÍA', cobroBs: null, cobroTipo: 'EXONERADO' });
+const aveSinCobro = finNov({ codigo: 'AV3', tipoTrabajo: 'AVERÍA' });
+const itemsNov = revisar(itemsParaRevisar({ ordenes: [instNov, instConPago, aveNov, aveExonerada, aveSinCobro, inst], rango: rangoNov }), {});
+const deNov = (codigo) => itemsNov.find((i) => i.orden.codigo === codigo);
+check('la barrera frena a la instalación y a la orden con cobro sin pago; no a las que ya traen el pago, exoneradas, sin cobro ni anteriores a la fecha', ['IN1', 'IN2', 'AV1', 'AV2'].map((c) => Boolean(motivoSinPago(deNov(c)))).concat(Boolean(motivoSinPago({ orden: aveSinCobro }))), [true, false, true, false, false]);
+check('el motivo dice quién debe registrarlo', motivoSinPago(deNov('IN1')), 'Falta el pago del cliente: lo registra el técnico (GERARDO). Si no puede, regístralo tú.');
+check('una orden anterior a la fecha de inicio del pago no se frena', motivoSinPago({ orden: { ...inst, finalizadoEn: DIA(27) } }), '');
+check('aprobar una orden sin pago da el error y no guarda nada', armarRevision(deNov('IN1'), 'APROBAR', { por: 'admin', ahora: 5 }).error, 'Falta el pago del cliente: lo registra el técnico (GERARDO). Si no puede, regístralo tú.');
+check('con el pago registrado se aprueba', armarRevision(deNov('IN2'), 'APROBAR', { por: 'admin', ahora: 5 }).datos?.estado, 'APROBADA');
+check('retener y excluir no necesitan el pago', ['RETENER', 'EXCLUIR'].map((a) => armarRevision(deNov('IN1'), a, { por: 'admin', ahora: 5, motivo: 'Prueba' }).datos?.estado), ['RETENIDA', 'EXCLUIDA']);
+const loteNov = aprobarPendientes(itemsNov, { por: 'admin', ahora: 6 });
+check('aprobar de golpe deja fuera las que esperan el pago y dice por qué', [loteNov.documentos.map((d) => d.datos.codigo).sort(), loteNov.omitidas.filter((o) => o.sinPago).map((o) => o.item.orden.codigo).sort()], [['AV2', 'AV3', 'IN2', 'IO1'].filter((c) => loteNov.documentos.some((d) => d.datos.codigo === c)).sort(), ['AV1', 'IN1']]);
+const aprobadaSinPago = { ...deNov('IN1'), estadoRevision: 'APROBADA', concepto: 'INSTALACION' };
+check('lo que ya estaba aprobado sigue llegando a Finanzas aunque la orden no traiga el pago (la barrera es solo para aprobar)', paraFinanzas([aprobadaSinPago]).length, 1);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');

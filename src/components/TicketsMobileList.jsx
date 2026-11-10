@@ -2,7 +2,7 @@ import { observacionParaTecnico } from '../utils/observacion';
 import { Fragment } from 'react';
 import { esProgramadaFutura } from '../utils/programada';
 import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
-import { Ban, Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench } from 'lucide-react';
+import { Ban, Banknote, Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
 import DevolucionAviso from './DevolucionAviso';
@@ -23,6 +23,7 @@ import { ESTADO_EN_SITIO, estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
+import { faltaElPago } from '../utils/pagoCliente';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -42,6 +43,7 @@ export default function TicketsMobileList({
   onPegarUbicacion,
   onVerDetalle,
   onPreFinalizar,
+  onRegistrarPago,
   onAprobarFinalizar,
   onResponderCobro,
   onEscalar,
@@ -210,7 +212,7 @@ export default function TicketsMobileList({
                 <span className="text-amber-800 dark:text-amber-300 leading-tight">{ticket.observacionTecnico}</span>
               </div>
             )}
-            <PagoDelCliente orden={ticket} tamano="grande" />
+            <PagoDelCliente orden={ticket} tamano="grande" avisarFalta />
           </div>
           {/* El técnico solo ve sus propias órdenes: repetir su nombre (y el creador,
               que no le sirve) en cada tarjeta solo gasta alto de pantalla. */}
@@ -247,6 +249,10 @@ export default function TicketsMobileList({
                 {ticket.estado === 'PENDIENTE' ? (
                   <button onClick={() => onPreFinalizar(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-[13px] transition-colors">
                     <CheckCircle2 className="w-4 h-4" /> Pre-finalizar
+                  </button>
+                ) : onRegistrarPago && faltaElPago(ticket) ? (
+                  <button onClick={() => onRegistrarPago(ticket.id)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 hover:bg-emerald-200 dark:hover:bg-emerald-500/25 font-bold text-[13px] transition-colors">
+                    <Banknote className="w-4 h-4" aria-hidden="true" /> Registrar el pago
                   </button>
                 ) : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? (
                   <div className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-400 font-bold text-sm">

@@ -33,7 +33,7 @@ import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { emitirCobro, sincronizarCobroDeOrden } from '../lib/cobrosClientes';
 import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
 import { avisoDeCobro } from '../utils/cobrosClientes';
-import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, piensaPagoCliente } from '../utils/pagoCliente';
+import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, faltaElPago, piensaPagoCliente } from '../utils/pagoCliente';
 import { ADMINISTRACION_ACTIVA } from '../constants';
 import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, datosVlanVisita, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, errorVlanVisita, esCambioEquipo, esConfigVlan, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
@@ -50,6 +50,9 @@ const avisoCobro = (t) => {
   if (estaExonerado(t)) return ' Visita exonerada: no se cobra al cliente.';
   return t.cobroBs ? ` Cobro resultante al cliente: ${textoMonto(t.cobroBs, monedaDe(t))}.` : '';
 };
+
+// Al finalizarse una orden que pide el pago del cliente (instalación u orden con cobro), el técnico debe registrarlo: el aviso se lo dice.
+const avisoPago = (t) => (faltaElPago(t) ? ' Registra el pago del cliente.' : '');
 
 // Órdenes que el técnico todavía tiene por atender: solo de esas le avisa que se las quitaron o cancelaron.
 const esActiva = (t) => t?.estado === 'PENDIENTE' || t?.estado === 'PRE-FINALIZADO';
@@ -388,11 +391,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     }
     // Cierre directo de una orden con tipo de visita (vino de una devolución): solo
     // avisa si hay cobro; el aviso normal de cierre es el de aprobación de abajo.
-    if (updated.tecnico && updated.estado === 'FINALIZADO' && original?.estado === 'PENDIENTE' && avisoCobro(updated)) {
+    if (updated.tecnico && updated.estado === 'FINALIZADO' && original?.estado === 'PENDIENTE' && (avisoCobro(updated) || avisoPago(updated))) {
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Orden finalizada',
-        body: `${updated.codigo || 'Orden'} fue finalizada.${avisoCobro(updated)}`,
+        body: `${updated.codigo || 'Orden'} fue finalizada.${avisoCobro(updated)}${avisoPago(updated)}`,
         tipo: 'aprobado',
         ticketId,
       });
@@ -401,7 +404,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Orden aprobada',
-        body: `${updated.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(updated) || ' Ya puedes continuar.'}`,
+        body: `${updated.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(updated)}${avisoPago(updated)}${avisoCobro(updated) || avisoPago(updated) ? '' : ' Ya puedes continuar.'}`,
         tipo: 'aprobado',
         ticketId,
       });
@@ -607,18 +610,19 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           const aprobadas = loadedTickets.filter(t =>
             t.estado === 'FINALIZADO' && (
               estadoAnteriorRef.current.get(t.id) === 'PRE-FINALIZADO'
-              || (estadoAnteriorRef.current.get(t.id) === 'PENDIENTE' && avisoCobro(t))
+              || (estadoAnteriorRef.current.get(t.id) === 'PENDIENTE' && (avisoCobro(t) || avisoPago(t)))
             )
           );
           if (aprobadas.length === 1) {
             const t = aprobadas[0];
-            const texto = `${t.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(t) || ' Ya puedes continuar.'}`;
+            const texto = `${t.codigo || 'Orden'} fue aprobada y finalizada.${avisoCobro(t)}${avisoPago(t)}${avisoCobro(t) || avisoPago(t) ? '' : ' Ya puedes continuar.'}`;
             setToastMsg({ type: 'aprobado', text: texto, duration: 6000 });
             onNotify?.({ type: 'aprobado', text: texto, ticketId: t.id });
             playAprobadoSound();
           } else if (aprobadas.length > 1) {
             const cobros = aprobadas.filter(t => avisoCobro(t)).map(t => `${t.codigo || 'Orden'}: ${estaExonerado(t) ? 'exonerada' : textoMonto(t.cobroBs, monedaDe(t))}`);
-            const texto = `${aprobadas.length} órdenes fueron aprobadas y finalizadas.${cobros.length ? ` Cobro resultante al cliente: ${cobros.join(', ')}.` : ''}`;
+            const sinPago = aprobadas.filter(t => faltaElPago(t)).length;
+            const texto = `${aprobadas.length} órdenes fueron aprobadas y finalizadas.${cobros.length ? ` Cobro resultante al cliente: ${cobros.join(', ')}.` : ''}${sinPago ? ` Registra el pago del cliente de ${sinPago === 1 ? 'una de ellas' : `${sinPago} de ellas`}.` : ''}`;
             setToastMsg({ type: 'aprobado', text: texto, duration: 6000 });
             onNotify?.({ type: 'aprobado', text: texto });
             playAprobadoSound();

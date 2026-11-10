@@ -9,6 +9,7 @@
 //   compartidoCon   { id, codigo } de la otra orden si tipo es JUNTO; si no, null
 //   monedaDistinta, diferencia   el cliente pagó en otra moneda que la del cobro / un monto distinto al cobro (se avisa en pantalla)
 //   registradoPor, registradoEn  quién lo registró y cuándo
+//   aNombreDelTecnico            solo si la oficina (ADMIN) lo registró por el técnico, desde Revisión (registradoPor es el administrador)
 //   corregidoPor, corregidoEn    solo si el ADMIN lo corrigió después (el último)
 import { esPagoDeFinanzas, textoPago } from './pagoCliente.js';
 
@@ -30,6 +31,7 @@ export function resumenDePago(documento, { corregidoPor = '', corregidoEn = 0 } 
     diferencia: Boolean(documento.diferencia),
     registradoPor: String(documento.registradoPor || ''),
     registradoEn: Number(documento.registradoEn) || 0,
+    ...(documento.aNombreDelTecnico === true ? { aNombreDelTecnico: true } : {}),
     ...(corregidoPor ? { corregidoPor: String(corregidoPor), corregidoEn: Number(corregidoEn) || 0 } : {}),
   };
 }
@@ -78,5 +80,5 @@ export function textoDelPago(x) {
 // La entrada del historial de la orden cuando el técnico registra el pago (o el ADMIN lo corrige). `fecha` y `operador`: como las demás entradas (fecha corta de es-VE y el usuario).
 export function entradaHistorialPago(p, { fecha, operador, corregido = false, motivo = '' }) {
   const texto = [lineaDePago(p), p.nota && `Nota: ${p.nota}`, corregido && motivo && `Corrección: ${motivo}`].filter(Boolean).join(' | ');
-  return { fecha, operador, tipo: 'pagoCliente', detalle: `${corregido ? 'Pago del cliente corregido' : 'Pago del cliente'}: ${texto}` };
+  return { fecha, operador, tipo: 'pagoCliente', detalle: `${corregido ? 'Pago del cliente corregido' : p.aNombreDelTecnico ? 'Pago del cliente (registrado por la oficina a nombre del técnico)' : 'Pago del cliente'}: ${texto}` };
 }

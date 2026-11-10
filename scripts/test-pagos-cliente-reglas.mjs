@@ -111,6 +111,20 @@ await check('un monto cero, una forma inventada o un campo de más se rechazan',
   await assertFails(registrar(ctx, { ...doc, extra: 1 }));
 });
 
+// --- El ADMIN registra el pago a nombre del técnico (Revisión: la orden espera el pago y el técnico no lo registra) ---
+const porOficina = (id, { por = 'admin', tecnico = 'GERARDO MOLERO', extra, marcado = true } = {}) => {
+  const doc = armarPagoRegistrado(ordenDe(id, tecnico), valor(extra), { por, ahora: AHORA, aNombreDelTecnico: marcado });
+  if (!marcado) delete doc.aNombreDelTecnico;
+  return doc;
+};
+await check('el ADMIN registra el pago a nombre del técnico: el pago marcado y la reserva de su referencia, en un solo lote', () => assertSucceeds(registrar(como('admin-uid'), porOficina('of1', { extra: { referencia: '770077' } }))));
+await check('también "paga después" por la oficina, con su nota', () => assertSucceeds(registrar(como('admin-uid'), armarPagoPendiente(ordenDe('of2'), { nota: 'El técnico no está' }, { por: 'admin', ahora: AHORA, aNombreDelTecnico: true }))));
+await check('el ADMIN lo registra aunque la orden ya no esté entre las vivas (archivada en un Cierre)', () => assertSucceeds(registrar(como('admin-uid'), porOficina('archivada1', { extra: { referencia: '880088' } }))));
+await check('el ADMIN no lo registra sin la marca de "a nombre del técnico"', () => assertFails(registrar(como('admin-uid'), porOficina('of3', { marcado: false, extra: { referencia: '990099' } }))));
+await check('el ADMIN no lo registra a nombre de otro usuario', () => assertFails(registrar(como('admin-uid'), porOficina('of4', { por: 'gerardo', extra: { referencia: '990100' } }))));
+await check('el técnico no puede ponerle la marca de la oficina a su pago', () => assertFails(registrar(como('gerardo-uid'), porOficina('of5', { por: 'gerardo', extra: { referencia: '660066' } }))));
+await check('el USUARIO (oficina) no registra pagos por el técnico: solo el ADMIN', () => assertFails(registrar(como('usuario-uid'), porOficina('of6', { por: 'usuario', extra: { referencia: '660067' } }))));
+
 // --- "El cliente paga después" ---
 await check('el técnico dice que el cliente paga después: queda pendiente de cobro, con nota', () => assertSucceeds(registrar(como('gerardo-uid'), pendiente('g7'))));
 await check('sin nota no se guarda', () => assertFails(registrar(como('reinel-uid'), pendiente('r2', { por: 'reinel', tecnico: 'REINEL BRAVO', nota: '' }))));

@@ -158,7 +158,8 @@ const entradaHistorial = (por, ahora, detalle) => ({ en: ahora, por, detalle });
 const textoDeCobro = (cobro) => (cobro ? textoMonto(formatoMontoBs(cobro.monto), cobro.moneda) : '');
 
 // El técnico registró el pago -> el documento nuevo (estado POR_CONCILIAR). `valor`: lo que devuelve parsePagoCliente.
-export function armarPagoRegistrado(ticket, valor, { por, ahora, cobro = cobroEsperadoDe(ticket) }) {
+// `aNombreDelTecnico` (solo el ADMIN, desde Revisión): lo registra la oficina porque el técnico no lo hizo; `nota` explica por qué. El pago queda a nombre del técnico de la orden.
+export function armarPagoRegistrado(ticket, valor, { por, ahora, cobro = cobroEsperadoDe(ticket), aNombreDelTecnico = false }) {
   return {
     ...datosDeOrden(ticket),
     estado: ESTADO_PAGO.POR_CONCILIAR,
@@ -176,12 +177,13 @@ export function armarPagoRegistrado(ticket, valor, { por, ahora, cobro = cobroEs
     notaAdministracion: '',
     creadoEn: ahora,
     actualizadoEn: ahora,
-    historial: [entradaHistorial(por, ahora, `Pago registrado por el técnico: ${textoPago(valor.pago)}`)],
+    ...(aNombreDelTecnico ? { aNombreDelTecnico: true } : {}),
+    historial: [entradaHistorial(por, ahora, aNombreDelTecnico ? `Pago registrado por la oficina a nombre del técnico: ${textoPago(valor.pago)}${valor.nota ? ` | Motivo: ${valor.nota}` : ''}` : `Pago registrado por el técnico: ${textoPago(valor.pago)}`)],
   };
 }
 
 // El técnico dijo que el cliente paga después (o pagó junto con otra orden) -> el documento nuevo (estado PENDIENTE_COBRO).
-export function armarPagoPendiente(ticket, { nota, compartidoCon = null }, { por, ahora, cobro = cobroEsperadoDe(ticket) }) {
+export function armarPagoPendiente(ticket, { nota, compartidoCon = null }, { por, ahora, cobro = cobroEsperadoDe(ticket), aNombreDelTecnico = false }) {
   const detalle = compartidoCon ? `El cliente pagó junto con la orden ${compartidoCon.codigo}` : 'El cliente paga después';
   return {
     ...datosDeOrden(ticket),
@@ -200,7 +202,8 @@ export function armarPagoPendiente(ticket, { nota, compartidoCon = null }, { por
     notaAdministracion: '',
     creadoEn: ahora,
     actualizadoEn: ahora,
-    historial: [entradaHistorial(por, ahora, `${detalle}: ${limpiar(nota)}`)],
+    ...(aNombreDelTecnico ? { aNombreDelTecnico: true } : {}),
+    historial: [entradaHistorial(por, ahora, `${aNombreDelTecnico ? 'Registrado por la oficina a nombre del técnico | ' : ''}${detalle}: ${limpiar(nota)}`)],
   };
 }
 
@@ -404,17 +407,20 @@ export function debePedirPagoCobro(ticket, tienePago, { desde = FECHA_INICIO_PAG
   return finalizada > 0 && diaDe(finalizada) >= desde;
 }
 
-// Las instalaciones piden el pago dentro del Pre-finalizar. Si el técnico ya la envió a revisión (o la oficina la finalizó) y no hay pago, se le vuelve a pedir
-// (por ejemplo, si el pago no se pudo guardar justo después de pre-finalizar). Solo las pre-finalizadas desde FECHA_INICIO_PAGO_CLIENTE.
+// Las instalaciones piden el pago cuando la oficina las finaliza, igual que las órdenes con cobro (no en el Pre-finalizar). Una instalación no trae monto esperado: el técnico anota lo que el cliente pagó.
+// Solo las finalizadas desde FECHA_INICIO_PAGO_CLIENTE.
 export function debePedirPagoInstalacion(ticket, tienePago, { desde = FECHA_INICIO_PAGO_CLIENTE } = {}) {
-  if (!ticket || tienePago || !esInstalacion(ticket.tipoTrabajo)) return false;
-  if (ticket.estado !== 'PRE-FINALIZADO' && ticket.estado !== 'FINALIZADO') return false;
-  const marca = Number(ticket.prefinalizadoEn) || Number(ticket.finalizadoEn) || 0;
-  return marca > 0 && diaDe(marca) >= desde;
+  if (!ticket || tienePago || !esInstalacion(ticket.tipoTrabajo) || ticket.estado !== 'FINALIZADO') return false;
+  const finalizada = Number(ticket.finalizadoEn) || 0;
+  return finalizada > 0 && diaDe(finalizada) >= desde;
 }
 
 // ¿Esta orden es de las que piden el pago al técnico (con o sin el pago ya registrado)? Las demás siguen con el aviso de siempre.
 export const piensaPagoCliente = (ticket, opciones) => debePedirPagoCobro(ticket, false, opciones) || debePedirPagoInstalacion(ticket, false, opciones);
+
+// ¿A esta orden le falta el pago del cliente? Finalizada, de las que lo piden (instalación u orden con cobro, desde FECHA_INICIO_PAGO_CLIENTE) y sin `pagoCliente`. Es lo que frena la aprobación en Revisión y lo que
+// el técnico ve como "por registrar".
+export const faltaElPago = (ticket, opciones) => Boolean(ticket) && !(ticket.pagoCliente && typeof ticket.pagoCliente === 'object') && piensaPagoCliente(ticket, opciones);
 
 // --- Resúmenes para Administración ---
 

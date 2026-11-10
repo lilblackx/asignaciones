@@ -31,8 +31,6 @@ import { veEnviosInventario, vinculaTecnicosInventario } from './utils/accesoInv
 import { veEstaciones } from './utils/estaciones';
 import EstacionesView from './components/EstacionesView';
 import { listarTecnicosInventario } from './lib/inventario';
-import { estadoReferencia } from './lib/pagosOrdenes';
-import { normalizarFormasPago } from './utils/formasPago';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
@@ -332,6 +330,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const [uncheckWarningTicket, setUncheckWarningTicket] = useState(null);
   const [whatsappMessage, setWhatsappMessage] = useState(null);
   const [preFinalizarTarget, setPreFinalizarTarget] = useState(null);
+  // Pago del cliente que el técnico debe registrar: las que dejó para después (solo esta sesión) y la que abrió a mano desde su orden.
+  const [pagoPospuesto, setPagoPospuesto] = useState(() => new Set());
+  const [pagoAbierto, setPagoAbierto] = useState(null);
   const [aprobarTarget, setAprobarTarget] = useState(null);
   const [finalizarTarget, setFinalizarTarget] = useState(null);
   const [ubicacionTarget, setUbicacionTarget] = useState(null);
@@ -524,21 +525,23 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const handleConfirmPreFinalizar = conAviso(async (ticket, extra) => {
     // Conector interno: el cobro se informa ya (y queda en el historial de la orden).
     const monto = avisaCobroAlPreFinalizar(extra.tipoVisita) ? montoBsDe(tasaConfig) : null;
-    const { pagoCliente, ...datosVisita } = extra;
-    const ok = await preFinalizarTicket(ticket, { ...datosVisita, montoBs: monto });
+    const ok = await preFinalizarTicket(ticket, { ...extra, montoBs: monto });
     setPreFinalizarTarget(null);
-    // Instalación: el pago del cliente que el técnico anotó en el mismo formulario. Si no se pudo guardar, la pantalla de pago vuelve a salir (la orden ya está en revisión sin pago).
-    if (ok && isTecnico && pagoCliente) {
-      const conDatos = { ...ticket, ...datosVisita };
-      const r = pagoCliente.tipo === 'pago' ? await registrarPagoDeOrden(conDatos, pagoCliente.valor) : await registrarPagoPendienteDeOrden(conDatos, { nota: pagoCliente.nota, compartidoCon: pagoCliente.compartidoCon });
-      if (r?.error || r?.repetida) setToastMsg({ type: 'error', duration: 9000, text: 'La orden se envió a revisión, pero el pago no se guardó. Vuelve a registrarlo en la pantalla que sale ahora.' });
-    }
     // Conector interno: el técnico ve el cobro ya, para informárselo al cliente en el momento.
     if (ok && isTecnico && avisaCobroAlPreFinalizar(extra.tipoVisita)) {
       if (monto) mostrarCobroInmediato({ ...ticket, ...extra }, monto);
       else setToastMsg({ type: 'error', duration: 9000, text: 'Conector interno: la tasa no está configurada y no se pudo calcular el cobro. Avisa al administrador.' });
     }
   }, 'No se pudo pre-finalizar la orden.');
+
+  // La pantalla de pago del técnico: la que abrió a mano desde su orden ("Registrar el pago") o, si no, la primera que no dejó para después. Una orden finalizada se puede dejar para después (la oficina no la puede aprobar
+  // hasta que el pago esté registrado y la orden lo avisa); el cobro que sale al pre-finalizar con conector interno no.
+  const pagoSinPosponer = cobrosPorRegistrar.filter((t) => !pagoPospuesto.has(t.id));
+  const pagoElegido = pagoAbierto ? cobrosPorRegistrar.find((t) => t.id === pagoAbierto) : null;
+  const pagoActual = isTecnico ? pagoElegido || pagoSinPosponer[0] || null : null;
+  const posponerPago = pagoActual?.estado === 'FINALIZADO'
+    ? () => { setPagoPospuesto((previos) => new Set(previos).add(pagoActual.id)); setPagoAbierto(null); }
+    : undefined;
 
   // ADMIN/USUARIO: marca o quita la prioridad alta de una orden (al marcarla, el técnico recibe un aviso).
   const handleTogglePrioridad = conAviso(async (ticket) => {
@@ -709,6 +712,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onActualizar={() => refreshReports(true)}
               usuario={currentUser}
               firebaseUser={firebaseUser}
+              formasPago={formasPago}
               setToastMsg={setToastMsg}
             />
           </Suspense>
@@ -787,6 +791,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onPegarUbicacion={handlePegarUbicacion}
               onVerDetalle={setDetalleTarget}
               onPreFinalizar={setPreFinalizarTarget}
+              onRegistrarPago={isTecnico ? setPagoAbierto : undefined}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
               onEscalar={canEditTickets ? setEscalarTarget : undefined}
@@ -819,6 +824,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onVerDetalle={setDetalleTarget}
               onVerHistorial={setHistorialTarget}
               onPreFinalizar={setPreFinalizarTarget}
+              onRegistrarPago={isTecnico ? setPagoAbierto : undefined}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
               onEscalar={canEditTickets ? setEscalarTarget : undefined}
@@ -1058,12 +1064,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {preFinalizarTarget && (
           <PreFinalizarModal
             ticket={tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget}
-            pagoInstalacion={isTecnico && !(tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget).pagoCliente ? {
-              cuentasEmpresa: normalizarFormasPago(formasPago),
-              otrasOrdenes: otrasOrdenesDelCliente(preFinalizarTarget),
-              // La referencia ya está en otra orden: { ticketId, codigo }; si está libre, null.
-              verificarReferencia: async (clave) => { const e = await estadoReferencia(clave, preFinalizarTarget.id); return e.estado === 'ajena' ? { ticketId: e.ticketId, codigo: e.codigo } : null; },
-            } : null}
             onConfirm={handleConfirmPreFinalizar}
             onConsultarCobro={consultarCobroRecableado}
             onClose={() => setPreFinalizarTarget(null)}
@@ -1121,19 +1121,20 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           />
         )}
 
-        {isTecnico && cobrosPorRegistrar.length > 0 ? (
+        {pagoActual ? (
           <CobroResultanteModal
-            key={cobrosPorRegistrar[0].id}
-            ticket={cobrosPorRegistrar[0]}
-            restantes={cobrosPorRegistrar.length - 1}
+            key={pagoActual.id}
+            ticket={pagoActual}
+            restantes={pagoElegido ? 0 : pagoSinPosponer.length - 1}
             formasPago={formasPago}
             onCopy={copyToClipboard}
             onClose={() => {}}
             registro={{
               onRegistrar: registrarPagoDeOrden,
               onPagaDespues: registrarPagoPendienteDeOrden,
+              onPosponer: posponerPago,
               // Otras órdenes del mismo cliente (misma cédula), por si pagó varias con un solo pago.
-              otrasOrdenes: otrasOrdenesDelCliente(cobrosPorRegistrar[0]),
+              otrasOrdenes: otrasOrdenesDelCliente(pagoActual),
             }}
           />
         ) : isTecnico && cobrosPendientes.length > 0 && (

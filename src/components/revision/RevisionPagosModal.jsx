@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ClipboardCheck, RefreshCw, Search } from 'lucide-react';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
@@ -7,12 +7,16 @@ import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
 import DetalleOrdenFinanzas from '../finanzas/DetalleOrdenFinanzas';
 import FilaRevision from './FilaRevision';
+import RegistrarPagoOficinaModal from './RegistrarPagoOficinaModal';
 import ResumenCifras from '../finanzas/ResumenCifras';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import { BUSCADOR } from '../estilos';
 import { BOTON, CHIP, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../finanzas/estilos';
 import { DIAS_POR_PAGAR, corteTodaviaNoLlega, textoFechaCorte, SIN_TECNICO, agruparOrdenes, claveOrden, dolares, ordenesPagables, rangoDeLectura, rangoPagable, rangoPorRevisar } from '../../utils/finanzas';
-import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, filtrarPorBusqueda, garantiasPorResolver, itemsParaRevisar, resumenRevision, revisar } from '../../utils/revisionPagos';
+import { ESTADOS_REVISION, ETIQUETA_REVISION, aprobarPendientes, armarRevision, filtrarPorBusqueda, garantiasPorResolver, itemsParaRevisar, motivoSinPago, resumenRevision, revisar } from '../../utils/revisionPagos';
+import { faltaElPago } from '../../utils/pagoCliente';
+import { normalizarFormasPago } from '../../utils/formasPago';
+import { leerResumenDePago, registrarPagoPorAdmin } from '../../lib/pagosOrdenes';
 import { PERIODOS, diaLegible, etiquetaRango, rangoDe } from '../../utils/periodoReporte';
 import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { diaDe } from '../../utils/totalesMes';
@@ -30,15 +34,17 @@ import RangoFechas from '../RangoFechas';
 // Lo que no se aprueba de golpe: las que necesitan una corrección (sin técnico o sin concepto) y las escaladas a infraestructura, que se aprueban una por una.
 function textoOmitidas(omitidas, verbo) {
   const escaladas = omitidas.filter((o) => o.escalada).length;
-  const otras = omitidas.length - escaladas;
+  const sinPago = omitidas.filter((o) => o.sinPago).length;
+  const otras = omitidas.length - escaladas - sinPago;
   const partes = [
+    sinPago > 0 && `${sinPago} ${sinPago === 1 ? 'espera' : 'esperan'} el pago del cliente (lo registra el técnico o lo registras tú)`,
     otras > 0 && `${otras} ${verbo} una corrección primero (sin técnico o sin concepto)`,
     escaladas > 0 && `${escaladas} ${escaladas === 1 ? 'está escalada' : 'están escaladas'} a infraestructura y se ${escaladas === 1 ? 'aprueba' : 'aprueban'} una por una`,
   ].filter(Boolean);
   return partes.length > 0 ? ` ${partes.join('; ')}.` : '';
 }
 
-export default function RevisionPagosModal({ technicians, tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onActualizar, usuario, firebaseUser, setToastMsg, onClose, enPagina = false }) {
+export default function RevisionPagosModal({ technicians, tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onActualizar, usuario, firebaseUser, formasPago = null, setToastMsg, onClose, enPagina = false }) {
   // Abre en "Pendientes": las órdenes de los últimos 35 días (con tope en el corte), para que ninguna quede sin revisar por no haber elegido fechas.
   const [periodo, setPeriodo] = useState('POR_REVISAR');
   const [hoy] = useState(() => diaDe(Date.now()));
@@ -48,6 +54,9 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const [filtroEstado, setFiltroEstado] = useState('PENDIENTE');
   const [detalle, setDetalle] = useState(null);
   const [aprobando, setAprobando] = useState(null);
+  // La orden a la que el administrador le registra el pago a nombre del técnico, y los pagos ya leídos de las órdenes que lo esperaban (id de la orden -> pago, o null si no hay).
+  const [registrandoPago, setRegistrandoPago] = useState(null);
+  const [pagosLeidos, setPagosLeidos] = useState({});
 
   const rango = useMemo(() => (periodo === 'POR_REVISAR' ? rangoPorRevisar(Date.parse(`${hoy}T12:00:00-04:00`)) : rangoDe(periodo, personalizado)), [periodo, personalizado, hoy]);
   const rangoRevision = useMemo(() => rangoPagable(rango), [rango]);
@@ -63,9 +72,24 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const nombresTecnicos = useMemo(() => (technicians || []).map((t) => t.name).filter(Boolean).sort(), [technicians]);
 
   // Todo lo que se revisa (sin lo ya pagado), con su estado. El filtro de técnico se aplica al técnico efectivo (el corregido, si lo hay).
-  const todos = useMemo(
+  const sinPagoLeido = useMemo(
     () => revisar(itemsParaRevisar({ ordenes, rango: rangoRevision, rangoElegido: rango, registros: datos.registros, tiposMudanza: datos.tiposMudanza }), datos.revisiones).filter((i) => !datos.idsPagadas.has(i.clave)),
     [ordenes, rangoRevision, rango, datos.registros, datos.tiposMudanza, datos.revisiones, datos.idsPagadas],
+  );
+  // Las órdenes que esperan el pago: si la oficina ya lo registró y la orden está archivada en un Cierre, su copia no lo trae; se lee del pago guardado (una lectura por orden que lo espera, una sola vez).
+  const idsSinPago = useMemo(() => sinPagoLeido.filter((i) => i.orden?.id && faltaElPago(i.orden)).map((i) => String(i.orden.id)), [sinPagoLeido]);
+  useEffect(() => {
+    const nuevos = idsSinPago.filter((id) => !(id in pagosLeidos)).slice(0, 60);
+    if (nuevos.length === 0) return undefined;
+    let vigente = true;
+    Promise.all(nuevos.map((id) => leerResumenDePago(id).then((r) => [id, r]).catch(() => [id, null]))).then((pares) => {
+      if (vigente) setPagosLeidos((previos) => ({ ...previos, ...Object.fromEntries(pares) }));
+    });
+    return () => { vigente = false; };
+  }, [idsSinPago, pagosLeidos]);
+  const todos = useMemo(
+    () => sinPagoLeido.map((i) => (pagosLeidos[String(i.orden?.id)] && !i.orden.pagoCliente ? { ...i, orden: { ...i.orden, pagoCliente: pagosLeidos[String(i.orden.id)] } } : i)),
+    [sinPagoLeido, pagosLeidos],
   );
   // La búsqueda recorta lo mismo que el técnico: las cifras de arriba y los botones de aprobar valen para lo que se busca.
   const delTecnico = useMemo(() => filtrarPorBusqueda(todos.filter((i) => !tecnico || i.tecnico === tecnico), busqueda), [todos, tecnico, busqueda]);
@@ -77,6 +101,9 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const porResolver = useMemo(() => garantiasPorResolver(delTecnico), [delTecnico]);
   // Lo escalado a infraestructura que espera revisión: tiene su alerta en la fila y se aprueba una por una.
   const escaladasPendientes = useMemo(() => delTecnico.filter((i) => i.escalada && i.estadoRevision === 'PENDIENTE'), [delTecnico]);
+  // Las que esperan el pago del cliente (lo registra el técnico o la oficina por él): no se pueden aprobar todavía.
+  const esperanPago = useMemo(() => delTecnico.filter((i) => motivoSinPago(i) && (i.estadoRevision === 'PENDIENTE' || i.estadoRevision === 'RETENIDA')), [delTecnico]);
+  const tecnicosSinPago = useMemo(() => [...new Set(esperanPago.map((i) => i.orden.tecnico || i.tecnico).filter(Boolean))], [esperanPago]);
 
   // La original de una garantía se busca entre todas las órdenes; su técnico es el efectivo en la revisión (el corregido, si lo hay) y su precio, lo que paga el tabulador por ella.
   const tecnicoDe = (o) => datos.revisiones[claveOrden(o)]?.tecnicoCorregido || o.tecnico;
@@ -118,6 +145,19 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
     const r = armarRevision(item, que === 'APROBAR' ? 'APROBAR' : que, opciones);
     if (r.error) return r.error;
     return (await datos.guardar([r], que === 'APROBAR' ? (r.ajustes.length > 0 ? `Orden aprobada: el descuento y el bono (${dolares(item.descuento)}) ya los ve Finanzas y se avisó a los dos técnicos.` : 'Orden aprobada: ya puede verla Finanzas.') : que === 'RETENER' ? 'Orden retenida.' : 'Orden excluida.')) === true;
+  };
+  // El administrador registra el pago por el técnico: se guarda y la orden queda lista para aprobarse (el pago leído se actualiza al instante).
+  const registrarPago = async (item, { valor = null, nota = '', pagaDespues = false }) => {
+    try {
+      const r = await registrarPagoPorAdmin(item.orden, { valor, nota, pagaDespues }, { por: usuario });
+      if (r.repetida) return r;
+      setPagosLeidos((previos) => ({ ...previos, [String(item.orden.id)]: r.resumen }));
+      setToastMsg?.({ type: 'success', text: pagaDespues ? 'Queda anotado que el cliente paga después: la orden ya se puede aprobar.' : 'Pago registrado a nombre del técnico: la orden ya se puede aprobar.' });
+      return { ok: true };
+    } catch (error) {
+      console.error('No se pudo registrar el pago por el técnico:', error);
+      return { error: 'No se pudo guardar el pago. Revisa tu conexión e intenta de nuevo.' };
+    }
   };
   const confirmarAprobacion = async () => {
     const { documentos } = aprobando;
@@ -180,6 +220,12 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
             </p>
           )}
 
+          {esperanPago.length > 0 && (
+            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+              {esperanPago.length === 1 ? '1 orden espera' : `${esperanPago.length} órdenes esperan`} el pago del cliente y no se {esperanPago.length === 1 ? 'puede' : 'pueden'} aprobar todavía ({esperanPago.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{esperanPago.length > 4 ? '…' : ''}). Lo registra {tecnicosSinPago.length === 1 ? 'el técnico' : 'cada técnico'}{tecnicosSinPago.length > 0 ? ` (${tecnicosSinPago.slice(0, 3).join(', ')}${tecnicosSinPago.length > 3 ? '…' : ''})` : ''}; si no puede, usa "Registrar el pago" en la orden.
+            </p>
+          )}
+
           {escaladasPendientes.length > 0 && (
             <p role="status" className="rounded-xl border border-orange-500 bg-orange-50 dark:bg-orange-950/30 px-4 py-3 text-sm text-orange-900 dark:text-orange-100">
               {escaladasPendientes.length === 1 ? '1 orden escalada a infraestructura espera' : `${escaladasPendientes.length} órdenes escaladas a infraestructura esperan`} tu revisión ({escaladasPendientes.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{escaladasPendientes.length > 4 ? '...' : ''}): llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
@@ -216,7 +262,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
                     <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-900 dark:text-white pb-1 border-b border-zinc-400 dark:border-zinc-700"><span>{g.titulo} · {g.items.length}</span></h4>
                     <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
                       {g.items.map((item) => (
-                        <FilaRevision key={item.clave} item={lista.find((i) => i.clave === item.clave)} precio={precio(item)} tasa={tasa} tecnicos={nombresTecnicos} ocupado={datos.ocupado} onAccion={accion} onDeshacer={(i) => datos.deshacer(i)} ordenesBusqueda={ordenes} precioOrigen={precioOrigen} tecnicoDe={tecnicoDe} onVerOrden={setDetalle} />
+                        <FilaRevision key={item.clave} item={lista.find((i) => i.clave === item.clave)} precio={precio(item)} tasa={tasa} tecnicos={nombresTecnicos} ocupado={datos.ocupado} onAccion={accion} onDeshacer={(i) => datos.deshacer(i)} ordenesBusqueda={ordenes} precioOrigen={precioOrigen} tecnicoDe={tecnicoDe} onVerOrden={setDetalle} onRegistrarPago={setRegistrandoPago} />
                       ))}
                     </ul>
                   </div>
@@ -228,6 +274,15 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
         </div>
       </div>
 
+      {registrandoPago && (
+        <RegistrarPagoOficinaModal
+          orden={registrandoPago.orden}
+          cuentasEmpresa={normalizarFormasPago(formasPago)}
+          onRegistrar={(valor, nota) => registrarPago(registrandoPago, { valor, nota })}
+          onPagaDespues={({ nota }) => registrarPago(registrandoPago, { nota, pagaDespues: true })}
+          onClose={() => setRegistrandoPago(null)}
+        />
+      )}
       {detalle && <DetalleOrdenFinanzas item={{ ...detalle, concepto: detalle.concepto || detalle.conceptoOriginal || 'AVERIA' }} tarifas={datos.tarifas} tasa={tasa} verTodoPago onClose={() => setDetalle(null)} />}
       {aprobando && (
         <ConfirmModal

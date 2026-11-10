@@ -102,7 +102,7 @@ service cloud.firestore {
     // otra orden). El documento que manda es el de pagosOrdenes (más abajo); esta copia solo se muestra.
     function pagoClienteValido(p) {
       return p is map
-        && p.keys().hasOnly(['tipo', 'pago', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'corregidoPor', 'corregidoEn'])
+        && p.keys().hasOnly(['tipo', 'pago', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'aNombreDelTecnico', 'corregidoPor', 'corregidoEn'])
         && p.keys().hasAll(['tipo', 'pago', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn'])
         && p.tipo in ['PAGO', 'DESPUES', 'JUNTO']
         && (p.tipo == 'PAGO') == (p.pago != null)
@@ -921,7 +921,7 @@ service cloud.firestore {
 
       function pagoOrdenValido() {
         let p = request.resource.data;
-        return p.keys().hasOnly(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'falla', 'tipoVisita', 'estado', 'cobro', 'pago', 'referenciaClave', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'conciliadoPor', 'conciliadoEn', 'notaAdministracion', 'creadoEn', 'actualizadoEn', 'historial'])
+        return p.keys().hasOnly(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'falla', 'tipoVisita', 'estado', 'cobro', 'pago', 'referenciaClave', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'aNombreDelTecnico', 'conciliadoPor', 'conciliadoEn', 'notaAdministracion', 'creadoEn', 'actualizadoEn', 'historial'])
           && p.keys().hasAll(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'falla', 'tipoVisita', 'estado', 'cobro', 'pago', 'referenciaClave', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'conciliadoPor', 'conciliadoEn', 'notaAdministracion', 'creadoEn', 'actualizadoEn', 'historial'])
           && p.ticketId == ticketId
           && p.codigo is string && p.codigo.size() <= 40
@@ -958,6 +958,20 @@ service cloud.firestore {
           && p.historial is list && p.historial.size() >= 1 && p.historial.size() <= 100;
       }
 
+      // Lo que un pago nuevo debe traer, lo cree el técnico o el ADMIN: sin conciliar, con una sola línea de historial y, o bien el pago con su referencia reservada en el mismo lote (nadie la tenía),
+      // o bien "paga después" / "pagó junto con otra orden" con su nota.
+      function pagoNuevoBien(appId) {
+        let p = request.resource.data;
+        return p.conciliadoPor == '' && p.conciliadoEn == 0 && p.notaAdministracion == ''
+          && p.historial.size() == 1
+          && (
+            (p.estado == 'POR_CONCILIAR' && p.pago != null && p.compartidoCon == null
+              && (p.pago.referencia == '') == (p.referenciaClave == '')
+              && (p.referenciaClave == '' || (!exists(referenciaDePago(appId)) && existsAfter(referenciaDePago(appId)) && getAfter(referenciaDePago(appId)).data.ticketId == ticketId)))
+            || (p.estado == 'PENDIENTE_COBRO' && p.pago == null && p.referenciaClave == '' && p.nota.size() > 0)
+          );
+      }
+
       // El técnico solo crea el pago de su propia orden, ya pre-finalizada o finalizada, y a su nombre.
       function tecnicoCreaSuPago(appId) {
         let p = request.resource.data;
@@ -967,21 +981,25 @@ service cloud.firestore {
           && orden.tecnico == tecnicoAsociado(appId)
           && orden.estado in ['PRE-FINALIZADO', 'FINALIZADO']
           && p.registradoPor == usuarioFinanzas(appId)
-          && p.conciliadoPor == '' && p.conciliadoEn == 0 && p.notaAdministracion == ''
-          && p.historial.size() == 1
-          && (
-            (p.estado == 'POR_CONCILIAR' && p.pago != null && p.compartidoCon == null
-              && (p.pago.referencia == '') == (p.referenciaClave == '')
-              // La referencia se reserva en el mismo lote y nadie la tenía: no se puede repetir en otra orden.
-              && (p.referenciaClave == '' || (!exists(referenciaDePago(appId)) && existsAfter(referenciaDePago(appId)) && getAfter(referenciaDePago(appId)).data.ticketId == ticketId)))
-            || (p.estado == 'PENDIENTE_COBRO' && p.pago == null && p.referenciaClave == '' && p.nota.size() > 0)
-          );
+          && !('aNombreDelTecnico' in p)
+          && pagoNuevoBien(appId);
+      }
+
+      // El ADMIN registra el pago de una orden a nombre del técnico (cuando el técnico no lo registra y la orden espera en Revisión): con su usuario como quien lo registró y marcado como "a nombre del técnico".
+      // No mira la orden: puede estar ya archivada en un Cierre (el técnico ya no la ve) y es justo cuando hace falta.
+      function adminCreaPagoDelTecnico(appId) {
+        let p = request.resource.data;
+        return isAdminUser(appId)
+          && p.tecnico.size() > 0
+          && p.registradoPor == usuarioFinanzas(appId)
+          && p.get('aNombreDelTecnico', false) == true
+          && pagoNuevoBien(appId);
       }
 
       // FINANZAS ve el pago, completo y en cualquier estado, de una instalación y de un cambio de equipo (y de ningún otro tipo de orden). Va con igualdades para que sus consultas por tipo se puedan comprobar.
       allow read: if llevaAdministracion(appId) || isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId))
         || (isFinanzasRole(appId) && (resource.data.tipoTrabajo == 'INSTALACIÓN' || resource.data.tipoTrabajo == 'CAMBIO DE EQUIPO' || resource.data.tipoVisita == 'CAMBIO_EQUIPO'));
-      allow create: if pagoOrdenValido() && tecnicoCreaSuPago(appId);
+      allow create: if pagoOrdenValido() && (tecnicoCreaSuPago(appId) || adminCreaPagoDelTecnico(appId));
       allow update: if llevaAdministracion(appId)
         && pagoOrdenValido()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'pago', 'referenciaClave', 'monedaDistinta', 'diferencia', 'conciliadoPor', 'conciliadoEn', 'notaAdministracion', 'actualizadoEn', 'historial'])

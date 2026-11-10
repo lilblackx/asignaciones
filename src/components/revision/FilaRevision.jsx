@@ -5,7 +5,7 @@ import SelectMenu from '../SelectMenu';
 import Colapsable from '../Colapsable';
 import { BOTON, BOTON_FILA, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
-import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable, textoEscaladaRevision } from '../../utils/revisionPagos';
+import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable, motivoSinPago, textoEscaladaRevision } from '../../utils/revisionPagos';
 import { parseMontoAjuste } from '../../utils/ajustes';
 import { montoCalculadora, montoParaCampo } from '../../utils/montoCalculadora';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
@@ -28,7 +28,7 @@ const CHIP_ESTADO = {
 };
 
 // `ordenesBusqueda`: las órdenes entre las que se busca la original; `precioOrigen(id)`: lo que cobra esa original (null si no se sabe); `tecnicoDe(orden)`: su técnico efectivo en la revisión.
-export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, onAccion, onDeshacer, onVerOrden, ordenesBusqueda = [], precioOrigen = () => null, tecnicoDe = (o) => o.tecnico }) {
+export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, onAccion, onDeshacer, onVerOrden, onRegistrarPago = null, ordenesBusqueda = [], precioOrigen = () => null, tecnicoDe = (o) => o.tecnico }) {
   const [abierto, setAbierto] = useState(null);
   const [motivo, setMotivo] = useState('');
   const [correccion, setCorreccion] = useState({ tecnico: '', concepto: '' });
@@ -79,7 +79,9 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
   };
 
   const topeOrigen = garantia.origen?.id ? precioOrigen(garantia.origen.id) : null;
-  const problema = estado === 'APROBADA' ? '' : motivoNoAprobable(item);
+  // Lo que frena la aprobación: lo de siempre y, además, que el técnico no haya registrado el pago del cliente (ver motivoSinPago).
+  const sinPago = estado === 'APROBADA' ? '' : motivoSinPago(item);
+  const problema = estado === 'APROBADA' ? '' : motivoNoAprobable(item) || sinPago;
   const esGarantiaDeOtro = Boolean(item.garantiaDe);
   const nombreConcepto = (id) => CONCEPTOS_PAGO.find((c) => c.id === id)?.nombre || '';
   const conceptos = [{ value: '', label: item.conceptoOriginal ? `Sin cambio (${nombreConcepto(item.conceptoOriginal)})` : 'Elige el concepto' }, ...CONCEPTOS_PAGO.map((c) => ({ value: c.id, label: c.nombre }))];
@@ -101,6 +103,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {item.tecnico}.</p>}
           {item.corregida && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
           {item.cambioDespues && <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
+          {sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">Falta el pago del cliente: lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}. No se puede aprobar hasta que esté registrado.</p>}
           <PagoDelCliente orden={item.orden} className="mt-0.5" />
           {item.revision?.motivo && <p className={TEXTO_SUAVE}>Motivo: {item.revision.motivo} · {item.revision.por}</p>}
           {estado === 'APROBADA' && item.revision && <p className={TEXTO_SUAVE}>Aprobada por {item.revision.por}</p>}
@@ -115,6 +118,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       </div>
 
       <div className="flex flex-wrap gap-2">
+        {sinPago && onRegistrarPago && <button type="button" onClick={() => onRegistrarPago(item)} disabled={ocupado} className={`${BOTON_FILA} !border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200`}>Registrar el pago</button>}
         {(estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
           <button type="button" onClick={aprobar} disabled={ocupado || Boolean(problema)} title={problema || undefined} className={`${BOTON_FILA} !border-emerald-600 !text-emerald-700 dark:!text-emerald-300`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar</button>
         )}

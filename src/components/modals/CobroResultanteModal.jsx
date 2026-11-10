@@ -30,7 +30,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
 // Sin `registro` (las exoneradas y las órdenes anteriores al registro del pago) se queda hasta que el técnico lo confirma con "Entendido"; si hay varias, las muestra una tras otra.
 // `registro` (órdenes con cobro desde que se pide el pago del cliente): en lugar del botón de confirmar lleva el formulario del pago que hizo el cliente y no se cierra sin registrarlo (o sin decir que el
 // cliente paga después); antes de guardar, el técnico confirma lo que va a registrar. { onRegistrar(ticket, valor) -> { ok } | { repetida } | { error }, onPagaDespues(ticket, { nota, compartidoCon }) -> { ok } | { error },
-// otrasOrdenes }. Es una pantalla por orden: quien la usa le pone `key` con el id de la orden para que lo escrito no pase a la siguiente.
+// otrasOrdenes, onPosponer? }. `onPosponer` (solo en una orden finalizada) agrega "Registrar después": la deja en la lista del técnico con su botón "Registrar el pago". Es una pantalla por orden: quien la usa le pone `key` con el id de la orden para que lo escrito no pase a la siguiente.
 export default function CobroResultanteModal({ ticket, restantes = 0, formasPago, onCopy, onClose, registro = null }) {
   // Qué se acaba de copiar ('monto'): el botón muestra un visto un instante.
   const { copiado, copiar } = useCopiado(onCopy);
@@ -92,7 +92,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
         {registro && (
           <section aria-label="Registrar el pago del cliente" className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 space-y-3">
             <h3 className="text-sm font-black tracking-wide text-zinc-900 dark:text-white">REGISTRAR EL PAGO DEL CLIENTE</h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Anota lo que el cliente pagó por este cobro. Es obligatorio: si todavía no pagó, di que paga después. Antes de guardar te pedimos confirmar los datos.</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">{instalacion ? 'Anota lo que el cliente pagó por la instalación. Es obligatorio: el cliente paga la instalación de una vez y, sin esto, la oficina no puede aprobar la orden.' : 'Anota lo que el cliente pagó por este cobro. Es obligatorio: si todavía no pagó, di que paga después.'} Antes de guardar te pedimos confirmar los datos.</p>
             <FormularioPagoCliente
               key={ticket.id}
               ticket={ticket}
@@ -104,6 +104,12 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
               onPagaDespues={(datos) => registro.onPagaDespues(ticket, datos)}
             />
             {restantes > 0 && <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400 text-center">{restantes} {restantes === 1 ? 'orden más' : 'órdenes más'} por registrar después de esta.</p>}
+            {registro.onPosponer && (
+              <div className="pt-1 space-y-1.5">
+                <button type="button" onClick={registro.onPosponer} className="w-full h-11 rounded-xl border-2 border-zinc-400 dark:border-zinc-600 text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Registrar después</button>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">Queda en tu lista como "Falta registrar el pago" con el botón para hacerlo. La oficina no puede aprobar la orden hasta que lo registres.</p>
+              </div>
+            )}
           </section>
         )}
 

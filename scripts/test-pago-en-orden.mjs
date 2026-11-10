@@ -3,7 +3,7 @@
 // de verdad las prueban test-rules.mjs, test-cobros-clientes-reglas.mjs y test-pagos-cliente-reglas.mjs). Uso: `npm run test:pagoenorden`.
 import { readFileSync } from 'node:fs';
 import {
-  ESTADO_PAGO, FECHA_INICIO_PAGO_CLIENTE, armarCorreccionAdmin, armarPagoPendiente, armarPagoRegistrado, cobroEsperadoDe, debePedirPagoInstalacion, notaPagoCompartido, parsePagoCliente, piensaPagoCliente,
+  ESTADO_PAGO, FECHA_INICIO_PAGO_CLIENTE, armarCorreccionAdmin, armarPagoPendiente, armarPagoRegistrado, cobroEsperadoDe, debePedirPagoInstalacion, faltaElPago, montoCalculadora, montoDelCampo, montoParaCampo, notaPagoCompartido, parsePagoCliente, piensaPagoCliente,
 } from '../src/utils/pagoCliente.js';
 import {
   TIPO_PAGO, avisosDePago, decisionDePago, entradaHistorialPago, lineaDePago, pagoClienteDe, pagoVisibleEnFinanzas, resumenDePago, textoDelPago,
@@ -77,14 +77,38 @@ check('registrar el pago de un "paga después" también exige la nota', armarCor
 check('si pagó junto con otra orden no hay datos que corregir', armarCorreccionAdmin(compartido, { valor: valorNuevo, nota: 'x' }, { por: 'admin', ahora: AHORA }).campo, 'forma');
 check('el resumen corregido sale del documento ya corregido', (() => { const r = resumenDePago({ ...registrado, ...corregido.cambios }, { corregidoPor: 'admin', corregidoEn: AHORA + 1000 }); return [r.pago.referencia, r.corregidoPor, r.registradoPor]; })(), [['999888', 'admin', 'jose']].flat());
 
+// --- El monto se escribe como en una calculadora ---
+check("los dígitos se llenan de derecha a izquierda: los dos últimos son los decimales", ["5", "56", "569", "5696", "56960", "569600", "56960000", "1234567890"].map(montoCalculadora), ["0,05", "0,56", "5,69", "56,96", "569,60", "5.696,00", "569.600,00", "12.345.678,90"]);
+check("solo cuentan los dígitos (puntos, comas y letras que se cuelen se ignoran)", [montoCalculadora("5.696,00"), montoCalculadora("5a6"), montoCalculadora("")], ["5.696,00", "0,56", ""]);
+check("borrar el último dígito retrocede como en una calculadora y se puede dejar vacío", ["5.696,0", "569,6", "0,0", "0,00", "000"].map(montoCalculadora), ["569,60", "56,96", "", "", ""]);
+check("tiene tope de once dígitos (hasta 999.999.999,99)", [montoCalculadora("99999999999"), montoCalculadora("999999999999")], ["999.999.999,99", "999.999.999,99"]);
+check("un monto guardado se ve en el campo con sus decimales", [montoParaCampo(5696), montoParaCampo(5696.5), montoParaCampo("5696"), montoParaCampo(0), montoParaCampo(null), montoParaCampo(20)], ["5.696,00", "5.696,50", "5.696,00", "", "", "20,00"]);
+check("el campo con puntos de miles se lee como lo lee el pago", [montoDelCampo("5.696,00"), montoDelCampo("0,05"), montoDelCampo("12.345.678,90"), montoDelCampo("5696,50")], ["5696,00", "0,05", "12345678,90", "5696,50"]);
+check("el pago acepta el monto del campo y lo guarda como número", [parse({ monto: "5.696,00" }).valor?.pago.monto, parse({ monto: "0,05" }).valor?.pago.monto, parse({ monto: "12.345,67" }).valor?.pago.monto], [5696, 0.05, 12345.67]);
+check("un monto en cero o vacío sigue dando error", [parse({ monto: "0,00" }).campo, parse({ monto: "" }).campo], ["monto", "monto"]);
+
 // --- ¿A quién se le pide el pago? ---
 check('la fecha de inicio es un día AAAA-MM-DD', /^\d{4}-\d{2}-\d{2}$/.test(FECHA_INICIO_PAGO_CLIENTE), true);
-check('una instalación pre-finalizada pide el pago; si ya trae el suyo, no', [piensaPagoCliente(instalacion, { desde: '2026-11-12' }), debePedirPagoInstalacion(instalacion, true, { desde: '2026-11-12' })], [true, false]);
+const instalacionFinalizada = { ...instalacion, estado: 'FINALIZADO', finalizadoEn: AHORA - 1800000 };
+check('una instalación pre-finalizada todavía no pide el pago (se pide cuando la oficina la finaliza)', [piensaPagoCliente(instalacion, { desde: '2026-11-12' }), debePedirPagoInstalacion(instalacion, false, { desde: '2026-11-12' })], [false, false]);
+check('una instalación finalizada pide el pago; si ya trae el suyo, no', [piensaPagoCliente(instalacionFinalizada, { desde: '2026-11-12' }), debePedirPagoInstalacion(instalacionFinalizada, true, { desde: '2026-11-12' })], [true, false]);
+check('las anteriores a la fecha de inicio no lo piden', [piensaPagoCliente(instalacionFinalizada, { desde: '2026-11-13' }), faltaElPago(instalacionFinalizada, { desde: '2026-11-13' })], [false, false]);
+const instalacionConPago = { ...instalacionFinalizada, pagoCliente: { tipo: 'PAGO' } };
+check('falta el pago: finalizada, de las que lo piden y sin pagoCliente (con él, ya no)', [faltaElPago(instalacionFinalizada, { desde: '2026-11-12' }), faltaElPago(instalacionConPago, { desde: '2026-11-12' }), faltaElPago(instalacion, { desde: '2026-11-12' }), faltaElPago(null)], [true, false, false, false]);
+const visitaFinalizada = { ...orden, estado: 'FINALIZADO', finalizadoEn: AHORA - 1800000 };
+check('una visita con cobro finalizada también falta; una exonerada no', [faltaElPago(visitaFinalizada, { desde: '2026-11-12' }), faltaElPago({ ...visitaFinalizada, cobroTipo: 'EXONERADO', cobroBs: null }, { desde: '2026-11-12' })], [true, false]);
+// El ADMIN registra el pago a nombre del técnico (Revisión): queda marcado y a nombre del técnico de la orden.
+const porOficina = armarPagoRegistrado(instalacionFinalizada, { pago: { moneda: 'BS', forma: 'Pago móvil', monto: 5696, banco: 'Banesco', cuentaEmpresa: '', referencia: '123456', pagadoEn: AHORA }, nota: 'El técnico no está', monedaDistinta: false, diferencia: false }, { por: 'admin', ahora: AHORA, aNombreDelTecnico: true });
+check('el pago de la oficina queda a nombre del técnico, marcado y con su motivo', [porOficina.tecnico, porOficina.registradoPor, porOficina.aNombreDelTecnico, porOficina.historial[0].detalle.startsWith('Pago registrado por la oficina a nombre del técnico')], ['JOSE', 'admin', true, true]);
+check('el resumen conserva la marca; el del técnico no la trae', [resumenDePago(porOficina).aNombreDelTecnico, 'aNombreDelTecnico' in resumenDePago(armarPagoRegistrado(instalacionFinalizada, { pago: porOficina.pago, nota: '', monedaDistinta: false, diferencia: false }, { por: 'tecnico1', ahora: AHORA }))], [true, false]);
+const despuesOficina = armarPagoPendiente(visitaFinalizada, { nota: 'Paga el viernes' }, { por: 'admin', ahora: AHORA, aNombreDelTecnico: true });
+check('"paga después" por la oficina también queda marcado', [despuesOficina.estado, despuesOficina.aNombreDelTecnico], ['PENDIENTE_COBRO', true]);
+check('el historial de la orden dice que lo registró la oficina', entradaHistorialPago(resumenDePago(porOficina), { fecha: '12/11/2026', operador: 'admin' }).detalle.startsWith('Pago del cliente (registrado por la oficina a nombre del técnico)'), true);
 
 // --- Todo está conectado ---
 const leer = (ruta) => readFileSync(new URL(`../${ruta}`, import.meta.url), 'utf8').replaceAll('\r\n', '\n');
 const fuentes = Object.fromEntries([
-  'src/App.jsx', 'src/hooks/useTickets.js', 'src/lib/pagosOrdenes.js', 'src/lib/cobrosClientes.js', 'src/utils/cobrosClientes.js', 'src/utils/exportReport.js',
+  'src/App.jsx', 'src/hooks/useTickets.js', 'src/utils/revisionPagos.js', 'src/lib/pagosOrdenes.js', 'src/lib/cobrosClientes.js', 'src/utils/cobrosClientes.js', 'src/utils/exportReport.js',
   'src/components/FormularioPagoCliente.jsx', 'src/components/PagoDelCliente.jsx', 'src/components/HistorialTimeline.jsx',
   'src/components/modals/CobroResultanteModal.jsx', 'src/components/modals/ConfirmarPagoModal.jsx', 'src/components/modals/PreFinalizarModal.jsx', 'src/components/modals/ConfirmPreFinalizarModal.jsx',
   'src/components/modals/CobroModal.jsx', 'src/components/modals/CorregirPagoModal.jsx', 'src/components/AdministracionApp.jsx', 'src/components/finanzas/CobrosEmitidos.jsx',
@@ -99,8 +123,11 @@ check('el técnico confirma antes de registrar: el formulario abre el modal de c
 check('las tres salidas (pago, paga después, pagó junto con otra orden) pasan por la confirmación', ['TIPO_PAGO.PAGO', 'TIPO_PAGO.DESPUES', 'TIPO_PAGO.JUNTO'].map((t) => tiene('src/components/FormularioPagoCliente.jsx', `tipo: ${t}`)), [true, true, true]);
 check('la confirmación avisa que solo el administrador corrige y tiene "Volver" primero', [tiene('src/components/modals/ConfirmarPagoModal.jsx', 'solo el administrador puede corregirlo'), fuentes['src/components/modals/ConfirmarPagoModal.jsx'].indexOf('onClick={onCancel}') < fuentes['src/components/modals/ConfirmarPagoModal.jsx'].indexOf('onClick={onConfirm}')], [true, true]);
 check('la pantalla del cobro lleva el formulario cuando hay registro y "Entendido" cuando no', [tiene('src/components/modals/CobroResultanteModal.jsx', '<FormularioPagoCliente'), tiene('src/components/modals/CobroResultanteModal.jsx', '{!registro && ('), tiene('src/components/modals/CobroResultanteModal.jsx', 'permitirPagarDespues={!instalacion}')], [true, true, true]);
-check('el Pre-finalizar de una instalación pide el pago (obligatorio, sin "paga después") y lo muestra en su confirmación', [tiene('src/components/modals/PreFinalizarModal.jsx', 'permitirPagarDespues={false}'), tiene('src/components/modals/PreFinalizarModal.jsx', '(pedirPago && !pagoCliente)'), tiene('src/components/modals/PreFinalizarModal.jsx', 'decisionDePago(porConfirmar.pagoCliente)'), tiene('src/components/modals/ConfirmPreFinalizarModal.jsx', '<FichaDelPago')], [true, true, true, true]);
-check('App: registra el pago de la instalación después de pre-finalizar y abre la pantalla del cobro con registro', [tiene('src/App.jsx', 'registrarPagoDeOrden(conDatos, pagoCliente.valor)'), tiene('src/App.jsx', 'registro={{'), tiene('src/App.jsx', 'pagoInstalacion={isTecnico'), tiene('src/App.jsx', 'cobrosPorRegistrar')], [true, true, true, true]);
+check('el Pre-finalizar ya no pide el pago (lo registra el técnico cuando la oficina finaliza) y su confirmación vuelve a no llevarlo', [tiene('src/components/modals/PreFinalizarModal.jsx', 'FormularioPagoCliente'), tiene('src/components/modals/PreFinalizarModal.jsx', 'pagoInstalacion'), tiene('src/components/modals/PreFinalizarModal.jsx', 'decisionDePago'), tiene('src/components/modals/ConfirmPreFinalizarModal.jsx', 'FichaDelPago')], [false, false, false, false]);
+check('App: ya no registra pagos al pre-finalizar y abre la pantalla del cobro con registro (instalaciones y órdenes con cobro finalizadas)', [tiene('src/App.jsx', 'registrarPagoDeOrden(conDatos'), tiene('src/App.jsx', 'pagoInstalacion={isTecnico'), tiene('src/App.jsx', 'registro={{'), tiene('src/App.jsx', 'cobrosPorRegistrar')], [false, false, true, true]);
+check('el aviso al técnico al finalizar le dice que registre el pago (push y aviso en pantalla)', [(fuentes['src/hooks/useTickets.js'].match(/avisoPago\(/g) || []).length >= 6, tiene('src/hooks/useTickets.js', "' Registra el pago del cliente.'")], [true, true]);
+check('Revisión: la barrera frena la aprobación (aprobar de golpe incluido), muestra el aviso y deja registrar el pago a nombre del técnico', [tiene('src/utils/revisionPagos.js', 'motivoNoAprobable(efectivo) || motivoSinPago(efectivo)'), tiene('src/components/revision/FilaRevision.jsx', 'Registrar el pago'), tiene('src/components/revision/RevisionPagosModal.jsx', 'RegistrarPagoOficinaModal'), tiene('src/components/revision/RevisionPagosModal.jsx', 'registrarPagoPorAdmin'), tiene('src/lib/pagosOrdenes.js', 'aNombreDelTecnico: true')], [true, true, true, true, true]);
+check('lo ya aprobado no depende de la barrera (Finanzas sigue con motivoNoAprobable)', fuentes['src/utils/revisionPagos.js'].includes('i.concepto && !motivoNoAprobable(i) && !(i.descuento > 0)'), true);
 check('useTickets: lo ya registrado se sabe por la propia orden (pagoCliente), sin leer más, y ya no existe la nota suelta', [tiene('src/hooks/useTickets.js', '!t.pagoCliente'), tiene('src/hooks/useTickets.js', 'registrarPagoCliente'), tiene('src/hooks/useTickets.js', 'observacionPago'), tiene('src/hooks/useTickets.js', 'guardarObservacionPago')], [true, true, false, false]);
 check('el registro se guarda en un solo lote (pago, referencia y copia en la orden) y después se copia al cobro', ['writeBatch', 'lote.set(docPago', 'lote.set(docReferencia', 'lote.update(docOrden', 'updateDoc(docCobro', 'arrayUnion'].map((t) => tiene('src/lib/pagosOrdenes.js', t)), [true, true, true, true, true, true]);
 check('la corrección del ADMIN va en una transacción que actualiza el pago, la referencia, la orden y el cobro', ['runTransaction', 'tx.update(docPago', 'tx.update(docOrden', 'tx.update(docCobro', 'tx.delete(docReferencia'].map((t) => tiene('src/lib/pagosOrdenes.js', t)), [true, true, true, true, true]);
@@ -113,7 +140,9 @@ check('los archivos exportados traen el pago (órdenes, cobros de Administració
 check('ya no queda nada de la observación de pago suelta en el código', Object.entries(fuentes).filter(([ruta, texto]) => !ruta.endsWith('.rules') && /observacionPago|NotaDePago|copiarNotaAlCobro/.test(texto)).map(([ruta]) => ruta), []);
 
 // Las reglas.
+check("el formulario usa el formato de calculadora (solo dígitos, a la derecha, con su ayuda)", [tiene("src/components/FormularioPagoCliente.jsx", "montoCalculadora(e.target.value)"), tiene("src/components/FormularioPagoCliente.jsx", "inputMode=\"numeric\""), tiene("src/components/FormularioPagoCliente.jsx", "text-right")], [true, true, true]);
 const reglas = fuentes['firestore.rules'];
+check('las reglas dejan al ADMIN crear el pago a nombre del técnico (marcado) y el técnico no puede marcarlo', [reglas.includes('function adminCreaPagoDelTecnico(appId)'), reglas.includes('tecnicoCreaSuPago(appId) || adminCreaPagoDelTecnico(appId)'), reglas.includes("&& !('aNombreDelTecnico' in p)")], [true, true, true]);
 const reglasTecnico = reglas.slice(reglas.indexOf('allow update: if ((isAdminUser(appId) || isUsuarioRole(appId)) && noPisaElCierre())'));
 check('reglas de órdenes: el técnico puede escribir pagoCliente, una sola vez, con la forma válida, en una orden pre-finalizada o finalizada y a su nombre', [
   /hasOnly\(\[[^\]]*'pagoCliente'[^\]]*\]\)/.test(reglasTecnico.slice(0, 900)), reglasTecnico.includes("hasAny(['pagoCliente'])"), reglasTecnico.includes("!('pagoCliente' in resource.data)"), reglasTecnico.includes("resource.data.estado in ['PRE-FINALIZADO', 'FINALIZADO']"),
@@ -130,4 +159,15 @@ if (failures > 0) {
   console.log(`\n${failures} prueba(s) fallaron.`);
   process.exit(1);
 }
-console.log('\nTodas las pruebas pasaron.');
+console.log('\nTodas las pruebas pasaron.');// El mismo formato en los demás campos de monto: los lectores aceptan lo que muestra el campo ("5.696,00") y lo de siempre ("5696,5", "50.50").
+import { parseMontoBs } from '../src/utils/cobro.js';
+import { parseMontoAdelanto } from '../src/utils/datosPago.js';
+import { parseMontoDescuento } from '../src/utils/descuentos.js';
+import { parseMontoAjuste } from '../src/utils/ajustes.js';
+check('los lectores de montos aceptan el formato del campo (cobro, adelanto, descuento y garantía)', [parseMontoBs('5.696,00').valor, parseMontoAdelanto('1.250,50').valor, parseMontoDescuento('45,00').valor, parseMontoAjuste('1.000,25').valor], [5696, 1250.5, 45, 1000.25]);
+check('y siguen aceptando lo de siempre', [parseMontoBs('5696,5').valor, parseMontoAdelanto('50.5').valor, parseMontoDescuento('50,50').valor, parseMontoAjuste('5').valor], [5696.5, 50.5, 50.5, 5]);
+check('lo que no es un monto sigue dando error ("5.696" sin decimales no se confunde)', [parseMontoBs('5.696').error ? 'error' : 'ok', parseMontoAdelanto('abc').error ? 'error' : 'ok', parseMontoDescuento('0,00').error ? 'error' : 'ok'], ['error', 'error', 'error']);
+check('los campos de monto usan el formato (Otro monto, cobro en Administración, adelanto, descuento y garantía)', [['src/components/modals/CobroSelector.jsx', 'montoCalculadora(e.target.value)'], ['src/components/modals/CobroModal.jsx', 'montoCalculadora(e.target.value)'], ['src/components/finanzas/PanelAdelanto.jsx', 'montoCalculadora(e.target.value)'], ['src/components/finanzas/PanelDescuento.jsx', 'montoCalculadora(e.target.value)'], ['src/components/revision/FilaRevision.jsx', 'montoCalculadora(e.target.value)']].map(([r, t]) => readFileSync(new URL('../' + r, import.meta.url), 'utf8').includes(t)), [true, true, true, true, true]);
+check('el técnico puede dejar el pago para después y abrirlo desde su orden (tarjeta del celular y tabla), con el aviso "Falta registrar el pago"', [tiene('src/App.jsx', 'pagoPospuesto'), tiene('src/App.jsx', 'onRegistrarPago={isTecnico ? setPagoAbierto : undefined}'), tiene('src/components/modals/CobroResultanteModal.jsx', 'Registrar después'), readFileSync(new URL('../src/components/TicketsMobileList.jsx', import.meta.url), 'utf8').includes('Registrar el pago'), readFileSync(new URL('../src/components/TicketsTable.jsx', import.meta.url), 'utf8').includes('Registrar el pago del cliente'), tiene('src/components/PagoDelCliente.jsx', 'Falta registrar el pago del cliente')], [true, true, true, true, true, true]);
+check('solo se deja para después una orden finalizada (el cobro del conector interno no)', tiene('src/App.jsx', "pagoActual?.estado === 'FINALIZADO'"), true);
+

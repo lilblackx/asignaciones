@@ -33,7 +33,7 @@ const confirmacion = leer('../src/components/modals/ConfirmPreFinalizarModal.jsx
 const alEnviar = modal.slice(modal.indexOf('const handleSubmit'), modal.indexOf('const confirmarPreFinalizar'));
 check('el formulario NO envía directo: al confirmar solo abre la confirmación (setPorConfirmar)', alEnviar.includes('setPorConfirmar(') && !alEnviar.includes('onConfirm('), true);
 check('solo "Sí, pre-finalizar" envía la orden (confirmarPreFinalizar llama a onConfirm)', modal.slice(modal.indexOf('const confirmarPreFinalizar')).split('};')[0].includes('onConfirm(ticket, porConfirmar)'), true);
-check('la confirmación recibe los datos que se envían y el pago', modal.includes('datos={datosParaConfirmar(porConfirmar)}') && modal.includes('pago={porConfirmar.pagoCliente'), true);
+check('la confirmación recibe los datos que se envían (y ya no el pago, que se registra al finalizar la oficina)', modal.includes('datos={datosParaConfirmar(porConfirmar)}') && !modal.includes('pago={porConfirmar'), true);
 check('"Volver" es el primer botón (recibe el cursor al abrir): un toque de más no envía', confirmacion.indexOf('onClick={onCancel}') < confirmacion.indexOf('onClick={onConfirm}'), true);
 check('la confirmación muestra los datos que se envían', confirmacion.includes('DATOS QUE SE ENVÍAN') && confirmacion.includes('datos.map('), true);
 check('Escape con la confirmación abierta cierra solo la confirmación (no pierde lo escrito)', modal.includes('if (!porConfirmar) onClose()'), true);

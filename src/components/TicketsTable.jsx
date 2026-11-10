@@ -1,6 +1,6 @@
 import { observacionParaTecnico } from '../utils/observacion';
 import { useRef } from 'react';
-import { ArrowDownAZ, Ban, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
+import { ArrowDownAZ, Ban, Banknote, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 // Para reactivar la columna ENVIADO: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
@@ -14,6 +14,7 @@ import CancelacionAviso from './CancelacionAviso';
 import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import PagoDelCliente from './PagoDelCliente';
+import { faltaElPago } from '../utils/pagoCliente';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
 import InsigniaGarantia from './InsigniaGarantia';
@@ -52,6 +53,7 @@ export default function TicketsTable({
   onVerHistorial,
   onVerDetalle,
   onPreFinalizar,
+  onRegistrarPago,
   onAprobarFinalizar,
   onResponderCobro,
   onEscalar,
@@ -165,7 +167,7 @@ export default function TicketsTable({
                         <span className="line-clamp-2">{ticket.observacionTecnico}</span>
                       </span>
                     )}
-                    <PagoDelCliente orden={ticket} tamano="compacto" />
+                    <PagoDelCliente orden={ticket} tamano="compacto" avisarFalta />
                   </div>
                 </td>
                 <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal align-middle">
@@ -264,6 +266,8 @@ export default function TicketsTable({
                         )}
                         {ticket.estado === 'PENDIENTE' ? (
                           <button onClick={() => onPreFinalizar(ticket)} aria-label={`Pre-finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-xl font-bold transition-colors" title="Pre-finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
+                        ) : onRegistrarPago && faltaElPago(ticket) ? (
+                          <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`Registrar el pago de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-xl font-bold transition-colors" title="Registrar el pago del cliente"><Banknote className="w-3.5 h-3.5" aria-hidden="true" /></button>
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
                         ) : null}
