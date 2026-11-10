@@ -6,6 +6,7 @@
 // su propio descuento con `cuota`, `cuotas` y `totalPlan` (el monto de todo el plan); solo la primera avisa al técnico. Sin `desde` entra ya.
 // `aplicado` es lo que ya entró en pagos (sube al pagar, baja al anular el pago, nunca pasa de `monto`).
 import { fechaCorta } from './calendario.js';
+import { montoDelCampo } from './montoCalculadora.js';
 
 const redondear = (valor) => Math.round((Number(valor) || 0) * 100) / 100;
 
@@ -16,7 +17,7 @@ const limpiar = (texto) => String(texto ?? '').replace(/\s+/g, ' ').trim();
 
 // "50" / "50,5" / "50.50" -> dólares (más de 0, hasta MAX_DESCUENTO, dos decimales) o { error }.
 export function parseMontoDescuento(texto) {
-  const limpio = String(texto ?? '').trim().replace(',', '.');
+  const limpio = String(montoDelCampo(texto) ?? '').trim().replace(',', '.');
   if (limpio === '') return { error: 'Escribe el monto del descuento.' };
   if (!/^\d{1,6}(\.\d{1,2})?$/.test(limpio)) return { error: 'Escribe solo números, con hasta 2 decimales. Ejemplo: 50 o 50,50' };
   const valor = Number(limpio);

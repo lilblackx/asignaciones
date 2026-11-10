@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { montoCalculadora } from '../../utils/montoCalculadora';
 import { ArrowLeft, HandCoins } from 'lucide-react';
 import Colapsable from '../Colapsable';
 import SelectMenu from '../SelectMenu';
@@ -45,7 +46,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
           <div>
             <label htmlFor="adelanto-monto" className={ETIQUETA}>Monto en dólares</label>
             <div className="relative mt-1">
-              <input id="adelanto-monto" value={form.monto} onChange={(e) => cambiar('monto', stripEmojis(e.target.value))} inputMode="decimal" autoComplete="off" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold`} />
+              <input id="adelanto-monto" value={form.monto} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold text-right tabular-nums`} />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
             </div>
             <Colapsable>{texto('monto') ? <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('monto')}</p> : (monto > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} font-bold mt-1 tabular-nums`}>{bolivares(aBs(monto, tasa))}</p>)}</Colapsable>

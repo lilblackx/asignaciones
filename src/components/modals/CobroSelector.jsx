@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { montoCalculadora } from '../../utils/montoCalculadora';
 import { Check } from 'lucide-react';
 import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, MONEDA_BS, MONEDA_USD } from '../../utils/cobro';
 import { claseCampo } from '../estilos';
@@ -81,15 +82,17 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
             id={`${idBase}-otro`}
             ref={inputRef}
             type="text"
-            inputMode="decimal"
-            maxLength={12}
-            placeholder={moneda === MONEDA_USD ? 'Ej. 30' : 'Ej. 5000'}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="0,00"
             value={seleccion.otro}
-            onChange={(e) => onChange({ ...seleccion, otro: e.target.value.replace(/[^\d,]/g, '') })}
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => onChange({ ...seleccion, otro: montoCalculadora(e.target.value) })}
             aria-invalid={!!error}
             aria-describedby={error ? `${idBase}-error` : undefined}
-            className={`${claseCampo('grande', error ? 'error' : 'normal')} font-bold`}
+            className={`${claseCampo('grande', error ? 'error' : 'normal')} font-bold text-right tabular-nums`}
           />
+          <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Escribe solo los números: se llenan de derecha a izquierda y los dos últimos son los decimales (569600 se ve 5.696,00).</p>
           {error && <p id={`${idBase}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
         </div>
       )}

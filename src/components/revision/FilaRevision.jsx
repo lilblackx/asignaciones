@@ -7,6 +7,7 @@ import { BOTON, BOTON_FILA, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from 
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
 import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable, textoEscaladaRevision } from '../../utils/revisionPagos';
 import { parseMontoAjuste } from '../../utils/ajustes';
+import { montoCalculadora, montoParaCampo } from '../../utils/montoCalculadora';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
 import { diaLegible } from '../../utils/periodoReporte';
 import { stripEmojis } from '../../utils/sanitizeInput';
@@ -46,7 +47,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
     setGarantia({
       modo: item.descuento > 0 ? 'DESCONTAR' : item.garantiaSinDescuento ? 'SIN' : item.garantiaDe ? '' : 'DESCONTAR',
       origen: marcada ? { id: marcada.id, codigo: marcada.codigo, tecnico: item.descuentoDe ? marcada.tecnico : (ordenesBusqueda.find((o) => (o.id ?? `${o.codigo}-${o.createdAt}`) === marcada.id) ? tecnicoDe(ordenesBusqueda.find((o) => (o.id ?? `${o.codigo}-${o.createdAt}`) === marcada.id)) : marcada.tecnico), cliente: marcada.cliente || '' } : null,
-      monto: item.descuento > 0 ? String(item.descuento).replace('.', ',') : '',
+      monto: item.descuento > 0 ? montoParaCampo(item.descuento) : '',
       sinDescuento: item.garantiaSinDescuento || '',
     });
   };
@@ -196,7 +197,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
               <div className="max-w-xs">
                 <label htmlFor={`monto-${item.clave}`} className={ETIQUETA}>Monto a descontar (en dólares)</label>
                 <div className="relative mt-1">
-                  <input id={`monto-${item.clave}`} value={garantia.monto} onChange={(e) => { setGarantia((g) => ({ ...g, monto: e.target.value.replace(/[^\d.,]/g, '') })); setError(''); }} inputMode="decimal" autoComplete="off" placeholder="0,00" className={`${CAMPO} pr-9 text-right tabular-nums`} />
+                  <input id={`monto-${item.clave}`} value={garantia.monto} onChange={(e) => { setGarantia((g) => ({ ...g, monto: montoCalculadora(e.target.value) })); setError(''); }} inputMode="numeric" autoComplete="off" placeholder="0,00" className={`${CAMPO} pr-9 text-right tabular-nums`} />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none" aria-hidden="true">$</span>
                 </div>
               </div>

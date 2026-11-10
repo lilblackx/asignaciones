@@ -7,6 +7,7 @@
 // `aplicado` es lo que ya entró en pagos (sube al pagar, baja al anular el pago, nunca pasa de `monto`), igual que en los adelantos. Un descuento se resta del próximo pago del
 // técnico (si no alcanza, el resto queda como saldo y se arrastra); un bono se suma entero al próximo pago.
 import { saldoAdelanto } from './adelantos.js';
+import { montoDelCampo } from './montoCalculadora.js';
 
 const redondear = (valor) => Math.round((Number(valor) || 0) * 100) / 100;
 
@@ -20,7 +21,7 @@ export const idsAjustesDeOrden = (clave, firma) => TIPOS_AJUSTE.map((tipo) => id
 
 // El monto que escribe el administrador ("5", "5,50", "5.5"): dólares positivos con hasta dos decimales. { valor } o { error }.
 export function parseMontoAjuste(raw) {
-  const texto = String(raw ?? '').trim().replace(/\s+/g, '').replace(',', '.');
+  const texto = String(montoDelCampo(String(raw ?? '').trim().replace(/\s+/g, '')) ?? '').replace(',', '.');
   if (!texto) return { error: 'Escribe el monto a descontar.' };
   if (!/^\d+(\.\d{1,2})?$/.test(texto)) return { error: 'El monto debe ser un número en dólares, con hasta dos decimales.' };
   const valor = Number(texto);

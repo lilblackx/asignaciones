@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { montoCalculadora } from '../../utils/montoCalculadora';
 import { AlertTriangle, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
@@ -13,7 +14,6 @@ import { SELECTOR } from '../finanzas/estilos';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, diasEsperando, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
-import { stripEmojis } from '../../utils/sanitizeInput';
 import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
@@ -134,7 +134,8 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
               <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
                 <div>
                   <label htmlFor="cobro-monto" className={ETIQUETA}>Monto</label>
-                  <input id="cobro-monto" value={monto} onChange={(e) => { setMonto(stripEmojis(e.target.value).replace(/[^\d,]/g, '')); setError(null); }} inputMode="decimal" autoComplete="off" placeholder="Ej. 45 o 45,50" aria-invalid={error?.campo === 'monto'} className={`${CAMPO_FORMULARIO} mt-1`} />
+                  <input id="cobro-monto" value={monto} onChange={(e) => { setMonto(montoCalculadora(e.target.value)); setError(null); }} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO_FORMULARIO} mt-1 text-right font-black tabular-nums`} />
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Solo los números: los dos últimos son los decimales (4500 se ve 45,00).</p>
                 </div>
                 <SelectMenu ariaLabel="Moneda del monto" className={SELECTOR} value={moneda} onChange={(v) => { setMoneda(v); setError(null); }} items={[{ value: 'USD', label: 'Dólares ($)' }, { value: 'BS', label: 'Bolívares (Bs)' }]} />
               </div>

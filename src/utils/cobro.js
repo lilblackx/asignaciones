@@ -6,6 +6,7 @@
 //   - "Exonerar": la visita no se cobra; el técnico ve en su aviso que no debe cobrar nada.
 
 import { esInstalacion } from './instalacion.js';
+import { montoDelCampo } from './montoCalculadora.js';
 import { cerradaComoTA } from './infraestructura.js';
 import { etiquetaTipoVisita } from './tipoVisita.js';
 
@@ -28,7 +29,7 @@ export const ETIQUETA_COBRO = { [COBRO_VISITA]: 'Visita técnica', [COBRO_OTRO]:
 // Monto escrito a mano (en Bs o en $): solo dígitos y, si hace falta, coma con hasta 2 decimales
 // (no se aceptan puntos para que "5.696" no se confunda con 5,696).
 export function parseMontoBs(raw) {
-  const txt = String(raw ?? '').trim();
+  const txt = String(montoDelCampo(raw) ?? '').trim();
   if (txt === '') return { error: 'Escribe el monto a cobrar.' };
   if (!/^\d{1,9}(,\d{1,2})?$/.test(txt)) return { error: 'Escribe solo números y usa coma para los decimales. Ejemplo: 5000 o 5000,50' };
   const valor = Number(txt.replace(',', '.'));

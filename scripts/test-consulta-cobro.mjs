@@ -43,7 +43,7 @@ const recordatorio = { ...respondida, consultaCobro: construirConsulta(250, 'GER
 check('un recordatorio también la deja pendiente (la oficina responde de nuevo)', [consultaPendiente(recordatorio), respuestaVigente(recordatorio)], [true, null]);
 
 // --- Al aprobar: la respuesta llega elegida ---
-check('un monto llega como "Otro monto" con su moneda', cobroPrecargado(respondida), { modo: COBRO_OTRO, otro: '5000,5', moneda: MONEDA_BS });
+check('un monto llega como "Otro monto" con su moneda', cobroPrecargado(respondida), { modo: COBRO_OTRO, otro: '5.000,50', moneda: MONEDA_BS });
 check('el monto precargado se puede confirmar tal cual', resolverCobro(cobroPrecargado(respondida), null), { cobroBs: '5.000,5', tipo: COBRO_OTRO, moneda: MONEDA_BS });
 check('en dólares llega en dólares', resolverCobro(cobroPrecargado({ ...consultada, respuestaCobro: dolares.respuesta }), null), { cobroBs: '30', tipo: COBRO_OTRO, moneda: MONEDA_USD });
 check('una exoneración llega como "Exonerar"', cobroPrecargado({ ...consultada, respuestaCobro: exonerada.respuesta }), { modo: COBRO_EXONERADO, otro: '', moneda: MONEDA_BS });

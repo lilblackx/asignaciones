@@ -6,6 +6,7 @@
 //   respuestaCobro: { metros, exonerado, valor, monto, moneda, por, en }        lo escribe la oficina
 // Cada consulta nueva (otros metros, o un recordatorio) deja sin vigencia la respuesta anterior: la oficina responde de nuevo.
 
+import { montoParaCampo } from './montoCalculadora.js';
 import { COBRO_EXONERADO, COBRO_OTRO, MONEDA_BS, MONEDA_USD, formatoMontoBs, parseMontoBs, textoMonto } from './cobro.js';
 
 export const consultaCobroDe = (t) => (t?.consultaCobro && Number.isInteger(t.consultaCobro.metros) ? t.consultaCobro : null);
@@ -49,7 +50,7 @@ export function cobroPrecargado(t) {
   const respuesta = respuestaVigente(t);
   if (!respuesta || (Number.isInteger(t.metrosCable) && t.metrosCable !== respuesta.metros)) return null;
   if (respuesta.exonerado) return { modo: COBRO_EXONERADO, otro: '', moneda: MONEDA_BS };
-  return { modo: COBRO_OTRO, otro: String(respuesta.valor).replace('.', ','), moneda: respuesta.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS };
+  return { modo: COBRO_OTRO, otro: montoParaCampo(respuesta.valor), moneda: respuesta.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS };
 }
 
 // --- Avisos en la app (mientras está abierta; con la app cerrada llega el push) ---

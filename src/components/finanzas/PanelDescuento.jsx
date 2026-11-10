@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { montoCalculadora } from '../../utils/montoCalculadora';
 import { ArrowLeft, MinusCircle } from 'lucide-react';
 import Colapsable from '../Colapsable';
 import CampoFecha from '../CampoFecha';
@@ -66,7 +67,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
         <div>
           <label htmlFor="descuento-monto" className={ETIQUETA}>{enCuotas ? 'Monto total en dólares' : 'Monto en dólares'}</label>
           <div className="relative mt-1">
-            <input id="descuento-monto" value={form.monto} onChange={(e) => cambiar('monto', stripEmojis(e.target.value))} inputMode="decimal" autoComplete="off" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold`} />
+            <input id="descuento-monto" value={form.monto} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold text-right tabular-nums`} />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
           </div>
           <Colapsable>{texto('monto') ? <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('monto')}</p> : (monto > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} font-bold mt-1 tabular-nums`}>{bolivares(aBs(monto, tasa))}</p>)}</Colapsable>

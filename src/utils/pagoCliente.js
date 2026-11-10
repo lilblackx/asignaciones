@@ -9,6 +9,7 @@
 //   SIN_COBRAR       lo marcaron sin cobrar en el flujo anterior
 import { MAX_BANCO, MAX_NOTA, MAX_REFERENCIA, MAX_TITULAR, MONEDA_BS, MONEDA_USD, esZelle, exigeReferencia, fechaHoraDeMarca, marcaDeFechaHora } from './datosPago.js';
 import { CAMPOS_POR_TIPO, TIPO_BINANCE, TIPO_CUENTA, TIPO_PAGO_MOVIL, TIPO_ZELLE, TITULO_POR_TIPO } from './formasPago.js';
+import { montoDelCampo } from './montoCalculadora.js';
 import { COBRO_EXONERADO, formatoMontoBs, llevaCobro, monedaDe, parseMontoBs, textoMonto } from './cobro.js';
 import { esInstalacion } from './instalacion.js';
 import { diaDe } from './totalesMes.js';
@@ -24,6 +25,7 @@ export const ETIQUETA_ESTADO_PAGO = { PENDIENTE_COBRO: 'Pendiente de cobro', POR
 // Desde qué día (Caracas) se pide el pago: las órdenes que se finalizan o pre-finalizan desde entonces. Lo anterior no pide nada (sigue con "Entendido"). Al desplegar el registro del pago, esta fecha debe
 // ser el día del despliegue: si fuera anterior, las órdenes ya cerradas sin pago le saldrían de golpe a cada técnico.
 // Para probar con otra fecha en local: VITE_PAGO_CLIENTE_DESDE=AAAA-MM-DD en .env.development.local.
+export { montoCalculadora, montoDelCampo, montoParaCampo } from './montoCalculadora.js';
 export const FECHA_INICIO_PAGO_CLIENTE = import.meta.env?.VITE_PAGO_CLIENTE_DESDE ?? '2026-11-10';
 
 // Las formas con que paga el cliente, según la moneda.
@@ -100,7 +102,7 @@ const redondear = (n) => Math.round(n * 100) / 100;
 export function parsePagoCliente({ moneda, forma, monto, banco, titular, cuentaEmpresa, referencia, fecha, hora, nota } = {}, { cuentas = [], cobro = null, ahora = Date.now() } = {}) {
   if (moneda !== MONEDA_BS && moneda !== MONEDA_USD) return { error: 'Elige la moneda del pago.', campo: 'moneda' };
   if (!formasDeCliente(moneda).includes(forma)) return { error: 'Elige la forma de pago.', campo: 'forma' };
-  const m = parseMontoBs(monto);
+  const m = parseMontoBs(montoDelCampo(monto));
   if (m.error) return { error: m.error.replace('a cobrar', 'pagado'), campo: 'monto' };
   const bancoLimpio = limpiar(banco);
   if (bancoLimpio.length > MAX_BANCO) return { error: `El nombre del banco es demasiado largo (máximo ${MAX_BANCO} caracteres).`, campo: 'banco' };

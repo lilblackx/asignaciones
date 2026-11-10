@@ -1,6 +1,7 @@
 // Los datos que Finanzas registra al pagar a un técnico o al darle un adelanto: moneda, forma de pago, referencia, fecha y hora. Funciones puras (las usan la
 // ventana de pago, el adelanto y las pruebas). La hora es la de Caracas, como en el resto de la app.
 import { esFechaValida } from './registroVnTa.js';
+import { montoDelCampo } from './montoCalculadora.js';
 
 export const MONEDA_BS = 'BS';
 export const MONEDA_USD = 'USD';
@@ -71,7 +72,7 @@ export function parseDatosPago({ moneda, forma, banco, referencia, fecha, hora }
 
 // "50" / "50,5" / "50.50" -> dólares (más de 0, hasta MAX_ADELANTO, dos decimales) o { error }.
 export function parseMontoAdelanto(texto) {
-  const limpio = String(texto ?? '').trim().replace(',', '.');
+  const limpio = String(montoDelCampo(texto) ?? '').trim().replace(',', '.');
   if (limpio === '') return { error: 'Escribe el monto del adelanto.' };
   if (!/^\d{1,6}(\.\d{1,2})?$/.test(limpio)) return { error: 'Escribe solo números, con hasta 2 decimales. Ejemplo: 50 o 50,50' };
   const valor = Number(limpio);

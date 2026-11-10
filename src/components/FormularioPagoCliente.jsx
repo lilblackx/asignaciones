@@ -11,6 +11,7 @@ import { AREA_TEXTO, BOTON, CAMPO_FECHA, CAMPO_FORMULARIO, ETIQUETA } from './es
 import { SELECTOR } from './finanzas/estilos';
 import { MAX_REFERENCIA, MAX_TITULAR } from '../utils/datosPago';
 import { stripEmojis } from '../utils/sanitizeInput';
+import { montoCalculadora, montoParaCampo } from '../utils/montoCalculadora';
 import { TIPO_PAGO } from '../utils/pagoEnOrden';
 import {
   MONEDA_BS, MONEDA_USD, MONEDAS_CLIENTE, aplicaBancoCliente, claveReferencia, cuentasParaForma, exigeReferencia, exigeTitularCliente, fechaHoraDeMarca, formasDeCliente, notaPagoCompartido, parsePagoCliente,
@@ -21,8 +22,8 @@ const SELECTOR_HORA = SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7');
 
 const MensajeError = ({ texto }) => <Colapsable>{texto && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto}</p>}</Colapsable>;
 
-// 5696 -> "5696"; 5696.5 -> "5696,5" (sin puntos de miles: así se escribe el monto en la app).
-const montoComoTexto = (monto) => (monto ? String(monto).replace('.', ',') : '');
+// 5696 -> "5.696,00"; 5696.5 -> "5.696,50" (el monto se escribe como en una calculadora, ver montoCalculadora).
+const montoComoTexto = montoParaCampo;
 
 // El formulario del pago que hace el cliente. Lo usan el técnico (al finalizarse la orden con cobro, o dentro del Pre-finalizar de una instalación) y el ADMIN (para corregir un pago). Valida todo con
 // utils/pagoCliente. Antes de guardar, el técnico ve un resumen de lo que va a registrar y lo confirma (ver ConfirmarPagoModal): así no carga datos de pago erróneos.
@@ -75,7 +76,7 @@ export default function FormularioPagoCliente({
 
   // Avisos en vivo (no bloquean): moneda distinta al cobro y monto distinto.
   const monedaDistinta = Boolean(cobro) && form.moneda !== cobro.moneda;
-  const montoNumero = Number(String(form.monto).replace(',', '.'));
+  const montoNumero = Number(String(form.monto).replace(/\./g, '').replace(',', '.'));
   const diferencia = Boolean(cobro) && !monedaDistinta && String(form.monto).trim() !== '' && Number.isFinite(montoNumero) && Math.abs(montoNumero - cobro.monto) > 0.005;
 
   const validar = () => parsePagoCliente(form, { cuentas, cobro });
@@ -256,7 +257,8 @@ export default function FormularioPagoCliente({
 
           <div>
             <label htmlFor={id('monto')} className={ETIQUETA}>Monto pagado ({form.moneda === MONEDA_USD ? '$' : 'Bs'})</label>
-            <input id={id('monto')} value={form.monto} onChange={(e) => cambiar('monto', e.target.value.replace(/[^\d,]/g, ''))} inputMode="decimal" autoComplete="off" placeholder="Ej. 5696 o 5696,50" aria-invalid={error?.campo === 'monto'} className={`${CAMPO_FORMULARIO} mt-1`} />
+            <input id={id('monto')} value={form.monto} onFocus={(e) => e.target.select()} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} aria-describedby={id('monto-ayuda')} className={`${CAMPO_FORMULARIO} mt-1 text-right text-lg font-black tabular-nums`} />
+            <p id={id('monto-ayuda')} className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Escribe solo los números, sin puntos ni comas: se llenan de derecha a izquierda y los dos últimos son los decimales. Ejemplo: 569600 se ve 5.696,00.</p>
             <MensajeError texto={texto('monto')} />
             <Colapsable>{diferencia && <p className="text-xs text-amber-800 dark:text-amber-300 font-bold mt-1">El monto es distinto al cobro: escribe en la nota por qué.</p>}</Colapsable>
           </div>
