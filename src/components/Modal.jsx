@@ -142,7 +142,12 @@ function VentanaModal({ onClose, onVolver, zIndexClass = 'z-50', completa = fals
   useEffect(() => {
     const panel = panelRef.current;
     const focusables = panel ? panel.querySelectorAll(FOCUSABLE_SELECTOR) : [];
-    if (focusables.length > 0) focusables[0].focus();
+    // Con teclado el foco va al primer control; en pantallas táctiles (sin teclado) queda en la propia ventana, para que el primer botón (la X de cerrar, un "Copiar") no salga con el aro de foco al abrir.
+    if (panel && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) {
+      panel.tabIndex = -1;
+      panel.style.outline = 'none';
+      panel.focus({ preventScroll: true });
+    } else if (focusables.length > 0) focusables[0].focus();
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
