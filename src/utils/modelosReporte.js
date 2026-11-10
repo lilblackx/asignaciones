@@ -483,5 +483,5 @@ export function documentoPagosDetallados(ctx) {
     },
     { tipo: 'texto', texto: 'Cada pago muestra las órdenes que se pagaron, lo que se sumó (bonos, pagos adicionales y pagos por garantía) y lo que se descontó (adelantos, descuentos y descuentos por garantía). Los montos son los del tabulador de precios del momento de cada pago y los bolívares, con la tasa BCV del dólar de ese momento.' },
   );
-  return { ...encabezado('Pagos detallados', rango, tecnico, ctx, bloques), etiqueta: 'Detalle de pagos', pie: '', nombreArchivo: tecnico ? `Pagos detallados ${tecnico}` : 'Pagos detallados' };
+  return { ...encabezado('Pagos detallados', rango, tecnico, ctx, bloques), pie: '', nombreArchivo: tecnico ? `Pagos detallados ${tecnico}` : 'Pagos detallados' };
 }

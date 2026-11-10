@@ -1,7 +1,7 @@
 // Arma el Word (.docx) de un documento de reporte (ver modelosReporte.js): mismo contenido que el PDF pero editable. A4 vertical, encabezado de
 // marca, cifras en tarjetas, gráficos como imagen, tablas con filas alternadas y pie con número de página. Se carga solo al exportar.
 import {
-  AlignmentType, BorderStyle, Document, Footer, Header, ImageRun, Packer, PageBreak, PageNumber, Paragraph, ShadingType, Table, TableLayoutType, TableRow, TableCell, TextRun, VerticalAlign, WidthType,
+  AlignmentType, BorderStyle, Document, Footer, Header, HeightRule, ImageRun, LineRuleType, Packer, PageBreak, PageNumber, Paragraph, ShadingType, Table, TableLayoutType, TableRow, TableCell, TextRun, VerticalAlign, WidthType,
 } from 'docx';
 import { graficoAImagen } from './graficoImagen.js';
 import { fechaHoraLegible } from './formatoFecha.js';
@@ -9,7 +9,10 @@ import { cargarLogo } from './logoReportes.js';
 import { ajustarTabla } from './tablaAngosta.js';
 
 const MARCA = 'ASIGNACIONES NS';
-const ANCHO_UTIL = 9638; // A4 (11906) menos márgenes de 2 cm, en veinteavos de punto
+const ANCHO_PAGINA = 11906; // el ancho de la hoja A4, en veinteavos de punto
+const MARGEN_LATERAL = 1134; // márgenes de 2 cm a los lados
+const ANCHO_UTIL = ANCHO_PAGINA - MARGEN_LATERAL * 2; // 9638
+const ALTO_BANDA = 1361; // 24 mm: la misma altura de la banda de marca del PDF
 const PX_UTIL = 640; // el mismo ancho en píxeles (para las imágenes)
 const FUENTE = 'Calibri';
 const SIN_BORDE = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
@@ -146,38 +149,61 @@ function grafico(b) {
   ];
 }
 
-// La banda negra de la portada con el logo (sus letras son blancas: sobre fondo claro no se verían), con la línea roja de la marca debajo.
-function bandaConLogo(logo) {
-  const alto = 60;
-  const ancho = Math.round((logo.ancho / logo.alto) * alto);
-  const borde = { style: BorderStyle.SINGLE, size: 12, color: 'DC2626' };
-  return [
-    new Table({
-      width: { size: ANCHO_UTIL, type: WidthType.DXA },
-      columnWidths: [ANCHO_UTIL],
-      layout: TableLayoutType.FIXED,
-      borders: { ...SIN_BORDES, insideHorizontal: SIN_BORDE, insideVertical: SIN_BORDE },
-      rows: [new TableRow({
-        cantSplit: true,
-        children: [new TableCell({
-          width: { size: ANCHO_UTIL, type: WidthType.DXA },
-          shading: { type: ShadingType.CLEAR, fill: '000000', color: 'auto' },
-          margins: { top: 100, bottom: 100, left: 200, right: 200 },
-          verticalAlign: VerticalAlign.CENTER,
-          borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: borde },
-          children: [parrafo([new ImageRun({ type: 'png', data: logo.bytes, transformation: { width: ancho, height: alto }, altText: { title: 'Network Speed', description: 'Logo de Network Speed', name: 'Logo' } })])],
-        })],
+// La banda de marca de la portada, igual que la del PDF: negra, de borde a borde y pegada al borde de arriba de la hoja, con el logo a la izquierda (sus letras son blancas: sobre fondo claro
+// no se verían) y la línea roja de la marca debajo. Va en el encabezado de la primera página, que la hoja pone a 0 cm del borde (ver `generarDocx`).
+function bandaDeMarca(logo) {
+  const alto = 64; // 17 mm, como el logo del PDF
+  const marca = logo
+    ? new ImageRun({ type: 'png', data: logo.bytes, transformation: { width: Math.round((logo.ancho / logo.alto) * alto), height: alto }, altText: { title: 'Network Speed', description: 'Logo de Network Speed', name: 'Logo' } })
+    : corrida(MARCA, { size: 26, bold: true, color: 'FFFFFF' });
+  return new Table({
+    width: { size: ANCHO_PAGINA, type: WidthType.DXA },
+    columnWidths: [ANCHO_PAGINA],
+    layout: TableLayoutType.FIXED,
+    indent: { size: -MARGEN_LATERAL, type: WidthType.DXA }, // sale del margen izquierdo hasta el borde de la hoja
+    borders: { ...SIN_BORDES, insideHorizontal: SIN_BORDE, insideVertical: SIN_BORDE },
+    rows: [new TableRow({
+      cantSplit: true,
+      height: { value: ALTO_BANDA, rule: HeightRule.EXACT },
+      children: [new TableCell({
+        width: { size: ANCHO_PAGINA, type: WidthType.DXA },
+        shading: { type: ShadingType.CLEAR, fill: '000000', color: 'auto' },
+        margins: { top: 0, bottom: 0, left: MARGEN_LATERAL, right: MARGEN_LATERAL }, // el logo queda alineado con el texto de la hoja
+        verticalAlign: VerticalAlign.CENTER,
+        borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: { style: BorderStyle.SINGLE, size: 24, color: 'DC2626' } },
+        children: [parrafo([marca])],
       })],
-    }),
-    parrafo([], { spacing: { after: 200 } }),
-  ];
+    })],
+  });
+}
+
+// Un párrafo vacío y mínimo para cerrar el encabezado de la primera página: Word exige que un encabezado termine en un párrafo, no en una tabla.
+const cierreDeEncabezado = () => parrafo([], { spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.EXACT }, run: { size: 2 } });
+
+// "ASIGNACIONES NS | título del reporte" con la línea roja debajo: el encabezado de las hojas que siguen a la primera (la primera lleva la banda de marca). La hoja tiene el encabezado a
+// 0 cm del borde de arriba para que la banda llegue hasta él, así que este se baja con `spacing.before` hasta donde estaba (500 veinteavos de punto, unos 0,9 cm).
+const encabezadoCorrido = (modelo) => parrafo([corrida(MARCA, { size: 17, bold: true, color: '0B0B0B' }), corrida(`   |   ${modelo.titulo}`, { size: 17, color: '898781' })], {
+  spacing: { before: 500 },
+  border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: 'DC2626', space: 4 } },
+});
+
+function pieDePagina(modelo) {
+  return new Footer({
+    children: [parrafo([
+      // `modelo.pie`: el texto del medio (los documentos para compartir con alguien de fuera no son "de uso interno"; con '' no lleva ninguno).
+      corrida([modelo.pie ?? 'Documento de uso interno', `Generado el ${fechaHoraLegible(modelo.generado.en)}`].filter(Boolean).join('   |   '), { size: 15, color: '898781' }),
+      corrida('\tPágina ', { size: 15, color: '898781' }),
+      new TextRun({ children: [PageNumber.CURRENT], font: FUENTE, size: 15, color: '898781' }),
+      corrida(' de ', { size: 15, color: '898781' }),
+      new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FUENTE, size: 15, color: '898781' }),
+    ], { tabStops: [{ type: 'right', position: ANCHO_UTIL }], border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'E1E0D9', space: 4 } } })],
+  });
 }
 
 export async function generarDocx(modelo) {
   const logo = await cargarLogo();
   const hijos = [
-    ...(logo ? bandaConLogo(logo) : []),
-    parrafo([corrida(modelo.titulo, { size: 44, bold: true, color: '0B0B0B' })], { spacing: { after: 60 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: 'DC2626', space: 6 } } }),
+    parrafo([corrida(modelo.titulo, { size: 44, bold: true, color: '0B0B0B' })], { spacing: { before: 300, after: 60 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: 'DC2626', space: 6 } } }),
     parrafo([corrida(modelo.subtitulo, { size: 21, color: '52514E' })], { spacing: { before: 100, after: 40 } }),
     parrafo([corrida(`Generado el ${fechaHoraLegible(modelo.generado.en)}${modelo.generado.por ? ` por ${modelo.generado.por}` : ''}`, { size: 17, color: '898781' })], { spacing: { after: 240 } }),
   ];
@@ -197,24 +223,14 @@ export async function generarDocx(modelo) {
     description: modelo.subtitulo,
     styles: { default: { document: { run: { font: FUENTE, size: 21 } } } },
     sections: [{
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1300, bottom: 1200, left: 1134, right: 1134, header: 500, footer: 500 } } },
+      // `titlePage`: la primera página lleva su propio encabezado, la banda de marca con el logo (igual que la portada del PDF), y las demás el de texto con su línea roja.
+      // El encabezado va a 0 cm del borde de arriba (`header: 0`) para que la banda llegue hasta él; el cuerpo baja solo cuando el encabezado es más alto que el margen de arriba.
+      properties: { titlePage: true, page: { size: { width: ANCHO_PAGINA, height: 16838 }, margin: { top: 1300, bottom: 1200, left: MARGEN_LATERAL, right: MARGEN_LATERAL, header: 0, footer: 500 } } },
       headers: {
-        default: new Header({
-          children: [parrafo([corrida(MARCA, { size: 17, bold: true, color: '0B0B0B' }), corrida(`   |   ${modelo.titulo}`, { size: 17, color: '898781' })], { border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: 'DC2626', space: 4 } } })],
-        }),
+        first: new Header({ children: [bandaDeMarca(logo), cierreDeEncabezado()] }),
+        default: new Header({ children: [encabezadoCorrido(modelo)] }),
       },
-      footers: {
-        default: new Footer({
-          children: [parrafo([
-            // `modelo.pie`: el texto del medio (los documentos para compartir con alguien de fuera no son "de uso interno"; con '' no lleva ninguno).
-            corrida([modelo.pie ?? 'Documento de uso interno', `Generado el ${fechaHoraLegible(modelo.generado.en)}`].filter(Boolean).join('   |   '), { size: 15, color: '898781' }),
-            corrida('\tPágina ', { size: 15, color: '898781' }),
-            new TextRun({ children: [PageNumber.CURRENT], font: FUENTE, size: 15, color: '898781' }),
-            corrida(' de ', { size: 15, color: '898781' }),
-            new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FUENTE, size: 15, color: '898781' }),
-          ], { tabStops: [{ type: 'right', position: ANCHO_UTIL }], border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'E1E0D9', space: 4 } } })],
-        }),
-      },
+      footers: { first: pieDePagina(modelo), default: pieDePagina(modelo) },
       children: hijos,
     }],
   });

@@ -56,11 +56,6 @@ export async function generarPdf(modelo) {
     doc.setTextColor(255, 255, 255);
     texto(MARCA, MARGEN, 14.5);
   }
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(200, 200, 200);
-  texto(modelo.etiqueta || 'Reporte de gestión', ancho - MARGEN, 14.5, { align: 'right' });
-
   y = 38;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(21);

@@ -103,7 +103,7 @@ check('el Resumen no trae el detalle de las órdenes: ni secciones ni tablas por
   tablas.some((t) => /^(Pago del|Órdenes pagadas|Descuentos y bonos)/.test(t.titulo || '')),
   csvDeDocumento(resumen).split('\r\n').some((l) => l.startsWith('Técnico;Fecha del pago;Orden;Cliente')),
 ], [false, false, false]);
-check('el Resumen conserva su portada y su pie de siempre', [resumen.etiqueta, resumen.pie, resumen.nombreArchivo], [undefined, undefined, undefined]);
+check('el Resumen conserva su pie de siempre y el nombre de archivo que sale de su título', [resumen.pie, resumen.nombreArchivo], [undefined, undefined]);
 const csvResumen = csvDeDocumento(resumen);
 check('el CSV del Resumen trae las tablas completas, no las angostas', [csvResumen.includes('Pagado a cada técnico\r\n'), csvResumen.split('\r\n').filter((l) => l.startsWith('Fecha;Técnico;Periodo;Órdenes;Total;Bonos y adicionales')).length], [true, 1]);
 
@@ -121,13 +121,13 @@ check('Pago a técnicos: la tabla angosta de lo que se debe tiene 7 columnas y l
   [angostasPagar[0].columnas.map((c) => c.titulo), tablasPagar.find((t) => t.soloCsv && t.titulo === 'Por pagar a cada técnico').columnas.length, angostasPagar[0].filas.length, angostasPagar[0].subfilas],
   [['Técnico', 'Órdenes', 'Total órdenes', 'Bonos y adic.', 'Descuentos', 'Total por pagar', 'En Bs'], 11, 1, ['1 instalación · 2 averías']]);
 check('Pago a técnicos: los pagos registrados, adelantos y descuentos son los mismos del Resumen', [angostasPagar[1].columnas.length, angostasPagar[2].columnas.map((c) => c.titulo), angostasPagar[3].columnas.map((c) => c.titulo)], [9, ['Fecha y hora', 'Técnico', 'Monto', 'Estado'], ['Fecha y hora', 'Técnico', 'Monto', 'Estado']]);
-check('Pago a técnicos: su portada y su pie siguen siendo los de siempre', [paraPagar.titulo, paraPagar.etiqueta, paraPagar.pie], ['Pago a técnicos', undefined, undefined]);
+check('Pago a técnicos: su título y su pie siguen siendo los de siempre', [paraPagar.titulo, paraPagar.pie], ['Pago a técnicos', undefined]);
 check('Pago a técnicos: el CSV conserva las once columnas de lo que se debe', csvDeDocumento(paraPagar).includes('Técnico;Órdenes;Instalaciones;Averías;Val. NAP;Trab. adicional;Total órdenes;Bonos y adicionales;Descuentos;Total por pagar;En Bs\r\n'), true);
 
 // --- Los Pagos detallados ---
 const contexto = (extra = {}) => ({ rango, tecnico: '', ahora, generadoPor: 'lfernandez', pagosFinanzas: { pagos, tasa: 880, adelantos, descuentos, detalle }, ...extra });
 const todos = documentoPagosDetallados(contexto());
-check('el documento se llama Pagos detallados, no dice "uso interno" y su archivo se llama igual', [todos.titulo, todos.etiqueta, todos.pie, todos.subtitulo.includes('Todos los técnicos'), nombreDeArchivo(todos, rango)], ['Pagos detallados', 'Detalle de pagos', '', true, 'pagos-detallados_2026-11-01_2026-11-09']);
+check('el documento se llama Pagos detallados, no dice "uso interno" y su archivo se llama igual', [todos.titulo, todos.pie, todos.subtitulo.includes('Todos los técnicos'), nombreDeArchivo(todos, rango)], ['Pagos detallados', '', true, 'pagos-detallados_2026-11-01_2026-11-09']);
 const secciones = todos.bloques.map((b, i) => [i, b.tipo, b.titulo]).filter(([, tipo]) => tipo === 'seccion' || tipo === 'salto');
 check('sin técnico elegido cada técnico va con su nombre en su propia página (un salto antes del segundo)', secciones.map(([, tipo, titulo]) => [tipo, titulo]), [['seccion', 'JOSE'], ['salto', undefined], ['seccion', 'LUIS']]);
 check('el salto va justo antes del nombre del segundo técnico', secciones[1][0] + 1, secciones[2][0]);
