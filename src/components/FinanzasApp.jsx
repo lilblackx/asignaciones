@@ -11,12 +11,13 @@ import { useTasaDolar } from '../hooks/useTasaDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
 import { rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
-import { corteTodaviaNoLlega, textoFechaCorte, rangoPagable, rangoPorPagar, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { claveOrden, corteTodaviaNoLlega, textoFechaCorte, pagosDelPeriodo, rangoPagable, rangoPorPagar, ordenesYaPagadas, resumenPagado, resumenPagos, totalesPagados } from '../utils/finanzas';
+import { detalleDePagos } from '../utils/detallePagos';
 import { itemsParaRevisar, paraFinanzas, revisar } from '../utils/revisionPagos';
 import { csvDeDocumento } from '../utils/csvReporte';
 import { descargarCsv } from '../utils/exportarOrdenes';
-import { exportarDocumento } from '../utils/exportarDocumento';
-import { documentoPagosClientes, documentoPagosTecnicos, documentoResumenPagos } from '../utils/modelosReporte';
+import { exportarDocumento, nombreDeArchivo } from '../utils/exportarDocumento';
+import { documentoPagosClientes, documentoPagosDetallados, documentoPagosTecnicos, documentoResumenPagos } from '../utils/modelosReporte';
 import Toast from './Toast';
 import EncabezadoSimple from './EncabezadoSimple';
 import PieVersion from './PieVersion';
@@ -44,6 +45,12 @@ const SECCIONES = [
   { id: 'CLIENTES', nombre: 'Pagos de clientes', corto: 'Clientes', documento: documentoPagosClientes, archivo: 'pagos-de-clientes' },
   { id: 'PRECIOS', nombre: 'Tabulador de precios', corto: 'Precios' },
   { id: 'REPORTE', nombre: 'Reporte de pagos', corto: 'Reporte', documento: documentoResumenPagos, archivo: 'resumen-de-pagos' },
+];
+
+// En "Reporte de pagos" el menú Exportar trae dos reportes: el Resumen de pagos (el de siempre) y los Pagos detallados, que se comparten con cada técnico.
+const GRUPOS_REPORTE = [
+  { clave: 'resumen', titulo: 'Resumen de pagos', detalle: 'Lo pagado a cada técnico, con los adelantos y descuentos.', formatos: ['pdf', 'docx', 'csv'] },
+  { clave: 'detallado', titulo: 'Pagos detallados', detalle: 'Cada pago con sus órdenes, descuentos y bonos. Para compartirlo con un técnico, elígelo antes en el filtro.', formatos: ['pdf', 'docx', 'csv'] },
 ];
 
 // Pantalla de FINANZAS: pagar a los técnicos, el tabulador de precios y el reporte de lo pagado. No toca las órdenes: lo que guarda va en sus propias colecciones.
@@ -126,13 +133,30 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
 
   const actual = SECCIONES.find((s) => s.id === seccion);
 
-  const exportar = async (formato) => {
+  // El cliente de cada orden pagada, si se conoce (las órdenes leídas y las filas del periodo): los Pagos detallados lo ponen junto al código.
+  const clientePorClave = useMemo(() => {
+    const mapa = new Map();
+    for (const o of ordenes) if (o.nombre) mapa.set(claveOrden(o), o.nombre);
+    for (const i of items) if (i.orden?.nombre && !mapa.has(i.clave)) mapa.set(i.clave, i.orden.nombre);
+    return mapa;
+  }, [ordenes, items]);
+
+  // `clave`: qué reporte baja el menú cuando la sección tiene más de uno (ver GRUPOS_REPORTE); sin clave, el de la sección.
+  const exportar = async (formato, clave) => {
     setErrorExportar('');
     setExportando(formato);
     try {
-      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosClientes: pagosClientes.pagos, cobrosClientes: cobrosClientes.cobros, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles, descuentos: descuentosVisibles } };
-      const documento = actual.documento(contexto);
-      if (formato === 'csv') descargarCsv(csvDeDocumento(documento), `${actual.archivo}_${rango.desde}_${rango.hasta}.csv`);
+      // Los Pagos detallados llevan, pago por pago, las órdenes que entraron y lo que se sumó o descontó: se leen las órdenes de los pagos del periodo que todavía no están leídas (solo al exportar).
+      const detallado = seccion === 'REPORTE' && clave === 'detallado';
+      let detalle = [];
+      if (detallado) {
+        const vigentes = pagosDelPeriodo(finanzas.pagos, rango).filter((p) => !p.anulado && (!tecnico || String(p.tecnico).toUpperCase() === tecnico.toUpperCase()));
+        const ordenesDeLosPagos = await finanzas.leerOrdenesDePagos(vigentes, finanzas.pagadas);
+        detalle = detalleDePagos({ pagos: vigentes, ordenesPagadas: ordenesDeLosPagos, nombreDe: (id) => clientePorClave.get(id) || '', adelantos: finanzas.adelantos, ajustes: finanzas.ajustes, descuentos: finanzas.descuentos, adicionales: finanzas.adicionales, tasa });
+      }
+      const contexto = { rango, tecnico, ahora: Date.now(), generadoPor: currentUser, pagosClientes: pagosClientes.pagos, cobrosClientes: cobrosClientes.cobros, pagosFinanzas: { filas: filasPagos, pagos: finanzas.pagos, pagadasPorTecnico, tasa, adelantos: adelantosVisibles, descuentos: descuentosVisibles, detalle } };
+      const documento = (detallado ? documentoPagosDetallados : actual.documento)(contexto);
+      if (formato === 'csv') descargarCsv(csvDeDocumento(documento), `${detallado ? nombreDeArchivo(documento, rango) : `${actual.archivo}_${rango.desde}_${rango.hasta}`}.csv`);
       else await exportarDocumento(documento, formato, rango);
     } catch (e) {
       console.error('No se pudo generar el archivo:', e);
@@ -160,7 +184,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                 >
                   <RefreshCw className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
                 </button>
-                <MenuExportar formatos={['pdf', 'docx', 'csv']} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs! bg-zinc-800! border-zinc-700! text-white! hover:bg-zinc-700!" />
+                <MenuExportar formatos={['pdf', 'docx', 'csv']} grupos={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs! bg-zinc-800! border-zinc-700! text-white! hover:bg-zinc-700!" />
               </>
             )}
           />
@@ -212,6 +236,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   cargando={actualizando}
                   onRecargar={() => { actualizar(); if (seccion === 'CLIENTES') { pagosClientes.recargar(); cobrosClientes.recargar(); } }}
                   formatosExportar={['pdf', 'docx', 'csv']}
+                  gruposExportar={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined}
                   onExportar={exportar}
                   exportando={exportando}
                 />
