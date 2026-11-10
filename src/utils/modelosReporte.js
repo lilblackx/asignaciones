@@ -21,7 +21,8 @@ import { HOJAS, armarHoja, columnasMaterialesVisitas, filasMaterialesVisitas } f
 import { cifrasVnTa, columnasEstadisticaVnTa, columnasVnTa, estadisticaRegistros, filaVnTa, filasEstadisticaVnTa, ordenarRegistros } from './registroVnTa.js';
 import { cifrasPagosClientes, columnasPagosClientes, filaPagoCliente, pagosClientesDelPeriodo, resumenPorForma } from './pagoCliente.js';
 import { cobrosDelPeriodo, columnasCobros, filaCobro, resumenCobros as resumenCobrosClientes } from './cobrosClientes.js';
-import { NOTA_PAGOS, adelantosDelPeriodo, columnasAdelantos, filaAdelanto, descuentosDelPeriodo, columnasDescuentos, filaDescuento, cifrasPagos, cifrasResumenPagado, columnasPagosRegistrados, columnasPagosTecnico, columnasResumenPagado, filaPagoRegistrado, filaPagoTecnico, filaResumenPagado, pagosDelPeriodo, resumenPagado, sumaPagado } from './finanzas.js';
+import { NOTA_PAGOS, adelantosDelPeriodo, columnasAdelantos, filaAdelanto, descuentosDelPeriodo, columnasDescuentos, filaDescuento, cifrasPagos, cifrasResumenPagado, columnasPagosRegistrados, columnasPagosTecnico, columnasResumenPagado, filaPagoRegistrado, filaPagoTecnico, filaResumenPagado, pagosDelPeriodo, resumenPagado, sumaPagado, textoGrupos, bolivares, dolares } from './finanzas.js';
+import { columnasCuentaDelPago, columnasMovimientos, columnasOrdenesDePago, filaMovimiento, filaOrdenDePago, textoFormaDePago } from './detallePagos.js';
 import { etiquetaMes } from './totalesMes.js';
 import { mesesDeLaTendencia, tendenciaMensual, textoVariacion } from './tendenciaMensual.js';
 
@@ -315,21 +316,59 @@ export function documentoRegistroEstadisticas(ctx) {
   ]);
 }
 
+// Una tabla doble: la completa solo para el CSV y otra angosta para el PDF y el Word, con unas pocas columnas (`indices`) y, debajo de cada fila, una línea gris con lo demás (`sub(fila, posición)`).
+// Así el PDF se lee en vertical y en el celular sin partir las palabras ni apretar el texto largo (forma de pago, referencia, nota) en una columna de dos dedos.
+// `titulosCortos`: { posición de la columna: título más corto para la tabla angosta }.
+const tablaDoble = ({ titulo, columnas, filas, vacio }, indices, sub, titulosCortos = {}) => [
+  { tipo: 'tabla', soloCsv: true, titulo, columnas, filas, vacio },
+  {
+    tipo: 'tabla', noCsv: true, titulo, vacio,
+    columnas: indices.map((i) => ({ ...columnas[i], titulo: titulosCortos[i] || columnas[i].titulo })),
+    filas: filas.map((f) => indices.map((i) => f[i])),
+    subfilas: filas.map((f, n) => sub(f, n)),
+  },
+];
+
+// Las tablas de pagos que comparten Pago a técnicos y el Resumen de pagos, cada una en su versión doble.
+const tablaPagosRegistrados = (registrados, tasa) => tablaDoble(
+  { titulo: `Pagos registrados (${registrados.length})`, columnas: columnasPagosRegistrados(), filas: registrados.map((p) => filaPagoRegistrado(p, tasa)), vacio: 'Ningún pago registrado en este periodo.' },
+  [0, 1, 3, 4, 5, 6, 7, 8, 10],
+  (f) => [`Periodo ${f[2]}`, f[9] && f[9] !== '-' && `Pago: ${f[9]}`, f[11] && `Nota: ${f[11]}`].filter(Boolean).join(' · '),
+  { 5: 'Bonos y adic.' },
+);
+const tablaAdelantos = (adelantosPeriodo) => tablaDoble(
+  { titulo: `Adelantos (${adelantosPeriodo.length})`, columnas: columnasAdelantos(), filas: adelantosPeriodo.map(filaAdelanto), vacio: 'Ningún adelanto en este periodo.' },
+  [0, 1, 2, 6],
+  (f) => [f[3], f[4], f[5] && `Ref. ${f[5]}`, f[7] && `Nota: ${f[7]}`].filter(Boolean).join(' · '),
+);
+const tablaDescuentos = (descuentosPeriodo) => tablaDoble(
+  { titulo: `Descuentos (${descuentosPeriodo.length})`, columnas: columnasDescuentos(), filas: descuentosPeriodo.map(filaDescuento), vacio: 'Ningún descuento en este periodo.' },
+  [0, 1, 2, 6],
+  (f) => [f[3] && `Aplica desde ${f[3]}`, f[4] && `Motivo: ${f[4]}`, f[5] && `Registrado por ${f[5]}`].filter(Boolean).join(' · '),
+);
+
 // Finanzas: lo que se le debe a cada técnico (con las tarifas de hoy) y los pagos registrados en el periodo.
 export function documentoPagosTecnicos(ctx) {
   const { rango, tecnico, pagosFinanzas } = ctx;
   const { filas, pagos, pagadasPorTecnico, tasa = null } = pagosFinanzas;
   const delTecnico = (nombre) => !tecnico || String(nombre).toUpperCase() === tecnico.toUpperCase();
   const visibles = filas.filter((f) => delTecnico(f.tecnico));
+  const porPagar = visibles.filter((f) => f.pendientes.length > 0);
   const registrados = pagosDelPeriodo(pagos, rango).filter((p) => delTecnico(p.tecnico));
   const adelantosPeriodo = adelantosDelPeriodo(pagosFinanzas.adelantos || [], rango, { tecnico });
   const descuentosPeriodo = descuentosDelPeriodo(pagosFinanzas.descuentos || [], rango, { tecnico });
   return encabezado('Pago a técnicos', rango, tecnico, ctx, [
     { tipo: 'cifras', items: cifrasPagos(visibles, sumaPagado(Object.entries(pagadasPorTecnico).filter(([nombre]) => delTecnico(nombre)).map(([, v]) => v)), tasa) },
-    { tipo: 'tabla', titulo: 'Por pagar a cada técnico', columnas: columnasPagosTecnico(), filas: visibles.filter((f) => f.pendientes.length > 0).map((f) => filaPagoTecnico(f, tasa)), vacio: 'Nada por pagar en este periodo.' },
-    { tipo: 'tabla', titulo: `Pagos registrados (${registrados.length})`, columnas: columnasPagosRegistrados(), filas: registrados.map((p) => filaPagoRegistrado(p, tasa)), vacio: 'Ningún pago registrado en este periodo.' },
-    { tipo: 'tabla', titulo: `Adelantos (${adelantosPeriodo.length})`, columnas: columnasAdelantos(), filas: adelantosPeriodo.map(filaAdelanto), vacio: 'Ningún adelanto en este periodo.' },
-    { tipo: 'tabla', titulo: `Descuentos (${descuentosPeriodo.length})`, columnas: columnasDescuentos(), filas: descuentosPeriodo.map(filaDescuento), vacio: 'Ningún descuento en este periodo.' },
+    // En el PDF y el Word las instalaciones, averías, validaciones y trabajos adicionales van en la línea gris de cada técnico.
+    ...tablaDoble(
+      { titulo: 'Por pagar a cada técnico', columnas: columnasPagosTecnico(), filas: porPagar.map((f) => filaPagoTecnico(f, tasa)), vacio: 'Nada por pagar en este periodo.' },
+      [0, 1, 6, 7, 8, 9, 10],
+      (f, n) => textoGrupos(porPagar[n].cantidades) || '-',
+      { 7: 'Bonos y adic.' },
+    ),
+    ...tablaPagosRegistrados(registrados, tasa),
+    ...tablaAdelantos(adelantosPeriodo),
+    ...tablaDescuentos(descuentosPeriodo),
     { tipo: 'texto', texto: NOTA_PAGOS },
   ]);
 }
@@ -352,7 +391,8 @@ export function documentoPagosClientes(ctx) {
   ]);
 }
 
-// Finanzas: el resumen de lo pagado en el periodo, por técnico (cuánto se le pagó y por cuántas órdenes) y cada pago registrado.
+// Finanzas: el resumen de lo pagado en el periodo, por técnico (cuánto se le pagó y por cuántas órdenes) y cada pago registrado, con los adelantos y descuentos.
+// El detalle de las órdenes de cada pago va aparte, en documentoPagosDetallados.
 export function documentoResumenPagos(ctx) {
   const { rango, tecnico, pagosFinanzas } = ctx;
   const { tasa = null } = pagosFinanzas;
@@ -362,10 +402,86 @@ export function documentoResumenPagos(ctx) {
   const descuentosPeriodo = descuentosDelPeriodo(pagosFinanzas.descuentos || [], rango, { tecnico });
   return encabezado('Resumen de pagos', rango, tecnico, ctx, [
     { tipo: 'cifras', items: cifrasResumenPagado(resumen) },
-    { tipo: 'tabla', titulo: 'Pagado a cada técnico', columnas: columnasResumenPagado(), filas: resumen.porTecnico.map(filaResumenPagado), vacio: 'Ningún pago registrado en este periodo.' },
-    { tipo: 'tabla', titulo: `Pagos registrados (${registrados.length})`, columnas: columnasPagosRegistrados(), filas: registrados.map((p) => filaPagoRegistrado(p, tasa)), vacio: 'Ningún pago registrado en este periodo.' },
-    { tipo: 'tabla', titulo: `Adelantos (${adelantosPeriodo.length})`, columnas: columnasAdelantos(), filas: adelantosPeriodo.map(filaAdelanto), vacio: 'Ningún adelanto en este periodo.' },
-    { tipo: 'tabla', titulo: `Descuentos (${descuentosPeriodo.length})`, columnas: columnasDescuentos(), filas: descuentosPeriodo.map(filaDescuento), vacio: 'Ningún descuento en este periodo.' },
+    ...tablaDoble(
+      { titulo: 'Pagado a cada técnico', columnas: columnasResumenPagado(), filas: resumen.porTecnico.map(filaResumenPagado), vacio: 'Ningún pago registrado en este periodo.' },
+      [0, 1, 6, 7, 8, 9, 10],
+      (f, n) => `${textoGrupos(resumen.porTecnico[n].cantidades) || '-'} · ${resumen.porTecnico[n].pagos === 1 ? '1 pago' : `${resumen.porTecnico[n].pagos} pagos`}`,
+      { 1: 'Órdenes', 7: 'Bonos y adic.' },
+    ),
+    ...tablaPagosRegistrados(registrados, tasa),
+    ...tablaAdelantos(adelantosPeriodo),
+    ...tablaDescuentos(descuentosPeriodo),
     { tipo: 'texto', texto: 'Cuenta los pagos registrados en el periodo; los anulados no suman. Los montos son los del tabulador de precios del momento de cada pago, y los bolívares, con la tasa BCV del dólar de ese momento (si un pago no la guardó, con la de hoy).' },
   ]);
+}
+
+// --- Pagos detallados: para compartir con cada técnico ---
+
+const redondear2 = (valor) => Math.round((Number(valor) || 0) * 100) / 100;
+
+// Las tres cifras de arriba de un técnico: lo que se le pagó (neto, con los bolívares), por cuántas órdenes y en cuántos pagos.
+function cifrasDeLosPagos(pagos) {
+  const neto = redondear2(pagos.reduce((suma, d) => suma + d.neto, 0));
+  const bs = redondear2(pagos.reduce((suma, d) => suma + (d.bs || 0), 0));
+  const ordenes = pagos.reduce((suma, d) => suma + (Number(d.pago.cantidadOrdenes) || d.ordenes.length), 0);
+  return [
+    { etiqueta: 'Neto pagado', valor: dolares(neto), detalle: bs > 0 ? bolivares(bs) : '' },
+    { etiqueta: 'Órdenes pagadas', valor: String(ordenes) },
+    { etiqueta: pagos.length === 1 ? 'Pago' : 'Pagos', valor: String(pagos.length) },
+  ];
+}
+
+// Un pago: cómo se pagó y su cuenta (órdenes, bonos, descuentos y neto), las órdenes que entraron y lo que se sumó o descontó.
+function bloquesDePago(d) {
+  const filas = d.ordenes.map((o) => filaOrdenDePago(o, '-'));
+  if (d.faltan > 0) filas.push(['', d.faltan === 1 ? 'Falta 1 orden de este pago: no se pudo leer' : `Faltan ${d.faltan} órdenes de este pago: no se pudieron leer`, '', '', '']);
+  const bloques = [
+    { tipo: 'tabla', noCsv: true, titulo: d.titulo, nota: d.nota, columnas: columnasCuentaDelPago(), filas: d.cuenta },
+    { tipo: 'tabla', noCsv: true, titulo: `Órdenes pagadas (${d.ordenes.length})`, columnas: columnasOrdenesDePago(), filas, vacio: 'No se pudo leer el detalle de las órdenes de este pago.' },
+  ];
+  if (d.movimientos.length > 0) bloques.push({ tipo: 'tabla', noCsv: true, titulo: `Descuentos y bonos (${d.movimientos.length})`, columnas: columnasMovimientos(), filas: d.movimientos.map(filaMovimiento) });
+  return bloques;
+}
+
+// Finanzas: el detalle de cada pago del periodo, para compartirlo con el técnico: lo que se le pagó y por qué órdenes, lo que se le sumó (bonos, pagos adicionales, garantías) y lo que se le descontó (adelantos,
+// descuentos), con su cuenta y los bolívares. Con un técnico elegido es su documento; sin elegir, cada técnico empieza en su propia página. `pagosFinanzas.detalle`: ver detalleDePagos (utils/detallePagos).
+// En el CSV van tres listas planas con todo, para Finanzas. Sin "uso interno" en el pie ni en la portada: es un documento para entregar.
+export function documentoPagosDetallados(ctx) {
+  const { rango, tecnico, pagosFinanzas } = ctx;
+  const detalle = pagosFinanzas.detalle || [];
+  // El detalle viene ordenado por técnico: los pagos de cada uno quedan seguidos.
+  const porTecnico = [];
+  for (const d of detalle) {
+    const ultimo = porTecnico[porTecnico.length - 1];
+    if (ultimo && ultimo.nombre === d.tecnico) ultimo.pagos.push(d);
+    else porTecnico.push({ nombre: d.tecnico, pagos: [d] });
+  }
+  const bloques = [];
+  porTecnico.forEach((t, n) => {
+    if (n > 0) bloques.push({ tipo: 'salto' });
+    if (porTecnico.length > 1) bloques.push({ tipo: 'seccion', titulo: t.nombre });
+    bloques.push({ tipo: 'cifras', items: cifrasDeLosPagos(t.pagos) });
+    for (const d of t.pagos) bloques.push(...bloquesDePago(d));
+  });
+  if (bloques.length === 0) bloques.push({ tipo: 'tabla', noCsv: true, titulo: 'Pagos', columnas: columnasCuentaDelPago(), filas: [], vacio: 'Ningún pago registrado en este periodo.' });
+  bloques.push(
+    {
+      tipo: 'tabla', soloCsv: true, titulo: 'Cuenta de cada pago',
+      columnas: [{ titulo: 'Técnico' }, { titulo: 'Fecha del pago' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total órdenes', derecha: true }, { titulo: 'Bonos y adicionales', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto pagado', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Forma de pago' }, { titulo: 'Nota' }],
+      filas: detalle.map((d) => [d.tecnico, d.fecha, String(Number(d.pago.cantidadOrdenes) || d.ordenes.length), dolares(d.pago.total), dolares(d.pago.bonos || 0), dolares(d.pago.descuento || 0), dolares(d.neto), d.bs == null ? '' : bolivares(d.bs), textoFormaDePago(d.pago), d.pago.nota || '']),
+    },
+    {
+      tipo: 'tabla', soloCsv: true, titulo: 'Órdenes pagadas',
+      columnas: [{ titulo: 'Técnico' }, { titulo: 'Fecha del pago' }, ...columnasOrdenesDePago()],
+      filas: detalle.flatMap((d) => d.ordenes.map((o) => [d.tecnico, d.fecha, ...filaOrdenDePago(o)])),
+    },
+    {
+      tipo: 'tabla', soloCsv: true, titulo: 'Descuentos y bonos',
+      columnas: [{ titulo: 'Técnico' }, { titulo: 'Fecha del pago' }, ...columnasMovimientos()],
+      filas: detalle.flatMap((d) => d.movimientos.map((m) => [d.tecnico, d.fecha, ...filaMovimiento(m)])),
+      vacio: 'Ningún pago de este periodo tuvo descuentos ni bonos.',
+    },
+    { tipo: 'texto', texto: 'Cada pago muestra las órdenes que se pagaron, lo que se sumó (bonos, pagos adicionales y pagos por garantía) y lo que se descontó (adelantos, descuentos y descuentos por garantía). Los montos son los del tabulador de precios del momento de cada pago y los bolívares, con la tasa BCV del dólar de ese momento.' },
+  );
+  return { ...encabezado('Pagos detallados', rango, tecnico, ctx, bloques), etiqueta: 'Detalle de pagos', pie: '', nombreArchivo: tecnico ? `Pagos detallados ${tecnico}` : 'Pagos detallados' };
 }

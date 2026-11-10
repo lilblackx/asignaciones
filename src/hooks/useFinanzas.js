@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, doc, documentId, limit, orderBy, query, where } from 'firebase/firestore';
 import { onSnapshot, getDocs, getDoc, setDoc, updateDoc, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { armarPago, avisoDeAdelanto, avisoDeAdicional, avisoDeAnulacion, avisoDeDescuento, avisoDePago, tarifasCompletas } from '../utils/finanzas';
 import { armarAdicional, itemsAdicionales } from '../utils/adicionales';
+import { pagosIncompletos } from '../utils/detallePagos';
 import { armarAdelanto } from '../utils/adelantos';
 import { armarPlanDescuentos } from '../utils/descuentos';
 import { diaDe } from '../utils/totalesMes';
@@ -111,6 +112,20 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
   const idsPagadas = useMemo(() => new Set(pagadasVisibles.map((p) => p.id)), [pagadasVisibles]);
   // La revisión del administrador de lo que se puede pagar: { [clave de la orden]: documento }.
   const revisiones = useMemo(() => Object.fromEntries((soloPendientes ? revisionesPendientes : revisionesDelPeriodo).map((r) => [r.id, r])), [soloPendientes, revisionesPendientes, revisionesDelPeriodo]);
+
+  // Las órdenes que entraron en esos pagos, para el reporte de Pagos detallados. `conocidas`: las órdenes pagadas que ya están leídas (las del periodo, por su día): si un pago ya las trae todas no se vuelve a pedir
+  // nada; de los que no, se leen sus órdenes por el id del pago, de 30 en 30 (una lectura por orden). Solo se llama al exportar.
+  const leerOrdenesDePagos = useCallback(async (pagosLista, conocidas = []) => {
+    const incompletos = pagosIncompletos(pagosLista, conocidas);
+    if (incompletos.length === 0) return conocidas;
+    const leidas = [];
+    for (let i = 0; i < incompletos.length; i += 30) {
+      const snap = await getDocs(query(datos('ordenesPagadas'), where('pagoId', 'in', incompletos.slice(i, i + 30))));
+      leidas.push(...aLista(snap));
+    }
+    const repetidos = new Set(incompletos);
+    return [...conocidas.filter((o) => !repetidos.has(o.pagoId)), ...leidas];
+  }, []);
 
   // Cada acción devuelve true si se guardó. Los errores salen como aviso, con el motivo cuando se sabe.
   const ejecutar = async (accion, exito, fallo) => {
@@ -293,5 +308,5 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
     await lote.commit();
   }, 'Pago anulado: las órdenes vuelven a estar por pagar, los adelantos y descuentos por descontar y los pagos adicionales por pagar.', 'No se pudo anular el pago.');
 
-  return { tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas: pagadasVisibles, desdePendientes, registros: registrosVisibles, tiposMudanza, adelantos, ajustes, descuentos, adicionales, itemsPagoAdicional, catalogoCargado: catalogoAdicionales !== null, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto, registrarDescuento, anularDescuento, guardarItemsAdicionales, registrarAdicional, anularAdicional };
+  return { leerOrdenesDePagos, tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas: pagadasVisibles, desdePendientes, registros: registrosVisibles, tiposMudanza, adelantos, ajustes, descuentos, adicionales, itemsPagoAdicional, catalogoCargado: catalogoAdicionales !== null, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto, registrarDescuento, anularDescuento, guardarItemsAdicionales, registrarAdicional, anularAdicional };
 }
