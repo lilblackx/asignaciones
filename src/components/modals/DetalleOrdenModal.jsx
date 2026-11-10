@@ -67,7 +67,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
   const conectores = textoConectoresInstalacion(datos.conectores);
   const promotora = instalacion ? promotoraDeOrden(ticket) : '';
   const plantilla = instalacion ? generarMensajeWhatsAppInstalacion(ticket) : '';
-  const hayDatosTecnico = Boolean(datos.serial || datos.vlan || datos.puerto || datos.metraje || datos.metrajeExistente === true || datos.puertosDisponibles || datos.posteadura?.length || conectores || ticket.potenciaDbm != null);
+  const hayDatosTecnico = Boolean(datos.serial || datos.vlan || datos.puerto || datos.metraje || datos.metrajeExistente === true || datos.puertosDisponibles || datos.posteadura?.length || conectores || ticket.vlanVisita || ticket.potenciaDbm != null);
   const cobro = estaExonerado(ticket) ? 'Exonerado' : ticket.cobroBs ? textoMonto(ticket.cobroBs, monedaDe(ticket)) : '';
 
   return (
@@ -143,6 +143,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               <Dato etiqueta="NAP y puerto">{napConPuerto(ticket.nap, datos.puerto)}</Dato>
               <Dato etiqueta="Serial">{datos.serial}</Dato>
               <Dato etiqueta="VLAN">{datos.vlan}</Dato>
+              <Dato etiqueta="VLAN configurada">{ticket.vlanVisita}</Dato>
               <Dato etiqueta="Metraje del drop">{datos.metrajeExistente === true ? 'Existente' : datos.metraje && `${datos.metraje} m`}</Dato>
               <Dato etiqueta="Posteadura">{datos.posteadura?.length ? datos.posteadura.join(', ') : ''}</Dato>
               <Dato etiqueta="Puertos disponibles">{datos.puertosDisponibles}</Dato>

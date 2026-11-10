@@ -35,7 +35,7 @@ import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdene
 import { avisoDeCobro } from '../utils/cobrosClientes';
 import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, piensaPagoCliente } from '../utils/pagoCliente';
 import { ADMINISTRACION_ACTIVA } from '../constants';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, datosVlanVisita, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, errorVlanVisita, esCambioEquipo, esConfigVlan, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
 import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
@@ -1055,7 +1055,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
   // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
-  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, tipoEquipoNuevo, montoBs, instalacion } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, tipoEquipoNuevo, vlanVisita, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacionTecnico || '').trim()) {
@@ -1097,6 +1097,13 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
+    // Configuración de VLAN: el número de VLAN configurada es obligatorio.
+    const errorVlan = errorVlanVisita(tipoVisita, vlanVisita);
+    if (errorVlan) {
+      setToastMsg({ type: 'error', text: errorVlan });
+      return false;
+    }
+
     // Instalación: el serial, la VLAN, al menos un poste, la NAP y el puerto son obligatorios. El serial, además, debe ser el
     // de la etiqueta (PON S/N o GPON...): el envío al inventario del almacén falla con una MAC o un "GOPN" mal escrito.
     const reporteInstalacion = esInstalacion(ticket.tipoTrabajo) ? validarInstalacion(instalacion || {}) : null;
@@ -1134,6 +1141,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ? datosSerialEquipo(tipoVisita, serialEquipo, tipoEquipoNuevo)
       : {};
 
+    // La VLAN de la visita solo se escribe en una configuración de VLAN, o para borrar una anterior.
+    const camposVlanVisita = tipoVisita !== undefined && (esConfigVlan(tipoVisita) || ticket.vlanVisita)
+      ? datosVlanVisita(tipoVisita, vlanVisita)
+      : {};
+
     let detalle = 'Marcado como PRE-FINALIZADO';
     detalle += ` | Obs: ${observacionTecnico.trim()}`;
     if (nap && nap.trim()) detalle += ` | NAP: ${nap.trim()}`;
@@ -1145,6 +1157,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
       const conector = textoConectorVisita({ tipoVisita, ...camposConectores });
       if (conector) detalle += ` | ${conector}`;
+      if (camposVlanVisita.vlanVisita) detalle += ` | VLAN: ${camposVlanVisita.vlanVisita}`;
       if (serialEquipoParseado) detalle += ` | Equipo nuevo: ${tipoEquipoNuevo} | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
     }
     if (avisaCobroAlPreFinalizar(tipoVisita)) detalle += detalleCobro(montoBs, COBRO_VISITA, false);
@@ -1167,6 +1180,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       tipoVisita: tipoVisita !== undefined ? tipoVisita : (ticket.tipoVisita || ''),
       ...camposConectores,
       ...camposSerialEquipo,
+      ...camposVlanVisita,
       // `null` borra lo registrado antes si el técnico lo vació; solo se toca en una instalación.
       ...(reporteInstalacion ? { instalacion: datosInstalacion } : {}),
       // Al pre-finalizar termina el viaje: si la devuelven, el técnico vuelve a avisar que sale.

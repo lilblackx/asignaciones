@@ -77,6 +77,18 @@ check('lo que la orden anterior sí tenía (la VLAN) no se puede vaciar', valida
 const visita = { id: 'v1', codigo: 'AS5', tipoTrabajo: 'AVERÍA', estado: 'FINALIZADO', nap: 'NAP 08 - Puerto 3' };
 const cambioEquipo = { ...visita, tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'ZTEG99887766' };
 const fc = formularioDatosTecnico(cambioEquipo);
+// Configuración de VLAN: el número de VLAN configurada es obligatorio y se corrige desde Editar orden.
+const configVlan = { ...visita, tipoVisita: 'CONFIG_VLAN', vlanVisita: '100' };
+const fvl = formularioDatosTecnico(configVlan);
+check('configuración de VLAN: el formulario trae la VLAN', [fvl.tipoVisita, fvl.vlanVisita], ['CONFIG_VLAN', '100']);
+r = validarDatosTecnico(configVlan, { ...fvl, vlanVisita: '0200' });
+check('configuración de VLAN: corregir el número', [r.error, r.datos.tipoVisita, r.datos.vlanVisita], [false, 'CONFIG_VLAN', '200']);
+check('configuración de VLAN sin número o fuera de rango: error y cursor en el campo', [validarDatosTecnico(configVlan, { ...fvl, vlanVisita: '' }).primerCampo, validarDatosTecnico(configVlan, { ...fvl, vlanVisita: '5000' }).error], ['pf-vlan-visita', true]);
+r = validarDatosTecnico(configVlan, { ...fvl, tipoVisita: 'DROP_ATENUADO' });
+check('pasar de configuración de VLAN a otro tipo borra la VLAN', [r.error, r.datos.vlanVisita], [false, '']);
+r = validarDatosTecnico(visita, { ...formularioDatosTecnico(visita), tipoVisita: 'CONFIG_VLAN', vlanVisita: '300' });
+check('una visita que pasa a configuración de VLAN guarda el número', [r.error, r.datos.vlanVisita], [false, '300']);
+check('el cambio queda en el historial', cambiosDatosTecnico(configVlan, { ...configVlan, vlanVisita: '200' }), ['VLAN configurada: 200']);
 check('cambio de equipo: el formulario trae el serial del equipo nuevo', [fc.tipoVisita, fc.serialEquipo], ['CAMBIO_EQUIPO', 'ZTEG99887766']);
 r = validarDatosTecnico(cambioEquipo, { ...fc, serialEquipo: 'zteg00112233' });
 check('cambio de equipo: corregir el serial del equipo nuevo', [r.error, r.datos.tipoVisita, r.datos.serialEquipo], [false, 'CAMBIO_EQUIPO', 'ZTEG00112233']);

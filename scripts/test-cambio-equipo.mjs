@@ -2,8 +2,8 @@
 // (src/utils/tipoVisita.js). No necesita el emulador. Uso: `npm run test:equipo`.
 import {
   ETIQUETA_TIPO_VISITA, TIPOS_VISITA, TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_DROP_ATENUADO, TIPO_RECABLEADO,
-  TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA,
-  datosSerialEquipo, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, etiquetaTipoVisita, generaCobro, llevaConectores, parseSerialEquipo, pideNapPuertoVisita,
+  TIPO_CONFIG_ROUTER, TIPO_CONFIG_VLAN, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA,
+  datosSerialEquipo, datosVlanVisita, errorVlanVisita, parseVlanVisita, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, etiquetaTipoVisita, generaCobro, llevaConectores, parseSerialEquipo, pideNapPuertoVisita,
 } from '../src/utils/tipoVisita.js';
 import { readFileSync } from 'node:fs';
 
@@ -22,6 +22,18 @@ check('etiqueta de cada una', [etiquetaTipoVisita(TIPO_CAMBIO_EQUIPO), etiquetaT
 check('configuración de router y fuente averiada: en la lista, con etiqueta, sin serial ni conectores ni cobro',
   [TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA].map(v => [TIPOS_VISITA.find(t => t.value === v)?.label, etiquetaTipoVisita(v), esCambioEquipo(v), llevaConectores(v), generaCobro(v)]),
   [['Configuración de router', 'Configuración de router', false, false, false], ['Fuente averiada', 'Fuente averiada', false, false, false]]);
+check('configuración de VLAN: en la lista, con etiqueta, sin serial ni conectores ni cobro ni NAP',
+  [TIPOS_VISITA.find(t => t.value === TIPO_CONFIG_VLAN)?.label, etiquetaTipoVisita(TIPO_CONFIG_VLAN), esCambioEquipo(TIPO_CONFIG_VLAN), llevaConectores(TIPO_CONFIG_VLAN), generaCobro(TIPO_CONFIG_VLAN), pideNapPuertoVisita(TIPO_CONFIG_VLAN)],
+  ['Configuración de VLAN', 'Configuración de VLAN', false, false, false, false]);
+check('configuración de VLAN: el número es obligatorio, de 1 a 4094',
+  [parseVlanVisita('').error, parseVlanVisita('0').error, parseVlanVisita('4095').error, parseVlanVisita('abc').error, parseVlanVisita(' 0100 ').valor, parseVlanVisita('4094').valor, parseVlanVisita('1').valor],
+  ['Escribe la VLAN que configuraste.', 'La VLAN debe ser un número entre 1 y 4094.', 'La VLAN debe ser un número entre 1 y 4094.', 'La VLAN debe ser un número entre 1 y 4094.', '100', '4094', '1']);
+check('solo la configuración de VLAN la pide; en cualquier otro tipo no hay error',
+  [errorVlanVisita(TIPO_CONFIG_VLAN, ''), errorVlanVisita(TIPO_CONFIG_VLAN, '100'), errorVlanVisita(TIPO_CONFIG_ROUTER, ''), errorVlanVisita('', '')],
+  ['Escribe la VLAN que configuraste.', '', '', '']);
+check('la VLAN se guarda normalizada solo en la configuración de VLAN (en otro tipo queda vacía y borra una anterior)',
+  [datosVlanVisita(TIPO_CONFIG_VLAN, '0100'), datosVlanVisita(TIPO_DROP_ATENUADO, '100'), datosVlanVisita('', '100')],
+  [{ vlanVisita: '100' }, { vlanVisita: '' }, { vlanVisita: '' }]);
 check('mudanza interna: en la lista, con etiqueta, sin serial ni conectores ni cobro ni NAP',
   [TIPOS_VISITA.find(t => t.value === TIPO_MUDANZA_INTERNA)?.label, etiquetaTipoVisita(TIPO_MUDANZA_INTERNA), esCambioEquipo(TIPO_MUDANZA_INTERNA), llevaConectores(TIPO_MUDANZA_INTERNA), generaCobro(TIPO_MUDANZA_INTERNA), pideNapPuertoVisita(TIPO_MUDANZA_INTERNA)],
   ['Mudanza interna', 'Mudanza interna', false, false, false, false]);
@@ -52,10 +64,10 @@ check('un tipo inválido no se guarda', datosSerialEquipo(TIPO_CAMBIO_EQUIPO, 'H
 // --- El tipo de visita es obligatorio al pre-finalizar (menos en instalaciones) ---
 const FALTA = 'Elige el tipo de visita.';
 check('sin tipo de visita no se puede pre-finalizar una avería ni una mudanza', [errorTipoVisita('AVERÍA', ''), errorTipoVisita('AVERÍA', undefined), errorTipoVisita('MUDANZA', '')], [FALTA, FALTA, FALTA]);
-check('con cualquiera de los ocho tipos sí', [TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA].map((t) => errorTipoVisita('AVERÍA', t)), ['', '', '', '', '', '', '', '']);
+check('con cualquiera de los nueve tipos sí', [TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA, TIPO_CONFIG_VLAN].map((t) => errorTipoVisita('AVERÍA', t)), ['', '', '', '', '', '', '', '', '']);
 check('un valor inventado no vale', errorTipoVisita('AVERÍA', 'OTRA_COSA'), FALTA);
 check('las instalaciones no llevan tipo de visita: no se les pide', [errorTipoVisita('INSTALACIÓN', ''), errorTipoVisita('Instalacion', undefined)], ['', '']);
-check('el técnico ve los ocho tipos, sin "Ninguno"', TIPOS_VISITA_OBLIGATORIO.map((t) => t.value), ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA', 'MUDANZA_INTERNA']);
+check('el técnico ve los nueve tipos, sin "Ninguno"', TIPOS_VISITA_OBLIGATORIO.map((t) => t.value), ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA', 'MUDANZA_INTERNA', 'CONFIG_VLAN']);
 check('la oficina conserva "Ninguno" al corregir una orden vieja', TIPOS_VISITA[0], { value: '', label: 'Ninguno' });
 
 // --- NAP y puerto solo donde hacen falta ---

@@ -14,7 +14,7 @@ import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
 import { datosParaConfirmar } from '../../utils/confirmarPreFinalizar';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
+import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo, esConfigVlan, parseVlanVisita } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { consultaCobroDe } from '../../utils/consultaCobro';
 import ConsultaCobroRecableado from './ConsultaCobroRecableado';
@@ -22,6 +22,7 @@ import { esInstalacion as trabajoEsInstalacion, napConPuerto, validarInstalacion
 import ConectoresRecableado, { CantidadesConectorInstalacion, CantidadesConectorVisita } from './ConectoresRecableado';
 import { normalizarConectoresInstalacion, parseConectoresInstalacion } from '../../utils/conectoresInstalacion';
 import SerialEquipoCampo from './SerialEquipoCampo';
+import VlanVisitaCampo from './VlanVisitaCampo';
 import { errorSerialCaja } from '../../utils/serialOlt';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
@@ -80,6 +81,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const [serialEquipoError, setSerialEquipoError] = useState('');
   const [tipoEquipo, setTipoEquipo] = useState(ticket?.tipoEquipoNuevo || '');
   const [tipoEquipoError, setTipoEquipoError] = useState('');
+  // Configuración de VLAN: el número de VLAN configurada (obligatorio).
+  const [vlanVisita, setVlanVisita] = useState(ticket?.vlanVisita || '');
+  const [vlanVisitaError, setVlanVisitaError] = useState('');
   const [tipoVisitaError, setTipoVisitaError] = useState('');
   const [metrosError, setMetrosError] = useState('');
   const [cantidadError, setCantidadError] = useState({ campo: '', mensaje: '' });
@@ -99,6 +103,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   // Lo que se resume en la confirmación para que el técnico vea qué está enviando: "Recableado: 250 m".
   const etiquetaVisita = tipoVisita ? `${etiquetaTipoVisita(tipoVisita)}${recableado && metros ? `: ${metros} m` : ''}` : '';
   const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
+  const configVlan = esConfigVlan(tipoVisita);
   const potenciaParseada = parsePotencia(potencia);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
 
@@ -124,6 +129,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const errorFormatoEquipo = serialEquipoLeido && !serialEquipoLeido.error ? errorSerialCaja(serialEquipo) : '';
     const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
     const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipo);
+    const vlanVisitaParseada = configVlan ? parseVlanVisita(vlanVisita) : null;
     // El pago del cliente (instalaciones): se revisa junto con lo demás para mostrar todos los errores a la vez.
     const pagoCliente = pedirPago ? await pagoRef.current?.obtener() : null;
     const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, metrajeExistente: metrajeExiste, nap, puerto, puertosDisponibles }) : null;
@@ -140,6 +146,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     setCantidadError({ campo: cantidades.campo || '', mensaje: errorCantidad });
     setSerialEquipoError(serialEquipoParseado?.error || '');
     setTipoEquipoError(errorTipoEquipo);
+    setVlanVisitaError(vlanVisitaParseada?.error || '');
     setInstalacionErrores(instalacion?.errores || {});
     setConectoresInstError({ campo: conectoresInst?.campo || '', mensaje: conectoresInst?.error || '' });
     setNapError(faltaNap ? 'Indica la nomenclatura real de la NAP (no vale "SN").' : '');
@@ -150,6 +157,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     if (metrosParseados?.error) document.getElementById('pf-metros')?.focus();
     else if (errorCantidad) document.getElementById(cantidades.campo === 'azul' ? 'pf-cant-azul' : 'pf-cant-verde')?.focus();
     else if (errorVisita) document.getElementById('pf-tipo-visita')?.focus();
+    else if (vlanVisitaParseada?.error) document.getElementById('pf-vlan-visita')?.focus();
     else if (errorTipoEquipo) document.getElementById('pf-tipo-equipo')?.focus();
     else if (serialEquipoParseado?.error) document.getElementById('pf-serial-equipo')?.focus();
     else if (instalacion?.errores.serial) document.getElementById('pf-serial')?.focus();
@@ -162,7 +170,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     else if (conectoresInst?.error) document.getElementById({ externoVerde: 'pf-cant-ext-verde', internoVerde: 'pf-cant-int-verde', internoAzul: 'pf-cant-int-azul' }[conectoresInst.campo])?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || errorVisita || metrosParseados?.error || errorCantidad || errorTipoEquipo || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error || (pedirPago && !pagoCliente)) {
+    if (faltaObs || errorVisita || metrosParseados?.error || errorCantidad || errorTipoEquipo || vlanVisitaParseada?.error || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error || (pedirPago && !pagoCliente)) {
       if (pedirPago && !pagoCliente && !(faltaObs || errorVisita || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto)) document.getElementById('pf-pago-forma')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
@@ -178,6 +186,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
       tipoVisita,
       serialEquipo: serialEquipoParseado?.valor ?? '',
       tipoEquipoNuevo: cambioEquipo ? tipoEquipo : '',
+      vlanVisita: vlanVisitaParseada?.valor ?? '',
       ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno, conectores: cantidades.valor }),
     });
   };
@@ -260,6 +269,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                 setCantidadError({ campo: '', mensaje: '' });
                 setSerialEquipoError('');
                 setTipoEquipoError('');
+                setVlanVisitaError('');
                 // Un texto ya escrito como "NAP 08 - Puerto 3" se reparte en los dos campos.
                 if (pideNapPuertoVisita(v) && !puerto) {
                   const sep = separarNapPuerto(nap);
@@ -301,6 +311,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               <ConectoresRecableado colorExterno={colorExterno} colorInterno={colorInterno} onExterno={setColorExterno} onInterno={setColorInterno} />
             </div>
           )}
+
+          {configVlan && <VlanVisitaCampo vlan={vlanVisita} onVlan={(v) => { setVlanVisita(v); if (vlanVisitaError) setVlanVisitaError(''); }} error={vlanVisitaError} />}
 
           {cambioEquipo && (
             <SerialEquipoCampo

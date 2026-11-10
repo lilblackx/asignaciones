@@ -1,5 +1,5 @@
 import { textoConectoresInstalacion } from './conectoresInstalacion.js';
-import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, esVisitaConector, pideNapPuertoVisita, textoConectorVisita } from './tipoVisita.js';
+import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, esConfigVlan, esVisitaConector, pideNapPuertoVisita, textoConectorVisita } from './tipoVisita.js';
 
 // Lo que el técnico va a enviar al pre-finalizar, para que lo revise en la confirmación antes de mandarlo (una vez enviado solo la oficina puede devolverle la orden). Recibe lo que arma el formulario
 // (`extra` de PreFinalizarModal) y devuelve las filas { etiqueta, valor, destacado }: el serial va destacado, porque es lo que más se equivoca al escribirlo o al escanearlo.
@@ -23,6 +23,7 @@ export function datosParaConfirmar(extra) {
       agregar('Tipo de equipo nuevo', extra.tipoEquipoNuevo);
       agregar('Serial del equipo nuevo', extra.serialEquipo, true);
     }
+    if (esConfigVlan(extra.tipoVisita)) agregar('VLAN configurada', extra.vlanVisita, true);
     if (pideNapPuertoVisita(extra.tipoVisita)) agregar('NAP y puerto', extra.nap);
     if (extra.tipoVisita === TIPO_RECABLEADO) agregar('Metros de cable', extra.metrosCable != null ? `${extra.metrosCable} m` : '');
     if (esVisitaConector(extra.tipoVisita)) agregar('Conectores usados', textoConectorVisita(extra).replace(/^Conectores?:?\s*/i, ''));

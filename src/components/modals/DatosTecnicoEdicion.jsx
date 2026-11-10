@@ -2,8 +2,9 @@ import { Plus, X } from 'lucide-react';
 import SelectMenu from '../SelectMenu';
 import ConectoresRecableado, { CantidadesConectorVisita } from './ConectoresRecableado';
 import SerialEquipoCampo from './SerialEquipoCampo';
+import VlanVisitaCampo from './VlanVisitaCampo';
 import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
-import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, esVisitaConector } from '../../utils/tipoVisita';
+import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, esConfigVlan, esVisitaConector } from '../../utils/tipoVisita';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
 import { SELECTOR_ORDEN, claseCampo } from '../estilos';
@@ -148,6 +149,12 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
                 </div>
               </Campo>
               <ConectoresRecableado colorExterno={form.colorExterno} colorInterno={form.colorInterno} onExterno={(v) => onChange({ colorExterno: v })} onInterno={(v) => onChange({ colorInterno: v })} />
+            </div>
+          )}
+
+          {esConfigVlan(tipoVisita) && (
+            <div className="col-span-2">
+              <VlanVisitaCampo vlan={form.vlanVisita} onVlan={(v) => onChange({ vlanVisita: v })} error={errores.vlanVisita} />
             </div>
           )}
 

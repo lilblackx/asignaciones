@@ -13,8 +13,8 @@ import { napSinDato, separarNapPuerto } from './napPuerto.js';
 import { esInstalacion, limpiarPostes, napConPuerto, validarInstalacion } from './instalacion.js';
 import { errorConectoresInstalacion, normalizarConectoresInstalacion, parseConectoresInstalacion, textoConectoresInstalacion } from './conectoresInstalacion.js';
 import {
-  TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, errorTipoEquipoNuevo, esCambioEquipo, etiquetaTipoVisita,
-  llevaConectores, parseCantidadesConector, parseMetros, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado,
+  TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, datosVlanVisita, errorTipoEquipoNuevo, esCambioEquipo, esConfigVlan, etiquetaTipoVisita,
+  llevaConectores, parseCantidadesConector, parseMetros, parseSerialEquipo, parseVlanVisita, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from './tipoVisita.js';
 
 export const ESTADOS_CON_DATOS_DEL_TECNICO = ['PRE-FINALIZADO', 'FINALIZADO'];
@@ -52,6 +52,7 @@ export function formularioDatosTecnico(ticket) {
     cantAzul: numero(cantidades.azul),
     serialEquipo: texto(ticket?.serialEquipo),
     tipoEquipoNuevo: texto(ticket?.tipoEquipoNuevo),
+    vlanVisita: texto(ticket?.vlanVisita),
   };
 }
 
@@ -108,7 +109,7 @@ function validarInstalacionEditada(ticket, f) {
 }
 
 const ORDEN_VISITA = [
-  { clave: 'metros', id: 'pf-metros' }, { clave: 'cantidades', id: (e) => ID_CONECTOR_VISITA[e.campo === 'azul' ? 'azul' : 'verde'] }, { clave: 'tipoEquipoNuevo', id: 'pf-tipo-equipo' }, { clave: 'serialEquipo', id: 'pf-serial-equipo' },
+  { clave: 'metros', id: 'pf-metros' }, { clave: 'cantidades', id: (e) => ID_CONECTOR_VISITA[e.campo === 'azul' ? 'azul' : 'verde'] }, { clave: 'tipoEquipoNuevo', id: 'pf-tipo-equipo' }, { clave: 'serialEquipo', id: 'pf-serial-equipo' }, { clave: 'vlanVisita', id: 'pf-vlan-visita' },
 ];
 
 function validarVisitaEditada(ticket, f) {
@@ -120,6 +121,8 @@ function validarVisitaEditada(ticket, f) {
   if (cantidades.error) errores.cantidades = { campo: cantidades.campo, mensaje: cantidades.error };
   const serialEquipo = esCambioEquipo(tipo) ? parseSerialEquipo(f.serialEquipo) : null;
   if (serialEquipo?.error) errores.serialEquipo = serialEquipo.error;
+  const vlanVisita = esConfigVlan(tipo) ? parseVlanVisita(f.vlanVisita) : null;
+  if (vlanVisita?.error) errores.vlanVisita = vlanVisita.error;
   // El tipo del equipo nuevo es obligatorio, salvo en una orden vieja que ya era cambio de equipo y se arregló sin él (no se bloquea editarla por otra cosa).
   const errorTipoEquipo = errorTipoEquipoNuevo(tipo, f.tipoEquipoNuevo, !(ticket?.tipoVisita === TIPO_CAMBIO_EQUIPO && !ticket?.tipoEquipoNuevo));
   if (errorTipoEquipo) errores.tipoEquipoNuevo = errorTipoEquipo;
@@ -132,6 +135,7 @@ function validarVisitaEditada(ticket, f) {
     tipoVisita: tipo,
     ...(conConectores ? datosConectores(tipo, { metros: metros?.valor, conectorExterno: f.colorExterno, conectorInterno: f.colorInterno, conectores: cantidades.valor }) : {}),
     ...(conSerial ? datosSerialEquipo(tipo, f.serialEquipo, f.tipoEquipoNuevo) : {}),
+    ...(esConfigVlan(tipo) || ticket?.vlanVisita ? datosVlanVisita(tipo, f.vlanVisita) : {}),
   });
 }
 
@@ -165,5 +169,6 @@ export function cambiosDatosTecnico(antes, despues) {
   si(conectorAntes !== conectorDespues && conectorDespues !== '', conectorDespues);
   si(texto(antes?.tipoEquipoNuevo) !== texto(despues?.tipoEquipoNuevo), `Tipo de equipo nuevo: ${despues?.tipoEquipoNuevo || 'Vacío'}`);
   si(texto(antes?.serialEquipo) !== texto(despues?.serialEquipo), `Serial del equipo nuevo: ${despues?.serialEquipo || 'Vacío'}`);
+  si(texto(antes?.vlanVisita) !== texto(despues?.vlanVisita), `VLAN configurada: ${despues?.vlanVisita || 'Vacía'}`);
   return cambios;
 }

@@ -381,6 +381,11 @@ await check('TECNICO puede registrar un cambio de equipo con el serial del equip
   await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', serialEquipo: '', tipoEquipoNuevo: '' }));
 });
 
+await check('TECNICO puede registrar una configuración de VLAN con el número de VLAN', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CONFIG_VLAN', vlanVisita: '100' }));
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'DROP_ATENUADO', vlanVisita: '' }));
+});
+
 await check('TECNICO puede marcar "en camino", "llegué" y cancelarlo en su orden', async () => {
   await assertSucceeds(camposGerardo(asTecnico()).update({ enCamino: { tecnico: 'GERARDO MOLERO', desde: 1 } }));
   await assertSucceeds(camposGerardo(asTecnico()).update({ enCamino: { tecnico: 'GERARDO MOLERO', desde: 1, llegoEn: 2 } }));

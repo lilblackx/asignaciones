@@ -11,10 +11,11 @@
 //   No genera cobro.
 // - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
 //   `serialEquipo`, junto con el tipo del equipo nuevo (MRTV, MTV, MR o SM; obligatorio) en `tipoEquipoNuevo`.
+// - Configuración de VLAN: el técnico indica el número de VLAN configurada (1 a 4094; obligatorio). Se guarda en `vlanVisita`.
 // - Drop atenuado, configuración de router, fuente averiada y mudanza interna: solo se registra el tipo de visita,
 //   sin datos extra.
 
-import { esInstalacion, parseSerial } from './instalacion.js';
+import { esInstalacion, parseSerial, parseVlan } from './instalacion.js';
 import { napSinDato, separarNapPuerto } from './napPuerto.js';
 import { TIPOS_DE_EQUIPO } from '../constants.js';
 
@@ -26,6 +27,7 @@ export const TIPO_DROP_ATENUADO = 'DROP_ATENUADO';
 export const TIPO_CONFIG_ROUTER = 'CONFIG_ROUTER';
 export const TIPO_FUENTE_AVERIADA = 'FUENTE_AVERIADA';
 export const TIPO_MUDANZA_INTERNA = 'MUDANZA_INTERNA';
+export const TIPO_CONFIG_VLAN = 'CONFIG_VLAN';
 
 export const ETIQUETA_TIPO_VISITA = {
   [TIPO_CONECTOR_EXTERNO]: 'Conector externo',
@@ -36,6 +38,7 @@ export const ETIQUETA_TIPO_VISITA = {
   [TIPO_CONFIG_ROUTER]: 'Configuración de router',
   [TIPO_FUENTE_AVERIADA]: 'Fuente averiada',
   [TIPO_MUDANZA_INTERNA]: 'Mudanza interna',
+  [TIPO_CONFIG_VLAN]: 'Configuración de VLAN',
 };
 
 export const TIPOS_VISITA = [
@@ -48,6 +51,7 @@ export const TIPOS_VISITA = [
   { value: TIPO_CONFIG_ROUTER, label: ETIQUETA_TIPO_VISITA[TIPO_CONFIG_ROUTER] },
   { value: TIPO_FUENTE_AVERIADA, label: ETIQUETA_TIPO_VISITA[TIPO_FUENTE_AVERIADA] },
   { value: TIPO_MUDANZA_INTERNA, label: ETIQUETA_TIPO_VISITA[TIPO_MUDANZA_INTERNA] },
+  { value: TIPO_CONFIG_VLAN, label: ETIQUETA_TIPO_VISITA[TIPO_CONFIG_VLAN] },
 ];
 
 // El tipo de visita es obligatorio al pre-finalizar cualquier orden que no sea una instalación (que no lo lleva): el técnico escoge uno de los tipos, sin opción "Ninguno".
@@ -94,6 +98,28 @@ export const errorTipoEquipoNuevo = (tipoVisita, tipo, exigir = true) => (
 export const datosSerialEquipo = (tipoVisita, serial, tipoEquipo = '') => ({
   serialEquipo: esCambioEquipo(tipoVisita) ? (parseSerial(serial).valor ?? '') : '',
   tipoEquipoNuevo: esCambioEquipo(tipoVisita) && TIPOS_DE_EQUIPO.includes(tipoEquipo) ? tipoEquipo : '',
+});
+
+// --- Configuración de VLAN ----------------------------------------------------------------
+
+export const esConfigVlan = (tipoVisita) => tipoVisita === TIPO_CONFIG_VLAN;
+
+// Número de VLAN configurada (de 1 a 4094, el mismo de las instalaciones): obligatorio en una visita de configuración de VLAN.
+// { valor } | { error }
+export function parseVlanVisita(raw) {
+  const vlan = parseVlan(raw);
+  if (vlan.error) return vlan;
+  if (!vlan.valor) return { error: 'Escribe la VLAN que configuraste.' };
+  return vlan;
+}
+
+// '' si no hace falta o está bien; si no, el mensaje.
+export const errorVlanVisita = (tipoVisita, vlan) => (esConfigVlan(tipoVisita) ? parseVlanVisita(vlan).error || '' : '');
+
+// VLAN de la visita tal como se guarda en la orden (`vlanVisita`, texto): solo en una configuración de VLAN; en cualquier otro
+// tipo queda vacía ('' y no omitir el campo es lo que permite borrar una anterior).
+export const datosVlanVisita = (tipoVisita, vlan) => ({
+  vlanVisita: esConfigVlan(tipoVisita) ? (parseVlan(vlan).valor ?? '') : '',
 });
 
 export const esVisitaConector = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_CONECTOR_INTERNO;

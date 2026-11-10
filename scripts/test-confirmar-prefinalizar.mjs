@@ -23,6 +23,7 @@ check('instalación: los postes salen separados por comas', valor(instalacion, '
 check('cambio de equipo: el tipo y el serial del equipo nuevo (serial destacado)', datosParaConfirmar({ tipoVisita: 'CAMBIO_EQUIPO', tipoEquipoNuevo: 'MR', serialEquipo: '54504C47BDAA8E40', observacionTecnico: 'ok' }).slice(0, 2), [{ etiqueta: 'Tipo de equipo nuevo', valor: 'MR', destacado: false }, { etiqueta: 'Serial del equipo nuevo', valor: '54504C47BDAA8E40', destacado: true }]);
 check('visita de conector externo: NAP y conectores', etiquetas({ tipoVisita: 'CONECTOR_EXTERNO', nap: 'N1 - Puerto 2', conectoresUsados: { verde: 2, azul: 1 }, observacionTecnico: 'x' }), ['NAP y puerto', 'Conectores usados', 'Observación']);
 check('recableado: los metros de cable', valor({ tipoVisita: 'RECABLEADO', metrosCable: 250, observacionTecnico: 'x' }, 'Metros de cable'), '250 m');
+check('configuración de VLAN: la VLAN configurada (destacada) y la observación', datosParaConfirmar({ tipoVisita: 'CONFIG_VLAN', vlanVisita: '100', observacionTecnico: 'ok' }), [{ etiqueta: 'VLAN configurada', valor: '100', destacado: true }, { etiqueta: 'Observación', valor: 'ok', destacado: false }]);
 check('una visita sin datos especiales solo muestra la observación', etiquetas({ tipoVisita: 'CONFIG_ROUTER', observacionTecnico: 'Configurado' }), ['Observación']);
 check('sin datos no hay nada que mostrar', datosParaConfirmar(null), []);
 
