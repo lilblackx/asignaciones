@@ -35,6 +35,7 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await b.collection('users').doc('usuario-uid').set({ role: 'USUARIO', disabled: false, username: 'usuario' });
   await b.collection('users').doc('cierra-uid').set({ role: 'TECNICO', puedeCerrar: true, tecnicoAsociado: 'GERARDO MOLERO', disabled: false, username: 'cierra' });
   await b.collection('users').doc('gerardo-uid').set({ role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO', disabled: false, username: 'gerardo' });
+  await b.collection('users').doc('reinel-uid').set({ role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO', disabled: false, username: 'reinel' });
   await b.collection('users').doc('admon-uid').set({ role: 'ADMINISTRACION', disabled: false, username: 'admon' });
   await b.collection('users').doc('admon-off-uid').set({ role: 'ADMINISTRACION', disabled: true, username: 'admon-off' });
   await b.collection('users').doc('finanzas-uid').set({ role: 'FINANZAS', disabled: false, username: 'fina' });
@@ -137,6 +138,90 @@ await check('Finanzas y Almacén no escriben ningún cobro', async () => {
   const { cambios } = armarCarga(await leer('i2'), { monto: '45', moneda: 'USD' }, { por: 'fina', ahora: AHORA + 1 });
   await assertFails(cobros(como('finanzas-uid')).doc('i2').update(cambios));
   await assertFails(cobros(como('almacen-uid')).doc('i2').update(cambios));
+});
+
+// --- El pago que registró el técnico ---
+// El técnico registra el pago del cliente (ver test-pagos-cliente-reglas.mjs) y deja una copia resumida en su orden y en el cobro, para que Administración y Finanzas la vean junto al cobro. Solo ese campo, una
+// sola vez y solo en el cobro de su orden; solo el ADMIN la corrige.
+const PAGO = {
+  tipo: 'PAGO', pago: { moneda: 'USD', forma: 'Zelle', monto: 20, banco: 'Bank of America', titular: 'Juan Pérez', cuentaEmpresa: 'Zelle · empresa', referencia: 'Z1', pagadoEn: AHORA },
+  nota: 'Pagó en efectivo', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'gerardo', registradoEn: AHORA,
+};
+const copiar = (ctx, id, pagoCliente = PAGO) => cobros(ctx).doc(id).update({ pagoCliente });
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  for (const id of ['n1', 'n5', 'n6']) await cobros(ctx).doc(id).set(armarCobro(orden(id), { por: 'usuario', ahora: AHORA }));
+  await cobros(ctx).doc('n2').set(armarCobro(orden('n2', { tecnico: 'REINEL BRAVO' }), { por: 'usuario', ahora: AHORA }));
+});
+await check('el técnico de la orden copia al cobro el pago que registró, una vez, a su nombre', async () => {
+  await assertSucceeds(copiar(como('gerardo-uid'), 'n1'));
+  if ((await leer('n1')).pagoCliente?.pago?.referencia !== 'Z1') throw new Error('el pago no quedó en el cobro');
+});
+await check('una vez copiado, el técnico no lo cambia ni lo quita (solo el ADMIN lo corrige)', async () => {
+  await assertFails(copiar(como('gerardo-uid'), 'n1', { ...PAGO, nota: 'Otra nota' }));
+  await assertFails(copiar(como('gerardo-uid'), 'n1', null));
+});
+await check('copia también "paga después" y "pagó junto con otra orden"', async () => {
+  const despues = { tipo: 'DESPUES', pago: null, nota: 'Paga el viernes', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'gerardo', registradoEn: AHORA };
+  await assertSucceeds(copiar(como('gerardo-uid'), 'n5', despues));
+  await assertSucceeds(copiar(como('gerardo-uid'), 'n6', { ...despues, tipo: 'JUNTO', nota: 'Pagó junto con AO3.', compartidoCon: { id: 'T0', codigo: 'AO3' } }));
+});
+await check('no lo escribe en el cobro de otro técnico, ni Finanzas, Almacén, Administración o alguien sin sesión', async () => {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => cobros(ctx).doc('n7').set(armarCobro(orden('n7'), { por: 'usuario', ahora: AHORA })));
+  await assertFails(copiar(como('gerardo-uid'), 'n2'));
+  await assertFails(copiar(como('reinel-uid'), 'n7'));
+  await assertFails(copiar(como('finanzas-uid'), 'n7'));
+  await assertFails(copiar(como('almacen-uid'), 'n7'));
+  await assertFails(copiar(como('admon-uid'), 'n7'));
+  await assertFails(copiar(testEnv.unauthenticatedContext(), 'n7'));
+});
+await check('el técnico solo toca ese campo: ni el monto, ni el estado, ni los datos de la orden', async () => {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => cobros(ctx).doc('n8').set(armarCobro(orden('n8'), { por: 'usuario', ahora: AHORA })));
+  const ctx = como('gerardo-uid');
+  await assertFails(cobros(ctx).doc('n8').update({ pagoCliente: PAGO, monto: 1 }));
+  await assertFails(cobros(ctx).doc('n8').update({ pagoCliente: PAGO, estado: 'CARGADO' }));
+  await assertFails(cobros(ctx).doc('n8').update({ pagoCliente: PAGO, anulado: true }));
+  await assertFails(cobros(ctx).doc('n8').update({ pagoCliente: PAGO, tecnico: 'REINEL BRAVO' }));
+  await assertFails(cobros(ctx).doc('n8').update({ estado: 'CARGADO' }));
+});
+await check('el pago debe ser válido y a nombre de quien lo copia', async () => {
+  const ctx = como('gerardo-uid');
+  const intento = (extra) => copiar(ctx, 'n8', { ...PAGO, ...extra });
+  await assertFails(intento({ registradoPor: 'otro' }));
+  await assertFails(intento({ tipo: 'OTRO' }));
+  await assertFails(intento({ tipo: 'DESPUES' }));
+  await assertFails(intento({ nota: 'x'.repeat(301) }));
+  await assertFails(intento({ extra: 'no va' }));
+  await assertFails(intento({ pago: { ...PAGO.pago, monto: 0 } }));
+  await assertFails(intento({ pago: { ...PAGO.pago, moneda: 'EUR' } }));
+  await assertFails(intento({ pago: { ...PAGO.pago, forma: 'Cheque' } }));
+  await assertFails(copiar(ctx, 'n8', 'Pagó en efectivo'));
+  await assertSucceeds(intento({}));
+});
+await check('el ADMIN corrige el pago del cobro con una entrada en el historial; Administración, la oficina y el técnico no', async () => {
+  const antes = await leer('n1');
+  const corregido = { ...PAGO, pago: { ...PAGO.pago, referencia: 'Z2' }, corregidoPor: 'admin', corregidoEn: AHORA + 5 };
+  const cambios = { pagoCliente: corregido, actualizadoEn: AHORA + 5, historial: [...antes.historial, { en: AHORA + 5, por: 'admin', detalle: 'Pago del cliente corregido: Zelle · Z2 | Era otra referencia' }] };
+  await assertFails(cobros(como('admon-uid')).doc('n1').update(cambios));
+  await assertFails(cobros(como('usuario-uid')).doc('n1').update(cambios));
+  await assertFails(cobros(como('gerardo-uid')).doc('n1').update(cambios));
+  await assertFails(cobros(como('admin-uid')).doc('n1').update({ pagoCliente: corregido, actualizadoEn: AHORA + 5 }));
+  await assertFails(cobros(como('admin-uid')).doc('n1').update({ ...cambios, monto: 1 }));
+  await assertSucceeds(cobros(como('admin-uid')).doc('n1').update(cambios));
+  if ((await leer('n1')).pagoCliente.pago.referencia !== 'Z2') throw new Error('la corrección no quedó');
+});
+await check('con el pago puesto, Administración carga y devuelve el cobro y la oficina lo sigue: el pago no estorba', async () => {
+  await assertSucceeds(cobros(como('admon-uid')).doc('n1').update(armarCarga(await leer('n1'), {}, { por: 'admon', ahora: AHORA + 10 }).cambios));
+  await assertSucceeds(cobros(como('admon-uid')).doc('n1').update(armarDevolucionCobro(await leer('n1'), { por: 'admon', ahora: AHORA + 11 }).cambios));
+  const { cambios } = sincronizarCobro(await leer('n1'), orden('n1', { cobroBs: '8.000' }), { por: 'usuario', ahora: AHORA + 12 });
+  await assertSucceeds(cobros(como('usuario-uid')).doc('n1').update(cambios));
+  if ((await leer('n1')).pagoCliente?.pago?.referencia !== 'Z2') throw new Error('el pago se perdió');
+});
+await check('la oficina emite el cobro ya con el pago si la orden lo traía (una instalación lo registra al pre-finalizar); uno que no es válido no pasa', async () => {
+  await assertSucceeds(emitir(como('usuario-uid'), 'n3', 'usuario', orden('n3', { pagoCliente: PAGO })));
+  const doc = armarCobro(orden('n4'), { por: 'usuario', ahora: AHORA });
+  await assertFails(cobros(como('usuario-uid')).doc('n4').set({ ...doc, pagoCliente: { ...PAGO, nota: 'x'.repeat(301) } }));
+  await assertFails(cobros(como('usuario-uid')).doc('n4').set({ ...doc, pagoCliente: 5 }));
+  await assertFails(cobros(como('usuario-uid')).doc('n4').set({ ...doc, pagoCliente: { ...PAGO, tipo: 'OTRO' } }));
 });
 
 await testEnv.cleanup();

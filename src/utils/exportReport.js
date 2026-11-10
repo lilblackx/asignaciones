@@ -1,6 +1,7 @@
 import { POTENCIA_MIN_DBM } from './potencia';
 import { ETIQUETA_COLOR, etiquetaTipoVisita } from './tipoVisita';
 import { conectoresPorColor } from './consumoMateriales';
+import { TIPO_PAGO, pagoClienteDe, textoDelPago } from './pagoEnOrden';
 
 // CSV con ";" como separador (no ","): es el que Excel en español espera por
 // defecto, y evita choques con las comas que aparecen en nombres/direcciones.
@@ -54,6 +55,7 @@ const COLUMNAS = [
   ['Enviado', t => (t.isAsignado ? 'Sí' : 'No')],
   ['Observación', t => t.observacion],
   ['Observación del técnico', t => t.observacionTecnico],
+  ['Pago del cliente', t => textoDelPago(t)],
   ['Estado', t => t.estado],
 ];
 
@@ -177,6 +179,8 @@ export function exportCobrosToCsv(filas, filtros) {
   const fecha = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
   const estados = { PENDIENTE: 'Pendiente', CARGADO: 'Cargado' };
   const monedaTexto = (c) => (c.moneda === 'USD' ? '$' : c.moneda === 'BS' ? 'Bs' : '');
+  // Los datos del pago que registró el técnico (solo si registró un pago: "paga después" y "pagó junto con otra orden" no los tienen).
+  const datosPago = (c) => pagoClienteDe(c)?.pago || null;
   const columnas = [
     ['Emitido', c => fecha(c.creadoEn)],
     ['Código', c => c.codigo],
@@ -191,6 +195,16 @@ export function exportCobrosToCsv(filas, filtros) {
     ['Cargado por', c => c.cargadoPor],
     ['Cargado el', c => fecha(c.cargadoEn)],
     ['Cambio de monto por corregir', c => (c.montoCambio ? 'Sí' : '')],
+    ['Pago del cliente', c => { const p = pagoClienteDe(c); return !p ? '' : p.tipo === TIPO_PAGO.PAGO ? 'Registrado' : p.tipo === TIPO_PAGO.JUNTO ? `Pagó junto con ${p.compartidoCon?.codigo || 'otra orden'}` : 'Paga después'; }],
+    ['Forma de pago', c => datosPago(c)?.forma || ''],
+    ['Banco', c => datosPago(c)?.banco || ''],
+    ['Titular', c => datosPago(c)?.titular || ''],
+    ['Referencia', c => datosPago(c)?.referencia || ''],
+    ['Cuenta de la empresa', c => datosPago(c)?.cuentaEmpresa || ''],
+    ['Monto pagado', c => (datosPago(c) ? String(datosPago(c).monto).replace('.', ',') : '')],
+    ['Moneda del pago', c => (datosPago(c) ? monedaTexto(datosPago(c)) : '')],
+    ['Pagado el', c => (datosPago(c) ? fecha(datosPago(c).pagadoEn) : '')],
+    ['Nota del técnico', c => pagoClienteDe(c)?.nota || ''],
   ];
   const lineas = [
     'Cobros a los clientes',

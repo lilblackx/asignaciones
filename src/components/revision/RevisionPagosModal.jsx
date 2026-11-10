@@ -228,7 +228,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
         </div>
       </div>
 
-      {detalle && <DetalleOrdenFinanzas item={{ ...detalle, concepto: detalle.concepto || detalle.conceptoOriginal || 'AVERIA' }} tarifas={datos.tarifas} tasa={tasa} onClose={() => setDetalle(null)} />}
+      {detalle && <DetalleOrdenFinanzas item={{ ...detalle, concepto: detalle.concepto || detalle.conceptoOriginal || 'AVERIA' }} tarifas={datos.tarifas} tasa={tasa} verTodoPago onClose={() => setDetalle(null)} />}
       {aprobando && (
         <ConfirmModal
           color="blue"

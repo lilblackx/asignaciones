@@ -4,6 +4,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, FileText, History, Search } fro
 import { TIPOS_TRABAJO } from '../../constants';
 import { motivoCancelacion } from '../../utils/cancelacion';
 import { fechaDeOrden } from '../../utils/fechaOrden';
+import { pagoClienteDe, textoDelPago } from '../../utils/pagoEnOrden';
 import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
 import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
@@ -217,6 +218,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                       {o.fechaProgramada && <p><span className="font-semibold">Programada:</span> {o.fechaProgramada}</p>}
                       <p><span className="font-semibold">Observación:</span> {o.observacion || '-'}</p>
                       {o.observacionTecnico && <p><span className="font-semibold">Obs. del técnico:</span> {o.observacionTecnico}</p>}
+                      {pagoClienteDe(o) && <p><span className="font-semibold">Pago del cliente:</span> {textoDelPago(o)}</p>}
                       {o.creado && <p><span className="font-semibold">Creada por:</span> {o.creado}</p>}
                       {puedeVerPlantilla && armarPlantilla?.(o) && (
                         <div className="pt-1.5">

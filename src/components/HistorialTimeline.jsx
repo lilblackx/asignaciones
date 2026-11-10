@@ -17,6 +17,7 @@ const TIPOS = {
   cancelado: { icono: Ban, titulo: 'Cancelada', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
   consultaCobro: { icono: Banknote, titulo: 'Consulta de cobro', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
   respuestaCobro: { icono: Banknote, titulo: 'Cobro respondido', color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
+  pagoCliente: { icono: Banknote, titulo: 'Pago del cliente', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
   infraestructura: { icono: HardHat, titulo: 'Infraestructura', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
   valores: { icono: Gauge, titulo: 'Valores del cliente', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
   estado: { icono: ArrowRightLeft, titulo: 'Cambio de estado', color: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200' },

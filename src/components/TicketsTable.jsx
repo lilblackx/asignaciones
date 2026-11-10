@@ -13,6 +13,7 @@ import InfraestructuraAviso from './InfraestructuraAviso';
 import CancelacionAviso from './CancelacionAviso';
 import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
+import PagoDelCliente from './PagoDelCliente';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
 import InsigniaGarantia from './InsigniaGarantia';
@@ -164,6 +165,7 @@ export default function TicketsTable({
                         <span className="line-clamp-2">{ticket.observacionTecnico}</span>
                       </span>
                     )}
+                    <PagoDelCliente orden={ticket} tamano="compacto" />
                   </div>
                 </td>
                 <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal align-middle">

@@ -42,7 +42,7 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
 
   await base.collection('users').doc('admin-uid').set({ role: 'ADMIN', disabled: false, username: 'admin' });
   await base.collection('users').doc('usuario-uid').set({ role: 'USUARIO', disabled: false, username: 'usuario' });
-  await base.collection('users').doc('tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO', disabled: false });
+  await base.collection('users').doc('tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO', disabled: false, username: 'gerardo' });
   await base.collection('users').doc('otro-tecnico-uid').set({ role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO', disabled: false });
   await base.collection('users').doc('almacen-uid').set({ role: 'ALMACEN', disabled: false });
   await base.collection('users').doc('cierra-uid').set({ role: 'USUARIO', disabled: false, puedeCerrar: true });
@@ -95,6 +95,13 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
     tecnico: 'GERARDO MOLERO', codigo: 'AS4', tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'FINALIZADO',
     finalizadoEn: 1000, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', observacion: ''
   });
+  // Órdenes para probar el pago del cliente (pagoCliente): una finalizada, una pre-finalizada y una pendiente de Gerardo, y una finalizada de Reinel.
+  const ordenPago = (id, tecnico, estado) => base.collection('tickets').doc(id).set({ tecnico, codigo: id.toUpperCase(), tipoTrabajo: 'AVERÍA', creado: 'usuario', estado, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', finalizadoEn: 1000, observacion: '', historialEdiciones: [{ detalle: 'creada' }] });
+  await ordenPago('pago-fin', 'GERARDO MOLERO', 'FINALIZADO');
+  await ordenPago('pago-fin-2', 'GERARDO MOLERO', 'FINALIZADO');
+  await ordenPago('pago-pre', 'GERARDO MOLERO', 'PRE-FINALIZADO');
+  await ordenPago('pago-pend', 'GERARDO MOLERO', 'PENDIENTE');
+  await ordenPago('pago-reinel', 'REINEL BRAVO', 'FINALIZADO');
   // Avisos de "alguien está revisando": uno vigente de otra persona y uno ya vencido.
   await base.collection('bloqueosOrden').doc('ticket-de-reinel__usuario').set({ ticketId: 'ticket-de-reinel', por: 'usuario', nombre: 'Usuario Demo', desde: Date.now(), venceEn: Date.now() + 5 * 60000 });
   await base.collection('bloqueosOrden').doc('ticket-de-gerardo__usuario').set({ ticketId: 'ticket-de-gerardo', por: 'usuario', nombre: 'Usuario Demo', desde: 1, venceEn: 2 });
@@ -269,6 +276,65 @@ await check('TECNICO puede pre-finalizar con NAP, potencia, observación e histo
 
 await check('TECNICO puede escribir su observación aparte de la de la oficina', async () => {
   await assertSucceeds(camposGerardo(asTecnico()).update({ observacionTecnico: 'Drop partido, se requiere recablear' }));
+});
+
+// El pago del cliente: el técnico deja una copia resumida (pagoCliente) en su orden ya pre-finalizada o finalizada, una sola vez y a su nombre; el documento que manda es el de pagosOrdenes (ver
+// test-pagos-cliente-reglas.mjs). Solo el ADMIN (o la oficina) la corrige. No toca el cobro ni el estado.
+const pagoCopia = (extra = {}) => ({
+  tipo: 'PAGO', pago: { moneda: 'BS', forma: 'Pago móvil', monto: 5696, banco: 'Banesco', titular: '', cuentaEmpresa: '', referencia: '123456', pagadoEn: 1000 },
+  nota: 'Pagó en efectivo', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'gerardo', registradoEn: 1000, ...extra,
+});
+const reponerPago = (id) => testEnv.withSecurityRulesDisabled(async (ctx) => ticketPath(ctx.firestore(), id).set({ tecnico: 'GERARDO MOLERO', codigo: id.toUpperCase(), tipoTrabajo: 'AVERÍA', creado: 'usuario', estado: 'FINALIZADO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', finalizadoEn: 1000, observacion: '', historialEdiciones: [{ detalle: 'creada' }] }));
+const historialPago = [{ detalle: 'creada' }, { fecha: '10/11/26', operador: 'gerardo', tipo: 'pagoCliente', detalle: 'Pago del cliente: Pago móvil · Banesco · ref. 123456 · 5.696 Bs' }];
+
+await check('TECNICO puede dejar el pago del cliente en una orden ya finalizada, a su nombre', async () => {
+  await assertSucceeds(ticketPath(asTecnico(), 'pago-fin').update({ pagoCliente: pagoCopia(), historialEdiciones: historialPago }));
+});
+
+await check('TECNICO puede dejar el pago del cliente en una orden pre-finalizada (una instalación lo registra al pre-finalizar)', async () => {
+  await assertSucceeds(ticketPath(asTecnico(), 'pago-pre').update({ pagoCliente: pagoCopia({ nota: '' }), historialEdiciones: historialPago }));
+});
+
+await check('TECNICO puede dejar "el cliente paga después" y "pagó junto con otra orden"', async () => {
+  const despues = { tipo: 'DESPUES', pago: null, nota: 'Paga el viernes', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'gerardo', registradoEn: 1000 };
+  const junto = { ...despues, tipo: 'JUNTO', nota: 'Pagó junto con AO3.', compartidoCon: { id: 'T0', codigo: 'AO3' } };
+  await assertSucceeds(ticketPath(asTecnico(), 'pago-fin-2').update({ pagoCliente: despues, historialEdiciones: historialPago }));
+  await reponerPago('pago-fin-2');
+  await assertSucceeds(ticketPath(asTecnico(), 'pago-fin-2').update({ pagoCliente: junto, historialEdiciones: historialPago }));
+});
+
+await check('TECNICO NO puede dejar el pago en una orden pendiente ni en la de otro técnico', async () => {
+  await assertFails(ticketPath(asTecnico(), 'pago-pend').update({ pagoCliente: pagoCopia(), historialEdiciones: historialPago }));
+  await assertFails(ticketPath(asTecnico(), 'pago-reinel').update({ pagoCliente: pagoCopia(), historialEdiciones: historialPago }));
+});
+
+await check('TECNICO NO puede cambiar el pago una vez registrado (solo el ADMIN lo corrige)', async () => {
+  await assertFails(ticketPath(asTecnico(), 'pago-fin').update({ pagoCliente: pagoCopia({ nota: 'Otra nota' }) }));
+  await assertFails(ticketPath(asTecnico(), 'pago-fin').update({ pagoCliente: null }));
+});
+
+await check('TECNICO NO puede registrar el pago a nombre de otro ni con una forma que no es válida', async () => {
+  await reponerPago('pago-fin-2');
+  const intento = (pagoCliente) => ticketPath(asTecnico(), 'pago-fin-2').update({ pagoCliente, historialEdiciones: historialPago });
+  await assertFails(intento(pagoCopia({ registradoPor: 'otro' })));
+  await assertFails(intento(pagoCopia({ tipo: 'OTRO' })));
+  await assertFails(intento(pagoCopia({ tipo: 'DESPUES' })));
+  await assertFails(intento(pagoCopia({ nota: 'x'.repeat(301) })));
+  await assertFails(intento(pagoCopia({ extra: 'no va' })));
+  await assertFails(intento(pagoCopia({ pago: { ...pagoCopia().pago, monto: -1 } })));
+  await assertFails(intento(pagoCopia({ pago: { ...pagoCopia().pago, forma: 'Cheque' } })));
+  await assertFails(intento(pagoCopia({ pago: { ...pagoCopia().pago, referencia: 'x'.repeat(41) } })));
+  await assertFails(intento('Pagó en efectivo'));
+});
+
+await check('TECNICO NO puede cambiar el cobro ni el estado de una orden finalizada junto con su pago', async () => {
+  await assertFails(ticketPath(asTecnico(), 'pago-fin-2').update({ pagoCliente: pagoCopia(), cobroBs: '1' }));
+  await assertFails(ticketPath(asTecnico(), 'pago-fin-2').update({ pagoCliente: pagoCopia(), estado: 'PENDIENTE' }));
+});
+
+await check('ADMIN puede corregir el pago de una orden finalizada (y USUARIO también: no es parte del cierre)', async () => {
+  await assertSucceeds(ticketPath(asAdmin(), 'pago-fin').update({ pagoCliente: pagoCopia({ corregidoPor: 'admin', corregidoEn: 2000, pago: { ...pagoCopia().pago, referencia: '999888' } }) }));
+  await assertSucceeds(ticketPath(asUsuario(), 'pago-fin').update({ pagoCliente: pagoCopia({ nota: 'Corregida' }) }));
 });
 
 await check('TECNICO puede consultar el cobro de un recableado, pero no responderlo', async () => {
@@ -837,7 +903,7 @@ await check('cada sesión reporta su estación a su nombre (cualquier rol activo
   await assertSucceeds(estacion(asAdmin(), 'estacionadmin01').set(reporteDe('admin-uid', 'admin', 'estacionadmin01')));
   await assertSucceeds(estacion(asAdmin(), 'estacionadmin01').set(reporteDe('admin-uid', 'admin', 'estacionadmin01', { ultimaSenal: 3 })));
   await assertSucceeds(estacion(asUsuario(), 'estacionusuario1').set(reporteDe('usuario-uid', 'usuario', 'estacionusuario1')));
-  await assertSucceeds(estacion(asTecnico(), 'estaciontecnico1').set(reporteDe('tecnico-uid', '', 'estaciontecnico1', { rol: 'TECNICO' })));
+  await assertSucceeds(estacion(asTecnico(), 'estaciontecnico1').set(reporteDe('tecnico-uid', 'gerardo', 'estaciontecnico1', { rol: 'TECNICO' })));
 });
 await check('no se reporta a nombre de otro, con otro id, con campos de más, con datos inválidos ni con una hora del servidor falsa', async () => {
   await assertFails(estacion(asUsuario(), 'estacionfalsa01').set(reporteDe('admin-uid', 'admin', 'estacionfalsa01')));

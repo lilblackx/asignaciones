@@ -31,7 +31,9 @@ import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../
 import { avisoOrdenReabierta, payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { emitirCobro, sincronizarCobroDeOrden } from '../lib/cobrosClientes';
+import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
 import { avisoDeCobro } from '../utils/cobrosClientes';
+import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, piensaPagoCliente } from '../utils/pagoCliente';
 import { ADMINISTRACION_ACTIVA } from '../constants';
 import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
@@ -153,11 +155,21 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const currentUserRef = useRef(currentUser);
   useEffect(() => { currentUserRef.current = currentUser; });
 
+  // Las órdenes con cobro que se finalizan desde que se pide el pago del cliente (y las instalaciones) ya no se cierran con "Entendido": el técnico registra el pago (ver cobrosPorRegistrar). Las exoneradas y
+  // lo anterior a esa fecha siguen con el aviso de siempre.
   const cobrosPendientes = useMemo(() => {
     if (role !== 'TECNICO' || !cobrosVistos) return [];
-    const finalizados = tickets.filter(t => esCobroFinalizado(t) && !cobroVisto(cobrosVistos, t) && t.id !== cobroInmediato?.id);
-    return cobroInmediato ? [cobroInmediato, ...finalizados] : finalizados;
-  }, [role, tickets, cobrosVistos, cobroInmediato]);
+    return tickets.filter(t => esCobroFinalizado(t) && !piensaPagoCliente(t) && !cobroVisto(cobrosVistos, t));
+  }, [role, tickets, cobrosVistos]);
+
+  // Lo que el técnico debe registrar: primero el cobro que sale al pre-finalizar con conector interno y después las órdenes (con cobro o instalaciones) que siguen sin pago. El pago ya registrado está en la
+  // propia orden (`pagoCliente`, ver utils/pagoEnOrden), así que la lista se vacía sola al guardarlo, sin leer nada más.
+  const cobrosPorRegistrar = useMemo(() => {
+    if (role !== 'TECNICO') return [];
+    const sinPago = tickets.filter(t => t.id !== cobroInmediato?.id && !t.pagoCliente && (debePedirPagoCobro(t, false) || debePedirPagoInstalacion(t, false)));
+    const inmediato = cobroInmediato && !tickets.find(t => t.id === cobroInmediato.id)?.pagoCliente ? [cobroInmediato] : [];
+    return [...inmediato, ...sinPago];
+  }, [role, tickets, cobroInmediato]);
   const actualizarCobrosVistos = (fn) => {
     const siguiente = fn(new Set(cobrosVistos || []));
     guardarCobrosVistos(currentUser, siguiente);
@@ -174,6 +186,37 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const mostrarCobro = (ticket) => actualizarCobrosVistos(set => { set.delete(ticket.id); set.delete(claveCobro(ticket)); return set; });
   // Pre-finalizar con conector interno: el cobro se informa en ese momento, sin esperar la aprobación.
   const mostrarCobroInmediato = (ticket, montoBs) => setCobroInmediato({ ...ticket, estado: 'PRE-FINALIZADO', cobroBs: montoBs, cobroTipo: null });
+
+  // El técnico registra el pago del cliente (o dice que paga después o que pagó junto con otra orden): se guarda en un solo lote con la copia en la orden y en el cobro (ver lib/pagosOrdenes). Devuelve lo que
+  // necesita el formulario: { ok }, { repetida } si la referencia ya está en otra orden, o { error }. Sin respuesta del servidor (sin conexión) el pago queda en cola y se avisa.
+  const avisoPagoGuardado = (r, texto) => setToastMsg(r.enCola
+    ? { type: 'error', duration: 9000, text: 'Sin respuesta del servidor: el pago quedó en cola y se enviará cuando vuelva la conexión.' }
+    : { type: 'success', text: texto });
+  const registrarPagoDeOrden = async (ticket, valor) => {
+    if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
+    try {
+      const r = await registrarPagoCliente(ticket, valor, { por: currentUser, cobro: cobroEsperadoDe(ticket) });
+      if (r.repetida) return r;
+      if (cobroInmediato?.id === ticket.id) setCobroInmediato(null);
+      avisoPagoGuardado(r, 'Pago registrado.');
+      return { ok: true };
+    } catch (error) {
+      console.error('No se pudo registrar el pago del cliente:', error);
+      return { error: 'No se pudo guardar el pago. Revisa tu conexión e intenta de nuevo.' };
+    }
+  };
+  const registrarPagoPendienteDeOrden = async (ticket, { nota, compartidoCon = null }) => {
+    if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
+    try {
+      const r = await registrarPagoPendiente(ticket, { nota, compartidoCon }, { por: currentUser, cobro: cobroEsperadoDe(ticket) });
+      if (cobroInmediato?.id === ticket.id) setCobroInmediato(null);
+      avisoPagoGuardado(r, compartidoCon ? 'Listo: queda anotado que pagó junto con otra orden.' : 'Listo: queda anotado que el cliente paga después.');
+      return { ok: true };
+    } catch (error) {
+      console.error('No se pudo dejar el pago pendiente:', error);
+      return { error: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' };
+    }
+  };
 
   // Guarda con la guardia de actualizarTicketConGuardia. Devuelve true si se guardó; false si otra persona ya había cambiado la orden (se avisa
   // con el texto del conflicto y no se escribe nada). Cualquier otro error sigue su camino (lo muestra quien llama).
@@ -1637,6 +1680,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     toggleAsignado,
     guardarUbicacion,
     preFinalizarTicket,
+    cobrosPorRegistrar,
+    registrarPagoDeOrden,
+    registrarPagoPendienteDeOrden,
     consultarCobroRecableado,
     responderConsultaCobro,
     aprobarFinalizarTicket,

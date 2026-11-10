@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { AlertTriangle, Check, CheckCircle2, Copy, Undo2, X } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import Colapsable from '../Colapsable';
 import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
+import PagoDelCliente from '../PagoDelCliente';
+import CorregirPagoModal from './CorregirPagoModal';
 import TelefonoAccion from '../TelefonoAccion';
 import { CAMPO_FORMULARIO, ETIQUETA } from '../estilos';
 import { SELECTOR } from '../finanzas/estilos';
@@ -12,6 +14,7 @@ import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, diasEsperando, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
 import { stripEmojis } from '../../utils/sanitizeInput';
+import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
@@ -40,8 +43,11 @@ function Dato({ clave, etiqueta, valor, copiable = true, copiado, onCopiar, chil
 //   - Pendiente: marcarlo cargado (una instalación pide el monto aquí: la app no lo conoce).
 //   - Cargado: devolverlo a pendiente si se marcó por error.
 //   - Con cambio de monto (la orden cambió cuando ya estaba cargado): confirmar que se corrigió en el portal.
-// `onTrabajar(accion, datos)` devuelve { ok } o { error, campo }; accion: 'cargar' | 'devolver' | 'confirmar'. `soloLectura` (Finanzas): se ven todos los datos y el historial, sin ninguna acción.
-export default function CobroModal({ cobro, onTrabajar = null, soloLectura = false, onClose }) {
+// `onTrabajar(accion, datos)` devuelve { ok } o { error, campo }; accion: 'cargar' | 'devolver' | 'confirmar'. `soloLectura` (Finanzas): se ven todos los datos y el historial, sin ninguna acción; el pago del cliente
+// solo se ve si es de una instalación o de un cambio de equipo (lo mismo que Finanzas ya ve de los pagos de clientes).
+// El pago que registró el técnico se ve arriba de los datos. `correccion` ({ cuentasEmpresa, onCorregir(valor, nota) }, solo el ADMIN): agrega el botón para corregirlo (ver CorregirPagoModal).
+export default function CobroModal({ cobro, onTrabajar = null, soloLectura = false, correccion = null, onClose }) {
+  const [corrigiendo, setCorrigiendo] = useState(false);
   const [monto, setMonto] = useState('');
   const [moneda, setMoneda] = useState('USD');
   const [error, setError] = useState(null);
@@ -65,6 +71,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
   const cambio = cobro.montoCambio;
 
   return (
+    <>
     <Modal onClose={onClose} zIndexClass="z-[80]">
       <div role="dialog" aria-labelledby="cobro-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
@@ -84,6 +91,12 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
               <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}</p>
               <p className="text-xs text-amber-900 dark:text-amber-200">Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</p>
             </div>
+          )}
+
+          {/* Lo que el técnico registró del pago del cliente (por ejemplo, que le pagó en efectivo): se ve antes de subir el cobro al portal. No va en lo que se copia. */}
+          <PagoDelCliente orden={cobro} bloque paraFinanzas={soloLectura} />
+          {correccion && !soloLectura && pagoClienteDe(cobro)?.tipo !== TIPO_PAGO.JUNTO && (
+            <Boton variante="secundario" tamano="normal" icono={Pencil} onClick={() => setCorrigiendo(true)}>{pagoClienteDe(cobro)?.tipo === TIPO_PAGO.PAGO ? 'Corregir pago' : 'Registrar el pago'}</Boton>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -140,5 +153,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
         </div>
       </div>
     </Modal>
+    {corrigiendo && correccion && <CorregirPagoModal cobro={cobro} cuentasEmpresa={correccion.cuentasEmpresa} onCorregir={correccion.onCorregir} onClose={() => setCorrigiendo(false)} />}
+    </>
   );
 }

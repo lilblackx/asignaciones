@@ -31,6 +31,8 @@ import { veEnviosInventario, vinculaTecnicosInventario } from './utils/accesoInv
 import { veEstaciones } from './utils/estaciones';
 import EstacionesView from './components/EstacionesView';
 import { listarTecnicosInventario } from './lib/inventario';
+import { estadoReferencia } from './lib/pagosOrdenes';
+import { normalizarFormasPago } from './utils/formasPago';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
@@ -115,7 +117,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, setUserPuedeVerHistorial, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, cobrosPorRegistrar, registrarPagoDeOrden, registrarPagoPendienteDeOrden, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
   // Un aviso de una orden que ya se atendió se quita solo (y el contador baja). Corre también cuando entra un aviso o se cargan los guardados,
   // no solo al cambiar las órdenes; sin cambios no hace nada, así que no hay vuelta.
   const { notifications: listaAvisos, quitarAtendidas } = notifications;
@@ -512,11 +514,25 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     setEditingTicket(null);
   }, 'No se pudieron guardar los cambios.');
 
+  // Las otras órdenes del mismo cliente (misma cédula), por si pagó varias con un solo pago ("pagó junto con otra orden").
+  const otrasOrdenesDelCliente = (orden) => {
+    const cedula = String(orden?.cedula || '').replace(/\D/g, '');
+    if (!cedula) return [];
+    return tickets.filter((o) => o.id !== orden.id && String(o.cedula || '').replace(/\D/g, '') === cedula).map((o) => ({ id: o.id, codigo: o.codigo, nombre: o.nombre }));
+  };
+
   const handleConfirmPreFinalizar = conAviso(async (ticket, extra) => {
     // Conector interno: el cobro se informa ya (y queda en el historial de la orden).
     const monto = avisaCobroAlPreFinalizar(extra.tipoVisita) ? montoBsDe(tasaConfig) : null;
-    const ok = await preFinalizarTicket(ticket, { ...extra, montoBs: monto });
+    const { pagoCliente, ...datosVisita } = extra;
+    const ok = await preFinalizarTicket(ticket, { ...datosVisita, montoBs: monto });
     setPreFinalizarTarget(null);
+    // Instalación: el pago del cliente que el técnico anotó en el mismo formulario. Si no se pudo guardar, la pantalla de pago vuelve a salir (la orden ya está en revisión sin pago).
+    if (ok && isTecnico && pagoCliente) {
+      const conDatos = { ...ticket, ...datosVisita };
+      const r = pagoCliente.tipo === 'pago' ? await registrarPagoDeOrden(conDatos, pagoCliente.valor) : await registrarPagoPendienteDeOrden(conDatos, { nota: pagoCliente.nota, compartidoCon: pagoCliente.compartidoCon });
+      if (r?.error || r?.repetida) setToastMsg({ type: 'error', duration: 9000, text: 'La orden se envió a revisión, pero el pago no se guardó. Vuelve a registrarlo en la pantalla que sale ahora.' });
+    }
     // Conector interno: el técnico ve el cobro ya, para informárselo al cliente en el momento.
     if (ok && isTecnico && avisaCobroAlPreFinalizar(extra.tipoVisita)) {
       if (monto) mostrarCobroInmediato({ ...ticket, ...extra }, monto);
@@ -1042,6 +1058,12 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {preFinalizarTarget && (
           <PreFinalizarModal
             ticket={tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget}
+            pagoInstalacion={isTecnico && !(tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget).pagoCliente ? {
+              cuentasEmpresa: normalizarFormasPago(formasPago),
+              otrasOrdenes: otrasOrdenesDelCliente(preFinalizarTarget),
+              // La referencia ya está en otra orden: { ticketId, codigo }; si está libre, null.
+              verificarReferencia: async (clave) => { const e = await estadoReferencia(clave, preFinalizarTarget.id); return e.estado === 'ajena' ? { ticketId: e.ticketId, codigo: e.codigo } : null; },
+            } : null}
             onConfirm={handleConfirmPreFinalizar}
             onConsultarCobro={consultarCobroRecableado}
             onClose={() => setPreFinalizarTarget(null)}
@@ -1099,8 +1121,23 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           />
         )}
 
-        {isTecnico && cobrosPendientes.length > 0 && (
-          <CobroResultanteModal ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} onCopy={copyToClipboard} onClose={cerrarCobro} />
+        {isTecnico && cobrosPorRegistrar.length > 0 ? (
+          <CobroResultanteModal
+            key={cobrosPorRegistrar[0].id}
+            ticket={cobrosPorRegistrar[0]}
+            restantes={cobrosPorRegistrar.length - 1}
+            formasPago={formasPago}
+            onCopy={copyToClipboard}
+            onClose={() => {}}
+            registro={{
+              onRegistrar: registrarPagoDeOrden,
+              onPagaDespues: registrarPagoPendienteDeOrden,
+              // Otras órdenes del mismo cliente (misma cédula), por si pagó varias con un solo pago.
+              otrasOrdenes: otrasOrdenesDelCliente(cobrosPorRegistrar[0]),
+            }}
+          />
+        ) : isTecnico && cobrosPendientes.length > 0 && (
+          <CobroResultanteModal key={cobrosPendientes[0].id} ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} formasPago={formasPago} onCopy={copyToClipboard} onClose={cerrarCobro} />
         )}
 
         {aprobarTarget && (

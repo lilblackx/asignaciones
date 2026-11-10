@@ -25,9 +25,14 @@ import { errorSerialCaja } from '../../utils/serialOlt';
 import DatosInstalacion from './DatosInstalacion';
 import NapPuertoCampos from './NapPuertoCampos';
 import Spinner from '../Spinner';
+import FormularioPagoCliente from '../FormularioPagoCliente';
 import { claseArea, claseCampo } from '../estilos';
+import { decisionDePago } from '../../utils/pagoEnOrden';
 
-export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
+// `pagoInstalacion` (el técnico, en una instalación sin pago registrado): { cuentasEmpresa, otrasOrdenes, verificarReferencia }. La instalación pide el pago del cliente dentro de este formulario: sin él no se envía
+// a revisión. El técnico lo confirma junto con lo demás en la confirmación del Pre-finalizar. Ver FormularioPagoCliente.
+export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose, pagoInstalacion = null }) {
+  const pagoRef = useRef(null);
   // La NAP y el puerto van en dos campos y son obligatorios con conector externo, drop atenuado y en las instalaciones (ver pideNapPuertoVisita); ahí una NAP "SN" (o vacía) no sirve: el técnico debe escribir la real.
   const pideNapPuertoInicial = pideNapPuertoVisita(ticket?.tipoVisita) || trabajoEsInstalacion(ticket?.tipoTrabajo);
   const separado = separarNapPuerto(ticket?.nap);
@@ -86,6 +91,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
 
   // En una instalación no aplica el tipo de visita (conectores, recableado): se oculta y no se guarda.
   const esInstalacion = trabajoEsInstalacion(ticket.tipoTrabajo);
+  const pedirPago = esInstalacion && Boolean(pagoInstalacion);
   const tipoVisita = esInstalacion ? '' : tipoVisitaElegido;
   const visitaConNapPuerto = pideNapPuertoVisita(tipoVisita);
   const recableado = tipoVisita === TIPO_RECABLEADO;
@@ -117,6 +123,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const errorFormatoEquipo = serialEquipoLeido && !serialEquipoLeido.error ? errorSerialCaja(serialEquipo) : '';
     const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
     const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipo);
+    // El pago del cliente (instalaciones): se revisa junto con lo demás para mostrar todos los errores a la vez.
+    const pagoCliente = pedirPago ? await pagoRef.current?.obtener() : null;
     const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, metrajeExistente: metrajeExiste, nap, puerto, puertosDisponibles }) : null;
     const errorFormatoSerial = instalacionLeida && !instalacionLeida.errores.serial ? errorSerialCaja(serial) : '';
     const instalacion = errorFormatoSerial ? { ...instalacionLeida, errores: { ...instalacionLeida.errores, serial: errorFormatoSerial }, error: true } : instalacionLeida;
@@ -153,9 +161,13 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     else if (conectoresInst?.error) document.getElementById({ externoVerde: 'pf-cant-ext-verde', internoVerde: 'pf-cant-int-verde', internoAzul: 'pf-cant-int-azul' }[conectoresInst.campo])?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || errorVisita || metrosParseados?.error || errorCantidad || errorTipoEquipo || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) return;
+    if (faltaObs || errorVisita || metrosParseados?.error || errorCantidad || errorTipoEquipo || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error || (pedirPago && !pagoCliente)) {
+      if (pedirPago && !pagoCliente && !(faltaObs || errorVisita || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto)) document.getElementById('pf-pago-forma')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     // Con todo en orden no se guarda todavía: primero se pide confirmar (ver ConfirmPreFinalizarModal).
     setPorConfirmar({
+      ...(pagoCliente ? { pagoCliente } : {}),
       // Solo estas visitas piden NAP y puerto; en las demás la orden conserva la NAP que ya traía.
       nap: visitaConNapPuerto ? unirNapPuerto(nap, puerto) : esInstalacion ? napConPuerto(nap, puerto) : (ticket?.nap || ''),
       ...(instalacion ? { instalacion: { ...instalacion.datos, conectores: conectoresInst.valor } } : {}),
@@ -342,6 +354,22 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onInternoAzul={(v) => { setInstInternoAzul(v); setConectoresInstError({ campo: '', mensaje: '' }); }}
               error={conectoresInstError}
             />
+            {pedirPago && (
+              <section aria-label="Pago del cliente" className="space-y-3 rounded-xl border-2 border-zinc-300 dark:border-zinc-700 p-3">
+                <h3 className="text-sm font-black tracking-wide text-zinc-900 dark:text-white">PAGO DEL CLIENTE</h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">Registra lo que el cliente pagó por la instalación. Es obligatorio: el cliente paga la instalación de una vez y, sin esto, no se envía a revisión.</p>
+                <FormularioPagoCliente
+                  ref={pagoRef}
+                  incrustado
+                  permitirPagarDespues={false}
+                  idPrefijo="pf-pago"
+                  cuentasEmpresa={pagoInstalacion.cuentasEmpresa}
+                  otrasOrdenes={pagoInstalacion.otrasOrdenes}
+                  verificarReferencia={pagoInstalacion.verificarReferencia}
+                  onPagaDespues={() => {}}
+                />
+              </section>
+            )}
             </>
           ) : visitaConNapPuerto ? (
             <NapPuertoCampos
@@ -451,6 +479,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
       <ConfirmPreFinalizarModal
         ticket={ticket}
         visita={etiquetaVisita}
+        pago={porConfirmar.pagoCliente ? decisionDePago(porConfirmar.pagoCliente) : null}
         isSubmitting={isSubmitting}
         onCancel={() => setPorConfirmar(null)}
         onConfirm={confirmarPreFinalizar}

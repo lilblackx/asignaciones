@@ -11,6 +11,7 @@ import InfraestructuraAviso from './InfraestructuraAviso';
 import CancelacionAviso from './CancelacionAviso';
 import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
+import PagoDelCliente from './PagoDelCliente';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
 import InsigniaGarantia from './InsigniaGarantia';
@@ -209,6 +210,7 @@ export default function TicketsMobileList({
                 <span className="text-amber-800 dark:text-amber-300 leading-tight">{ticket.observacionTecnico}</span>
               </div>
             )}
+            <PagoDelCliente orden={ticket} tamano="grande" />
           </div>
           {/* El técnico solo ve sus propias órdenes: repetir su nombre (y el creador,
               que no le sirve) en cada tarjeta solo gasta alto de pantalla. */}

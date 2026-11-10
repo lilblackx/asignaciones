@@ -10,6 +10,7 @@
 import { MONEDA_BS, MONEDA_USD, formatoMontoBs, parseMontoBs, textoMonto } from './cobro.js';
 import { cobroEsperadoDe } from './pagoCliente.js';
 import { esInstalacion } from './instalacion.js';
+import { pagoClienteDe, pagoVisibleEnFinanzas, textoDelPago } from './pagoEnOrden.js';
 import { diaDe } from './totalesMes.js';
 
 export const ESTADO_COBRO = { PENDIENTE: 'PENDIENTE', CARGADO: 'CARGADO' };
@@ -31,6 +32,7 @@ export const textoDeCobro = (c) => (c?.monto > 0 ? textoMonto(formatoMontoBs(Num
 // --- Emitir ---
 
 // El cobro de la orden finalizada, o null si no lleva cobro (una orden exonerada o sin monto no lo emite). Las instalaciones lo emiten sin monto: lo escribe Administración al cargarlo.
+// Si la orden ya trae el pago que registró el técnico (una instalación lo registra al pre-finalizar), el cobro nace con su copia (`pagoCliente`); si el técnico lo registra después, la copia él mismo al cobro (ver registrarPagoCliente).
 export function armarCobro(ticket, { por, ahora }) {
   const instalacion = esInstalacion(ticket?.tipoTrabajo);
   const esperado = cobroEsperadoDe(ticket);
@@ -56,6 +58,7 @@ export function armarCobro(ticket, { por, ahora }) {
     cargadoPor: '',
     cargadoEn: 0,
     actualizadoEn: ahora,
+    ...(pagoClienteDe(ticket) && { pagoCliente: pagoClienteDe(ticket) }),
   };
   return { ...cobro, historial: [entrada(por, ahora, `Cobro emitido: ${textoDeCobro(cobro)}`)] };
 }
@@ -182,7 +185,7 @@ export function armarConfirmacionCambio(actual, { por, ahora }) {
 // El aviso que recibe Administración (push y campana) cuando se emite un cobro.
 export const avisoDeCobro = (c) => ({ title: 'Cobro por cargar', body: [c.codigo || 'S/C', c.nombre, textoDeCobro(c)].filter(Boolean).join(' · ') });
 
-// Todo lo que Administración necesita para subir el cobro al portal, en líneas, para copiarlo de una vez.
+// Todo lo que Administración necesita para subir el cobro al portal, en líneas, para copiarlo de una vez. No lleva el pago que registró el técnico: es interno y el portal es de la empresa.
 export function textoParaCopiar(c) {
   return [
     `Orden: ${c.codigo || 'S/C'}`,
@@ -239,9 +242,9 @@ export function resumenCobros(cobros) {
 export const diasEsperando = (c, ahora = Date.now()) => Math.max(0, Math.floor((ahora - (Number(c?.creadoEn) || ahora)) / 86400000));
 
 // Las columnas de la tabla del reporte de Finanzas y su fila.
-export const columnasCobros = () => [{ titulo: 'Emitido' }, { titulo: 'Código' }, { titulo: 'Cliente' }, { titulo: 'Técnico' }, { titulo: 'Trabajo' }, { titulo: 'Monto', derecha: true }, { titulo: 'Estado' }, { titulo: 'Cargado por' }, { titulo: 'Cargado el' }];
+export const columnasCobros = () => [{ titulo: 'Emitido' }, { titulo: 'Código' }, { titulo: 'Cliente' }, { titulo: 'Técnico' }, { titulo: 'Trabajo' }, { titulo: 'Monto', derecha: true }, { titulo: 'Estado' }, { titulo: 'Cargado por' }, { titulo: 'Cargado el' }, { titulo: 'Pago del cliente' }];
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
-export const filaCobro = (c) => [fechaHora(c.creadoEn), c.codigo || '', c.nombre || '', c.tecnico || '', c.esInstalacion ? 'Instalación' : [c.tipoTrabajo, c.falla].filter(Boolean).join(' - '), c.monto > 0 ? textoDeCobro(c) : '', ETIQUETA_ESTADO_COBRO[c.estado] || c.estado, c.cargadoPor || '', c.estado === ESTADO_COBRO.CARGADO ? fechaHora(c.cargadoEn) : ''];
+export const filaCobro = (c) => [fechaHora(c.creadoEn), c.codigo || '', c.nombre || '', c.tecnico || '', c.esInstalacion ? 'Instalación' : [c.tipoTrabajo, c.falla].filter(Boolean).join(' - '), c.monto > 0 ? textoDeCobro(c) : '', ETIQUETA_ESTADO_COBRO[c.estado] || c.estado, c.cargadoPor || '', c.estado === ESTADO_COBRO.CARGADO ? fechaHora(c.cargadoEn) : '', pagoVisibleEnFinanzas(c) ? textoDelPago(c) : ''];
 
 // Los cobros creados en el rango (días de Caracas "AAAA-MM-DD"), de un técnico si se pide; los más nuevos primero (para Finanzas).
 export function cobrosDelPeriodo(cobros, rango, { tecnico = '' } = {}) {

@@ -145,10 +145,11 @@ check('aviso a Administración: paga después y pagó junto con otra', [avisoDeP
 ]);
 
 // --- ¿Hay que pedir el pago? ---
-check('una orden con cobro finalizada hoy lo pide', debePedirPagoCobro(visita, false), true);
-check('si ya hay pago, no lo vuelve a pedir', debePedirPagoCobro(visita, true), false);
-check('antes de la fecha de inicio no pide nada', debePedirPagoCobro({ ...visita, finalizadoEn: Date.parse('2026-10-27T20:00:00-04:00') }, false), false);
-check('exonerada, instalación, sin finalizar o sin fecha de cierre: no pide', [debePedirPagoCobro({ ...visita, cobroTipo: 'EXONERADO' }, false), debePedirPagoCobro({ ...visita, tipoTrabajo: 'INSTALACIÓN' }, false), debePedirPagoCobro({ ...visita, estado: 'PRE-FINALIZADO' }, false), debePedirPagoCobro({ ...visita, finalizadoEn: null }, false)], [false, false, false, false]);
+const DESDE_PRUEBA = { desde: '2026-10-28' };
+check('una orden con cobro finalizada hoy lo pide', debePedirPagoCobro(visita, false, DESDE_PRUEBA), true);
+check('si ya hay pago, no lo vuelve a pedir', debePedirPagoCobro(visita, true, DESDE_PRUEBA), false);
+check('antes de la fecha de inicio no pide nada', debePedirPagoCobro({ ...visita, finalizadoEn: Date.parse('2026-10-27T20:00:00-04:00') }, false, DESDE_PRUEBA), false);
+check('exonerada, instalación, sin finalizar o sin fecha de cierre: no pide', [debePedirPagoCobro({ ...visita, cobroTipo: 'EXONERADO' }, false, DESDE_PRUEBA), debePedirPagoCobro({ ...visita, tipoTrabajo: 'INSTALACIÓN' }, false, DESDE_PRUEBA), debePedirPagoCobro({ ...visita, estado: 'PRE-FINALIZADO' }, false, DESDE_PRUEBA), debePedirPagoCobro({ ...visita, finalizadoEn: null }, false, DESDE_PRUEBA)], [false, false, false, false]);
 
 // --- Resúmenes ---
 const lista = [registrado, pendiente, { ...registrado, estado: ESTADO_PAGO.CONCILIADO, pago: { ...registrado.pago, moneda: 'USD', monto: 30 } }, { ...pendiente, estado: ESTADO_PAGO.SIN_COBRAR }];

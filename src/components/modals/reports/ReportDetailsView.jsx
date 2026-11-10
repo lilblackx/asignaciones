@@ -6,6 +6,7 @@ import { formatCedula } from '../../../utils/ticketDisplay';
 import { motivoCancelacion } from '../../../utils/cancelacion';
 import { CENTRADO_AMPLIO } from '../../Modal';
 import EncabezadoModulo from '../../EncabezadoModulo';
+import PagoDelCliente from '../../PagoDelCliente';
 
 // Los cierres nuevos traen en un solo reporte las órdenes finalizadas y las canceladas; cada una se marca con su estado.
 function EstadoOrden({ ticket }) {
@@ -99,8 +100,9 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                     )}
                   </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 italic leading-snug align-middle">
-                    {ticket.observacion || (ticket.observacionTecnico ? '' : '-')}
+                    {ticket.observacion || (ticket.observacionTecnico || ticket.pagoCliente ? '' : '-')}
                     {ticket.observacionTecnico && <span className={`block not-italic text-amber-700 dark:text-amber-400 ${ticket.observacion ? 'mt-1' : ''}`}><span className="font-semibold">Técnico:</span> {ticket.observacionTecnico}</span>}
+                    <PagoDelCliente orden={ticket} className="not-italic mt-1" />
                     {motivoCancelacion(ticket) && <span className="block not-italic text-red-700 dark:text-red-300 mt-1"><span className="font-semibold">Cancelada:</span> {motivoCancelacion(ticket)}</span>}
                   </td>
                 </tr>
@@ -137,6 +139,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                     <span>{ticket.observacionTecnico}</span>
                   </p>
                 )}
+                <PagoDelCliente orden={ticket} tamano="grande" />
               </div>
             </div>
           ))}

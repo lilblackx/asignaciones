@@ -4,6 +4,8 @@ import Chip from '../Chip';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import Boton from '../Boton';
 import CobroModal from '../modals/CobroModal';
+import PagoDelCliente from '../PagoDelCliente';
+import { pagoVisibleEnFinanzas } from '../../utils/pagoEnOrden';
 import { BUSCADOR } from '../estilos';
 import { TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { etiquetaRango } from '../../utils/periodoReporte';
@@ -95,6 +97,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                   {estadoChip(c)}
                 </div>
                 <p className="text-sm font-bold break-words">{textoDeCobro(c)}</p>
+                <PagoDelCliente orden={c} paraFinanzas />
                 {alerta(c)}
                 {c.estado === ESTADO_COBRO.CARGADO && <p className="text-xs text-zinc-700 dark:text-zinc-300">Cargado por {c.cargadoPor} · {fechaHora(c.cargadoEn)}</p>}
                 <Boton variante="secundario" tamano="grande" className="w-full" onClick={() => setAbierto(c.id)}>Ver todos los datos</Boton>
@@ -106,7 +109,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
               <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Cargado por', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
+                <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', 'Cargado por', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                 {visibles.map((c) => (
@@ -118,6 +121,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                     <td className="px-3 py-2.5 min-w-[8rem] text-zinc-700 dark:text-zinc-300 break-words">{tipoTexto(c)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{estadoChip(c)}</td>
+                    <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoVisibleEnFinanzas(c) ? <PagoDelCliente orden={c} tamano="compacto" paraFinanzas /> : <span className="text-xs text-zinc-400">-</span>}</td>
                     <td className="px-3 py-2.5 text-xs text-zinc-700 dark:text-zinc-300">{c.estado === ESTADO_COBRO.CARGADO ? <>{c.cargadoPor}<span className="block">{fechaHora(c.cargadoEn)}</span></> : '-'}</td>
                     <td className="px-3 py-2.5"><Boton variante="secundario" tamano="compacto" onClick={() => setAbierto(c.id)}>Ver</Boton></td>
                   </tr>

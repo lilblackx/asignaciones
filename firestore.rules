@@ -98,6 +98,35 @@ service cloud.firestore {
       return get(profilePath(appId)).data.get('username', '');
     }
 
+    // La copia resumida del pago del cliente (`pagoCliente`, ver utils/pagoEnOrden) que el técnico deja en su orden y en el cobro: PAGO (con sus datos), DESPUES (el cliente paga después) o JUNTO (pagó junto con
+    // otra orden). El documento que manda es el de pagosOrdenes (más abajo); esta copia solo se muestra.
+    function pagoClienteValido(p) {
+      return p is map
+        && p.keys().hasOnly(['tipo', 'pago', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn', 'corregidoPor', 'corregidoEn'])
+        && p.keys().hasAll(['tipo', 'pago', 'nota', 'compartidoCon', 'monedaDistinta', 'diferencia', 'registradoPor', 'registradoEn'])
+        && p.tipo in ['PAGO', 'DESPUES', 'JUNTO']
+        && (p.tipo == 'PAGO') == (p.pago != null)
+        && (p.pago == null || (p.pago is map
+          && p.pago.keys().hasOnly(['moneda', 'forma', 'monto', 'banco', 'titular', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
+          && p.pago.keys().hasAll(['moneda', 'forma', 'monto', 'banco', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
+          && p.pago.moneda in ['BS', 'USD']
+          && p.pago.forma in ['Pago móvil', 'Transferencia', 'Efectivo', 'Zelle', 'Binance', 'Otro']
+          && p.pago.monto is number && p.pago.monto > 0 && p.pago.monto <= 999999999
+          && p.pago.banco is string && p.pago.banco.size() <= 40
+          && (!('titular' in p.pago) || (p.pago.titular is string && p.pago.titular.size() <= 80))
+          && p.pago.cuentaEmpresa is string && p.pago.cuentaEmpresa.size() <= 160
+          && p.pago.referencia is string && p.pago.referencia.size() <= 40
+          && p.pago.pagadoEn is int))
+        && p.nota is string && p.nota.size() <= 300
+        && (p.compartidoCon == null || (p.compartidoCon is map && p.compartidoCon.keys().hasOnly(['id', 'codigo'])
+          && p.compartidoCon.id is string && p.compartidoCon.id.size() > 0 && p.compartidoCon.id.size() <= 200 && p.compartidoCon.codigo is string && p.compartidoCon.codigo.size() <= 40))
+        && (p.tipo == 'JUNTO') == (p.compartidoCon != null)
+        && p.monedaDistinta is bool && p.diferencia is bool
+        && p.registradoPor is string && p.registradoPor.size() <= 100
+        && p.registradoEn is int
+        && (!('corregidoPor' in p) || (p.corregidoPor is string && p.corregidoPor.size() <= 100 && p.corregidoEn is int));
+    }
+
     // Cambiar `aplicado` (lo que ya se descontó de un adelanto, un descuento o un bono en pagos) solo vale junto a un pago del mismo técnico: al pagar, el pago se crea en el mismo lote
     // (y trae ese adelanto o ajuste en su lista, `lista`); al anular, ese mismo lote anula el pago. `pagoId` dice cuál. Así nadie borra un descuento ni un adelanto sin dejar el pago que
     // lo respalda. Son siempre los mismos dos documentos (el pago y el perfil): no suman llamadas aunque el lote traiga muchos adelantos.
@@ -237,6 +266,7 @@ service cloud.firestore {
       // tiene habilitados en Pre-finalizar / Detalles). El estado solo puede pasar
       // de PENDIENTE a PRE-FINALIZADO: nunca FINALIZADO ni CANCELADO, ni
       // reabrir una orden. El historial solo crece: no puede borrar entradas.
+      // `pagoCliente` es la copia resumida del pago que el técnico registra en su orden ya pre-finalizada o finalizada (ver pagoClienteValido): la deja una sola vez y no la cambia (solo el ADMIN la corrige); nunca toca el cobro ni el estado.
       // Una orden ya finalizada no cambia su cierre: ni la hora de finalización ni el cobro. Si dos personas finalizan la misma orden a la vez,
       // la segunda escritura llega con la orden ya FINALIZADA y se rechaza aquí (la app, además, lo evita con una transacción).
       function noPisaElCierre() {
@@ -252,7 +282,7 @@ service cloud.firestore {
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'tipoEquipoNuevo', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones'])
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'pagoCliente', 'consultaCobro', 'tipoVisita', 'metrosCable', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'tipoEquipoNuevo', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones'])
           // Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, agregar
           // 'infraestructura' a la lista de arriba y esta condición (el técnico solo deja la orden esperando, a su nombre y con motivo):
           // && (
@@ -270,6 +300,12 @@ service cloud.firestore {
           //     && request.resource.data.infraestructura.en is int
           //   )
           // )
+          // El pago del cliente: solo si la orden ya está pre-finalizada o finalizada y aún no tiene uno, con la forma de pagoClienteValido y a nombre de quien lo registra.
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['pagoCliente'])
+            || (!('pagoCliente' in resource.data)
+              && resource.data.estado in ['PRE-FINALIZADO', 'FINALIZADO']
+              && pagoClienteValido(request.resource.data.pagoCliente)
+              && request.resource.data.pagoCliente.registradoPor == usuarioFinanzas(appId)))
           // Las horas del ciclo (reporte de esperas) son números o null; asignadoEn y primerAsignadoEn solo los escribe la oficina.
           && (request.resource.data.get('salioEn', null) == null || request.resource.data.salioEn is int)
           && (request.resource.data.get('llegoEn', null) == null || request.resource.data.llegoEn is int)
@@ -804,7 +840,7 @@ service cloud.firestore {
     // El cobro de cada orden al cliente, para ADMINISTRACION (y el ADMIN): un documento por orden (id = id de la orden) que quien finaliza la orden (ADMIN, USUARIO o quien cierra) emite PENDIENTE al
     // finalizarla (una instalación sin monto; lo escribe Administración al cargarlo). Administración lo sube al portal de la empresa y lo marca CARGADO (o lo devuelve a PENDIENTE); si la orden cambia
     // cuando ya estaba cargado, queda `montoCambio` hasta que Administración lo confirma. La oficina solo sigue a la orden (monto, anulado, montoCambio) y nunca cambia el estado. Nadie lo borra.
-    // Lo leen la oficina, Administración y Finanzas.
+    // El técnico de la orden solo puede copiar aquí, una vez, el resumen del pago que registró (`pagoCliente`, ver pagoClienteValido) y el ADMIN lo corrige. Lo leen la oficina, Administración y Finanzas.
     match /artifacts/{appId}/public/data/cobrosClientes/{ticketId} {
       function oficinaCierra(appId) {
         return canCerrar(appId) || isUsuarioRole(appId);
@@ -812,7 +848,7 @@ service cloud.firestore {
 
       function cobroValido() {
         let c = request.resource.data;
-        return c.keys().hasOnly(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'tipoVisita', 'falla', 'esInstalacion', 'monto', 'moneda', 'estado', 'montoCambio', 'anulado', 'creadoEn', 'creadoPor', 'cargadoPor', 'cargadoEn', 'actualizadoEn', 'historial'])
+        return c.keys().hasOnly(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'tipoVisita', 'falla', 'esInstalacion', 'monto', 'moneda', 'estado', 'montoCambio', 'anulado', 'creadoEn', 'creadoPor', 'cargadoPor', 'cargadoEn', 'actualizadoEn', 'historial', 'pagoCliente'])
           && c.keys().hasAll(['ticketId', 'codigo', 'nombre', 'cedula', 'telefono', 'tecnico', 'tipoTrabajo', 'tipoVisita', 'falla', 'esInstalacion', 'monto', 'moneda', 'estado', 'montoCambio', 'anulado', 'creadoEn', 'creadoPor', 'cargadoPor', 'cargadoEn', 'actualizadoEn', 'historial'])
           && c.ticketId == ticketId
           && c.codigo is string && c.codigo.size() <= 40
@@ -838,8 +874,10 @@ service cloud.firestore {
       }
 
       allow read: if llevaAdministracion(appId) || oficinaCierra(appId) || isFinanzasRole(appId);
+      // pagoClienteValido se revisa solo donde el pago se escribe (al emitir un cobro que ya lo trae y en las dos ramas de abajo que lo ponen): validarlo en cada actualización gastaría expresiones de más.
       allow create: if oficinaCierra(appId)
         && cobroValido()
+        && (!('pagoCliente' in request.resource.data) || pagoClienteValido(request.resource.data.pagoCliente))
         && request.resource.data.estado == 'PENDIENTE'
         && request.resource.data.anulado == false
         && request.resource.data.montoCambio == null
@@ -847,7 +885,15 @@ service cloud.firestore {
         && (request.resource.data.monto != null || request.resource.data.esInstalacion)
         && request.resource.data.historial.size() == 1
         && request.resource.data.creadoPor == usuarioFinanzas(appId);
-      allow update: if cobroValido()
+      // El técnico va primero: comprobar su rol cuesta poco y, si no, la regla gasta las 1.000 expresiones que Firestore permite en las comprobaciones de la oficina antes de llegar a él.
+      allow update: if (isTecnicoRole(appId)
+          && resource.data.tecnico == tecnicoAsociado(appId)
+          && !('pagoCliente' in resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pagoCliente'])
+          && pagoClienteValido(request.resource.data.pagoCliente)
+          && request.resource.data.pagoCliente.registradoPor == usuarioFinanzas(appId))
+        // El técnico dueño de la orden copia aquí, una sola vez, el resumen del pago que registró en su orden para que Administración y Finanzas lo vean junto al cobro: solo ese campo, nada más.
+        || (cobroValido()
         && request.resource.data.historial.size() > resource.data.historial.size()
         && request.resource.data.historial.hasAll(resource.data.historial)
         && request.resource.data.ticketId == resource.data.ticketId
@@ -856,11 +902,15 @@ service cloud.firestore {
           (llevaAdministracion(appId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'monto', 'moneda', 'montoCambio', 'anulado', 'cargadoPor', 'cargadoEn', 'actualizadoEn', 'historial'])
             && (request.resource.data.cargadoPor == resource.data.cargadoPor || request.resource.data.cargadoPor == '' || request.resource.data.cargadoPor == usuarioFinanzas(appId)))
+          // El ADMIN corrige el pago del cliente (su copia en el cobro): solo ese campo, con su entrada en el historial.
+          || (isAdminUser(appId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pagoCliente', 'actualizadoEn', 'historial'])
+            && pagoClienteValido(request.resource.data.pagoCliente))
           // La oficina: el cobro sigue a la orden (se actualiza el monto, se retira o queda el aviso de cambio), sin cambiar su estado.
           || (oficinaCierra(appId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['monto', 'moneda', 'montoCambio', 'anulado', 'actualizadoEn', 'historial'])
             && request.resource.data.estado == resource.data.estado)
-        );
+        ));
       allow delete: if false;
     }
 

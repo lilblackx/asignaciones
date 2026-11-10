@@ -20,6 +20,7 @@ import AvisoCambioDeOrden from '../AvisoCambioDeOrden';
 import AvisoRevision from '../AvisoRevision';
 import { cambioMientrasAbierta } from '../../utils/concurrencia';
 import { claseArea } from '../estilos';
+import PagoDelCliente from '../PagoDelCliente';
 
 // Revisión de una orden antes de cerrarla. Sirve para los dos cierres de la oficina: aprobar una orden que el
 // técnico pre-finalizó (con "Devolver" si algo no está bien) y finalizar directo una orden pendiente, sin que
@@ -261,6 +262,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
               </div>
             </div>
           )}
+
+          <PagoDelCliente orden={ticket} bloque />
 
           <Colapsable>
             {devolviendo && (

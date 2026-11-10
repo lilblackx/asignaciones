@@ -8,6 +8,7 @@ import { agruparOrdenes, bolivares, cifrasResumenPagado, dolares, frasePagado, g
 import { diaDe } from '../../utils/totalesMes';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 import InsigniaJM from '../InsigniaJM';
+import PagoDelCliente from '../PagoDelCliente';
 
 // El reporte de Finanzas: lo que se pagó en el periodo, por técnico (cuánto y por cuántas órdenes), en filas grandes y sin cajas. "Ver órdenes" muestra las órdenes ya pagadas del
 // técnico agrupadas como en los reportes, con la marca Pagada. `ordenesPagadas`: las órdenes ya pagadas del periodo (ordenesYaPagadas).
@@ -70,6 +71,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                                       <InsigniaJM orden={item.orden} className="ml-2" />
                                     </span>
                                     <span className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {grupoDePago(item.concepto)}</span>
+                                    <PagoDelCliente orden={item.orden} paraFinanzas className="mt-0.5" />
                                   </span>
                                   <span className="flex items-center gap-3">
                                     <span className={`${CHIP} bg-emerald-700 text-white gap-1`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" />Pagada</span>

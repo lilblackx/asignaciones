@@ -4,7 +4,9 @@
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { conSesionReciente } from './sesion-prueba.mjs';
-import { armarConciliacion, armarCorreccion, armarDevolucion, armarPagoPendiente, armarPagoRegistrado, armarSinCobrar, claveReferencia, parsePagoCliente } from '../src/utils/pagoCliente.js';
+import { armarCobro } from '../src/utils/cobrosClientes.js';
+import { resumenDePago } from '../src/utils/pagoEnOrden.js';
+import { armarConciliacion, armarCorreccion, armarCorreccionAdmin, armarDevolucion, armarPagoPendiente, armarPagoRegistrado, armarSinCobrar, claveReferencia, parsePagoCliente } from '../src/utils/pagoCliente.js';
 
 const APP_ID = 'default-app-id';
 const testEnv = await initializeTestEnvironment({
@@ -278,6 +280,59 @@ await check('pero no puede listar todo ni otros tipos de orden, y no escribe en 
   await assertFails(pagos(ctx).doc('fi-conciliada').update({ nota: 'x' }));
 });
 await check('ALMACEN sigue sin ver ese pago', () => assertFails(pagos(como('almacen-uid')).doc('fi-conciliada').get()));
+
+// --- El lote real de la app: el pago, la reserva de su referencia, la copia en la orden y la copia en el cobro, todo junto ---
+const ordenes = (ctx) => base(ctx).collection('tickets');
+const cobrosC = (ctx) => base(ctx).collection('cobrosClientes');
+const sembrar = (id, { estado = 'FINALIZADO', cobro = true } = {}) => testEnv.withSecurityRulesDisabled(async (ctx) => {
+  await ordenes(ctx).doc(id).set({ ...ordenDe(id, 'GERARDO MOLERO', estado), historialEdiciones: [{ detalle: 'creada' }] });
+  if (cobro) await cobrosC(ctx).doc(id).set(armarCobro(ordenDe(id), { por: 'usuario', ahora: AHORA }));
+});
+const leerDoc = async (coleccion, id) => { let d; await testEnv.withSecurityRulesDisabled(async (ctx) => { d = (await coleccion(ctx).doc(id).get()).data(); }); return d; };
+async function registrarCompleto(ctx, doc, { cobro = true } = {}) {
+  const resumen = resumenDePago(doc);
+  const actual = await leerDoc(ordenes, doc.ticketId);
+  const lote = ctx.firestore().batch();
+  lote.set(pagos(ctx).doc(doc.ticketId), doc);
+  if (doc.referenciaClave) lote.set(refs(ctx).doc(doc.referenciaClave), reserva(doc, doc.registradoPor));
+  lote.update(ordenes(ctx).doc(doc.ticketId), { pagoCliente: resumen, historialEdiciones: [...actual.historialEdiciones, { fecha: 'f', operador: doc.registradoPor, tipo: 'pagoCliente', detalle: 'Pago del cliente' }] });
+  if (cobro) lote.update(cobrosC(ctx).doc(doc.ticketId), { pagoCliente: resumen });
+  await lote.commit();
+}
+await sembrar('lote1');
+await sembrar('lote2', { estado: 'PRE-FINALIZADO', cobro: false });
+await sembrar('lote3');
+await check('el técnico registra el pago con el lote completo (pago, referencia, orden y cobro) y queda todo', async () => {
+  await assertSucceeds(registrarCompleto(como('gerardo-uid'), registro('lote1', { extra: { referencia: '700001' } })));
+  if ((await leerDoc(ordenes, 'lote1')).pagoCliente?.pago?.referencia !== '700001') throw new Error('falta la copia en la orden');
+  if ((await leerDoc(cobrosC, 'lote1')).pagoCliente?.pago?.referencia !== '700001') throw new Error('falta la copia en el cobro');
+});
+await check('una instalación pre-finalizada lo registra antes de que exista su cobro (lote sin la copia del cobro)', () => assertSucceeds(registrarCompleto(como('gerardo-uid'), registro('lote2', { extra: { referencia: '700002' } }), { cobro: false })));
+await check('si la referencia ya está en otra orden el lote entero se rechaza: ni el pago ni las copias quedan', async () => {
+  await assertFails(registrarCompleto(como('gerardo-uid'), registro('lote3', { extra: { referencia: '700001' } })));
+  if ((await leerDoc(ordenes, 'lote3')).pagoCliente) throw new Error('quedó una copia en la orden');
+  if ((await leerDoc(cobrosC, 'lote3')).pagoCliente) throw new Error('quedó una copia en el cobro');
+});
+await check('el técnico no puede registrar el lote en la orden de otro técnico', async () => {
+  await sembrar('lote4');
+  await assertFails(registrarCompleto(como('reinel-uid'), registro('lote4', { por: 'reinel', tecnico: 'GERARDO MOLERO', extra: { referencia: '700004' } })));
+});
+await check('el ADMIN corrige el pago con una transacción equivalente: documento, referencia vieja y nueva, orden y cobro', async () => {
+  const actual = await leerDoc(pagos, 'lote1');
+  const { cambios } = armarCorreccionAdmin(actual, { valor: valor({ referencia: '700099' }), nota: 'Era otra referencia' }, { por: 'admin', ahora: AHORA + 5 });
+  const resumen = resumenDePago({ ...actual, ...cambios }, { corregidoPor: 'admin', corregidoEn: AHORA + 5 });
+  const orden = await leerDoc(ordenes, 'lote1');
+  const cobro = await leerDoc(cobrosC, 'lote1');
+  const ctx = como('admin-uid');
+  const lote = ctx.firestore().batch();
+  lote.update(pagos(ctx).doc('lote1'), cambios);
+  lote.set(refs(ctx).doc(cambios.referenciaClave), reserva(actual, 'admin'));
+  lote.delete(refs(ctx).doc(actual.referenciaClave));
+  lote.update(ordenes(ctx).doc('lote1'), { pagoCliente: resumen, historialEdiciones: [...orden.historialEdiciones, { fecha: 'f', operador: 'admin', tipo: 'pagoCliente', detalle: 'corregido' }] });
+  lote.update(cobrosC(ctx).doc('lote1'), { pagoCliente: resumen, actualizadoEn: AHORA + 5, historial: [...cobro.historial, { en: AHORA + 5, por: 'admin', detalle: 'Pago del cliente corregido' }] });
+  await assertSucceeds(lote.commit());
+  if ((await leerDoc(cobrosC, 'lote1')).pagoCliente.corregidoPor !== 'admin') throw new Error('el cobro no quedó corregido');
+});
 
 await testEnv.cleanup();
 if (failures > 0) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }

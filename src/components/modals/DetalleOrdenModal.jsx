@@ -1,4 +1,6 @@
 import { observacionEsInterna, observacionParaTecnico } from '../../utils/observacion';
+import PagoDelCliente from '../PagoDelCliente';
+import { pagoClienteDe } from '../../utils/pagoEnOrden';
 import { Cable, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import HistorialTimeline from '../HistorialTimeline';
@@ -157,6 +159,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               <Dato etiqueta="Del técnico">{ticket.observacionTecnico}</Dato>
             </Seccion>
           )}
+
+          {pagoClienteDe(ticket) && <PagoDelCliente orden={ticket} bloque />}
 
           {plantilla && (
             <Seccion

@@ -1,10 +1,14 @@
 import { CheckCheck, Clock, MapPin, Plug, Tag, User, Wrench } from 'lucide-react';
 import Modal from '../Modal';
 import BotonCopiar from '../BotonCopiar';
+import FormularioPagoCliente from '../FormularioPagoCliente';
 import { useCopiado } from '../../hooks/useCopiado';
 import ValoresClienteTarjeta from './ValoresClienteTarjeta';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { MONEDA_USD, conceptoCobro, estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
+import { cobroEsperadoDe } from '../../utils/pagoCliente';
+import { esInstalacion } from '../../utils/instalacion';
+import { normalizarFormasPago } from '../../utils/formasPago';
 import { valoresGuardados } from '../../utils/valoresCliente';
 
 function Dato({ icon: Icon, etiqueta, valor }) {
@@ -20,20 +24,23 @@ function Dato({ icon: Icon, etiqueta, valor }) {
   );
 }
 
-// Aviso a pantalla completa para el técnico con el cobro al cliente de una orden suya con cobro
-// (visita de conector o instalación): no puede pasar desapercibido. Sale al finalizarse la orden o, con conector interno,
-// apenas se pre-finaliza. Se queda hasta que el técnico lo confirma; si hay varias, las muestra
-// una tras otra. Con cobro, debajo del monto va un botón para copiarlo. El cliente paga en el portal de la empresa (Administración sube el cobro): el técnico solo le informa el monto, así que
-// no hay formas de pago ni formulario de pago aquí.
-// Si la oficina guardó los valores de señal del cliente al aprobar la orden, van en su propia tarjeta debajo del monto.
+// Aviso a pantalla completa para el técnico con el cobro al cliente de una orden suya con cobro (visita de conector, por ejemplo): no puede pasar desapercibido. Sale al finalizarse la orden o, con conector
+// interno, apenas se pre-finaliza. Con cobro, debajo del monto va un botón para copiarlo. Si la oficina guardó los valores de señal del cliente al aprobar la orden, van en su propia tarjeta.
 // `onCopy(texto, mensaje)` hace la copia (devuelve si pudo) y avisa con el toast.
-export default function CobroResultanteModal({ ticket, restantes = 0, onCopy, onClose }) {
+// Sin `registro` (las exoneradas y las órdenes anteriores al registro del pago) se queda hasta que el técnico lo confirma con "Entendido"; si hay varias, las muestra una tras otra.
+// `registro` (órdenes con cobro desde que se pide el pago del cliente): en lugar del botón de confirmar lleva el formulario del pago que hizo el cliente y no se cierra sin registrarlo (o sin decir que el
+// cliente paga después); antes de guardar, el técnico confirma lo que va a registrar. { onRegistrar(ticket, valor) -> { ok } | { repetida } | { error }, onPagaDespues(ticket, { nota, compartidoCon }) -> { ok } | { error },
+// otrasOrdenes }. Es una pantalla por orden: quien la usa le pone `key` con el id de la orden para que lo escrito no pase a la siguiente.
+export default function CobroResultanteModal({ ticket, restantes = 0, formasPago, onCopy, onClose, registro = null }) {
   // Qué se acaba de copiar ('monto'): el botón muestra un visto un instante.
   const { copiado, copiar } = useCopiado(onCopy);
   if (!ticket) return null;
+  const formas = normalizarFormasPago(formasPago);
   const visita = conceptoCobro(ticket);
   const preFinalizada = ticket.estado === 'PRE-FINALIZADO';
   const exonerado = estaExonerado(ticket);
+  // Una instalación no trae monto: la pantalla solo sirve para registrar el pago (aparece si no se pudo guardar al pre-finalizar).
+  const instalacion = esInstalacion(ticket.tipoTrabajo);
   const moneda = monedaDe(ticket);
   const IconoEstado = preFinalizada ? Clock : CheckCheck;
   return (
@@ -53,8 +60,10 @@ export default function CobroResultanteModal({ ticket, restantes = 0, onCopy, on
         </div>
 
         <div className="px-5 py-6 text-center bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-900/50">
-          <p className="text-xs sm:text-sm font-black tracking-widest text-emerald-800 dark:text-emerald-300">COBRO RESULTANTE AL CLIENTE</p>
-          {exonerado ? (
+          <p className="text-xs sm:text-sm font-black tracking-widest text-emerald-800 dark:text-emerald-300">{instalacion ? 'PAGO DE LA INSTALACIÓN' : 'COBRO RESULTANTE AL CLIENTE'}</p>
+          {instalacion ? (
+            <p className="mt-2 text-lg font-black text-emerald-800 dark:text-emerald-300 leading-tight">Registra el pago que recibiste del cliente.</p>
+          ) : exonerado ? (
             <>
               <p className="mt-1 text-5xl sm:text-6xl font-black text-emerald-700 dark:text-emerald-400 leading-none">EXONERADA</p>
               <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Esta visita se exoneró: no le cobres nada al cliente.</p>
@@ -64,9 +73,9 @@ export default function CobroResultanteModal({ ticket, restantes = 0, onCopy, on
               {ticket.cobroBs} <span className="text-3xl sm:text-4xl">{moneda === MONEDA_USD ? '$' : 'Bs'}</span>
             </p>
           )}
-          {preFinalizada && <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Informa este monto al cliente ahora. La orden queda pendiente de aprobación.</p>}
-          {visita && <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-900/50 rounded-full px-3 py-1"><Plug className="w-3.5 h-3.5" aria-hidden="true" /> {visita}</p>}
-          {!exonerado && onCopy && ticket.cobroBs && (
+          {preFinalizada && !instalacion && <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Informa este monto al cliente ahora. La orden queda pendiente de aprobación.</p>}
+          {visita && !instalacion && <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-900/50 rounded-full px-3 py-1"><Plug className="w-3.5 h-3.5" aria-hidden="true" /> {visita}</p>}
+          {!exonerado && !instalacion && onCopy && ticket.cobroBs && (
             <BotonCopiar
               copiado={copiado === 'monto'}
               onClick={() => copiar('monto', textoMonto(ticket.cobroBs, moneda), 'Monto copiado.')}
@@ -79,6 +88,24 @@ export default function CobroResultanteModal({ ticket, restantes = 0, onCopy, on
             </BotonCopiar>
           )}
         </div>
+
+        {registro && (
+          <section aria-label="Registrar el pago del cliente" className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 space-y-3">
+            <h3 className="text-sm font-black tracking-wide text-zinc-900 dark:text-white">REGISTRAR EL PAGO DEL CLIENTE</h3>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Anota lo que el cliente pagó por este cobro. Es obligatorio: si todavía no pagó, di que paga después. Antes de guardar te pedimos confirmar los datos.</p>
+            <FormularioPagoCliente
+              key={ticket.id}
+              ticket={ticket}
+              cobro={cobroEsperadoDe(ticket)}
+              cuentasEmpresa={formas}
+              permitirPagarDespues={!instalacion}
+              otrasOrdenes={registro.otrasOrdenes}
+              onGuardar={(valor) => registro.onRegistrar(ticket, valor)}
+              onPagaDespues={(datos) => registro.onPagaDespues(ticket, datos)}
+            />
+            {restantes > 0 && <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400 text-center">{restantes} {restantes === 1 ? 'orden más' : 'órdenes más'} por registrar después de esta.</p>}
+          </section>
+        )}
 
         {onCopy && valoresGuardados(ticket) && (
           <section aria-label="Valores del cliente" className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
@@ -94,15 +121,17 @@ export default function CobroResultanteModal({ ticket, restantes = 0, onCopy, on
           <Dato icon={Tag} etiqueta="NAP / CAJA / PUERTO" valor={ticket.nap} />
         </div>
 
-        <div className="sticky bottom-0 px-5 py-3 mt-auto bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-md transition-colors"
-          >
-            {restantes > 0 ? `Entendido (${restantes} más por ver)` : 'Entendido'}
-          </button>
-        </div>
+        {!registro && (
+          <div className="sticky bottom-0 px-5 py-3 mt-auto bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-md transition-colors"
+            >
+              {restantes > 0 ? `Entendido (${restantes} más por ver)` : 'Entendido'}
+            </button>
+          </div>
+        )}
       </div>
     </Modal>
   );

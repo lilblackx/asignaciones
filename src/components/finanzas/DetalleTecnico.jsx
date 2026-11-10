@@ -9,6 +9,7 @@ import { sePuedeAnularAdicional, textoAdicional } from '../../utils/adicionales'
 import { diaDe } from '../../utils/totalesMes';
 import { useAhora } from '../../hooks/useAhora';
 import InsigniaJM from '../InsigniaJM';
+import PagoDelCliente from '../PagoDelCliente';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 
 // Todo lo de un técnico en una sola pantalla, sin cajas: cuánto se le debe (en grande), lo que se paga por concepto con cantidad, precio y subtotal en $ y Bs, los adelantos,
@@ -220,6 +221,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
                           <span key={a.id} className="block text-xs font-bold text-sky-800 dark:text-sky-300">Descuento por la garantía {a.codigo || 's/c'} (de {a.a}): − {dolares(saldoAdelanto(a))} → cobra {dolares(Math.max(0, (tarifas[item.concepto] || 0) - saldoAdelanto(a)))}</span>
                         ))}
                         {garantiasPendientes.has(item.clave) && <span className="block text-xs font-bold text-amber-800 dark:text-amber-300">Tiene una garantía de otro técnico por revisar: el descuento puede llegar después.</span>}
+                        <PagoDelCliente orden={item.orden} paraFinanzas className="mt-0.5" />
                       </span>
                       <Monto usd={tarifas[item.concepto] || 0} tasa={tasa} />
                     </li>

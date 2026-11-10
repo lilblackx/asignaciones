@@ -1,12 +1,12 @@
-// El pago que el cliente le hace a la empresa por el cobro de una orden: lo registra el técnico (o, si el cliente paga después, Administración) y
-// Administración lo concilia. Un documento por orden en `pagosOrdenes` (id = id de la orden), que lleva copiados los datos clave de la orden para que el
-// Cierre del día no lo afecte. Funciones puras: las usan las pantallas, el hook y las pruebas.
+// El pago que el cliente le hace a la empresa por el cobro de una orden: lo registra el técnico (formulario completo: moneda, forma, cuenta de la empresa, banco, titular, referencia, monto, fecha y hora, nota)
+// y lo ven Administración, Revisión y Finanzas junto al cobro (ver utils/pagoEnOrden); solo el ADMIN lo corrige. Un documento por orden en `pagosOrdenes` (id = id de la orden), que lleva copiados los datos
+// clave de la orden para que el Cierre del día no lo afecte. Funciones puras: las usan las pantallas, la escritura y las pruebas.
 //
-// Estados:
-//   PENDIENTE_COBRO  el técnico dijo "el cliente paga después" (o "pagó junto con otra orden"): lo cobra Administración
-//   POR_CONCILIAR    el técnico registró el pago: Administración lo verifica
-//   CONCILIADO       Administración lo verificó (o lo cobró y registró)
-//   SIN_COBRAR       Administración marcó que el cliente no pagó
+// Estados (del tiempo en que Administración conciliaba los pagos; hoy Administración solo sube los cobros al portal y no los usa, pero el documento y las reglas los conservan):
+//   PENDIENTE_COBRO  el técnico dijo "el cliente paga después" (o "pagó junto con otra orden")
+//   POR_CONCILIAR    el técnico registró el pago
+//   CONCILIADO       lo conciliaron en el flujo anterior
+//   SIN_COBRAR       lo marcaron sin cobrar en el flujo anterior
 import { MAX_BANCO, MAX_NOTA, MAX_REFERENCIA, MAX_TITULAR, MONEDA_BS, MONEDA_USD, esZelle, exigeReferencia, fechaHoraDeMarca, marcaDeFechaHora } from './datosPago.js';
 import { CAMPOS_POR_TIPO, TIPO_BINANCE, TIPO_CUENTA, TIPO_PAGO_MOVIL, TIPO_ZELLE, TITULO_POR_TIPO } from './formasPago.js';
 import { COBRO_EXONERADO, formatoMontoBs, llevaCobro, monedaDe, parseMontoBs, textoMonto } from './cobro.js';
@@ -21,9 +21,10 @@ export const ESTADO_PAGO = { PENDIENTE: 'PENDIENTE_COBRO', POR_CONCILIAR: 'POR_C
 export const ESTADOS_PAGO = Object.values(ESTADO_PAGO);
 export const ETIQUETA_ESTADO_PAGO = { PENDIENTE_COBRO: 'Pendiente de cobro', POR_CONCILIAR: 'Por conciliar', CONCILIADO: 'Conciliado', SIN_COBRAR: 'Sin cobrar' };
 
-// Desde qué día (Caracas) se pide el pago: las órdenes que se finalizan o pre-finalizan desde entonces. Lo anterior no pide nada.
+// Desde qué día (Caracas) se pide el pago: las órdenes que se finalizan o pre-finalizan desde entonces. Lo anterior no pide nada (sigue con "Entendido"). Al desplegar el registro del pago, esta fecha debe
+// ser el día del despliegue: si fuera anterior, las órdenes ya cerradas sin pago le saldrían de golpe a cada técnico.
 // Para probar con otra fecha en local: VITE_PAGO_CLIENTE_DESDE=AAAA-MM-DD en .env.development.local.
-export const FECHA_INICIO_PAGO_CLIENTE = import.meta.env?.VITE_PAGO_CLIENTE_DESDE ?? '2026-10-28';
+export const FECHA_INICIO_PAGO_CLIENTE = import.meta.env?.VITE_PAGO_CLIENTE_DESDE ?? '2026-11-10';
 
 // Las formas con que paga el cliente, según la moneda.
 export const FORMAS_PAGO_CLIENTE = {
@@ -283,6 +284,28 @@ export function armarCorreccion(actual, { valor, nota = '', repiteReferencia = f
       diferencia: valor.diferencia,
       actualizadoEn: ahora,
       historial: [...(actual.historial || []), entradaHistorial(por, ahora, `Corregido: ${textoPago(valor.pago)} | ${notaLimpia}`)],
+    },
+  };
+}
+
+// El ADMIN corrige el pago de una orden (botón "Corregir pago"): si el técnico registró un pago, se corrigen sus datos (armarCorreccion); si dijo que el cliente paga después, el ADMIN registra el pago que sí se
+// hizo (el documento pasa a POR_CONCILIAR con esos datos). Si el cliente pagó junto con otra orden no hay datos que corregir aquí. `valor`: lo que devuelve parsePagoCliente; la nota (qué se corrigió) es obligatoria.
+export function armarCorreccionAdmin(actual, { valor, nota = '', repiteReferencia = false }, { por, ahora }) {
+  if (actual?.pago) return armarCorreccion(actual, { valor, nota, repiteReferencia }, { por, ahora });
+  if (actual?.compartidoCon) return { error: 'El técnico dijo que el cliente pagó junto con otra orden: este pago no tiene datos que corregir.', campo: 'forma' };
+  const notaLimpia = limpiar(nota);
+  if (!notaLimpia) return { error: 'Escribe por qué registras el pago.', campo: 'nota' };
+  if (notaLimpia.length > MAX_NOTA) return { error: `La nota es demasiado larga (máximo ${MAX_NOTA} caracteres).`, campo: 'nota' };
+  return {
+    cambios: {
+      estado: ESTADO_PAGO.POR_CONCILIAR,
+      pago: valor.pago,
+      referenciaClave: claveReferencia(valor.pago.forma, valor.pago.banco, valor.pago.referencia),
+      monedaDistinta: valor.monedaDistinta,
+      diferencia: valor.diferencia,
+      notaAdministracion: notaLimpia,
+      actualizadoEn: ahora,
+      historial: [...(actual?.historial || []), entradaHistorial(por, ahora, `Pago registrado por el administrador: ${textoPago(valor.pago)} | ${notaLimpia}`)],
     },
   };
 }

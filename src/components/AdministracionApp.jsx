@@ -14,6 +14,8 @@ import RangoFechas from './RangoFechas';
 import SelectMenu from './SelectMenu';
 import Toast from './Toast';
 import CobroModal from './modals/CobroModal';
+import PagoDelCliente from './PagoDelCliente';
+import { pagoClienteDe } from '../utils/pagoEnOrden';
 import { BUSCADOR } from './estilos';
 import { SELECTOR } from './finanzas/estilos';
 import { useAhora } from '../hooks/useAhora';
@@ -22,6 +24,9 @@ import { useTema } from '../hooks/useTema';
 import { useToast } from '../hooks/useToast';
 import { useAvisosCobros, useCobrosAdministracion } from '../hooks/useCobrosClientes';
 import { trabajarCobro } from '../lib/cobrosClientes';
+import { corregirPagoCliente } from '../lib/pagosOrdenes';
+import { useFormasPago } from '../hooks/useFormasPago';
+import { normalizarFormasPago } from '../utils/formasPago';
 import { fechaCorta, fechaISO } from '../utils/calendario';
 import { exportCobrosToCsv } from '../utils/exportReport';
 import {
@@ -46,6 +51,9 @@ const desdeHace = (dias, base) => fechaISO(base - (dias - 1) * 86400000);
 export default function AdministracionApp({ auth, onAbrirMenu }) {
   const { firebaseUser, currentUserName, currentUser, role, handleLogout } = auth;
   const esAdministracion = role === ROLES.ADMINISTRACION;
+  // Solo el ADMIN corrige el pago que registró el técnico: él necesita las cuentas de la empresa para el formulario.
+  const esAdmin = role === ROLES.ADMIN;
+  const { formasPago } = useFormasPago(esAdmin ? firebaseUser : null);
   const [isDarkMode, setIsDarkMode] = useTema(currentUser);
   const { toastMsg, setToastMsg } = useToast();
   const notifications = useNotifications(esAdministracion ? currentUser : null);
@@ -81,6 +89,19 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
       return r;
     } catch (e) {
       console.error('No se pudo trabajar el cobro:', e);
+      return { error: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' };
+    }
+  };
+
+  // El ADMIN corrige (o registra) el pago del cobro abierto: se actualiza el documento de pago y su copia en la orden y en el cobro (ver corregirPagoCliente).
+  const corregirPago = async (valor, nota) => {
+    const registraba = pagoClienteDe(cobroAbierto)?.tipo !== 'PAGO';
+    try {
+      const r = await corregirPagoCliente(cobroAbierto.id, { valor, nota }, { por: currentUser });
+      if (r?.ok) setToastMsg({ type: 'success', text: registraba ? 'Pago registrado.' : 'Pago corregido.' });
+      return r;
+    } catch (e) {
+      console.error('No se pudo corregir el pago:', e);
       return { error: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' };
     }
   };
@@ -201,6 +222,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                           {estadoChip(c)}
                         </div>
                         <p className="text-sm font-bold break-words">{textoDeCobro(c)}</p>
+                        <PagoDelCliente orden={c} tamano="grande" />
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           {alerta(c)}
                           {c.estado === ESTADO_COBRO.PENDIENTE && <span className={ETIQUETA}>{diasEsperando(c, ahora)} d esperando</span>}
@@ -214,7 +236,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                   <div className="hidden md:block rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-x-auto">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                        <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
+                        <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                         {filas.map((c) => (
@@ -226,6 +248,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                             <td className="px-3 py-2.5 min-w-[8rem] text-zinc-700 dark:text-zinc-300 break-words">{tipoTexto(c)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap">{estadoChip(c)}</td>
+                            <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoClienteDe(c) ? <PagoDelCliente orden={c} tamano="compacto" /> : <span className="text-xs text-zinc-400">-</span>}</td>
                             <td className="px-3 py-2.5"><Boton variante={accionDestacada(c) ? 'principal' : 'secundario'} tamano="compacto" onClick={() => setAbierto(c.id)}>{accionTexto(c)}</Boton></td>
                           </tr>
                         ))}
@@ -237,7 +260,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
             </>
           )}
         </main>
-        {cobroAbierto && <CobroModal key={cobroAbierto.id} cobro={cobroAbierto} onTrabajar={trabajar} onClose={() => setAbierto(null)} />}
+        {cobroAbierto && <CobroModal key={cobroAbierto.id} cobro={cobroAbierto} onTrabajar={trabajar} correccion={esAdmin ? { cuentasEmpresa: normalizarFormasPago(formasPago), onCorregir: corregirPago } : null} onClose={() => setAbierto(null)} />}
         <PieVersion />
       </div>
     </div>

@@ -1,7 +1,7 @@
 // Prueba el cobro de cada orden para ADMINISTRACION (src/utils/cobrosClientes.js): cuándo se emite, qué lleva, cómo cambia si la orden cambia, lo que hace Administración
 // (cargar, devolver, confirmar un cambio de monto) y las listas y resúmenes. No necesita el emulador. Uso: `npm run test:cobroscliente`.
 import {
-  ESTADO_COBRO, cobroDesdePagoPendiente, armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, avisoDeCobro, cobrosDelPeriodo, diasEsperando, filtrarCobros, ordenarCobros, resumenCobros,
+  ESTADO_COBRO, cobroDesdePagoPendiente, armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, avisoDeCobro, cobrosDelPeriodo, columnasCobros, diasEsperando, filaCobro, filtrarCobros, ordenarCobros, resumenCobros,
   sincronizarCobro, textoDeCobro, textoParaCopiar,
 } from '../src/utils/cobrosClientes.js';
 
@@ -30,6 +30,17 @@ check('el historial arranca con quién lo emitió', [cobro.historial.length, cob
 check('el texto del cobro: con monto y sin él', [textoDeCobro(cobro), textoDeCobro(armarCobro(instalacion, { por: 'o', ahora: AHORA }))], ['5.696 Bs', 'Monto por definir']);
 check('el aviso a Administración trae la orden, el cliente y el monto', avisoDeCobro(cobro), { title: 'Cobro por cargar', body: 'AO7 · Ana Pérez · 5.696 Bs' });
 check('lo que se copia para subirlo al portal', textoParaCopiar(cobro).split('\n'), ['Orden: AO7', 'Cliente: Ana Pérez', 'Cédula: 12345678', 'Teléfono: 0414-1234567', 'Trabajo: AVERÍA - LOS', 'Monto: 5.696 Bs']);
+
+// --- El pago que registró el técnico ---
+const PAGO = { tipo: 'PAGO', pago: { moneda: 'USD', forma: 'Zelle', monto: 20, banco: 'Bank of America', titular: 'Juan Pérez', cuentaEmpresa: 'Zelle · empresa', referencia: 'Z1', pagadoEn: AHORA }, nota: 'Pagó en efectivo', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'jose', registradoEn: AHORA };
+const conPago = armarCobro({ ...visita, pagoCliente: PAGO }, { por: 'oficina', ahora: AHORA });
+check('si la orden ya trae el pago del técnico, el cobro nace con su copia; sin pago no lleva el campo', [conPago.pagoCliente?.pago.forma, conPago.pagoCliente?.nota, 'pagoCliente' in cobro], ['Zelle', 'Pagó en efectivo', false]);
+check('una instalación también la lleva', armarCobro({ ...instalacion, pagoCliente: PAGO }, { por: 'o', ahora: AHORA }).pagoCliente?.tipo, 'PAGO');
+check('un pagoCliente que no es un resumen válido no pasa al cobro', [armarCobro({ ...visita, pagoCliente: { tipo: 'OTRO' } }, { por: 'o', ahora: AHORA }), armarCobro({ ...visita, pagoCliente: 'x' }, { por: 'o', ahora: AHORA })].map((c) => 'pagoCliente' in c), [false, false]);
+check('lo que se copia al portal no lleva el pago del técnico: es interno', [textoParaCopiar(conPago).includes('Zelle'), textoParaCopiar(conPago).includes('efectivo')], [false, false]);
+const conPagoInstalacion = armarCobro({ ...instalacion, pagoCliente: PAGO }, { por: 'o', ahora: AHORA });
+check('la tabla de Finanzas trae el pago como última columna, solo en instalaciones y cambios de equipo', [columnasCobros().at(-1).titulo, filaCobro(conPago).at(-1), filaCobro(conPagoInstalacion).at(-1), filaCobro(armarCobro({ ...dolares, pagoCliente: PAGO }, { por: 'o', ahora: AHORA })).at(-1), columnasCobros().length === filaCobro(cobro).length], ['Pago del cliente', '', 'Zelle · Bank of America · ref. Z1 · 20 $ | Pagó en efectivo', 'Zelle · Bank of America · ref. Z1 · 20 $ | Pagó en efectivo', true]);
+check('un cobro con el pago se carga igual que uno sin él (el pago no cambia)', [armarCarga(conPago, {}, { por: 'adm', ahora: AHORA + 2 }).cambios.estado, 'pagoCliente' in armarCarga(conPago, {}, { por: 'adm', ahora: AHORA + 2 }).cambios], [ESTADO_COBRO.CARGADO, false]);
 
 // --- Si la orden cambia ---
 check('pendiente: si la oficina cambia el monto, se actualiza solo', (({ cambios }) => [cambios.monto, cambios.moneda, cambios.historial.length])(sincronizarCobro(cobro, { ...visita, cobroBs: '8.000' }, { por: 'oficina', ahora: AHORA + 1 })), [8000, 'BS', 2]);

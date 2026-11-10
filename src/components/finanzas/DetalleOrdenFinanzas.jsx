@@ -10,6 +10,7 @@ import { culminadaEn } from '../../utils/reporteMensual';
 import { aBs, bolivares, dolares, grupoDePago } from '../../utils/finanzas';
 import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
 import InsigniaJM from '../InsigniaJM';
+import PagoDelCliente from '../PagoDelCliente';
 import CobroClienteDetalle from '../CobroClienteDetalle';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
@@ -35,8 +36,8 @@ function textoCobro(orden) {
   return esInstalacion(orden.tipoTrabajo) ? 'Sin monto fijado por la oficina' : 'Sin cobro registrado';
 }
 
-// `item`: { orden, concepto, tecnico } de ordenesPagables; `tarifas`: el tabulador de precios.
-export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose, ajustes = [] }) {
+// `item`: { orden, concepto, tecnico } de ordenesPagables; `tarifas`: el tabulador de precios. `verTodoPago`: Revisión (solo ADMIN) ve el pago del cliente de cualquier orden; Finanzas, solo el de las instalaciones y los cambios de equipo.
+export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose, ajustes = [], verTodoPago = false }) {
   const { orden, concepto, registro } = item;
   // Una orden ya pagada muestra lo que se le pagó; una por pagar, el precio de hoy.
   const precio = item.pagada ? item.monto : tarifas[concepto] || 0;
@@ -79,6 +80,8 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
               <CobroClienteDetalle ticketId={orden.id ?? item.clave} paraFinanzas />
             </div>
           )}
+
+          {!registro && <PagoDelCliente orden={orden} bloque paraFinanzas={!verTodoPago} />}
 
           <div className="flex items-center justify-between gap-3 rounded-xl bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
             <div className="min-w-0">
