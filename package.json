@@ -25,6 +25,7 @@
     "test:pagocliente": "node scripts/test-pago-cliente.mjs",
     "test:pagoenorden": "node scripts/test-pago-en-orden.mjs",
     "test:lecturaserial": "node scripts/test-lectura-serial.mjs",
+    "test:confirmarprefinalizar": "node scripts/test-confirmar-prefinalizar.mjs",
     "test:cobroscliente": "node scripts/test-cobros-clientes.mjs",
     "test:llenarolt": "node scripts/test-llenar-olt.mjs",
     "test:revisionpagos": "node scripts/test-revision-pagos.mjs",

@@ -11,6 +11,7 @@ import ContactoCliente from '../ContactoCliente';
 import DevolucionAviso from '../DevolucionAviso';
 import { devolucionPendiente, reporteTecnicoInicial } from '../../utils/devolucion';
 import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
+import { datosParaConfirmar } from '../../utils/confirmarPreFinalizar';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
 import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo } from '../../utils/tipoVisita';
@@ -479,6 +480,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
       <ConfirmPreFinalizarModal
         ticket={ticket}
         visita={etiquetaVisita}
+        datos={datosParaConfirmar(porConfirmar)}
         pago={porConfirmar.pagoCliente ? decisionDePago(porConfirmar.pagoCliente) : null}
         isSubmitting={isSubmitting}
         onCancel={() => setPorConfirmar(null)}
