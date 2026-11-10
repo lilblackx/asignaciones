@@ -5,6 +5,7 @@ import { autoTable } from 'jspdf-autotable';
 import { graficoAImagen } from './graficoImagen.js';
 import { fechaHoraLegible } from './formatoFecha.js';
 import { cargarLogo } from './logoReportes.js';
+import { ajustarTabla } from './tablaAngosta.js';
 
 const MARCA = 'ASIGNACIONES NS';
 const MARGEN = 15;
@@ -17,7 +18,9 @@ const FONDO = [244, 244, 245];
 const BORDE = [225, 224, 217];
 
 // Los textos estándar del PDF (Helvetica) solo traen el alfabeto latino básico: lo demás se reemplaza por algo equivalente.
+// El espacio sin salto (el de "21,33 $") se cambia por uno común: jsPDF lo mide como dos espacios y lo alineado a la derecha (los montos) quedaba unos 2,4 pt corrido a la izquierda de su encabezado.
 const limpio = (texto) => String(texto ?? '')
+  .replaceAll(String.fromCharCode(160), ' ')
   .replace(/[—–]/g, '-')
   .replace(/[“”]/g, '"')
   .replace(/[‘’]/g, "'")
@@ -56,7 +59,7 @@ export async function generarPdf(modelo) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(200, 200, 200);
-  texto('Reporte de gestión', ancho - MARGEN, 14.5, { align: 'right' });
+  texto(modelo.etiqueta || 'Reporte de gestión', ancho - MARGEN, 14.5, { align: 'right' });
 
   y = 38;
   doc.setFont('helvetica', 'bold');
@@ -138,34 +141,76 @@ export async function generarPdf(modelo) {
     y += lineas.length * 3.6 + 5;
   };
 
-  const tabla = (b) => {
+  const tabla = (original) => {
     // El título, el encabezado de la tabla y un par de filas van juntos: si no caben, todo pasa a la página siguiente.
-    asegurar(b.filas.length === 0 ? 20 : 40);
-    encabezadoDeSeccion(b.titulo || '', b.nota);
-    if (b.filas.length === 0) {
+    asegurar(original.filas.length === 0 ? 20 : 40);
+    encabezadoDeSeccion(original.titulo || '', original.nota);
+    if (original.filas.length === 0) {
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(9);
       color(GRIS_TENUE);
-      texto(b.vacio || 'Sin datos en este periodo.', MARGEN, y);
+      texto(original.vacio || 'Sin datos en este periodo.', MARGEN, y);
       y += 9;
       return;
     }
+    // Ninguna columna debe partir sus palabras ("Instalacione/s", "Órden/es"): cada una mide lo que su palabra más larga (con tope, para que un texto sin espacios no deje sin sitio a las demás)
+    // y, si todas juntas no caben, la letra baja de 8,5 a un mínimo de 6,5. Lo que queda libre se lo reparten las columnas de texto, que sí pueden saltar de línea.
+    // RELLENO: los bordes de la celda (2,5 por lado) y un poco más, para que una palabra que justo cabe no salte de línea por un redondeo.
+    const RELLENO = 5.4;
+    const TOPE_MINIMO = 38;
+    const LETRA_MAXIMA = 8.5;
+    const LETRA_COMODA = 7.5;
+    const LETRA_MINIMA = 6.5;
+    // Solo el espacio común separa palabras: el espacio sin salto de "1.010.845,61 Bs" las une, y la columna debe dar cabida a las dos partes juntas.
+    const medida = (palabra) => doc.getTextWidth(limpio(palabra));
+    // Si no cabe con las palabras enteras ni a una letra cómoda (7,5), las columnas que sobran pasan a una línea gris debajo de cada fila (ver utils/tablaAngosta): mejor eso que una letra diminuta.
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(LETRA_COMODA);
+    const b = ajustarTabla(original, { ancho: medida, util, relleno: RELLENO, tope: TOPE_MINIMO });
+    const minimosA = (fuente) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fuente);
+      return b.columnas.map((c, i) => {
+        const palabras = [c.titulo, ...b.filas.map((f) => f[i])].flatMap((t) => String(t ?? '').split(/[ \t\r\n]+/)).filter(Boolean);
+        return Math.min(TOPE_MINIMO, Math.max(0, ...palabras.map(medida)) + RELLENO);
+      });
+    };
+    let fuente = LETRA_MAXIMA;
+    let minimos = minimosA(fuente);
+    while (minimos.reduce((suma, m) => suma + m, 0) > util && fuente > LETRA_MINIMA) {
+      fuente -= 0.5;
+      minimos = minimosA(fuente);
+    }
+    // Último recurso (casi imposible tras ajustarTabla): si aun así no caben se reducen en proporción, para que la tabla nunca pase del margen; una palabra podría partirse.
+    const sumaMinimos = minimos.reduce((suma, m) => suma + m, 0);
+    if (sumaMinimos > util) minimos = minimos.map((m) => (m * util) / sumaMinimos);
+    // Las filas con una línea gris debajo (`subfilas`, lo que no cabe en las columnas: forma de pago, nota...) forman una sola pieza: la línea no lleva raya encima y la raya va al final del conjunto.
+    const conLinea = new Set();
+    const cuerpo = [];
+    b.filas.forEach((f, r) => {
+      const fondo = r % 2 === 1 ? [250, 250, 249] : [255, 255, 255];
+      cuerpo.push(f.map((t) => ({ content: limpio(t), styles: { fillColor: fondo } })));
+      const linea = b.subfilas?.[r];
+      if (linea) {
+        conLinea.add(cuerpo.length - 1);
+        cuerpo.push([{ content: limpio(linea), colSpan: b.columnas.length, styles: { fillColor: fondo, textColor: GRIS, fontStyle: 'normal', halign: 'left', fontSize: Math.max(6, fuente - 1), cellPadding: { top: 0, bottom: 2.2, left: 2.5, right: 2.5 } } }]);
+      }
+    });
     autoTable(doc, {
       startY: y,
       margin: { left: MARGEN, right: MARGEN, top: MARGEN + 6, bottom: PIE + 4 },
       head: [b.columnas.map((c) => limpio(c.titulo))],
-      body: b.filas.map((f) => f.map(limpio)),
+      body: cuerpo,
       theme: 'plain',
-      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 }, textColor: NEGRO, overflow: 'linebreak' },
-      headStyles: { fillColor: [24, 24, 27], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-      alternateRowStyles: { fillColor: [250, 250, 249] },
-      columnStyles: Object.fromEntries(b.columnas.map((c, i) => [i, { halign: c.derecha ? 'right' : 'left', fontStyle: c.derecha ? 'bold' : i === 0 ? 'bold' : 'normal' }])),
+      styles: { font: 'helvetica', fontSize: fuente, cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 }, textColor: NEGRO, overflow: 'linebreak' },
+      headStyles: { fillColor: [24, 24, 27], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: fuente - 0.5, valign: 'middle' },
+      columnStyles: Object.fromEntries(b.columnas.map((c, i) => [i, { halign: c.derecha ? 'right' : 'left', fontStyle: c.derecha ? 'bold' : i === 0 ? 'bold' : 'normal', minCellWidth: minimos[i] }])),
       didParseCell: (data) => {
-        // El encabezado de las columnas numéricas también va a la derecha, sobre sus cifras.
-        if (data.section === 'head' && b.columnas[data.column.index]?.derecha) data.cell.styles.halign = 'right';
+        // Cada encabezado se alinea igual que los datos de su columna: a la derecha las numéricas (sobre sus cifras) y a la izquierda las de texto. Ninguno queda centrado.
+        if (data.section === 'head') data.cell.styles.halign = b.columnas[data.column.index]?.derecha ? 'right' : 'left';
       },
       didDrawCell: (data) => {
-        if (data.section === 'body') {
+        if (data.section === 'body' && !conLinea.has(data.row.index)) {
           doc.setDrawColor(...BORDE);
           doc.setLineWidth(0.15);
           doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
@@ -205,6 +250,7 @@ export async function generarPdf(modelo) {
   for (const b of modelo.bloques) {
     if (b.tipo === 'cifras') cifras(b.items);
     else if (b.tipo === 'seccion') encabezadoDeSeccion(b.titulo);
+    else if (b.tipo === 'salto') { if (y > MARGEN + 8) nuevaPagina(); }
     else if (b.tipo === 'texto') parrafo(b.texto);
     else if (b.tipo === 'tabla' && !b.soloCsv) tabla(b);
     else if (b.tipo === 'lista') lista(b);
@@ -230,7 +276,8 @@ export async function generarPdf(modelo) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     color(GRIS_TENUE);
-    texto(`${MARCA}  |  Documento de uso interno  |  Generado el ${fechaHoraLegible(modelo.generado.en)}`, MARGEN, alto - PIE + 5);
+    // `modelo.pie`: el texto del medio (los documentos para compartir con alguien de fuera no son "de uso interno"; con '' no lleva ninguno).
+    texto([MARCA, modelo.pie ?? 'Documento de uso interno', `Generado el ${fechaHoraLegible(modelo.generado.en)}`].filter(Boolean).join('  |  '), MARGEN, alto - PIE + 5);
     texto(`Página ${p} de ${paginas}`, ancho - MARGEN, alto - PIE + 5, { align: 'right' });
   }
 

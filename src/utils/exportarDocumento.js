@@ -6,9 +6,9 @@ const FORMATOS = {
   docx: { extension: 'docx', cargar: async () => (await import('./exportarDocx.js')).generarDocx },
 };
 
-// "tiempo-de-atencion_2026-10-13_2026-10-19" a partir del título del reporte y su periodo.
+// "tiempo-de-atencion_2026-10-13_2026-10-19" a partir del título del reporte y su periodo (o de `modelo.nombreArchivo`, si el documento trae uno: "pagos-detallados-jose_...").
 export function nombreDeArchivo(modelo, rango) {
-  const base = modelo.titulo.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const base = (modelo.nombreArchivo || modelo.titulo).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return rango ? `${base}_${rango.desde}_${rango.hasta}` : `${base}_${new Date(modelo.generado.en).toISOString().slice(0, 10)}`;
 }
 

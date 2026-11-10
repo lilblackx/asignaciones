@@ -1,11 +1,12 @@
 // Arma el Word (.docx) de un documento de reporte (ver modelosReporte.js): mismo contenido que el PDF pero editable. A4 vertical, encabezado de
 // marca, cifras en tarjetas, gráficos como imagen, tablas con filas alternadas y pie con número de página. Se carga solo al exportar.
 import {
-  AlignmentType, BorderStyle, Document, Footer, Header, ImageRun, Packer, PageNumber, Paragraph, ShadingType, Table, TableLayoutType, TableRow, TableCell, TextRun, VerticalAlign, WidthType,
+  AlignmentType, BorderStyle, Document, Footer, Header, ImageRun, Packer, PageBreak, PageNumber, Paragraph, ShadingType, Table, TableLayoutType, TableRow, TableCell, TextRun, VerticalAlign, WidthType,
 } from 'docx';
 import { graficoAImagen } from './graficoImagen.js';
 import { fechaHoraLegible } from './formatoFecha.js';
 import { cargarLogo } from './logoReportes.js';
+import { ajustarTabla } from './tablaAngosta.js';
 
 const MARCA = 'ASIGNACIONES NS';
 const ANCHO_UTIL = 9638; // A4 (11906) menos márgenes de 2 cm, en veinteavos de punto
@@ -62,7 +63,8 @@ const RELLENO_CELDA = 260;
 function anchosDeColumnas(b) {
   const textos = (i) => [b.columnas[i].titulo, ...b.filas.map((f) => String(f[i] ?? ''))];
   const pesos = b.columnas.map((_, i) => Math.min(30, Math.max(7, ...textos(i).map((t) => t.length))));
-  const minimos = b.columnas.map((_, i) => Math.max(...textos(i).flatMap((t) => t.split(/\s+/)).map((p) => p.length)) * TWIPS_POR_LETRA + RELLENO_CELDA);
+  // Solo el espacio común separa palabras: el espacio sin salto de "1.010.845,61 Bs" las une.
+  const minimos = b.columnas.map((_, i) => Math.max(...textos(i).flatMap((t) => t.split(/[ \t\r\n]+/)).map((p) => p.length)) * TWIPS_POR_LETRA + RELLENO_CELDA);
   const fijas = new Set();
   let anchos = [];
   for (let vuelta = 0; vuelta <= b.columnas.length; vuelta += 1) {
@@ -80,17 +82,29 @@ function anchosDeColumnas(b) {
   return anchos;
 }
 
-function tabla(b) {
-  if (b.filas.length === 0) return [...seccion(b.titulo || '', b.nota), parrafo([corrida(b.vacio || 'Sin datos en este periodo.', { size: 18, italics: true, color: '898781' })])];
+function tabla(original) {
+  if (original.filas.length === 0) return [...seccion(original.titulo || '', original.nota), parrafo([corrida(original.vacio || 'Sin datos en este periodo.', { size: 18, italics: true, color: '898781' })])];
+  // Si no cabe sin partir palabras, las columnas que sobran pasan a una línea gris debajo de cada fila (ver utils/tablaAngosta).
+  const b = ajustarTabla(original, { ancho: (palabra) => palabra.length * TWIPS_POR_LETRA, util: ANCHO_UTIL, relleno: RELLENO_CELDA });
   const anchos = anchosDeColumnas(b);
   const borde = { style: BorderStyle.SINGLE, size: 4, color: 'E1E0D9' };
-  const celda = (texto, i, { cabecera = false, par = false } = {}) => new TableCell({
+  const celda = (texto, i, { cabecera = false, par = false, conLinea = false } = {}) => new TableCell({
     width: { size: anchos[i], type: WidthType.DXA },
     shading: cabecera ? { type: ShadingType.CLEAR, fill: '18181B', color: 'auto' } : par ? { type: ShadingType.CLEAR, fill: 'FAFAF9', color: 'auto' } : undefined,
-    margins: { top: 70, bottom: 70, left: 110, right: 110 },
-    verticalAlign: VerticalAlign.CENTER,
-    borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: cabecera ? SIN_BORDE : borde },
-    children: [parrafo([corrida(texto, { size: cabecera ? 16 : 17, bold: cabecera || b.columnas[i].derecha || i === 0, color: cabecera ? 'FFFFFF' : '0B0B0B' })], { alignment: b.columnas[i].derecha ? AlignmentType.RIGHT : AlignmentType.LEFT })],
+    margins: { top: 70, bottom: conLinea ? 20 : 70, left: 110, right: 110 },
+    // Igual que en el PDF: el encabezado centrado en vertical y los datos arriba, para que una celda de varias líneas no desplace a las de al lado.
+    verticalAlign: cabecera ? VerticalAlign.CENTER : VerticalAlign.TOP,
+    borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: cabecera || conLinea ? SIN_BORDE : borde },
+    children: [parrafo([corrida(texto, { size: cabecera ? 16 : 17, bold: cabecera || b.columnas[i].derecha || i === 0, color: cabecera ? 'FFFFFF' : '0B0B0B' })], { alignment: b.columnas[i].derecha ? AlignmentType.RIGHT : AlignmentType.LEFT, keepNext: conLinea })],
+  });
+  // La línea gris de debajo de una fila (`subfilas`: lo que no cabe en las columnas: forma de pago, nota...): una celda que ocupa todo el ancho y lleva la raya del conjunto.
+  const celdaLinea = (texto, par) => new TableCell({
+    columnSpan: b.columnas.length,
+    width: { size: ANCHO_UTIL, type: WidthType.DXA },
+    shading: par ? { type: ShadingType.CLEAR, fill: 'FAFAF9', color: 'auto' } : undefined,
+    margins: { top: 0, bottom: 70, left: 110, right: 110 },
+    borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: borde },
+    children: [parrafo([corrida(texto, { size: 15, color: '52514E' })])],
   });
   return [
     ...seccion(b.titulo || '', b.nota),
@@ -100,7 +114,12 @@ function tabla(b) {
       layout: TableLayoutType.FIXED,
       rows: [
         new TableRow({ tableHeader: true, cantSplit: true, children: b.columnas.map((c, i) => celda(c.titulo, i, { cabecera: true })) }),
-        ...b.filas.map((f, r) => new TableRow({ cantSplit: true, children: f.map((t, i) => celda(t, i, { par: r % 2 === 1 })) })),
+        ...b.filas.flatMap((f, r) => {
+          const par = r % 2 === 1;
+          const linea = b.subfilas?.[r];
+          const fila = new TableRow({ cantSplit: true, children: f.map((t, i) => celda(t, i, { par, conLinea: Boolean(linea) })) });
+          return linea ? [fila, new TableRow({ cantSplit: true, children: [celdaLinea(linea, par)] })] : [fila];
+        }),
       ],
     }),
   ];
@@ -165,6 +184,7 @@ export async function generarDocx(modelo) {
   for (const b of modelo.bloques) {
     if (b.tipo === 'cifras') { hijos.push(tarjetas(b.items), parrafo([], { spacing: { after: 120 } })); }
     else if (b.tipo === 'seccion') hijos.push(...seccion(b.titulo));
+    else if (b.tipo === 'salto') hijos.push(parrafo([new PageBreak()]));
     else if (b.tipo === 'texto') hijos.push(parrafo([corrida(b.texto, { size: 16, color: '52514E' })], { spacing: { before: 120, after: 120 } }));
     else if (b.tipo === 'tabla' && !b.soloCsv) hijos.push(...tabla(b), parrafo([], { spacing: { after: 160 } }));
     else if (b.tipo === 'lista') hijos.push(...lista(b));
@@ -186,7 +206,8 @@ export async function generarDocx(modelo) {
       footers: {
         default: new Footer({
           children: [parrafo([
-            corrida(`Documento de uso interno   |   Generado el ${fechaHoraLegible(modelo.generado.en)}`, { size: 15, color: '898781' }),
+            // `modelo.pie`: el texto del medio (los documentos para compartir con alguien de fuera no son "de uso interno"; con '' no lleva ninguno).
+            corrida([modelo.pie ?? 'Documento de uso interno', `Generado el ${fechaHoraLegible(modelo.generado.en)}`].filter(Boolean).join('   |   '), { size: 15, color: '898781' }),
             corrida('\tPágina ', { size: 15, color: '898781' }),
             new TextRun({ children: [PageNumber.CURRENT], font: FUENTE, size: 15, color: '898781' }),
             corrida(' de ', { size: 15, color: '898781' }),
