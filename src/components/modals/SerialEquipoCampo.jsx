@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TIPOS_DE_EQUIPO } from '../../constants';
+import BotonEscanearSerial from '../BotonEscanearSerial';
 import SelectMenu from '../SelectMenu';
 import { MAX_LARGO_SERIAL } from '../../utils/instalacion';
 import { evaluarSerialCaja } from '../../utils/serialOlt';
@@ -32,6 +33,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
       <label htmlFor="pf-serial-equipo" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
         SERIAL DEL EQUIPO NUEVO <span className="font-normal text-red-500">(obligatorio)</span>
       </label>
+      <div className="flex items-stretch gap-2">
       <input
         id="pf-serial-equipo"
         type="text"
@@ -45,8 +47,10 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
         onBlur={() => setTocado(true)}
         aria-invalid={!!error || rojo}
         aria-describedby={error || rojo || verde ? 'pf-serial-equipo-error' : undefined}
-        className={claseCampo('grande', error || rojo ? 'error' : verde ? 'ok' : 'normal')}
+        className={`${claseCampo('grande', error || rojo ? 'error' : verde ? 'ok' : 'normal')} min-w-0 flex-1`}
       />
+      <BotonEscanearSerial onLeido={(leido) => { onSerial(leido.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase()); setTocado(true); }} />
+      </div>
       {error || rojo
         ? <p id="pf-serial-equipo-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>
         : verde && <p id="pf-serial-equipo-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacion.mensaje}</p>}

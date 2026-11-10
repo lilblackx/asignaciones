@@ -46,8 +46,10 @@ export function evaluarSerialCaja(serial) {
   const texto = limpio(serial);
   if (!texto) return { estado: 'vacio', codigo: '', mensaje: '' };
   if (texto.startsWith('GOPN')) return { estado: 'error', codigo: 'GOPN', mensaje: 'Dice GOPN: debe ser GPON. Revisa el serial de la caja.' };
-  if (esSerialOlt(serialParaOlt(texto))) return { estado: 'ok', codigo: '', mensaje: 'Serial correcto.' };
+  // 12 caracteres hexadecimales y nada más es una MAC (CC-BA-BD-AA-8E-40 -> CCBABDAA8E40). Va antes de la verificación de "4 letras + 8 hexadecimales": una MAC que empieza con cuatro letras A-F (como esa)
+  // se parece a un serial de OLT y se colaba como correcta. Un serial de OLT siempre trae en sus 4 letras alguna que no es hexadecimal (VSOL, TPLG, HWTC, BTPT...).
   if (/^[0-9A-F]{12}$/.test(texto)) return { estado: 'error', codigo: 'MAC', mensaje: 'Eso parece la MAC. Escribe el serial de la etiqueta (PON S/N o GPON/SN).' };
+  if (esSerialOlt(serialParaOlt(texto))) return { estado: 'ok', codigo: '', mensaje: 'Serial correcto.' };
   return { estado: 'error', codigo: 'FORMATO', mensaje: 'Revisa el serial: no tiene el formato esperado (ej. VSOL00E65D25, GPON… o el XPSN de AmericanPon).' };
 }
 

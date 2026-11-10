@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
+import BotonEscanearSerial from '../BotonEscanearSerial';
 import NapPuertoCampos from './NapPuertoCampos';
 import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
@@ -30,6 +31,7 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
         <label htmlFor="pf-serial" className={claseEtiqueta}>
           SERIAL <span className="font-normal text-red-500">(obligatorio)</span>
         </label>
+        <div className="flex items-stretch gap-2">
         <input
           id="pf-serial"
           type="text"
@@ -43,11 +45,15 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           onBlur={() => setSerialTocado(true)}
           aria-invalid={!!errores.serial || serialRojo}
           aria-describedby={errores.serial || serialRojo || serialVerde ? 'pf-serial-error' : undefined}
-          className={claseInput(errores.serial || serialRojo, serialVerde)}
+          className={`${claseInput(errores.serial || serialRojo, serialVerde)} min-w-0 flex-1`}
         />
+        <BotonEscanearSerial onLeido={(leido) => { onSerial(leido.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase()); setSerialTocado(true); }} />
+        </div>
         {errores.serial || serialRojo
           ? <p id="pf-serial-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.serial || evaluacionSerial.mensaje}</p>
-          : serialVerde && <p id="pf-serial-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacionSerial.mensaje}</p>}
+          : serialVerde
+          ? <p id="pf-serial-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacionSerial.mensaje}</p>
+          : <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Escríbelo o escanea el código de barras de la caja: el que dice <b>PON S/N</b> o <b>GPON SN</b>.</p>}
       </div>
 
       <div className="space-y-1">
