@@ -14,7 +14,7 @@ import { direccionCliente, nombrePersona } from '../utils/datosCliente';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../utils/whatsapp';
 import { esVentaPorNumerar, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
 import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion, ubicacionObligatoria } from '../utils/ubicacion';
-import { errorGarantia, esTipoGarantia } from '../utils/garantia';
+import { codigoManualDeOrdenNueva, errorGarantia, esTipoGarantia } from '../utils/garantia';
 import { cambiosDeTicket } from '../utils/cambiosTicket';
 import { ConflictoOrdenError, verificarEstado } from '../utils/concurrencia';
 import { camposTiempos, conTiempos } from '../utils/tiemposOrden';
@@ -791,8 +791,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     // milisegundo compartían id y la segunda pisaba a la primera.
     const newId = doc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets')).id;
 
-    // Código manual (si el usuario lo escribió) tiene prioridad y no consume el contador automático.
-    const codigoManual = (formData.codigo || '').trim();
+    // Código manual (si el usuario lo escribió) tiene prioridad y no consume el contador automático. Una garantía de otro técnico es una orden nueva: no hereda el código de la original.
+    const codigoManual = codigoManualDeOrdenNueva(formData.tipoTrabajo, formData.codigo, formData.garantiaDe);
     const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
     const tieneTecnico = Boolean(formData.tecnico && formData.tecnico.trim());
     const { ventaTecnico, garantiaDe, ...datosOrden } = formData;

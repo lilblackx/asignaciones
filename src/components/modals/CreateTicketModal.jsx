@@ -5,7 +5,7 @@ import { TIPOS_POR_TRABAJO } from '../../constants';
 import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchivados, buscarHistorialCliente, textoHace } from '../../utils/reincidencia';
 import { parseInstalacionTemplate, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
 import { buscarTecnicoPorNombre, esVentaDelTecnico } from '../../utils/tecnicoVenta';
-import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia, tecnicoDeOriginal } from '../../utils/garantia';
+import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia, llevaCodigoDeOriginal, tecnicoDeOriginal } from '../../utils/garantia';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import CampoFecha from '../CampoFecha';
@@ -89,10 +89,12 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   );
   // Orden todavía abierta del mismo cliente: pide confirmación antes de crear.
   const ticketDuplicado = historial.abiertas[0] || null;
-  // Una garantía lleva el código de la orden original: las del cliente que se pueden reutilizar, y el error si falta.
+  // Una garantía (del mismo técnico) lleva el código de la orden original: las del cliente que se pueden reutilizar, y el error si falta. Con el check "Garantía de otro técnico" es una
+  // orden nueva para otro técnico: no se pide ni se reutiliza el código de la original y toma un número nuevo de su tipo.
   const esGarantiaTipo = esTipoGarantia(formData.tipoTrabajo);
-  const codigosOriginales = useMemo(() => (esGarantiaTipo ? codigosParaGarantia(ordenesGarantia, formData.cedula) : []), [esGarantiaTipo, ordenesGarantia, formData.cedula]);
-  const errorCodigo = errorCodigoGarantia(formData.tipoTrabajo, formData.codigo, codigosOriginales);
+  const usaCodigoOriginal = llevaCodigoDeOriginal(formData.tipoTrabajo, formData.garantiaDe);
+  const codigosOriginales = useMemo(() => (usaCodigoOriginal ? codigosParaGarantia(ordenesGarantia, formData.cedula) : []), [usaCodigoOriginal, ordenesGarantia, formData.cedula]);
+  const errorCodigo = errorCodigoGarantia(formData.tipoTrabajo, formData.codigo, codigosOriginales, formData.garantiaDe);
   // Reincidencia: solo tiene sentido si esto no es una instalación nueva.
   const reincidencias = esInstalacion ? [] : historial.recientes;
   const reincidenciaMuyReciente = reincidencias.some(r => r.dias <= REINCIDENCIA_MUY_RECIENTE_DIAS);
@@ -100,13 +102,13 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   // Al elegir o escribir el código de la orden original, la garantía se asigna al técnico de esa orden (si sigue en la lista de técnicos). Se aplica una vez por código: después se puede cambiar a mano.
   const codigoAsignado = useRef('');
   useEffect(() => {
-    const codigo = esGarantiaTipo ? formData.codigo.trim().toUpperCase() : '';
+    const codigo = usaCodigoOriginal ? formData.codigo.trim().toUpperCase() : '';
     if (codigo === codigoAsignado.current) return;
     codigoAsignado.current = codigo;
     const nombre = tecnicoDeOriginal(ordenesGarantia, codigo, formData.cedula);
     const tecnicoOriginal = nombre && technicians.find((t) => t.name === nombre);
     if (tecnicoOriginal && tecnicoOriginal.name !== formData.tecnico) handleCreateChange({ target: { name: 'tecnico', value: tecnicoOriginal.name, type: 'text' } });
-  }, [esGarantiaTipo, formData.codigo, formData.cedula, formData.tecnico, ordenesGarantia, technicians, handleCreateChange]);
+  }, [usaCodigoOriginal, formData.codigo, formData.cedula, formData.tecnico, ordenesGarantia, technicians, handleCreateChange]);
 
   const doSubmit = async () => {
     setIsSubmitting(true);
@@ -208,7 +210,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           </div>
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-codigo" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">CÓDIGO</label>
-            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={esGarantiaTipo && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className={`${CAMPO_ORDEN} uppercase placeholder:normal-case placeholder:text-zinc-400`} />
+            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={usaCodigoOriginal && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className={`${CAMPO_ORDEN} uppercase placeholder:normal-case placeholder:text-zinc-400`} />
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
             <label htmlFor="tk-fecha-prog" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
@@ -281,7 +283,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             emptyOptionLabel="N/A"
           />
 
-          {esGarantiaTipo && (
+          {usaCodigoOriginal && (
             <div className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-1.5 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200">
               {codigosOriginales.length > 0 ? (
                 <>
@@ -315,11 +317,21 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             />
           )}
 
+          {esGarantiaTipo && formData.garantiaDe && (
+            <p className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200">
+              Es una garantía de otro técnico: es una orden nueva para él, así que toma un número nuevo y no el código de la original.
+            </p>
+          )}
+
           <GarantiaField
             wrapperClassName="col-span-2 sm:col-span-5"
             idPrefix="tk"
             value={formData.garantiaDe}
-            onChange={(value) => handleCreateChange({ target: { name: 'garantiaDe', value, type: 'garantia' } })}
+            onChange={(value) => {
+              handleCreateChange({ target: { name: 'garantiaDe', value, type: 'garantia' } });
+              // Al marcar el check, el código de la original que ya se hubiera elegido o escrito se quita: la orden nueva toma el suyo.
+              if (value && esGarantiaTipo && formData.codigo) handleCreateChange({ target: { name: 'codigo', value: '', type: 'text' } });
+            }}
             ordenes={ordenesGarantia}
             tecnico={formData.tecnico}
             cedula={formData.cedula}

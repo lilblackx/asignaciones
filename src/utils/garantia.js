@@ -38,10 +38,24 @@ export function tecnicoDeOriginal(ordenes, codigo, cedula = '') {
 }
 
 // Al crear una GARANTIA del cliente con \u00f3rdenes anteriores el c\u00f3digo es obligatorio (el de la original). Sin \u00f3rdenes anteriores del cliente en la app, puede quedar vac\u00edo y toma un n\u00famero nuevo.
-export function errorCodigoGarantia(tipoTrabajo, codigo, candidatas) {
-  if (!esTipoGarantia(tipoTrabajo) || String(codigo || '').trim() || !candidatas.length) return '';
+// En una garantía de otro técnico (`garantiaDe`, el valor del check) no se pide: es una orden nueva y toma un número nuevo.
+export function errorCodigoGarantia(tipoTrabajo, codigo, candidatas, garantiaDe = null) {
+  if (!llevaCodigoDeOriginal(tipoTrabajo, garantiaDe) || String(codigo || '').trim() || !candidatas.length) return '';
   return 'Una garant\u00eda lleva el c\u00f3digo de la orden original. Elige una de las \u00f3rdenes del cliente o escribe el c\u00f3digo.';
 }
+
+// Una orden con el check "Garantía de otro técnico" es una orden NUEVA para un técnico distinto: toma su propio número según su tipo de trabajo (AO, IO, VO...), no el de la original.
+// Solo la orden de tipo GARANTIA que se queda con el mismo técnico (sin ese check) reutiliza el código de la original. `garantiaDe`: el valor del check (null si no está marcado; { id: '' } si
+// está marcado pero aún sin original elegida: ya cuenta, para no pedir ni reutilizar el código de la original mientras se elige).
+export const llevaCodigoDeOriginal = (tipoTrabajo, garantiaDe) => esTipoGarantia(tipoTrabajo) && !garantiaDe;
+
+// El código escrito a mano al crear la orden, o '' para que tome el número automático de su tipo. En una garantía de otro técnico de tipo GARANTIA se descarta lo escrito: si no, el código de la
+// original (que el formulario ofrece antes de marcar el check) pasaría a la orden nueva y gastaría su lugar.
+export function codigoManualDeOrdenNueva(tipoTrabajo, codigo, garantiaDe) {
+  if (esTipoGarantia(tipoTrabajo) && garantiaDe) return '';
+  return String(codigo || '').trim();
+}
+
 const mismoTecnico = (a, b) => sinTildes(a) !== '' && sinTildes(a) === sinTildes(b);
 
 // Lo que se guarda en la orden de la garantía para recordar cuál es la original.

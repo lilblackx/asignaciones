@@ -1,5 +1,6 @@
-// Prueba que una garantía toma el código de la orden original (src/utils/garantia.js) y que el código anterior de una orden se puede recuperar del historial (src/utils/correlativo.js).
-import { codigosParaGarantia, errorCodigoGarantia, esTipoGarantia, tecnicoDeOriginal } from '../src/utils/garantia.js';
+// Prueba que una garantía del mismo técnico toma el código de la orden original y una garantía de otro técnico toma un número nuevo (src/utils/garantia.js) y que el código anterior de una orden se puede recuperar del historial (src/utils/correlativo.js).
+import { readFileSync } from 'node:fs';
+import { codigoManualDeOrdenNueva, codigosParaGarantia, errorCodigoGarantia, esTipoGarantia, llevaCodigoDeOriginal, tecnicoDeOriginal } from '../src/utils/garantia.js';
 import { codigosAnteriores } from '../src/utils/correlativo.js';
 
 let failures = 0;
@@ -37,6 +38,26 @@ check('el técnico de la original sale del código, sin importar mayúsculas', t
 check('ignora garantías: IO96 es de ABRAHAM', tecnicoDeOriginal(ordenes, 'IO96', ''), 'ABRAHAM');
 check('prefiere la orden del mismo cliente', tecnicoDeOriginal([...ordenes, { id: '8', codigo: 'IO96', tipoTrabajo: 'INSTALACIÓN', cedula: '999999999', createdAt: 900, tecnico: 'OTRO' }], 'IO96', '18395753'), 'ABRAHAM');
 check('código sin número, vacío o inexistente: sin técnico', [tecnicoDeOriginal(ordenes, 'IO', ''), tecnicoDeOriginal(ordenes, '', ''), tecnicoDeOriginal(ordenes, 'ZZ1', '')], ['', '', '']);
+
+// --- Garantía de otro técnico: es una orden nueva para otro técnico, con su propio número según su tipo (no el código de la original) ---
+const marcadaSinOriginal = { id: '' };
+const conOriginal = { id: 'abc', codigo: 'AO275', tecnico: 'REINEL', cliente: 'X' };
+check('una GARANTIA sin el check de otro técnico reutiliza el código de la original', llevaCodigoDeOriginal('GARANTIA', null), true);
+check('con el check marcado (aunque aún sin original elegida) o con la original elegida, no lo reutiliza', [llevaCodigoDeOriginal('GARANTIA', marcadaSinOriginal), llevaCodigoDeOriginal('GARANTIA', conOriginal)], [false, false]);
+check('otros tipos de trabajo nunca reutilizan el código de la original', ['AVERÍA', 'INSTALACIÓN', 'RECONEXIÓN'].map((t) => llevaCodigoDeOriginal(t, null)), [false, false, false]);
+check('en una garantía de otro técnico no se pide el código de la original', [errorCodigoGarantia('GARANTIA', '', candidatas, conOriginal), errorCodigoGarantia('GARANTIA', '', candidatas, marcadaSinOriginal)], ['', '']);
+check('sin el check se sigue pidiendo (el argumento nuevo es opcional)', [errorCodigoGarantia('GARANTIA', '', candidatas, null), errorCodigoGarantia('GARANTIA', '', candidatas)], [MENSAJE, MENSAJE]);
+check('al guardar, una GARANTIA de otro técnico con su original descarta el código escrito y toma el número automático', codigoManualDeOrdenNueva('GARANTIA', 'AO275', conOriginal), '');
+check('al guardar, una GARANTIA del mismo técnico conserva el código de la original', codigoManualDeOrdenNueva('GARANTIA', ' ao275 ', null), 'ao275');
+check('un código escrito en otro tipo de orden se respeta, aunque lleve el check', [codigoManualDeOrdenNueva('AVERÍA', 'AO300', conOriginal), codigoManualDeOrdenNueva('AVERÍA', '', conOriginal)], ['AO300', '']);
+
+// Conexión: el formulario y el guardado usan estas reglas (no se prueba con el emulador: el número lo asigna utils/correlativo.js como en cualquier orden del tipo).
+const formulario = readFileSync(new URL('../src/components/modals/CreateTicketModal.jsx', import.meta.url), 'utf8');
+const hook = readFileSync(new URL('../src/hooks/useTickets.js', import.meta.url), 'utf8');
+check('el formulario solo ofrece y exige el código de la original cuando no hay garantía de otro técnico', formulario.includes('llevaCodigoDeOriginal(formData.tipoTrabajo, formData.garantiaDe)') && formulario.includes('usaCodigoOriginal ? codigosParaGarantia('), true);
+check('el formulario no asigna el técnico de la original en una garantía de otro técnico', formulario.includes('const codigo = usaCodigoOriginal ?'), true);
+check('al marcar el check se quita el código de la original ya elegido', formulario.includes("if (value && esGarantiaTipo && formData.codigo) handleCreateChange({ target: { name: 'codigo', value: '', type: 'text' } });"), true);
+check('al crear la orden se descarta el código de la original en una garantía de otro técnico', hook.includes('const codigoManual = codigoManualDeOrdenNueva(formData.tipoTrabajo, formData.codigo, formData.garantiaDe);'), true);
 
 const orden = {
   historialEdiciones: [
