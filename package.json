@@ -47,6 +47,7 @@
     "test:recableado": "node scripts/test-recableado.mjs",
     "test:instalacion": "node scripts/test-instalacion.mjs",
     "test:prioridad": "node scripts/test-prioridad.mjs",
+    "test:ruta": "node scripts/test-ruta-del-dia.mjs",
     "test:encamino": "node scripts/test-en-camino.mjs",
     "test:esperas": "node scripts/test-esperas-ciclo.mjs",
     "test:cobros": "node scripts/test-cobros-reporte.mjs",

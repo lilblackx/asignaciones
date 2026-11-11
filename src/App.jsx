@@ -29,6 +29,9 @@ import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
 import { useEnviosInventario } from './hooks/useEnviosInventario';
 import { veEnviosInventario, vinculaTecnicosInventario } from './utils/accesoInventario';
 import { veEstaciones } from './utils/estaciones';
+import BotonRuta from './components/BotonRuta';
+import { useFunciones } from './hooks/useFunciones';
+import { paradasDeRuta } from './utils/rutaDelDia';
 import EstacionesView from './components/EstacionesView';
 import { listarTecnicosInventario } from './lib/inventario';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
@@ -52,7 +55,7 @@ import { useTema } from './hooks/useTema';
 import Sidebar from './components/Sidebar';
 import PieVersion from './components/PieVersion';
 import PaginaMarco from './components/PaginaMarco';
-import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, MonitorSmartphone, PackageCheck, ShieldCheck, Users } from 'lucide-react';
+import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, MonitorSmartphone, PackageCheck, Settings, ShieldCheck, Users } from 'lucide-react';
 import { aplanarArchivados } from './utils/reincidencia';
 import { buscaEnCerradas } from './utils/ordenesCerradas';
 import { construirNapsConocidas } from './utils/napsConocidas';
@@ -65,6 +68,8 @@ import TicketsTable from './components/TicketsTable';
 const CreateTicketModal = lazy(() => import('./components/modals/CreateTicketModal'));
 const EditTicketModal = lazy(() => import('./components/modals/EditTicketModal'));
 const TechniciansModal = lazy(() => import('./components/modals/TechniciansModal'));
+const ConfiguracionView = lazy(() => import('./components/ConfiguracionView'));
+const RutaDelDiaModal = lazy(() => import('./components/modals/RutaDelDiaModal'));
 const UsersModal = lazy(() => import('./components/modals/UsersModal'));
 const ConfirmModal = lazy(() => import('./components/modals/ConfirmModal'));
 const ReportsModal = lazy(() => import('./components/modals/ReportsModal'));
@@ -95,7 +100,7 @@ const EMPTY_FORM = () => ({
 });
 
 // Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).
-const ACTIVO_EN_MENU = { ADMINISTRACION: 'administracion', FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', ESTACIONES: 'estaciones', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
+const ACTIVO_EN_MENU = { ADMINISTRACION: 'administracion', FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', CONFIGURACION: 'configuracion', ESTACIONES: 'estaciones', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
 
 // `auth`: la sesión (useAuth) la resuelve Root, que decide qué pantalla corresponde al rol.
 // `moduloActivo` / `onAbrirModulo(id)`: el administrador abre cada módulo desde el menú lateral y se ve como página dentro del marco, a la derecha del menú (los demás roles los abren como ventana); Root guarda cuál está abierto
@@ -239,6 +244,14 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     await guardarFormasPago(formas, currentUserName || currentUser);
     setToastMsg({ type: 'success', text: 'Formas de pago guardadas.' });
   }, 'No se pudieron guardar las formas de pago.');
+
+  // Funciones que el ADMIN enciende en Configuración (nacen apagadas). Solo las escuchan los técnicos y el módulo Configuración abierto.
+  const configuracionAbierta = isAdmin && moduloActivo === 'CONFIGURACION';
+  const { funciones, cargado: funcionesCargadas, error: funcionesError, cambiar: cambiarFuncion } = useFunciones(firebaseUser, isTecnico || configuracionAbierta, currentUserName || currentUser);
+  // Ruta del día del técnico (ver utils/rutaDelDia.js). La hoja recibe una copia de las paradas al abrirse: así el orden que el técnico ajusta
+  // con las flechas no se rehace cada vez que llega un cambio de sus órdenes.
+  const paradasRuta = isTecnico && funciones.rutasActivas ? paradasDeRuta(ticketsParaVer) : null;
+  const [rutaAbierta, setRutaAbierta] = useState(null);
 
   // La tasa se actualiza sola una vez al día por la mañana (cron del Worker de
   // notificaciones); el botón de Tasa permite actualizarla a mano en cualquier momento.
@@ -658,6 +671,12 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
         loginData={loginData}
+        {isAdmin && abierta('CONFIGURACION', false) && enMarco('Configuración', Settings, (
+          <Suspense fallback={null}>
+            <ConfiguracionView enPagina funciones={funciones} cargado={funcionesCargadas} error={funcionesError} onCambiar={cambiarFuncion} onClose={() => onAbrirModulo(null)} />
+          </Suspense>
+        ))}
+
         setLoginData={setLoginData}
         loginError={loginError}
         handleLogin={handleLogin}
@@ -762,7 +781,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             isTecnico={isTecnico}
           />
 
-          <TechnicianWorkload tickets={tickets} technicians={technicians} getTecnicoColor={getTecnicoColor} canEditTickets={canEditTickets} isTecnico={isTecnico} onToggleActivo={toggleTechnicoActivoSeguro} onOpenSinTecnico={() => setStatusFilter('PENDIENTE_SIN_TECNICO')} ahora={ahora} onOpenViaje={setStatusFilter} />
+          <TechnicianWorkload tickets={tickets} technicians={technicians} getTecnicoColor={getTecnicoColor} canEditTickets={canEditTickets} isTecnico={isTecnico} onToggleActivo={toggleTechnicoActivoSeguro} rutaBoton={paradasRuta?.paradas.length ? <BotonRuta cantidad={paradasRuta.paradas.length} onClick={() => setRutaAbierta(paradasRuta)} /> : null} onOpenSinTecnico={() => setStatusFilter('PENDIENTE_SIN_TECNICO')} ahora={ahora} onOpenViaje={setStatusFilter} />
 
           {/* lg:pr-2: en escritorio el texto termina alineado con el contenido de la
               última columna de la tabla (ACC), no en el borde exterior. */}
@@ -1140,6 +1159,10 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         ) : isTecnico && cobrosPendientes.length > 0 && (
           <CobroResultanteModal key={cobrosPendientes[0].id} ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} formasPago={formasPago} onCopy={copyToClipboard} onClose={cerrarCobro} />
         )}
+        {isTecnico && funciones.rutasActivas && rutaAbierta && (
+          <RutaDelDiaModal paradas={rutaAbierta.paradas} sinPunto={rutaAbierta.sinPunto} onClose={() => setRutaAbierta(null)} />
+        )}
+
 
         {aprobarTarget && (
           <AprobarFinalizarModal

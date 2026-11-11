@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LogOut, MonitorSmartphone, Moon, Network, PackageCheck, ShieldCheck, Sun, TrendingUp, Users, Wallet, X } from 'lucide-react';
+import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LogOut, MonitorSmartphone, Moon, Network, PackageCheck, Settings, ShieldCheck, Sun, TrendingUp, Users, Wallet, X } from 'lucide-react';
 import { ADMINISTRACION_ACTIVA } from '../constants';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
@@ -63,6 +63,9 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
       ...(veInventario ? [{ id: 'inventario', Icono: PackageCheck, nombre: 'Envíos al inventario', alertas: alertasInventario, accion: () => acciones.modulo('INVENTARIO') }] : []),
       { id: 'infraestructura', Icono: Network, nombre: 'Infraestructura', accion: () => acciones.modulo('INFRAESTRUCTURA') },
       { id: 'ventas', Icono: TrendingUp, nombre: 'Ventas', accion: () => acciones.modulo('PROMOTORA') },
+    ] },
+    { titulo: 'Sistema', items: [
+      { id: 'configuracion', Icono: Settings, nombre: 'Configuración', accion: () => acciones.modulo('CONFIGURACION') },
     ] },
   ];
 

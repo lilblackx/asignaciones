@@ -130,3 +130,23 @@ export const ubicacionObligatoria = (ticket) =>
 export function getUbicacionUrl(ubicacion) {
   return normalizarUbicacion(ubicacion).valor || null;
 }
+
+// { lat, lng } de la ubicación guardada de una orden (enlace de Google Maps o coordenadas), o null si no trae coordenadas
+// (los enlaces cortos de Google, maps.app.goo.gl, no las traen).
+export function coordenadasDeUbicacion(ubicacion) {
+  const enlace = getUbicacionUrl(ubicacion);
+  if (!enlace) return null;
+  try {
+    return coordenadasDeUrl(new URL(enlace));
+  } catch {
+    return null;
+  }
+}
+
+// { lat, lng } de las coordenadas de la NAP guardadas ("lat, lng"), o null.
+export function coordenadasDeNap(napCoordenadas) {
+  const { valor } = normalizarCoordenadasNap(napCoordenadas);
+  if (!valor) return null;
+  const [lat, lng] = valor.split(',').map((n) => parseFloat(n));
+  return { lat, lng };
+}

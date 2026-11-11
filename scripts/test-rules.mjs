@@ -1023,6 +1023,19 @@ await check('Quien cierra marca el cierre manual del día (solo ese campo); la c
   await assertSucceeds(cierreCfg(asAdmin()).set({ hora: '21:00' }, { merge: true }));
 });
 
+// --- Funciones que se encienden en Configuración (config/funciones): las lee todo usuario activo y solo las cambia el ADMIN ---
+const funcionesCfg = (db) => datos(db).collection('config').doc('funciones');
+await check('config/funciones: el ADMIN la enciende y la apaga; técnico, usuario y almacén la leen pero no la escriben', async () => {
+  await assertSucceeds(funcionesCfg(asAdmin()).set({ rutasActivas: true, actualizadoPor: 'admin', actualizadoEn: 1 }, { merge: true }));
+  await assertSucceeds(funcionesCfg(asAdmin()).set({ rutasActivas: false }, { merge: true }));
+  await assertSucceeds(funcionesCfg(asTecnico()).get());
+  await assertSucceeds(funcionesCfg(asUsuario()).get());
+  await assertSucceeds(funcionesCfg(testEnv.authenticatedContext('almacen-uid').firestore()).get());
+  await assertFails(funcionesCfg(asTecnico()).set({ rutasActivas: true }, { merge: true }));
+  await assertFails(funcionesCfg(asUsuario()).set({ rutasActivas: true }, { merge: true }));
+  await assertFails(funcionesCfg(testEnv.authenticatedContext('almacen-uid').firestore()).set({ rutasActivas: true }, { merge: true }));
+});
+
 // --- Totales del mes (estadisticasMensuales): los ve ventas y quien cierra; solo quien cierra suma, y nunca resta ---
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await ctx.firestore().collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('estadisticasMensuales').doc('2026-10').set({ instalacionesFinalizadas: 5, losResueltas: 2 });

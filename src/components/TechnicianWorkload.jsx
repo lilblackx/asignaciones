@@ -4,7 +4,8 @@ import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
 import NumeroPulso from './NumeroPulso';
 
-export default function TechnicianWorkload({ tickets, technicians, getTecnicoColor, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje }) {
+// `rutaBoton`: el atajo a la Ruta del día (solo el técnico, y solo con la función encendida en Configuración); va al final de la misma fila, a la derecha.
+export default function TechnicianWorkload({ tickets, technicians, getTecnicoColor, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje, rutaBoton = null }) {
   // TECNICO solo recibe (por query scoping) su propio técnico en `technicians`,
   // así que dejarlo togglear acá nunca le da acceso al badge de otro.
   const canToggle = canEditTickets || isTecnico;
@@ -40,7 +41,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
     return { enCamino: tickets.filter(t => estaEnCamino(t, ahora)).length, enSitio: tickets.filter(t => estaEnSitio(t, ahora)).length };
   }, [tickets, canEditTickets, ahora]);
 
-  if (counts.length === 0 && sinTecnico === 0 && enInfra === 0) return null;
+  if (counts.length === 0 && sinTecnico === 0 && enInfra === 0 && !rutaBoton) return null;
 
   return (
     <div className="mb-3 flex flex-wrap gap-1.5" aria-label="Técnicos y sus asignaciones activas">
@@ -103,6 +104,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           </span>
         );
       })}
+      {rutaBoton && <div className="ml-auto">{rutaBoton}</div>}
     </div>
   );
 }

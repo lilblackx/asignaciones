@@ -67,7 +67,7 @@ check('la cámara se apaga al cerrar la ventana', modal.includes('camaraRef.curr
 
 // El hosting no debe bloquear la cámara (antes decía camera=(): en producción el navegador la negaba sin preguntar) ni abrirla a otros sitios.
 const hosting = JSON.parse(leer('../firebase.json')).hosting.headers.flatMap((h) => h.headers).find((h) => h.key === 'Permissions-Policy').value;
-check('el hosting permite la cámara solo a la propia app (camera=(self))', hosting.includes('camera=(self)') && hosting.includes('microphone=()') && hosting.includes('geolocation=()'), true);
+check('el hosting permite la cámara solo a la propia app (camera=(self)) y mantiene el micrófono cerrado (la ubicación la prueba test-ruta-del-dia)', hosting.includes('camera=(self)') && hosting.includes('microphone=()'), true);
 const config = leer('../vite.config.js');
 check('la librería ZXing no se descarga con la instalación de la app (fuera del precache)', config.includes("'**/esm-*.js'"), true);
 
