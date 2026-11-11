@@ -2,7 +2,7 @@
 // (src/utils/tipoVisita.js). No necesita el emulador. Uso: `npm run test:equipo`.
 import {
   ETIQUETA_TIPO_VISITA, TIPOS_VISITA, TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_DROP_ATENUADO, TIPO_RECABLEADO,
-  TIPO_CONFIG_ROUTER, TIPO_CONFIG_VLAN, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA,
+  TIPO_CONFIG_ROUTER, TIPO_CONFIG_VLAN, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA, TIPO_RECONEXION, TIPO_RETIRO_EQUIPOS,
   datosSerialEquipo, datosVlanVisita, errorVlanVisita, parseVlanVisita, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, esCambioEquipo, etiquetaTipoVisita, generaCobro, llevaConectores, parseSerialEquipo, pideNapPuertoVisita,
 } from '../src/utils/tipoVisita.js';
 import { readFileSync } from 'node:fs';
@@ -22,6 +22,9 @@ check('etiqueta de cada una', [etiquetaTipoVisita(TIPO_CAMBIO_EQUIPO), etiquetaT
 check('configuración de router y fuente averiada: en la lista, con etiqueta, sin serial ni conectores ni cobro',
   [TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA].map(v => [TIPOS_VISITA.find(t => t.value === v)?.label, etiquetaTipoVisita(v), esCambioEquipo(v), llevaConectores(v), generaCobro(v)]),
   [['Configuración de router', 'Configuración de router', false, false, false], ['Fuente averiada', 'Fuente averiada', false, false, false]]);
+check('reconexión: en la lista, con etiqueta, sin conectores ni cobro ni NAP (su serial obligatorio se prueba en test-reconexion-serial)',
+  [TIPOS_VISITA.find(t => t.value === TIPO_RECONEXION)?.label, etiquetaTipoVisita(TIPO_RECONEXION), esCambioEquipo(TIPO_RECONEXION), llevaConectores(TIPO_RECONEXION), generaCobro(TIPO_RECONEXION), pideNapPuertoVisita(TIPO_RECONEXION)],
+  ['Reconexión', 'Reconexión', false, false, false, false]);
 check('configuración de VLAN: en la lista, con etiqueta, sin serial ni conectores ni cobro ni NAP',
   [TIPOS_VISITA.find(t => t.value === TIPO_CONFIG_VLAN)?.label, etiquetaTipoVisita(TIPO_CONFIG_VLAN), esCambioEquipo(TIPO_CONFIG_VLAN), llevaConectores(TIPO_CONFIG_VLAN), generaCobro(TIPO_CONFIG_VLAN), pideNapPuertoVisita(TIPO_CONFIG_VLAN)],
   ['Configuración de VLAN', 'Configuración de VLAN', false, false, false, false]);
@@ -64,10 +67,10 @@ check('un tipo inválido no se guarda', datosSerialEquipo(TIPO_CAMBIO_EQUIPO, 'H
 // --- El tipo de visita es obligatorio al pre-finalizar (menos en instalaciones) ---
 const FALTA = 'Elige el tipo de visita.';
 check('sin tipo de visita no se puede pre-finalizar una avería ni una mudanza', [errorTipoVisita('AVERÍA', ''), errorTipoVisita('AVERÍA', undefined), errorTipoVisita('MUDANZA', '')], [FALTA, FALTA, FALTA]);
-check('con cualquiera de los nueve tipos sí', [TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA, TIPO_CONFIG_VLAN].map((t) => errorTipoVisita('AVERÍA', t)), ['', '', '', '', '', '', '', '', '']);
+check('con cualquiera de los once tipos sí', [TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA, TIPO_CONFIG_VLAN, TIPO_RECONEXION, TIPO_RETIRO_EQUIPOS].map((t) => errorTipoVisita('AVERÍA', t)), ['', '', '', '', '', '', '', '', '', '', '']);
 check('un valor inventado no vale', errorTipoVisita('AVERÍA', 'OTRA_COSA'), FALTA);
 check('las instalaciones no llevan tipo de visita: no se les pide', [errorTipoVisita('INSTALACIÓN', ''), errorTipoVisita('Instalacion', undefined)], ['', '']);
-check('el técnico ve los nueve tipos, sin "Ninguno"', TIPOS_VISITA_OBLIGATORIO.map((t) => t.value), ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA', 'MUDANZA_INTERNA', 'CONFIG_VLAN']);
+check('el técnico ve los once tipos, sin "Ninguno"', TIPOS_VISITA_OBLIGATORIO.map((t) => t.value), ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA', 'MUDANZA_INTERNA', 'CONFIG_VLAN', 'RECONEXION', 'RETIRO_EQUIPOS']);
 check('la oficina conserva "Ninguno" al corregir una orden vieja', TIPOS_VISITA[0], { value: '', label: 'Ninguno' });
 
 // --- NAP y puerto solo donde hacen falta ---

@@ -6,14 +6,14 @@ import { MAX_LARGO_SERIAL } from '../../utils/instalacion';
 import { evaluarSerialCaja } from '../../utils/serialOlt';
 import { claseCampo } from '../estilos';
 
-// Equipo nuevo en una visita de "Cambio de equipo": su tipo (MRTV, MTV, MR o SM) y su serial, los dos obligatorios. El serial tiene el mismo
+// Equipo de una visita de "Cambio de equipo" (el nuevo: su tipo MRTV, MTV, MR o SM y su serial, los dos obligatorios) o de "Reconexión" (solo su serial, obligatorio; `nuevo` false). El serial tiene el mismo
 // formato que el de la ONU de una instalación: letras y números, en mayúsculas.
 // `onTipoEquipo` (con `tipoEquipo` y `errorTipo`): muestra el desplegable del tipo sobre el serial.
 // `aviso`: texto o elemento opcional bajo el campo (solo lo pasa Editar orden para los admins).
 // `verificar`: marca el recuadro en verde si el serial es correcto y en rojo si no (lo usa el técnico al pre-finalizar).
 const ITEMS_TIPO = [{ value: '', label: 'Elige el tipo de equipo' }, ...TIPOS_DE_EQUIPO.map((t) => ({ value: t, label: t }))];
 
-export default function SerialEquipoCampo({ serial, onSerial, error, aviso = null, verificar = false, tipoEquipo = '', onTipoEquipo = null, errorTipo = '' }) {
+export default function SerialEquipoCampo({ serial, onSerial, error, aviso = null, verificar = false, tipoEquipo = '', onTipoEquipo = null, errorTipo = '', nuevo = true }) {
   const [tocado, setTocado] = useState(false);
   const evaluacion = verificar ? evaluarSerialCaja(serial) : { estado: 'vacio', codigo: '', mensaje: '' };
   const rojo = evaluacion.estado === 'error' && (tocado || evaluacion.codigo === 'GOPN');
@@ -31,7 +31,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
       )}
       <div className="space-y-1">
       <label htmlFor="pf-serial-equipo" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-        SERIAL DEL EQUIPO NUEVO <span className="font-normal text-red-500">(obligatorio)</span>
+        {nuevo ? 'SERIAL DEL EQUIPO NUEVO' : 'SERIAL DEL EQUIPO'} <span className="font-normal text-red-500">(obligatorio)</span>
       </label>
       <div className="flex items-stretch gap-2">
       <input

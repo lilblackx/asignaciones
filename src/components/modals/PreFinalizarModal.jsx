@@ -14,7 +14,7 @@ import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
 import { datosParaConfirmar } from '../../utils/confirmarPreFinalizar';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo, esConfigVlan, parseVlanVisita } from '../../utils/tipoVisita';
+import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo, pideSerialEquipo, esConfigVlan, parseVlanVisita } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { consultaCobroDe } from '../../utils/consultaCobro';
 import ConsultaCobroRecableado from './ConsultaCobroRecableado';
@@ -98,6 +98,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   // Lo que se resume en la confirmación para que el técnico vea qué está enviando: "Recableado: 250 m".
   const etiquetaVisita = tipoVisita ? `${etiquetaTipoVisita(tipoVisita)}${recableado && metros ? `: ${metros} m` : ''}` : '';
   const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
+  // El cambio de equipo y la reconexión piden el serial del equipo (obligatorio); el tipo del equipo solo el cambio.
+  const pideSerial = pideSerialEquipo(tipoVisita);
   const configVlan = esConfigVlan(tipoVisita);
   const potenciaParseada = parsePotencia(potencia);
   const potenciaEval = potenciaParseada.valor !== undefined ? evaluarPotencia(potenciaParseada.valor) : null;
@@ -120,7 +122,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const cantidades = parseCantidadesConector(tipoVisita, { verde: cantVerde, azul: cantAzul });
     const errorCantidad = cantidades.error || '';
     // Además del formato, el serial debe ser el de la etiqueta (PON S/N o GPON...), no la MAC ni un "GOPN" mal escrito.
-    const serialEquipoLeido = cambioEquipo ? parseSerialEquipo(serialEquipo) : null;
+    const serialEquipoLeido = pideSerial ? parseSerialEquipo(serialEquipo, tipoVisita) : null;
     const errorFormatoEquipo = serialEquipoLeido && !serialEquipoLeido.error ? errorSerialCaja(serialEquipo) : '';
     const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
     const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipo);
@@ -305,14 +307,15 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
 
           {configVlan && <VlanVisitaCampo vlan={vlanVisita} onVlan={(v) => { setVlanVisita(v); if (vlanVisitaError) setVlanVisitaError(''); }} error={vlanVisitaError} />}
 
-          {cambioEquipo && (
+          {pideSerial && (
             <SerialEquipoCampo
+              nuevo={cambioEquipo}
               serial={serialEquipo}
               onSerial={(v) => { setSerialEquipo(v); if (serialEquipoError) setSerialEquipoError(''); }}
               error={serialEquipoError}
               verificar
               tipoEquipo={tipoEquipo}
-              onTipoEquipo={(v) => { setTipoEquipo(v); if (tipoEquipoError) setTipoEquipoError(''); }}
+              onTipoEquipo={cambioEquipo ? (v) => { setTipoEquipo(v); if (tipoEquipoError) setTipoEquipoError(''); } : null}
               errorTipo={tipoEquipoError}
             />
           )}

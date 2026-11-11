@@ -4,7 +4,7 @@ import ConectoresRecableado, { CantidadesConectorVisita } from './ConectoresReca
 import SerialEquipoCampo from './SerialEquipoCampo';
 import VlanVisitaCampo from './VlanVisitaCampo';
 import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
-import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, esConfigVlan, esVisitaConector } from '../../utils/tipoVisita';
+import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, esConfigVlan, esVisitaConector, pideSerialEquipo } from '../../utils/tipoVisita';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
 import { SELECTOR_ORDEN, claseCampo } from '../estilos';
@@ -158,9 +158,9 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             </div>
           )}
 
-          {tipoVisita === TIPO_CAMBIO_EQUIPO && (
+          {pideSerialEquipo(tipoVisita) && (
             <div className="col-span-2">
-              <SerialEquipoCampo serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} tipoEquipo={form.tipoEquipoNuevo} onTipoEquipo={(v) => onChange({ tipoEquipoNuevo: v })} errorTipo={errores.tipoEquipoNuevo} verificar={avisoSerial} aviso={avisoSerial ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
+              <SerialEquipoCampo nuevo={tipoVisita === TIPO_CAMBIO_EQUIPO} serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} tipoEquipo={form.tipoEquipoNuevo} onTipoEquipo={tipoVisita === TIPO_CAMBIO_EQUIPO ? (v) => onChange({ tipoEquipoNuevo: v }) : null} errorTipo={errores.tipoEquipoNuevo} verificar={avisoSerial} aviso={avisoSerial && tipoVisita === TIPO_CAMBIO_EQUIPO ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
             </div>
           )}
 

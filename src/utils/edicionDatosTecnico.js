@@ -14,7 +14,7 @@ import { esInstalacion, limpiarPostes, napConPuerto, validarInstalacion } from '
 import { errorConectoresInstalacion, normalizarConectoresInstalacion, parseConectoresInstalacion, textoConectoresInstalacion } from './conectoresInstalacion.js';
 import {
   TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, datosVlanVisita, errorTipoEquipoNuevo, esCambioEquipo, esConfigVlan, etiquetaTipoVisita,
-  llevaConectores, parseCantidadesConector, parseMetros, parseSerialEquipo, parseVlanVisita, partesRecableado, textoConectorVisita, tieneDatosRecableado,
+  llevaConectores, parseCantidadesConector, parseMetros, parseSerialEquipo, parseVlanVisita, pideSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from './tipoVisita.js';
 
 export const ESTADOS_CON_DATOS_DEL_TECNICO = ['PRE-FINALIZADO', 'FINALIZADO'];
@@ -119,7 +119,7 @@ function validarVisitaEditada(ticket, f) {
   if (metros?.error) errores.metros = metros.error;
   const cantidades = parseCantidadesConector(tipo, { verde: f.cantVerde, azul: f.cantAzul });
   if (cantidades.error) errores.cantidades = { campo: cantidades.campo, mensaje: cantidades.error };
-  const serialEquipo = esCambioEquipo(tipo) ? parseSerialEquipo(f.serialEquipo) : null;
+  const serialEquipo = pideSerialEquipo(tipo) ? parseSerialEquipo(f.serialEquipo, tipo) : null;
   if (serialEquipo?.error) errores.serialEquipo = serialEquipo.error;
   const vlanVisita = esConfigVlan(tipo) ? parseVlanVisita(f.vlanVisita) : null;
   if (vlanVisita?.error) errores.vlanVisita = vlanVisita.error;
@@ -130,7 +130,7 @@ function validarVisitaEditada(ticket, f) {
   // Igual que al pre-finalizar: los campos de metros, conectores y serial solo se escriben si el tipo los lleva o si hay
   // que borrar los de un tipo anterior; las demás órdenes no suman campos vacíos.
   const conConectores = llevaConectores(tipo) || tieneDatosRecableado(ticket) || ticket?.conectoresUsados;
-  const conSerial = esCambioEquipo(tipo) || ticket?.serialEquipo;
+  const conSerial = pideSerialEquipo(tipo) || ticket?.serialEquipo;
   return resultado(errores, ORDEN_VISITA, {
     tipoVisita: tipo,
     ...(conConectores ? datosConectores(tipo, { metros: metros?.valor, conectorExterno: f.colorExterno, conectorInterno: f.colorInterno, conectores: cantidades.valor }) : {}),
@@ -168,7 +168,7 @@ export function cambiosDatosTecnico(antes, despues) {
   const conectorDespues = textoConectorVisita(despues);
   si(conectorAntes !== conectorDespues && conectorDespues !== '', conectorDespues);
   si(texto(antes?.tipoEquipoNuevo) !== texto(despues?.tipoEquipoNuevo), `Tipo de equipo nuevo: ${despues?.tipoEquipoNuevo || 'Vacío'}`);
-  si(texto(antes?.serialEquipo) !== texto(despues?.serialEquipo), `Serial del equipo nuevo: ${despues?.serialEquipo || 'Vacío'}`);
+  si(texto(antes?.serialEquipo) !== texto(despues?.serialEquipo), `Serial del equipo${esCambioEquipo(despues?.tipoVisita) ? ' nuevo' : ''}: ${despues?.serialEquipo || 'Vacío'}`);
   si(texto(antes?.vlanVisita) !== texto(despues?.vlanVisita), `VLAN configurada: ${despues?.vlanVisita || 'Vacía'}`);
   return cambios;
 }

@@ -12,7 +12,9 @@
 // - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
 //   `serialEquipo`, junto con el tipo del equipo nuevo (MRTV, MTV, MR o SM; obligatorio) en `tipoEquipoNuevo`.
 // - Configuración de VLAN: el técnico indica el número de VLAN configurada (1 a 4094; obligatorio). Se guarda en `vlanVisita`.
-// - Drop atenuado, configuración de router, fuente averiada y mudanza interna: solo se registra el tipo de visita,
+// - Reconexión: el técnico indica el serial del equipo (obligatorio, el mismo formato y verificación que el del cambio de equipo). Se guarda en `serialEquipo`; no lleva tipo de equipo,
+//   ni genera cobro ni envío al inventario.
+// - Drop atenuado, configuración de router, fuente averiada, mudanza interna y retiro de equipos: solo se registra el tipo de visita,
 //   sin datos extra.
 
 import { esInstalacion, parseSerial, parseVlan } from './instalacion.js';
@@ -28,6 +30,8 @@ export const TIPO_CONFIG_ROUTER = 'CONFIG_ROUTER';
 export const TIPO_FUENTE_AVERIADA = 'FUENTE_AVERIADA';
 export const TIPO_MUDANZA_INTERNA = 'MUDANZA_INTERNA';
 export const TIPO_CONFIG_VLAN = 'CONFIG_VLAN';
+export const TIPO_RECONEXION = 'RECONEXION';
+export const TIPO_RETIRO_EQUIPOS = 'RETIRO_EQUIPOS';
 
 export const ETIQUETA_TIPO_VISITA = {
   [TIPO_CONECTOR_EXTERNO]: 'Conector externo',
@@ -39,6 +43,8 @@ export const ETIQUETA_TIPO_VISITA = {
   [TIPO_FUENTE_AVERIADA]: 'Fuente averiada',
   [TIPO_MUDANZA_INTERNA]: 'Mudanza interna',
   [TIPO_CONFIG_VLAN]: 'Configuración de VLAN',
+  [TIPO_RECONEXION]: 'Reconexión',
+  [TIPO_RETIRO_EQUIPOS]: 'Retiro de equipos',
 };
 
 export const TIPOS_VISITA = [
@@ -52,6 +58,8 @@ export const TIPOS_VISITA = [
   { value: TIPO_FUENTE_AVERIADA, label: ETIQUETA_TIPO_VISITA[TIPO_FUENTE_AVERIADA] },
   { value: TIPO_MUDANZA_INTERNA, label: ETIQUETA_TIPO_VISITA[TIPO_MUDANZA_INTERNA] },
   { value: TIPO_CONFIG_VLAN, label: ETIQUETA_TIPO_VISITA[TIPO_CONFIG_VLAN] },
+  { value: TIPO_RECONEXION, label: ETIQUETA_TIPO_VISITA[TIPO_RECONEXION] },
+  { value: TIPO_RETIRO_EQUIPOS, label: ETIQUETA_TIPO_VISITA[TIPO_RETIRO_EQUIPOS] },
 ];
 
 // El tipo de visita es obligatorio al pre-finalizar cualquier orden que no sea una instalación (que no lo lleva): el técnico escoge uno de los tipos, sin opción "Ninguno".
@@ -77,13 +85,16 @@ export const TIPOS_VISITA_OBLIGATORIO = TIPOS_VISITA.filter((t) => t.value);
 // --- Cambio de equipo ---------------------------------------------------------------------
 
 export const esCambioEquipo = (tipoVisita) => tipoVisita === TIPO_CAMBIO_EQUIPO;
+export const esReconexion = (tipoVisita) => tipoVisita === TIPO_RECONEXION;
+// Piden el serial del equipo: el cambio de equipo (el del equipo nuevo) y la reconexión (el del equipo del cliente).
+export const pideSerialEquipo = (tipoVisita) => esCambioEquipo(tipoVisita) || esReconexion(tipoVisita);
 
-// Serial del equipo nuevo: mismo formato que el de la ONU de una instalación, y obligatorio.
+// Serial del equipo (el nuevo en un cambio de equipo, el del cliente en una reconexión): mismo formato que el de la ONU de una instalación, y obligatorio.
 // { valor } | { error }
-export function parseSerialEquipo(raw) {
+export function parseSerialEquipo(raw, tipoVisita = TIPO_CAMBIO_EQUIPO) {
   const serial = parseSerial(raw);
   if (serial.error) return serial;
-  if (!serial.valor) return { error: 'Escribe el serial del equipo nuevo.' };
+  if (!serial.valor) return { error: esReconexion(tipoVisita) ? 'Escribe el serial del equipo.' : 'Escribe el serial del equipo nuevo.' };
   return serial;
 }
 
@@ -93,10 +104,10 @@ export const errorTipoEquipoNuevo = (tipoVisita, tipo, exigir = true) => (
   exigir && esCambioEquipo(tipoVisita) && !TIPOS_DE_EQUIPO.includes(tipo) ? 'Elige el tipo del equipo nuevo.' : ''
 );
 
-// Serial y tipo del equipo nuevo tal como se guardan en la orden: solo en un cambio de equipo; en cualquier otro tipo quedan
+// Serial y tipo del equipo tal como se guardan en la orden: el serial en un cambio de equipo o una reconexión, y el tipo solo en el cambio de equipo; en cualquier otro tipo quedan
 // vacíos ('' y no omitir el campo es lo que permite borrar uno anterior).
 export const datosSerialEquipo = (tipoVisita, serial, tipoEquipo = '') => ({
-  serialEquipo: esCambioEquipo(tipoVisita) ? (parseSerial(serial).valor ?? '') : '',
+  serialEquipo: pideSerialEquipo(tipoVisita) ? (parseSerial(serial).valor ?? '') : '',
   tipoEquipoNuevo: esCambioEquipo(tipoVisita) && TIPOS_DE_EQUIPO.includes(tipoEquipo) ? tipoEquipo : '',
 });
 

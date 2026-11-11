@@ -35,7 +35,7 @@ import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdene
 import { avisoDeCobro } from '../utils/cobrosClientes';
 import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, faltaElPago, piensaPagoCliente } from '../utils/pagoCliente';
 import { ADMINISTRACION_ACTIVA } from '../constants';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, datosVlanVisita, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, errorVlanVisita, esCambioEquipo, esConfigVlan, llevaConectores, parseSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, datosVlanVisita, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, errorVlanVisita, esCambioEquipo, esConfigVlan, llevaConectores, parseSerialEquipo, pideSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
 import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
@@ -1088,7 +1088,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     }
 
     // Cambio de equipo: el serial del equipo nuevo es obligatorio.
-    const serialEquipoParseado = esCambioEquipo(tipoVisita) ? parseSerialEquipo(serialEquipo) : null;
+    const serialEquipoParseado = pideSerialEquipo(tipoVisita) ? parseSerialEquipo(serialEquipo, tipoVisita) : null;
     const errorSerialEquipo = serialEquipoParseado?.error || (serialEquipoParseado ? errorSerialCaja(serialEquipo) : '');
     if (errorSerialEquipo) {
       setToastMsg({ type: 'error', text: errorSerialEquipo });
@@ -1141,7 +1141,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       : {};
 
     // El serial del equipo nuevo solo se escribe en un cambio de equipo, o para borrar uno anterior.
-    const camposSerialEquipo = tipoVisita !== undefined && (esCambioEquipo(tipoVisita) || ticket.serialEquipo)
+    const camposSerialEquipo = tipoVisita !== undefined && (pideSerialEquipo(tipoVisita) || ticket.serialEquipo)
       ? datosSerialEquipo(tipoVisita, serialEquipo, tipoEquipoNuevo)
       : {};
 
@@ -1162,7 +1162,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       const conector = textoConectorVisita({ tipoVisita, ...camposConectores });
       if (conector) detalle += ` | ${conector}`;
       if (camposVlanVisita.vlanVisita) detalle += ` | VLAN: ${camposVlanVisita.vlanVisita}`;
-      if (serialEquipoParseado) detalle += ` | Equipo nuevo: ${tipoEquipoNuevo} | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
+      if (serialEquipoParseado) detalle += esCambioEquipo(tipoVisita) ? ` | Equipo nuevo: ${tipoEquipoNuevo} | Serial del equipo nuevo: ${serialEquipoParseado.valor}` : ` | Serial del equipo: ${serialEquipoParseado.valor}`;
     }
     if (avisaCobroAlPreFinalizar(tipoVisita)) detalle += detalleCobro(montoBs, COBRO_VISITA, false);
 
