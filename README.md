@@ -31,6 +31,7 @@ PWA para el control y seguimiento de asignaciones (instalaciones, reconexiones, 
 - Reportes y exportación, carga de trabajo por técnico, detección de reincidencias.
 - Ruta del día (función que el ADMIN enciende en Configuración, desactivada por defecto): el técnico ve el botón "Ruta" junto a su nombre y abre en Google Maps el recorrido de sus órdenes de hoy, primero las de prioridad alta y luego de la más cercana a la más lejana desde donde está (usa la ubicación del cliente o, si falta, la de la NAP). Ver `src/utils/rutaDelDia.js`.
 - Configuración (solo ADMIN, al final del menú): funciones que se encienden o apagan para todos; se guardan en `config/funciones`.
+- Finanzas guarda las tasas BCV del dólar de los últimos 7 días (`config/tasasDolar`, a partir del historial de DolarAPI) y tiene un selector junto a la tasa para pagar con la de un día anterior (por ejemplo, el martes con la del lunes); avisa cuando no es la más reciente. Ver `src/utils/tasasDolar.js`.
 - Visita "Reconexión": el técnico indica el serial del equipo (obligatorio, con escáner y la misma verificación que el cambio de equipo); se guarda en `serialEquipo`, sin cobro ni envío al inventario.
 - Notificaciones: en vivo dentro de la app (Firestore) y push (FCM) con la app cerrada.
   - El push sale con prioridad alta (Android no lo retrasa en reposo) y con un `tag` por evento, para no duplicar avisos.

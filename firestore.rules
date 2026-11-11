@@ -1041,6 +1041,15 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cierreManualFecha']);
     }
 
+    // Las tasas BCV del dólar de los últimos 7 días (utils/tasasDolar.js): las lee todo usuario activo (config/{docId}) y las guarda FINANZAS (el ADMIN ya puede escribir toda la
+    // configuración) cuando abre su pantalla. Solo ese documento y solo con esos campos: { dias: { 'AAAA-MM-DD': tasa }, actualizadoEn, actualizadoPor }.
+    match /artifacts/{appId}/public/data/config/tasasDolar {
+      allow create, update: if llevaFinanzas(appId)
+        && request.resource.data.keys().hasOnly(['dias', 'actualizadoEn', 'actualizadoPor'])
+        && request.resource.data.dias is map
+        && request.resource.data.dias.size() <= 10;
+    }
+
     // El orden semanal (campo "orden") solo lo arma ADMIN. Pero USUARIO
     // también crea instalaciones, así que necesita poder avanzar el puntero
     // ("turnoActualIndex") al asignar una — sin tocar la lista en sí.

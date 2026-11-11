@@ -1101,6 +1101,28 @@ await check('Registro de técnicos: ALMACEN y PROMOTORA no leen ni escriben; nad
 // --- FINANZAS: lee órdenes y reportes, no las toca, y lleva tarifas y pagos ---
 const asFinanzas = () => testEnv.authenticatedContext('finanzas-uid').firestore();
 const asFinanzasOff = () => testEnv.authenticatedContext('finanzas-off-uid').firestore();
+
+// --- Tasas BCV del dólar de los últimos 7 días (config/tasasDolar): FINANZAS y ADMIN las guardan, solo así; todos los usuarios activos las leen ---
+const tasasDolarCfg = (db) => datos(db).collection('config').doc('tasasDolar');
+const diasTasas = { '2026-11-09': 897.54, '2026-11-10': 899.27 };
+await check('config/tasasDolar: FINANZAS guarda las tasas de los días (solo ese documento, solo esos campos) y todos las leen', async () => {
+  await assertSucceeds(tasasDolarCfg(asFinanzas()).set({ dias: diasTasas, actualizadoEn: 1, actualizadoPor: 'fina' }));
+  await assertSucceeds(tasasDolarCfg(asFinanzas()).set({ dias: { ...diasTasas, '2026-11-11': 901.62 }, actualizadoEn: 2, actualizadoPor: 'fina' }));
+  await assertSucceeds(tasasDolarCfg(asAdmin()).set({ dias: diasTasas, actualizadoEn: 3, actualizadoPor: 'admin' }));
+  await assertSucceeds(tasasDolarCfg(asFinanzas()).get());
+  await assertSucceeds(tasasDolarCfg(asTecnico()).get());
+  await assertSucceeds(tasasDolarCfg(asUsuario()).get());
+});
+await check('config/tasasDolar: lo que no es un mapa de días, con campos de más o con más de 10 días se rechaza; técnico, usuario, almacén y un FINANZAS desactivado no escriben', async () => {
+  await assertFails(tasasDolarCfg(asFinanzas()).set({ dias: 'x', actualizadoEn: 1, actualizadoPor: 'fina' }));
+  await assertFails(tasasDolarCfg(asFinanzas()).set({ dias: diasTasas, actualizadoEn: 1, actualizadoPor: 'fina', otro: 1 }));
+  await assertFails(tasasDolarCfg(asFinanzas()).set({ dias: Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`2026-10-${String(i + 10).padStart(2, '0')}`, 890])), actualizadoEn: 1, actualizadoPor: 'fina' }));
+  await assertFails(tasasDolarCfg(asTecnico()).set({ dias: diasTasas, actualizadoEn: 1, actualizadoPor: 'x' }));
+  await assertFails(tasasDolarCfg(asUsuario()).set({ dias: diasTasas, actualizadoEn: 1, actualizadoPor: 'x' }));
+  await assertFails(tasasDolarCfg(testEnv.authenticatedContext('almacen-uid').firestore()).set({ dias: diasTasas, actualizadoEn: 1, actualizadoPor: 'x' }));
+  await assertFails(tasasDolarCfg(asFinanzasOff()).set({ dias: diasTasas, actualizadoEn: 1, actualizadoPor: 'x' }));
+  await assertFails(datos(asFinanzas()).collection('config').doc('tasaBcv').set({ tasa: 5 }));
+});
 const fin = (db, nombre) => datos(db).collection(nombre);
 const tarifas = (extra = {}) => ({ INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5, MUDANZA_EXTERNA: 8, VALIDACION_NAP: 2, TRABAJO_ADICIONAL: 6, RECABLEADO: 8, LOW_SIGNAL: 3, CAMBIO_EQUIPO: 10, por: 'fina', en: 1, ...extra });
 const pagoDe = (extra = {}) => ({ tecnico: 'GERARDO MOLERO', desde: '2026-10-01', hasta: '2026-10-15', cantidades: { INSTALACION: 1, AVERIA: 1, MUDANZA_INTERNA: 0 }, tarifas: { INSTALACION: 20, AVERIA: 3.5, MUDANZA_INTERNA: 5 }, total: 23.5, cantidadOrdenes: 2, nota: '', por: 'fina', creadoEn: 1, anulado: false, ...extra });

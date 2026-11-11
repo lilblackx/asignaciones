@@ -8,6 +8,8 @@ import { useFinanzas } from '../hooks/useFinanzas';
 import { usePagosFinanzas } from '../hooks/usePagosOrdenes';
 import { useCobrosFinanzas } from '../hooks/useCobrosClientes';
 import { useTasaDolar } from '../hooks/useTasaDolar';
+import { useTasasDolar } from '../hooks/useTasasDolar';
+import { etiquetaDia, opcionElegida } from '../utils/tasasDolar';
 import { todasLasOrdenes } from '../utils/gestionTecnicos';
 import { rangoDe } from '../utils/periodoReporte';
 import { diaDe } from '../utils/totalesMes';
@@ -85,9 +87,15 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   // Lo que pagaron los clientes por instalaciones y cambios de equipo (lo registra el técnico); solo se lee cuando se abre esa sección.
   const pagosClientes = usePagosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
   const cobrosClientes = useCobrosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
-  // La tasa BCV del dólar, para mostrar los bolívares (cada pago guarda la de su momento).
+  // La tasa BCV del dólar, para mostrar los bolívares y pagar (cada pago guarda la de su momento). Se guardan las de los últimos 7 días y se puede pagar con la de un día anterior
+  // (el martes con la del lunes): `diaTasa` es el día elegido (null: la más reciente) y `tasa` la de ese día; sin historial (no llegó ni de la API ni de lo guardado) es la de ahora.
   const bcv = useTasaDolar();
-  const tasa = bcv.tasa;
+  const tasas = useTasasDolar(firebaseUser, currentUser, bcv);
+  const [diaTasa, setDiaTasa] = useState(null);
+  const tasaElegida = opcionElegida(tasas.opciones, diaTasa);
+  const tasa = tasaElegida ? tasaElegida.tasa : bcv.tasa;
+  // Lo que se agrega al texto de los bolívares al pagar: de qué día es la tasa, solo si no es la de hoy.
+  const etiquetaTasa = tasaElegida && !tasaElegida.esHoy ? `tasa del ${etiquetaDia(tasaElegida.dia)}` : '';
   const ordenes = useMemo(() => todasLasOrdenes(tickets, reports), [tickets, reports]);
   const nombresTecnicos = useMemo(() => technicians.map((t) => t.name).filter(Boolean).sort(), [technicians]);
   const historial = { hasMoreReports: hayMasReportes, isLoadingReports: cargandoReportes, onLoadMoreReports: cargarReportesAnteriores };
@@ -210,7 +218,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-            <TasaBcv tasa={bcv.tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={bcv.actualizar} />
+            <TasaBcv tasa={tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={() => { bcv.actualizar(); tasas.actualizar(); }} opciones={tasas.opciones} dia={tasaElegida?.dia ?? null} onElegir={(dia) => setDiaTasa(dia === tasas.opciones[0]?.dia ? null : dia)} />
             {cargado && (
               <span role="status" className="sm:ml-auto lg:hidden text-xs text-zinc-600 dark:text-zinc-300">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
             )}
@@ -270,6 +278,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   rango={rango}
                   etiquetaPeriodo={soloPendientes ? 'Por pagar' : undefined}
                   tasa={tasa}
+                  etiquetaTasa={etiquetaTasa}
                   ocupado={finanzas.ocupado}
                   historial={historial}
                   onPagar={(fila, opciones) => finanzas.pagar(fila, rangoDeuda, { ...opciones, tasa })}

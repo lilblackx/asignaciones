@@ -15,7 +15,8 @@ import { stripEmojis } from '../../utils/sanitizeInput';
 
 // El segundo paso de pagar: los datos del pago (moneda, forma, banco, referencia, fecha y hora, nota y si se le avisa al técnico). Va en la misma pantalla que el detalle (no es una
 // ventana), con el total pendiente siempre a la vista. Solo "Confirmar pago" guarda. `onConfirmar({ datosPago, notificar, nota })` devuelve true si se guardó.
-export default function PanelPago({ fila, rango, etiqueta, tasa, ocupado, onConfirmar, onVolver }) {
+// `etiquetaTasa`: de qué día es la tasa cuando no es la de hoy ("tasa del lun 09/11"); se dice junto a los bolívares para que se vea con cuál se paga.
+export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = '', ocupado, onConfirmar, onVolver }) {
   const [form, setForm] = useState(() => ({ moneda: tasa > 0 ? MONEDA_BS : MONEDA_USD, forma: '', banco: '', referencia: '', nota: '', ...fechaHoraDeMarca(Date.now()) }));
   const [hoy] = useState(() => fechaHoraDeMarca(Date.now()).fecha);
   const [notificar, setNotificar] = useState(true);
@@ -75,7 +76,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, ocupado, onConf
           <div className="border border-zinc-400 dark:border-zinc-700 rounded-xl px-4 py-3">
             <p className={ETIQUETA}>Monto a entregar</p>
             <p className="text-lg font-bold tabular-nums text-zinc-900 dark:text-white"><NumeroPulso valor={entregar} /></p>
-            {form.moneda === MONEDA_BS && tasa > 0 && <p className={`${TEXTO_SUAVE} tabular-nums`}>{dolares(neto)} a {tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs por dólar</p>}
+            {form.moneda === MONEDA_BS && tasa > 0 && <p className={`${TEXTO_SUAVE} tabular-nums`}>{dolares(neto)} a {tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs por dólar{etiquetaTasa && ` (${etiquetaTasa})`}</p>}
           </div>
 
           <div>
