@@ -9,8 +9,7 @@ import Spinner from '../Spinner';
 import PagoDelCliente from '../PagoDelCliente';
 import CorregirPagoModal from './CorregirPagoModal';
 import TelefonoAccion from '../TelefonoAccion';
-import { CAMPO_FORMULARIO, ETIQUETA } from '../estilos';
-import { SELECTOR } from '../finanzas/estilos';
+import { CAMPO_FORMULARIO, ETIQUETA, claseSelector } from '../estilos';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, diasEsperando, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
@@ -131,14 +130,12 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
           {pideMonto && (
             <div className="space-y-2 rounded-xl border border-zinc-300 dark:border-zinc-700 p-3">
               <p className="text-xs text-zinc-600 dark:text-zinc-400">Esta instalación no trae monto: escribe el que subes al portal.</p>
-              <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
-                <div>
-                  <label htmlFor="cobro-monto" className={ETIQUETA}>Monto</label>
-                  <input id="cobro-monto" value={monto} onChange={(e) => { setMonto(montoCalculadora(e.target.value)); setError(null); }} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO_FORMULARIO} mt-1 text-right font-black tabular-nums`} />
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Solo los números: los dos últimos son los decimales (4500 se ve 45,00).</p>
-                </div>
-                <SelectMenu ariaLabel="Moneda del monto" className={SELECTOR} value={moneda} onChange={(v) => { setMoneda(v); setError(null); }} items={[{ value: 'USD', label: 'Dólares ($)' }, { value: 'BS', label: 'Bolívares (Bs)' }]} />
+              <label htmlFor="cobro-monto" className={`${ETIQUETA} block`}>Monto</label>
+              <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                <input id="cobro-monto" value={monto} onChange={(e) => { setMonto(montoCalculadora(e.target.value)); setError(null); }} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO_FORMULARIO} text-right font-black tabular-nums`} />
+                <SelectMenu ariaLabel="Moneda del monto" className={claseSelector('grande')} value={moneda} onChange={(v) => { setMoneda(v); setError(null); }} items={[{ value: 'USD', label: 'Dólares ($)' }, { value: 'BS', label: 'Bolívares (Bs)' }]} />
               </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">Solo los números: los dos últimos son los decimales (4500 se ve 45,00).</p>
             </div>
           )}
 
