@@ -1,6 +1,6 @@
 // Prueba el flujo de asignar técnico (numeración de instalaciones) contra el emulador
 // de Firestore, con las reglas reales y transacciones reales. No toca producción.
-// Cubre guardarConNumeracion, que usan Editar, el botón Enviado y copiar WhatsApp.
+// Cubre guardarConNumeracion, que usan Editar y copiar WhatsApp.
 // Requiere el emulador corriendo (`npm run emulators`). Uso: `npm run test:asignar`.
 import { readFileSync } from 'node:fs';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -50,7 +50,7 @@ const ultimoContador = async (prefijo) => {
   return snap.exists() ? snap.data().ultimo : 0;
 };
 
-// Igual que Editar / Enviado: guardar el ticket con (o sin) técnico.
+// Igual que Editar: guardar el ticket con (o sin) técnico.
 const asignar = (tickets, ticket, tecnico, extra = {}) =>
   guardarConNumeracion(db, APP_ID, tickets, ticket.id, ticket.codigo, ticket.tipoTrabajo, tecnico, hoy,
     (codigo) => ({ ...ticket, ...extra, codigo, tecnico }));

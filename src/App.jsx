@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ROLES, siguienteColorTecnico } from './constants';
-import { getEnvioInfo } from './utils/ticketDisplay';
 import { normalizarUbicacion } from './utils/ubicacion';
 import { avisoTasaDesactualizada, montoBsDe } from './utils/tasa';
 import { avisaCobroAlPreFinalizar } from './utils/tipoVisita';
@@ -29,10 +28,10 @@ import { useAvisoCierreAutomatico } from './hooks/useAvisoCierreAutomatico';
 import { useEnviosInventario } from './hooks/useEnviosInventario';
 import { veEnviosInventario, vinculaTecnicosInventario } from './utils/accesoInventario';
 import { veEstaciones } from './utils/estaciones';
+import EstacionesView from './components/EstacionesView';
 import BotonRuta from './components/BotonRuta';
 import { useFunciones } from './hooks/useFunciones';
 import { paradasDeRuta } from './utils/rutaDelDia';
-import EstacionesView from './components/EstacionesView';
 import { listarTecnicosInventario } from './lib/inventario';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
@@ -68,9 +67,9 @@ import TicketsTable from './components/TicketsTable';
 const CreateTicketModal = lazy(() => import('./components/modals/CreateTicketModal'));
 const EditTicketModal = lazy(() => import('./components/modals/EditTicketModal'));
 const TechniciansModal = lazy(() => import('./components/modals/TechniciansModal'));
+const UsersModal = lazy(() => import('./components/modals/UsersModal'));
 const ConfiguracionView = lazy(() => import('./components/ConfiguracionView'));
 const RutaDelDiaModal = lazy(() => import('./components/modals/RutaDelDiaModal'));
-const UsersModal = lazy(() => import('./components/modals/UsersModal'));
 const ConfirmModal = lazy(() => import('./components/modals/ConfirmModal'));
 const ReportsModal = lazy(() => import('./components/modals/ReportsModal'));
 const ReportesModal = lazy(() => import('./components/modals/ReportesModal'));
@@ -120,7 +119,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, setUserPuedeVerHistorial, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, toggleAsignado, guardarUbicacion, preFinalizarTicket, cobrosPorRegistrar, registrarPagoDeOrden, registrarPagoPendienteDeOrden, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, asegurarNumero, guardarUbicacion, preFinalizarTicket, cobrosPorRegistrar, registrarPagoDeOrden, registrarPagoPendienteDeOrden, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
   // Un aviso de una orden que ya se atendió se quita solo (y el contador baja). Corre también cuando entra un aviso o se cargan los guardados,
   // no solo al cambiar las órdenes; sin cambios no hace nada, así que no hay vuelta.
   const { notifications: listaAvisos, quitarAtendidas } = notifications;
@@ -183,12 +182,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     return generarMensajeWhatsApp({ ...ticket, creado: resolveOperador(ticket.creado) }, tasaConfig, ticket.cobroBs || null, monedaDe(ticket));
   };
 
-  // Copiar la plantilla también marca el ticket como ENVIADO (campo isAsignado
-  // en Firestore, se conserva el nombre por compatibilidad con datos viejos). Se marca primero porque asignar puede cambiar el código del
-  // ticket (correlativo del técnico) y la plantilla debe salir con el final.
-  // Solo marca si el usuario puede editar y ya hay técnico; nunca desmarca.
-  // Si la orden ya estaba enviada pero cambió después (técnico, trabajo, etc.),
-  // copiar registra un reenvío para limpiar el aviso ámbar.
   // Si la plantilla lleva el monto en Bs (todas menos INSTALACIÓN) y la tasa BCV
   // no es de hoy, la copia igual sale pero el aviso lo dice, para no mandar un
   // cobro con tasa vieja sin darse cuenta.
@@ -203,27 +196,17 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
       : { texto: textoBase, tipo: 'success' };
   };
 
+  // Copiar la plantilla ya no marca la orden como enviada. Solo, si la orden tiene técnico y aún no tiene número, se lo asigna primero: la plantilla debe salir con el código final.
   const handleCopyWhatsApp = conAviso(async (ticket) => {
     // Una instalación sin la plantilla de la promotora pegada no tiene plantilla que copiar (una reconexión sí: sale en el formato de la app).
     if (ordenSinPlantilla(ticket)) {
       setToastMsg({ type: 'error', text: TEXTO_SIN_PLANTILLA, duration: 8000 });
       return false;
     }
-    const reenvio = ticket.isAsignado && getEnvioInfo(ticket).cambioTrasEnvio;
-    if (!canEditTickets || !ticket.tecnico || (ticket.isAsignado && !reenvio)) {
-      // Sin técnico copia igual pero NO marca como enviada: se dice para que no
-      // parezca que el botón falló.
-      const sinTecnico = canEditTickets && !ticket.tecnico && !ticket.isAsignado;
-      const base = sinTecnico
-        ? 'Plantilla copiada. No se marcó como enviada: falta asignar técnico.'
-        : 'Plantilla copiada, lista para WhatsApp.';
-      const { texto, tipo } = toastCopia(ticket, base);
-      return copyToClipboard(buildWhatsAppMessage(ticket), texto, sinTecnico ? 'aviso' : tipo);
-    }
-    const guardado = await toggleAsignado(ticket, true, { silencioso: true, reenvio });
-    const { texto, tipo } = toastCopia(ticket, reenvio ? 'Plantilla copiada y reenvío registrado.' : 'Plantilla copiada y orden marcada como Enviada.');
-    return copyToClipboard(buildWhatsAppMessage(guardado || ticket), texto, tipo);
-  }, 'No se pudo marcar la orden como enviada.');
+    const guardada = canEditTickets ? await asegurarNumero(ticket) : null;
+    const { texto, tipo } = toastCopia(ticket, 'Plantilla copiada, lista para WhatsApp.');
+    return copyToClipboard(buildWhatsAppMessage(guardada || ticket), texto, tipo);
+  }, 'No se pudo copiar la plantilla.');
 
   const handleActualizarTasaAutomatica = async () => {
     const ok = await actualizarAutomatica();
@@ -245,14 +228,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     setToastMsg({ type: 'success', text: 'Formas de pago guardadas.' });
   }, 'No se pudieron guardar las formas de pago.');
 
-  // Funciones que el ADMIN enciende en Configuración (nacen apagadas). Solo las escuchan los técnicos y el módulo Configuración abierto.
-  const configuracionAbierta = isAdmin && moduloActivo === 'CONFIGURACION';
-  const { funciones, cargado: funcionesCargadas, error: funcionesError, cambiar: cambiarFuncion } = useFunciones(firebaseUser, isTecnico || configuracionAbierta, currentUserName || currentUser);
-  // Ruta del día del técnico (ver utils/rutaDelDia.js). La hoja recibe una copia de las paradas al abrirse: así el orden que el técnico ajusta
-  // con las flechas no se rehace cada vez que llega un cambio de sus órdenes.
-  const paradasRuta = isTecnico && funciones.rutasActivas ? paradasDeRuta(ticketsParaVer) : null;
-  const [rutaAbierta, setRutaAbierta] = useState(null);
-
   // La tasa se actualiza sola una vez al día por la mañana (cron del Worker de
   // notificaciones); el botón de Tasa permite actualizarla a mano en cualquier momento.
 
@@ -269,6 +244,14 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const hasActiveAssignments = isTecnico
     ? ticketsParaVer.some(t => (t.estado === 'PENDIENTE' && !esProgramadaFutura(t)) || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA')
     : tickets.length > 0;
+
+  // Funciones que el ADMIN enciende en Configuración (nacen apagadas). Solo las escuchan los técnicos y el módulo Configuración abierto.
+  const configuracionAbierta = isAdmin && moduloActivo === 'CONFIGURACION';
+  const { funciones, cargado: funcionesCargadas, error: funcionesError, cambiar: cambiarFuncion } = useFunciones(firebaseUser, isTecnico || configuracionAbierta, currentUserName || currentUser);
+  // Ruta del día del técnico (ver utils/rutaDelDia.js). La hoja recibe una copia de las paradas al abrirse: así el orden que el técnico ajusta
+  // con las flechas no se rehace cada vez que llega un cambio de sus órdenes.
+  const paradasRuta = isTecnico && funciones.rutasActivas ? paradasDeRuta(ticketsParaVer) : null;
+  const [rutaAbierta, setRutaAbierta] = useState(null);
 
   // Las órdenes de los cierres ya cargados: la búsqueda del dashboard también las encuentra (debajo de las activas, marcadas como archivadas).
   const archivados = useMemo(() => aplanarArchivados(reports), [reports]);
@@ -340,7 +323,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   const [cierreDateInput, setCierreDateInput] = useState('');
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const [uncheckWarningTicket, setUncheckWarningTicket] = useState(null);
   const [whatsappMessage, setWhatsappMessage] = useState(null);
   const [preFinalizarTarget, setPreFinalizarTarget] = useState(null);
   // Pago del cliente que el técnico debe registrar: las que dejó para después (solo esta sesión) y la que abrió a mano desde su orden.
@@ -589,23 +571,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   // Cancelar una orden: pide el motivo y avisa al técnico. Devuelve true si se pudo (el modal se cierra solo).
   const handleCancelar = conAviso(async (ticket, motivo) => cancelarTicket(ticket, motivo), 'No se pudo cancelar la orden.');
 
-  const confirmToggleAsignado = conAviso(async (ticket, newValue) => {
-    await toggleAsignado(ticket, newValue);
-    setUncheckWarningTicket(null);
-  }, 'No se pudo cambiar el estado de envío.');
-
-  const handleToggleAsignado = (ticket) => {
-    if (!canEditTickets) return;
-    if (ticket.isAsignado) {
-      setUncheckWarningTicket(ticket);
-    } else if (!ticket.tecnico) {
-      setToastMsg({ type: 'error', text: 'Selecciona un técnico antes de marcar como enviada.' });
-      abrirEdicion(ticket);
-    } else {
-      confirmToggleAsignado(ticket, true);
-    }
-  };
-
   // Ubicación sin abrir Editar: si la orden aún no tiene, intenta guardar lo que
   // haya en el portapapeles (la operadora copia el enlace de Maps y toca el botón);
   // si no hay un enlace válido —o la orden ya tenía ubicación— abre el modal.
@@ -671,12 +636,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
         loginData={loginData}
-        {isAdmin && abierta('CONFIGURACION', false) && enMarco('Configuración', Settings, (
-          <Suspense fallback={null}>
-            <ConfiguracionView enPagina funciones={funciones} cargado={funcionesCargadas} error={funcionesError} onCambiar={cambiarFuncion} onClose={() => onAbrirModulo(null)} />
-          </Suspense>
-        ))}
-
         setLoginData={setLoginData}
         loginError={loginError}
         handleLogin={handleLogin}
@@ -711,6 +670,12 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {isAdmin && (moduloActivo === 'FINANZAS' || moduloActivo === 'PROMOTORA' || moduloActivo === 'INFRAESTRUCTURA' || moduloActivo === 'ADMINISTRACION') && (
           <div className="flex-1 min-w-0">{renderModulo(moduloActivo, { onAbrirMenu: () => setIsSidebarOpen(true) })}</div>
         )}
+
+        {isAdmin && abierta('CONFIGURACION', false) && enMarco('Configuración', Settings, (
+          <Suspense fallback={null}>
+            <ConfiguracionView enPagina funciones={funciones} cargado={funcionesCargadas} error={funcionesError} onCambiar={cambiarFuncion} onClose={() => onAbrirModulo(null)} />
+          </Suspense>
+        ))}
 
         {abierta('ALMACEN', false) && enMarco('Almacén', Cable, (
           <Suspense fallback={null}>
@@ -802,7 +767,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               isTecnico={isTecnico}
               hasAnyTickets={hasActiveAssignments}
               getTecnicoColor={getTecnicoColor}
-              onToggleAsignado={handleToggleAsignado}
               onEdit={abrirEdicion}
               onCancelar={setCancelarTarget}
               onCopyWhatsApp={handleCopyWhatsApp}
@@ -834,7 +798,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               sortBy={sortBy}
               setSortBy={setSortBy}
               getTecnicoColor={getTecnicoColor}
-              onToggleAsignado={handleToggleAsignado}
               onEdit={abrirEdicion}
               onCancelar={setCancelarTarget}
               onCopyWhatsApp={handleCopyWhatsApp}
@@ -1059,19 +1022,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           />
         )}
 
-        {uncheckWarningTicket && (
-          <ConfirmModal
-            color="yellow"
-            title="¿Retirar Asignación?"
-            description='Está a punto de retirar el check de "Enviado". Esta acción quedará registrada en el log de modificaciones de la orden.'
-            confirmLabel="Sí, Retirar"
-            processingLabel="Retirando..."
-            zIndexClass="z-[90]"
-            onCancel={() => setUncheckWarningTicket(null)}
-            onConfirm={() => confirmToggleAsignado(uncheckWarningTicket, false)}
-          />
-        )}
-
         {whatsappMessage && (
           <WhatsAppMessageModal
             mensaje={whatsappMessage}
@@ -1159,10 +1109,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         ) : isTecnico && cobrosPendientes.length > 0 && (
           <CobroResultanteModal key={cobrosPendientes[0].id} ticket={cobrosPendientes[0]} restantes={cobrosPendientes.length - 1} formasPago={formasPago} onCopy={copyToClipboard} onClose={cerrarCobro} />
         )}
-        {isTecnico && funciones.rutasActivas && rutaAbierta && (
-          <RutaDelDiaModal paradas={rutaAbierta.paradas} sinPunto={rutaAbierta.sinPunto} onClose={() => setRutaAbierta(null)} />
-        )}
-
 
         {aprobarTarget && (
           <AprobarFinalizarModal
@@ -1212,6 +1158,10 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onClose={cerrarVentana(setIsInventarioOpen)}
           />
         ))}
+
+        {isTecnico && funciones.rutasActivas && rutaAbierta && (
+          <RutaDelDiaModal paradas={rutaAbierta.paradas} sinPunto={rutaAbierta.sinPunto} onClose={() => setRutaAbierta(null)} />
+        )}
 
         {verEstaciones && abierta('ESTACIONES', isEstacionesOpen) && enMarco('Estaciones', MonitorSmartphone, (
           <EstacionesView enPagina={isAdmin} onClose={cerrarVentana(setIsEstacionesOpen)} />

@@ -28,14 +28,12 @@ import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } 
 import { formatCedula, getEstadoColor, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
 
-// Para reactivar el aviso "Enviado" de cada tarjeta: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
 export default function TicketsMobileList({
   filteredTickets,
   canEditTickets,
   isTecnico = false,
   hasAnyTickets = true,
   getTecnicoColor,
-  // onToggleAsignado,
   onEdit,
   onCancelar,
   onCopyWhatsApp,

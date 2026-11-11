@@ -1646,42 +1646,12 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     return true;
   };
 
-  // Devuelve el ticket ya guardado (con el código final) para que quien llame
-  // pueda armar el mensaje de WhatsApp con el código correcto. `silencioso`
-  // omite el toast propio cuando el llamador muestra el suyo.
-  const toggleAsignado = async (ticket, newValue, { silencioso = false, reenvio = false } = {}) => {
-    if (!firebaseUser) return null;
-
-    const nuevaEdicion = {
-      fecha: new Date().toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }),
-      operador: currentUser || 'OPERADOR',
-      tipo: newValue ? (reenvio ? 'reenvio' : 'envio') : 'envio-retirado',
-      detalle: newValue ? `Check de ENVIADO marcado${reenvio ? ' (reenvío)' : ''}` : 'Check de ENVIADO retirado'
-    };
-
+  // Una orden con técnico que aún no tiene número (una instalación "IS", "IMZ"...) lo recibe aquí, para que la plantilla que se copia salga con el código final.
+  // Devuelve la orden ya guardada, o null si no hacía falta. No marca nada ni deja huella en el historial.
+  const asegurarNumero = async (ticket) => {
+    if (!firebaseUser || !ticket?.tecnico || !esCodigoSinNumero(ticket.codigo)) return null;
     const ticketFecha = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
-    const updatedTicket = await guardarConNumeracion(
-      tickets,
-      ticket.id,
-      ticket.codigo,
-      ticket.tipoTrabajo,
-      ticket.tecnico,
-      ticketFecha,
-      (codigo) => ({
-        ...ticket,
-        codigo,
-        isAsignado: newValue,
-        historialEdiciones: [...(ticket.historialEdiciones || []), nuevaEdicion]
-      }),
-      ticket
-    );
-    if (!silencioso) {
-      setToastMsg({
-        type: newValue ? 'success' : 'error',
-        text: newValue ? 'Orden marcada como Enviada.' : 'Check de Enviado retirado.'
-      });
-    }
-    return updatedTicket;
+    return guardarConNumeracion(tickets, ticket.id, ticket.codigo, ticket.tipoTrabajo, ticket.tecnico, ticketFecha, (codigo) => ({ ...ticket, codigo }), ticket);
   };
 
   return {
@@ -1695,7 +1665,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     verificarCodigoManual,
     updateTicket,
     cancelarTicket,
-    toggleAsignado,
+    asegurarNumero,
     guardarUbicacion,
     preFinalizarTicket,
     cobrosPorRegistrar,

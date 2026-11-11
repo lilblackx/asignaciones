@@ -1,7 +1,6 @@
 import { observacionParaTecnico } from '../utils/observacion';
 import { useRef } from 'react';
 import { ArrowDownAZ, Ban, Banknote, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
-// Para reactivar la columna ENVIADO: volver a importar Send, TriangleAlert y getEnvioInfo, y a recibir onToggleAsignado.
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -44,7 +43,6 @@ export default function TicketsTable({
   sortBy,
   setSortBy,
   getTecnicoColor,
-  // onToggleAsignado,
   onEdit,
   onCancelar,
   onCopyWhatsApp,
@@ -95,9 +93,6 @@ export default function TicketsTable({
               </span>
             </th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
-            {/* Columna ENVIADO desactivada por ahora (el estado de envío sigue en isAsignado y en el Excel); ver también su celda más abajo.
-            <th className="px-2 py-3 border-r border-zinc-800 w-[6%] align-middle text-center">ENVIADO</th>
-            */}
             <th className="px-3 py-3 border-r border-zinc-800 w-[14%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
             <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
           </tr>
@@ -105,7 +100,6 @@ export default function TicketsTable({
         <tbody ref={cuerpo}>
           {filteredTickets.map((ticket, index) => {
             const tipoEstilo = getTipoTrabajoEstilo(ticket.tipoTrabajo);
-            // const envio = getEnvioInfo(ticket); // solo la usa la celda ENVIADO, desactivada
             const enlaceNavegacion = getEnlaceNavegacion(ticket.ubicacion);
             const prioritaria = esPrioritaria(ticket);
             const sinPlantilla = ordenSinPlantilla(ticket);
@@ -220,29 +214,6 @@ export default function TicketsTable({
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
                 </td>
-                {/* Celda ENVIADO desactivada (ver el encabezado).
-                <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle bg-zinc-50/50 dark:bg-zinc-900/20">
-                  <div className="flex items-center justify-center h-full min-h-[2rem]">
-                    <button
-                      type="button"
-                      onClick={() => onToggleAsignado(ticket)}
-                      disabled={!canEditTickets || isTecnico}
-                      aria-label={`Orden ${ticket.codigo || ticket.id}: ${envio.detalle}`}
-                      aria-pressed={envio.enviado}
-                      title={envio.detalle}
-                      className={`p-1.5 rounded-full transition-colors disabled:cursor-not-allowed ${
-                        envio.cambioTrasEnvio
-                          ? 'bg-amber-500 text-black hover:bg-amber-400'
-                          : envio.enviado
-                            ? 'bg-emerald-700 text-white hover:bg-emerald-600'
-                            : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-700 disabled:hover:bg-zinc-200 dark:disabled:hover:bg-zinc-800'
-                      }`}
-                    >
-                      {envio.cambioTrasEnvio ? <TriangleAlert className="w-3.5 h-3.5" /> : envio.enviado ? <CheckCheck className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </td>
-                */}
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-0.5">
                     <span className={`inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>

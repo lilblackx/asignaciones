@@ -52,7 +52,6 @@ const COLUMNAS = [
   ['Conectores verdes', t => conectoresPorColor(t).verde || ''],
   ['Conectores azules', t => conectoresPorColor(t).azul || ''],
   ['Ubicación', t => t.ubicacion],
-  ['Enviado', t => (t.isAsignado ? 'Sí' : 'No')],
   ['Observación', t => t.observacion],
   ['Observación del técnico', t => t.observacionTecnico],
   ['Pago del cliente', t => textoDelPago(t)],

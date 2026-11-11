@@ -53,26 +53,6 @@ export const getEtiquetaDia = (fechaStr, estado) => {
   return { texto: fechaStr, atrasado: false };
 };
 
-// Estado del envío por WhatsApp (campo isAsignado) leído del historial:
-// quién/cuándo lo marcó y si hubo cambios que afectan el mensaje después
-// (técnico, trabajo, programación o código) y por tanto hay que reenviar.
-export const getEnvioInfo = (ticket) => {
-  if (!ticket?.isAsignado) return { enviado: false, cambioTrasEnvio: false, detalle: 'Sin enviar' };
-  const hist = ticket.historialEdiciones || [];
-  let idx = -1;
-  for (let i = hist.length - 1; i >= 0; i--) {
-    if (/(ENVIADO|ASIGNADO) marcado/.test(hist[i].detalle || '')) { idx = i; break; }
-  }
-  const marca = idx >= 0 ? hist[idx] : null;
-  const cambioTrasEnvio = idx >= 0 && hist.slice(idx + 1).some(h => /(Técnico|Trabajo|Prog|Cód):/.test(h.detalle || ''));
-  const base = marca ? `Enviado por ${marca.operador} el ${marca.fecha}` : 'Enviado';
-  return {
-    enviado: true,
-    cambioTrasEnvio,
-    detalle: cambioTrasEnvio ? `${base}. La orden cambió después del envío: copia y reenvía la plantilla.` : base,
-  };
-};
-
 export const getFechaStyles =(fechaStr, estado) => {
   if (estado === 'FINALIZADO' || estado === 'CANCELADO') {
     return "text-zinc-600 dark:text-zinc-400 font-medium";
