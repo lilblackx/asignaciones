@@ -6,6 +6,7 @@ import { graficoAImagen } from './graficoImagen.js';
 import { fechaHoraLegible } from './formatoFecha.js';
 import { cargarLogo } from './logoReportes.js';
 import { ajustarTabla } from './tablaAngosta.js';
+import { partirNegritas } from './textoEnriquecido.js';
 
 const MARCA = 'ASIGNACIONES NS';
 const MARGEN = 15;
@@ -126,7 +127,47 @@ export async function generarPdf(modelo) {
     y += 3;
   };
 
-  const parrafo = (t) => {
+  // Un párrafo con fragmentos en negrita (jsPDF no mezcla tipos de letra en una misma línea): se parte en palabras, se miden con su tipo de letra, se reparten en líneas y cada palabra se pinta en su sitio.
+  const parrafoConNegritas = (partes) => {
+    doc.setFontSize(8);
+    color(GRIS);
+    const palabras = [];
+    let hayEspacio = false;
+    for (const p of partes) {
+      for (const trozo of limpio(p.texto).split(/(\s+)/)) {
+        if (trozo === '') continue;
+        if (/^\s+$/.test(trozo)) { hayEspacio = true; continue; }
+        palabras.push({ t: trozo, negrita: p.negrita, espacio: hayEspacio && palabras.length > 0 });
+        hayEspacio = false;
+      }
+    }
+    doc.setFont('helvetica', 'normal');
+    const espacio = doc.getTextWidth(' ');
+    const lineas = [];
+    let linea = [];
+    let usado = 0;
+    for (const w of palabras) {
+      doc.setFont('helvetica', w.negrita ? 'bold' : 'normal');
+      const ancho = doc.getTextWidth(w.t);
+      if (linea.length && usado + (w.espacio ? espacio : 0) + ancho > util) { lineas.push(linea); linea = []; usado = 0; }
+      const antes = linea.length && w.espacio ? espacio : 0;
+      linea.push({ ...w, x: usado + antes });
+      usado += antes + ancho;
+    }
+    if (linea.length) lineas.push(linea);
+    const paso = doc.getLineHeight() / doc.internal.scaleFactor;
+    asegurar(lineas.length * 3.6 + 2);
+    // Cada palabra se pinta en su sitio medido (no por tramos): así una diferencia de ancho de la letra del visor no se acumula en una línea larga y no se come el espacio junto a la negrita.
+    lineas.forEach((l, i) => l.forEach((w) => {
+      doc.setFont('helvetica', w.negrita ? 'bold' : 'normal');
+      doc.text(w.t, MARGEN + w.x, y + i * paso);
+    }));
+    doc.setFont('helvetica', 'normal');
+    y += lineas.length * 3.6 + 5;
+  };
+
+  const parrafo = (t, negritas) => {
+    if (negritas?.length) { parrafoConNegritas(partirNegritas(t, negritas)); return; }
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     color(GRIS);
@@ -246,7 +287,7 @@ export async function generarPdf(modelo) {
     if (b.tipo === 'cifras') cifras(b.items);
     else if (b.tipo === 'seccion') encabezadoDeSeccion(b.titulo);
     else if (b.tipo === 'salto') { if (y > MARGEN + 8) nuevaPagina(); }
-    else if (b.tipo === 'texto') parrafo(b.texto);
+    else if (b.tipo === 'texto') parrafo(b.texto, b.negritas);
     else if (b.tipo === 'tabla' && !b.soloCsv) tabla(b);
     else if (b.tipo === 'lista') lista(b);
     else if (b.tipo === 'grafico') grafico(b);

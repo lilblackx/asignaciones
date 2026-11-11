@@ -46,7 +46,7 @@ export function movimientosDePago(pago, { adelantos = [], ajustes = [], descuent
   const esperado = redondear((Number(pago.neto ?? pago.total) || 0) - (Number(pago.total) || 0));
   const listado = redondear(filas.reduce((suma, f) => suma + f.monto, 0));
   if (Math.abs(esperado - listado) > 0.005) {
-    filas.push({ tipo: esperado < listado ? 'Descuento' : 'Bono', detalle: 'Sin detalle guardado (pago anterior)', monto: redondear(esperado - listado) });
+    filas.push({ tipo: esperado < listado ? 'Descuento' : 'Pago adicional', detalle: 'Sin detalle guardado (pago anterior)', monto: redondear(esperado - listado) });
   }
   return filas;
 }
@@ -75,7 +75,7 @@ export const textoFormaDePago = (pago) => (pago?.forma
 // El detalle de los pagos dados (los del periodo, sin anular): uno por pago, por técnico y del más reciente al más viejo.
 // `ordenesPagadas`: los documentos de las órdenes pagadas de esos pagos. Cada elemento:
 //   { pago, tecnico, fecha, titulo, nota, cuenta, neto, bs, ordenes, faltan, movimientos }
-//   cuenta: las filas [concepto, monto] de la cuenta del pago (órdenes, bonos, descuentos, neto y bolívares);
+//   cuenta: las filas [concepto, monto] de la cuenta del pago (órdenes, pagos adicionales, descuentos, neto y bolívares);
 //   nota: cómo se pagó y la nota del pago; faltan: cuántas órdenes del pago no se pudieron leer (0 si salieron todas).
 export function detalleDePagos({ pagos, ordenesPagadas = [], nombreDe = () => '', adelantos = [], ajustes = [], descuentos = [], adicionales = [], tasa = null }) {
   return pagos
@@ -100,7 +100,7 @@ export function detalleDePagos({ pagos, ordenesPagadas = [], nombreDe = () => ''
         nota: [forma && `Forma de pago: ${forma}`, pago.nota && `Nota: ${pago.nota}`].filter(Boolean).join('. '),
         cuenta: [
           [`Órdenes pagadas (${cantidad})`, dolares(total)],
-          bonos > 0 && ['Bonos y pagos adicionales', `+ ${dolares(bonos)}`],
+          bonos > 0 && ['Pagos adicionales y por garantía', `+ ${dolares(bonos)}`],
           descuento > 0 && ['Descuentos', `- ${dolares(descuento)}`],
           ['Neto pagado', dolares(neto)],
           bs != null && [`${pago.moneda === MONEDA_BS ? 'Pagado en bolívares' : 'Equivalente en bolívares'} (tasa ${tasaLegible(tasaDelPago)})`, bolivares(bs)],

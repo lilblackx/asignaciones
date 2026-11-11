@@ -2,7 +2,8 @@
 // (para compartir con cada técnico): las órdenes que entraron en cada pago, lo que se sumó y se descontó, que las cuentas cuadren con el neto, las tablas angostas del PDF y el Word y las listas planas del CSV.
 // No necesita el emulador. Uso: `node scripts/test-detalle-pagos.mjs`.
 import { detalleDePagos, movimientosDePago, nombreDeConcepto, pagosIncompletos, textoFormaDePago } from '../src/utils/detallePagos.js';
-import { documentoPagosDetallados, documentoPagosTecnicos, documentoResumenPagos } from '../src/utils/modelosReporte.js';
+import { EMPRESA_FACTURA, documentoPagosDetallados, documentoPagosTecnicos, documentoResumenPagos } from '../src/utils/modelosReporte.js';
+import { partirNegritas } from '../src/utils/textoEnriquecido.js';
 import { csvDeDocumento } from '../src/utils/csvReporte.js';
 import { nombreDeArchivo } from '../src/utils/exportarDocumento.js';
 
@@ -76,9 +77,9 @@ check('si no se pudieron leer todas las órdenes de un pago se dice cuántas fal
 check('el título lleva la fecha del pago y las órdenes', [d1.titulo.startsWith('Pago del 09/11/2026'), d1.titulo.endsWith('· 3 órdenes'), detalle[3].titulo.endsWith('· 2 órdenes')], [true, true, true]);
 check('la nota dice cómo se pagó (banco, referencia y moneda) y lleva la nota del pago', d1.nota, 'Forma de pago: Transferencia · Banco Nacional de Crédito (BNC) · Ref. 123456789 · en bolívares. Nota: Pago de la semana');
 check('un pago de antes, sin forma de pago ni nota, no lleva nota', detalle[1].nota, '');
-check('la cuenta del pago: órdenes, bonos, descuentos, neto y los bolívares de la tasa de ese pago (900)', d1.cuenta,
-  [['Órdenes pagadas (3)', usd('15,00 $')], ['Bonos y pagos adicionales', usd('+ 5,00 $')], ['Descuentos', usd('- 4,00 $')], ['Neto pagado', usd('16,00 $')], ['Pagado en bolívares (tasa 900,00)', bs('14.400,00 Bs')]]);
-check('sin bonos ni descuentos la cuenta no los muestra, y si no se pagó en bolívares dice "equivalente" con la tasa de hoy cuando el pago no guardó la suya',
+check('la cuenta del pago: órdenes, pagos adicionales, descuentos, neto y los bolívares de la tasa de ese pago (900)', d1.cuenta,
+  [['Órdenes pagadas (3)', usd('15,00 $')], ['Pagos adicionales y por garantía', usd('+ 5,00 $')], ['Descuentos', usd('- 4,00 $')], ['Neto pagado', usd('16,00 $')], ['Pagado en bolívares (tasa 900,00)', bs('14.400,00 Bs')]]);
+check('sin pagos adicionales ni descuentos la cuenta no los muestra, y si no se pagó en bolívares dice "equivalente" con la tasa de hoy cuando el pago no guardó la suya',
   detalle[3].cuenta, [['Órdenes pagadas (2)', usd('10,00 $')], ['Neto pagado', usd('10,00 $')], ['Equivalente en bolívares (tasa 880,00)', bs('8.800,00 Bs')]]);
 check('un pago con su propia tasa (850) usa esa y no la de hoy', detalle[1].cuenta.at(-1), ['Equivalente en bolívares (tasa 850,00)', bs('24.505,50 Bs')]);
 check('cada pago trae su neto y sus bolívares', detalle.map((d) => [d.neto, d.bs]), [[16, 14400], [28.83, 24505.5], [3, 2640], [10, 8800]]);
@@ -100,7 +101,7 @@ check('la línea gris de cada pago lleva el periodo, la forma de pago y la nota'
 check('la línea gris del resumen por técnico dice qué se pagó y en cuántos pagos', compactas[0].subfilas.map((s) => s.endsWith(' pagos') || s.endsWith(' pago')), compactas[0].subfilas.map(() => true));
 check('el Resumen no trae el detalle de las órdenes: ni secciones ni tablas por pago, ni listas de órdenes en el CSV', [
   resumen.bloques.some((b) => b.tipo === 'seccion' || b.tipo === 'salto'),
-  tablas.some((t) => /^(Pago del|Órdenes pagadas|Descuentos y bonos)/.test(t.titulo || '')),
+  tablas.some((t) => /^(Pago del|Órdenes pagadas|Descuentos y pagos adicionales)/.test(t.titulo || '')),
   csvDeDocumento(resumen).split('\r\n').some((l) => l.startsWith('Técnico;Fecha del pago;Orden;Cliente')),
 ], [false, false, false]);
 check('el Resumen conserva su pie de siempre y el nombre de archivo que sale de su título', [resumen.pie, resumen.nombreArchivo], [undefined, undefined]);
@@ -137,25 +138,36 @@ check('las cifras de cada técnico: neto pagado (con bolívares), órdenes y pag
   [['Neto pagado', usd('10,00 $'), bs('8.800,00 Bs')], ['Órdenes pagadas', '2', undefined], ['Pago', '1', undefined]],
 ]);
 const paraPdf = todos.bloques.filter((b) => b.tipo === 'tabla' && b.noCsv);
-check('por cada pago hay una tabla de cuenta y una de órdenes, y una de descuentos y bonos si los tuvo (3 + 3 + 3 + 2 tablas)', paraPdf.map((t) => t.titulo.replace(/\(\d+\)/, '(n)').replace(/\d{2}\/\d{2}\/\d{4}.*?·/, 'FECHA ·')), [
-  'Pago del FECHA · 3 órdenes', 'Órdenes pagadas (n)', 'Descuentos y bonos (n)',
-  'Pago del FECHA · 2 órdenes', 'Órdenes pagadas (n)', 'Descuentos y bonos (n)',
-  'Pago del FECHA · 1 orden', 'Órdenes pagadas (n)', 'Descuentos y bonos (n)',
+check('por cada pago hay una tabla de cuenta y una de órdenes, y una de descuentos y pagos adicionales si los tuvo (3 + 3 + 3 + 2 tablas)', paraPdf.map((t) => t.titulo.replace(/\(\d+\)/, '(n)').replace(/\d{2}\/\d{2}\/\d{4}.*?·/, 'FECHA ·')), [
+  'Pago del FECHA · 3 órdenes', 'Órdenes pagadas (n)', 'Descuentos y pagos adicionales (n)',
+  'Pago del FECHA · 2 órdenes', 'Órdenes pagadas (n)', 'Descuentos y pagos adicionales (n)',
+  'Pago del FECHA · 1 orden', 'Órdenes pagadas (n)', 'Descuentos y pagos adicionales (n)',
   'Pago del FECHA · 2 órdenes', 'Órdenes pagadas (n)',
 ]);
 check('la tabla de cuenta de un pago lleva la forma de pago como nota y sus filas de cuenta', [paraPdf[0].columnas.map((c) => c.titulo), paraPdf[0].nota.startsWith('Forma de pago: Transferencia'), paraPdf[0].filas.length], [['Resumen del pago', 'Monto'], true, 5]);
 check('el cliente que no se conoce sale con un guion en el PDF y el Word, y vacío en el CSV (Excel trata como fórmula lo que empieza con "-")', [paraPdf[1].filas.map((f) => f[1]), csvDeDocumento(todos).includes(";'-;")], [['José Núñez', '-', 'María Pérez'], false]);
 check('la tabla de órdenes de un pago con órdenes sin leer avisa cuántas faltan', paraPdf.at(-1).filas.at(-1)[1], 'Falta 1 orden de este pago: no se pudo leer');
 check('todas las tablas de los Pagos detallados traen una celda de texto por columna', paraPdf.every((t) => t.filas.every((f) => f.length === t.columnas.length && f.every((c) => typeof c === 'string'))), true);
+// --- El texto del recibo: es el detalle de la factura fiscal de la cuadrilla, con el nombre de la empresa en negrita ---
+const TEXTO_RECIBO = 'Este recibo de pago es el detalle de la factura fiscal emitida por la cuadrilla a NETWORK SPEED, C.A producto de la relación comercial, a la tasa del Banco Central de Venezuela vigente para el día de pago.';
+const textos = todos.bloques.filter((b) => b.tipo === 'texto');
+check('los Pagos detallados cierran con el texto del recibo y la empresa como único fragmento en negrita', [textos.length, textos[0].texto, textos[0].negritas], [1, TEXTO_RECIBO, ['NETWORK SPEED, C.A']]);
+check('el nombre de la empresa sale de una sola constante y está dentro del texto', [EMPRESA_FACTURA, textos[0].texto.includes(EMPRESA_FACTURA)], ['NETWORK SPEED, C.A', true]);
+check('el documento ya no usa la palabra bono (ni en el texto, ni en las cuentas, tablas y CSV de los pagos detallados)', [JSON.stringify(todos).toLowerCase().includes('bono'), csvDeDocumento(todos).toLowerCase().includes('bono')], [false, false]);
+check('el texto del recibo dice a qué tasa están los bolívares: la del Banco Central de Venezuela vigente el día de pago', textos[0].texto.endsWith(', a la tasa del Banco Central de Venezuela vigente para el día de pago.'), true);
+check('el texto se parte en tres: normal, la empresa en negrita y normal', partirNegritas(textos[0].texto, textos[0].negritas).map((p) => [p.negrita, p.texto.length > 20 ? p.texto.slice(0, 12) + '...' : p.texto]), [[false, 'Este recibo ...'], [true, 'NETWORK SPEED, C.A'], [false, ' producto de...']]);
+check('lo que se parte vuelve a dar el mismo texto', partirNegritas(textos[0].texto, textos[0].negritas).map((p) => p.texto).join(''), TEXTO_RECIBO);
+check('el texto del recibo no sale en el CSV (solo cifras y tablas) y el de un técnico lo lleva igual', [csvDeDocumento(todos).includes('factura fiscal'), documentoPagosDetallados(contexto({ tecnico: 'JOSE' })).bloques.some((b) => b.tipo === 'texto' && b.negritas?.[0] === EMPRESA_FACTURA)], [false, true]);
+
 const csv = csvDeDocumento(todos);
-check('el CSV trae las tres listas planas (cuenta de cada pago, órdenes, descuentos y bonos) y no las tablas del PDF', [
-  csv.includes('Cuenta de cada pago'), csv.includes('Órdenes pagadas\r\n'), csv.includes('Descuentos y bonos\r\n'), csv.includes('Resumen del pago'),
+check('el CSV trae las tres listas planas (cuenta de cada pago, órdenes, descuentos y pagos adicionales) y no las tablas del PDF', [
+  csv.includes('Cuenta de cada pago'), csv.includes('Órdenes pagadas\r\n'), csv.includes('Descuentos y pagos adicionales\r\n'), csv.includes('Resumen del pago'),
 ], [true, true, true, false]);
 check('el CSV de órdenes tiene una fila por orden leída', csv.split('\r\n').filter((l) => /^(JOSE|LUIS);\d{2}\/\d{2}\/\d{4}/.test(l) && /;(AO|AS|IO|AM)\d+;/.test(l)).length, ordenesPagadas.length);
 check('el CSV de la cuenta tiene una fila por pago, con el neto y los bolívares', csv.split('\r\n').filter((l) => /^(JOSE|LUIS);\d{2}\/\d{2}\/\d{4} [^;]*;\d+;[\d.,]+ \$;/.test(l)).map((l) => l.split(';').slice(2, 8).join('|')), [
   '3|15,00 $|5,00 $|4,00 $|16,00 $|14.400,00 Bs', '2|26,33 $|5,00 $|2,50 $|28,83 $|24.505,50 Bs', '1|5,00 $|0,00 $|2,00 $|3,00 $|2.640,00 Bs', '2|10,00 $|0,00 $|0,00 $|10,00 $|8.800,00 Bs',
 ]);
-check('el CSV de descuentos y bonos lleva el técnico y la fecha del pago en cada fila', csv.split('\r\n').filter((l) => /;(Adelanto|Descuento|Pago adicional|Descuento por garantía|Pago por garantía);/.test(l)).length, 3 + 2 + 1);
+check('el CSV de descuentos y pagos adicionales lleva el técnico y la fecha del pago en cada fila', csv.split('\r\n').filter((l) => /;(Adelanto|Descuento|Pago adicional|Descuento por garantía|Pago por garantía);/.test(l)).length, 3 + 2 + 1);
 
 const deJose = documentoPagosDetallados(contexto({ tecnico: 'JOSE', pagosFinanzas: { pagos, tasa: 880, adelantos, descuentos, detalle: detalle.filter((d) => d.tecnico === 'JOSE') } }));
 check('con un técnico elegido es su documento: sin secciones ni saltos, su nombre en el subtítulo y en el nombre del archivo',

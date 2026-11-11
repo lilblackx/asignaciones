@@ -1,7 +1,7 @@
 // Lo que muestra cada reporte, armado como datos puros: las cifras de arriba (las usan las pantallas) y el "documento" que se baja en PDF o
 // Word. Un documento es { titulo, subtitulo, generado, bloques }; cada bloque es uno de:
 //   { tipo: 'cifras', items: [{ etiqueta, valor, detalle? }] }
-//   { tipo: 'seccion', titulo }                      { tipo: 'texto', texto }
+//   { tipo: 'seccion', titulo }                      { tipo: 'texto', texto, negritas? }   (negritas: fragmentos del texto que van en negrita, ver textoEnriquecido.js)
 //   { tipo: 'lista', titulo, items: [{ nivel: 'aviso' | 'ok', texto }] }   (puntos de atención)
 //   { tipo: 'tabla', titulo?, nota?, columnas: [{ titulo, derecha? }], filas: [[texto, ...]], vacio? }
 //   { tipo: 'grafico', variante: 'columnas' | 'barras', titulo, subtitulo?, series: [{ nombre, color }], categorias: [{ etiqueta, valores, textos? }] }
@@ -27,6 +27,8 @@ import { etiquetaMes } from './totalesMes.js';
 import { mesesDeLaTendencia, tendenciaMensual, textoVariacion } from './tendenciaMensual.js';
 
 const HORA_MS = 3600000;
+// La empresa a la que la cuadrilla le emite su factura fiscal (el texto del recibo de los Pagos detallados, con el nombre en negrita).
+export const EMPRESA_FACTURA = 'NETWORK SPEED, C.A';
 const AZUL = '#2a78d6';
 const NARANJA = '#eb6834';
 const decimal = (n) => n.toFixed(2).replace('.', ',');
@@ -431,7 +433,7 @@ function cifrasDeLosPagos(pagos) {
   ];
 }
 
-// Un pago: cómo se pagó y su cuenta (órdenes, bonos, descuentos y neto), las órdenes que entraron y lo que se sumó o descontó.
+// Un pago: cómo se pagó y su cuenta (órdenes, pagos adicionales, descuentos y neto), las órdenes que entraron y lo que se sumó o descontó.
 function bloquesDePago(d) {
   const filas = d.ordenes.map((o) => filaOrdenDePago(o, '-'));
   if (d.faltan > 0) filas.push(['', d.faltan === 1 ? 'Falta 1 orden de este pago: no se pudo leer' : `Faltan ${d.faltan} órdenes de este pago: no se pudieron leer`, '', '', '']);
@@ -439,11 +441,11 @@ function bloquesDePago(d) {
     { tipo: 'tabla', noCsv: true, titulo: d.titulo, nota: d.nota, columnas: columnasCuentaDelPago(), filas: d.cuenta },
     { tipo: 'tabla', noCsv: true, titulo: `Órdenes pagadas (${d.ordenes.length})`, columnas: columnasOrdenesDePago(), filas, vacio: 'No se pudo leer el detalle de las órdenes de este pago.' },
   ];
-  if (d.movimientos.length > 0) bloques.push({ tipo: 'tabla', noCsv: true, titulo: `Descuentos y bonos (${d.movimientos.length})`, columnas: columnasMovimientos(), filas: d.movimientos.map(filaMovimiento) });
+  if (d.movimientos.length > 0) bloques.push({ tipo: 'tabla', noCsv: true, titulo: `Descuentos y pagos adicionales (${d.movimientos.length})`, columnas: columnasMovimientos(), filas: d.movimientos.map(filaMovimiento) });
   return bloques;
 }
 
-// Finanzas: el detalle de cada pago del periodo, para compartirlo con el técnico: lo que se le pagó y por qué órdenes, lo que se le sumó (bonos, pagos adicionales, garantías) y lo que se le descontó (adelantos,
+// Finanzas: el detalle de cada pago del periodo, para compartirlo con el técnico: lo que se le pagó y por qué órdenes, lo que se le sumó (pagos adicionales y por garantía) y lo que se le descontó (adelantos,
 // descuentos), con su cuenta y los bolívares. Con un técnico elegido es su documento; sin elegir, cada técnico empieza en su propia página. `pagosFinanzas.detalle`: ver detalleDePagos (utils/detallePagos).
 // En el CSV van tres listas planas con todo, para Finanzas. Sin "uso interno" en el pie ni en la portada: es un documento para entregar.
 export function documentoPagosDetallados(ctx) {
@@ -467,7 +469,7 @@ export function documentoPagosDetallados(ctx) {
   bloques.push(
     {
       tipo: 'tabla', soloCsv: true, titulo: 'Cuenta de cada pago',
-      columnas: [{ titulo: 'Técnico' }, { titulo: 'Fecha del pago' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total órdenes', derecha: true }, { titulo: 'Bonos y adicionales', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto pagado', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Forma de pago' }, { titulo: 'Nota' }],
+      columnas: [{ titulo: 'Técnico' }, { titulo: 'Fecha del pago' }, { titulo: 'Órdenes', derecha: true }, { titulo: 'Total órdenes', derecha: true }, { titulo: 'Pagos adicionales y por garantía', derecha: true }, { titulo: 'Descuentos', derecha: true }, { titulo: 'Neto pagado', derecha: true }, { titulo: 'En Bs', derecha: true }, { titulo: 'Forma de pago' }, { titulo: 'Nota' }],
       filas: detalle.map((d) => [d.tecnico, d.fecha, String(Number(d.pago.cantidadOrdenes) || d.ordenes.length), dolares(d.pago.total), dolares(d.pago.bonos || 0), dolares(d.pago.descuento || 0), dolares(d.neto), d.bs == null ? '' : bolivares(d.bs), textoFormaDePago(d.pago), d.pago.nota || '']),
     },
     {
@@ -476,12 +478,12 @@ export function documentoPagosDetallados(ctx) {
       filas: detalle.flatMap((d) => d.ordenes.map((o) => [d.tecnico, d.fecha, ...filaOrdenDePago(o)])),
     },
     {
-      tipo: 'tabla', soloCsv: true, titulo: 'Descuentos y bonos',
+      tipo: 'tabla', soloCsv: true, titulo: 'Descuentos y pagos adicionales',
       columnas: [{ titulo: 'Técnico' }, { titulo: 'Fecha del pago' }, ...columnasMovimientos()],
       filas: detalle.flatMap((d) => d.movimientos.map((m) => [d.tecnico, d.fecha, ...filaMovimiento(m)])),
-      vacio: 'Ningún pago de este periodo tuvo descuentos ni bonos.',
+      vacio: 'Ningún pago de este periodo tuvo descuentos ni pagos adicionales.',
     },
-    { tipo: 'texto', texto: 'Cada pago muestra las órdenes que se pagaron, lo que se sumó (bonos, pagos adicionales y pagos por garantía) y lo que se descontó (adelantos, descuentos y descuentos por garantía). Los montos son los del tabulador de precios del momento de cada pago y los bolívares, con la tasa BCV del dólar de ese momento.' },
+    { tipo: 'texto', texto: `Este recibo de pago es el detalle de la factura fiscal emitida por la cuadrilla a ${EMPRESA_FACTURA} producto de la relación comercial, a la tasa del Banco Central de Venezuela vigente para el día de pago.`, negritas: [EMPRESA_FACTURA] },
   );
   return { ...encabezado('Pagos detallados', rango, tecnico, ctx, bloques), pie: '', nombreArchivo: tecnico ? `Pagos detallados ${tecnico}` : 'Pagos detallados' };
 }

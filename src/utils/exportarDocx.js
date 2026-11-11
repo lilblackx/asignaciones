@@ -7,6 +7,7 @@ import { graficoAImagen } from './graficoImagen.js';
 import { fechaHoraLegible } from './formatoFecha.js';
 import { cargarLogo } from './logoReportes.js';
 import { ajustarTabla } from './tablaAngosta.js';
+import { partirNegritas } from './textoEnriquecido.js';
 
 const MARCA = 'ASIGNACIONES NS';
 const ANCHO_PAGINA = 11906; // el ancho de la hoja A4, en veinteavos de punto
@@ -211,7 +212,7 @@ export async function generarDocx(modelo) {
     if (b.tipo === 'cifras') { hijos.push(tarjetas(b.items), parrafo([], { spacing: { after: 120 } })); }
     else if (b.tipo === 'seccion') hijos.push(...seccion(b.titulo));
     else if (b.tipo === 'salto') hijos.push(parrafo([new PageBreak()]));
-    else if (b.tipo === 'texto') hijos.push(parrafo([corrida(b.texto, { size: 16, color: '52514E' })], { spacing: { before: 120, after: 120 } }));
+    else if (b.tipo === 'texto') hijos.push(parrafo(partirNegritas(b.texto, b.negritas).map((p) => corrida(p.texto, { size: 16, color: '52514E', ...(p.negrita ? { bold: true } : {}) })), { spacing: { before: 120, after: 120 } }));
     else if (b.tipo === 'tabla' && !b.soloCsv) hijos.push(...tabla(b), parrafo([], { spacing: { after: 160 } }));
     else if (b.tipo === 'lista') hijos.push(...lista(b));
     else if (b.tipo === 'grafico') hijos.push(...grafico(b));
