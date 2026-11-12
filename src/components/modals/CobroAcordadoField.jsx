@@ -25,7 +25,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
       <p id={`${idPrefix}-cobro-acordado`} className={etiqueta}>
         COBRO ACORDADO CON EL CLIENTE <span className="font-normal normal-case text-zinc-400">(opcional; lo ve quien finaliza la orden)</span>
       </p>
-      <div role="radiogroup" aria-labelledby={`${idPrefix}-cobro-acordado`} className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+      <div role="radiogroup" aria-labelledby={`${idPrefix}-cobro-acordado`} className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-1.5">
         {OPCIONES.map(([modo, texto]) => {
           const activa = value.modo === modo;
           return (
@@ -35,7 +35,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
               role="radio"
               aria-checked={activa}
               onClick={() => onChange({ ...value, modo })}
-              className={`min-h-11 lg:min-h-9 px-2 py-1.5 rounded-xl border-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
+              className={`min-h-11 lg:min-h-9 px-2 py-1.5 rounded-xl border-2 text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
                 activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
               }`}
             >
