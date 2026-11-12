@@ -33,27 +33,27 @@ check('conector interno: verde o azul', ['VERDE', 'AZUL', '', 'ROJO'].map(colorC
 
 // --- Datos que se guardan ---
 check('recableado con ambos conectores',
-  datosConectores('RECABLEADO', { metros: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' }),
-  { metrosCable: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL', conectoresUsados: null });
+  datosConectores('RECABLEADO', { metros: 35, metrajeInicial: 100, metrajeFinal: 135, conectorExterno: 'VERDE', conectorInterno: 'AZUL' }),
+  { metrosCable: 35, metrajeInicial: 100, metrajeFinal: 135, conectorExterno: 'VERDE', conectorInterno: 'AZUL', conectoresUsados: null });
 check('recableado sin conectores (son opcionales)',
-  datosConectores('RECABLEADO', { metros: 20 }), { metrosCable: 20, conectorExterno: '', conectorInterno: '', conectoresUsados: null });
+  datosConectores('RECABLEADO', { metros: 20 }), { metrosCable: 20, metrajeInicial: null, metrajeFinal: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null });
 check('un azul externo se descarta', datosConectores('RECABLEADO', { metros: 20, conectorExterno: 'AZUL' }).conectorExterno, '');
 check('sin tipo de visita (o con otro) todo se borra',
   ['', undefined, 'OTRO'].map(t => datosConectores(t, { metros: 35, conectorExterno: 'VERDE', conectorInterno: 'AZUL' })),
-  [1, 2, 3].map(() => ({ metrosCable: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null })));
+  [1, 2, 3].map(() => ({ metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null })));
 
 // --- Visita de conector: el técnico indica cuántos conectores usó de cada color ---
 check('visitas de conector', ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(esVisitaConector), [false, true, true, false]);
 check('llevan conectores el recableado y las visitas de conector', ['', 'CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO'].map(llevaConectores), [false, true, true, true]);
 check('conector externo: siempre verde, con la cantidad escrita; los azules son internos opcionales',
   [{ verde: 3 }, { verde: 1, azul: 4 }].map(c => datosConectores('CONECTOR_EXTERNO', { metros: 35, conectorInterno: 'AZUL', conectores: c })),
-  [{ metrosCable: null, conectorExterno: 'VERDE', conectorInterno: '', conectoresUsados: { verde: 3, azul: 0 } },
-   { metrosCable: null, conectorExterno: 'VERDE', conectorInterno: 'AZUL', conectoresUsados: { verde: 1, azul: 4 } }]);
+  [{ metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: 'VERDE', conectorInterno: '', conectoresUsados: { verde: 3, azul: 0 } },
+   { metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: 'VERDE', conectorInterno: 'AZUL', conectoresUsados: { verde: 1, azul: 4 } }]);
 check('conector interno: guarda las cantidades; el color solo si se usó uno',
   [{ verde: 2, azul: 0 }, { verde: 0, azul: 3 }, { verde: 1, azul: 1 }].map(c => datosConectores('CONECTOR_INTERNO', { metros: 35, conectorExterno: 'VERDE', conectores: c })),
-  [{ metrosCable: null, conectorExterno: '', conectorInterno: 'VERDE', conectoresUsados: { verde: 2, azul: 0 } },
-   { metrosCable: null, conectorExterno: '', conectorInterno: 'AZUL', conectoresUsados: { verde: 0, azul: 3 } },
-   { metrosCable: null, conectorExterno: '', conectorInterno: '', conectoresUsados: { verde: 1, azul: 1 } }]);
+  [{ metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: '', conectorInterno: 'VERDE', conectoresUsados: { verde: 2, azul: 0 } },
+   { metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: '', conectorInterno: 'AZUL', conectoresUsados: { verde: 0, azul: 3 } },
+   { metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: '', conectorInterno: '', conectoresUsados: { verde: 1, azul: 1 } }]);
 check('cantidades inválidas se guardan como 0 (la validación las frena antes)',
   datosConectores('CONECTOR_INTERNO', { conectores: { verde: -1, azul: 'x' } }).conectoresUsados, { verde: 0, azul: 0 });
 

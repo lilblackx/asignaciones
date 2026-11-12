@@ -1,4 +1,5 @@
 import { textoConectoresInstalacion } from './conectoresInstalacion.js';
+import { textoMetrajeConMarcas } from './metraje.js';
 import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, esConfigVlan, esReconexion, esVisitaConector, pideNapPuertoVisita, textoConectorVisita } from './tipoVisita.js';
 
 // Lo que el técnico va a enviar al pre-finalizar, para que lo revise en la confirmación antes de mandarlo (una vez enviado solo la oficina puede devolverle la orden). Recibe lo que arma el formulario
@@ -14,7 +15,7 @@ export function datosParaConfirmar(extra) {
     agregar('Serial', inst.serial, true);
     agregar('VLAN', inst.vlan);
     agregar('NAP y puerto', extra.nap);
-    agregar('Metraje del drop', inst.metrajeExistente ? 'Metraje existente (no se descuenta cable)' : inst.metraje != null ? `${inst.metraje} m` : '');
+    agregar('Metraje del drop', inst.metrajeExistente ? 'Metraje existente (no se descuenta cable)' : inst.metraje != null ? textoMetrajeConMarcas(inst.metraje, inst) : '');
     agregar('Posteadura', Array.isArray(inst.posteadura) ? inst.posteadura.join(', ') : '');
     agregar('Puertos disponibles en la NAP', inst.puertosDisponibles);
     agregar('Conectores usados', textoConectoresInstalacion(inst.conectores));
@@ -26,7 +27,7 @@ export function datosParaConfirmar(extra) {
     if (esReconexion(extra.tipoVisita)) agregar('Serial del equipo', extra.serialEquipo, true);
     if (esConfigVlan(extra.tipoVisita)) agregar('VLAN configurada', extra.vlanVisita, true);
     if (pideNapPuertoVisita(extra.tipoVisita)) agregar('NAP y puerto', extra.nap);
-    if (extra.tipoVisita === TIPO_RECABLEADO) agregar('Metros de cable', extra.metrosCable != null ? `${extra.metrosCable} m` : '');
+    if (extra.tipoVisita === TIPO_RECABLEADO) agregar('Metros de cable', extra.metrosCable != null ? textoMetrajeConMarcas(extra.metrosCable, extra) : '');
     if (esVisitaConector(extra.tipoVisita)) agregar('Conectores usados', textoConectorVisita(extra).replace(/^Conectores?:?\s*/i, ''));
   }
   if (extra.potenciaDbm !== null && extra.potenciaDbm !== undefined) agregar('Potencia óptica', `${extra.potenciaDbm} dBm`);

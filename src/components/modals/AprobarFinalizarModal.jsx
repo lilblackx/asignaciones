@@ -1,3 +1,4 @@
+import { textoMetrajeConMarcas } from '../../utils/metraje';
 import { useState } from 'react';
 import { Banknote, Cable, CheckCheck, CircleAlert, Eye, Undo2, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
@@ -173,7 +174,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
               {tieneDatosRecableado(ticket)
                 ? (
                   <div className="ml-6 space-y-1.5">
-                    {ticket.metrosCable != null && <p className="font-bold">{ticket.metrosCable} m de cable</p>}
+                    {ticket.metrosCable != null && <p className="font-bold">{textoMetrajeConMarcas(ticket.metrosCable, ticket)} de cable</p>}
                     {[['Conector externo', ticket.conectorExterno], ['Conector interno', ticket.conectorInterno]].filter(([, color]) => color).map(([nombre, color]) => (
                       <p key={nombre} className="flex flex-wrap items-center gap-2 font-bold">{nombre} <InsigniaConector color={color} /></p>
                     ))}

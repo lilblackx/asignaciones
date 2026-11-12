@@ -84,7 +84,7 @@ export default function CorregirEnvioModal({ envio, usuario, onReenviar, onClose
                 {' '}Solo se cambian estos datos; el cobro, el técnico y el estado quedan como están. El cambio queda en el historial de la orden.
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <DatosTecnicoEdicion instalacion={esInstalacion(ticket.tipoTrabajo)} form={formulario} onChange={cambiar} errores={errores} finalizada={false} avisoSerial />
+                <DatosTecnicoEdicion instalacion={esInstalacion(ticket.tipoTrabajo)} form={formulario} onChange={cambiar} errores={errores} finalizada={false} avisoSerial ticketMetros={ticket.metrosCable ?? null} />
               </div>
               {aviso && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{aviso}</p>}
               <div className="space-y-2">

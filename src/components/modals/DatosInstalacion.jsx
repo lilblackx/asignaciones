@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import BotonEscanearSerial from '../BotonEscanearSerial';
 import NapPuertoCampos from './NapPuertoCampos';
-import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
+import MetrajeInicialFinal from './MetrajeInicialFinal';
+import { MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { evaluarSerialCaja } from '../../utils/serialOlt';
 import { claseCampo } from '../estilos';
@@ -12,10 +13,10 @@ const claseEtiqueta = 'text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1';
 
 // Lo que el técnico llena al instalar y la plantilla de la promotora trae vacío. Los campos van en el mismo orden
 // que en el modal de revisión de la oficina (ver DatosParaAutorizar): serial, VLAN, NAP y puerto donde
-// conecta el cliente (iguales que en la visita de conector externo), metraje del drop, posteadura (uno o varios
+// conecta el cliente (iguales que en la visita de conector externo), metraje del drop (inicial y final; el total se calcula), posteadura (uno o varios
 // postes) y puertos disponibles en la NAP. Todo es obligatorio. Si se cambia el orden aquí, también el del
 // modal de revisión y el del foco al validar (PreFinalizarModal): lo vigila la prueba de utils/instalacion.
-export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, metraje, onMetraje, metrajeExistente = false, onMetrajeExistente, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
+export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, metrajeInicial, onMetrajeInicial, metrajeFinal, onMetrajeFinal, metrajeExistente = false, onMetrajeExistente, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
   const cambiarPoste = (i, valor) => onPostes(postes.map((p, j) => (j === i ? valor : p)));
   // Recuadro del serial: verde si es correcto; rojo si no (el rojo sale al salir del campo, salvo "GOPN", que se avisa de una vez).
   const [serialTocado, setSerialTocado] = useState(false);
@@ -79,27 +80,20 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
       <NapPuertoCampos nap={nap} onNap={onNap} napError={errores.nap} puerto={puerto} onPuerto={onPuerto} puertoError={errores.puerto} />
 
       <div className="space-y-1">
-        <label htmlFor="pf-metraje" className={claseEtiqueta}>
-          METRAJE DEL DROP <span className="font-normal text-red-500">(obligatorio)</span> <span className="font-normal text-zinc-400">metros de cable</span>
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            id="pf-metraje"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={MAX_LARGO_METRAJE}
-            placeholder="Ej. 120"
-            value={metrajeExistente ? '' : metraje}
-            disabled={metrajeExistente}
-            onChange={(e) => onMetraje(e.target.value.replace(/\D/g, ''))}
-            aria-invalid={!!errores.metraje}
-            aria-describedby={errores.metraje ? 'pf-metraje-error' : undefined}
-            className={`flex-1 min-w-0 ${claseInput(errores.metraje)} disabled:opacity-50 disabled:cursor-not-allowed`}
-          />
-          <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400" aria-hidden="true">m</span>
-        </div>
-        {errores.metraje && <p id="pf-metraje-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
+        <p className={claseEtiqueta}>
+          METRAJE DEL DROP <span className="font-normal text-zinc-400">marca del cable al empezar y al terminar</span>
+        </p>
+        <MetrajeInicialFinal
+          idInicial="pf-metraje-inicial"
+          idFinal="pf-metraje-final"
+          inicial={metrajeInicial}
+          final={metrajeFinal}
+          onInicial={onMetrajeInicial}
+          onFinal={onMetrajeFinal}
+          errorInicial={errores.metrajeInicial}
+          errorFinal={errores.metrajeFinal}
+          deshabilitado={metrajeExistente}
+        />
         {onMetrajeExistente && (
           <label htmlFor="pf-metraje-existente" className="flex items-start gap-2.5 min-h-11 py-1.5 cursor-pointer">
             <input id="pf-metraje-existente" type="checkbox" checked={metrajeExistente} onChange={(e) => onMetrajeExistente(e.target.checked)} className="mt-0.5 w-5 h-5 shrink-0 accent-red-600" />

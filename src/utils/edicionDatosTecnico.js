@@ -10,11 +10,12 @@
 // tuvo (las anteriores a que se pidiera el metraje o los conectores) puede seguir vacío: así se corrige un serial sin obligar
 // a inventar datos que van al módulo Materiales y al inventario del almacén.
 import { napSinDato, separarNapPuerto } from './napPuerto.js';
+import { calcularMetraje, textoMetrajeConMarcas } from './metraje.js';
 import { esInstalacion, limpiarPostes, napConPuerto, validarInstalacion } from './instalacion.js';
 import { errorConectoresInstalacion, normalizarConectoresInstalacion, parseConectoresInstalacion, textoConectoresInstalacion } from './conectoresInstalacion.js';
 import {
   TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, datosVlanVisita, errorTipoEquipoNuevo, esCambioEquipo, esConfigVlan, etiquetaTipoVisita,
-  llevaConectores, parseCantidadesConector, parseMetros, parseSerialEquipo, parseVlanVisita, pideSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado,
+  llevaConectores, parseCantidadesConector, parseSerialEquipo, parseVlanVisita, pideSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from './tipoVisita.js';
 
 export const ESTADOS_CON_DATOS_DEL_TECNICO = ['PRE-FINALIZADO', 'FINALIZADO'];
@@ -24,6 +25,7 @@ export const tieneDatosDelTecnico = (ticket) => ESTADOS_CON_DATOS_DEL_TECNICO.in
 
 const texto = (v) => String(v ?? '');
 const numero = (v) => (v ? String(v) : '');
+const marca = (v) => (v == null ? '' : String(v)); // una marca puede ser 0
 
 // La orden -> los campos del formulario, todos como texto. Una instalación sin NAP o puerto propios los toma del texto de la
 // orden ("NAP 08 - Puerto 3").
@@ -37,7 +39,10 @@ export function formularioDatosTecnico(ticket) {
     vlan: texto(inst.vlan),
     nap: texto(inst.nap || separado.nap),
     puerto: texto(inst.puerto || separado.puerto),
+    // Metraje: el total que ya tenía la orden (las anteriores a las marcas solo lo tienen a él) y las marcas inicial y final, de la instalación o del recableado.
     metraje: numero(inst.metraje),
+    metrajeInicial: marca(inst.metrajeInicial ?? ticket?.metrajeInicial),
+    metrajeFinal: marca(inst.metrajeFinal ?? ticket?.metrajeFinal),
     metrajeExistente: inst.metrajeExistente === true,
     postes: inst.posteadura?.length ? [...inst.posteadura] : [''],
     puertosDisponibles: texto(inst.puertosDisponibles),
@@ -45,7 +50,6 @@ export function formularioDatosTecnico(ticket) {
     intVerde: numero(conectores.interno.verde),
     intAzul: numero(conectores.interno.azul),
     tipoVisita: texto(ticket?.tipoVisita),
-    metros: ticket?.metrosCable != null ? String(ticket.metrosCable) : '',
     colorExterno: colorConectorExterno(ticket?.conectorExterno),
     colorInterno: colorConectorInterno(ticket?.conectorInterno),
     cantVerde: numero(cantidades.verde),
@@ -71,24 +75,32 @@ function resultado(errores, ordenCampos, datos) {
 
 const ORDEN_INSTALACION = [
   { clave: 'serial', id: 'ed-serial' }, { clave: 'vlan', id: 'ed-vlan' }, { clave: 'nap', id: 'ed-nap' }, { clave: 'puerto', id: 'ed-puerto' },
-  { clave: 'metraje', id: 'ed-metraje' }, { clave: 'posteadura', id: 'ed-poste-1' }, { clave: 'puertosDisponibles', id: 'ed-puertos-disponibles' },
+  { clave: 'metraje', id: 'ed-metraje-inicial' }, { clave: 'metrajeInicial', id: 'ed-metraje-inicial' }, { clave: 'metrajeFinal', id: 'ed-metraje-final' }, { clave: 'posteadura', id: 'ed-poste-1' }, { clave: 'puertosDisponibles', id: 'ed-puertos-disponibles' },
   { clave: 'conectores', id: (e) => ID_CONECTOR_INSTALACION[e.campo] },
 ];
 
 function validarInstalacionEditada(ticket, f) {
-  const reporte = validarInstalacion({ serial: f.serial, vlan: f.vlan, postes: f.postes, metraje: f.metraje, metrajeExistente: f.metrajeExistente === true, nap: f.nap, puerto: f.puerto, puertosDisponibles: f.puertosDisponibles });
-  // Lo que la orden ya tenía no se puede dejar vacío; lo que nunca tuvo puede seguir vacío (solo se revisa si se escribió).
   const inicial = formularioDatosTecnico(ticket);
+  // Metraje: con marcas escritas (o ya guardadas) el total se calcula de ellas; una orden anterior a las marcas conserva su total mientras no se escriban.
+  const hayMarcas = Boolean(texto(f.metrajeInicial).trim() || texto(f.metrajeFinal).trim());
+  const teniaMarcas = Boolean(inicial.metrajeInicial.trim() || inicial.metrajeFinal.trim());
+  const conservaTotal = !hayMarcas && !teniaMarcas && f.metrajeExistente !== true && Boolean(inicial.metraje.trim());
+  const reporte = validarInstalacion({
+    serial: f.serial, vlan: f.vlan, postes: f.postes, metraje: conservaTotal ? inicial.metraje : '', metrajeInicial: f.metrajeInicial, metrajeFinal: f.metrajeFinal,
+    pideMarcas: !conservaTotal, metrajeExistente: f.metrajeExistente === true, nap: f.nap, puerto: f.puerto, puertosDisponibles: f.puertosDisponibles,
+  });
+  // Lo que la orden ya tenía no se puede dejar vacío; lo que nunca tuvo puede seguir vacío (solo se revisa si se escribió).
   const exige = {
     serial: Boolean(inicial.serial.trim()), vlan: Boolean(inicial.vlan.trim()), posteadura: limpiarPostes(inicial.postes).length > 0,
     metraje: Boolean(inicial.metraje.trim()) || inicial.metrajeExistente === true, puertosDisponibles: Boolean(inicial.puertosDisponibles.trim()),
   };
   const vacios = {
     serial: !texto(f.serial).trim(), vlan: !texto(f.vlan).trim(), posteadura: limpiarPostes(f.postes).length === 0,
-    metraje: !texto(f.metraje).trim(), puertosDisponibles: !texto(f.puertosDisponibles).trim(),
+    metraje: !hayMarcas && !conservaTotal, puertosDisponibles: !texto(f.puertosDisponibles).trim(),
   };
+  const grupo = (campo) => (campo === 'metrajeInicial' || campo === 'metrajeFinal' ? 'metraje' : campo);
   const errores = {};
-  for (const [campo, mensaje] of Object.entries(reporte.errores)) if (exige[campo] || !vacios[campo]) errores[campo] = mensaje;
+  for (const [campo, mensaje] of Object.entries(reporte.errores)) if (exige[grupo(campo)] || !vacios[grupo(campo)]) errores[campo] = mensaje;
   if (!napSinDato(inicial.nap) && napSinDato(f.nap)) errores.nap = 'Indica la nomenclatura real de la NAP (no vale "SN").';
   if (inicial.puerto.trim() && !texto(f.puerto).trim()) errores.puerto = 'Indica el puerto.';
 
@@ -109,14 +121,26 @@ function validarInstalacionEditada(ticket, f) {
 }
 
 const ORDEN_VISITA = [
-  { clave: 'metros', id: 'pf-metros' }, { clave: 'cantidades', id: (e) => ID_CONECTOR_VISITA[e.campo === 'azul' ? 'azul' : 'verde'] }, { clave: 'tipoEquipoNuevo', id: 'pf-tipo-equipo' }, { clave: 'serialEquipo', id: 'pf-serial-equipo' }, { clave: 'vlanVisita', id: 'pf-vlan-visita' },
+  { clave: 'metrajeInicial', id: 'pf-metros-inicial' }, { clave: 'metrajeFinal', id: 'pf-metros-final' }, { clave: 'cantidades', id: (e) => ID_CONECTOR_VISITA[e.campo === 'azul' ? 'azul' : 'verde'] }, { clave: 'tipoEquipoNuevo', id: 'pf-tipo-equipo' }, { clave: 'serialEquipo', id: 'pf-serial-equipo' }, { clave: 'vlanVisita', id: 'pf-vlan-visita' },
 ];
 
 function validarVisitaEditada(ticket, f) {
   const tipo = f.tipoVisita;
   const errores = {};
-  const metros = tipo === TIPO_RECABLEADO ? parseMetros(f.metros) : null;
-  if (metros?.error) errores.metros = metros.error;
+  // Recableado: el total sale de las marcas inicial y final; uno anterior a las marcas conserva su total mientras no se escriban.
+  let metros = null;
+  if (tipo === TIPO_RECABLEADO) {
+    const hayMarcas = Boolean(texto(f.metrajeInicial).trim() || texto(f.metrajeFinal).trim());
+    const teniaMarcas = ticket?.metrajeInicial != null || ticket?.metrajeFinal != null;
+    if (!hayMarcas && !teniaMarcas && ticket?.tipoVisita === TIPO_RECABLEADO && ticket?.metrosCable != null) {
+      metros = { valor: ticket.metrosCable };
+    } else {
+      const calculo = calcularMetraje(f.metrajeInicial, f.metrajeFinal);
+      if (calculo.errores?.inicial) errores.metrajeInicial = calculo.errores.inicial;
+      if (calculo.errores?.final) errores.metrajeFinal = calculo.errores.final;
+      metros = { valor: calculo.valor?.total ?? null, inicial: calculo.valor?.inicial, final: calculo.valor?.final };
+    }
+  }
   const cantidades = parseCantidadesConector(tipo, { verde: f.cantVerde, azul: f.cantAzul });
   if (cantidades.error) errores.cantidades = { campo: cantidades.campo, mensaje: cantidades.error };
   const serialEquipo = pideSerialEquipo(tipo) ? parseSerialEquipo(f.serialEquipo, tipo) : null;
@@ -133,7 +157,7 @@ function validarVisitaEditada(ticket, f) {
   const conSerial = pideSerialEquipo(tipo) || ticket?.serialEquipo;
   return resultado(errores, ORDEN_VISITA, {
     tipoVisita: tipo,
-    ...(conConectores ? datosConectores(tipo, { metros: metros?.valor, conectorExterno: f.colorExterno, conectorInterno: f.colorInterno, conectores: cantidades.valor }) : {}),
+    ...(conConectores ? datosConectores(tipo, { metros: metros?.valor, metrajeInicial: metros?.inicial, metrajeFinal: metros?.final, conectorExterno: f.colorExterno, conectorInterno: f.colorInterno, conectores: cantidades.valor }) : {}),
     ...(conSerial ? datosSerialEquipo(tipo, f.serialEquipo, f.tipoEquipoNuevo) : {}),
     ...(esConfigVlan(tipo) || ticket?.vlanVisita ? datosVlanVisita(tipo, f.vlanVisita) : {}),
   });
@@ -154,7 +178,8 @@ export function cambiosDatosTecnico(antes, despues) {
   si(texto(a.serial) !== texto(d.serial), `Serial: ${d.serial || 'Vacío'}`);
   si(texto(a.vlan) !== texto(d.vlan), `VLAN: ${d.vlan || 'Vacía'}`);
   si(JSON.stringify(a.posteadura || []) !== JSON.stringify(d.posteadura || []), `Posteadura: ${(d.posteadura || []).join(', ') || 'Vacía'}`);
-  si(numero(a.metraje) !== numero(d.metraje) || (a.metrajeExistente === true) !== (d.metrajeExistente === true), d.metrajeExistente === true ? 'Metraje: existente' : `Metraje: ${d.metraje ? `${d.metraje} m` : 'Vacío'}`);
+  const textoMetraje = (x) => (x.metrajeExistente === true ? 'existente' : x.metraje ? textoMetrajeConMarcas(x.metraje, x) : '');
+  si(textoMetraje(a) !== textoMetraje(d), `Metraje: ${textoMetraje(d) || 'Vacío'}`);
   si(texto(a.puertosDisponibles) !== texto(d.puertosDisponibles), `Puertos disponibles: ${d.puertosDisponibles || 'Vacío'}`);
   const conectoresAntes = textoConectoresInstalacion(a.conectores);
   const conectoresDespues = textoConectoresInstalacion(d.conectores);

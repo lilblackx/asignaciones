@@ -14,7 +14,7 @@ import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
 import { datosParaConfirmar } from '../../utils/confirmarPreFinalizar';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseMetros, parseSerialEquipo, pideSerialEquipo, esConfigVlan, parseVlanVisita } from '../../utils/tipoVisita';
+import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseSerialEquipo, pideSerialEquipo, esConfigVlan, parseVlanVisita } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { consultaCobroDe } from '../../utils/consultaCobro';
 import ConsultaCobroRecableado from './ConsultaCobroRecableado';
@@ -25,9 +25,13 @@ import SerialEquipoCampo from './SerialEquipoCampo';
 import VlanVisitaCampo from './VlanVisitaCampo';
 import { errorSerialCaja } from '../../utils/serialOlt';
 import DatosInstalacion from './DatosInstalacion';
+import MetrajeInicialFinal from './MetrajeInicialFinal';
+import { calcularMetraje, totalMetraje } from '../../utils/metraje';
 import NapPuertoCampos from './NapPuertoCampos';
 import Spinner from '../Spinner';
 import { claseArea, claseCampo } from '../estilos';
+
+const marcaTexto = (v) => (v == null ? '' : String(v));
 
 // El pago del cliente ya no se pide aquí: el técnico lo registra cuando la oficina finaliza la orden (ver CobroResultanteModal).
 export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
@@ -39,7 +43,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   // Instalación: lo que la plantilla de la promotora trae vacío (ver utils/instalacion).
   const [serial, setSerial] = useState(ticket?.instalacion?.serial || '');
   const [vlan, setVlan] = useState(ticket?.instalacion?.vlan || '');
-  const [metraje, setMetraje] = useState(ticket?.instalacion?.metraje ? String(ticket.instalacion.metraje) : '');
+  const [metrajeInicial, setMetrajeInicial] = useState(marcaTexto(ticket?.instalacion?.metrajeInicial));
+  const [metrajeFinal, setMetrajeFinal] = useState(marcaTexto(ticket?.instalacion?.metrajeFinal));
   const [metrajeExiste, setMetrajeExiste] = useState(ticket?.instalacion?.metrajeExistente === true);
   const [puertosDisponibles, setPuertosDisponibles] = useState(ticket?.instalacion?.puertosDisponibles || '');
   const [postes, setPostes] = useState(ticket?.instalacion?.posteadura?.length ? ticket.instalacion.posteadura : ['']);
@@ -65,7 +70,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const [potencia1490, setPotencia1490] = useState(ticket?.potencia1490Dbm != null ? String(ticket.potencia1490Dbm) : '');
   // Recableado: metros de cable (obligatorios) y conectores colocados (opcionales). Visita de
   // conector: el color del conector colocado (el interno es obligatorio).
-  const [metros, setMetros] = useState(ticket?.metrosCable != null ? String(ticket.metrosCable) : (consultaCobroDe(ticket) ? String(ticket.consultaCobro.metros) : ''));
+  const [metrosInicial, setMetrosInicial] = useState(marcaTexto(ticket?.metrajeInicial));
+  const [metrosFinal, setMetrosFinal] = useState(marcaTexto(ticket?.metrajeFinal));
   const [colorExterno, setColorExterno] = useState(colorConectorExterno(ticket?.conectorExterno));
   const [colorInterno, setColorInterno] = useState(colorConectorInterno(ticket?.conectorInterno));
   // Visita de conector: cuántos conectores verdes y azules usó (texto, como se escribe).
@@ -81,7 +87,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const [vlanVisita, setVlanVisita] = useState(ticket?.vlanVisita || '');
   const [vlanVisitaError, setVlanVisitaError] = useState('');
   const [tipoVisitaError, setTipoVisitaError] = useState('');
-  const [metrosError, setMetrosError] = useState('');
+  const [metrosError, setMetrosError] = useState({});
   const [cantidadError, setCantidadError] = useState({ campo: '', mensaje: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Los datos ya validados que se guardarán si el técnico confirma; mientras haya algo aquí se ve el aviso de confirmación.
@@ -95,6 +101,9 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const tipoVisita = esInstalacion ? '' : tipoVisitaElegido;
   const visitaConNapPuerto = pideNapPuertoVisita(tipoVisita);
   const recableado = tipoVisita === TIPO_RECABLEADO;
+  // Recableado: los metros son la diferencia entre el metraje inicial y el final (texto vacío mientras no se pueda calcular).
+  const metrosTotal = totalMetraje(metrosInicial, metrosFinal);
+  const metros = metrosTotal != null ? String(metrosTotal) : '';
   // Lo que se resume en la confirmación para que el técnico vea qué está enviando: "Recableado: 250 m".
   const etiquetaVisita = tipoVisita ? `${etiquetaTipoVisita(tipoVisita)}${recableado && metros ? `: ${metros} m` : ''}` : '';
   const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
@@ -118,7 +127,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const metrosParseados = recableado ? parseMetros(metros) : null;
+    const metrosParseados = recableado ? calcularMetraje(metrosInicial, metrosFinal) : null;
     const cantidades = parseCantidadesConector(tipoVisita, { verde: cantVerde, azul: cantAzul });
     const errorCantidad = cantidades.error || '';
     // Además del formato, el serial debe ser el de la etiqueta (PON S/N o GPON...), no la MAC ni un "GOPN" mal escrito.
@@ -127,7 +136,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const serialEquipoParseado = errorFormatoEquipo ? { error: errorFormatoEquipo } : serialEquipoLeido;
     const errorTipoEquipo = errorTipoEquipoNuevo(tipoVisita, tipoEquipo);
     const vlanVisitaParseada = configVlan ? parseVlanVisita(vlanVisita) : null;
-    const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metraje, metrajeExistente: metrajeExiste, nap, puerto, puertosDisponibles }) : null;
+    const instalacionLeida = esInstalacion ? validarInstalacion({ serial, vlan, postes, metrajeInicial, metrajeFinal, pideMarcas: true, metrajeExistente: metrajeExiste, nap, puerto, puertosDisponibles }) : null;
     const errorFormatoSerial = instalacionLeida && !instalacionLeida.errores.serial ? errorSerialCaja(serial) : '';
     const instalacion = errorFormatoSerial ? { ...instalacionLeida, errores: { ...instalacionLeida.errores, serial: errorFormatoSerial }, error: true } : instalacionLeida;
     const conectoresInst = esInstalacion ? parseConectoresInstalacion({ externoVerde: instExternoVerde, internoVerde: instInternoVerde, internoAzul: instInternoAzul }) : null;
@@ -137,7 +146,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const faltaPuerto = pideNapPuerto && !puerto.trim();
     const errorVisita = errorTipoVisita(ticket.tipoTrabajo, tipoVisita);
     setTipoVisitaError(errorVisita);
-    setMetrosError(metrosParseados?.error || '');
+    setMetrosError(metrosParseados?.errores || {});
     setCantidadError({ campo: cantidades.campo || '', mensaje: errorCantidad });
     setSerialEquipoError(serialEquipoParseado?.error || '');
     setTipoEquipoError(errorTipoEquipo);
@@ -149,7 +158,8 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     const faltaObs = !observacion.trim();
     setObsError(faltaObs ? 'Debes describir el trabajo realizado antes de pre-finalizar.' : '');
     // El campo queda arriba y el botón abajo: el cursor va al primer campo con problema, en el orden del formulario.
-    if (metrosParseados?.error) document.getElementById('pf-metros')?.focus();
+    if (metrosParseados?.errores?.inicial) document.getElementById('pf-metros-inicial')?.focus();
+    else if (metrosParseados?.errores?.final) document.getElementById('pf-metros-final')?.focus();
     else if (errorCantidad) document.getElementById(cantidades.campo === 'azul' ? 'pf-cant-azul' : 'pf-cant-verde')?.focus();
     else if (errorVisita) document.getElementById('pf-tipo-visita')?.focus();
     else if (vlanVisitaParseada?.error) document.getElementById('pf-vlan-visita')?.focus();
@@ -159,13 +169,14 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
     else if (instalacion?.errores.vlan) document.getElementById('pf-vlan')?.focus();
     else if (faltaNap) document.getElementById('pf-nap')?.focus();
     else if (faltaPuerto) document.getElementById('pf-puerto')?.focus();
-    else if (instalacion?.errores.metraje) document.getElementById('pf-metraje')?.focus();
+    else if (instalacion?.errores.metrajeInicial || instalacion?.errores.metraje) document.getElementById('pf-metraje-inicial')?.focus();
+    else if (instalacion?.errores.metrajeFinal) document.getElementById('pf-metraje-final')?.focus();
     else if (instalacion?.errores.posteadura) document.getElementById('pf-poste-1')?.focus();
     else if (instalacion?.errores.puertosDisponibles) document.getElementById('pf-puertos-disponibles')?.focus();
     else if (conectoresInst?.error) document.getElementById({ externoVerde: 'pf-cant-ext-verde', internoVerde: 'pf-cant-int-verde', internoAzul: 'pf-cant-int-azul' }[conectoresInst.campo])?.focus();
     else if (potenciaParseada.error) document.getElementById('pf-potencia')?.focus();
     else if (faltaObs) document.getElementById('pf-obs')?.focus();
-    if (faltaObs || errorVisita || metrosParseados?.error || errorCantidad || errorTipoEquipo || vlanVisitaParseada?.error || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) {
+    if (faltaObs || errorVisita || metrosParseados?.errores || errorCantidad || errorTipoEquipo || vlanVisitaParseada?.error || serialEquipoParseado?.error || instalacion?.error || conectoresInst?.error || faltaNap || faltaPuerto || potenciaParseada.error) {
       return;
     }
     // Con todo en orden no se guarda todavía: primero se pide confirmar (ver ConfirmPreFinalizarModal).
@@ -180,7 +191,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
       serialEquipo: serialEquipoParseado?.valor ?? '',
       tipoEquipoNuevo: cambioEquipo ? tipoEquipo : '',
       vlanVisita: vlanVisitaParseada?.valor ?? '',
-      ...datosConectores(tipoVisita, { metros: metrosParseados?.valor, conectorExterno: colorExterno, conectorInterno: colorInterno, conectores: cantidades.valor }),
+      ...datosConectores(tipoVisita, { metros: metrosParseados?.valor?.total, metrajeInicial: metrosParseados?.valor?.inicial, metrajeFinal: metrosParseados?.valor?.final, conectorExterno: colorExterno, conectorInterno: colorInterno, conectores: cantidades.valor }),
     });
   };
 
@@ -258,7 +269,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
                 setTipoVisitaError('');
                 setNapError('');
                 setPuertoError('');
-                setMetrosError('');
+                setMetrosError({});
                 setCantidadError({ campo: '', mensaje: '' });
                 setSerialEquipoError('');
                 setTipoEquipoError('');
@@ -281,24 +292,19 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
           {recableado && (
             <div className="space-y-4 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
               <div className="space-y-1">
-                <label htmlFor="pf-metros" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-                  METROS DE CABLE <span className="font-normal text-red-500">(obligatorio)</span>
-                </label>
-                <div className="relative">
-                  <input
-                    id="pf-metros"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Ej. 35"
-                    value={metros}
-                    onChange={(e) => { setMetros(e.target.value.replace(/\D/g, '').slice(0, 4)); if (metrosError) setMetrosError(''); }}
-                    aria-invalid={!!metrosError}
-                    aria-describedby={metrosError ? 'pf-metros-error' : undefined}
-                    className={`${claseCampo('grande', metrosError ? 'error' : 'normal').replace('px-3', 'pl-3 pr-9')} min-w-0 font-bold`}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
-                </div>
-                {metrosError && <p id="pf-metros-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{metrosError}</p>}
+                <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+                  METRAJE DEL CABLE <span className="font-normal text-zinc-400">marca del cable al empezar y al terminar</span>
+                </p>
+                <MetrajeInicialFinal
+                  idInicial="pf-metros-inicial"
+                  idFinal="pf-metros-final"
+                  inicial={metrosInicial}
+                  final={metrosFinal}
+                  onInicial={(v) => { setMetrosInicial(v); if (metrosError.inicial) setMetrosError((e) => ({ ...e, inicial: undefined })); }}
+                  onFinal={(v) => { setMetrosFinal(v); if (metrosError.final) setMetrosError((e) => ({ ...e, final: undefined })); }}
+                  errorInicial={metrosError.inicial}
+                  errorFinal={metrosError.final}
+                />
               </div>
               {onConsultarCobro && <ConsultaCobroRecableado ticket={ticket} metros={metros} onConsultar={(valor) => onConsultarCobro(ticket, valor)} />}
               <ConectoresRecableado colorExterno={colorExterno} colorInterno={colorInterno} onExterno={setColorExterno} onInterno={setColorInterno} />
@@ -340,10 +346,12 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
               onVlan={(v) => { setVlan(v); if (instalacionErrores.vlan) setInstalacionErrores((e) => ({ ...e, vlan: undefined })); }}
               postes={postes}
               onPostes={(v) => { setPostes(v); if (instalacionErrores.posteadura) setInstalacionErrores((e) => ({ ...e, posteadura: undefined })); }}
-              metraje={metraje}
-              onMetraje={(v) => { setMetraje(v); if (instalacionErrores.metraje) setInstalacionErrores((e) => ({ ...e, metraje: undefined })); }}
+              metrajeInicial={metrajeInicial}
+              onMetrajeInicial={(v) => { setMetrajeInicial(v); if (instalacionErrores.metrajeInicial) setInstalacionErrores((e) => ({ ...e, metrajeInicial: undefined })); }}
+              metrajeFinal={metrajeFinal}
+              onMetrajeFinal={(v) => { setMetrajeFinal(v); if (instalacionErrores.metrajeFinal) setInstalacionErrores((e) => ({ ...e, metrajeFinal: undefined })); }}
               metrajeExistente={metrajeExiste}
-              onMetrajeExistente={(v) => { setMetrajeExiste(v); if (v) setMetraje(''); if (instalacionErrores.metraje) setInstalacionErrores((e) => ({ ...e, metraje: undefined })); }}
+              onMetrajeExistente={(v) => { setMetrajeExiste(v); if (v) { setMetrajeInicial(''); setMetrajeFinal(''); } setInstalacionErrores((e) => ({ ...e, metrajeInicial: undefined, metrajeFinal: undefined })); }}
               nap={nap}
               onNap={(v) => { setNap(v); if (napError) setNapError(''); }}
               puerto={puerto}

@@ -8,11 +8,14 @@
 // aparte (utils/conectoresInstalacion) y no entran en instalacionCompleta: las instalaciones anteriores no los
 // tienen y no deben quedar bloqueadas al aprobarlas.
 // El metraje cuenta como cable gastado en el módulo Materiales (ver utils/consumoMateriales).
+// El metraje se escribe como marca inicial y final del cable (`metrajeInicial`, `metrajeFinal`, ver utils/metraje) y `metraje` queda como el total
+// calculado: el resto de la app lee ese total.
 // "Metraje existente": si el cliente ya tenía su drop y el técnico lo reutiliza, marca esa casilla en vez de escribir metros. Se guarda
 // `metrajeExistente: true` y `metraje: null`: no gasta cable (ni en Materiales ni en el envío al inventario) y en la plantilla queda el
 // metraje que ya traía la original.
 
 import { napSinDato } from './napPuerto.js';
+import { calcularMetraje, textoMetrajeConMarcas } from './metraje.js';
 import { textoConectoresInstalacion } from './conectoresInstalacion.js';
 
 export const esInstalacion = (tipoTrabajo) => String(tipoTrabajo || '').toUpperCase().includes('INSTAL');
@@ -83,12 +86,17 @@ export const tieneDatosInstalacion = (datos) =>
 // Lo que escribió el técnico -> { datos, errores, error }: `datos` listo para guardar en
 // `ticket.instalacion` (serial y VLAN normalizados, postes limpios) y `errores` por campo
 // (serial, vlan, posteadura, metraje, puertosDisponibles): falta o no es válido. La NAP y el puerto los exige el formulario.
-export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, metrajeExistente: existente, nap, puerto, puertosDisponibles } = {}) {
+// El metraje se pide como marca inicial y final (el total lo calcula la app, ver utils/metraje). Con `pideMarcas` es obligatorio
+// (pre-finalizar); sin él, una instalación anterior que solo guardó el total sigue siendo válida con ese total (`metraje`).
+export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, metrajeInicial, metrajeFinal, pideMarcas = false, metrajeExistente: existente, nap, puerto, puertosDisponibles } = {}) {
   const serialParseado = parseSerial(serial);
   const vlanParseada = parseVlan(vlan);
   const usaExistente = existente === true;
+  const hayMarcas = [metrajeInicial, metrajeFinal].some((m) => String(m ?? '').trim() !== '');
+  const usaMarcas = !usaExistente && (hayMarcas || pideMarcas);
+  const marcas = usaMarcas ? calcularMetraje(metrajeInicial, metrajeFinal) : null;
   // Con "metraje existente" no se escriben metros: se ignora lo que haya en el campo.
-  const metrajeParseado = usaExistente ? { valor: null } : parseMetraje(metraje);
+  const metrajeParseado = usaExistente || usaMarcas ? { valor: marcas?.valor?.total ?? null } : parseMetraje(metraje);
   const lista = limpiarPostes(postes ?? posteadura);
   const errores = {};
   if (serialParseado.error) errores.serial = serialParseado.error;
@@ -96,8 +104,10 @@ export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, 
   if (vlanParseada.error) errores.vlan = vlanParseada.error;
   else if (!vlanParseada.valor) errores.vlan = 'Escribe la VLAN.';
   if (lista.length === 0) errores.posteadura = 'Agrega al menos un poste.';
-  if (metrajeParseado.error) errores.metraje = metrajeParseado.error;
-  else if (!usaExistente && !metrajeParseado.valor) errores.metraje = 'Indica el metraje de cable usado en la instalación.';
+  if (marcas?.errores?.inicial) errores.metrajeInicial = marcas.errores.inicial;
+  if (marcas?.errores?.final) errores.metrajeFinal = marcas.errores.final;
+  if (!usaMarcas && metrajeParseado.error) errores.metraje = metrajeParseado.error;
+  else if (!usaExistente && !usaMarcas && !metrajeParseado.valor) errores.metraje = 'Indica el metraje de cable usado en la instalación.';
   const disponibles = String(puertosDisponibles ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_LARGO_PUERTOS_DISPONIBLES);
   if (!disponibles) errores.puertosDisponibles = 'Indica los puertos disponibles de la NAP. Si no queda ninguno, escribe 0.';
   return {
@@ -106,6 +116,7 @@ export function validarInstalacion({ serial, vlan, postes, posteadura, metraje, 
       vlan: vlanParseada.valor ?? '',
       posteadura: lista,
       metraje: metrajeParseado.valor ?? null,
+      ...(marcas?.valor && { metrajeInicial: marcas.valor.inicial, metrajeFinal: marcas.valor.final }),
       ...(usaExistente && { metrajeExistente: true }),
       nap: String(nap || '').trim(),
       puerto: String(puerto || '').replace(/\D/g, ''),
@@ -126,7 +137,7 @@ export function instalacionCompleta(ticket) {
 }
 
 // Nombres con los que se muestra lo que falta de una instalación (los mismos del modal de revisión).
-const NOMBRE_FALTANTE = { serial: 'Serial', vlan: 'VLAN', posteadura: 'Posteadura', metraje: 'Drop', nap: 'NAP', puerto: 'Puerto', puertosDisponibles: 'Puertos disponibles' };
+const NOMBRE_FALTANTE = { serial: 'Serial', vlan: 'VLAN', posteadura: 'Posteadura', metraje: 'Drop', metrajeInicial: 'Drop', metrajeFinal: 'Drop', nap: 'NAP', puerto: 'Puerto', puertosDisponibles: 'Puertos disponibles' };
 
 // Lo que le falta (o no es válido) a una instalación para estar completa, con esos nombres y en el orden de
 // la revisión. Lista vacía si está completa o si la orden no es una instalación.
@@ -137,7 +148,8 @@ export function faltantesInstalacion(ticket) {
   const faltan = new Set(Object.keys(errores));
   if (napSinDato(datos.nap)) faltan.add('nap');
   if (!String(datos.puerto || '').trim()) faltan.add('puerto');
-  return ['serial', 'vlan', 'nap', 'puerto', 'metraje', 'posteadura', 'puertosDisponibles'].filter((k) => faltan.has(k)).map((k) => NOMBRE_FALTANTE[k]);
+  const nombres = ['serial', 'vlan', 'nap', 'puerto', 'metraje', 'metrajeInicial', 'metrajeFinal', 'posteadura', 'puertosDisponibles'].filter((k) => faltan.has(k)).map((k) => NOMBRE_FALTANTE[k]);
+  return [...new Set(nombres)];
 }
 
 // Líneas del historial con lo que registró el técnico ("Serial: ...", "VLAN: ...", "Posteadura: ...", "Metraje: ...",
@@ -150,7 +162,7 @@ export function detalleInstalacion(datos) {
   if (datos.vlan) detalle += ` | VLAN: ${datos.vlan}`;
   if (datos.posteadura?.length) detalle += ` | Posteadura: ${datos.posteadura.join(', ')}`;
   if (datos.metrajeExistente === true) detalle += ' | Metraje: existente';
-  else if (datos.metraje) detalle += ` | Metraje: ${datos.metraje} m`;
+  else if (datos.metraje) detalle += ` | Metraje: ${textoMetrajeConMarcas(datos.metraje, datos)}`;
   if (datos.puerto) detalle += ` | Puerto: ${datos.puerto}`;
   if (datos.puertosDisponibles) detalle += ` | Puertos disponibles: ${datos.puertosDisponibles}`;
   const conectores = textoConectoresInstalacion(datos.conectores);

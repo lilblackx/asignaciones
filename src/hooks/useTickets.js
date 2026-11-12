@@ -27,6 +27,7 @@ import { construirConsulta, construirRespuesta, consultasNuevas, mapaConsultas, 
 import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado, llevaCobro, monedaDe, textoMonto, tieneCobroFinal, valorCobro } from '../utils/cobro';
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalacion } from '../utils/instalacion';
+import { calcularMetraje } from '../utils/metraje';
 import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
 import { avisoOrdenReabierta, payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
@@ -1059,7 +1060,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   // `montoBs`: cobro que se le informa al técnico en este momento (solo con conector interno); se deja en el historial.
   // `instalacion`: serial, VLAN, posteadura, NAP y puerto que llena el técnico al instalar (ver utils/instalacion).
-  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, tipoEquipoNuevo, vlanVisita, montoBs, instalacion } = {}) => {
+  const preFinalizarTicket = async (ticket, { nap, observacionTecnico, potenciaDbm, potencia1490Dbm, tipoVisita, metrosCable, metrajeInicial, metrajeFinal, conectorExterno, conectorInterno, conectoresUsados, serialEquipo, tipoEquipoNuevo, vlanVisita, montoBs, instalacion } = {}) => {
     if (!firebaseUser || !ticket) return;
 
     if (!(observacionTecnico || '').trim()) {
@@ -1074,10 +1075,14 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
 
-    // Recableado: los metros de cable son obligatorios (los conectores no).
-    if (tipoVisita === TIPO_RECABLEADO && !(Number.isInteger(metrosCable) && metrosCable >= 1)) {
-      setToastMsg({ type: 'error', text: 'Indica los metros de cable usados en el recableado.' });
-      return false;
+    // Recableado: el metraje inicial y final son obligatorios y los metros son su diferencia (los conectores no son obligatorios).
+    if (tipoVisita === TIPO_RECABLEADO) {
+      const calculo = calcularMetraje(metrajeInicial, metrajeFinal);
+      const errorMetraje = calculo.errores ? (calculo.errores.inicial || calculo.errores.final) : (calculo.valor.total !== metrosCable ? 'El metraje inicial y final no coinciden con los metros de cable.' : '');
+      if (errorMetraje) {
+        setToastMsg({ type: 'error', text: errorMetraje });
+        return false;
+      }
     }
 
     // Visita de conector: la cantidad de conectores usados (verdes y/o azules) es obligatoria.
@@ -1110,7 +1115,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
     // Instalación: el serial, la VLAN, al menos un poste, la NAP y el puerto son obligatorios. El serial, además, debe ser el
     // de la etiqueta (PON S/N o GPON...): el envío al inventario del almacén falla con una MAC o un "GOPN" mal escrito.
-    const reporteInstalacion = esInstalacion(ticket.tipoTrabajo) ? validarInstalacion(instalacion || {}) : null;
+    const reporteInstalacion = esInstalacion(ticket.tipoTrabajo) ? validarInstalacion({ ...instalacion, pideMarcas: true }) : null;
     if (reporteInstalacion?.error) {
       setToastMsg({ type: 'error', text: Object.values(reporteInstalacion.errores)[0] });
       return false;
@@ -1137,7 +1142,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     // Los datos de metros y conectores solo se escriben si el tipo de visita los lleva o si hay que
     // borrar los de una visita anterior; así las demás visitas no suman campos vacíos a la orden.
     const camposConectores = tipoVisita !== undefined && (llevaConectores(tipoVisita) || tieneDatosRecableado(ticket) || ticket.conectoresUsados)
-      ? datosConectores(tipoVisita, { metros: metrosCable, conectorExterno, conectorInterno, conectores: conectoresUsados })
+      ? datosConectores(tipoVisita, { metros: metrosCable, metrajeInicial, metrajeFinal, conectorExterno, conectorInterno, conectores: conectoresUsados })
       : {};
 
     // El serial del equipo nuevo solo se escribe en un cambio de equipo, o para borrar uno anterior.
@@ -1156,7 +1161,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     detalle += detalleInstalacion(datosInstalacion);
     if (potenciaDbm != null) detalle += ` | Potencia: ${potenciaDbm} dBm`;
     if (potencia1490Dbm != null) detalle += ` | ONU Rx 1490 nm: ${potencia1490Dbm} dBm`;
-    if (tipoVisita === TIPO_RECABLEADO) detalle += ` | Recableado: ${partesRecableado({ metrosCable, conectorExterno, conectorInterno }).join(', ')}`;
+    if (tipoVisita === TIPO_RECABLEADO) detalle += ` | Recableado: ${partesRecableado({ metrosCable, metrajeInicial, metrajeFinal, conectorExterno, conectorInterno }).join(', ')}`;
     else if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) {
       detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
       const conector = textoConectorVisita({ tipoVisita, ...camposConectores });

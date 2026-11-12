@@ -6,7 +6,8 @@
 //   conectores internos azules (opcional); el interno, verdes y/o azules (al menos 1 en total). Se guarda
 //   en `conectoresUsados: { verde, azul }` (en el externo, el azul es el interno); las
 //   visitas anteriores solo tienen el color (`conectorExterno` / `conectorInterno`) y cuentan como 1.
-// - Recableado: se registran los metros de cable usados (obligatorio) y, opcionalmente, los
+// - Recableado: se registran el metraje inicial y final del cable (`metrajeInicial`, `metrajeFinal`; la app calcula el total en
+//   `metrosCable`, ver utils/metraje) y, opcionalmente, los
 //   conectores colocados: un conector externo (solo verde) y/o uno interno (verde o azul).
 //   No genera cobro.
 // - Cambio de equipo: el técnico indica el serial del equipo nuevo (obligatorio). Se guarda en
@@ -19,6 +20,7 @@
 
 import { esInstalacion, parseSerial, parseVlan } from './instalacion.js';
 import { napSinDato, separarNapPuerto } from './napPuerto.js';
+import { textoMarcas } from './metraje.js';
 import { TIPOS_DE_EQUIPO } from '../constants.js';
 
 export const TIPO_CONECTOR_EXTERNO = 'CONECTOR_EXTERNO';
@@ -234,10 +236,10 @@ export const errorCantidadesConector = (tipoVisita, conectores) =>
 //     usó uno (el externo siempre es verde).
 //   - Cualquier otro tipo: todo queda vacío.
 // `null`/'' (y no omitir el campo) es lo que permite borrar un valor anterior.
-export function datosConectores(tipoVisita, { metros, conectorExterno, conectorInterno, conectores } = {}) {
-  const vacios = { metrosCable: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null };
+export function datosConectores(tipoVisita, { metros, metrajeInicial, metrajeFinal, conectorExterno, conectorInterno, conectores } = {}) {
+  const vacios = { metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null };
   if (tipoVisita === TIPO_RECABLEADO) {
-    return { ...vacios, metrosCable: metros ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
+    return { ...vacios, metrosCable: metros ?? null, metrajeInicial: metrajeInicial ?? null, metrajeFinal: metrajeFinal ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
   }
   if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
     const azul = entero(conectores?.azul);
@@ -285,7 +287,7 @@ export const tieneDatosRecableado = (t) => Boolean(t) && (t.metrosCable != null 
 export function partesRecableado(t) {
   if (!t) return [];
   const partes = [];
-  if (t.metrosCable != null) partes.push(`${t.metrosCable} m de cable`);
+  if (t.metrosCable != null) partes.push(`${t.metrosCable} m de cable${textoMarcas(t) ? ` (${textoMarcas(t)})` : ''}`);
   if (t.conectorExterno) partes.push(`Conector externo: ${ETIQUETA_COLOR[t.conectorExterno] || t.conectorExterno}`);
   if (t.conectorInterno) partes.push(`Conector interno: ${ETIQUETA_COLOR[t.conectorInterno] || t.conectorInterno}`);
   return partes;

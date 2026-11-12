@@ -371,6 +371,10 @@ await check('TECNICO puede registrar los datos de la instalación (serial, VLAN,
   }));
 });
 
+await check('TECNICO puede registrar el metraje inicial y final de un recableado', async () => {
+  await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'RECABLEADO', metrosCable: 35, metrajeInicial: 100, metrajeFinal: 135 }));
+});
+
 await check('TECNICO puede registrar el color del conector de una visita de conector', async () => {
   await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CONECTOR_INTERNO', metrosCable: null, conectorExterno: '', conectorInterno: 'AZUL' }));
   await assertSucceeds(camposGerardo(asTecnico()).update({ tipoVisita: 'CONECTOR_EXTERNO', metrosCable: null, conectorExterno: 'VERDE', conectorInterno: '' }));

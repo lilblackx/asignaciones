@@ -345,6 +345,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             />
           )}
           {faltabaPlantilla && (
+              ticketMetros={ordenAlAbrir.metrosCable ?? null}
             <div className="col-span-2 space-y-1">
               <label htmlFor="ed-plantilla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
               <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className={`${CAMPO_ORDEN} font-mono`} placeholder="Pega aquí la plantilla tal como la envió la promotora..." />

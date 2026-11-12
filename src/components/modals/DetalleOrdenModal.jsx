@@ -1,3 +1,4 @@
+import { textoMetrajeConMarcas } from '../../utils/metraje';
 import { observacionEsInterna, observacionParaTecnico } from '../../utils/observacion';
 import PagoDelCliente from '../PagoDelCliente';
 import { pagoClienteDe } from '../../utils/pagoEnOrden';
@@ -144,7 +145,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               <Dato etiqueta="Serial">{datos.serial}</Dato>
               <Dato etiqueta="VLAN">{datos.vlan}</Dato>
               <Dato etiqueta="VLAN configurada">{ticket.vlanVisita}</Dato>
-              <Dato etiqueta="Metraje del drop">{datos.metrajeExistente === true ? 'Existente' : datos.metraje && `${datos.metraje} m`}</Dato>
+              <Dato etiqueta="Metraje del drop">{datos.metrajeExistente === true ? 'Existente' : datos.metraje && textoMetrajeConMarcas(datos.metraje, datos)}</Dato>
               <Dato etiqueta="Posteadura">{datos.posteadura?.length ? datos.posteadura.join(', ') : ''}</Dato>
               <Dato etiqueta="Puertos disponibles">{datos.puertosDisponibles}</Dato>
               <Dato etiqueta="Conectores">{conectores && <InsigniasConectoresInstalacion conectores={datos.conectores} />}</Dato>

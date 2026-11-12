@@ -52,12 +52,21 @@ check('sin tocar la NAP ni el puerto, el texto de la NAP de la orden no se reesc
 
 // --- Instalación: lo que ya estaba completo no se puede vaciar ---
 const vaciar = (campos) => (({ errores }) => Object.keys(errores))(validarDatosTecnico(instalacionCompleta, { ...f, ...campos }));
-check('lo completo no se puede dejar vacío: serial, VLAN, metraje, postes, puertos disponibles', [vaciar({ serial: '' }), vaciar({ vlan: '' }), vaciar({ metraje: '' }), vaciar({ postes: ['  ', ''] }), vaciar({ puertosDisponibles: ' ' })],
-  [['serial'], ['vlan'], ['metraje'], ['posteadura'], ['puertosDisponibles']]);
+check('lo completo no se puede dejar vacío: serial, VLAN, postes, puertos disponibles', [vaciar({ serial: '' }), vaciar({ vlan: '' }), vaciar({ postes: ['  ', ''] }), vaciar({ puertosDisponibles: ' ' })],
+  [['serial'], ['vlan'], ['posteadura'], ['puertosDisponibles']]);
+// Metraje: una orden anterior a las marcas conserva su total mientras no se escriban; con marcas guardadas no se pueden vaciar.
+check('una orden anterior a las marcas conserva su total sin pedir marcas', [validarDatosTecnico(instalacionCompleta, f).error, validarDatosTecnico(instalacionCompleta, f).datos.instalacion.metraje], [false, 120]);
+const conMarcas = { ...instalacionCompleta, instalacion: { ...instalacionCompleta.instalacion, metraje: 120, metrajeInicial: 500, metrajeFinal: 620 } };
+const fm = formularioDatosTecnico(conMarcas);
+check('el formulario trae el metraje inicial y final', [fm.metrajeInicial, fm.metrajeFinal], ['500', '620']);
+check('con marcas guardadas no se pueden dejar vacías', [validarDatosTecnico(conMarcas, { ...fm, metrajeInicial: '', metrajeFinal: '' }).errores, validarDatosTecnico(conMarcas, { ...fm, metrajeFinal: '' }).primerCampo], [{ metrajeInicial: 'Escribe el metraje inicial.', metrajeFinal: 'Escribe el metraje final.' }, 'ed-metraje-final']);
+const nuevasMarcas = validarDatosTecnico(conMarcas, { ...fm, metrajeInicial: '100', metrajeFinal: '40' });
+check('cambiar las marcas recalcula el total (la diferencia, suba o baje la marca)', [nuevasMarcas.error, nuevasMarcas.datos.instalacion.metraje, nuevasMarcas.datos.instalacion.metrajeInicial, nuevasMarcas.datos.instalacion.metrajeFinal], [false, 60, 100, 40]);
+check('marcas iguales: el final no puede ser igual al inicial', validarDatosTecnico(conMarcas, { ...fm, metrajeInicial: '50', metrajeFinal: '50' }).errores.metrajeFinal, 'El metraje final no puede ser igual al inicial.');
 check('ni la NAP real ("SN" no vale) ni el puerto', [vaciar({ nap: 'SN' }), vaciar({ puerto: '' })], [['nap'], ['puerto']]);
 check('ni los conectores (al menos 1 en total)', [vaciar({ extVerde: '', intVerde: '', intAzul: '' }), vaciar({ extVerde: '0', intVerde: '0', intAzul: '0' })], [['conectores'], ['conectores']]);
 check('el puertos disponibles "0" cuenta como lleno', vaciar({ puertosDisponibles: '0' }), []);
-check('el cursor va al primer campo con error, en el orden del formulario', validarDatosTecnico(instalacionCompleta, { ...f, metraje: '', vlan: '', puertosDisponibles: '' }).primerCampo, 'ed-vlan');
+check('el cursor va al primer campo con error, en el orden del formulario', validarDatosTecnico(instalacionCompleta, { ...f, vlan: '', puertosDisponibles: '' }).primerCampo, 'ed-vlan');
 check('un error en los conectores lleva el cursor al campo que falló', [
   validarDatosTecnico(instalacionCompleta, { ...f, extVerde: '', intVerde: '', intAzul: '' }).primerCampo,
   validarDatosTecnico(instalacionCompleta, { ...f, intAzul: '12' }).primerCampo,
@@ -68,8 +77,8 @@ check('un error en los conectores lleva el cursor al campo que falló', [
 const fv = formularioDatosTecnico(instalacionVieja);
 r = validarDatosTecnico(instalacionVieja, { ...fv, serial: 'ZTEGC0123456' });
 check('una instalación anterior (sin metraje ni conectores) se corrige sin obligar a llenarlos', [r.error, r.datos.instalacion.serial, r.datos.instalacion.metraje, r.datos.instalacion.conectores], [false, 'ZTEGC0123456', null, { externo: { verde: 0 }, interno: { verde: 0, azul: 0 } }]);
-check('pero lo que sí escribe en ella debe ser válido', [validarDatosTecnico(instalacionVieja, { ...fv, metraje: '12m' }).errores.metraje !== undefined, validarDatosTecnico(instalacionVieja, { ...fv, intVerde: 'x' }).errores.conectores !== undefined], [true, true]);
-r = validarDatosTecnico(instalacionVieja, { ...fv, metraje: '85', extVerde: '1' });
+check('pero lo que sí escribe en ella debe ser válido', [validarDatosTecnico(instalacionVieja, { ...fv, metrajeInicial: '12m', metrajeFinal: '20' }).errores.metrajeInicial !== undefined, validarDatosTecnico(instalacionVieja, { ...fv, intVerde: 'x' }).errores.conectores !== undefined], [true, true]);
+r = validarDatosTecnico(instalacionVieja, { ...fv, metrajeInicial: '100', metrajeFinal: '185', extVerde: '1' });
 check('y puede completar el metraje y los conectores', [r.error, r.datos.instalacion.metraje, r.datos.instalacion.conectores.externo.verde], [false, 85, 1]);
 check('lo que la orden anterior sí tenía (la VLAN) no se puede vaciar', validarDatosTecnico(instalacionVieja, { ...fv, vlan: '' }).errores.vlan !== undefined, true);
 
@@ -97,9 +106,10 @@ check('cambio de equipo sin serial o con uno inválido: error y cursor en el cam
 
 const recableado = { ...visita, tipoVisita: 'RECABLEADO', metrosCable: 40, conectorExterno: 'VERDE', conectorInterno: '' };
 const fr = formularioDatosTecnico(recableado);
-r = validarDatosTecnico(recableado, { ...fr, metros: '55', colorInterno: 'AZUL' });
+r = validarDatosTecnico(recableado, { ...fr, metrajeInicial: '100', metrajeFinal: '155', colorInterno: 'AZUL' });
 check('recableado: corregir los metros y los conectores', [r.error, r.datos.metrosCable, r.datos.conectorExterno, r.datos.conectorInterno], [false, 55, 'VERDE', 'AZUL']);
-check('recableado sin metros o con metros inválidos: error y cursor en el campo', [validarDatosTecnico(recableado, { ...fr, metros: '' }).primerCampo, validarDatosTecnico(recableado, { ...fr, metros: '0' }).error], ['pf-metros', true]);
+check('recableado: guarda las marcas y el total; el anterior a las marcas conserva sus metros', [r.datos.metrajeInicial, r.datos.metrajeFinal, validarDatosTecnico(recableado, fr).datos.metrosCable], [100, 155, 40]);
+check('recableado con una marca sola o iguales: error y cursor en el campo', [validarDatosTecnico(recableado, { ...fr, metrajeInicial: '10' }).primerCampo, validarDatosTecnico(recableado, { ...fr, metrajeInicial: '10', metrajeFinal: '10' }).primerCampo, validarDatosTecnico(recableado, { ...fr, metrajeInicial: '10', metrajeFinal: 'x' }).error], ['pf-metros-final', 'pf-metros-final', true]);
 
 const visitaInterna = { ...visita, tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 2, azul: 1 }, conectorInterno: '' };
 const fi = formularioDatosTecnico(visitaInterna);
@@ -159,8 +169,8 @@ check('vacío no es verde ni rojo (que sea obligatorio lo exige el formulario)',
 check('errorSerialCaja: el mensaje que bloquea el pre-finalizar, o vacío si está bien', [errorSerialCaja('GOPN54504C47BDAA8DE0'), errorSerialCaja('VSOL00E65D25')], ['Dice GOPN: debe ser GPON. Revisa el serial de la caja.', '']);
 
 // --- Historial ---
-check('el historial dice qué se corrigió, con el valor nuevo', cambiosDatosTecnico(instalacionCompleta, { ...instalacionCompleta, ...validarDatosTecnico(instalacionCompleta, { ...f, serial: 'ZTEGC0123456', metraje: '95', postes: ['P1'], vlan: '200', puertosDisponibles: '4', intAzul: '0' }).datos }),
-  ['Serial: ZTEGC0123456', 'VLAN: 200', 'Posteadura: P1', 'Metraje: 95 m', 'Puertos disponibles: 4', 'Conectores: Externo: 1 verde · Interno: 1 verde']);
+check('el historial dice qué se corrigió, con el valor nuevo', cambiosDatosTecnico(instalacionCompleta, { ...instalacionCompleta, ...validarDatosTecnico(instalacionCompleta, { ...f, serial: 'ZTEGC0123456', metrajeInicial: '100', metrajeFinal: '195', postes: ['P1'], vlan: '200', puertosDisponibles: '4', intAzul: '0' }).datos }),
+  ['Serial: ZTEGC0123456', 'VLAN: 200', 'Posteadura: P1', 'Metraje: 95 m (inicial 100, final 195)', 'Puertos disponibles: 4', 'Conectores: Externo: 1 verde · Interno: 1 verde']);
 check('si no cambió nada de estos datos no agrega líneas', cambiosDatosTecnico(instalacionCompleta, { ...instalacionCompleta, nombre: 'Otro nombre' }), []);
 check('el historial de un cambio de equipo y de un recableado',
   [cambiosDatosTecnico(cambioEquipo, { ...cambioEquipo, serialEquipo: 'ZTEG00112233' }), cambiosDatosTecnico(recableado, { ...recableado, metrosCable: 55 }), cambiosDatosTecnico(recableado, { ...recableado, tipoVisita: 'DROP_ATENUADO', metrosCable: null, conectorExterno: '' })],
@@ -178,7 +188,7 @@ check('la plantilla final de una instalación finalizada se rehace con el serial
 check('sin tocar nada no hay nada que guardar', corregirDatosParaEnvio(instalacionCompleta, formularioDatosTecnico(instalacionCompleta), { por: 'a' }).sinCambios, true);
 const mala = corregirDatosParaEnvio(instalacionCompleta, { ...formularioDatosTecnico(instalacionCompleta), serial: '' }, { por: 'a' });
 check('lo que la orden ya tenía no se puede dejar vacío', [mala.error, Boolean(mala.errores.serial), mala.primerCampo], [true, true, 'ed-serial']);
-const metrajeNuevo = corregirDatosParaEnvio(instalacionCompleta, { ...formularioDatosTecnico(instalacionCompleta), metraje: '95' }, { por: 'a', ahora: AHORA });
+const metrajeNuevo = corregirDatosParaEnvio(instalacionCompleta, { ...formularioDatosTecnico(instalacionCompleta), metrajeInicial: '100', metrajeFinal: '195' }, { por: 'a', ahora: AHORA });
 check('el metraje corregido cambia lo que se descuenta del almacén', [metrajeNuevo.ticket.instalacion.metraje, payloadEnvioInventario(metrajeNuevo.ticket).dropMetros], [95, 95]);
 
 if (failures > 0) {

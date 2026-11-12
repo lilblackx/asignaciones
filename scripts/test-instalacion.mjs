@@ -232,7 +232,7 @@ const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), 'utf8');
 const formulario = leer('../src/components/modals/DatosInstalacion.jsx');
 const enFormulario = Object.entries({
   serial: formulario.indexOf('id="pf-serial"'), vlan: formulario.indexOf('id="pf-vlan"'), nap: formulario.indexOf('<NapPuertoCampos'),
-  metraje: formulario.indexOf('id="pf-metraje"'), posteadura: formulario.indexOf('id="pf-postes-etiqueta"'), puertosDisponibles: formulario.indexOf('id="pf-puertos-disponibles"'),
+  metraje: formulario.indexOf('idInicial="pf-metraje-inicial"'), posteadura: formulario.indexOf('id="pf-postes-etiqueta"'), puertosDisponibles: formulario.indexOf('id="pf-puertos-disponibles"'),
 }).sort((x, y) => x[1] - y[1]).map(([k]) => k);
 const ORDEN = ['serial', 'vlan', 'nap', 'metraje', 'posteadura', 'puertosDisponibles']; // el puerto va junto a la NAP
 check('formulario del técnico: orden de los campos', enFormulario, ORDEN);
@@ -247,8 +247,8 @@ check('aviso de lo que falta: mismo orden',
 
 const modal = leer('../src/components/modals/PreFinalizarModal.jsx');
 const cadena = modal.slice(modal.indexOf('El campo queda arriba'), modal.indexOf('if (faltaObs ||'));
-const ID_A_CLAVE = { 'pf-serial': 'serial', 'pf-vlan': 'vlan', 'pf-nap': 'nap', 'pf-puerto': 'puerto', 'pf-metraje': 'metraje', 'pf-poste-1': 'posteadura', 'pf-puertos-disponibles': 'puertosDisponibles' };
-const foco = [...cadena.matchAll(/getElementById\('([^']+)'\)/g)].map(m => ID_A_CLAVE[m[1]]).filter(Boolean);
+const ID_A_CLAVE = { 'pf-serial': 'serial', 'pf-vlan': 'vlan', 'pf-nap': 'nap', 'pf-puerto': 'puerto', 'pf-metraje-inicial': 'metraje', 'pf-metraje-final': 'metraje', 'pf-poste-1': 'posteadura', 'pf-puertos-disponibles': 'puertosDisponibles' };
+const foco = [...cadena.matchAll(/getElementById\('([^']+)'\)/g)].map(m => ID_A_CLAVE[m[1]]).filter(Boolean).filter((c, i, todos) => c !== todos[i - 1]);
 check('salto del cursor al validar: mismo orden (con el puerto detrás de la NAP)', foco, ['serial', 'vlan', 'nap', 'puerto', 'metraje', 'posteadura', 'puertosDisponibles']);
 
 // Rótulos: el serial se llama "Serial" en el formulario y en la revisión; el drop conserva su nombre en cada lugar
@@ -292,10 +292,24 @@ const ordenConMetros = { ...ordenExistente, instalacion: { ...baseExistente, pos
 const marcado = validarDatosTecnico(ordenConMetros, { ...formularioDatosTecnico(ordenConMetros), metrajeExistente: true, metraje: '' });
 check('al editar, marcar "existente" quita los metros sin pedir un número', [marcado.error, marcado.datos?.instalacion?.metraje, marcado.datos?.instalacion?.metrajeExistente], [false, null, true]);
 check('al editar, el historial dice "Metraje: existente"', cambiosDatosTecnico(ordenConMetros, { ...ordenConMetros, instalacion: marcado.datos?.instalacion }).filter(l => l.startsWith('Metraje')), ['Metraje: existente']);
-const desmarcado = validarDatosTecnico(ordenExistente, { ...formularioDatosTecnico(ordenExistente), metrajeExistente: false, metraje: '' });
-check('al editar, desmarcar "existente" exige escribir los metros', [desmarcado.error, Boolean(desmarcado.errores.metraje)], [true, true]);
-const conNumero = validarDatosTecnico(ordenExistente, { ...formularioDatosTecnico(ordenExistente), metrajeExistente: false, metraje: '80' });
-check('al editar, desmarcar con metros guarda el número y quita la marca', [conNumero.error, conNumero.datos?.instalacion?.metraje, 'metrajeExistente' in (conNumero.datos?.instalacion || {})], [false, 80, false]);
+const desmarcado = validarDatosTecnico(ordenExistente, { ...formularioDatosTecnico(ordenExistente), metrajeExistente: false });
+check('al editar, desmarcar "existente" exige escribir el metraje inicial y final', [desmarcado.error, Boolean(desmarcado.errores.metrajeInicial), Boolean(desmarcado.errores.metrajeFinal)], [true, true, true]);
+const conNumero = validarDatosTecnico(ordenExistente, { ...formularioDatosTecnico(ordenExistente), metrajeExistente: false, metrajeInicial: '20', metrajeFinal: '100' });
+check('al editar, desmarcar con metraje guarda el total y quita la marca', [conNumero.error, conNumero.datos?.instalacion?.metraje, 'metrajeExistente' in (conNumero.datos?.instalacion || {})], [false, 80, false]);
+
+// --- Metraje inicial y final: la app calcula el total ---
+const base = { serial: 'HWTC1A2B3C4D', vlan: '100', postes: ['P1'], nap: 'M05F11', puerto: '3', puertosDisponibles: '5', pideMarcas: true };
+check('metraje inicial y final: el total es la diferencia y se guardan las dos marcas', (({ datos }) => [datos.metraje, datos.metrajeInicial, datos.metrajeFinal])(validarInstalacion({ ...base, metrajeInicial: '500', metrajeFinal: ' 620 ' })), [120, 500, 620]);
+check('la marca puede bajar: el total es la diferencia sin signo', validarInstalacion({ ...base, metrajeInicial: '620', metrajeFinal: '500' }).datos.metraje, 120);
+check('la marca inicial puede ser 0', validarInstalacion({ ...base, metrajeInicial: '0', metrajeFinal: '85' }).datos.metraje, 85);
+check('con pideMarcas, sin marcas se piden las dos', validarInstalacion(base).errores, { metrajeInicial: 'Escribe el metraje inicial.', metrajeFinal: 'Escribe el metraje final.' });
+check('con una sola marca se pide la otra', [validarInstalacion({ ...base, metrajeInicial: '10' }).errores, validarInstalacion({ ...base, metrajeFinal: '10' }).errores], [{ metrajeFinal: 'Escribe el metraje final.' }, { metrajeInicial: 'Escribe el metraje inicial.' }]);
+check('marcas iguales, con letras, decimales o de más de 4 cifras no valen', [['50', '50'], ['5a', '60'], ['5.5', '60'], ['10', '10000']].map(([i, f]) => Object.keys(validarInstalacion({ ...base, metrajeInicial: i, metrajeFinal: f }).errores).length > 0), [true, true, true, true]);
+check('con metraje existente no se piden marcas ni se guardan', (({ error, datos }) => [error, datos.metraje, 'metrajeInicial' in datos])(validarInstalacion({ ...base, metrajeInicial: '1', metrajeFinal: '9', metrajeExistente: true })), [false, null, false]);
+check('el metraje guardado (total) es el que leen Materiales y el envío', metrajeInstalacion({ instalacion: validarInstalacion({ ...base, metrajeInicial: '500', metrajeFinal: '620' }).datos }), 120);
+check('una instalación anterior (solo el total) sigue completa sin marcas', instalacionCompleta({ instalacion: datos.datos }), true);
+check('el historial muestra el total con las marcas', detalleInstalacion(validarInstalacion({ ...base, metrajeInicial: '500', metrajeFinal: '620' }).datos).includes('Metraje: 120 m (inicial 500, final 620)'), true);
+check('y sin marcas (orden anterior) solo el total', detalleInstalacion(datos.datos).includes('Metraje: 120 m'), true);
 
 console.log(failures ? `\n${failures} prueba(s) fallaron.` : '\nTodas las pruebas pasaron.');
 process.exit(failures ? 1 : 0);

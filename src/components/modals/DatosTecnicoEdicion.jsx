@@ -3,7 +3,8 @@ import SelectMenu from '../SelectMenu';
 import ConectoresRecableado, { CantidadesConectorVisita } from './ConectoresRecableado';
 import SerialEquipoCampo from './SerialEquipoCampo';
 import VlanVisitaCampo from './VlanVisitaCampo';
-import { MAX_LARGO_METRAJE, MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
+import MetrajeInicialFinal from './MetrajeInicialFinal';
+import { MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
 import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, esConfigVlan, esVisitaConector, pideSerialEquipo } from '../../utils/tipoVisita';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
@@ -50,7 +51,8 @@ function CampoConectores({ id, etiqueta, valor, onChange, error }) {
 // Los datos que cargó el técnico al pre-finalizar, para que la oficina los corrija en "Editar orden". Una instalación lleva
 // serial, VLAN, NAP y puerto, metraje, posteadura, puertos disponibles y conectores; el resto de las órdenes, su tipo de visita
 // con los datos que ese tipo pide. Se rellena en el mismo formulario del técnico: las mismas reglas (ver utils/edicionDatosTecnico).
-export default function DatosTecnicoEdicion({ instalacion, form, onChange, errores, finalizada, avisoSerial = false }) {
+// `ticketMetros`: los metros que ya tenía un recableado (las órdenes anteriores a las marcas solo guardaron el total).
+export default function DatosTecnicoEdicion({ instalacion, form, onChange, errores, finalizada, avisoSerial = false, ticketMetros = null }) {
   const conectoresError = errores.conectores?.mensaje || '';
   const cambiarPoste = (i, valor) => onChange({ postes: form.postes.map((p, j) => (j === i ? valor : p)) });
   const tipoVisita = form.tipoVisita;
@@ -72,16 +74,26 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             <input id="ed-serial" type="text" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={MAX_LARGO_SERIAL} placeholder="Ej. HWTC1A2B3C4D" value={form.serial} onChange={(e) => onChange({ serial: e.target.value.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase() })} aria-invalid={!!errores.serial} aria-describedby={errores.serial ? 'ed-serial-error' : undefined} className={claseInput(errores.serial || (avisoSerial && evaluacionSerial.estado === 'error'), avisoSerial && evaluacionSerial.estado === 'ok')} />
             {avisoSerial && !errores.serial && <AvisoSerialOlt serial={form.serial} />}
           </Campo>
-          {/* VLAN y metraje: una fila para las etiquetas, otra para los campos y otra para los avisos, así los campos quedan a la misma altura aunque una etiqueta ocupe dos líneas. */}
-          <div className="col-span-2 grid grid-cols-2 gap-x-3 gap-y-1 items-end">
-            <label htmlFor="ed-vlan" className={`${claseEtiqueta} col-start-1 row-start-1`}>VLAN</label>
-            <label htmlFor="ed-metraje" className={`${claseEtiqueta} col-start-2 row-start-1`}>METRAJE DEL DROP (m)</label>
-            <input id="ed-vlan" type="text" inputMode="numeric" autoComplete="off" maxLength="4" placeholder="Ej. 100" value={form.vlan} onChange={(e) => onChange({ vlan: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.vlan} aria-describedby={errores.vlan ? 'ed-vlan-error' : undefined} className={`${claseInput(errores.vlan)} col-start-1 row-start-2`} />
-            <input id="ed-metraje" type="text" inputMode="numeric" autoComplete="off" maxLength={MAX_LARGO_METRAJE} placeholder="Ej. 120" value={form.metrajeExistente ? '' : form.metraje} disabled={form.metrajeExistente} onChange={(e) => onChange({ metraje: soloDigitos(e.target.value, MAX_LARGO_METRAJE) })} aria-invalid={!!errores.metraje} aria-describedby={errores.metraje ? 'ed-metraje-error' : undefined} className={`${claseInput(errores.metraje)} disabled:opacity-50 disabled:cursor-not-allowed col-start-2 row-start-2`} />
-            {errores.vlan && <p id="ed-vlan-error" role="alert" className="col-start-1 row-start-3 self-start text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
-            {errores.metraje && <p id="ed-metraje-error" role="alert" className="col-start-2 row-start-3 self-start text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.metraje}</p>}
-            <label htmlFor="ed-metraje-existente" className="col-start-2 row-start-4 flex items-center gap-2.5 min-h-11 cursor-pointer">
-              <input id="ed-metraje-existente" type="checkbox" checked={form.metrajeExistente === true} onChange={(e) => onChange({ metrajeExistente: e.target.checked, ...(e.target.checked ? { metraje: '' } : {}) })} className="w-5 h-5 shrink-0 accent-red-600" />
+          <Campo id="ed-vlan" etiqueta="VLAN" error={errores.vlan} className="col-span-2">
+            <input id="ed-vlan" type="text" inputMode="numeric" autoComplete="off" maxLength="4" placeholder="Ej. 100" value={form.vlan} onChange={(e) => onChange({ vlan: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.vlan} aria-describedby={errores.vlan ? 'ed-vlan-error' : undefined} className={claseInput(errores.vlan)} />
+          </Campo>
+          <div className="col-span-2 space-y-1">
+            <p className={claseEtiqueta}>METRAJE DEL DROP <span className="font-normal text-zinc-400">marca inicial y final del cable</span></p>
+            <MetrajeInicialFinal
+              idInicial="ed-metraje-inicial"
+              idFinal="ed-metraje-final"
+              inicial={form.metrajeInicial}
+              final={form.metrajeFinal}
+              onInicial={(v) => onChange({ metrajeInicial: v })}
+              onFinal={(v) => onChange({ metrajeFinal: v })}
+              errorInicial={errores.metrajeInicial || errores.metraje}
+              errorFinal={errores.metrajeFinal}
+              deshabilitado={form.metrajeExistente === true}
+              totalGuardado={form.metraje && !form.metrajeInicial && !form.metrajeFinal ? form.metraje : null}
+              compacto
+            />
+            <label htmlFor="ed-metraje-existente" className="flex items-center gap-2.5 min-h-11 cursor-pointer">
+              <input id="ed-metraje-existente" type="checkbox" checked={form.metrajeExistente === true} onChange={(e) => onChange({ metrajeExistente: e.target.checked, ...(e.target.checked ? { metrajeInicial: '', metrajeFinal: '' } : {}) })} className="w-5 h-5 shrink-0 accent-red-600" />
               <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Metraje existente</span>
             </label>
           </div>
@@ -142,12 +154,21 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
 
           {tipoVisita === TIPO_RECABLEADO && (
             <div className="col-span-2 space-y-3">
-              <Campo id="pf-metros" etiqueta="METROS DE CABLE" error={errores.metros} className="col-span-2">
-                <div className="relative">
-                  <input id="pf-metros" type="text" inputMode="numeric" placeholder="Ej. 35" value={form.metros} onChange={(e) => onChange({ metros: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.metros} aria-describedby={errores.metros ? 'pf-metros-error' : undefined} className={`w-full pr-8 ${claseInput(errores.metros)}`} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">m</span>
-                </div>
-              </Campo>
+              <div className="space-y-1">
+                <p className={claseEtiqueta}>METRAJE DEL CABLE <span className="font-normal text-zinc-400">marca inicial y final del cable</span></p>
+                <MetrajeInicialFinal
+                  idInicial="pf-metros-inicial"
+                  idFinal="pf-metros-final"
+                  inicial={form.metrajeInicial}
+                  final={form.metrajeFinal}
+                  onInicial={(v) => onChange({ metrajeInicial: v })}
+                  onFinal={(v) => onChange({ metrajeFinal: v })}
+                  errorInicial={errores.metrajeInicial}
+                  errorFinal={errores.metrajeFinal}
+                  totalGuardado={ticketMetros && !form.metrajeInicial && !form.metrajeFinal ? ticketMetros : null}
+                  compacto
+                />
+              </div>
               <ConectoresRecableado colorExterno={form.colorExterno} colorInterno={form.colorInterno} onExterno={(v) => onChange({ colorExterno: v })} onInterno={(v) => onChange({ colorInterno: v })} />
             </div>
           )}
