@@ -58,7 +58,7 @@
           { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseapp.com https://ve.dolarapi.com https://*.workers.dev wss://*.firebaseio.com; frame-src https://*.firebaseapp.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+            "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseapp.com https://ve.dolarapi.com https://asignaciones-notify.soportenetworkspeed.workers.dev https://asignaciones-tomodat.soportenetworkspeed.workers.dev wss://*.firebaseio.com; frame-src https://*.firebaseapp.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
           }
         ]
       }
