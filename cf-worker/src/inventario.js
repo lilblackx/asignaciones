@@ -74,7 +74,7 @@ export function textoAuditoria(p) {
   const metros = Number(Math.abs(p.dropMetros).toFixed(2));
   const consumo = `(Consumo: ${Math.abs(p.apc)} APC, ${Math.abs(p.upc)} UPC, ${metros}m Drop).`;
   if (p.accion === ACCION_AVERIA) {
-    return { accion: 'Avería', detalle: `AVERÍA: '${p.cliente}'${p.motivo ? ` (${p.motivo})` : ''}. Téc: '${p.tecnico}'. ${consumo}` };
+    return { accion: 'Avería', detalle: `AVERÍA: '${p.cliente}'${p.motivo ? ` (${p.motivo})` : ''}${p.serial ? `. Equipo cambiado: Serial [${p.serial}]` : ''}. Téc: '${p.tecnico}'. ${consumo}` };
   }
   if (p.accion === ACCION_INSTALACION) {
     return { accion: 'Instalación a Cliente', detalle: `INSTALACIÓN NUEVA: Serial [${p.serial}] a '${p.cliente}'. Téc: '${p.tecnico}'. ${consumo}` };
@@ -168,6 +168,17 @@ async function llamarTelecom(env, url, cuerpo, ahoraMs) {
   throw new Error('El inventario rechazó la sesión.');
 }
 
+// El registro de material que ya hay con ese id, o null si no existe.
+async function leerRegistroMaterial(env, id, ahoraMs) {
+  try {
+    const doc = await llamarTelecom(env, `${docsTelecom(env)}/${rutaTelecom(env)}/materialLogs/${id}`, null, ahoraMs);
+    return camposAObjeto(doc.fields);
+  } catch (err) {
+    if (String(err.message).includes(' 404:')) return null;
+    throw err;
+  }
+}
+
 async function buscarEquipo(env, serial, ahoraMs) {
   const filas = await llamarTelecom(env, `${docsTelecom(env)}/${rutaTelecom(env)}:runQuery`, {
     structuredQuery: { from: [{ collectionId: 'inventory' }], where: { fieldFilter: { field: { fieldPath: 'serial' }, op: 'EQUAL', value: { stringValue: serial } } }, limit: 1 },
@@ -229,7 +240,7 @@ async function limpiezaDelEnvioAnterior(env, ticketId, previo, p, escribeMateria
   const notas = [];
   const acciones = [];
 
-  if (previo.accion !== ACCION_AVERIA && previo.serial && previo.serial !== p.serial) {
+  if (previo.serial && previo.serial !== p.serial) {
     const equipo = await buscarEquipo(env, previo.serial, ahoraMs);
     const actual = equipo ? camposAObjeto(equipo.fields) : null;
     if (actual && normalizarNombre(actual.estado) === ESTADO_INSTALADO && normalizarNombre(actual.cliente) === normalizarNombre(previo.cliente)) {
@@ -287,7 +298,8 @@ async function limpiezaDelEnvioAnterior(env, ticketId, previo, p, escribeMateria
 // Envía una orden. Devuelve { estado, mensaje }; si no se pudo llegar al otro sistema, lanza el error (queda PENDIENTE).
 // `previo`: lo que ya quedó escrito en el almacén por esta orden (escritoDe), si se envió antes: se limpia en el mismo commit.
 export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.now(), previo = null) {
-  const conEquipo = orden.accion !== ACCION_AVERIA;
+  // Una avería (recableado o conector interno) solo lleva equipo si se combinó con un cambio de equipo y trae el serial del equipo nuevo.
+  const conEquipo = orden.accion !== ACCION_AVERIA || Boolean(orden.serial);
   const escrituras = [];
   const { fecha, fechaHora } = fechaHoraCaracas(orden.finalizadoEn || ahoraMs);
 
@@ -320,17 +332,20 @@ export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.no
     if (tecnicoEquipo && tecnicoEquipo !== '-' && tecnicoEquipo !== normalizarNombre(p.tecnico)) {
       return { estado: 'EQUIPO_OTRO_TECNICO', mensaje: `${TEXTO_ESTADO_ENVIO.EQUIPO_OTRO_TECNICO} (el equipo figura con ${actual.tecnico} y la orden es de ${p.tecnico}).` };
     }
-    escrituras.push({
-      update: { name: equipo.name, fields: campos({ estado: 'Instalado', cliente: p.cliente, fechaInstalacion: fecha, fechaHoraInstalacion: fechaHora }) },
-      updateMask: { fieldPaths: ['estado', 'cliente', 'fechaInstalacion', 'fechaHoraInstalacion'] },
-      currentDocument: { exists: true },
-    });
+    // Un equipo que ya figura instalado a este cliente (un reenvío) no se vuelve a escribir: su sistema puede rechazar reescribir lo que ya está.
+    if (estadoActual !== ESTADO_INSTALADO) {
+      escrituras.push({
+        update: { name: equipo.name, fields: campos({ estado: 'Instalado', cliente: p.cliente, fechaInstalacion: fecha, fechaHoraInstalacion: fechaHora }) },
+        updateMask: { fieldPaths: ['estado', 'cliente', 'fechaInstalacion', 'fechaHoraInstalacion'] },
+        currentDocument: { exists: true },
+      });
+    }
   }
 
   // Material usado, en negativo como lo guarda su sistema (el drop en km). En una instalación o un cambio de equipo solo
   // se registra si hubo material; una avería siempre lleva su registro, con el motivo pegado al nombre del cliente.
   const dropKm = Math.abs(p.dropMetros) / 1000;
-  const escribeMaterial = !conEquipo || p.apc > 0 || p.upc > 0 || dropKm > 0;
+  const escribeMaterial = p.accion === ACCION_AVERIA || !conEquipo || p.apc > 0 || p.upc > 0 || dropKm > 0;
   if (escribeMaterial) {
     const id = idRegistro(ticketId, p.finalizadoEn);
     const registro = {
@@ -340,7 +355,10 @@ export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.no
       ...(conEquipo ? { equipoSerial: p.serial } : {}),
       cliente: p.accion === ACCION_AVERIA && p.motivo ? `${p.cliente} (Incidente: ${p.motivo})` : p.cliente,
     };
-    escrituras.push({ update: { name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/materialLogs/${id}`, fields: { id: { doubleValue: id }, ...campos(registro) } } });
+    // Un registro que ya está escrito con lo mismo (un reenvío) no se vuelve a escribir: su sistema solo deja crear registros, y reescribir uno existente lo rechaza (403) y frena todo el envío.
+    const escrito = await leerRegistroMaterial(env, id, ahoraMs);
+    const igual = escrito && ['apc', 'upc', 'drop'].every((k) => Math.abs(Number(escrito[k]) - registro[k]) < 1e-9) && String(escrito.tecnico) === registro.tecnico && String(escrito.cliente) === registro.cliente;
+    if (!igual) escrituras.push({ update: { name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/materialLogs/${id}`, fields: { id: { doubleValue: id }, ...campos(registro) } } });
   }
 
   // Su historial de auditoría: una línea por orden enviada, aunque no hubiera material (el cambio de equipo no gasta). Va en el

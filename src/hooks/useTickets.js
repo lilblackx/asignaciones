@@ -37,7 +37,7 @@ import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdene
 import { avisoDeCobro } from '../utils/cobrosClientes';
 import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, faltaElPago, piensaPagoCliente } from '../utils/pagoCliente';
 import { ADMINISTRACION_ACTIVA } from '../constants';
-import { ETIQUETA_TIPO_VISITA, TIPO_RECABLEADO, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, datosVlanVisita, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, errorVlanVisita, esCambioEquipo, esConfigVlan, llevaConectores, parseSerialEquipo, pideSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
+import { ETIQUETA_TIPO_VISITA, avisaCobroAlPreFinalizar, datosConectores, datosSerialEquipo, datosVlanVisita, errorCantidadesConector, errorNapPuertoVisita, errorTipoEquipoNuevo, errorTipoVisita, errorVlanVisita, esCambioEquipo, esConfigVlan, esRecableado, llevaConectores, parseSerialEquipo, pideSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado } from '../utils/tipoVisita';
 import { lineaTecnico } from '../utils/historial';
 import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
@@ -1093,7 +1093,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     }
 
     // Recableado: el metraje inicial y final son obligatorios y los metros son su diferencia (los conectores no son obligatorios).
-    if (tipoVisita === TIPO_RECABLEADO) {
+    if (esRecableado(tipoVisita)) {
       const calculo = calcularMetraje(metrajeInicial, metrajeFinal);
       const errorMetraje = calculo.errores ? (calculo.errores.inicial || calculo.errores.final) : (calculo.valor.total !== metrosCable ? 'El metraje inicial y final no coinciden con los metros de cable.' : '');
       if (errorMetraje) {
@@ -1178,8 +1178,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     detalle += detalleInstalacion(datosInstalacion);
     if (potenciaDbm != null) detalle += ` | Potencia: ${potenciaDbm} dBm`;
     if (potencia1490Dbm != null) detalle += ` | ONU Rx 1490 nm: ${potencia1490Dbm} dBm`;
-    if (tipoVisita === TIPO_RECABLEADO) detalle += ` | Recableado: ${partesRecableado({ metrosCable, metrajeInicial, metrajeFinal, conectorExterno, conectorInterno }).join(', ')}`;
-    else if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) {
+    if (esRecableado(tipoVisita)) {
+      if (esCambioEquipo(tipoVisita)) detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
+      detalle += ` | Recableado: ${partesRecableado({ metrosCable, metrajeInicial, metrajeFinal, conectorExterno, conectorInterno }).join(', ')}`;
+      if (serialEquipoParseado) detalle += ` | Equipo nuevo: ${tipoEquipoNuevo} | Serial del equipo nuevo: ${serialEquipoParseado.valor}`;
+    } else if (tipoVisita && ETIQUETA_TIPO_VISITA[tipoVisita]) {
       detalle += ` | ${ETIQUETA_TIPO_VISITA[tipoVisita]}`;
       const conector = textoConectorVisita({ tipoVisita, ...camposConectores });
       if (conector) detalle += ` | ${conector}`;

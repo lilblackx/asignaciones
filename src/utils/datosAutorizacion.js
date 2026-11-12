@@ -27,7 +27,7 @@ export function datosAutorizacion(ticket) {
 
   if (esCambioEquipo(t.tipoVisita)) agregar(equipo, 'tipoEquipoNuevo', 'Tipo de equipo nuevo', t.tipoEquipoNuevo);
   if (esCambioEquipo(t.tipoVisita)) agregar(equipo, 'serialEquipo', 'Serial del equipo nuevo', t.serialEquipo);
-  if (esReconexion(t.tipoVisita)) agregar(equipo, 'serialEquipo', 'Serial del equipo', t.serialEquipo);
+  if (esReconexion(t.tipoVisita) && !esCambioEquipo(t.tipoVisita)) agregar(equipo, 'serialEquipo', 'Serial del equipo', t.serialEquipo);
   if (esConfigVlan(t.tipoVisita)) agregar(equipo, 'vlan', 'VLAN configurada', t.vlanVisita);
   agregar(equipo, 'serial', 'Serial', inst.serial);
   agregar(equipo, 'vlan', 'VLAN', inst.vlan);

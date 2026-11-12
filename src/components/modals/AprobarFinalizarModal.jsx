@@ -6,7 +6,7 @@ import ConfirmModal from './ConfirmModal';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { faltantesInstalacion } from '../../utils/instalacion';
 import { evaluarPotencia } from '../../utils/potencia';
-import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, tieneDatosRecableado } from '../../utils/tipoVisita';
+import { avisaCobroAlPreFinalizar, esRecableado, tieneDatosRecableado } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
 import { cobroPrecargado, consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
 import DatosParaAutorizar from './DatosParaAutorizar';
@@ -170,7 +170,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
 
           <DatosParaAutorizar ticket={ticket} onCopy={onCopy} />
 
-          {ticket.tipoVisita === TIPO_RECABLEADO && (
+          {esRecableado(ticket.tipoVisita) && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
               <p className="flex items-center gap-2 font-black"><Cable className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> RECABLEADO</p>
               {tieneDatosRecableado(ticket)

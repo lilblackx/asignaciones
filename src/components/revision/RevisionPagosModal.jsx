@@ -73,8 +73,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
 
   // Todo lo que se revisa (sin lo ya pagado), con su estado. El filtro de técnico se aplica al técnico efectivo (el corregido, si lo hay).
   const sinPagoLeido = useMemo(
-    () => revisar(itemsParaRevisar({ ordenes, rango: rangoRevision, rangoElegido: rango, registros: datos.registros, tiposMudanza: datos.tiposMudanza }), datos.revisiones).filter((i) => !datos.idsPagadas.has(i.clave)),
-    [ordenes, rangoRevision, rango, datos.registros, datos.tiposMudanza, datos.revisiones, datos.idsPagadas],
+    () => revisar(itemsParaRevisar({ ordenes, rango: rangoRevision, rangoElegido: rango, registros: datos.registros, tiposMudanza: datos.tiposMudanza, tarifas: datos.tarifas }), datos.revisiones).filter((i) => !datos.idsPagadas.has(i.clave)),
+    [ordenes, rangoRevision, rango, datos.registros, datos.tiposMudanza, datos.tarifas, datos.revisiones, datos.idsPagadas],
   );
   // Las órdenes que esperan el pago: si la oficina ya lo registró y la orden está archivada en un Cierre, su copia no lo trae; se lee del pago guardado (una lectura por orden que lo espera, una sola vez).
   const idsSinPago = useMemo(() => sinPagoLeido.filter((i) => i.orden?.id && faltaElPago(i.orden)).map((i) => String(i.orden.id)), [sinPagoLeido]);
@@ -111,7 +111,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const precioOrigen = (id) => {
     const o = porClave.get(id);
     if (!o) return null;
-    const [pagable] = ordenesPagables([o], { desde: '0000-01-01', hasta: '9999-12-31' }, {});
+    const [pagable] = ordenesPagables([o], { desde: '0000-01-01', hasta: '9999-12-31' }, { tarifas: datos.tarifas });
     const concepto = datos.revisiones[id]?.conceptoCorregido || pagable?.concepto || (/INSTAL/i.test(o.tipoTrabajo || '') ? 'INSTALACION' : null);
     return concepto ? datos.tarifas[concepto] || 0 : null;
   };

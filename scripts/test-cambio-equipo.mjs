@@ -70,7 +70,7 @@ check('sin tipo de visita no se puede pre-finalizar una avería ni una mudanza',
 check('con cualquiera de los once tipos sí', [TIPO_CONECTOR_EXTERNO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, TIPO_CAMBIO_EQUIPO, TIPO_DROP_ATENUADO, TIPO_CONFIG_ROUTER, TIPO_FUENTE_AVERIADA, TIPO_MUDANZA_INTERNA, TIPO_CONFIG_VLAN, TIPO_RECONEXION, TIPO_RETIRO_EQUIPOS].map((t) => errorTipoVisita('AVERÍA', t)), ['', '', '', '', '', '', '', '', '', '', '']);
 check('un valor inventado no vale', errorTipoVisita('AVERÍA', 'OTRA_COSA'), FALTA);
 check('las instalaciones no llevan tipo de visita: no se les pide', [errorTipoVisita('INSTALACIÓN', ''), errorTipoVisita('Instalacion', undefined)], ['', '']);
-check('el técnico ve los once tipos, sin "Ninguno"', TIPOS_VISITA_OBLIGATORIO.map((t) => t.value), ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA', 'MUDANZA_INTERNA', 'CONFIG_VLAN', 'RECONEXION', 'RETIRO_EQUIPOS']);
+check('el técnico ve los once tipos y las tres combinaciones con cambio de equipo, sin "Ninguno"', TIPOS_VISITA_OBLIGATORIO.map((t) => t.value), ['CONECTOR_EXTERNO', 'CONECTOR_INTERNO', 'RECABLEADO', 'CAMBIO_EQUIPO', 'DROP_ATENUADO', 'CONFIG_ROUTER', 'FUENTE_AVERIADA', 'MUDANZA_INTERNA', 'CONFIG_VLAN', 'RECONEXION', 'RECABLEADO_CAMBIO_EQUIPO', 'RECONEXION_CAMBIO_EQUIPO', 'CONECTOR_INTERNO_CAMBIO_EQUIPO', 'RETIRO_EQUIPOS']);
 check('la oficina conserva "Ninguno" al corregir una orden vieja', TIPOS_VISITA[0], { value: '', label: 'Ninguno' });
 
 // --- NAP y puerto solo donde hacen falta ---

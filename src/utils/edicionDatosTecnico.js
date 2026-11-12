@@ -14,7 +14,7 @@ import { calcularMetraje, textoMetrajeConMarcas } from './metraje.js';
 import { esInstalacion, limpiarPostes, napConPuerto, validarInstalacion } from './instalacion.js';
 import { errorConectoresInstalacion, normalizarConectoresInstalacion, parseConectoresInstalacion, textoConectoresInstalacion } from './conectoresInstalacion.js';
 import {
-  TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, datosVlanVisita, errorTipoEquipoNuevo, esCambioEquipo, esConfigVlan, etiquetaTipoVisita,
+  cantidadesConector, esRecableado, colorConectorExterno, colorConectorInterno, datosConectores, datosSerialEquipo, datosVlanVisita, errorTipoEquipoNuevo, esCambioEquipo, esConfigVlan, etiquetaTipoVisita,
   llevaConectores, parseCantidadesConector, parseSerialEquipo, parseVlanVisita, pideSerialEquipo, partesRecableado, textoConectorVisita, tieneDatosRecableado,
 } from './tipoVisita.js';
 
@@ -129,10 +129,10 @@ function validarVisitaEditada(ticket, f) {
   const errores = {};
   // Recableado: el total sale de las marcas inicial y final; uno anterior a las marcas conserva su total mientras no se escriban.
   let metros = null;
-  if (tipo === TIPO_RECABLEADO) {
+  if (esRecableado(tipo)) {
     const hayMarcas = Boolean(texto(f.metrajeInicial).trim() || texto(f.metrajeFinal).trim());
     const teniaMarcas = ticket?.metrajeInicial != null || ticket?.metrajeFinal != null;
-    if (!hayMarcas && !teniaMarcas && ticket?.tipoVisita === TIPO_RECABLEADO && ticket?.metrosCable != null) {
+    if (!hayMarcas && !teniaMarcas && esRecableado(ticket?.tipoVisita) && ticket?.metrosCable != null) {
       metros = { valor: ticket.metrosCable };
     } else {
       const calculo = calcularMetraje(f.metrajeInicial, f.metrajeFinal);
@@ -148,7 +148,7 @@ function validarVisitaEditada(ticket, f) {
   const vlanVisita = esConfigVlan(tipo) ? parseVlanVisita(f.vlanVisita) : null;
   if (vlanVisita?.error) errores.vlanVisita = vlanVisita.error;
   // El tipo del equipo nuevo es obligatorio, salvo en una orden vieja que ya era cambio de equipo y se arregló sin él (no se bloquea editarla por otra cosa).
-  const errorTipoEquipo = errorTipoEquipoNuevo(tipo, f.tipoEquipoNuevo, !(ticket?.tipoVisita === TIPO_CAMBIO_EQUIPO && !ticket?.tipoEquipoNuevo));
+  const errorTipoEquipo = errorTipoEquipoNuevo(tipo, f.tipoEquipoNuevo, !(esCambioEquipo(ticket?.tipoVisita) && !ticket?.tipoEquipoNuevo));
   if (errorTipoEquipo) errores.tipoEquipoNuevo = errorTipoEquipo;
 
   // Igual que al pre-finalizar: los campos de metros, conectores y serial solo se escriben si el tipo los lleva o si hay

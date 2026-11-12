@@ -7,10 +7,12 @@
 //   - Cambio de equipo       -> cambio_equipo: el serial del equipo nuevo pasa a "Instalado" (no gasta material).
 //   - Recableado             -> averia: solo el material (drop y conectores), con el motivo "Recableado - Orden #1234".
 //   - Visita de conector     -> averia: solo el material, con el motivo "Visita de conector externo - Orden #1234".
+//   - Recableado + cambio de equipo y Conector interno + cambio de equipo -> averia con serial: el material de la avería y, además, el equipo nuevo pasa a "Instalado".
+//   - Reconexión + cambio de equipo -> cambio_equipo (el equipo nuevo pasa a "Instalado"; la reconexión no gasta material).
 // El serial se envía como lo ve la OLT (ver utils/serialOlt): el de la caja de TP-Link (GOPN...) se convierte; lo guardado en la orden no cambia.
 // Cualquier otra orden (drop atenuado, averías sin material...) no envía nada.
 import { conectoresPorColor, esCambioEquipoFinalizado, esInstalacionFinalizada, esRecableadoFinalizado, esVisitaConectorFinalizada } from './consumoMateriales.js';
-import { etiquetaTipoVisita } from './tipoVisita.js';
+import { esCambioEquipo, etiquetaTipoVisita } from './tipoVisita.js';
 import { serialParaOlt } from './serialOlt.js';
 
 export const ACCION_INSTALACION = 'instalacion_nueva';
@@ -59,6 +61,9 @@ export function avisoOrdenReabierta(antes, despues) {
 
 const soloLetrasYNumeros = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
 
+// El serial del equipo nuevo de una avería combinada con cambio de equipo (recableado o conector interno); vacío en las demás averías.
+const serialDelCambio = (t) => (esCambioEquipo(t.tipoVisita) ? serialParaOlt(soloLetrasYNumeros(t.serialEquipo)) : '');
+
 // Lo que hay que enviar de una orden aprobada, o null si no corresponde enviar nada.
 //   { accion, codigo, tecnico, cliente, serial, apc, upc, dropMetros, motivo, finalizadoEn }
 export function payloadEnvioInventario(t) {
@@ -80,10 +85,10 @@ export function payloadEnvioInventario(t) {
     return { ...base, accion: ACCION_INSTALACION, serial: serialParaOlt(soloLetrasYNumeros(t.instalacion?.serial)), ...material, dropMetros: Number(t.instalacion?.metraje) || 0, motivo: '' };
   }
   if (esRecableadoFinalizado(t)) {
-    return { ...base, accion: ACCION_AVERIA, serial: '', ...material, dropMetros: Number(t.metrosCable) || 0, motivo: `Recableado - ${orden}` };
+    return { ...base, accion: ACCION_AVERIA, serial: serialDelCambio(t), ...material, dropMetros: Number(t.metrosCable) || 0, motivo: `${etiquetaTipoVisita(t.tipoVisita)} - ${orden}` };
   }
   if (esVisitaConectorFinalizada(t)) {
-    return { ...base, accion: ACCION_AVERIA, serial: '', ...material, dropMetros: 0, motivo: `Visita de ${etiquetaTipoVisita(t.tipoVisita).toLowerCase()} - ${orden}` };
+    return { ...base, accion: ACCION_AVERIA, serial: serialDelCambio(t), ...material, dropMetros: 0, motivo: `Visita de ${etiquetaTipoVisita(t.tipoVisita).toLowerCase()} - ${orden}` };
   }
   return null;
 }

@@ -1,6 +1,6 @@
 import { textoConectoresInstalacion } from './conectoresInstalacion.js';
 import { textoMetrajeConMarcas } from './metraje.js';
-import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO, esConfigVlan, esReconexion, esVisitaConector, pideNapPuertoVisita, textoConectorVisita } from './tipoVisita.js';
+import { esCambioEquipo, esConfigVlan, esReconexion, esRecableado, esVisitaConector, pideNapPuertoVisita, textoConectorVisita } from './tipoVisita.js';
 
 // Lo que el técnico va a enviar al pre-finalizar, para que lo revise en la confirmación antes de mandarlo (una vez enviado solo la oficina puede devolverle la orden). Recibe lo que arma el formulario
 // (`extra` de PreFinalizarModal) y devuelve las filas { etiqueta, valor, destacado }: el serial va destacado, porque es lo que más se equivoca al escribirlo o al escanearlo.
@@ -20,14 +20,14 @@ export function datosParaConfirmar(extra) {
     agregar('Puertos disponibles en la NAP', inst.puertosDisponibles);
     agregar('Conectores usados', textoConectoresInstalacion(inst.conectores));
   } else {
-    if (extra.tipoVisita === TIPO_CAMBIO_EQUIPO) {
+    if (esCambioEquipo(extra.tipoVisita)) {
       agregar('Tipo de equipo nuevo', extra.tipoEquipoNuevo);
       agregar('Serial del equipo nuevo', extra.serialEquipo, true);
     }
-    if (esReconexion(extra.tipoVisita)) agregar('Serial del equipo', extra.serialEquipo, true);
+    if (esReconexion(extra.tipoVisita) && !esCambioEquipo(extra.tipoVisita)) agregar('Serial del equipo', extra.serialEquipo, true);
     if (esConfigVlan(extra.tipoVisita)) agregar('VLAN configurada', extra.vlanVisita, true);
     if (pideNapPuertoVisita(extra.tipoVisita)) agregar('NAP y puerto', extra.nap);
-    if (extra.tipoVisita === TIPO_RECABLEADO) agregar('Metros de cable', extra.metrosCable != null ? textoMetrajeConMarcas(extra.metrosCable, extra) : '');
+    if (esRecableado(extra.tipoVisita)) agregar('Metros de cable', extra.metrosCable != null ? textoMetrajeConMarcas(extra.metrosCable, extra) : '');
     if (esVisitaConector(extra.tipoVisita)) agregar('Conectores usados', textoConectorVisita(extra).replace(/^Conectores?:?\s*/i, ''));
   }
   if (extra.potenciaDbm !== null && extra.potenciaDbm !== undefined) agregar('Potencia óptica', `${extra.potenciaDbm} dBm`);

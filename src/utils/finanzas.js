@@ -24,7 +24,7 @@ import { diaDe } from './totalesMes.js';
 import { enRango, ensancharRango } from './periodoReporte.js';
 import { fechaDeHoja, hojaPorTipo, ordenesDeHoja, tipoDeAveria, tipoDeVisita } from './reporteMensual.js';
 import { RESULTADO_CERRADA, infraestructuraDe } from './infraestructura.js';
-import { TIPO_CAMBIO_EQUIPO, TIPO_RECABLEADO } from './tipoVisita.js';
+import { TIPO_CAMBIO_EQUIPO, esCambioEquipo, esCombinadoConCambio, esRecableado } from './tipoVisita.js';
 import { TRABAJOS_VNTA } from './registroVnTa.js';
 import { adelantosConSaldo, repartirAdelantos, saldoAdelanto } from './adelantos.js';
 import { bonosConSaldo, descuentosConSaldo } from './ajustes.js';
@@ -88,7 +88,7 @@ export const ORDENES_FUERA_DEL_CORTE = [
 
 // Las órdenes de esa lista que caen en el periodo elegido (sin el recorte del corte) y son anteriores al corte; las demás ya entran por ordenesPagables.
 // Mismo formato que ordenesPagables.
-export function ordenesFueraDelCorte(ordenes, rango, { tecnico, tiposMudanza = null, excepciones = ORDENES_FUERA_DEL_CORTE, corte = FECHA_CORTE } = {}) {
+export function ordenesFueraDelCorte(ordenes, rango, { tecnico, tiposMudanza = null, tarifas = null, excepciones = ORDENES_FUERA_DEL_CORTE, corte = FECHA_CORTE } = {}) {
   if (!rango || !corte || excepciones.length === 0) return [];
   const clave = (codigo, tec) => `${String(codigo || '').trim().toUpperCase()}|${String(tec || '').trim().toUpperCase()}`;
   const permitidas = new Set(excepciones.map((e) => clave(e.codigo, e.tecnico)));
@@ -97,7 +97,7 @@ export function ordenesFueraDelCorte(ordenes, rango, { tecnico, tiposMudanza = n
     for (const orden of ordenesDeHoja(ordenes, hoja, rango, { tecnico })) {
       const dia = diaDe(fechaDeHoja(orden));
       if (dia >= corte || !permitidas.has(clave(orden.codigo, orden.tecnico))) continue;
-      const concepto = conceptoDePago(orden, hoja, tiposMudanza);
+      const concepto = conceptoDePago(orden, hoja, tiposMudanza, tarifas);
       if (concepto) lista.push({ orden, clave: claveOrden(orden), concepto, tecnico: String(orden.tecnico || '').trim() || SIN_TECNICO, dia });
     }
   }
@@ -147,14 +147,23 @@ const tipoDeMudanza = (t, tiposElegidos) => {
 
 // El concepto con que se le paga una orden al técnico, o null si no se paga (o si es una mudanza todavía sin tipo).
 // Una avería o visita técnica que se paga y fue un recableado se paga con la tarifa de recableado, no con la de avería o visita técnica; una mudanza, con la suya.
-export function conceptoDePago(t, hoja, tiposElegidos = null) {
+// Una visita combinada con cambio de equipo (recableado, reconexión o conector interno + cambio de equipo) se paga con UNA sola tarifa: la mayor entre la de su visita y la de cambio de equipo
+// (`tarifas`: el tabulador; sin él, se queda con la de su visita).
+export function conceptoDePago(t, hoja, tiposElegidos = null, tarifas = null) {
   if (!t || t.estado !== 'FINALIZADO') return null;
   if (hoja === 'INSTALACIONES') return 'INSTALACION';
   // Una validación de NAP finalizada se paga con su propia tarifa, tenga o no cobro (es un trabajo interno). Lo escalado a infraestructura se decide aparte (conceptoDeEscalada).
   if (hoja === 'VNTA') return String(t.tipoTrabajo || '').trim().toUpperCase() === 'VALIDACION NAP' ? 'VALIDACION_NAP' : null;
   const pagada = hoja === 'VISITAS' ? ['EX', 'AC'].includes(tipoDeVisita(t)) : hoja === 'AVERIAS' ? ['EX', 'AC'].includes(tipoDeAveria(t)) : false;
   if (!pagada) return null;
-  if (t.tipoVisita === TIPO_RECABLEADO) return 'RECABLEADO';
+  const concepto = conceptoDeLaVisita(t, tiposElegidos);
+  if (!concepto || !esCombinadoConCambio(t.tipoVisita)) return concepto;
+  return (tarifas?.CAMBIO_EQUIPO || 0) > (tarifas?.[concepto] || 0) ? 'CAMBIO_EQUIPO' : concepto;
+}
+
+// El concepto de una avería o visita que se paga, según su visita (sin mirar si lleva cambio de equipo añadido).
+function conceptoDeLaVisita(t, tiposElegidos) {
+  if (esRecableado(t.tipoVisita)) return 'RECABLEADO';
   const trabajo = String(t.tipoTrabajo || '').trim().toUpperCase();
   if (trabajo === 'LOW SIGNAL') return 'LOW_SIGNAL';
   if (trabajo === 'CAMBIO DE EQUIPO' || t.tipoVisita === TIPO_CAMBIO_EQUIPO) return 'CAMBIO_EQUIPO';
@@ -164,20 +173,20 @@ export function conceptoDePago(t, hoja, tiposElegidos = null) {
 
 // El concepto con que se pagaría una orden escalada a infraestructura, para que un administrador la apruebe, la corrija o la excluya al revisarla: cerrada como trabajo adicional →
 // TRABAJO_ADICIONAL; finalizada de otra forma (volvió al técnico y la terminó) → el que le tocaría por su tipo si nunca se hubiera escalado; sin terminar → null (se elige al corregirla).
-export function conceptoDeEscalada(t, tiposElegidos = null) {
+export function conceptoDeEscalada(t, tiposElegidos = null, tarifas = null) {
   if (!t || t.estado !== 'FINALIZADO') return null;
   if (infraestructuraDe(t)?.resultado === RESULTADO_CERRADA) return 'TRABAJO_ADICIONAL';
-  return conceptoDePago(t, hojaPorTipo(t), tiposElegidos);
+  return conceptoDePago(t, hojaPorTipo(t), tiposElegidos, tarifas);
 }
 
 // Las validaciones de NAP finalizadas y las órdenes escaladas a infraestructura del periodo (las dos van en la hoja 'VNTA'): [{ orden, clave, concepto, tecnico, dia, escalada? }]. Las escaladas llevan
 // `escalada` (la marca de la orden) para que Revisión las avise, cuentan el día en que se escalaron y, si todavía no se pueden pagar (sin terminar), su `concepto` es null. Las canceladas no cuentan.
-function vnYEscaladas(ordenes, rango, { tecnico, tiposMudanza = null } = {}) {
+function vnYEscaladas(ordenes, rango, { tecnico, tiposMudanza = null, tarifas = null } = {}) {
   const lista = [];
   for (const orden of ordenesDeHoja(ordenes, 'VNTA', rango, { tecnico })) {
     if (orden.estado === 'CANCELADO') continue;
     const escalada = infraestructuraDe(orden);
-    const concepto = escalada ? conceptoDeEscalada(orden, tiposMudanza) : conceptoDePago(orden, 'VNTA');
+    const concepto = escalada ? conceptoDeEscalada(orden, tiposMudanza, tarifas) : conceptoDePago(orden, 'VNTA');
     if (!concepto && !escalada) continue;
     lista.push({ orden, clave: claveOrden(orden), concepto, tecnico: String(orden.tecnico || '').trim() || SIN_TECNICO, dia: diaDe(fechaDeHoja(orden)), ...(escalada && { escalada }) });
   }
@@ -205,22 +214,22 @@ export function registrosPagables(registros, rango, { tecnico } = {}) {
 
 // Las órdenes que se le pagan al técnico en el periodo, con su concepto: [{ orden, clave, concepto, tecnico, dia }]. El día es el mismo con que cuenta la
 // orden en el Registro de estadísticas (cuando se terminó el trabajo). `registros`: las filas de VN y TA del periodo, que se pagan junto con las órdenes.
-export function ordenesPagables(ordenes, rango, { tecnico, registros = [], tiposMudanza = null } = {}) {
+export function ordenesPagables(ordenes, rango, { tecnico, registros = [], tiposMudanza = null, tarifas = null } = {}) {
   const lista = registrosPagables(registros, rango, { tecnico });
   for (const hoja of ['INSTALACIONES', 'VISITAS', 'AVERIAS']) {
     for (const orden of ordenesDeHoja(ordenes, hoja, rango, { tecnico })) {
-      const concepto = conceptoDePago(orden, hoja, tiposMudanza);
+      const concepto = conceptoDePago(orden, hoja, tiposMudanza, tarifas);
       if (concepto) lista.push({ orden, clave: claveOrden(orden), concepto, tecnico: String(orden.tecnico || '').trim() || SIN_TECNICO, dia: diaDe(fechaDeHoja(orden)) });
     }
   }
-  lista.push(...vnYEscaladas(ordenes, rango, { tecnico, tiposMudanza }).filter((i) => i.concepto));
+  lista.push(...vnYEscaladas(ordenes, rango, { tecnico, tiposMudanza, tarifas }).filter((i) => i.concepto));
   return lista.sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
 }
 
 // Las mudanzas que se pagarían pero no tienen tipo (interna o externa): no se pagan hasta que la oficina se lo ponga. [{ orden, clave, tecnico, dia }].
 export function mudanzasSinTipo(ordenes, rango, { tecnico, tiposMudanza = null } = {}) {
   return ordenesDeHoja(ordenes, 'VISITAS', rango, { tecnico })
-    .filter((orden) => orden.estado === 'FINALIZADO' && String(orden.tipoTrabajo || '').trim().toUpperCase() === 'MUDANZA' && !tipoDeMudanza(orden, tiposMudanza) && orden.tipoVisita !== TIPO_RECABLEADO && orden.tipoVisita !== TIPO_CAMBIO_EQUIPO && ['EX', 'AC'].includes(tipoDeVisita(orden)))
+    .filter((orden) => orden.estado === 'FINALIZADO' && String(orden.tipoTrabajo || '').trim().toUpperCase() === 'MUDANZA' && !tipoDeMudanza(orden, tiposMudanza) && !esRecableado(orden.tipoVisita) && !esCambioEquipo(orden.tipoVisita) && ['EX', 'AC'].includes(tipoDeVisita(orden)))
     .map((orden) => ({ orden, clave: claveOrden(orden), tecnico: String(orden.tecnico || '').trim() || SIN_TECNICO, dia: diaDe(fechaDeHoja(orden)) }))
     .sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
 }

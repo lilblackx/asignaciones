@@ -35,7 +35,7 @@ import { esInstalacion, metrajeInstalacion } from './instalacion.js';
 import { parseDatosClienteTemplate } from './whatsapp.js';
 import { fueEscalada, infraestructuraDe } from './infraestructura.js';
 import { motivoCancelacion } from './cancelacion.js';
-import { TIPO_RECABLEADO, etiquetaTipoVisita } from './tipoVisita.js';
+import { esCambioEquipo, esRecableado, etiquetaTipoVisita } from './tipoVisita.js';
 
 export const TIPOS_VISITA_HOJA = ['EX', 'AC', 'NR', 'GA'];
 export const EQUIPOS = ['SM', 'MTV', 'MR', 'MRTV'];
@@ -135,7 +135,7 @@ export function equipoDe(t) {
 export function materialDe(t) {
   if (t?.estado !== 'FINALIZADO' || fueEscalada(t)) return { verde: 0, azul: 0, drop: 0 };
   const { verde, azul } = conectoresPorColor(t);
-  const drop = t.tipoVisita === TIPO_RECABLEADO ? Number(t.metrosCable) || 0 : (esInstalacion(t.tipoTrabajo) ? metrajeInstalacion(t) || 0 : 0);
+  const drop = esRecableado(t.tipoVisita) ? Number(t.metrosCable) || 0 : (esInstalacion(t.tipoTrabajo) ? metrajeInstalacion(t) || 0 : 0);
   return { verde, azul, drop };
 }
 
@@ -462,7 +462,7 @@ export function cantidadDeMaterial(t, material) {
 export const ordenesConMaterial = (lista, material) => lista.filter((t) => cantidadDeMaterial(t, material) > 0);
 
 // El serial del equipo: el de la ONU de una instalación o el del equipo nuevo de un cambio de equipo ('' si no se registró).
-export const serialDeEquipo = (t) => String((t?.tipoVisita === 'CAMBIO_EQUIPO' ? t.serialEquipo : t?.instalacion?.serial) ?? '').trim();
+export const serialDeEquipo = (t) => String((esCambioEquipo(t?.tipoVisita) ? t.serialEquipo : t?.instalacion?.serial) ?? '').trim();
 
 export function columnasDetalleMaterial(material) {
   const equipo = EQUIPOS.includes(material);

@@ -23,6 +23,7 @@ const base = { id: 'x', codigo: 'IS10', nombre: 'Ana Pérez', tecnico: 'GERARDO 
 const instalacion = { ...base, tipoTrabajo: 'INSTALACIÓN', instalacion: { serial: 'hwtc1a2b3c4d', metraje: 120, conectores: { externo: { verde: 1 }, interno: { verde: 1, azul: 1 } } } };
 const cambio = { ...base, codigo: 'CE1', tipoTrabajo: 'VISITA', tipoVisita: 'CAMBIO_EQUIPO', serialEquipo: 'ZTEG99887766' };
 const recableado = { ...base, codigo: 'R1', tipoTrabajo: 'VISITA', tipoVisita: 'RECABLEADO', metrosCable: 40, conectorExterno: 'VERDE', conectorInterno: 'AZUL' };
+const recableadoCambio = { ...recableado, codigo: 'RC1', tipoVisita: 'RECABLEADO_CAMBIO_EQUIPO', serialEquipo: 'ZTEG99887766', tipoEquipoNuevo: 'SM' };
 const visitaInterna = { ...base, codigo: 'V1', tipoTrabajo: 'VISITA', tipoVisita: 'CONECTOR_INTERNO', conectoresUsados: { verde: 2, azul: 1 } };
 const visitaExterna = { ...base, codigo: 'V2', tipoTrabajo: 'VISITA', tipoVisita: 'CONECTOR_EXTERNO', conectoresUsados: { verde: 1, azul: 0 } };
 
@@ -81,6 +82,7 @@ const fieldsDe = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k,
 const dec = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, 'stringValue' in v ? v.stringValue : 'integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : v]));
 
 let materialLogsTelecom = []; // registros de material del almacén: [{ id, campos }]
+let registrosTelecom = {}; // materialLogs que ya existen con su contenido: { id: campos } (un reenvío los encuentra ya escritos)
 let existentesTelecom = new Set(); // ids de materialLogs que ya existen (por ejemplo, una corrección ya hecha)
 let aplicarEscriturasDeEquipo = false; // los commits cambian el inventario simulado (para probar un envío tras liberar)
 let sinPermisoAuditoria = false; // sus reglas no dejan escribir auditLogs
@@ -114,6 +116,7 @@ globalThis.fetch = async (url, init = {}) => {
       return respuesta(materialLogsTelecom.filter((l) => l.campos.equipoSerial === serial).map((l) => ({ document: { name: `${DOCS_TELECOM}/materialLogs/${l.id}`, fields: fieldsDe(l.campos) } })).concat([{}]));
     }
     if (u.includes('/materialLogs/') && (!init.method || init.method === 'GET')) {
+      if (registrosTelecom[u.split('/materialLogs/')[1]]) return respuesta({ name: u, fields: fieldsDe(registrosTelecom[u.split('/materialLogs/')[1]]) });
       return existentesTelecom.has(u.split('/materialLogs/')[1]) ? respuesta({ name: u, fields: {} }) : respuesta('no existe', 404);
     }
     if (u.endsWith(':runQuery')) {
@@ -201,6 +204,7 @@ const reiniciar = () => {
     inst1: fieldsDe({ ...instalacion, estado: 'FINALIZADO', tipoTrabajo: 'INSTALACIÓN' }),
     cambio1: fieldsDe(cambio),
     rec1: fieldsDe(recableado),
+    reccambio1: fieldsDe(recableadoCambio),
     visita1: fieldsDe(visitaInterna),
     pre1: fieldsDe({ ...instalacion, estado: 'PRE-FINALIZADO' }),
     otra1: fieldsDe({ ...base, tipoTrabajo: 'AVERÍA' }),
@@ -216,7 +220,7 @@ const reiniciar = () => {
   comportamientoTelecom = 'ok';
   sinPermisoNotificaciones = false; notificacionesTelecom = [];
   llamadasTelecom = []; commitsTelecom = []; loginsTelecom = []; pushes = []; consultasNuestras = []; reportes = [];
-  materialLogsTelecom = []; existentesTelecom = new Set(); aplicarEscriturasDeEquipo = false;
+  materialLogsTelecom = []; registrosTelecom = {}; existentesTelecom = new Set(); aplicarEscriturasDeEquipo = false;
 };
 
 async function llamar(ruta, uid, cuerpo, e = env) {
@@ -542,6 +546,52 @@ check('recableado: la auditoría es una avería con el motivo y su consumo', [au
 check('recableado: avería con el motivo pegado al nombre del cliente, sin serial', [dec(averia).grapas, dec(averia).cliente, dec(averia).apc, dec(averia).upc, dec(averia).drop, 'equipoSerial' in averia], ['Avería', 'Ana Pérez (Incidente: Recableado - Orden #R1)', -1, -1, -0.04, false]);
 r = await enviar('visita1');
 check('visita de conector: avería con sus conectores y sin drop', (({ cliente, apc, upc, drop }) => [cliente, apc, upc, drop])(dec(escrituraDe(commitsTelecom[1], 'materialLogs').update.fields)), ['Ana Pérez (Incidente: Visita de conector interno - Orden #V1)', -2, -1, 0]);
+// 6b) Recableado + cambio de equipo: el material de la avería Y el equipo nuevo pasa a Instalado
+reiniciar();
+r = await enviar('reccambio1');
+const materialCambio = dec(escrituraDe(commitsTelecom[0], 'materialLogs').update.fields);
+const auditoriaRC = dec(escrituraDe(commitsTelecom[0], 'auditLogs').update.fields);
+check('recableado + cambio: marca el equipo nuevo como instalado y descuenta el material de la avería, en el mismo envío',
+  [r.json.estado, commitsTelecom[0].length, commitsTelecom[0][0].update.name.includes('/inventory/inv-2'), materialCambio.grapas, materialCambio.equipoSerial, materialCambio.apc, materialCambio.upc, materialCambio.drop],
+  ['ENVIADO', 3, true, 'Avería', 'ZTEG99887766', -1, -1, -0.04]);
+check('recableado + cambio: la auditoría dice qué equipo se cambió', [auditoriaRC.accion, auditoriaRC.detalle.includes('Equipo cambiado: Serial [ZTEG99887766]')], ['Avería', true]);
+reiniciar();
+inventario.ZTEG99887766.campos = { serial: 'ZTEG99887766', estado: 'En Almacén' };
+r = await enviar('reccambio1');
+check('recableado + cambio con el equipo nuevo en almacén: no se envía nada (ni el material) y queda la alerta', [r.json.estado, commitsTelecom.length], ['EQUIPO_NO_ASIGNADO', 0]);
+// La avería ya se había enviado sola (sin el cambio de equipo), la orden se corrigió a recableado + cambio y se reenvía (el caso de AN10)
+reiniciar();
+r = await enviar('rec1');
+check('la avería sola se envía primero (sin equipo)', [r.json.estado, commitsTelecom.length, inventario.ZTEG99887766.campos.estado], ['ENVIADO', 1, 'Con Técnico']);
+ordenes.rec1 = fieldsDe({ ...recableadoCambio, codigo: 'R1' });
+r = await llamar('/inventario/reenviar', 'lf-uid', { ticketId: 'rec1' });
+check('al corregirla a recableado + cambio y reenviar, el equipo nuevo pasa a instalado y el material no se descuenta dos veces',
+  [r.json.estado, commitsTelecom[1].some((w) => w.update.name.endsWith('/inv-2')), commitsTelecom[1].filter((w) => w.update.name.includes('/materialLogs/')).length, commitsTelecom[1].some((w) => dec(w.update.fields).grapas === 'Corrección')],
+  ['ENVIADO', true, 1, false]);
+
+// 6c) Un reenvío no reescribe lo que ya está escrito (su sistema solo deja crear registros: reescribir uno existente da 403 y frena todo el envío; el caso de AN10)
+reiniciar();
+r = await enviar('rec1');
+const primero = dec(escrituraDe(commitsTelecom[0], 'materialLogs').update.fields);
+const FIN2 = FIN + 70 * 60 * 1000; // la orden se volvió a finalizar más tarde: otro id de registro
+const idSegundo = idRegistro('rec1', FIN2);
+// El segundo envío (con el cambio de equipo) ya escribió su material y dejó el equipo instalado; se reenvía otra vez y debe devolver solo el primero.
+registrosTelecom[idSegundo] = { ...primero, id: idSegundo, cliente: 'Ana Pérez (Incidente: Recableado + cambio de equipo - Orden #R1)', equipoSerial: 'ZTEG99887766' };
+inventario.ZTEG99887766.campos = { serial: 'ZTEG99887766', estado: 'Instalado', cliente: 'Ana Pérez', tecnico: 'GERARDO MOLERO' };
+ordenes.rec1 = fieldsDe({ ...recableadoCambio, codigo: 'R1', finalizadoEn: FIN2 });
+r = await llamar('/inventario/reenviar', 'lf-uid', { ticketId: 'rec1' });
+const escrituras6c = commitsTelecom[1] || [];
+check('reenviar con un material ya escrito: no lo reescribe, devuelve el primero con una corrección y no vuelve a tocar el equipo ya instalado',
+  [r.json.estado, escrituras6c.some((w) => w.update.name.endsWith(`/materialLogs/${idSegundo}`)), escrituras6c.some((w) => dec(w.update.fields).grapas === 'Corrección'), escrituras6c.some((w) => w.update.name.includes('/inventory/'))],
+  ['ENVIADO', false, true, false]);
+// y si el material existente es distinto (otros metros), sí se escribe
+reiniciar();
+r = await enviar('rec1');
+registrosTelecom[idSegundo] = { ...primero, id: idSegundo, drop: -0.999 };
+ordenes.rec1 = fieldsDe({ ...recableadoCambio, codigo: 'R1', finalizadoEn: FIN2 });
+r = await llamar('/inventario/reenviar', 'lf-uid', { ticketId: 'rec1' });
+check('si el material ya escrito es distinto de lo que dice la orden, sí se escribe', (commitsTelecom[1] || []).some((w) => w.update.name.endsWith(`/materialLogs/${idSegundo}`)), true);
+
 check('la sesión del otro sistema se reutiliza entre órdenes (un solo inicio de sesión)', loginsTelecom.length, 1);
 
 // 7) Lo que no corresponde

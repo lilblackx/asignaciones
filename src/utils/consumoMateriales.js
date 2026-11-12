@@ -11,7 +11,7 @@
 // del equipo nuevo.
 import { conectoresDeInstalacion } from './conectoresInstalacion.js';
 import { esInstalacion, metrajeExistente, metrajeInstalacion } from './instalacion.js';
-import { TIPO_RECABLEADO, COLOR_AZUL, COLOR_VERDE, cantidadesConector, esCambioEquipo, esVisitaConector } from './tipoVisita.js';
+import { COLOR_AZUL, COLOR_VERDE, cantidadesConector, esCambioEquipo, esRecableado as esTipoRecableado, esVisitaConector } from './tipoVisita.js';
 
 export const PERIODOS = [
   { id: 'HOY', etiqueta: 'Hoy' },
@@ -39,8 +39,11 @@ export function conectoresPorColor(t) {
 export const totalConectores = (r) => r.verde + r.azul;
 
 const pendienteDeAprobar = (t) => t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA';
-const esRecableado = (t) => t?.tipoVisita === TIPO_RECABLEADO;
+const esRecableado = (t) => esTipoRecableado(t?.tipoVisita);
 const esCambio = (t) => esCambioEquipo(t?.tipoVisita);
+// Cambio de equipo "puro": el de la visita Cambio de equipo y el de la Reconexión + cambio de equipo. Las combinaciones con recableado o con conector gastan material y se cuentan
+// y se envían como esa avería (con el serial del equipo nuevo): ver payloadEnvioInventario.
+const esCambioPuro = (t) => esCambio(t) && !esRecableado(t) && !esVisitaConector(t?.tipoVisita);
 const tieneMetros = (t) => esRecableado(t) && t.metrosCable != null && Number(t.metrosCable) > 0;
 // Una instalación con su metraje registrado (o con "metraje existente": el drop ya estaba puesto, así que suma la instalación, su serial y sus
 // conectores, pero 0 metros). Las anteriores a que se pidiera el metraje no lo tienen y no suman.
@@ -49,7 +52,7 @@ const tieneMetraje = (t) => !esCambio(t) && esInstalacion(t?.tipoTrabajo) && (me
 const gastaCable = (t) => tieneMetros(t) || (tieneMetraje(t) && !metrajeExistente(t));
 const metrosDe = (t) => (esRecableado(t) ? Number(t.metrosCable) : (metrajeInstalacion(t) ?? 0));
 // Tipo de la orden para mostrarla: 'RECABLEADO', 'CAMBIO_EQUIPO', 'INSTALACION' o 'VISITA' (de conector).
-const claseDe = (t) => (esRecableado(t) ? 'RECABLEADO' : esCambio(t) ? 'CAMBIO_EQUIPO' : esInstalacion(t?.tipoTrabajo) ? 'INSTALACION' : 'VISITA');
+const claseDe = (t) => (esRecableado(t) ? 'RECABLEADO' : esCambioPuro(t) ? 'CAMBIO_EQUIPO' : esInstalacion(t?.tipoTrabajo) ? 'INSTALACION' : 'VISITA');
 // Serial del equipo: el de la ONU de una instalación o el del equipo nuevo de un cambio de equipo ('' si no hay).
 const serialDe = (t) => String((esCambio(t) ? t.serialEquipo : tieneMetraje(t) ? t.instalacion?.serial : '') ?? '').trim();
 const tieneConector = (t) => esVisitaConector(t?.tipoVisita) && totalConectores(conectoresPorColor(t)) > 0;
@@ -61,8 +64,8 @@ export const esInstalacionFinalizada = (t) => !esRecableado(t) && tieneMetraje(t
 export const esInstalacionPorAprobar = (t) => !esRecableado(t) && tieneMetraje(t) && pendienteDeAprobar(t);
 export const esVisitaConectorFinalizada = (t) => tieneConector(t) && t.estado === 'FINALIZADO';
 export const esVisitaConectorPorAprobar = (t) => tieneConector(t) && pendienteDeAprobar(t);
-export const esCambioEquipoFinalizado = (t) => !esRecableado(t) && esCambio(t) && t.estado === 'FINALIZADO';
-export const esCambioEquipoPorAprobar = (t) => !esRecableado(t) && esCambio(t) && pendienteDeAprobar(t);
+export const esCambioEquipoFinalizado = (t) => esCambioPuro(t) && t.estado === 'FINALIZADO';
+export const esCambioEquipoPorAprobar = (t) => esCambioPuro(t) && pendienteDeAprobar(t);
 
 // Cuándo se usó el material: al finalizar la orden (finalizadoEn) o, si no está, al crearla.
 export const fechaDeUso = (t) => Number(t.finalizadoEn) || Number(t.createdAt) || 0;
@@ -85,7 +88,7 @@ function sumar(acum, t) {
   if (esRecableado(t)) {
     acum.ordenes += 1;
     acum.metros += metrosDe(t);
-  } else if (esCambio(t)) {
+  } else if (esCambioPuro(t)) {
     acum.cambiosEquipo += 1;
   } else if (tieneMetraje(t)) {
     acum.instalaciones += 1;
@@ -132,7 +135,7 @@ export function consumoPorTecnico(ordenes, { desde = 0, hasta = Infinity, tecnic
       if (esRecableado(t)) {
         porAprobar.ordenes += 1;
         porAprobar.metros += metrosDe(t);
-      } else if (esCambio(t)) {
+      } else if (esCambioPuro(t)) {
         porAprobar.cambiosEquipo += 1;
       } else if (tieneMetraje(t)) {
         porAprobar.instalaciones += 1;

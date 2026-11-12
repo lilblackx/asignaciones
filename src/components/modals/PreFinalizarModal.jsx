@@ -14,7 +14,7 @@ import ConfirmPreFinalizarModal from './ConfirmPreFinalizarModal';
 import { datosParaConfirmar } from '../../utils/confirmarPreFinalizar';
 import { evaluarPotencia, parsePotencia } from '../../utils/potencia';
 import { puedeCapturarPotencia } from '../../utils/senalOnu';
-import { TIPOS_VISITA_OBLIGATORIO, TIPO_CAMBIO_EQUIPO, errorTipoVisita, pideNapPuertoVisita, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, cantidadesConector, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseSerialEquipo, pideSerialEquipo, esConfigVlan, parseVlanVisita } from '../../utils/tipoVisita';
+import { TIPOS_VISITA_OBLIGATORIO, errorTipoVisita, pideNapPuertoVisita, TIPO_RECABLEADO, cantidadesConector, esCambioEquipo, esRecableado, avisaCobroAlPreFinalizar, colorConectorExterno, colorConectorInterno, datosConectores, errorTipoEquipoNuevo, esVisitaConector, etiquetaTipoVisita, parseCantidadesConector, parseSerialEquipo, pideSerialEquipo, esConfigVlan, parseVlanVisita } from '../../utils/tipoVisita';
 import { conceptoCobro, llevaCobro } from '../../utils/cobro';
 import { consultaCobroDe } from '../../utils/consultaCobro';
 import ConsultaCobroRecableado from './ConsultaCobroRecableado';
@@ -100,13 +100,14 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   const esInstalacion = trabajoEsInstalacion(ticket.tipoTrabajo);
   const tipoVisita = esInstalacion ? '' : tipoVisitaElegido;
   const visitaConNapPuerto = pideNapPuertoVisita(tipoVisita);
-  const recableado = tipoVisita === TIPO_RECABLEADO;
+  const recableado = esRecableado(tipoVisita);
   // Recableado: los metros son la diferencia entre el metraje inicial y el final (texto vacío mientras no se pueda calcular).
   const metrosTotal = totalMetraje(metrosInicial, metrosFinal);
   const metros = metrosTotal != null ? String(metrosTotal) : '';
   // Lo que se resume en la confirmación para que el técnico vea qué está enviando: "Recableado: 250 m".
   const etiquetaVisita = tipoVisita ? `${etiquetaTipoVisita(tipoVisita)}${recableado && metros ? `: ${metros} m` : ''}` : '';
-  const cambioEquipo = tipoVisita === TIPO_CAMBIO_EQUIPO;
+  // El cambio de equipo y sus combinaciones (recableado, reconexión o conector interno + cambio de equipo) piden el tipo y el serial del equipo nuevo.
+  const cambioEquipo = esCambioEquipo(tipoVisita);
   // El cambio de equipo y la reconexión piden el serial del equipo (obligatorio); el tipo del equipo solo el cambio.
   const pideSerial = pideSerialEquipo(tipoVisita);
   const configVlan = esConfigVlan(tipoVisita);
@@ -328,7 +329,7 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
 
           {esVisitaConector(tipoVisita) && (
             <CantidadesConectorVisita
-              interno={tipoVisita === TIPO_CONECTOR_INTERNO}
+              interno={avisaCobroAlPreFinalizar(tipoVisita)}
               verde={cantVerde}
               azul={cantAzul}
               onVerde={(v) => { setCantVerde(v); setCantidadError({ campo: '', mensaje: '' }); }}

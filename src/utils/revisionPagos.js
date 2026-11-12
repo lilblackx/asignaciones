@@ -50,15 +50,15 @@ export function firmaDeItem(item) {
 }
 
 // Lo que se revisa: lo que hoy llegaría a Finanzas más las mudanzas finalizadas que todavía no tienen tipo (el administrador les elige el concepto al corregirlas).
-// `registros`: filas de VN y TA del periodo; `tiposMudanza`: lo que Finanzas ya eligió para mudanzas de un cierre.
+// `registros`: filas de VN y TA del periodo; `tiposMudanza`: lo que Finanzas ya eligió para mudanzas de un cierre; `tarifas`: el tabulador (una visita combinada con cambio de equipo se paga con la mayor de sus dos tarifas).
 // `rangoElegido`: el periodo tal como se eligió, sin el recorte del corte; con él entran las órdenes de la excepción (ver ORDENES_FUERA_DEL_CORTE).
-export function itemsParaRevisar({ ordenes, rango, rangoElegido = null, tecnico = '', registros = [], tiposMudanza = null }) {
-  const pagables = ordenesPagables(ordenes, rango, { tecnico, registros, tiposMudanza });
+export function itemsParaRevisar({ ordenes, rango, rangoElegido = null, tecnico = '', registros = [], tiposMudanza = null, tarifas = null }) {
+  const pagables = ordenesPagables(ordenes, rango, { tecnico, registros, tiposMudanza, tarifas });
   const claves = new Set(pagables.map((i) => i.clave));
-  pagables.push(...ordenesFueraDelCorte(ordenes, rangoElegido, { tecnico, tiposMudanza }).filter((i) => !claves.has(i.clave)));
+  pagables.push(...ordenesFueraDelCorte(ordenes, rangoElegido, { tecnico, tiposMudanza, tarifas }).filter((i) => !claves.has(i.clave)));
   const sinTipo = mudanzasSinTipo(ordenes, rango, { tecnico, tiposMudanza }).map((i) => ({ ...i, concepto: null }));
   // Lo escalado a infraestructura que todavía no se terminó también se revisa (con su alerta); sin concepto no se puede aprobar hasta que el administrador lo elija.
-  const escaladas = escaladasSinConcepto(ordenes, rango, { tecnico, tiposMudanza });
+  const escaladas = escaladasSinConcepto(ordenes, rango, { tecnico, tiposMudanza, tarifas });
   return [...pagables, ...sinTipo, ...escaladas].sort((a, b) => a.dia.localeCompare(b.dia) || String(a.orden.codigo).localeCompare(String(b.orden.codigo)));
 }
 

@@ -33,6 +33,22 @@ export const TIPO_FUENTE_AVERIADA = 'FUENTE_AVERIADA';
 export const TIPO_MUDANZA_INTERNA = 'MUDANZA_INTERNA';
 export const TIPO_CONFIG_VLAN = 'CONFIG_VLAN';
 export const TIPO_RECONEXION = 'RECONEXION';
+// Visitas combinadas con cambio de equipo: la orden lleva un solo tipo de visita, así que el técnico elige la combinación en el mismo desplegable. Hacen lo de su visita de base
+// (metros y conectores, el cobro del conector, el serial de la reconexión) y además piden el tipo y el serial del equipo nuevo, obligatorios. Ver tipoBase.
+export const TIPO_RECABLEADO_CAMBIO_EQUIPO = 'RECABLEADO_CAMBIO_EQUIPO';
+export const TIPO_RECONEXION_CAMBIO_EQUIPO = 'RECONEXION_CAMBIO_EQUIPO';
+export const TIPO_CONECTOR_INTERNO_CAMBIO_EQUIPO = 'CONECTOR_INTERNO_CAMBIO_EQUIPO';
+
+// combinación -> su visita de base
+const COMBINADOS = {
+  [TIPO_RECABLEADO_CAMBIO_EQUIPO]: TIPO_RECABLEADO,
+  [TIPO_RECONEXION_CAMBIO_EQUIPO]: TIPO_RECONEXION,
+  [TIPO_CONECTOR_INTERNO_CAMBIO_EQUIPO]: TIPO_CONECTOR_INTERNO,
+};
+// La visita de base de un tipo: la misma si no es una combinación ("RECABLEADO_CAMBIO_EQUIPO" -> "RECABLEADO").
+export const tipoBase = (tipoVisita) => COMBINADOS[tipoVisita] || tipoVisita;
+export const esCombinadoConCambio = (tipoVisita) => Object.hasOwn(COMBINADOS, tipoVisita);
+export const esRecableado = (tipoVisita) => tipoBase(tipoVisita) === TIPO_RECABLEADO;
 export const TIPO_RETIRO_EQUIPOS = 'RETIRO_EQUIPOS';
 
 export const ETIQUETA_TIPO_VISITA = {
@@ -46,6 +62,9 @@ export const ETIQUETA_TIPO_VISITA = {
   [TIPO_MUDANZA_INTERNA]: 'Mudanza interna',
   [TIPO_CONFIG_VLAN]: 'Configuración de VLAN',
   [TIPO_RECONEXION]: 'Reconexión',
+  [TIPO_RECABLEADO_CAMBIO_EQUIPO]: 'Recableado + cambio de equipo',
+  [TIPO_RECONEXION_CAMBIO_EQUIPO]: 'Reconexión + cambio de equipo',
+  [TIPO_CONECTOR_INTERNO_CAMBIO_EQUIPO]: 'Conector interno + cambio de equipo',
   [TIPO_RETIRO_EQUIPOS]: 'Retiro de equipos',
 };
 
@@ -61,6 +80,9 @@ export const TIPOS_VISITA = [
   { value: TIPO_MUDANZA_INTERNA, label: ETIQUETA_TIPO_VISITA[TIPO_MUDANZA_INTERNA] },
   { value: TIPO_CONFIG_VLAN, label: ETIQUETA_TIPO_VISITA[TIPO_CONFIG_VLAN] },
   { value: TIPO_RECONEXION, label: ETIQUETA_TIPO_VISITA[TIPO_RECONEXION] },
+  { value: TIPO_RECABLEADO_CAMBIO_EQUIPO, label: ETIQUETA_TIPO_VISITA[TIPO_RECABLEADO_CAMBIO_EQUIPO] },
+  { value: TIPO_RECONEXION_CAMBIO_EQUIPO, label: ETIQUETA_TIPO_VISITA[TIPO_RECONEXION_CAMBIO_EQUIPO] },
+  { value: TIPO_CONECTOR_INTERNO_CAMBIO_EQUIPO, label: ETIQUETA_TIPO_VISITA[TIPO_CONECTOR_INTERNO_CAMBIO_EQUIPO] },
   { value: TIPO_RETIRO_EQUIPOS, label: ETIQUETA_TIPO_VISITA[TIPO_RETIRO_EQUIPOS] },
 ];
 
@@ -72,7 +94,7 @@ export const errorTipoVisita = (tipoTrabajo, tipoVisita) => (
 
 // Solo estas visitas piden la NAP y el puerto, en dos campos y obligatorios (con el conector externo, el drop atenuado y el recableado se llega a la caja del cliente); en el resto
 // de visitas (conector interno, cambio de equipo, configuración de router, fuente averiada) no se piden y la orden conserva la NAP que ya traía. Las instalaciones los piden aparte.
-export const pideNapPuertoVisita = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_DROP_ATENUADO || tipoVisita === TIPO_RECABLEADO;
+export const pideNapPuertoVisita = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_DROP_ATENUADO || esRecableado(tipoVisita);
 
 // '' si la visita no los pide o `nap` (el texto de la orden, "NAP 08 - Puerto 3") trae una NAP real y el puerto; si no, el mensaje.
 export function errorNapPuertoVisita(tipoVisita, nap) {
@@ -86,8 +108,9 @@ export const TIPOS_VISITA_OBLIGATORIO = TIPOS_VISITA.filter((t) => t.value);
 
 // --- Cambio de equipo ---------------------------------------------------------------------
 
-export const esCambioEquipo = (tipoVisita) => tipoVisita === TIPO_CAMBIO_EQUIPO;
-export const esReconexion = (tipoVisita) => tipoVisita === TIPO_RECONEXION;
+// Pide el equipo nuevo (tipo y serial): el cambio de equipo y todas sus combinaciones.
+export const esCambioEquipo = (tipoVisita) => tipoVisita === TIPO_CAMBIO_EQUIPO || esCombinadoConCambio(tipoVisita);
+export const esReconexion = (tipoVisita) => tipoBase(tipoVisita) === TIPO_RECONEXION;
 // Piden el serial del equipo: el cambio de equipo (el del equipo nuevo) y la reconexión (el del equipo del cliente).
 export const pideSerialEquipo = (tipoVisita) => esCambioEquipo(tipoVisita) || esReconexion(tipoVisita);
 
@@ -96,7 +119,7 @@ export const pideSerialEquipo = (tipoVisita) => esCambioEquipo(tipoVisita) || es
 export function parseSerialEquipo(raw, tipoVisita = TIPO_CAMBIO_EQUIPO) {
   const serial = parseSerial(raw);
   if (serial.error) return serial;
-  if (!serial.valor) return { error: esReconexion(tipoVisita) ? 'Escribe el serial del equipo.' : 'Escribe el serial del equipo nuevo.' };
+  if (!serial.valor) return { error: esReconexion(tipoVisita) && !esCambioEquipo(tipoVisita) ? 'Escribe el serial del equipo.' : 'Escribe el serial del equipo nuevo.' };
   return serial;
 }
 
@@ -135,17 +158,17 @@ export const datosVlanVisita = (tipoVisita, vlan) => ({
   vlanVisita: esConfigVlan(tipoVisita) ? (parseVlan(vlan).valor ?? '') : '',
 });
 
-export const esVisitaConector = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoVisita === TIPO_CONECTOR_INTERNO;
+export const esVisitaConector = (tipoVisita) => tipoVisita === TIPO_CONECTOR_EXTERNO || tipoBase(tipoVisita) === TIPO_CONECTOR_INTERNO;
 
 // Solo las visitas de conector generan cobro; el recableado no.
 export const generaCobro = (tipoVisita) => esVisitaConector(tipoVisita);
 
 // Tipos de visita en los que el técnico registra conectores (recableado o visita de conector).
-export const llevaConectores = (tipoVisita) => tipoVisita === TIPO_RECABLEADO || esVisitaConector(tipoVisita);
+export const llevaConectores = (tipoVisita) => esRecableado(tipoVisita) || esVisitaConector(tipoVisita);
 
 // ¿Cuándo ve el técnico el aviso de cobro? Con conector interno, apenas pre-finaliza (el cobro se
 // le informa al cliente en el momento); en las demás visitas con cobro, hasta que se finaliza la orden.
-export const avisaCobroAlPreFinalizar = (tipoVisita) => tipoVisita === TIPO_CONECTOR_INTERNO;
+export const avisaCobroAlPreFinalizar = (tipoVisita) => tipoBase(tipoVisita) === TIPO_CONECTOR_INTERNO;
 
 export const etiquetaTipoVisita = (tipoVisita) => ETIQUETA_TIPO_VISITA[tipoVisita] || tipoVisita || '';
 
@@ -186,8 +209,8 @@ const entero = (v) => (Number.isInteger(v) && v >= 0 ? v : 0);
 // esas; las visitas anteriores solo tienen el color y cuentan como 1 conector de ese color. En cualquier otro
 // tipo de visita no aplica ({ verde: 0, azul: 0 }); en el externo, el azul es un conector interno opcional.
 export function cantidadesConector(t) {
-  const externo = t?.tipoVisita === TIPO_CONECTOR_EXTERNO;
-  if (!externo && t?.tipoVisita !== TIPO_CONECTOR_INTERNO) return { verde: 0, azul: 0 };
+  const externo = tipoBase(t?.tipoVisita) === TIPO_CONECTOR_EXTERNO;
+  if (!externo && tipoBase(t?.tipoVisita) !== TIPO_CONECTOR_INTERNO) return { verde: 0, azul: 0 };
   const c = t.conectoresUsados;
   if (c && typeof c === 'object') return { verde: entero(c.verde), azul: entero(c.azul) };
   const color = externo ? colorConectorExterno(t.conectorExterno) : colorConectorInterno(t.conectorInterno);
@@ -218,7 +241,7 @@ export function parseCantidadesConector(tipoVisita, { verde, azul } = {}) {
   if (v.error) return { error: v.error, campo: 'verde' };
   const a = leer(azul, 'azules');
   if (a.error) return { error: a.error, campo: 'azul' };
-  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
+  if (tipoBase(tipoVisita) === TIPO_CONECTOR_EXTERNO) {
     if (v.valor < 1) return { error: 'Indica cuántos conectores verdes usaste.', campo: 'verde' };
     return { valor: { verde: v.valor, azul: a.valor } };
   }
@@ -238,14 +261,14 @@ export const errorCantidadesConector = (tipoVisita, conectores) =>
 // `null`/'' (y no omitir el campo) es lo que permite borrar un valor anterior.
 export function datosConectores(tipoVisita, { metros, metrajeInicial, metrajeFinal, conectorExterno, conectorInterno, conectores } = {}) {
   const vacios = { metrosCable: null, metrajeInicial: null, metrajeFinal: null, conectorExterno: '', conectorInterno: '', conectoresUsados: null };
-  if (tipoVisita === TIPO_RECABLEADO) {
+  if (tipoBase(tipoVisita) === TIPO_RECABLEADO) {
     return { ...vacios, metrosCable: metros ?? null, metrajeInicial: metrajeInicial ?? null, metrajeFinal: metrajeFinal ?? null, conectorExterno: colorConectorExterno(conectorExterno), conectorInterno: colorConectorInterno(conectorInterno) };
   }
-  if (tipoVisita === TIPO_CONECTOR_EXTERNO) {
+  if (tipoBase(tipoVisita) === TIPO_CONECTOR_EXTERNO) {
     const azul = entero(conectores?.azul);
     return { ...vacios, conectorExterno: COLOR_VERDE, conectorInterno: azul > 0 ? COLOR_AZUL : '', conectoresUsados: { verde: entero(conectores?.verde), azul } };
   }
-  if (tipoVisita === TIPO_CONECTOR_INTERNO) {
+  if (tipoBase(tipoVisita) === TIPO_CONECTOR_INTERNO) {
     const verde = entero(conectores?.verde);
     const azul = entero(conectores?.azul);
     const unSoloColor = verde > 0 && azul === 0 ? COLOR_VERDE : azul > 0 && verde === 0 ? COLOR_AZUL : '';
@@ -260,13 +283,13 @@ export function textoConectorVisita(t) {
   if (!esVisitaConector(t?.tipoVisita)) return '';
   if (t.conectoresUsados && typeof t.conectoresUsados === 'object') {
     const { verde, azul } = cantidadesConector(t);
-    if (t.tipoVisita === TIPO_CONECTOR_EXTERNO && azul > 0) {
+    if (tipoBase(t.tipoVisita) === TIPO_CONECTOR_EXTERNO && azul > 0) {
       return `Conectores: ${verde} externo${verde === 1 ? '' : 's'} verde${verde === 1 ? '' : 's'}, ${azul} interno${azul === 1 ? '' : 's'} azul${azul === 1 ? '' : 'es'}`;
     }
     const texto = textoCantidades(cantidadesConector(t));
     return texto ? `Conectores: ${texto}` : '';
   }
-  const color = t.tipoVisita === TIPO_CONECTOR_EXTERNO ? t.conectorExterno : t.conectorInterno;
+  const color = tipoBase(t.tipoVisita) === TIPO_CONECTOR_EXTERNO ? t.conectorExterno : t.conectorInterno;
   return ETIQUETA_COLOR[color] ? `Conector ${ETIQUETA_COLOR[color].toLowerCase()}` : '';
 }
 
@@ -274,8 +297,8 @@ export function textoConectorVisita(t) {
 // color si fue uno solo (la etiqueta del color va vacía si no se registró) y las cantidades por color.
 // null si la orden no es una visita de conector.
 export function conectorDeVisita(t) {
-  const externo = t?.tipoVisita === TIPO_CONECTOR_EXTERNO;
-  if (!externo && t?.tipoVisita !== TIPO_CONECTOR_INTERNO) return null;
+  const externo = tipoBase(t?.tipoVisita) === TIPO_CONECTOR_EXTERNO;
+  if (!externo && tipoBase(t?.tipoVisita) !== TIPO_CONECTOR_INTERNO) return null;
   const color = externo ? colorConectorExterno(t.conectorExterno) : colorConectorInterno(t.conectorInterno);
   return { tipo: externo ? 'Externo' : 'Interno', color, etiquetaColor: ETIQUETA_COLOR[color] || '', cantidades: cantidadesConector(t) };
 }

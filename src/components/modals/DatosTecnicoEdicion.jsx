@@ -5,7 +5,7 @@ import SerialEquipoCampo from './SerialEquipoCampo';
 import VlanVisitaCampo from './VlanVisitaCampo';
 import MetrajeInicialFinal from './MetrajeInicialFinal';
 import { MAX_LARGO_POSTE, MAX_LARGO_PUERTOS_DISPONIBLES, MAX_LARGO_SERIAL, MAX_POSTES } from '../../utils/instalacion';
-import { TIPOS_VISITA, TIPO_CAMBIO_EQUIPO, TIPO_CONECTOR_INTERNO, TIPO_RECABLEADO, esConfigVlan, esVisitaConector, pideSerialEquipo } from '../../utils/tipoVisita';
+import { TIPOS_VISITA, avisaCobroAlPreFinalizar, esCambioEquipo, esConfigVlan, esRecableado, esVisitaConector, pideSerialEquipo } from '../../utils/tipoVisita';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
 import { SELECTOR_ORDEN, claseCampo } from '../estilos';
@@ -152,7 +152,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             />
           </div>
 
-          {tipoVisita === TIPO_RECABLEADO && (
+          {esRecableado(tipoVisita) && (
             <div className="col-span-2 space-y-3">
               <div className="space-y-1">
                 <p className={claseEtiqueta}>METRAJE DEL CABLE <span className="font-normal text-zinc-400">marca inicial y final del cable</span></p>
@@ -181,14 +181,14 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
 
           {pideSerialEquipo(tipoVisita) && (
             <div className="col-span-2">
-              <SerialEquipoCampo nuevo={tipoVisita === TIPO_CAMBIO_EQUIPO} serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} tipoEquipo={form.tipoEquipoNuevo} onTipoEquipo={tipoVisita === TIPO_CAMBIO_EQUIPO ? (v) => onChange({ tipoEquipoNuevo: v }) : null} errorTipo={errores.tipoEquipoNuevo} verificar={avisoSerial} aviso={avisoSerial && tipoVisita === TIPO_CAMBIO_EQUIPO ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
+              <SerialEquipoCampo nuevo={esCambioEquipo(tipoVisita)} serial={form.serialEquipo} onSerial={(v) => onChange({ serialEquipo: v })} error={errores.serialEquipo} tipoEquipo={form.tipoEquipoNuevo} onTipoEquipo={esCambioEquipo(tipoVisita) ? (v) => onChange({ tipoEquipoNuevo: v }) : null} errorTipo={errores.tipoEquipoNuevo} verificar={avisoSerial} aviso={avisoSerial && esCambioEquipo(tipoVisita) ? <AvisoSerialOlt serial={form.serialEquipo} soloEnvio /> : null} />
             </div>
           )}
 
           {esVisitaConector(tipoVisita) && (
             <div className="col-span-2">
               <CantidadesConectorVisita
-                interno={tipoVisita === TIPO_CONECTOR_INTERNO}
+                interno={avisaCobroAlPreFinalizar(tipoVisita)}
                 verde={form.cantVerde}
                 azul={form.cantAzul}
                 onVerde={(v) => onChange({ cantVerde: v })}
