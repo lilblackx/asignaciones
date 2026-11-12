@@ -174,6 +174,25 @@ function lineasEnvio(e) {
   return lineas;
 }
 
+// Una orden que espera su reintento automático: se puede reintentar ya, sin esperar los 15 minutos.
+function FilaPendiente({ envio, onReintentar }) {
+  const [ocupado, setOcupado] = useState(false);
+  const reintentar = async () => {
+    setOcupado(true);
+    await onReintentar(envio);
+    setOcupado(false);
+  };
+  return (
+    <li className="px-3 py-2 space-y-1.5">
+      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
+      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-300 break-words">{unidad(envio.intentos, 'intento', 'intentos')} · {envio.mensaje || 'No se pudo llegar al inventario.'}</p>
+      <Boton variante="principal" tamano="compacto" type="button" onClick={reintentar} disabled={ocupado}>
+        <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reintentar ahora'}
+      </Boton>
+    </li>
+  );
+}
+
 function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorregir }) {
   const [abierta, setAbierta] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -243,9 +262,9 @@ function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorr
                   <Bell className="w-3 h-3" aria-hidden="true" /> {avisando ? 'Reenviando aviso...' : 'Reenviar aviso'}
                 </Boton>
               )}
-              {envio.estado === 'DESCARTADO' && (
+              {(envio.estado === 'DESCARTADO' || envio.estado === 'PENDIENTE') && (
                 <Boton variante="principal" tamano="compacto" type="button" onClick={reintentar} disabled={ocupado}>
-                  <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reabrir y reintentar'}
+                  <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : envio.estado === 'PENDIENTE' ? 'Reintentar ahora' : 'Reabrir y reintentar'}
                 </Boton>
               )}
             </div>
@@ -313,12 +332,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
             <section aria-labelledby="envios-pendientes" className="space-y-2">
               <h3 id="envios-pendientes" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400">Esperando para enviarse ({pendientes.length})</h3>
               <ul className="border border-amber-300 dark:border-amber-900/60 rounded-xl divide-y divide-amber-200 dark:divide-amber-900/40 bg-amber-50 dark:bg-amber-950/20">
-                {pendientes.map((e) => (
-                  <li key={e.id} className="px-3 py-2">
-                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{e.codigo || 'S/C'}{e.cliente ? ` - ${e.cliente}` : ''}</p>
-                    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-300">{unidad(e.intentos, 'intento', 'intentos')} · {e.mensaje || 'No se pudo llegar al inventario.'}</p>
-                  </li>
-                ))}
+                {pendientes.map((e) => <FilaPendiente key={e.id} envio={e} onReintentar={onReintentar} />)}
               </ul>
               <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">Se reintentan solas cada 15 minutos.</p>
             </section>
