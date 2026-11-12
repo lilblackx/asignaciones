@@ -162,10 +162,10 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-700 dark:text-zinc-300">
-            <span className="inline-flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" aria-hidden="true" /><span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-zinc-600 dark:text-zinc-400">- {ticket.falla}</span>}</span>
-            {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></span>}
-            {ticket.creado && <span className="text-zinc-600 dark:text-zinc-400">Creado por: {ticket.creado}</span>}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-zinc-800 dark:text-zinc-200">
+            <span className="inline-flex items-center gap-1.5"><Wrench className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /><span className="font-black text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-zinc-700 dark:text-zinc-300">- {ticket.falla}</span>}</span>
+            {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" aria-hidden="true" />Técnico: <span className="font-black">{ticket.tecnico}</span></span>}
+            {ticket.creado && <span className="text-zinc-700 dark:text-zinc-300">Creado por: <span className="font-bold">{ticket.creado}</span></span>}
           </div>
 
           <DatosParaAutorizar ticket={ticket} onCopy={onCopy} />
@@ -219,6 +219,22 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
             </section>
           )}
 
+          {/* Lo que describió el técnico va aparte de la nota de la oficina. En las órdenes viejas (sin campo propio) queda un solo bloque. */}
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">OBSERVACIÓN / DETALLES DEL TRABAJO</span>
+            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words min-h-[3rem]">
+              {ticket.observacionTecnico || ticket.observacion || <span className="text-zinc-400 italic">Sin observación registrada.</span>}
+            </div>
+          </div>
+          {ticket.observacionTecnico && ticket.observacion && (
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA DE LA OFICINA</span>
+              <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">
+                {ticket.observacion}
+              </div>
+            </div>
+          )}
+
           {ofreceValores && (
             <ValoresClienteAdmin
               ticket={ticket}
@@ -248,22 +264,6 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
               {ticket.potencia1490Dbm != null && (
                 <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
               )}
-            </div>
-          )}
-
-          {/* Lo que describió el técnico va aparte de la nota de la oficina. En las órdenes viejas (sin campo propio) queda un solo bloque. */}
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">OBSERVACIÓN / DETALLES DEL TRABAJO</span>
-            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words min-h-[3rem]">
-              {ticket.observacionTecnico || ticket.observacion || <span className="text-zinc-400 italic">Sin observación registrada.</span>}
-            </div>
-          </div>
-          {ticket.observacionTecnico && ticket.observacion && (
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA DE LA OFICINA</span>
-              <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">
-                {ticket.observacion}
-              </div>
             </div>
           )}
 
