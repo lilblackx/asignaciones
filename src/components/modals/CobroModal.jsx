@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { montoCalculadora } from '../../utils/montoCalculadora';
-import { AlertTriangle, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
+import { AlertTriangle, Ban, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import Colapsable from '../Colapsable';
@@ -12,7 +12,7 @@ import TelefonoAccion from '../TelefonoAccion';
 import { CAMPO_FORMULARIO, ETIQUETA, claseSelector } from '../estilos';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
-import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, diasEsperando, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
+import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, MENSAJE_SIN_PAGO_DEL_TECNICO, diasEsperando, faltaElPagoDelTecnico, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
 import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
@@ -68,6 +68,8 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
   const pendiente = cobro.estado === ESTADO_COBRO.PENDIENTE;
   const pideMonto = !soloLectura && pendiente && !(Number(cobro.monto) > 0);
   const cambio = cobro.montoCambio;
+  // El técnico todavía no registró el pago: el cobro se ve, pero no se puede marcar como cargado (ver faltaElPagoDelTecnico).
+  const sinPagoDelTecnico = !soloLectura && pendiente && faltaElPagoDelTecnico(cobro);
 
   return (
     <>
@@ -139,12 +141,19 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
             </div>
           )}
 
+          {sinPagoDelTecnico && (
+            <div role="alert" className="rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 p-3 space-y-1 text-xs text-red-900 dark:text-red-200">
+              <p className="flex items-center gap-1.5 font-black tracking-wide"><Ban className="w-4 h-4 shrink-0" aria-hidden="true" /> EL TÉCNICO AÚN NO REGISTRÓ EL PAGO</p>
+              <p>{MENSAJE_SIN_PAGO_DEL_TECNICO}</p>
+            </div>
+          )}
+
           <Colapsable>{error && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{error.texto}</p>}</Colapsable>
 
           {!soloLectura && (
           <div className="space-y-2">
             {cambio && <Boton variante="principal" tamano="grande" icono={CheckCircle2} className="w-full" onClick={() => trabajar('confirmar')} disabled={trabajando}>{trabajando ? <Spinner /> : null} Ya lo corregí en el portal</Boton>}
-            {pendiente && <Boton variante="principal" tamano="grande" icono={CheckCircle2} className="w-full" onClick={() => trabajar('cargar', { monto, moneda })} disabled={trabajando}>{trabajando ? <Spinner /> : null} Marcar como cargado en el portal</Boton>}
+            {pendiente && <Boton variante="principal" tamano="grande" icono={CheckCircle2} className="w-full" onClick={() => trabajar('cargar', { monto, moneda })} disabled={trabajando || sinPagoDelTecnico}>{trabajando ? <Spinner /> : null} Marcar como cargado en el portal</Boton>}
             {!pendiente && <Boton variante="secundario" tamano="grande" icono={Undo2} className="w-full" onClick={() => trabajar('devolver')} disabled={trabajando}>{trabajando ? <Spinner /> : null} Devolver a pendiente</Boton>}
           </div>
           )}

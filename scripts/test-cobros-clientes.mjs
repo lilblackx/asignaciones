@@ -1,7 +1,7 @@
 // Prueba el cobro de cada orden para ADMINISTRACION (src/utils/cobrosClientes.js): cuándo se emite, qué lleva, cómo cambia si la orden cambia, lo que hace Administración
 // (cargar, devolver, confirmar un cambio de monto) y las listas y resúmenes. No necesita el emulador. Uso: `npm run test:cobroscliente`.
 import {
-  ESTADO_COBRO, cobroDesdePagoPendiente, armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, avisoDeCobro, cobrosDelPeriodo, columnasCobros, diasEsperando, filaCobro, filtrarCobros, ordenarCobros, resumenCobros,
+  ESTADO_COBRO, MENSAJE_SIN_PAGO_DEL_TECNICO, faltaElPagoDelTecnico, cobroDesdePagoPendiente, armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, avisoDeCobro, cobrosDelPeriodo, columnasCobros, diasEsperando, filaCobro, filtrarCobros, ordenarCobros, resumenCobros,
   sincronizarCobro, textoDeCobro, textoParaCopiar,
 } from '../src/utils/cobrosClientes.js';
 
@@ -90,6 +90,22 @@ check('el orden: con cambio de monto, pendientes del más viejo al más nuevo y 
 check('el resumen cuenta por estado, suma por moneda y cuenta las alertas', (({ PENDIENTE, CARGADO, alertas }) => [PENDIENTE.cantidad, PENDIENTE.montos.BS, CARGADO.cantidad, CARGADO.montos.BS, alertas])(resumenCobros(lista)), [3, 11392, 2, 11392, 1]);
 check('los días que lleva esperando', [diasEsperando(lista[0], AHORA), diasEsperando(lista[4], AHORA)], [3, 0]);
 check('por período y técnico para Finanzas, los más nuevos primero', [cobrosDelPeriodo(lista, { desde: '2026-10-29', hasta: '2026-10-30' }).map((c) => c.codigo), cobrosDelPeriodo(lista, { desde: '2026-10-01', hasta: '2026-10-30' }, { tecnico: 'pedro' }).map((c) => c.codigo)], [['IO5', 'AO2'], ['IO5']]);
+
+// --- El técnico aún no registró el pago: el cobro se ve pero no se puede marcar como cargado ---
+const DIA_DEL_PAGO = Date.parse('2026-11-11T15:00:00-04:00');
+const sinPagoTecnico = { ...cobro, creadoEn: DIA_DEL_PAGO, historial: [] };
+const conPagoTecnico = { ...sinPagoTecnico, pagoCliente: { tipo: 'PAGO', pago: { moneda: 'BS', forma: 'Efectivo', monto: 5696 }, nota: '', compartidoCon: null } };
+const pagaDespues = { ...sinPagoTecnico, pagoCliente: { tipo: 'DESPUES', pago: null, nota: 'paga el viernes', compartidoCon: null } };
+check('un cobro emitido desde que se pide el pago y sin pago del técnico está esperando', faltaElPagoDelTecnico(sinPagoTecnico), true);
+check('con el pago registrado, con "paga después" o "pagó junto con otra" ya no espera', [conPagoTecnico, pagaDespues, { ...sinPagoTecnico, pagoCliente: { tipo: 'JUNTO', pago: null, nota: '', compartidoCon: { id: 'X', codigo: 'AO1' } } }].map((c) => faltaElPagoDelTecnico(c)), [false, false, false]);
+check('un cobro anulado o anterior a que se pidiera el pago no espera nada', [faltaElPagoDelTecnico({ ...sinPagoTecnico, anulado: true }), faltaElPagoDelTecnico({ ...sinPagoTecnico, creadoEn: Date.parse('2026-11-09T12:00:00-04:00') }), faltaElPagoDelTecnico({ ...sinPagoTecnico, creadoEn: 0 }), faltaElPagoDelTecnico(null)], [false, false, false, false]);
+const bloqueado = armarCarga(sinPagoTecnico, {}, { por: 'adm', ahora: DIA_DEL_PAGO + 1 });
+check('Administración no puede marcarlo como cargado mientras falte el pago del técnico', [bloqueado.error, bloqueado.cambios], [MENSAJE_SIN_PAGO_DEL_TECNICO, undefined]);
+check('con el pago del técnico sí se puede cargar', [conPagoTecnico, pagaDespues].map((c) => armarCarga(c, {}, { por: 'adm', ahora: DIA_DEL_PAGO + 1 }).cambios?.estado), [ESTADO_COBRO.CARGADO, ESTADO_COBRO.CARGADO]);
+check('devolver a pendiente no se frena por esto', armarDevolucionCobro({ ...sinPagoTecnico, estado: ESTADO_COBRO.CARGADO }, { por: 'adm', ahora: DIA_DEL_PAGO + 2 }).cambios?.estado, ESTADO_COBRO.PENDIENTE);
+const listaSinPago = [sinPagoTecnico, { ...conPagoTecnico, id: 'T9' }, { ...sinPagoTecnico, id: 'T8', estado: ESTADO_COBRO.CARGADO }];
+check('el filtro "Sin pago del técnico" muestra los que lo esperan', filtrarCobros(listaSinPago, { estado: 'SIN_PAGO' }).map((c) => c.id), [sinPagoTecnico.id, 'T8']);
+check('el resumen cuenta solo los pendientes que esperan el pago del técnico', resumenCobros(listaSinPago).sinPago, 1);
 
 if (failures > 0) {
   console.log(`\n${failures} prueba(s) fallaron.`);

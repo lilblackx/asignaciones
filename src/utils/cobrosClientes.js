@@ -8,7 +8,7 @@
 // Aparte, `anulado` (la orden se canceló o dejó de tener cobro antes de cargarlo: sale de las listas) y `montoCambio` (el monto de la orden cambió cuando ya estaba cargado: Administración lo corrige
 // en el portal y lo confirma).
 import { MONEDA_BS, MONEDA_USD, formatoMontoBs, parseMontoBs, textoMonto } from './cobro.js';
-import { cobroEsperadoDe } from './pagoCliente.js';
+import { FECHA_INICIO_PAGO_CLIENTE, cobroEsperadoDe } from './pagoCliente.js';
 import { esInstalacion } from './instalacion.js';
 import { pagoClienteDe, pagoVisibleEnFinanzas, textoDelPago } from './pagoEnOrden.js';
 import { diaDe } from './totalesMes.js';
@@ -21,6 +21,7 @@ export const FILTROS_ESTADO_COBRO = [
   { valor: ESTADO_COBRO.PENDIENTE, etiqueta: 'Pendientes' },
   { valor: ESTADO_COBRO.CARGADO, etiqueta: 'Cargados' },
   { valor: 'ALERTA', etiqueta: 'Con cambio de monto' },
+  { valor: 'SIN_PAGO', etiqueta: 'Sin pago del técnico' },
 ];
 
 const redondear = (n) => Math.round(n * 100) / 100;
@@ -28,6 +29,17 @@ const entrada = (por, en, detalle) => ({ en, por, detalle });
 
 // "30 $" / "5.696 Bs" o, si todavía no hay monto (una instalación), "Monto por definir".
 export const textoDeCobro = (c) => (c?.monto > 0 ? textoMonto(formatoMontoBs(Number(c.monto)), c.moneda) : 'Monto por definir');
+
+// ¿El técnico todavía no registró el pago del cliente de esta orden? Los cobros emitidos desde FECHA_INICIO_PAGO_CLIENTE lo esperan (el cobro nace al finalizarse la orden y el técnico registra el pago después).
+// Mientras falte, Administración ve el cobro pero no puede marcarlo como cargado: no sabe si el cliente ya pagó (p. ej. en efectivo) o si hay que cargarle la deuda en el portal. `pagoCliente` es la copia del pago en el cobro
+// (ver lib/pagosOrdenes): también cuenta el "paga después" y el "pagó junto con otra orden", porque ahí el técnico ya dijo qué pasó.
+export function faltaElPagoDelTecnico(c, { desde = FECHA_INICIO_PAGO_CLIENTE } = {}) {
+  if (!c || c.anulado || pagoClienteDe(c)) return false;
+  const emitido = Number(c.creadoEn) || 0;
+  return emitido > 0 && diaDe(emitido) >= desde;
+}
+
+export const MENSAJE_SIN_PAGO_DEL_TECNICO = 'El técnico todavía no registró el pago del cliente de esta orden. No lo marques como cargado hasta que lo registre: así sabes si el cliente ya pagó (por ejemplo en efectivo) o si debes cargarle la deuda en el portal.';
 
 // --- Emitir ---
 
@@ -135,6 +147,7 @@ export function sincronizarCobro(actual, ticket, { por, ahora }) {
 export function armarCarga(actual, { monto = '', moneda = MONEDA_USD } = {}, { por, ahora }) {
   if (!actual || actual.anulado) return { error: 'Este cobro ya no está vigente: la orden se canceló o dejó de tener cobro.' };
   if (actual.estado !== ESTADO_COBRO.PENDIENTE) return { error: 'Este cobro ya está cargado.' };
+  if (faltaElPagoDelTecnico(actual)) return { error: MENSAJE_SIN_PAGO_DEL_TECNICO };
   let montoFinal = Number(actual.monto) > 0 ? Number(actual.monto) : null;
   let monedaFinal = actual.moneda || '';
   if (!montoFinal) {
@@ -209,7 +222,7 @@ export function filtrarCobros(cobros, { estado = 'TODOS', tecnico = '', tipo = '
   const digitos = buscado.replace(/\D/g, '');
   return (cobros || []).filter((c) => {
     if (!estaVigente(c)) return false;
-    if (estado === 'ALERTA' ? !tieneCambioDeMonto(c) : estado && estado !== 'TODOS' && c.estado !== estado) return false;
+    if (estado === 'ALERTA' ? !tieneCambioDeMonto(c) : estado === 'SIN_PAGO' ? !faltaElPagoDelTecnico(c) : estado && estado !== 'TODOS' && c.estado !== estado) return false;
     if (tecnico && c.tecnico !== tecnico) return false;
     if (tipo === 'INSTALACION' && !c.esInstalacion) return false;
     if (tipo === 'OTRAS' && c.esInstalacion) return false;
@@ -228,13 +241,14 @@ export function ordenarCobros(cobros) {
 
 // { PENDIENTE: { cantidad, montos: { BS, USD } }, CARGADO: {...}, alertas } de lo vigente; las instalaciones sin monto cuentan en la cantidad y no suman.
 export function resumenCobros(cobros) {
-  const resumen = { ...Object.fromEntries(ESTADOS_COBRO.map((e) => [e, { cantidad: 0, montos: { [MONEDA_BS]: 0, [MONEDA_USD]: 0 } }])), alertas: 0 };
+  const resumen = { ...Object.fromEntries(ESTADOS_COBRO.map((e) => [e, { cantidad: 0, montos: { [MONEDA_BS]: 0, [MONEDA_USD]: 0 } }])), alertas: 0, sinPago: 0 };
   for (const c of (cobros || []).filter(estaVigente)) {
     const fila = resumen[c.estado];
     if (!fila) continue;
     fila.cantidad += 1;
     if (c.monto > 0 && fila.montos[c.moneda] !== undefined) fila.montos[c.moneda] = redondear(fila.montos[c.moneda] + Number(c.monto));
     if (tieneCambioDeMonto(c)) resumen.alertas += 1;
+    if (c.estado === ESTADO_COBRO.PENDIENTE && faltaElPagoDelTecnico(c)) resumen.sinPago += 1;
   }
   return resumen;
 }

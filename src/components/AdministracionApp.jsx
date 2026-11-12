@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Landmark, Search } from 'lucide-react';
+import { AlertTriangle, Ban, Landmark, Search } from 'lucide-react';
 import { ROLES, etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import BotonFiltros from './BotonFiltros';
@@ -30,7 +30,7 @@ import { normalizarFormasPago } from '../utils/formasPago';
 import { fechaCorta, fechaISO } from '../utils/calendario';
 import { exportCobrosToCsv } from '../utils/exportReport';
 import {
-  ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, FILTROS_ESTADO_COBRO, diasEsperando, filtrarCobros, ordenarCobros, resumenCobros, textoDeCobro, tieneCambioDeMonto,
+  ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, FILTROS_ESTADO_COBRO, diasEsperando, faltaElPagoDelTecnico, filtrarCobros, ordenarCobros, resumenCobros, textoDeCobro, tieneCambioDeMonto,
 } from '../utils/cobrosClientes';
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
 
@@ -119,6 +119,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
         <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{r.cantidad}</p>
         <p className="text-xs font-bold">{titulo}</p>
         {(montos.length > 0 || (porCargar && r.cantidad > 0)) && <p className={`${ETIQUETA} tabular-nums`}>{[...montos, porCargar && r.cantidad > 0 && 'de cualquier fecha'].filter(Boolean).join(' · ')}</p>}
+        {porCargar && resumen.sinPago > 0 && <p className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400">{resumen.sinPago} esperan el pago del técnico</p>}
       </button>
     );
   };
@@ -135,8 +136,13 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
   const alerta = (c) => tieneCambioDeMonto(c) && (
     <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>
   );
-  const accionTexto = (c) => (tieneCambioDeMonto(c) ? 'Corregir' : c.estado === ESTADO_COBRO.PENDIENTE ? 'Cargar' : 'Ver');
-  const accionDestacada = (c) => tieneCambioDeMonto(c) || c.estado === ESTADO_COBRO.PENDIENTE;
+  // El técnico todavía no registró el pago del cliente: el cobro se ve, pero no se puede marcar como cargado hasta que lo registre (ver faltaElPagoDelTecnico).
+  const sinPago = (c) => faltaElPagoDelTecnico(c) && (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded bg-red-600 text-white"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
+  );
+  const esperaPago = (c) => c.estado === ESTADO_COBRO.PENDIENTE && faltaElPagoDelTecnico(c);
+  const accionTexto = (c) => (tieneCambioDeMonto(c) ? 'Corregir' : esperaPago(c) ? 'Ver' : c.estado === ESTADO_COBRO.PENDIENTE ? 'Cargar' : 'Ver');
+  const accionDestacada = (c) => tieneCambioDeMonto(c) || (c.estado === ESTADO_COBRO.PENDIENTE && !esperaPago(c));
   const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [c.tipoTrabajo, c.falla].filter(Boolean).join(' · '));
 
   const campana = esAdministracion && (
@@ -223,6 +229,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                         </div>
                         <p className="text-sm font-bold break-words">{textoDeCobro(c)}</p>
                         <PagoDelCliente orden={c} tamano="grande" />
+                        {sinPago(c) && <div className="space-y-1">{sinPago(c)}{esperaPago(c) && <p className="text-xs text-zinc-700 dark:text-zinc-300">No marques este cobro como cargado todavía: no sabes si el cliente ya pagó.</p>}</div>}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           {alerta(c)}
                           {c.estado === ESTADO_COBRO.PENDIENTE && <span className={ETIQUETA}>{diasEsperando(c, ahora)} d esperando</span>}
@@ -247,7 +254,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                             <td className="px-3 py-2.5 min-w-[7rem]">{c.tecnico}</td>
                             <td className="px-3 py-2.5 min-w-[8rem] text-zinc-700 dark:text-zinc-300 break-words">{tipoTexto(c)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
-                            <td className="px-3 py-2.5 whitespace-nowrap">{estadoChip(c)}</td>
+                            <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1">{estadoChip(c)}{sinPago(c)}</div></td>
                             <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoClienteDe(c) ? <PagoDelCliente orden={c} tamano="compacto" /> : <span className="text-xs text-zinc-400">-</span>}</td>
                             <td className="px-3 py-2.5"><Boton variante={accionDestacada(c) ? 'principal' : 'secundario'} tamano="compacto" onClick={() => setAbierto(c.id)}>{accionTexto(c)}</Boton></td>
                           </tr>
