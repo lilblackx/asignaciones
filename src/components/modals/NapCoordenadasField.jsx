@@ -58,7 +58,8 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
   const codigo = extraerCodigoNap(nap);
   // Cajas sin código en su nombre ("NAP EDIF A-3", "NAP EBANO"): se busca el texto
   // tal cual, solo con el botón (nunca sola, para no consultar mientras se escribe).
-  const textoLibre = String(nap || '').trim();
+  // Sin el puerto ("NAP M06HXX - Puerto 3" → "NAP M06HXX"): Tomodat nombra la caja, no el puerto, y con él no la encuentra.
+  const textoLibre = String(nap || '').replace(/\s*[-–,]?\s*(?:PUERTO|PORT)\b.*$/i, '').trim();
   const consulta = codigo || (textoLibre.replace(/[^A-Za-z0-9]/g, '').length >= 5 && textoLibre.length <= 40 ? textoLibre : null);
   const parseada = normalizarCoordenadasNap(value);
   const [estado, setEstado] = useState(null);

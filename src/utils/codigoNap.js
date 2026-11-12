@@ -14,7 +14,7 @@ export function napSinPuerto(texto) {
   if (!limpio) return null;
   const codigo = extraerCodigoNap(limpio);
   if (codigo) return codigo;
-  const nombre = limpio.toUpperCase().replace(/\s*[-–,]?\s*PUERTO\b.*$/, '').replace(/^NAP\s+/, '').trim();
+  const nombre = limpio.toUpperCase().replace(/\s*[-–,]?\s*(?:PUERTO|PORT)\b.*$/, '').replace(/^NAP\s+/, '').trim();
   return nombre || limpio.toUpperCase();
 }
 
