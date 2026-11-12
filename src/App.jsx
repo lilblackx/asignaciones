@@ -1001,7 +1001,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           <ConfirmModal
             color="blue"
             title="¿Confirmar Cierre?"
-            description='Se moverán todos los tickets "FINALIZADO" y "CANCELADO" al historial de reportes.'
+            description='Se moverán los tickets "FINALIZADO" y "CANCELADO" al historial de reportes. Las finalizadas a las que todavía les falta el pago del cliente se quedan en la lista hasta que se registre.'
             dateInput={cierreDateInput}
             setDateInput={setCierreDateInput}
             isProcessing={isProcessing}

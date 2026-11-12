@@ -376,6 +376,34 @@ check('tareas que arrancan juntas comparten un solo token de Google', peticiones
   check('un cierre manual de otro día no lo frena', debeEjecutar({ ...config, cierreManualFecha: '2026-10-12' }, AHORA)?.fecha, '2026-10-13');
   check('y al día siguiente vuelve a tocar aunque ayer se cerrara a mano', debeEjecutar({ ...config, cierreManualFecha: '2026-10-13' }, AHORA + 86400000)?.fecha, '2026-10-14');
 }
+// El cierre no archiva las finalizadas a las que les falta el pago del cliente: se quedan vivas para que el técnico las registre.
+{
+  const { ordenPlana, cierreAutomatico: cierreConPago } = await import('../cf-worker/src/index.js?pago');
+  const AHORA_PAGO = Date.parse('2026-11-12T22:05:00-04:00');
+  const FIN = Date.parse('2026-11-11T18:00:00-04:00');
+  const orden = (id, extra = {}) => ({ name: `${DOCS}/artifacts/${APP}/public/data/tickets/${id}`, fields: { codigo: { stringValue: id }, estado: { stringValue: 'FINALIZADO' }, tipoTrabajo: { stringValue: 'INSTALACIÓN' }, tecnico: { stringValue: 'REINEL' }, createdAt: { integerValue: '1000' }, finalizadoEn: { integerValue: String(FIN) }, ...extra } });
+  const conPagoMapa = { pagoCliente: { mapValue: { fields: { tipo: { stringValue: 'DESPUES' }, nota: { stringValue: 'paga después' }, pago: { nullValue: null } } } } };
+  const SIN_PAGO = orden('IN55');
+  const CON_PAGO = orden('IN60', conPagoMapa);
+  const ANTES_DEL_PAGO = orden('IN10', { finalizadoEn: { integerValue: String(Date.parse('2026-11-09T12:00:00-04:00')) } });
+  check('ordenPlana entiende mapas y nulos de la orden', [ordenPlana(CON_PAGO).pagoCliente, ordenPlana(CON_PAGO).id], [{ tipo: 'DESPUES', nota: 'paga después', pago: null }, 'IN60']);
+  const comprometidas = [];
+  globalThis.fetchDelCierre = async (url, init = {}) => {
+    const u = String(url);
+    if (u.includes('/config/cierreAutomatico') && (init.method || 'GET') === 'GET') return respuesta({ fields: { activo: { booleanValue: true }, hora: { stringValue: '22:00' }, dias: { arrayValue: { values: [0, 1, 2, 3, 4, 5, 6].map((d) => ({ integerValue: String(d) })) } }, actualizadoEn: { integerValue: '1' } } });
+    if (u.includes('/config/cierreAutomatico')) return respuesta({});
+    if (u.includes(':runQuery')) {
+      const q = JSON.parse(init.body).structuredQuery;
+      if (q.from[0].collectionId === 'tickets') return respuesta((q.where.fieldFilter.value.stringValue === 'FINALIZADO' ? [SIN_PAGO, CON_PAGO, ANTES_DEL_PAGO] : []).map((document) => ({ document })));
+      return respuesta([{}]);
+    }
+    return fetchBase(url, init);
+  };
+  reiniciar();
+  const cierre = await cierreConPago(env, AHORA_PAGO);
+  comprometidas.push(...commits.flatMap((c) => c.writes || []).filter((w) => w.delete?.includes('/tickets/')).map((w) => w.delete.split('/').pop()));
+  check('el cierre archiva la que ya tiene pago y la anterior a que se pidiera, y deja viva la que falta', [cierre.finalizadas, comprometidas.sort()], [2, ['IN10', 'IN60']]);
+}
 // Tasa del euro: si DolarAPI trae un valor imposible (1.006 en vez de 1.006,03) se rechaza, queda la anterior y se avisa una vez por día.
 {
   const { tasaEuroPlausible } = await import('../cf-worker/src/index.js');

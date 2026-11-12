@@ -4,6 +4,7 @@ import { getDocs, setDoc, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { RETENCION_MS_HISTORIAL_VENTAS, esDeVentas, resumenInstalacion } from '../utils/estadoInstalacion';
 import { diaDe, incrementosDeCierre } from '../utils/totalesMes';
+import { faltaElPago } from '../utils/pagoCliente';
 import { lecturaVigente } from '../utils/lecturaVigente';
 
 const REPORTS_PAGE_SIZE = 30;
@@ -119,7 +120,8 @@ export function useReports(firebaseUser, canCerrar, currentUser, tickets, setToa
 
   // Un solo reporte por cierre, con las órdenes finalizadas y las canceladas (cada orden conserva su estado).
   const archivarCierre = async (dateInput) => {
-    const seleccionados = [...tickets.filter(t => t.estado === 'FINALIZADO'), ...tickets.filter(t => t.estado === 'CANCELADO')];
+    // Una finalizada a la que le falta el pago del cliente no se archiva: se queda en la lista para que el técnico la vea por registrar y la cierre el día en que tenga su pago.
+    const seleccionados = [...tickets.filter(t => t.estado === 'FINALIZADO' && !faltaElPago(t)), ...tickets.filter(t => t.estado === 'CANCELADO')];
     if (seleccionados.length === 0) return null;
 
     const reportId = `${Date.now()}-CIERRE`;

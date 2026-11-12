@@ -4,6 +4,7 @@ import { manejarConsultaCliente, RUTA_CONSULTA } from './consulta-cliente.js';
 import { liberarEquipoInventario, listarTecnicosInventario, manejarInventario, reenviarNotificacion, reintentarPendientes } from './inventario.js';
 import { USUARIOS_INVENTARIO } from '../../src/utils/accesoInventario.js';
 import { inicioDeSesionVigente } from '../../src/utils/sesion.js';
+import { faltaElPago } from '../../src/utils/pagoCliente.js';
 import { direccionCliente, nombrePersona } from '../../src/utils/datosCliente.js';
 import { actualizarUsoFirestore } from './usoFirestore.js';
 
@@ -449,6 +450,16 @@ function valorJs(v) {
   return undefined;
 }
 
+// Un valor de Firestore (REST) completo, con mapas y nulos, para aplicarle a una orden las reglas de la app.
+export function valorCompleto(v) {
+  if (!v) return undefined;
+  if ('nullValue' in v) return null;
+  if ('mapValue' in v) return Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, valorCompleto(x)]));
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(valorCompleto);
+  return valorJs(v);
+}
+export const ordenPlana = (doc) => ({ id: String(doc?.name || '').split('/').pop(), ...Object.fromEntries(Object.entries(doc?.fields || {}).map(([k, v]) => [k, valorCompleto(v)])) });
+
 // Documentos de config/ (cierreAutomatico, tasaBcv): lectura y escritura parcial.
 async function leerConfig(env, accessToken, nombre) {
   const res = await fetch(`${docsBase(env)}/${rutaDatos(env)}/config/${nombre}`, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -645,7 +656,8 @@ function incrementosDeCierre(finalizadas, canceladas, ahoraMs, diaCierreMs = aho
 // Equivalente a archivarCierre de useReports: un solo reporte con las órdenes finalizadas y las canceladas, y borra esas órdenes.
 // El reporte y los primeros borrados van en un solo commit (atómico). Devuelve cuántas de cada una archivó.
 async function archivarCierre(env, accessToken, ahoraMs, fecha) {
-  const finalizadas = await runQuery(env, accessToken, 'estado', 'EQUAL', { stringValue: 'FINALIZADO' }, 'tickets');
+  // Una finalizada a la que le falta el pago del cliente no se archiva: se queda viva para que el técnico la vea por registrar (ver faltaElPago).
+  const finalizadas = (await runQuery(env, accessToken, 'estado', 'EQUAL', { stringValue: 'FINALIZADO' }, 'tickets')).filter((t) => !faltaElPago(ordenPlana(t)));
   const canceladas = await runQuery(env, accessToken, 'estado', 'EQUAL', { stringValue: 'CANCELADO' }, 'tickets');
   const tickets = [...finalizadas, ...canceladas];
   if (tickets.length === 0) return { finalizadas: 0, canceladas: 0 };
