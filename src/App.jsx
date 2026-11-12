@@ -31,6 +31,7 @@ import { veEstaciones } from './utils/estaciones';
 import EstacionesView from './components/EstacionesView';
 import BotonRuta from './components/BotonRuta';
 import { useFunciones } from './hooks/useFunciones';
+import { useInterruptorRemoto } from './hooks/useInterruptorRemoto';
 import { paradasDeRuta } from './utils/rutaDelDia';
 import { listarTecnicosInventario } from './lib/inventario';
 import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
@@ -248,6 +249,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   // Funciones que el ADMIN enciende en Configuración (nacen apagadas). Solo las escuchan los técnicos y el módulo Configuración abierto.
   const configuracionAbierta = isAdmin && moduloActivo === 'CONFIGURACION';
   const { funciones, cargado: funcionesCargadas, error: funcionesError, cambiar: cambiarFuncion } = useFunciones(firebaseUser, isTecnico || configuracionAbierta, currentUserName || currentUser);
+  const interruptorRemoto = useInterruptorRemoto(firebaseUser, configuracionAbierta, currentUserName || currentUser);
   // Ruta del día del técnico (ver utils/rutaDelDia.js). La hoja recibe una copia de las paradas al abrirse: así el orden que el técnico ajusta
   // con las flechas no se rehace cada vez que llega un cambio de sus órdenes.
   const paradasRuta = isTecnico && funciones.rutasActivas ? paradasDeRuta(ticketsParaVer) : null;
@@ -673,7 +675,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
         {isAdmin && abierta('CONFIGURACION', false) && enMarco('Configuración', Settings, (
           <Suspense fallback={null}>
-            <ConfiguracionView enPagina funciones={funciones} cargado={funcionesCargadas} error={funcionesError} onCambiar={cambiarFuncion} onClose={() => onAbrirModulo(null)} />
+            <ConfiguracionView enPagina funciones={funciones} cargado={funcionesCargadas} error={funcionesError} onCambiar={cambiarFuncion} interruptor={interruptorRemoto} onClose={() => onAbrirModulo(null)} />
           </Suspense>
         ))}
 
