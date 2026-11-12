@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LogOut, MonitorSmartphone, Moon, Network, PackageCheck, Settings, ShieldCheck, Sun, TrendingUp, Users, Wallet, X } from 'lucide-react';
 import { ADMINISTRACION_ACTIVA } from '../constants';
+import { esNavidad } from '../utils/navidad';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 // Los botones del pie (tema y cerrar sesión): cuadrados redondeados con su propio fondo y borde, no iconos sueltos.
@@ -80,7 +81,9 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
       >
         <div className={`flex items-center justify-between px-5 h-[62px] shrink-0 border-b-4 border-red-600 bg-black text-white ${colapsado ? 'lg:justify-center' : ''}`}>
           <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className={`flex items-center rounded-xl hover:opacity-80 transition-opacity ${colapsado ? 'lg:hidden' : ''}`}>
-            <img src="/logo-menu.png" alt="" width="93" height="44" className="h-11 w-auto" />
+            {esNavidad()
+              ? <img src="/navidad/logo-menu.png" alt="" width="70" height="48" className="h-12 w-auto" />
+              : <img src="/logo-menu.png" alt="" width="93" height="44" className="h-11 w-auto" />}
           </button>
           <button
             type="button"
