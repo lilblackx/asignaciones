@@ -28,6 +28,7 @@ import { COBRO_EXONERADO, COBRO_VISITA, camposCobro, detalleCobro, estaExonerado
 import { detalleValoresCliente, exigeValoresCliente, ofreceValoresCliente, parseValoresCliente, valoresGuardados } from '../utils/valoresCliente';
 import { detalleInstalacion, esInstalacion, instalacionCompleta, validarInstalacion } from '../utils/instalacion';
 import { calcularMetraje } from '../utils/metraje';
+import { cobroAcordadoDe, mismoCobroAcordado, resolverCobroAcordado, sellarCobroAcordado, textoCobroAcordado } from '../utils/cobroAcordado';
 import { errorConectoresInstalacion, normalizarConectoresInstalacion } from '../utils/conectoresInstalacion';
 import { avisoOrdenReabierta, payloadEnvioInventario } from '../utils/envioInventario';
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
@@ -778,15 +779,21 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       setToastMsg({ type: 'error', text: errorDeGarantia });
       return false;
     }
+    // Cobro acordado con el cliente: un monto escrito debe ser válido (el formulario también lo avisa).
+    const cobroAcordado = llevaCobro({ tipoTrabajo: formData.tipoTrabajo }) ? resolverCobroAcordado(formData.cobroSel) : { valor: null };
+    if (cobroAcordado.error) {
+      setToastMsg({ type: 'error', text: `Cobro acordado: ${cobroAcordado.error}` });
+      return false;
+    }
     creandoRef.current = true;
     try {
-      return await crearTicketSinGuardia(formData);
+      return await crearTicketSinGuardia(formData, cobroAcordado.valor);
     } finally {
       creandoRef.current = false;
     }
   };
 
-  const crearTicketSinGuardia = async (formData) => {
+  const crearTicketSinGuardia = async (formData, cobroAcordado = null) => {
     const finalFalla = formData.falla.trim() === '' ? formData.tipoTrabajo : formData.falla;
     // Id automático de Firestore: con Date.now() dos órdenes creadas en el mismo
     // milisegundo compartían id y la segunda pisaba a la primera.
@@ -796,7 +803,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     const codigoManual = codigoManualDeOrdenNueva(formData.tipoTrabajo, formData.codigo, formData.garantiaDe);
     const esInstalacion = formData.tipoTrabajo?.toUpperCase().includes('INSTAL');
     const tieneTecnico = Boolean(formData.tecnico && formData.tecnico.trim());
-    const { ventaTecnico, garantiaDe, ...datosOrden } = formData;
+    // `cobroSel` es el formulario del cobro acordado: se guarda ya convertido (cobroAcordado), no tal cual.
+    // eslint-disable-next-line no-unused-vars
+    const { ventaTecnico, garantiaDe, cobroSel, ...datosOrden } = formData;
     // La promotora de una instalación (sale de la plantilla): se guarda con una clave para que cada promotora vea las suyas.
     const datosPromotora = esInstalacion ? { promotora: nombrePromotora(formData.promotora), promotoraClave: claveNombre(formData.promotora) } : {};
     const armarTicket = (codigo) => ({
@@ -806,6 +815,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       ...datosPromotora,
       ...(ventaTecnico ? { ventaTecnico } : {}),
       ...(garantiaDe?.id ? { garantiaDe } : {}),
+      // Lo que se acordó con el cliente: quién lo anotó y cuándo van con él.
+      ...(cobroAcordado ? { cobroAcordado: sellarCobroAcordado(cobroAcordado, null, { por: currentUser }) } : {}),
       ubicacion: normalizarUbicacion(formData.ubicacion).valor || '',
       napCoordenadas: normalizarCoordenadasNap(formData.napCoordenadas).valor || '',
       falla: finalFalla,
@@ -957,6 +968,11 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       }
       // Si la oficina corrige una instalación ya finalizada, la plantilla guardada se rehace con lo corregido.
       if (ticketToSave.estado === 'FINALIZADO') Object.assign(ticketToSave, plantillaFinalDe(ticketToSave));
+      // Cobro acordado con el cliente (solo lo toca la oficina): si cambió, queda con quién y cuándo; si no, se conserva tal cual.
+      if (role !== 'TECNICO' && 'cobroAcordado' in editingTicket) {
+        ticketToSave.cobroAcordado = sellarCobroAcordado(editingTicket.cobroAcordado, originalTicket?.cobroAcordado, { por: currentUser });
+        if (!ticketToSave.cobroAcordado && !originalTicket?.cobroAcordado) delete ticketToSave.cobroAcordado;
+      }
       if (originalTicket) {
         let cambios = [];
         if (originalTicket.estado !== editingTicket.estado) cambios.push(`Estado: ${editingTicket.estado}`);
@@ -967,6 +983,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
         // Solo en las garantías (que reusan el código de la original): con el código anterior, para poder buscar una orden por el número que tuvo (un código cambiado a mano deja un hueco en el contador).
         if (originalTicket.codigo !== ticketToSave.codigo) cambios.push(esTipoGarantia(ticketToSave.tipoTrabajo) && originalTicket.codigo && !esCodigoSinNumero(originalTicket.codigo) ? `Cód: ${originalTicket.codigo} → ${ticketToSave.codigo}` : `Cód: ${ticketToSave.codigo}`);
         if (originalTicket.observacion !== editingTicket.observacion) cambios.push(`Obs. modificada`);
+        if (role !== 'TECNICO' && !mismoCobroAcordado(originalTicket.cobroAcordado, ticketToSave.cobroAcordado)) cambios.push(`Cobro acordado: ${textoCobroAcordado(cobroAcordadoDe(ticketToSave)) || 'Ninguno'}`);
         if ((originalTicket.observacionTecnico || '') !== (editingTicket.observacionTecnico || '')) cambios.push('Obs. del técnico modificada');
         if (!String(originalTicket.plantillaOriginal || '').trim() && String(editingTicket.plantillaOriginal || '').trim()) cambios.push('Plantilla de la promotora pegada');
         if (esInstalacion(editingTicket.tipoTrabajo) && promotoraDeOrden(originalTicket) !== ticketToSave.promotora) cambios.push(`Promotor: ${ticketToSave.promotora || 'Vacío'}`);

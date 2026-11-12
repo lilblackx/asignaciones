@@ -7,10 +7,12 @@ import { stripEmojis } from '../../utils/sanitizeInput';
 import { faltantesInstalacion } from '../../utils/instalacion';
 import { evaluarPotencia } from '../../utils/potencia';
 import { TIPO_RECABLEADO, avisaCobroAlPreFinalizar, tieneDatosRecableado } from '../../utils/tipoVisita';
-import { COBRO_INICIAL, conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
+import { conceptoCobro, llevaCobro, resolverCobro } from '../../utils/cobro';
 import { cobroPrecargado, consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
 import DatosParaAutorizar from './DatosParaAutorizar';
 import CobroSelector from './CobroSelector';
+import CobroAcordadoAviso from './CobroAcordadoAviso';
+import { cobroInicialDeOrden } from '../../utils/cobroAcordado';
 import ConectorColocado from './ConectorColocado';
 import InsigniaConector from '../InsigniaConector';
 import ValoresClienteAdmin from './ValoresClienteAdmin';
@@ -38,7 +40,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   // Lo que se eligió de cobro, ya validado, para usarlo al confirmar.
   const [extraCierre, setExtraCierre] = useState(undefined);
   // Cobro que verá el técnico (solo en visitas de conector): "Visita técnica" u "Otro monto".
-  const [cobro, setCobro] = useState(() => cobroPrecargado(ticket) || COBRO_INICIAL);
+  const [cobro, setCobro] = useState(() => cobroPrecargado(ticket) || cobroInicialDeOrden(ticket));
   const [cobroError, setCobroError] = useState('');
   // Valores de señal del cliente (obligatorios): los campos, lo ya guardado en la orden y si se está guardando.
   const [oltTexto, setOltTexto] = useState(ticket?.valoresCliente?.olt1310Dbm != null ? String(ticket.valoresCliente.olt1310Dbm) : '');
@@ -206,6 +208,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                 )}
                 {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <p className="ml-6 mt-1 text-[11px] max-lg:text-xs opacity-80">El técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</p>}
               </div>
+              <CobroAcordadoAviso ticket={ticket} />
               <CobroSelector
                 idBase="cobro-aprobar"
                 montoVisita={montoBs}

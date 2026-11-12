@@ -96,7 +96,9 @@ const EMPTY_FORM = () => ({
   fechaProgramada: '',
   codigo: '', nombre: '', cedula: '', tipoDocumento: 'V', direccion: '', telefono: '', nap: '', napCoordenadas: '', ubicacion: '',
   tipoTrabajo: 'AVERÍA', falla: '', tecnico: '', observacion: '', observacionInterna: false, estado: 'PENDIENTE',
-  plantillaOriginal: '', ventaTecnico: '', promotora: '', garantiaDe: null, olt: ''
+  plantillaOriginal: '', ventaTecnico: '', promotora: '', garantiaDe: null, olt: '',
+  // Cobro acordado con el cliente (formulario; se guarda como `cobroAcordado`, ver utils/cobroAcordado).
+  cobroSel: { modo: '', otro: '', moneda: 'BS', nota: '' }
 });
 
 // Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).

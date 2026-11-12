@@ -24,6 +24,9 @@ import { stripEmojis } from '../../utils/sanitizeInput';
 import Spinner from '../Spinner';
 import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, SELECTOR_ORDEN, SELECTOR_ORDEN_NORMAL, claseCampo } from '../estilos';
 import CampoFecha from '../CampoFecha';
+import CobroAcordadoField from './CobroAcordadoField';
+import { formularioCobroAcordado, resolverCobroAcordado } from '../../utils/cobroAcordado';
+import { llevaCobro } from '../../utils/cobro';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, tickets = [], reports = [], napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,6 +36,11 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   const [showSinCoordenadas, setShowSinCoordenadas] = useState(false);
   const [errorMotivo, setErrorMotivo] = useState('');
   const [intentoSinUbicacion, setIntentoSinUbicacion] = useState(false);
+  // Cobro acordado con el cliente (solo la oficina, mientras la orden sigue abierta): se edita aparte y se guarda junto con lo demás.
+  const [cobroSel, setCobroSel] = useState(() => formularioCobroAcordado(editingTicket));
+  const [intentoCobro, setIntentoCobro] = useState(false);
+  const pideCobroAcordado = !isTecnico && llevaCobro(editingTicket) && editingTicket.estado !== 'FINALIZADO' && editingTicket.estado !== 'CANCELADO';
+  const cobroResuelto = pideCobroAcordado ? resolverCobroAcordado(cobroSel) : null;
 
   const esInstalacion = editingTicket.tipoTrabajo?.toUpperCase().includes('INSTAL');
   // Instalación o reconexión que se creó sin la plantilla de la promotora: aquí se puede pegar. Si ya la tiene, no se
@@ -92,7 +100,8 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
 
   const guardar = async () => {
     setIsSubmitting(true);
-    await handleEditSubmit({ preventDefault: () => {} }, datosAGuardar());
+    const extra = { ...(datosAGuardar() || {}), ...(cobroResuelto && !cobroResuelto.error ? { cobroAcordado: cobroResuelto.valor } : {}) };
+    await handleEditSubmit({ preventDefault: () => {} }, Object.keys(extra).length > 0 ? extra : null);
     setIsSubmitting(false);
   };
 
@@ -123,6 +132,11 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
         document.getElementById('ed-motivo-cancelacion')?.focus();
         return;
       }
+    }
+    if (cobroResuelto?.error) {
+      setIntentoCobro(true);
+      document.getElementById('ed-cobro-monto')?.focus();
+      return;
     }
     // Un dato con error: el cursor va al primero, en el orden del formulario.
     const campoConError = napCoordenadasParseadas.error ? 'ed-nap-coords' : ubicacionParseada.error || faltaUbicacion ? 'ed-ubicacion' : potenciaParseada.error ? 'ed-potencia' : null;
@@ -331,6 +345,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
               errores={datosErrores}
               finalizada={ordenAlAbrir.estado === 'FINALIZADO'}
               avisoSerial={esAdmin && ordenAlAbrir.estado === 'FINALIZADO'}
+              ticketMetros={ordenAlAbrir.metrosCable ?? null}
             />
           )}
           {esInstalacion && !isTecnico && (
@@ -345,7 +360,6 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             />
           )}
           {faltabaPlantilla && (
-              ticketMetros={ordenAlAbrir.metrosCable ?? null}
             <div className="col-span-2 space-y-1">
               <label htmlFor="ed-plantilla" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
               <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className={`${CAMPO_ORDEN} font-mono`} placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
@@ -377,6 +391,15 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             </>
           ) : (
             <>
+              {pideCobroAcordado && (
+                <CobroAcordadoField
+                  idPrefix="ed"
+                  wrapperClassName="col-span-2 space-y-1"
+                  value={cobroSel}
+                  onChange={setCobroSel}
+                  error={intentoCobro ? cobroResuelto?.error || '' : ''}
+                />
+              )}
               <ObservacionField
                 variant="edit"
                 wrapperClassName="col-span-2 space-y-1"

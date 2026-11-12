@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Cable, User, X } from 'lucide-react';
 import Modal from '../Modal';
 import CobroSelector from './CobroSelector';
-import { COBRO_EXONERADO, COBRO_OTRO, MONEDA_BS, parseMontoBs } from '../../utils/cobro';
+import CobroAcordadoAviso from './CobroAcordadoAviso';
+import { cobroInicialDeOrden } from '../../utils/cobroAcordado';
+import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, MONEDA_BS, parseMontoBs } from '../../utils/cobro';
 import { consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
 import Spinner from '../Spinner';
 
@@ -11,7 +13,11 @@ import Spinner from '../Spinner';
 export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
   const consulta = consultaCobroDe(ticket);
   const respuesta = respuestaVigente(ticket);
-  const [seleccion, setSeleccion] = useState({ modo: COBRO_OTRO, otro: '', moneda: MONEDA_BS });
+  // Si al crear la orden se acordó un monto o la exoneración, el selector viene con eso ("Visita técnica" no aplica aquí).
+  const [seleccion, setSeleccion] = useState(() => {
+    const acordado = cobroInicialDeOrden(ticket);
+    return acordado.modo === COBRO_VISITA ? { modo: COBRO_OTRO, otro: '', moneda: MONEDA_BS } : acordado;
+  });
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
 
@@ -53,6 +59,7 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
                 <p className="flex items-center gap-1.5"><Cable className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Drop que va a usar: <span className="font-black text-sm">{consulta.metros} m</span></p>
                 {respuesta && <p className="pt-1 text-[11px] max-lg:text-xs">Ya respondiste: <span className="font-black">{textoRespuesta(respuesta)}</span>. Puedes cambiarlo.</p>}
               </div>
+              <CobroAcordadoAviso ticket={ticket} />
               <CobroSelector
                 idBase="cobro-recableado"
                 modos={[COBRO_OTRO, COBRO_EXONERADO]}

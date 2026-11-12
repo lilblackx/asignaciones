@@ -19,6 +19,9 @@ import TelefonosField from './TelefonosField';
 import PromotorField from './PromotorField';
 import { CedulaField, GarantiaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import Spinner from '../Spinner';
+import CobroAcordadoField from './CobroAcordadoField';
+import { resolverCobroAcordado } from '../../utils/cobroAcordado';
+import { llevaCobro } from '../../utils/cobro';
 import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, claseCampo, claseSelector } from '../estilos';
 
 export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, onClose }) {
@@ -153,6 +156,10 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
   const faltaUbicacion = esInstalacion && ubicacionParseada.vacio;
   const mostrarFaltaUbicacion = faltaUbicacion && intentoGuardar;
 
+  // El cobro acordado solo va en las órdenes que llevan cobro (no en las instalaciones); un monto escrito debe ser válido.
+  const pideCobroAcordado = llevaCobro({ tipoTrabajo: formData.tipoTrabajo });
+  const errorCobroAcordado = pideCobroAcordado ? (resolverCobroAcordado(formData.cobroSel).error || '') : '';
+
   const onSubmit = (e) => {
     e.preventDefault();
     if (faltaTipo) {
@@ -161,6 +168,11 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
       return;
     }
     if (verificandoCodigo) return;
+    if (errorCobroAcordado) {
+      setIntentoGuardar(true);
+      document.getElementById('tk-cobro-monto')?.focus();
+      return;
+    }
     if (errorCodigo) {
       setIntentoGuardar(true);
       document.getElementById('tk-codigo')?.focus();
@@ -410,6 +422,16 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
+
+          {pideCobroAcordado && (
+            <CobroAcordadoField
+              idPrefix="tk"
+              wrapperClassName="col-span-2 sm:col-span-5 space-y-1"
+              value={formData.cobroSel}
+              onChange={(siguiente) => handleCreateChange({ target: { name: 'cobroSel', value: siguiente, type: 'object' } })}
+              error={intentoGuardar ? errorCobroAcordado : ''}
+            />
+          )}
 
           <ObservacionField
             variant="create"

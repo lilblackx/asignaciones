@@ -60,6 +60,7 @@
     "test:consultacobro": "node scripts/test-consulta-cobro.mjs",
     "test:equipo": "node scripts/test-cambio-equipo.mjs",
     "test:valores": "node scripts/test-valores-cliente.mjs",
+    "test:cobroacordado": "node scripts/test-cobro-acordado.mjs",
     "test:edicion": "node scripts/test-edicion-datos-tecnico.mjs",
     "test:logtecnico": "node scripts/test-log-tecnico.mjs",
     "test:gestion": "node scripts/test-gestion-tecnicos.mjs",
