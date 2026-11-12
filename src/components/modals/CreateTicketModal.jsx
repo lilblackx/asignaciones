@@ -20,12 +20,14 @@ import PromotorField from './PromotorField';
 import { CedulaField, GarantiaField, ObservacionField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import Spinner from '../Spinner';
 import CobroAcordadoField from './CobroAcordadoField';
-import { resolverCobroAcordado } from '../../utils/cobroAcordado';
+import { COBRO_PAGADA, resolverCobroAcordado } from '../../utils/cobroAcordado';
 import { llevaCobro } from '../../utils/cobro';
 import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, claseCampo, claseSelector } from '../estilos';
 
-export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, onClose }) {
+export default function CreateTicketModal({ formData, handleCreateChange, handleCreateSubmit, verificarCodigoManual, technicians, tickets, reports = [], napsConocidas, turnoSugerido, cuentasEmpresa = [], onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Los datos del pago cuando el cobro acordado es "Pagada" (el formulario de pago los entrega al guardar).
+  const pagoRef = useRef(null);
   // Las órdenes entre las que se busca la original de una garantía (vivas y de los cierres cargados).
   const ordenesGarantia = useMemo(() => todasLasOrdenes(tickets, reports), [tickets, reports]);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
@@ -115,8 +117,18 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
   const doSubmit = async () => {
     setIsSubmitting(true);
-    await handleCreateSubmit({ preventDefault: () => {} });
-    setIsSubmitting(false);
+    try {
+      // Cobro acordado "Pagada": el formulario de pago valida y entrega los datos (si falta algo muestra el error y no se guarda).
+      let pagada = null;
+      if (llevaCobro({ tipoTrabajo: formData.tipoTrabajo }) && formData.cobroSel.modo === COBRO_PAGADA) {
+        const r = await pagoRef.current?.obtener();
+        if (!r || r.tipo !== 'pago') return;
+        pagada = r.valor;
+      }
+      await handleCreateSubmit({ preventDefault: () => {} }, { pagada });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const ubicacionParseada = normalizarUbicacion(formData.ubicacion);
@@ -430,6 +442,9 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               value={formData.cobroSel}
               onChange={(siguiente) => handleCreateChange({ target: { name: 'cobroSel', value: siguiente, type: 'object' } })}
               error={intentoGuardar ? errorCobroAcordado : ''}
+              cuentasEmpresa={cuentasEmpresa}
+              pagoRef={pagoRef}
+              permitirPagada
             />
           )}
 

@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
-import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, MONEDA_BS, MONEDA_USD } from '../../utils/cobro';
-import { MAX_NOTA_COBRO, SIN_DEFINIR } from '../../utils/cobroAcordado';
+import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, MONEDA_BS, MONEDA_USD, formatoMontoBs } from '../../utils/cobro';
+import { COBRO_PAGADA, MAX_NOTA_COBRO, SIN_DEFINIR, textoModoAcordado } from '../../utils/cobroAcordado';
+import FormularioPagoCliente from '../FormularioPagoCliente';
 import { montoCalculadora } from '../../utils/montoCalculadora';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { claseCampo } from '../estilos';
@@ -10,12 +11,15 @@ const OPCIONES = [
   [COBRO_VISITA, 'Visita técnica'],
   [COBRO_OTRO, 'Monto'],
   [COBRO_EXONERADO, 'Exonerada'],
+  [COBRO_PAGADA, 'Pagada'],
 ];
 
 // Cobro acordado con el cliente al crear (o editar) la orden, para que quien la finalice sepa qué se habló aunque no sea quien la creó
 // (ver utils/cobroAcordado). Es solo de la oficina: no cambia nada hasta que se finaliza, y entonces el selector de cobro viene con esto elegido.
+// `permitirPagada`: ofrece "Pagada" y pide los datos del pago. Una orden que ya es "Pagada" (`value.pagada`) muestra su resumen y no vuelve a pedirlos.
 // `value`: el formulario (`cobroSel`: { modo, otro, moneda, nota }); `onChange(siguiente)`; `error`: mensaje del monto, si lo hay.
-export default function CobroAcordadoField({ idPrefix, value, onChange, error = '', wrapperClassName = 'space-y-1' }) {
+// "Pagada": muestra el formulario de pago del técnico (moneda, forma, cuenta, banco, referencia, monto, fecha y hora). `cuentasEmpresa`: las formas de pago de la empresa; `pagoRef`: para pedir los datos al guardar.
+export default function CobroAcordadoField({ idPrefix, value, onChange, error = '', wrapperClassName = 'space-y-1', cuentasEmpresa = [], pagoRef = null, permitirPagada = false }) {
   const moneda = value.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS;
   const esMonto = value.modo === COBRO_OTRO;
   const etiqueta = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
@@ -26,7 +30,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
         COBRO ACORDADO CON EL CLIENTE <span className="font-normal normal-case text-zinc-400">(opcional; lo ve quien finaliza la orden)</span>
       </p>
       <div role="radiogroup" aria-labelledby={`${idPrefix}-cobro-acordado`} className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-1.5">
-        {OPCIONES.map(([modo, texto]) => {
+        {OPCIONES.filter(([modo]) => modo !== COBRO_PAGADA || permitirPagada || value.modo === COBRO_PAGADA).map(([modo, texto]) => {
           const activa = value.modo === modo;
           return (
             <button
@@ -45,6 +49,20 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
           );
         })}
       </div>
+
+      {value.modo === COBRO_PAGADA && value.pagada?.pago && (
+        <p className="rounded-xl border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-2 text-xs font-bold text-emerald-900 dark:text-emerald-300">
+          {textoModoAcordado({ modo: COBRO_PAGADA, monto: formatoMontoBs(value.pagada.pago.monto), moneda: value.pagada.pago.moneda, pago: value.pagada.pago })}
+          {value.pagada.nota ? ` · ${value.pagada.nota}` : ''}
+        </p>
+      )}
+
+      {value.modo === COBRO_PAGADA && permitirPagada && !value.pagada?.pago && (
+        <div className="rounded-xl border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 space-y-3">
+          <p className="text-xs font-bold text-emerald-900 dark:text-emerald-300">DATOS DEL PAGO</p>
+          <FormularioPagoCliente incrustado permitirPagarDespues={false} confirmar={false} cuentasEmpresa={cuentasEmpresa} ref={pagoRef} idPrefijo={`${idPrefix}-pago`} notaEtiqueta="Nota del pago" />
+        </div>
+      )}
 
       {esMonto && (
         <div className="space-y-1">
@@ -87,17 +105,20 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
         </div>
       )}
 
-      <input
-        id={`${idPrefix}-cobro-nota`}
-        type="text"
-        autoComplete="off"
-        maxLength={MAX_NOTA_COBRO}
-        aria-label="Nota del cobro acordado"
-        placeholder="Nota (opcional). Ej. Revisión de equipos: se cobra solo si resulta falla del cliente"
-        value={value.nota}
-        onChange={(e) => onChange({ ...value, nota: stripEmojis(e.target.value) })}
-        className={claseCampo('compacto')}
-      />
+      {/* Con "Pagada" la nota es la del propio pago (arriba): no se repite. */}
+      {value.modo !== COBRO_PAGADA && (
+        <input
+          id={`${idPrefix}-cobro-nota`}
+          type="text"
+          autoComplete="off"
+          maxLength={MAX_NOTA_COBRO}
+          aria-label="Nota del cobro acordado"
+          placeholder="Nota (opcional). Ej. Revisión de equipos: se cobra solo si resulta falla del cliente"
+          value={value.nota}
+          onChange={(e) => onChange({ ...value, nota: stripEmojis(e.target.value) })}
+          className={claseCampo('compacto')}
+        />
+      )}
     </div>
   );
 }

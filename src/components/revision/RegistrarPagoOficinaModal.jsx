@@ -7,6 +7,8 @@ import { cobroEsperadoDe } from '../../utils/pagoCliente';
 // la oficina y queda marcado en la orden, en el pago y en el historial ("registrado por la oficina a nombre del técnico"). Si el cliente todavía no pagó, también puede dejarlo como "paga después".
 // `orden`: la orden con su técnico; `cuentasEmpresa`: las formas de pago de la empresa ya normalizadas; `onRegistrar(valor, nota)` y `onPagaDespues({ nota })` guardan y devuelven { ok }, { repetida } o { error }.
 export default function RegistrarPagoOficinaModal({ orden, cuentasEmpresa = [], onRegistrar, onPagaDespues, onClose }) {
+  // Si al crear la orden se acordó "Pagada", los datos del pago ya están anotados en la orden: el formulario se abre con ellos.
+  const pagoAcordado = orden.cobroAcordado?.modo === 'PAGADA' && orden.cobroAcordado.pago ? orden.cobroAcordado.pago : null;
   return (
     <Modal onClose={onClose} zIndexClass="z-[90]">
       <div role="dialog" aria-labelledby="oficina-pago-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-300 dark:border-zinc-800">
@@ -22,11 +24,13 @@ export default function RegistrarPagoOficinaModal({ orden, cuentasEmpresa = [], 
             {orden.tecnico ? `${orden.tecnico} todavía no registró el pago de esta orden. ` : ''}Anota el pago que el cliente hizo y escribe por qué lo registras tú. Queda en el historial con tu nombre y la hora, marcado como
             registrado por la oficina; el técnico ya no tendrá que registrarlo.
           </p>
+          {pagoAcordado && <p role="status" className="rounded-lg border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-emerald-950/20 px-3 py-2 text-xs font-bold text-emerald-900 dark:text-emerald-300">Al crear la orden se anotó que el cliente ya pagó: el formulario trae esos datos. Revísalos y regístralos.</p>}
           <FormularioPagoCliente
             idPrefijo="oficina-pago"
             ticket={orden}
             cobro={cobroEsperadoDe(orden)}
             cuentasEmpresa={cuentasEmpresa}
+            valoresIniciales={pagoAcordado}
             notaObligatoria
             notaEtiqueta="¿Por qué lo registras tú?"
             guardarTexto="Registrar el pago"

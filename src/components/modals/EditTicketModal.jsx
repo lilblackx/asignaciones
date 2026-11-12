@@ -1,5 +1,5 @@
 import { observacionParaTecnico } from '../../utils/observacion';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { MapPin, X } from 'lucide-react';
 import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion, ubicacionObligatoria } from '../../utils/ubicacion';
 import ContactoCliente from '../ContactoCliente';
@@ -25,11 +25,13 @@ import Spinner from '../Spinner';
 import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, SELECTOR_ORDEN, SELECTOR_ORDEN_NORMAL, claseCampo } from '../estilos';
 import CampoFecha from '../CampoFecha';
 import CobroAcordadoField from './CobroAcordadoField';
-import { formularioCobroAcordado, resolverCobroAcordado } from '../../utils/cobroAcordado';
+import { COBRO_PAGADA, formularioCobroAcordado, resolverCobroAcordado } from '../../utils/cobroAcordado';
 import { llevaCobro } from '../../utils/cobro';
 
-export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, tickets = [], reports = [], napsConocidas, turnoSugerido, onClose, isTecnico = false, esAdmin = false }) {
+export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, tickets = [], reports = [], napsConocidas, turnoSugerido, cuentasEmpresa = [], onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Los datos del pago cuando se elige el cobro acordado "Pagada" (el formulario de pago los entrega al guardar).
+  const pagoRef = useRef(null);
   // Las órdenes entre las que se busca la original de una garantía (vivas y de los cierres cargados).
   const ordenesGarantia = useMemo(() => (isTecnico ? [] : todasLasOrdenes(tickets, reports)), [isTecnico, tickets, reports]);
   const [saltoCodigo, setSaltoCodigo] = useState(null);
@@ -100,9 +102,19 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
 
   const guardar = async () => {
     setIsSubmitting(true);
-    const extra = { ...(datosAGuardar() || {}), ...(cobroResuelto && !cobroResuelto.error ? { cobroAcordado: cobroResuelto.valor } : {}) };
-    await handleEditSubmit({ preventDefault: () => {} }, Object.keys(extra).length > 0 ? extra : null);
-    setIsSubmitting(false);
+    try {
+      let cobro = cobroResuelto;
+      // "Pagada" recién elegida: el formulario de pago valida y entrega los datos (si falta algo muestra el error y no se guarda).
+      if (pideCobroAcordado && cobroSel.modo === COBRO_PAGADA && !cobroSel.pagada?.pago) {
+        const r = await pagoRef.current?.obtener();
+        if (!r || r.tipo !== 'pago') return;
+        cobro = resolverCobroAcordado(cobroSel, r.valor);
+      }
+      const extra = { ...(datosAGuardar() || {}), ...(cobro && !cobro.error ? { cobroAcordado: cobro.valor } : {}) };
+      await handleEditSubmit({ preventDefault: () => {} }, Object.keys(extra).length > 0 ? extra : null);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Un código corregido a mano que se salta números del correlativo pide confirmación.
@@ -398,6 +410,9 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
                   value={cobroSel}
                   onChange={setCobroSel}
                   error={intentoCobro ? cobroResuelto?.error || '' : ''}
+                  cuentasEmpresa={cuentasEmpresa}
+                  pagoRef={pagoRef}
+                  permitirPagada
                 />
               )}
               <ObservacionField

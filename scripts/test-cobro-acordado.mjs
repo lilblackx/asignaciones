@@ -3,7 +3,7 @@
 // Uso: `npm run test:cobroacordado`.
 import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA } from '../src/utils/cobro.js';
 import {
-  COBRO_SEL_INICIAL, avisoCambioDeTrabajo, cobroAcordadoDe, cobroInicialDeOrden, formularioCobroAcordado, mismoCobroAcordado, resolverCobroAcordado, sellarCobroAcordado,
+  COBRO_PAGADA, COBRO_SEL_INICIAL, avisoCambioDeTrabajo, cobroAcordadoDe, cobroInicialDeOrden, formularioCobroAcordado, mismoCobroAcordado, resolverCobroAcordado, sellarCobroAcordado,
   sugiereExonerar, textoCobroAcordado,
 } from '../src/utils/cobroAcordado.js';
 
@@ -25,6 +25,21 @@ check('otro monto en bolívares con decimales', resolverCobroAcordado({ modo: CO
 check('otro monto sin escribir o en cero es un error', [resolverCobroAcordado({ modo: COBRO_OTRO, otro: '', moneda: 'BS' }).error, resolverCobroAcordado({ modo: COBRO_OTRO, otro: '0,00', moneda: 'BS' }).error], ['Escribe el monto a cobrar.', 'El monto debe ser mayor a 0.']);
 check('un modo desconocido se trata como sin definir', resolverCobroAcordado({ modo: 'XX', nota: '' }), { valor: null });
 check('la nota se corta a 200 letras', resolverCobroAcordado({ modo: '', nota: 'a'.repeat(300) }).valor.nota.length, 200);
+
+// --- Pagada: el cliente ya pagó al acordar el trabajo ---
+const pagoZelle = { moneda: 'USD', forma: 'Zelle', monto: 30, banco: 'Bank of America', titular: 'Carlos Pérez', cuentaEmpresa: 'Zelle · pagos@x.com', referencia: '8841207', pagadoEn: 1793000000000 };
+const pagoMovil = { moneda: 'BS', forma: 'Pago móvil', monto: 5696.5, banco: 'Banesco', titular: '', cuentaEmpresa: 'Pago Móvil · BNC · 0412', referencia: '004512', pagadoEn: 1793000000000 };
+check('pagada sin los datos del pago todavía: no es un error, falta el pago', resolverCobroAcordado({ modo: COBRO_PAGADA, otro: '', moneda: 'BS', nota: '' }), { valor: null, falta: true });
+check('pagada en dólares: el monto y la moneda salen del pago, con su nota', resolverCobroAcordado({ modo: COBRO_PAGADA, moneda: 'BS', nota: 'ignorada' }, { pago: pagoZelle, nota: 'Zelle de Carlos' }),
+  { valor: { modo: COBRO_PAGADA, monto: '30', moneda: 'USD', nota: 'Zelle de Carlos', pago: pagoZelle } });
+check('pagada en bolívares con decimales', resolverCobroAcordado({ modo: COBRO_PAGADA }, { pago: pagoMovil, nota: '' }).valor.monto, '5.696,5');
+const ordenPagada = { tipoTrabajo: 'AVERÍA', cobroAcordado: { modo: COBRO_PAGADA, monto: '30', moneda: 'USD', nota: 'Zelle de Carlos', pago: pagoZelle, por: 'rcova', en: 1 } };
+check('una orden pagada conserva el pago al leerla', cobroAcordadoDe(ordenPagada).pago, pagoZelle);
+check('el texto dice pagada, el monto y la forma', textoCobroAcordado(cobroAcordadoDe(ordenPagada)), 'Pagada · 30 $ · Zelle · Zelle de Carlos');
+check('al finalizar el cobro se abre con el monto que ya pagó', cobroInicialDeOrden(ordenPagada), { modo: COBRO_OTRO, otro: '30,00', moneda: 'USD' });
+check('al editar: el formulario trae el pago y se vuelve a guardar igual sin perderlo', resolverCobroAcordado(formularioCobroAcordado(ordenPagada)).valor.pago, pagoZelle);
+check('al editar: cambiar a otro modo suelta el pago', resolverCobroAcordado({ ...formularioCobroAcordado(ordenPagada), modo: COBRO_EXONERADO }).valor, { modo: COBRO_EXONERADO, monto: '', moneda: 'BS', nota: 'Zelle de Carlos' });
+check('dos cobros pagada con distinto pago no son el mismo', mismoCobroAcordado(ordenPagada.cobroAcordado, { ...ordenPagada.cobroAcordado, pago: { ...pagoZelle, referencia: '1' } }), false);
 
 // --- De la orden al formulario y de vuelta ---
 const orden = (cobroAcordado, extra = {}) => ({ tipoTrabajo: 'AVERÍA', cobroAcordado, ...extra });

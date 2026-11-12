@@ -38,6 +38,7 @@ import { contarPendientes, useInsigniaApp } from './hooks/useInsigniaApp';
 import { useArchivedSearch } from './hooks/useArchivedSearch';
 import { useTasaBcv } from './hooks/useTasaBcv';
 import { useFormasPago } from './hooks/useFormasPago';
+import { normalizarFormasPago } from './utils/formasPago';
 import { useTurnoInstalaciones } from './hooks/useTurnoInstalaciones';
 import { useCompletarPromotoras } from './hooks/useCompletarPromotoras';
 import { esProgramadaFutura } from './utils/programada';
@@ -472,9 +473,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   // Si createTicket falla, conAviso muestra el error y esta función se corta ahí:
   // el modal sigue abierto con lo escrito (no se cierra ni se limpia el formulario).
-  const handleCreateSubmit = conAviso(async (e) => {
+  const handleCreateSubmit = conAviso(async (e, extra) => {
     e.preventDefault();
-    const nuevoTicket = await createTicket(formData);
+    const nuevoTicket = await createTicket(formData, extra);
     if (nuevoTicket === false) return; // validación rechazó: el modal sigue abierto con lo escrito
     setIsCreateModalOpen(false);
     setFormData(EMPTY_FORM());
@@ -862,6 +863,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             reports={reports}
             napsConocidas={napsConocidas}
             turnoSugerido={tecnicoSugerido}
+            cuentasEmpresa={normalizarFormasPago(formasPago)}
             onClose={() => setIsCreateModalOpen(false)}
           />
         )}
@@ -879,6 +881,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             esAdmin={isAdmin}
             napsConocidas={napsConocidas}
             turnoSugerido={tecnicoSugerido}
+            cuentasEmpresa={normalizarFormasPago(formasPago)}
             onClose={() => setEditingTicket(null)}
           />
         )}

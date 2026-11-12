@@ -756,7 +756,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   const creandoRef = useRef(false);
 
   // Devuelve false si falta el teléfono (el llamador deja el formulario abierto para no perder lo escrito).
-  const createTicket = async (formData) => {
+  // `extra.pagada`: el pago de un cobro acordado "Pagada" (lo entrega el formulario de pago del modal al guardar).
+  const createTicket = async (formData, extra = null) => {
     if (!firebaseUser || creandoRef.current) return;
     // Toda orden lleva el teléfono del cliente: el formulario lo exige y aquí se vuelve a comprobar.
     if (!tieneTelefono(formData.telefono)) {
@@ -780,9 +781,9 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return false;
     }
     // Cobro acordado con el cliente: un monto escrito debe ser válido (el formulario también lo avisa).
-    const cobroAcordado = llevaCobro({ tipoTrabajo: formData.tipoTrabajo }) ? resolverCobroAcordado(formData.cobroSel) : { valor: null };
-    if (cobroAcordado.error) {
-      setToastMsg({ type: 'error', text: `Cobro acordado: ${cobroAcordado.error}` });
+    const cobroAcordado = llevaCobro({ tipoTrabajo: formData.tipoTrabajo }) ? resolverCobroAcordado(formData.cobroSel, extra?.pagada) : { valor: null };
+    if (cobroAcordado.error || cobroAcordado.falta) {
+      setToastMsg({ type: 'error', text: `Cobro acordado: ${cobroAcordado.error || 'faltan los datos del pago.'}` });
       return false;
     }
     creandoRef.current = true;
