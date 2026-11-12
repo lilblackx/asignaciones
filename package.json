@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.23.5 <23"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -57,10 +60,10 @@
     "test:ventas": "node scripts/test-resumen-ventas.mjs",
     "test:datos": "node scripts/test-datos-cliente.mjs",
     "test:cobro": "node scripts/test-cobro.mjs",
+    "test:cobroacordado": "node scripts/test-cobro-acordado.mjs",
     "test:consultacobro": "node scripts/test-consulta-cobro.mjs",
     "test:equipo": "node scripts/test-cambio-equipo.mjs",
     "test:valores": "node scripts/test-valores-cliente.mjs",
-    "test:cobroacordado": "node scripts/test-cobro-acordado.mjs",
     "test:edicion": "node scripts/test-edicion-datos-tecnico.mjs",
     "test:logtecnico": "node scripts/test-log-tecnico.mjs",
     "test:gestion": "node scripts/test-gestion-tecnicos.mjs",
@@ -112,6 +115,9 @@
     "workbox-precaching": "^7.4.1"
   },
   "overrides": {
-    "@grpc/grpc-js": "^1.14.7"
+    "@grpc/grpc-js": "^1.14.7",
+    "uuid": "^11.1.1",
+    "glob": "^14.0.5",
+    "minimatch": "^11.0.8"
   }
 }

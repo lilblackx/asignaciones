@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -38,7 +38,10 @@ jobs:
         run: npm test -- --sin-emulador
       - name: Compilación
         run: npm run build
-      # Solo falla con vulnerabilidades críticas de producción. Quedan 4 altas conocidas de @grpc/grpc-js dentro de firebase
-      # (ruta de Node, no la del navegador) cuyo arreglo propuesto es bajar firebase a la 9: no se aplica.
+      # Falla con vulnerabilidades altas o críticas de producción, en la app y en cada Worker. Los avisos de herramientas de desarrollo
+      # (`--omit=dev`) no cuentan: no llegan a producción. El aviso de @grpc/grpc-js dentro de firebase se cerró con el override de package.json.
       - name: Auditoría de producción
-        run: npm audit --omit=dev --audit-level=critical
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm audit --omit=dev --audit-level=high --prefix cf-worker
+          npm audit --omit=dev --audit-level=high --prefix cf-worker-tomodat
