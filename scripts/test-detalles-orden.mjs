@@ -125,6 +125,7 @@ const fuentes = archivosFuente('src');
 const usosDelHook = fuentes.flatMap((f) => [...leer(f).matchAll(/useUrlsDeFotos\(([^;\r\n]*)\)/g)].map((m) => ({ f, arg: m[1] }))).filter((u) => !u.f.endsWith('useUrlsDeFotos.js'));
 check('las fotos no se piden de entrada: todo uso de useUrlsDeFotos va condicionado y es solo en FotosDeOrden y VerFotosOrden', [usosDelHook.map((u) => u.f.split('/').pop()).sort(), usosDelHook.every((u) => /^(cerca|pedidas) \? /.test(u.arg))], [['FotosDeOrden.jsx', 'VerFotosOrden.jsx'], true]);
 check('solo el hook y el campo de fotos del técnico llaman a urlDeFoto', fuentes.filter((f) => /urlDeFoto\(/.test(leer(f)) && !f.endsWith('fotosOrden.js')).map((f) => f.split('/').pop()).sort(), ['DetallesOrdenCampo.jsx', 'useUrlsDeFotos.js']);
+check('el Historial de órdenes ya no repite el historial de cambios afuera: se ve dentro del Detalle completo', [leer('src/components/modals/OrdersHistoryModal.jsx').includes('HistorialTimeline'), leer('src/components/modals/DetalleOrdenModal.jsx').includes('<HistorialTimeline ticket={ticket} />')], [false, true]);
 check('las fotos solo las ve la oficina y solo se piden cuando la sección entra en pantalla; se abren en el visor de la app, no en otra pestaña', [
   leer('src/components/modals/DetalleOrdenModal.jsx').includes('verCobro && fotosDe(ticket).length > 0'),
   leer('src/components/FotosDeOrden.jsx').includes('cerca ? fotos.map((f) => f.ruta) : []'), leer('src/components/FotosDeOrden.jsx').includes('IntersectionObserver'),

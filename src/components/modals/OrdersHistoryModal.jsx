@@ -11,7 +11,6 @@ import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/expor
 import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
-import HistorialTimeline from '../HistorialTimeline';
 import CampoFecha from '../CampoFecha';
 import SelectMenu from '../SelectMenu';
 import PlantillaFinalModal from './PlantillaFinalModal';
@@ -244,12 +243,6 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                       )}
                       </div>
                       {motivoCancelacion(o) && <p><span className="font-semibold">Motivo de la cancelación:</span> {motivoCancelacion(o)}{o.canceladaPor ? ` (${o.canceladaPor})` : ''}</p>}
-                      {(o.historialEdiciones || []).length > 0 && (
-                        <div className="pt-1.5 mt-1.5 border-t border-zinc-100 dark:border-zinc-800">
-                          <p className="font-semibold mb-2">Historial de cambios</p>
-                          <HistorialTimeline ticket={o} />
-                        </div>
-                      )}
                     </div>
                   )}
                 </Colapsable>
