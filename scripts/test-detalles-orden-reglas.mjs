@@ -43,6 +43,12 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await b.collection('users').doc('finanzas-uid').set({ role: 'FINANZAS', disabled: false, username: 'fina' });
   await b.collection('users').doc('admon-uid').set({ role: 'ADMINISTRACION', disabled: false, username: 'admon' });
   await b.collection('users').doc('almacen-uid').set({ role: 'ALMACEN', disabled: false, username: 'alma' });
+  await b.collection('users').doc('infra-hist-uid').set({ role: 'INFRAESTRUCTURA', disabled: false, username: 'infrahist', puedeVerHistorial: true });
+  await b.collection('users').doc('infra-uid').set({ role: 'INFRAESTRUCTURA', disabled: false, username: 'infra' });
+  // Lo que lee el Detalle de la orden del historial: la revisión, el cobro y el pago de una orden.
+  await b.collection('revisionPagos').doc('g1').set({ estado: 'APROBADA', sinDetalles: 'motivo', por: 'admin', en: 1 });
+  await b.collection('cobrosClientes').doc('g1').set({ ticketId: 'g1', estado: 'PENDIENTE' });
+  await b.collection('pagosOrdenes').doc('g1').set({ ticketId: 'g1', tecnico: 'GERARDO MOLERO', tipoTrabajo: 'AVERÍA' });
   const ord = (id, tecnico, estado, extra = {}) => b.collection('tickets').doc(id).set({ codigo: id.toUpperCase(), nombre: `Cliente ${id}`, tipoTrabajo: 'AVERÍA', falla: 'LOS', tecnico, estado, historialEdiciones: [], ...extra });
   for (const id of ['g1', 'g2', 'g4', 'g5', 'g6', 'g7']) await ord(id, 'GERARDO MOLERO', 'FINALIZADO', { finalizadoEn: Date.now() });
   await ord('gp', 'GERARDO MOLERO', 'PRE-FINALIZADO');
@@ -132,6 +138,18 @@ await check('Storage: ven las fotos la oficina, Administración, Finanzas y el t
 await check('Storage: no las ve otro técnico ni Almacén', async () => {
   await assertFails(archivo('reinel-uid', `ordenes/g1/01-${CORRIDA}.jpg`).getDownloadURL());
   await assertFails(archivo('almacen-uid', `ordenes/g1/01-${CORRIDA}.jpg`).getDownloadURL());
+});
+await check('Storage: ve las fotos Infraestructura con el permiso de historial, y no la que no lo tiene', async () => {
+  await assertSucceeds(archivo('infra-hist-uid', `ordenes/g1/01-${CORRIDA}.jpg`).getDownloadURL());
+  await assertFails(archivo('infra-uid', `ordenes/g1/01-${CORRIDA}.jpg`).getDownloadURL());
+});
+await check('Firestore: Infraestructura con permiso de historial lee la revisión, el cobro y el pago de una orden por su id (no las listas); sin el permiso no lee nada', async () => {
+  for (const coleccion of ['revisionPagos', 'cobrosClientes', 'pagosOrdenes']) {
+    await assertSucceeds(base(como('infra-hist-uid')).collection(coleccion).doc('g1').get());
+    await assertFails(base(como('infra-hist-uid')).collection(coleccion).get());
+    await assertFails(base(como('infra-uid')).collection(coleccion).doc('g1').get());
+    await assertFails(base(como('infra-hist-uid')).collection(coleccion).doc('g1').set({ estado: 'APROBADA' }));
+  }
 });
 await check('Storage: nadie sobrescribe una foto y solo el técnico de la orden la borra (para cambiarla se sube otra y se quita la anterior)', async () => {
   await assertFails(subir('gerardo-uid', `ordenes/g1/01-${CORRIDA}.jpg`));

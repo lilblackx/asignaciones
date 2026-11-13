@@ -670,6 +670,8 @@ service cloud.firestore {
           && r.historial is list && r.historial.size() <= 30;
       }
       allow read: if llevaFinanzas(appId);
+      // INFRAESTRUCTURA con permiso de historial lee la revisión de una orden por su id (no la lista): el Detalle de la orden del historial avisa si se aprobó sin los detalles.
+      allow get: if infraVeHistorial(appId);
       allow create: if isAdminUser(appId) && revisionValida()
         && request.resource.data.get('pagoId', '') == ''
         && request.resource.data.pendientePago == (request.resource.data.estado == 'APROBADA');
@@ -898,6 +900,8 @@ service cloud.firestore {
       }
 
       allow read: if llevaAdministracion(appId) || oficinaCierra(appId) || isFinanzasRole(appId);
+      // INFRAESTRUCTURA con permiso de historial lee el cobro de una orden por su id (no la lista), para el Detalle de la orden del historial.
+      allow get: if infraVeHistorial(appId);
       // pagoClienteValido se revisa solo donde el pago se escribe (al emitir un cobro que ya lo trae y en las dos ramas de abajo que lo ponen): validarlo en cada actualización gastaría expresiones de más.
       allow create: if oficinaCierra(appId)
         && cobroValido()
@@ -1023,6 +1027,8 @@ service cloud.firestore {
       // FINANZAS ve el pago, completo y en cualquier estado, de una instalación y de un cambio de equipo (y de ningún otro tipo de orden). Va con igualdades para que sus consultas por tipo se puedan comprobar.
       allow read: if llevaAdministracion(appId) || isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId))
         || (isFinanzasRole(appId) && (resource.data.tipoTrabajo == 'INSTALACIÓN' || resource.data.tipoTrabajo == 'CAMBIO DE EQUIPO' || resource.data.tipoVisita == 'CAMBIO_EQUIPO'));
+      // INFRAESTRUCTURA con permiso de historial lee el pago de una orden por su id (no la lista), para el Detalle de la orden del historial.
+      allow get: if infraVeHistorial(appId);
       allow create: if pagoOrdenValido() && (tecnicoCreaSuPago(appId) || adminCreaPagoDelTecnico(appId));
       allow update: if llevaAdministracion(appId)
         && pagoOrdenValido()

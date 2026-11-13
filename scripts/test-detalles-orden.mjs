@@ -1,7 +1,7 @@
 // Prueba los "Detalles de la orden" (fotos del técnico, ver src/utils/detallesOrden.js): cuándo se piden, qué le falta al técnico, la forma de lo que se guarda y que cada pantalla (modal del cobro, listas del técnico,
 // cierre del día, Revisión y detalle de la orden) esté conectada. No necesita el emulador (las reglas de verdad, de Firestore y de Storage, las prueba test-detalles-orden-reglas.mjs).
 // Uso: `npm run test:detalles`.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import {
   BYTES_MAXIMOS_FOTO, FECHA_INICIO_DETALLES, MAX_FOTOS, MIN_FOTOS, PENDIENTE_DETALLES, PENDIENTE_PAGO, armarDetalles, carpetaDeFotos, debePedirDetalles, dimensionesReducidas, faltanDetalles, fotosDe, nombreDeFoto, pendienteDelTecnico, puedeCorregirDetalles, rutasQuitadas, tieneDetalles, validarDetalles,
 } from '../src/utils/detallesOrden.js';
@@ -118,6 +118,13 @@ check('el Detalle de la orden avisa, solo al ADMIN, si se aprobó sin los detall
   leer('src/components/AprobacionSinDetalles.jsx').includes("revision?.estado !== 'APROBADA' || !revision.sinDetalles"), leer('src/components/AprobacionSinDetalles.jsx').includes('[clave]'), leer('src/components/AprobacionSinDetalles.jsx').includes('|| tieneDetalles(orden)'), leer('src/components/revision/FilaRevision.jsx').includes('!tieneDetalles(item.orden)'), leer('src/lib/revisionDeOrden.js').includes("'revisionPagos'"),
 ], [true, 2, true, true, true, true, true, true]);
 check('las reglas de Firestore aceptan el motivo de la aprobación sin detalles', leer('firestore.rules').includes("'garantiaSinDescuento', 'sinDetalles', 'por'"), true);
+// Las fotos (descargas de Storage) nunca se piden de entrada, en ningún lugar donde se usan: cada uso de useUrlsDeFotos va condicionado (a que la sección esté por verse o a que se toque el botón) y solo el hook y el campo del técnico
+// piden una URL directamente. Si un uso nuevo pide las fotos sin condición, esta prueba falla.
+const archivosFuente = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? archivosFuente(`${dir}/${e.name}`) : /\.jsx?$/.test(e.name) ? [`${dir}/${e.name}`] : []));
+const fuentes = archivosFuente('src');
+const usosDelHook = fuentes.flatMap((f) => [...leer(f).matchAll(/useUrlsDeFotos\(([^;\r\n]*)\)/g)].map((m) => ({ f, arg: m[1] }))).filter((u) => !u.f.endsWith('useUrlsDeFotos.js'));
+check('las fotos no se piden de entrada: todo uso de useUrlsDeFotos va condicionado y es solo en FotosDeOrden y VerFotosOrden', [usosDelHook.map((u) => u.f.split('/').pop()).sort(), usosDelHook.every((u) => /^(cerca|pedidas) \? /.test(u.arg))], [['FotosDeOrden.jsx', 'VerFotosOrden.jsx'], true]);
+check('solo el hook y el campo de fotos del técnico llaman a urlDeFoto', fuentes.filter((f) => /urlDeFoto\(/.test(leer(f)) && !f.endsWith('fotosOrden.js')).map((f) => f.split('/').pop()).sort(), ['DetallesOrdenCampo.jsx', 'useUrlsDeFotos.js']);
 check('las fotos solo las ve la oficina y solo se piden cuando la sección entra en pantalla; se abren en el visor de la app, no en otra pestaña', [
   leer('src/components/modals/DetalleOrdenModal.jsx').includes('verCobro && fotosDe(ticket).length > 0'),
   leer('src/components/FotosDeOrden.jsx').includes('cerca ? fotos.map((f) => f.ruta) : []'), leer('src/components/FotosDeOrden.jsx').includes('IntersectionObserver'),

@@ -169,6 +169,11 @@ check('el Worker acepta los roles nuevos al crear usuarios', /ROLES_VALIDOS = \[
 check('el permiso de historial viene de la sesión y solo vale para INFRAESTRUCTURA', /puedeVerHistorial: profile\?\.role === 'INFRAESTRUCTURA' && profile\?\.puedeVerHistorial === true/.test(leer('../src/hooks/useAuth.js')), true);
 check('el Worker guarda el permiso de historial solo en INFRAESTRUCTURA', /puedeVerHistorial: \{ booleanValue: role === 'INFRAESTRUCTURA' && puedeVerHistorial === true \}/.test(worker), true);
 check('las reglas dan el historial solo a INFRAESTRUCTURA con el permiso', /function infraVeHistorial\(appId\) \{\s*return isInfraestructuraRole\(appId\) && get\(profilePath\(appId\)\)\.data\.get\('puedeVerHistorial', false\) == true;/.test(reglas), true);
+check('Infraestructura con permiso de historial ve el Detalle completo igual que el admin: cobro, fotos y aviso, con lectura puntual (get) en las reglas de Firestore y Storage', [
+  /<OrdersHistoryModal[^>]*verCobro\s+verRevision/.test(leer('../src/components/HistorialInfra.jsx').replace(/\s+/g, ' ')),
+  ['cobrosClientes', 'pagosOrdenes', 'revisionPagos'].every((c) => { const desde = reglas.indexOf(`/public/data/${c}/{`); return desde > 0 && reglas.slice(desde, reglas.indexOf('match /artifacts/', desde + 10)).includes('allow get: if infraVeHistorial(appId);'); }),
+  /allow get: if perfilActivo\(\)\s*&& perfilDe\(request\.auth\.uid\)\.role == 'INFRAESTRUCTURA'\s*&& perfilDe\(request\.auth\.uid\)\.get\('puedeVerHistorial', false\) == true;/.test(leer('../storage.rules')),
+], [true, true, true]);
 check('el historial de Infraestructura se lee sin listeners de órdenes', !/onSnapshot/.test(leer('../src/hooks/useHistorialOrdenes.js')) && /getDocs/.test(leer('../src/hooks/useHistorialOrdenes.js')), true);
 check('Infraestructura muestra las pestañas solo con el permiso', /puedeVerHistorial === true && \(\s*<div[^>]*>\s*<div[^>]*role="group" aria-label="Sección"/.test(leer('../src/components/InfraestructuraApp.jsx')), true);
 check('Finanzas tiene su pantalla y no importa hooks de la oficina', /FinanzasApp/.test(root) && !/useTickets'|usePushToken|useUsers/.test(leer('../src/components/FinanzasApp.jsx')), true);

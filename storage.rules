@@ -3,7 +3,7 @@ rules_version = '2';
 // Fotos de los "Detalles de la orden" (ver src/utils/detallesOrden.js): ordenes/{id de la orden}/{archivo}.jpg
 // Los roles y la orden se leen de Firestore (cada petición hace 2 lecturas: el perfil de quien sube y la orden).
 // Sube solo el TECNICO de la orden, cuando ya está FINALIZADA, y solo JPEG de hasta 1 MB. Nadie sobrescribe una foto: para cambiarla se sube otra y se quita la anterior (solo la borra el técnico de la orden mientras siga finalizada); el bucket borra el resto a los 60 días.
-// Leen la oficina (ADMIN y USUARIO), ADMINISTRACION, FINANZAS y el técnico de la orden. Mantener la sesión igual que firestore.rules (24 h; 7 días si es TECNICO).
+// Leen la oficina (ADMIN y USUARIO), ADMINISTRACION, FINANZAS, el técnico de la orden e INFRAESTRUCTURA con el permiso de historial. Mantener la sesión igual que firestore.rules (24 h; 7 días si es TECNICO).
 service firebase.storage {
   match /b/{bucket}/o {
 
@@ -36,6 +36,11 @@ service firebase.storage {
       allow read: if perfilActivo()
         && (perfilDe(request.auth.uid).role in ['ADMIN', 'USUARIO', 'ADMINISTRACION', 'FINANZAS']
           || esTecnicoDeLaOrden(ticketId));
+
+      // INFRAESTRUCTURA con el permiso de historial (puedeVerHistorial) ve las fotos en el Detalle de la orden del historial.
+      allow get: if perfilActivo()
+        && perfilDe(request.auth.uid).role == 'INFRAESTRUCTURA'
+        && perfilDe(request.auth.uid).get('puedeVerHistorial', false) == true;
 
       // `resource == null`: el archivo no existe todavía (una foto ya subida no se puede sobrescribir).
       allow create: if resource == null
