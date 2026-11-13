@@ -1000,6 +1000,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onLoadMoreReports={loadMoreReports}
             getTecnicoColor={getTecnicoColor}
             puedeVerPlantilla={canCerrar}
+            verCobro={canEditTickets}
+            verRevision={isAdmin}
             plantillaDe={plantillaDeHistorial}
             onCopy={copyToClipboard}
             enPagina={isAdmin}
@@ -1081,6 +1083,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {detalleTarget && (
           <DetalleOrdenModal
             verCobro={canEditTickets}
+            verRevision={isAdmin}
             ticket={tickets.find(t => t.id === detalleTarget.id) || detalleTarget}
             onCopy={(texto, mensaje) => copyToClipboard(texto, mensaje)}
             onClose={() => setDetalleTarget(null)}

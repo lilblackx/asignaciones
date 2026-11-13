@@ -6,6 +6,7 @@ import Colapsable from '../Colapsable';
 import { BOTON, BOTON_FILA, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
 import VerFotosOrden from '../VerFotosOrden';
+import { tieneDetalles } from '../../utils/detallesOrden';
 import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable, motivoSinDetalles, motivoSinPago, textoEscaladaRevision } from '../../utils/revisionPagos';
 import { parseMontoAjuste } from '../../utils/ajustes';
 import { montoCalculadora, montoParaCampo } from '../../utils/montoCalculadora';
@@ -55,7 +56,8 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
   const cerrar = () => { setAbierto(null); setMotivo(''); setError(''); };
 
   const confirmar = async (accion) => {
-    const ok = await onAccion(item, accion, accion === 'CORREGIR' ? { correccion } : { motivo });
+    // "Aprobar sin detalles" es una aprobación que lleva el motivo de no tener las fotos.
+    const ok = accion === 'SIN_DETALLES' ? await onAccion(item, 'APROBAR', { sinDetalles: motivo }) : await onAccion(item, accion, accion === 'CORREGIR' ? { correccion } : { motivo });
     if (ok === true) cerrar(); else if (typeof ok === 'string') setError(ok);
   };
   const guardarGarantia = async () => {
@@ -111,6 +113,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           <VerFotosOrden orden={item.orden} className="mt-0.5" />
           {item.revision?.motivo && <p className={TEXTO_SUAVE}>Motivo: {item.revision.motivo} · {item.revision.por}</p>}
           {estado === 'APROBADA' && item.revision && <p className={TEXTO_SUAVE}>Aprobada por {item.revision.por}</p>}
+          {estado === 'APROBADA' && item.revision?.sinDetalles && !tieneDetalles(item.orden) && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Aprobada sin los detalles de la orden (fotos): {item.revision.sinDetalles}</p>}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className={`${CHIP} ${CHIP_ESTADO[estado]}`}>{ETIQUETA_REVISION[estado]}</span>
@@ -126,6 +129,9 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
         {(estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
           <button type="button" onClick={aprobar} disabled={ocupado || Boolean(problema)} title={problema || undefined} className={`${BOTON_FILA} !border-emerald-600 !text-emerald-700 dark:!text-emerald-300`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar</button>
         )}
+        {sinDetalles && !sinPago && !motivoNoAprobable(item) && (estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
+          <button type="button" onClick={() => abrir('SIN_DETALLES')} disabled={ocupado} className={`${BOTON_FILA} !border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar sin detalles</button>
+        )}
         {(estado === 'PENDIENTE' || estado === 'APROBADA') && <button type="button" onClick={() => abrir('RETENER')} disabled={ocupado} className={BOTON_FILA}><PauseCircle className="w-4 h-4" aria-hidden="true" /> Retener</button>}
         {estado !== 'EXCLUIDA' && <button type="button" onClick={() => abrir('EXCLUIR')} disabled={ocupado} className={BOTON_FILA}><XCircle className="w-4 h-4" aria-hidden="true" /> Excluir</button>}
         {(estado === 'PENDIENTE' || estado === 'APROBADA') && (
@@ -138,15 +144,15 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       {problema && estado !== 'APROBADA' && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{problema}</p>}
       {error && !abierto && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
 
-      <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR') && (
+      <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR' || abierto === 'SIN_DETALLES') && (
         <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
           <div>
-            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : 'Por qué se excluye (no se paga)'}</label>
+            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : abierto === 'EXCLUIR' ? 'Por qué se excluye (no se paga)' : 'Por qué se aprueba sin los detalles de la orden (obligatorio)'}</label>
             <input id={`motivo-${item.clave}`} value={motivo} onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
             {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-1">{error}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar(abierto)} disabled={ocupado}>{abierto === 'RETENER' ? 'Retener' : 'Excluir'}</Boton>
+            <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar(abierto)} disabled={ocupado}>{abierto === 'RETENER' ? 'Retener' : abierto === 'EXCLUIR' ? 'Excluir' : 'Aprobar sin detalles'}</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>
           </div>
         </div>

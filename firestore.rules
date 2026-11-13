@@ -647,13 +647,14 @@ service cloud.firestore {
       }
       function revisionValida() {
         let r = request.resource.data;
-        return r.keys().hasOnly(['estado', 'motivo', 'firma', 'dia', 'codigo', 'tecnico', 'concepto', 'tecnicoCorregido', 'conceptoCorregido', 'descuento', 'descuentoDe', 'garantiaSinDescuento', 'por', 'en', 'historial', 'pendientePago', 'pagoId'])
+        return r.keys().hasOnly(['estado', 'motivo', 'firma', 'dia', 'codigo', 'tecnico', 'concepto', 'tecnicoCorregido', 'conceptoCorregido', 'descuento', 'descuentoDe', 'garantiaSinDescuento', 'sinDetalles', 'por', 'en', 'historial', 'pendientePago', 'pagoId'])
           && r.pendientePago is bool
           && (!('pagoId' in r) || (r.pagoId is string && r.pagoId.size() <= 100))
           && (!('descuento' in r) || ((r.descuento is int || r.descuento is float) && r.descuento >= 0 && r.descuento <= 100000))
           && (!('descuentoDe' in r) || (r.descuentoDe is map && r.descuentoDe.keys().hasOnly(['id', 'codigo', 'tecnico']) && r.descuentoDe.id is string && r.descuentoDe.id.size() > 0 && r.descuentoDe.id.size() <= 200
             && r.descuentoDe.codigo is string && r.descuentoDe.codigo.size() <= 40 && r.descuentoDe.tecnico is string && r.descuentoDe.tecnico.size() > 0 && r.descuentoDe.tecnico.size() <= 100))
           && (!('garantiaSinDescuento' in r) || (r.garantiaSinDescuento is string && r.garantiaSinDescuento.size() > 0 && r.garantiaSinDescuento.size() <= 300))
+          && (!('sinDetalles' in r) || (r.sinDetalles is string && r.sinDetalles.size() > 0 && r.sinDetalles.size() <= 300 && r.estado == 'APROBADA'))
           && r.estado in ['PENDIENTE', 'APROBADA', 'RETENIDA', 'EXCLUIDA']
           && r.motivo is string && r.motivo.size() <= 300
           && (!(r.estado in ['RETENIDA', 'EXCLUIDA']) || r.motivo.size() > 0)

@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import {
   BYTES_MAXIMOS_FOTO, FECHA_INICIO_DETALLES, MAX_FOTOS, MIN_FOTOS, PENDIENTE_DETALLES, PENDIENTE_PAGO, armarDetalles, carpetaDeFotos, debePedirDetalles, dimensionesReducidas, faltanDetalles, fotosDe, nombreDeFoto, pendienteDelTecnico, puedeCorregirDetalles, rutasQuitadas, tieneDetalles, validarDetalles,
 } from '../src/utils/detallesOrden.js';
-import { aprobarPendientes, motivoSinDetalles } from '../src/utils/revisionPagos.js';
+import { aprobarPendientes, armarRevision, motivoSinDetalles } from '../src/utils/revisionPagos.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -72,6 +72,21 @@ check('Revisión: la aprobación en bloque deja fuera las que esperan fotos y lo
   return [documentos.length, omitidas.map((o) => [Boolean(o.sinDetalles), o.motivo.startsWith('Faltan los detalles de la orden')])];
 })(), [0, [[true, true]]]);
 
+// Aprobar una orden sin los detalles: solo una por una y con motivo obligatorio.
+const aprobable = { ...item(), concepto: 'AVERIA', conceptoOriginal: 'AVERIA', tecnico: 'JOSE', tecnicoOriginal: 'JOSE', firma: 'f', dia: '2026-11-14' };
+check('Revisión: sin motivo no se aprueba sin detalles (ni vacío ni solo espacios) y con motivo sí, y se guarda', (() => {
+  const sin = armarRevision(aprobable, 'APROBAR', { por: 'admin', ahora: AHORA });
+  const vacio = armarRevision(aprobable, 'APROBAR', { por: 'admin', ahora: AHORA, sinDetalles: '   ' });
+  const con = armarRevision(aprobable, 'APROBAR', { por: 'admin', ahora: AHORA, sinDetalles: 'El técnico perdió el teléfono' });
+  return [sin.error.startsWith('Faltan los detalles'), vacio.error, con.datos.estado, con.datos.sinDetalles, con.datos.historial[0].sinDetalles];
+})(), [true, 'Escribe por qué se aprueba sin los detalles de la orden.', 'APROBADA', 'El técnico perdió el teléfono', 'El técnico perdió el teléfono']);
+check('Revisión: una orden con fotos no guarda motivo aunque se mande, y retener no lo guarda', (() => {
+  const conFotos = { ...aprobable, orden: { ...aprobable.orden, detallesOrden: detalles(2) } };
+  const a = armarRevision(conFotos, 'APROBAR', { por: 'admin', ahora: AHORA, sinDetalles: 'x' });
+  const r = armarRevision(aprobable, 'RETENER', { por: 'admin', ahora: AHORA, motivo: 'm', sinDetalles: 'x' });
+  return ['sinDetalles' in a.datos, 'sinDetalles' in r.datos];
+})(), [false, false]);
+
 // --- Todo conectado ---
 const leer = (ruta) => readFileSync(ruta, 'utf8');
 const modal = leer('src/components/modals/CobroResultanteModal.jsx');
@@ -96,7 +111,13 @@ check('useTickets: lo que el técnico debe completar incluye las órdenes sin de
 check('el técnico corrige las fotos desde su lista (tabla y celular) en un modal propio', [leer('src/components/TicketsTable.jsx').includes('onCorregirFotos(ticket)'), leer('src/components/TicketsMobileList.jsx').includes('Corregir fotos'), leer('src/App.jsx').includes('<CorregirDetallesModal'), leer('src/components/DetallesOrdenCampo.jsx').includes('Cambiar la foto'), leer('src/components/DetallesOrdenCampo.jsx').includes('Quitar la foto')], [true, true, true, true, true]);
 check('las listas del técnico muestran el botón de subir los detalles', [leer('src/components/TicketsTable.jsx').includes('pendienteDelTecnico(ticket)'), leer('src/components/TicketsMobileList.jsx').includes('Subir detalles')], [true, true]);
 check('el cierre del día no archiva una orden a la que le faltan los detalles', leer('src/hooks/useReports.js').includes('!faltaElPago(t) && !faltanDetalles(t)'), true);
-check('Revisión muestra el motivo y bloquea la aprobación', [leer('src/components/revision/FilaRevision.jsx').includes('motivoSinDetalles(item)'), leer('src/utils/revisionPagos.js').includes('motivoSinPago(efectivo) || motivoSinDetalles(efectivo)')], [true, true]);
+check('Revisión muestra el motivo y bloquea la aprobación, salvo "Aprobar sin detalles" con motivo', [leer('src/components/revision/FilaRevision.jsx').includes('motivoSinDetalles(item)'), leer('src/components/revision/FilaRevision.jsx').includes('Aprobar sin detalles'), leer('src/utils/revisionPagos.js').includes('motivoSinPago(efectivo)')], [true, true, true]);
+check('el detalle de pago de Revisión tiene el botón "Ver detalle completo" que abre el Detalle de la orden (no en una fila del registro de VN y TA)', [leer('src/components/finanzas/DetalleOrdenFinanzas.jsx').includes('onVerCompleto && !registro'), leer('src/components/revision/RevisionPagosModal.jsx').includes('onVerCompleto={setDetalleCompleto}'), leer('src/components/revision/RevisionPagosModal.jsx').includes('<DetalleOrdenModal ticket={detalleCompleto} verCobro')], [true, true, true]);
+check('el Detalle de la orden avisa, solo al ADMIN, si se aprobó sin los detalles: lee la revisión una vez por orden y solo muestra una aprobada con motivo', [
+  leer('src/components/modals/DetalleOrdenModal.jsx').includes('verRevision && <AprobacionSinDetalles'), leer('src/App.jsx').split('verRevision={isAdmin}').length - 1, leer('src/components/revision/RevisionPagosModal.jsx').includes('verCobro verRevision'),
+  leer('src/components/AprobacionSinDetalles.jsx').includes("revision?.estado !== 'APROBADA' || !revision.sinDetalles"), leer('src/components/AprobacionSinDetalles.jsx').includes('[clave]'), leer('src/components/AprobacionSinDetalles.jsx').includes('|| tieneDetalles(orden)'), leer('src/components/revision/FilaRevision.jsx').includes('!tieneDetalles(item.orden)'), leer('src/lib/revisionDeOrden.js').includes("'revisionPagos'"),
+], [true, 2, true, true, true, true, true, true]);
+check('las reglas de Firestore aceptan el motivo de la aprobación sin detalles', leer('firestore.rules').includes("'garantiaSinDescuento', 'sinDetalles', 'por'"), true);
 check('las fotos solo las ve la oficina y solo se piden cuando la sección entra en pantalla; se abren en el visor de la app, no en otra pestaña', [
   leer('src/components/modals/DetalleOrdenModal.jsx').includes('verCobro && fotosDe(ticket).length > 0'),
   leer('src/components/FotosDeOrden.jsx').includes('cerca ? fotos.map((f) => f.ruta) : []'), leer('src/components/FotosDeOrden.jsx').includes('IntersectionObserver'),

@@ -6,6 +6,7 @@ import SelectMenu from '../SelectMenu';
 import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
 import DetalleOrdenFinanzas from '../finanzas/DetalleOrdenFinanzas';
+import DetalleOrdenModal from '../modals/DetalleOrdenModal';
 import FilaRevision from './FilaRevision';
 import RegistrarPagoOficinaModal from './RegistrarPagoOficinaModal';
 import ResumenCifras from '../finanzas/ResumenCifras';
@@ -39,7 +40,7 @@ function textoOmitidas(omitidas, verbo) {
   const otras = omitidas.length - escaladas - sinPago - sinDetalles;
   const partes = [
     sinPago > 0 && `${sinPago} ${sinPago === 1 ? 'espera' : 'esperan'} el pago del cliente (lo registra el técnico o lo registras tú)`,
-    sinDetalles > 0 && `${sinDetalles} ${sinDetalles === 1 ? 'espera' : 'esperan'} los detalles de la orden (fotos del técnico)`,
+    sinDetalles > 0 && `${sinDetalles} ${sinDetalles === 1 ? 'espera' : 'esperan'} los detalles de la orden (fotos del técnico; si no los van a subir, apruébalas una por una con "Aprobar sin detalles" y un motivo)`,
     otras > 0 && `${otras} ${verbo} una corrección primero (sin técnico o sin concepto)`,
     escaladas > 0 && `${escaladas} ${escaladas === 1 ? 'está escalada' : 'están escaladas'} a infraestructura y se ${escaladas === 1 ? 'aprueba' : 'aprueban'} una por una`,
   ].filter(Boolean);
@@ -55,6 +56,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('PENDIENTE');
   const [detalle, setDetalle] = useState(null);
+  // La orden abierta en el Detalle de la orden completo (desde el detalle de pago de Revisión).
+  const [detalleCompleto, setDetalleCompleto] = useState(null);
   const [aprobando, setAprobando] = useState(null);
   // La orden a la que el administrador le registra el pago a nombre del técnico, y los pagos ya leídos de las órdenes que lo esperaban (id de la orden -> pago, o null si no hay).
   const [registrandoPago, setRegistrandoPago] = useState(null);
@@ -171,6 +174,17 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
     setAprobando({ ...r, titulo });
   };
 
+  const copiar = async (texto, mensaje) => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setToastMsg?.({ type: 'success', text: mensaje });
+      return true;
+    } catch {
+      setToastMsg?.({ type: 'error', text: 'No se pudo copiar.' });
+      return false;
+    }
+  };
+
   const marco = (hijos) => (enPagina ? <>{hijos}</> : <Modal onClose={onClose} completa>{hijos}</Modal>);
 
   return marco(
@@ -285,7 +299,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           onClose={() => setRegistrandoPago(null)}
         />
       )}
-      {detalle && <DetalleOrdenFinanzas item={{ ...detalle, concepto: detalle.concepto || detalle.conceptoOriginal || 'AVERIA' }} tarifas={datos.tarifas} tasa={tasa} verTodoPago onClose={() => setDetalle(null)} />}
+      {detalle && <DetalleOrdenFinanzas item={{ ...detalle, concepto: detalle.concepto || detalle.conceptoOriginal || 'AVERIA' }} tarifas={datos.tarifas} tasa={tasa} verTodoPago onVerCompleto={setDetalleCompleto} onClose={() => setDetalle(null)} />}
+      {detalleCompleto && <DetalleOrdenModal ticket={detalleCompleto} verCobro verRevision onCopy={copiar} onClose={() => setDetalleCompleto(null)} zIndexClass="z-[80]" />}
       {aprobando && (
         <ConfirmModal
           color="blue"
