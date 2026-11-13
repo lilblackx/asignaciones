@@ -34,6 +34,8 @@ import { avisoOrdenReabierta, payloadEnvioInventario } from '../utils/envioInven
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { emitirCobro, sincronizarCobroDeOrden } from '../lib/cobrosClientes';
 import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
+import { subirDetallesDeOrden } from '../lib/fotosOrden';
+import { faltanDetalles, tieneDetalles } from '../utils/detallesOrden';
 import { avisoDeCobro } from '../utils/cobrosClientes';
 import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, faltaElPago, piensaPagoCliente } from '../utils/pagoCliente';
 import { ADMINISTRACION_ACTIVA } from '../constants';
@@ -54,7 +56,7 @@ const avisoCobro = (t) => {
 };
 
 // Al finalizarse una orden que pide el pago del cliente (instalación u orden con cobro), el técnico debe registrarlo: el aviso se lo dice.
-const avisoPago = (t) => (faltaElPago(t) ? ' Registra el pago del cliente.' : '');
+const avisoPago = (t) => `${faltaElPago(t) ? ' Registra el pago del cliente.' : ''}${faltanDetalles(t) ? ' Sube los detalles de la orden (fotos).' : ''}`;
 
 // Órdenes que el técnico todavía tiene por atender: solo de esas le avisa que se las quitaron o cancelaron.
 const esActiva = (t) => t?.estado === 'PENDIENTE' || t?.estado === 'PRE-FINALIZADO';
@@ -171,7 +173,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
   // propia orden (`pagoCliente`, ver utils/pagoEnOrden), así que la lista se vacía sola al guardarlo, sin leer nada más.
   const cobrosPorRegistrar = useMemo(() => {
     if (role !== 'TECNICO') return [];
-    const sinPago = tickets.filter(t => t.id !== cobroInmediato?.id && !t.pagoCliente && (debePedirPagoCobro(t, false) || debePedirPagoInstalacion(t, false)));
+    // También las finalizadas a las que les faltan los detalles de la orden (fotos): el técnico las sube en la misma pantalla.
+    const sinPago = tickets.filter(t => t.id !== cobroInmediato?.id && ((!t.pagoCliente && (debePedirPagoCobro(t, false) || debePedirPagoInstalacion(t, false))) || faltanDetalles(t)));
     const inmediato = cobroInmediato && !tickets.find(t => t.id === cobroInmediato.id)?.pagoCliente ? [cobroInmediato] : [];
     return [...inmediato, ...sinPago];
   }, [role, tickets, cobroInmediato]);
@@ -208,6 +211,21 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     } catch (error) {
       console.error('No se pudo registrar el pago del cliente:', error);
       return { error: 'No se pudo guardar el pago. Revisa tu conexión e intenta de nuevo.' };
+    }
+  };
+  // El técnico sube los detalles de la orden (2 a 7 fotos): se reducen, se suben a Storage y la orden guarda sus rutas (ver lib/fotosOrden). La orden sale de su lista cuando ya tiene el pago y los detalles.
+  const subirDetallesDeLaOrden = async (ticket, fotos, onProgreso) => {
+    if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
+    try {
+      const corregia = tieneDetalles(ticket);
+      const r = await subirDetallesDeOrden(ticket, fotos, { por: currentUser, onProgreso });
+      setToastMsg(r.enCola
+        ? { type: 'error', duration: 9000, text: 'Sin respuesta del servidor: los detalles quedaron en cola y se enviarán cuando vuelva la conexión.' }
+        : { type: 'success', text: corregia ? 'Fotos de la orden corregidas.' : 'Detalles de la orden guardados.' });
+      return { ok: true };
+    } catch (error) {
+      console.error('No se pudieron subir los detalles de la orden:', error);
+      return { error: error?.message?.startsWith('No se pudo') || error?.message?.startsWith('Sube') ? error.message : 'No se pudieron subir las fotos. Revisa tu conexión e intenta de nuevo.' };
     }
   };
   const registrarPagoPendienteDeOrden = async (ticket, { nota, compartidoCon = null }) => {
@@ -1433,7 +1451,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       detalle: `Valores del cliente guardados | ${detalleValoresCliente(valoresCliente)}`
     };
     await actualizarTicket(actual, { ...actual, valoresCliente, historialEdiciones: [...(actual.historialEdiciones || []), nuevaEdicion] });
-    setToastMsg({ type: 'success', text: exigeValoresCliente(actual) ? 'Valores del cliente guardados. El técnico los verá con el cobro.' : 'Valores del cliente guardados.' });
+    setToastMsg({ type: 'success', text: llevaCobro(actual) ? 'Valores del cliente guardados. El técnico los verá con el cobro.' : 'Valores del cliente guardados.' });
     return valoresCliente;
   };
 
@@ -1697,6 +1715,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     cobrosPorRegistrar,
     registrarPagoDeOrden,
     registrarPagoPendienteDeOrden,
+    subirDetallesDeLaOrden,
     consultarCobroRecableado,
     responderConsultaCobro,
     aprobarFinalizarTicket,

@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "emulators": "firebase emulators:start",
     "respaldo": "node scripts/respaldar-firestore.mjs",
+    "medir:fotos": "node scripts/medir-fotos-reales.mjs",
     "restaurar": "node scripts/restaurar-firestore.mjs",
     "test:respaldo": "node scripts/test-respaldo.mjs",
     "test": "node scripts/correr-pruebas.mjs",
@@ -37,6 +38,7 @@
     "seed:ventas": "node scripts/seed-ventas-emulator.mjs",
     "seed:esperas": "node scripts/seed-esperas-emulator.mjs",
     "seed:activacion": "node scripts/seed-activacion-emulator.mjs",
+    "seed:detalles": "node scripts/seed-detalles-emulator.mjs",
     "test:rules": "node scripts/test-rules.mjs",
     "test:correlativo": "node scripts/test-correlativo.mjs",
     "test:asignar": "node scripts/test-asignar-tecnico.mjs",
@@ -82,7 +84,14 @@
     "test:vnta": "node scripts/test-registro-vnta.mjs",
     "test:finanzas": "node scripts/test-finanzas.mjs",
     "test:consultacliente": "node --conditions=workerd scripts/test-consulta-cliente.mjs",
-    "test:estado": "node scripts/test-estado-sistema.mjs"
+    "test:estado": "node scripts/test-estado-sistema.mjs",
+    "test:detalles": "node scripts/test-detalles-orden.mjs",
+    "test:aparecer": "node scripts/test-mostrar-al-aparecer.mjs",
+    "test:pasosrevision": "node scripts/test-pasos-revision.mjs",
+    "test:pasosprefinalizar": "node scripts/test-pasos-prefinalizar.mjs",
+    "test:humopasos": "node scripts/test-humo-pasos.mjs",
+    "test:instalarapp": "node scripts/test-instalar-app.mjs",
+    "test:consumofotos": "node scripts/test-consumo-fotos.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

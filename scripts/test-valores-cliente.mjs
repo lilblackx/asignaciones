@@ -12,7 +12,7 @@ function check(name, actual, esperado) {
   else { failures++; console.log(`FAIL  ${name}\n      esperado ${e}, llegó ${a}`); }
 }
 
-// --- Obligatorios solo donde hay una ONU que medir y el técnico ve el cobro ---
+// --- Obligatorios donde hay una ONU que medir: en toda orden con cobro y en las instalaciones ---
 const nivel = (v) => calidadValor(v)?.nivel;
 check('obligatorios en avería, reconexión, mudanza, garantía y low signal',
   ['AVERÍA', 'RECONEXIÓN', 'MUDANZA', 'GARANTIA', 'LOW SIGNAL'].map((tipoTrabajo) => exigeValoresCliente({ tipoTrabajo })), [true, true, true, true, true]);
@@ -20,9 +20,9 @@ check('el cambio de equipo es un trabajo más, con los mismos tipos de equipo qu
   [TIPOS_TRABAJO.includes('CAMBIO DE EQUIPO'), TIPOS_POR_TRABAJO['CAMBIO DE EQUIPO'], TIPOS_POR_TRABAJO['CAMBIO DE EQUIPO'].join() === TIPOS_POR_TRABAJO['INSTALACIÓN'].join(), exigeValoresCliente({ tipoTrabajo: 'CAMBIO DE EQUIPO' })],
   [true, ['MRTV', 'MTV', 'MR', 'SM'], true, true]);
 check('no se exigen en retiro de equipo ni en validación NAP', ['RETIRO EQUIPO', 'VALIDACION NAP'].map((tipoTrabajo) => exigeValoresCliente({ tipoTrabajo })), [false, false]);
-check('no se exigen en instalaciones (no pasan por el cobro)', exigeValoresCliente({ tipoTrabajo: 'INSTALACIÓN' }), false);
+check('también se exigen en instalaciones (aunque no pasen por el cobro y el técnico no los vea)', exigeValoresCliente({ tipoTrabajo: 'INSTALACIÓN' }), true);
 check('sin orden no se exigen', exigeValoresCliente(null), false);
-check('la oficina puede guardarlos en instalaciones (opcional) y donde son obligatorios; no en retiro, validación NAP ni sin orden',
+check('la oficina los guarda en instalaciones y donde son obligatorios; no en retiro, validación NAP ni sin orden',
   [{ tipoTrabajo: 'INSTALACIÓN' }, { tipoTrabajo: 'AVERÍA' }, { tipoTrabajo: 'RETIRO EQUIPO' }, { tipoTrabajo: 'VALIDACION NAP' }, null].map(ofreceValoresCliente), [true, true, false, false, false]);
 
 // --- Escala ---

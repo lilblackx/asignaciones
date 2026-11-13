@@ -2,7 +2,7 @@ import { textoMetrajeConMarcas } from '../../utils/metraje';
 import { observacionEsInterna, observacionParaTecnico } from '../../utils/observacion';
 import PagoDelCliente from '../PagoDelCliente';
 import { pagoClienteDe } from '../../utils/pagoEnOrden';
-import { Cable, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
+import { Cable, Camera, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import HistorialTimeline from '../HistorialTimeline';
 import InsigniaVentaTecnico from '../InsigniaVentaTecnico';
@@ -21,6 +21,8 @@ import { estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../../utils/whatsapp';
 import { valoresGuardados } from '../../utils/valoresCliente';
 import CancelacionAviso from '../CancelacionAviso';
+import FotosDeOrden from '../FotosDeOrden';
+import { fotosDe } from '../../utils/detallesOrden';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 const fechaProgramada = (iso) => { const [y, m, d] = String(iso || '').split('-'); return y && m && d ? `${d}/${m}/${y}` : ''; };
@@ -163,6 +165,13 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
           )}
 
           {pagoClienteDe(ticket) && <PagoDelCliente orden={ticket} bloque />}
+
+          {/* Solo la oficina ve las fotos (el técnico las corrige desde su lista) y se piden cuando esta sección entra en pantalla, no al abrir el detalle. */}
+          {verCobro && fotosDe(ticket).length > 0 && (
+            <Seccion icono={Camera} titulo="Detalles de la orden (fotos)">
+              <FotosDeOrden ticket={ticket} />
+            </Seccion>
+          )}
 
           {plantilla && (
             <Seccion

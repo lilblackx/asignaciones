@@ -1,6 +1,6 @@
 import { observacionParaTecnico } from '../utils/observacion';
 import { useRef } from 'react';
-import { ArrowDownAZ, Ban, Banknote, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
+import { ArrowDownAZ, Ban, Banknote, Camera, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -13,7 +13,7 @@ import CancelacionAviso from './CancelacionAviso';
 import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import PagoDelCliente from './PagoDelCliente';
-import { faltaElPago } from '../utils/pagoCliente';
+import { PENDIENTE_PAGO, pendienteDelTecnico, puedeCorregirDetalles } from '../utils/detallesOrden';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
 import InsigniaGarantia from './InsigniaGarantia';
@@ -52,6 +52,7 @@ export default function TicketsTable({
   onVerDetalle,
   onPreFinalizar,
   onRegistrarPago,
+  onCorregirFotos,
   onAprobarFinalizar,
   onResponderCobro,
   onEscalar,
@@ -237,10 +238,12 @@ export default function TicketsTable({
                         )}
                         {ticket.estado === 'PENDIENTE' ? (
                           <button onClick={() => onPreFinalizar(ticket)} aria-label={`Pre-finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-xl font-bold transition-colors" title="Pre-finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
-                        ) : onRegistrarPago && faltaElPago(ticket) ? (
-                          <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`Registrar el pago de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-xl font-bold transition-colors" title="Registrar el pago del cliente"><Banknote className="w-3.5 h-3.5" aria-hidden="true" /></button>
+                        ) : onRegistrarPago && pendienteDelTecnico(ticket) ? (
+                          <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`${pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago' : 'Subir los detalles'} de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-xl font-bold transition-colors" title={pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago del cliente' : 'Subir los detalles de la orden (fotos)'}>{pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? <Banknote className="w-3.5 h-3.5" aria-hidden="true" /> : <Camera className="w-3.5 h-3.5" aria-hidden="true" />}</button>
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
+                        ) : onCorregirFotos && puedeCorregirDetalles(ticket) ? (
+                          <button onClick={() => onCorregirFotos(ticket)} aria-label={`Corregir las fotos de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors" title="Corregir las fotos de la orden"><Camera className="w-3.5 h-3.5" aria-hidden="true" /></button>
                         ) : null}
                         {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
                             comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.

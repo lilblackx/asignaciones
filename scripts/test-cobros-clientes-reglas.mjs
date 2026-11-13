@@ -42,7 +42,9 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await b.collection('users').doc('almacen-uid').set({ role: 'ALMACEN', disabled: false, username: 'alma' });
 });
 
-const AHORA = Date.now();
+// Una fecha fija anterior a FECHA_INICIO_PAGO_CLIENTE (10/11/2026): los cobros emitidos desde ese día esperan el pago del técnico y Administración no puede cargarlos hasta que lo registre (ver faltaElPagoDelTecnico). Con la fecha de hoy
+// esta prueba dejó de funcionar al pasar ese día; lo del pago del técnico lo prueban test-pagos-cliente-reglas y test-pago-en-orden.
+const AHORA = Date.parse('2026-11-05T12:00:00-04:00');
 const orden = (id, extra = {}) => ({ id, codigo: id.toUpperCase(), nombre: `Cliente ${id}`, cedula: '12345678', telefono: '0414-1234567', tecnico: 'GERARDO MOLERO', tipoTrabajo: 'AVERÍA', falla: 'LOS', tipoVisita: 'CONECTOR_EXTERNO', estado: 'FINALIZADO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', ...extra });
 const instalacion = (id) => orden(id, { tipoTrabajo: 'INSTALACIÓN', tipoVisita: '', cobroBs: '', cobroTipo: '' });
 const emitir = (ctx, id, por = 'usuario', o = orden(id)) => cobros(ctx).doc(id).set(armarCobro(o, { por, ahora: AHORA }));

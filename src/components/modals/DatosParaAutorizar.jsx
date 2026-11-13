@@ -1,4 +1,4 @@
-import { ExternalLink, FileText, MapPin, Router, User } from 'lucide-react';
+import { ExternalLink, FileText, MapPin, Router, ShieldCheck, User } from 'lucide-react';
 import BotonCopiar, { BotonCopiarDato } from '../BotonCopiar';
 import { useCopiado } from '../../hooks/useCopiado';
 import { buildSmartOltUrl } from '../../utils/smartolt';
@@ -56,7 +56,9 @@ function Bloque({ titulo, icono: Icono, datos, ticket, copiado, onCopiar, classN
   );
 }
 
-export default function DatosParaAutorizar({ ticket, onCopy }) {
+// `paraAutorizar` (por defecto sí): la orden necesita autorizar un equipo en SmartOLT (ver requiereAutorizar). Si no, el mismo bloque dice "Datos del cliente" (y su tarjeta del equipo, "NAP"): son los mismos datos para copiar, sin
+// hablar de autorizar lo que no hay que autorizar.
+export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = true }) {
   const { equipo, cliente, texto } = datosAutorizacion(ticket);
   const { copiado, copiar } = useCopiado(onCopy);
 
@@ -64,8 +66,12 @@ export default function DatosParaAutorizar({ ticket, onCopy }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400">Para autorizar en SmartOLT</p>
+      {/* El título de la sección, como los demás del modal (COBRO, RECABLEADO...): más grande, con su ícono rojo y la línea roja de las ventanas de la app. */}
+      <div className="flex items-center justify-between gap-2 pb-2 border-b-2 border-red-600">
+        <h3 className="min-w-0 flex items-center gap-2 text-sm font-black tracking-wide uppercase text-zinc-900 dark:text-white">
+          {paraAutorizar ? <ShieldCheck className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> : <User className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />}
+          <span className="truncate">{paraAutorizar ? 'Para autorizar en SmartOLT' : 'Datos del cliente'}</span>
+        </h3>
         <BotonCopiar
           copiado={copiado === 'todo'}
           onClick={() => copiar('todo', texto, 'Datos copiados.')}
@@ -80,7 +86,7 @@ export default function DatosParaAutorizar({ ticket, onCopy }) {
       {/* En el celular el equipo va primero (es lo que más se usa); en escritorio, el cliente a la izquierda y el equipo a la derecha. */}
       <div className="grid gap-3 md:grid-cols-2 items-start">
         <Bloque
-          titulo="EQUIPO"
+          titulo={paraAutorizar ? 'EQUIPO' : 'NAP'}
           icono={Router}
           datos={equipo}
           ticket={ticket}

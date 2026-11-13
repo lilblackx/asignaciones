@@ -16,7 +16,8 @@ const claseEtiqueta = 'text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1';
 // conecta el cliente (iguales que en la visita de conector externo), metraje del drop (inicial y final; el total se calcula), posteadura (uno o varios
 // postes) y puertos disponibles en la NAP. Todo es obligatorio. Si se cambia el orden aquí, también el del
 // modal de revisión y el del foco al validar (PreFinalizarModal): lo vigila la prueba de utils/instalacion.
-export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, postes, onPostes, metrajeInicial, onMetrajeInicial, metrajeFinal, onMetrajeFinal, metrajeExistente = false, onMetrajeExistente, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
+// `parte`: 'equipo' (serial, VLAN, NAP y puerto), 'cable' (metraje, posteadura y puertos disponibles) o 'todo'. El formulario de pre-finalizar los muestra en dos pasos.
+export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vlan, onVlan, postes, onPostes, metrajeInicial, onMetrajeInicial, metrajeFinal, onMetrajeFinal, metrajeExistente = false, onMetrajeExistente, nap, onNap, puerto, onPuerto, puertosDisponibles, onPuertosDisponibles, errores }) {
   const cambiarPoste = (i, valor) => onPostes(postes.map((p, j) => (j === i ? valor : p)));
   // Recuadro del serial: verde si es correcto; rojo si no (el rojo sale al salir del campo, salvo "GOPN", que se avisa de una vez).
   const [serialTocado, setSerialTocado] = useState(false);
@@ -26,6 +27,8 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
 
   return (
     <div className="space-y-4">
+      {parte !== 'cable' && (
+      <>
       <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Estos datos se escriben en la plantilla de la orden, que luego puedes copiar completa.</p>
 
       <div className="space-y-1">
@@ -78,7 +81,11 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
       </div>
 
       <NapPuertoCampos nap={nap} onNap={onNap} napError={errores.nap} puerto={puerto} onPuerto={onPuerto} puertoError={errores.puerto} />
+      </>
+      )}
 
+      {parte !== 'equipo' && (
+      <>
       <div className="space-y-1">
         <p className={claseEtiqueta}>
           METRAJE DEL DROP <span className="font-normal text-zinc-400">marca del cable al empezar y al terminar</span>
@@ -166,6 +173,8 @@ export default function DatosInstalacion({ serial, onSerial, vlan, onVlan, poste
           ? <p id="pf-puertos-disponibles-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.puertosDisponibles}</p>
           : <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Los que quedan libres en la NAP (si no queda ninguno, escribe 0).</p>}
       </div>
+      </>
+      )}
     </div>
   );
 }

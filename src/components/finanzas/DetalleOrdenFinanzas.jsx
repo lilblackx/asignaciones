@@ -12,6 +12,8 @@ import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
 import InsigniaJM from '../InsigniaJM';
 import PagoDelCliente from '../PagoDelCliente';
 import CobroClienteDetalle from '../CobroClienteDetalle';
+import FotosDeOrden from '../FotosDeOrden';
+import { fotosDe } from '../../utils/detallesOrden';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
@@ -82,6 +84,13 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           )}
 
           {!registro && <PagoDelCliente orden={orden} bloque paraFinanzas={!verTodoPago} />}
+
+          {!registro && fotosDe(orden).length > 0 && (
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
+              <p className={ETIQUETA}>Detalles de la orden (fotos del técnico)</p>
+              <FotosDeOrden ticket={orden} />
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-3 rounded-xl bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
             <div className="min-w-0">

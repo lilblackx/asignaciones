@@ -35,9 +35,11 @@ import RangoFechas from '../RangoFechas';
 function textoOmitidas(omitidas, verbo) {
   const escaladas = omitidas.filter((o) => o.escalada).length;
   const sinPago = omitidas.filter((o) => o.sinPago).length;
-  const otras = omitidas.length - escaladas - sinPago;
+  const sinDetalles = omitidas.filter((o) => o.sinDetalles).length;
+  const otras = omitidas.length - escaladas - sinPago - sinDetalles;
   const partes = [
     sinPago > 0 && `${sinPago} ${sinPago === 1 ? 'espera' : 'esperan'} el pago del cliente (lo registra el técnico o lo registras tú)`,
+    sinDetalles > 0 && `${sinDetalles} ${sinDetalles === 1 ? 'espera' : 'esperan'} los detalles de la orden (fotos del técnico)`,
     otras > 0 && `${otras} ${verbo} una corrección primero (sin técnico o sin concepto)`,
     escaladas > 0 && `${escaladas} ${escaladas === 1 ? 'está escalada' : 'están escaladas'} a infraestructura y se ${escaladas === 1 ? 'aprueba' : 'aprueban'} una por una`,
   ].filter(Boolean);

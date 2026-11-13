@@ -84,7 +84,7 @@ check('un conector interno, cambio de equipo, configuración de router y fuente 
 // --- Lo que vigila el código del formulario y del guardado ---
 const modal = readFileSync(new URL('../src/components/modals/PreFinalizarModal.jsx', import.meta.url), 'utf8');
 check('el formulario pone los dos campos separados solo en las visitas que lo piden, ya no hay campo suelto y el tipo es obligatorio',
-  [/\) : visitaConNapPuerto \? \(\s+<NapPuertoCampos/.test(modal), !modal.includes('NAP / CAJA / PUERTO'), /items=\{TIPOS_VISITA_OBLIGATORIO\}/.test(modal), /TIPO DE VISITA <span[^>]*>\(obligatorio\)/.test(modal)], [true, true, true, true]);
+  [/!esInstalacion && visitaConNapPuerto && \(\s+<NapPuertoCampos/.test(modal), !modal.includes('NAP / CAJA / PUERTO'), /items=\{TIPOS_VISITA_OBLIGATORIO\}/.test(modal), /TIPO DE VISITA <span[^>]*>\(obligatorio\)/.test(modal)], [true, true, true, true]);
 const hook = readFileSync(new URL('../src/hooks/useTickets.js', import.meta.url), 'utf8');
 check('al guardar también se exige el tipo de visita y la NAP con el puerto', /errorTipoVisita\(ticket\.tipoTrabajo, tipoVisita\) \|\| errorNapPuertoVisita\(tipoVisita, nap\)/.test(hook), true);
 const contadores = readFileSync(new URL('../src/components/modals/ConectoresRecableado.jsx', import.meta.url), 'utf8');

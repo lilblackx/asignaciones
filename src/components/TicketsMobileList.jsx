@@ -2,7 +2,7 @@ import { observacionParaTecnico } from '../utils/observacion';
 import { Fragment } from 'react';
 import { esProgramadaFutura } from '../utils/programada';
 import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
-import { Ban, Banknote, Calendar, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench } from 'lucide-react';
+import { Ban, Banknote, Calendar, Camera, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
 import DevolucionAviso from './DevolucionAviso';
@@ -23,7 +23,7 @@ import { ESTADO_EN_SITIO, estadoViaje } from '../utils/enCamino';
 import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
-import { faltaElPago } from '../utils/pagoCliente';
+import { PENDIENTE_PAGO, pendienteDelTecnico, puedeCorregirDetalles } from '../utils/detallesOrden';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -42,6 +42,7 @@ export default function TicketsMobileList({
   onVerDetalle,
   onPreFinalizar,
   onRegistrarPago,
+  onCorregirFotos,
   onAprobarFinalizar,
   onResponderCobro,
   onEscalar,
@@ -248,14 +249,18 @@ export default function TicketsMobileList({
                   <button onClick={() => onPreFinalizar(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-[13px] transition-colors">
                     <CheckCircle2 className="w-4 h-4" /> Pre-finalizar
                   </button>
-                ) : onRegistrarPago && faltaElPago(ticket) ? (
+                ) : onRegistrarPago && pendienteDelTecnico(ticket) ? (
                   <button onClick={() => onRegistrarPago(ticket.id)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 hover:bg-emerald-200 dark:hover:bg-emerald-500/25 font-bold text-[13px] transition-colors">
-                    <Banknote className="w-4 h-4" aria-hidden="true" /> Registrar el pago
+                    {pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? <><Banknote className="w-4 h-4" aria-hidden="true" /> Registrar el pago</> : <><Camera className="w-4 h-4" aria-hidden="true" /> Subir detalles</>}
                   </button>
                 ) : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? (
                   <div className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-400 font-bold text-sm">
                     <Clock className="w-4 h-4" /> En espera
                   </div>
+                ) : onCorregirFotos && puedeCorregirDetalles(ticket) ? (
+                  <button onClick={() => onCorregirFotos(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-zinc-800 dark:text-zinc-200 font-bold text-[13px] hover:bg-zinc-50 dark:hover:bg-zinc-700/40 transition-colors">
+                    <Camera className="w-4 h-4" aria-hidden="true" /> Corregir fotos
+                  </button>
                 ) : null}
                 {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
                     comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.

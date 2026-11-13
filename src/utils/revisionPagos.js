@@ -14,6 +14,7 @@ import { ajustesDeOrden, idsAjustesDeOrden } from './ajustes.js';
 import { RESULTADO_CERRADA, RESULTADO_DEVUELTA } from './infraestructura.js';
 import { diaLegible } from './periodoReporte.js';
 import { faltaElPago } from './pagoCliente.js';
+import { faltanDetalles, textoFaltanDetalles } from './detallesOrden.js';
 import { diaDe } from './totalesMes.js';
 
 export const ESTADOS_REVISION = ['PENDIENTE', 'APROBADA', 'RETENIDA', 'EXCLUIDA'];
@@ -106,6 +107,9 @@ export const motivoSinPago = (item) => (faltaElPago(item?.orden)
   ? `Falta el pago del cliente: lo registra el técnico${item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}. Si no puede, regístralo tú.`
   : '');
 
+// Lo mismo con los detalles de la orden (2 a 7 fotos que sube el técnico, ver utils/detallesOrden): sin ellos la orden no se aprueba. '' si no faltan.
+export const motivoSinDetalles = (item) => (faltanDetalles(item?.orden) ? `${textoFaltanDetalles(item.orden.tecnico)} No se puede aprobar hasta que los suba.` : '');
+
 // Lo que ve Finanzas: lo aprobado y lo que ya se pagó (las ya pagadas siguen a la vista de los reportes). `pagadas`: Set de claves de ordenesPagadas. Una orden aprobada con descuento
 // no se paga como orden a nadie: Finanzas solo ve su descuento y su bono (ajustes).
 export const paraFinanzas = (revisados, pagadas = new Set()) => revisados
@@ -179,7 +183,7 @@ export function armarRevision(item, accion, { por, ahora, motivo = '', correccio
     texto = m.valor;
   }
   if (estado === 'APROBADA') {
-    const problema = motivoNoAprobable(efectivo) || motivoSinPago(efectivo);
+    const problema = motivoNoAprobable(efectivo) || motivoSinPago(efectivo) || motivoSinDetalles(efectivo);
     if (problema) return { error: problema };
   }
   const ajustes = estado === 'APROBADA' ? ajustesDeOrden(efectivo, { por, ahora, sinTecnico: SIN_TECNICO }) : [];
@@ -224,7 +228,7 @@ export function aprobarPendientes(revisados, { por, ahora }) {
     // Lo escalado a infraestructura se aprueba una por una: quien revisa tiene que ver su alerta.
     if (item.escalada) { omitidas.push({ item, motivo: 'Está escalada a infraestructura: apruébala una por una.', escalada: true }); continue; }
     const r = armarRevision(item, 'APROBAR', { por, ahora });
-    if (r.error) omitidas.push({ item, motivo: r.error, ...(motivoSinPago(item) && !motivoNoAprobable(item) ? { sinPago: true } : {}) }); else documentos.push(r);
+    if (r.error) omitidas.push({ item, motivo: r.error, ...(motivoSinPago(item) && !motivoNoAprobable(item) ? { sinPago: true } : motivoSinDetalles(item) && !motivoNoAprobable(item) ? { sinDetalles: true } : {}) }); else documentos.push(r);
   }
   return { documentos, omitidas };
 }

@@ -1,6 +1,7 @@
 import { useImperativeHandle, useMemo, useState } from 'react';
 import { CheckCircle2, Clock, Link2 } from 'lucide-react';
 import Colapsable from './Colapsable';
+import { useMostrarAlAparecer } from '../hooks/useMostrarAlAparecer';
 import SelectMenu from './SelectMenu';
 import Spinner from './Spinner';
 import CampoFecha from './CampoFecha';
@@ -58,6 +59,8 @@ export default function FormularioPagoCliente({
   const [hoy] = useState(() => fechaHoraDeMarca(Date.now()).fecha);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // "El cliente paga después" abre un campo nuevo (la nota) más abajo: cuando termina de desplegarse, la pantalla baja suave hasta mostrarlo completo con su botón y el cursor queda dentro de la nota.
+  const mostrarPagaDespues = useMostrarAlAparecer({ enfocar: `${idPrefijo}-nota-pendiente` });
   const [repetida, setRepetida] = useState(null);
   const [pagaDespues, setPagaDespues] = useState(false);
   const [notaPendiente, setNotaPendiente] = useState('');
@@ -318,7 +321,7 @@ export default function FormularioPagoCliente({
                 <Clock className="w-4 h-4" aria-hidden="true" /> El cliente paga después
               </button>
               <Colapsable>{pagaDespues && (
-                <div className="space-y-2">
+                <div ref={mostrarPagaDespues} className="space-y-2">
                   {areaPaga}
                   <button type="button" onClick={confirmarPagaDespues} disabled={bloqueado} className={`${BOTON} w-full h-11`}>
                     {guardando ? <Spinner /> : null} Confirmar: el cliente paga después
