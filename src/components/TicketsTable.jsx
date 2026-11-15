@@ -1,6 +1,6 @@
 import { observacionParaTecnico } from '../utils/observacion';
 import { useRef } from 'react';
-import { ArrowDownAZ, Ban, Banknote, Camera, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
+import { Ban, Banknote, Camera, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -42,7 +42,6 @@ export default function TicketsTable({
   isTecnico = false,
   hasAnyTickets = true,
   sortBy,
-  setSortBy,
   getTecnicoColor,
   onEdit,
   onCancelar,
@@ -87,13 +86,7 @@ export default function TicketsTable({
             <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[16%] align-middle text-center">NOMBRE</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[13%] min-[1440px]:w-[12%] align-middle text-center">CÉDULA</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[18%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] align-middle text-center group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
-              {/* El título va centrado como los demás; el ícono de orden cuelga a su derecha sin correrlo. */}
-              <span className="relative block w-fit mx-auto">
-                FALLA / TRABAJO
-                <ArrowDownAZ className={`absolute left-full top-1/2 -translate-y-1/2 ml-1 w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-400 group-hover:text-zinc-300'}`} />
-              </span>
-            </th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] align-middle text-center">FALLA / TRABAJO</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[14%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
             <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
@@ -212,7 +205,6 @@ export default function TicketsTable({
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-1">
                     {ticket.tecnico && (
                       <NombreTecnico nombre={ticket.tecnico} getTecnicoColor={getTecnicoColor} />
-                    {isTecnico && <FaltaPorCompletar ticket={ticket} />}
                     )}
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
@@ -220,6 +212,7 @@ export default function TicketsTable({
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-0.5">
                     <span className={`inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
+                    {isTecnico && <FaltaPorCompletar ticket={ticket} />}
                     {cerrada && (
                       <span className="text-[11px] max-lg:text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
                         {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}

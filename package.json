@@ -93,6 +93,7 @@
     "test:instalarapp": "node scripts/test-instalar-app.mjs",
     "test:consumofotos": "node scripts/test-consumo-fotos.mjs",
     "test:pendientes": "node scripts/test-pendientes-tecnico.mjs",
+    "test:encabezado": "node scripts/test-tabla-encabezado.mjs",
     "test:filarevision": "node scripts/test-fila-revision.mjs"
   },
   "dependencies": {

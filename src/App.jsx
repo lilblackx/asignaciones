@@ -805,7 +805,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               isTecnico={isTecnico}
               hasAnyTickets={hasActiveAssignments}
               sortBy={sortBy}
-              setSortBy={setSortBy}
               getTecnicoColor={getTecnicoColor}
               onEdit={abrirEdicion}
               onCancelar={setCancelarTarget}
