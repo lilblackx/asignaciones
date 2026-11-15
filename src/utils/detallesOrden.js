@@ -82,6 +82,55 @@ export function validarDetalles(detalles, ticketId) {
 
 export const textoFaltanDetalles = (tecnico) => `Faltan los detalles de la orden (fotos): los sube el técnico${tecnico ? ` (${tecnico})` : ''}.`;
 
+// --- Elegir y subir las fotos desde el teléfono (galería, otra app o la cámara) ---
+// Lo que se sabe de un archivo elegido sin abrirlo: un tipo que no es imagen (un PDF, un video) se rechaza al elegirlo; un tipo vacío o genérico ("octet-stream": algunas apps entregan así la foto) se intenta abrir. El HEIC (algunos iPhone y Samsung)
+// no lo abre el navegador de Android: se avisa con qué hacer.
+export const noEsImagen = (archivo) => Boolean(archivo?.type) && !/^image\//i.test(archivo.type) && !/octet-stream$/i.test(archivo.type);
+export const esFormatoHeic = (archivo) => /image\/hei[cf]/i.test(archivo?.type || '') || /\.hei[cf]$/i.test(archivo?.name || '');
+export const textoFotoIlegible = (archivo) => (esFormatoHeic(archivo)
+  ? 'No se pudo abrir: está en formato HEIC. En la cámara elige el formato "Más compatible" (JPG) o toma otra.'
+  : 'No se pudo leer esta foto. Quítala y toma otra.');
+
+// Cada foto se sube con hasta INTENTOS_POR_FOTO intentos (con otro nombre, porque Storage no deja sobrescribir) y se da por trabada si pasa ESPERA_SIN_AVANCE_MS sin que avance ni un byte.
+export const INTENTOS_POR_FOTO = 2;
+export const ESPERA_SIN_AVANCE_MS = 45000;
+// Los errores que reintentar no arregla (sin permiso, sin sesión, sin cupo, sin bucket) se muestran de una vez.
+const SIN_REINTENTO = ['storage/unauthorized', 'storage/unauthenticated', 'storage/quota-exceeded', 'storage/bucket-not-found', 'storage/project-not-found', 'storage/invalid-argument', 'storage/invalid-checksum', 'storage/canceled'];
+export const sePuedeReintentar = (codigo) => !SIN_REINTENTO.includes(codigo);
+// Qué se le dice al técnico según el error de Cloud Storage. Siempre empieza con "No se pudo" (es lo que la app deja pasar tal cual, ver ErrorDeFotos).
+// Todos terminan con el código del error entre paréntesis: así, si algo falla en el teléfono de un técnico, quien lo ve puede decir cuál fue (y no se confunde un permiso con la señal).
+const conCodigo = (texto, codigo) => `${texto} (código: ${codigo || 'desconocido'})`;
+export function textoErrorDeSubida(codigo) {
+  switch (codigo) {
+    case 'storage/unauthorized':
+    case 'storage/unauthenticated':
+      return conCodigo('No se pudo subir: no hay permiso para guardar fotos en esta orden. Cierra sesión, entra de nuevo e inténtalo otra vez; si sigue igual, avisa a la oficina.', codigo);
+    case 'storage/quota-exceeded':
+      return conCodigo('No se pudo subir: el almacenamiento está lleno. Avisa a la oficina.', codigo);
+    case 'storage/bucket-not-found':
+    case 'storage/project-not-found':
+      return conCodigo('No se pudo subir: el almacenamiento de fotos no está disponible. Avisa a la oficina.', codigo);
+    case 'subida/sin-avance':
+      return conCodigo('No se pudo subir: la subida no avanza, la señal es muy débil. Busca mejor señal e inténtalo de nuevo (las fotos se conservan).', codigo);
+    case 'storage/retry-limit-exceeded':
+      return conCodigo('No se pudo subir: no hay buena conexión. Busca mejor señal e inténtalo de nuevo (las fotos se conservan).', codigo);
+    default:
+      return conCodigo('No se pudo subir las fotos. Inténtalo de nuevo; si sigue igual, avisa a la oficina con este código (las fotos se conservan).', codigo);
+  }
+}
+// Lo mismo con el error de Firestore al guardar la orden con sus fotos ya subidas.
+export function textoErrorDeGuardado(codigo) {
+  switch (codigo) {
+    case 'permission-denied':
+      return conCodigo('No se pudo guardar la orden: no hay permiso (la orden cambió o ya no está a tu nombre). Avisa a la oficina.', `firestore/${codigo}`);
+    case 'unavailable':
+    case 'deadline-exceeded':
+      return conCodigo('No se pudo guardar la orden: no hay buena conexión. Busca mejor señal e inténtalo de nuevo (las fotos se conservan).', `firestore/${codigo}`);
+    default:
+      return conCodigo('No se pudo guardar la orden con sus fotos. Inténtalo de nuevo; si sigue igual, avisa a la oficina con este código (las fotos se conservan).', codigo ? `firestore/${codigo}` : '');
+  }
+}
+
 // Lo que le falta al técnico en una orden finalizada: 'PAGO' (el pago del cliente), 'DETALLES' (las fotos) o '' (nada). Primero el pago.
 export const PENDIENTE_PAGO = 'PAGO';
 export const PENDIENTE_DETALLES = 'DETALLES';

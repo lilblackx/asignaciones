@@ -3,7 +3,7 @@
 // Uso: `npm run test:detalles`.
 import { readFileSync, readdirSync } from 'node:fs';
 import {
-  BYTES_MAXIMOS_FOTO, FECHA_INICIO_DETALLES, MAX_FOTOS, MIN_FOTOS, PENDIENTE_DETALLES, PENDIENTE_PAGO, armarDetalles, carpetaDeFotos, debePedirDetalles, dimensionesReducidas, faltanDetalles, fotosDe, nombreDeFoto, pendienteDelTecnico, puedeCorregirDetalles, rutasQuitadas, tieneDetalles, validarDetalles,
+  BYTES_MAXIMOS_FOTO, ESPERA_SIN_AVANCE_MS, FECHA_INICIO_DETALLES, INTENTOS_POR_FOTO, esFormatoHeic, noEsImagen, sePuedeReintentar, textoErrorDeGuardado, textoErrorDeSubida, textoFotoIlegible, MAX_FOTOS, MIN_FOTOS, PENDIENTE_DETALLES, PENDIENTE_PAGO, armarDetalles, carpetaDeFotos, debePedirDetalles, dimensionesReducidas, faltanDetalles, fotosDe, nombreDeFoto, pendienteDelTecnico, puedeCorregirDetalles, rutasQuitadas, tieneDetalles, validarDetalles,
 } from '../src/utils/detallesOrden.js';
 import { aprobarPendientes, armarRevision, motivoSinDetalles } from '../src/utils/revisionPagos.js';
 
@@ -141,3 +141,27 @@ check('firebase.json: reglas de Storage, emulador y las fotos permitidas en la p
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron');
+// --- Elegir y subir las fotos desde el teléfono: galería, otra app o la cámara de la app ---
+check('al elegir solo se rechaza lo que dice no ser imagen: un PDF o un video sí; sin tipo, "octet-stream" (algunas apps) y las imágenes de cualquier formato se intentan abrir', [
+  { type: 'application/pdf' }, { type: 'video/mp4' }, { type: '' }, { type: 'application/octet-stream' }, { type: 'image/jpeg' }, { type: 'image/webp' }, { type: 'image/heic' }, {},
+].map(noEsImagen), [true, true, false, false, false, false, false, false]);
+check('el HEIC se reconoce por su tipo o por su extensión y el mensaje dice qué hacer', [esFormatoHeic({ type: 'image/heic' }), esFormatoHeic({ name: 'IMG_1.HEIC', type: '' }), esFormatoHeic({ name: 'a.jpg', type: 'image/jpeg' }), textoFotoIlegible({ name: 'a.heic' }).includes('Más compatible'), textoFotoIlegible({ name: 'a.jpg' }).startsWith('No se pudo leer')], [true, true, false, true, true]);
+check('cada foto se sube con 2 intentos y se da por trabada a los 45 s sin avance', [INTENTOS_POR_FOTO, ESPERA_SIN_AVANCE_MS], [2, 45000]);
+check('no se reintenta lo que reintentar no arregla (sin permiso, sin sesión, sin cupo) y sí la mala señal', [['storage/unauthorized', 'storage/unauthenticated', 'storage/quota-exceeded', 'storage/canceled'].map(sePuedeReintentar), ['storage/unknown', 'storage/retry-limit-exceeded', 'subida/sin-avance', undefined].map(sePuedeReintentar)], [[false, false, false, false], [true, true, true, true]]);
+check('todo error de subida tiene un texto para el técnico que empieza con "No se pudo" y dice qué hacer', ['storage/unauthorized', 'storage/quota-exceeded', 'storage/bucket-not-found', 'subida/sin-avance', 'storage/retry-limit-exceeded', 'storage/unknown', 'otro/raro', undefined].map(textoErrorDeSubida).every((t) => t.startsWith('No se pudo') && t.length > 40), true);
+check('todos los errores llevan su código para poder decir cuál fue, y un permiso ya no se presenta como un problema de conexión', [
+  ['storage/unauthorized', 'storage/retry-limit-exceeded', 'storage/unknown', 'otro/raro', undefined].every((c) => textoErrorDeSubida(c).includes(`(código: ${c || 'desconocido'})`)),
+  ['permission-denied', 'unavailable', 'aborted', undefined].every((c) => textoErrorDeGuardado(c).startsWith('No se pudo guardar la orden') && textoErrorDeGuardado(c).includes('código: ')),
+  /conexi[oó]n/i.test(textoErrorDeSubida('storage/unauthorized')), /conexi[oó]n/i.test(textoErrorDeGuardado('permission-denied')), textoErrorDeSubida('storage/unauthorized').includes('permiso'),
+], [true, true, false, false, true]);
+check('la subida trabada y la mala señal dicen que las fotos se conservan', [textoErrorDeSubida('subida/sin-avance'), textoErrorDeSubida('storage/unknown'), textoErrorDeSubida('otro')].every((t) => t.includes('se conservan')), true);
+const campo = leer('src/components/DetallesOrdenCampo.jsx');
+const fotosLib = leer('src/lib/fotosOrden.js');
+check('la cámara tiene su botón propio ("Tomar foto", capture=environment) y la galería otro que deja elegir varias, sin que quepa duda', [campo.includes('capture="environment"'), campo.includes('Tomar foto'), campo.includes('> Galería'), campo.includes('type="file" accept="image/*" multiple')], [true, true, true, true]);
+check('cada foto se reduce al elegirla (una por vez), se ve la que no se pudo abrir y no se sube con fotos marcadas ni mientras se preparan', [campo.includes('comprimirFoto(archivo)'), campo.includes("estado: 'error'"), campo.includes('conError > 0'), campo.includes('disabled={subiendo || preparando || !huboCambios}'), campo.includes('cola.current = cola.current.then')], [true, true, true, true, true]);
+check('al subir se usa la foto ya reducida, con reintento y vigilante de subida trabada, sin conexión se avisa de una vez, y el texto del error llega al técnico', [
+  fotosLib.includes('f.blob || await comprimirFoto(f.archivo)'), fotosLib.includes('uploadBytesResumable'), fotosLib.includes("code: 'subida/sin-avance'"), fotosLib.includes('INTENTOS_POR_FOTO'), fotosLib.includes('navigator.onLine === false'),
+  leer('src/hooks/useTickets.js').includes('error instanceof ErrorDeFotos'),
+], [true, true, true, true, true, true]);
+check('la foto se abre con respaldos (orientación, sin opciones, etiqueta img) y un PNG con transparencia queda sobre fondo blanco', [fotosLib.includes("imageOrientation: 'from-image'"), fotosLib.includes('await imagen.decode()'), fotosLib.includes("fillStyle = '#ffffff'")], [true, true, true]);
+check('el botón de guardar las fotos no se apaga con menos de 2 (parecería que no hace nada): al tocarlo dice cuántas faltan y qué botones usar', [campo.includes('disabled={subiendo || preparando || !huboCambios}'), campo.includes('fotos.length < MIN_FOTOS) { setError('), campo.includes('toca «Tomar foto» o «Galería»')], [true, true, true]);

@@ -3,7 +3,10 @@ rules_version = '2';
 // Fotos de los "Detalles de la orden" (ver src/utils/detallesOrden.js): ordenes/{id de la orden}/{archivo}.jpg
 // Los roles y la orden se leen de Firestore (cada petición hace 2 lecturas: el perfil de quien sube y la orden).
 // Sube solo el TECNICO de la orden, cuando ya está FINALIZADA, y solo JPEG de hasta 1 MB. Nadie sobrescribe una foto: para cambiarla se sube otra y se quita la anterior (solo la borra el técnico de la orden mientras siga finalizada); el bucket borra el resto a los 60 días.
-// Leen la oficina (ADMIN y USUARIO), ADMINISTRACION, FINANZAS, el técnico de la orden e INFRAESTRUCTURA con el permiso de historial. Mantener la sesión igual que firestore.rules (24 h; 7 días si es TECNICO).
+// Leen la oficina (ADMIN y USUARIO), ADMINISTRACION, FINANZAS, el técnico de la orden e INFRAESTRUCTURA con el permiso de historial.
+// IMPORTANTE: estas reglas leen Firestore (firestore.get), y para eso la cuenta de servicio de Storage (service-NUMERO_DEL_PROYECTO@gcp-sa-firebasestorage.iam.gserviceaccount.com) necesita el rol "Firebase Rules Firestore Service Agent"
+// (roles/firebaserules.firestoreServiceAgent). La CLI lo concede, preguntando, al desplegar estas reglas desde una terminal interactiva; en modo no interactivo (sin terminal) lo omite en silencio y TODA subida y lectura de fotos
+// da 403 (storage/unauthorized). Si se cambia de proyecto o de cuenta de servicio, volver a desplegar `storage` desde una terminal y responder que sí. Mantener la sesión igual que firestore.rules (24 h; 7 días si es TECNICO).
 service firebase.storage {
   match /b/{bucket}/o {
 

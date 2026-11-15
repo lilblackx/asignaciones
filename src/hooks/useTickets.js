@@ -34,7 +34,7 @@ import { avisoOrdenReabierta, payloadEnvioInventario } from '../utils/envioInven
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { emitirCobro, sincronizarCobroDeOrden } from '../lib/cobrosClientes';
 import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
-import { subirDetallesDeOrden } from '../lib/fotosOrden';
+import { ErrorDeFotos, subirDetallesDeOrden } from '../lib/fotosOrden';
 import { faltanDetalles, tieneDetalles } from '../utils/detallesOrden';
 import { avisoDeCobro } from '../utils/cobrosClientes';
 import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, faltaElPago, piensaPagoCliente } from '../utils/pagoCliente';
@@ -225,7 +225,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return { ok: true };
     } catch (error) {
       console.error('No se pudieron subir los detalles de la orden:', error);
-      return { error: error?.message?.startsWith('No se pudo') || error?.message?.startsWith('Sube') ? error.message : 'No se pudieron subir las fotos. Revisa tu conexión e intenta de nuevo.' };
+      return { error: error instanceof ErrorDeFotos || error?.message?.startsWith('Sube') ? error.message : `No se pudo subir las fotos. Inténtalo de nuevo; si sigue igual, avisa a la oficina con este código (las fotos se conservan). (código: ${error?.code || 'desconocido'})` };
     }
   };
   const registrarPagoPendienteDeOrden = async (ticket, { nota, compartidoCon = null }) => {
