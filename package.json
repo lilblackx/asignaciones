@@ -92,6 +92,7 @@
     "test:humopasos": "node scripts/test-humo-pasos.mjs",
     "test:instalarapp": "node scripts/test-instalar-app.mjs",
     "test:consumofotos": "node scripts/test-consumo-fotos.mjs",
+    "test:temporada": "node scripts/test-temporada-logo.mjs",
     "test:pendientes": "node scripts/test-pendientes-tecnico.mjs",
     "test:encabezado": "node scripts/test-tabla-encabezado.mjs",
     "test:filarevision": "node scripts/test-fila-revision.mjs"

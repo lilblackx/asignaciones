@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LogOut, MonitorSmartphone, Moon, Network, PackageCheck, Settings, ShieldCheck, Sun, TrendingUp, Users, Wallet, X } from 'lucide-react';
 import { ADMINISTRACION_ACTIVA } from '../constants';
+import { logosDeTemporada } from '../utils/temporada';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 // Los botones del pie (tema y cerrar sesión): cuadrados redondeados con su propio fondo y borde, no iconos sueltos.
@@ -17,6 +18,8 @@ const guardarColapsado = (valor) => { try { localStorage.setItem(CLAVE_COLAPSADO
 //   activo: el módulo que está a la vista ('oficina', 'revision', 'finanzas', 'almacen' o 'ventas'); los demás son ventanas que se abren encima.
 export default function Sidebar({ acciones, veInventario = false, veEstaciones = false, alertasInventario = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
   const [colapsado, setColapsado] = useState(leerColapsado);
+  // El logo de Navidad solo en el menú (y en el login), por fechas; el ícono de la app instalada no cambia (ver utils/temporada).
+  const logos = logosDeTemporada();
   // Si la lista de módulos no cabe, un degradado sobre el pie avisa de que sigue hacia abajo (se quita al llegar al final).
   const listaRef = useRef(null);
   const [masAbajo, setMasAbajo] = useState(false);
@@ -80,7 +83,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
       >
         <div className={`flex items-center justify-between px-5 h-[62px] shrink-0 border-b-4 border-red-600 bg-black text-white ${colapsado ? 'lg:justify-center' : ''}`}>
           <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className={`flex items-center rounded-xl hover:opacity-80 transition-opacity ${colapsado ? 'lg:hidden' : ''}`}>
-            <img src="/logo-menu.png" alt="" width="93" height="44" className="h-11 w-auto" />
+            <img src={logos.menu} alt="" width={logos.menuAncho} height={logos.menuAlto} className={logos.menuClase} />
           </button>
           <button
             type="button"
