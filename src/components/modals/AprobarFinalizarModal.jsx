@@ -61,6 +61,8 @@ function FilaResumen({ etiqueta, valor, ok, onCambiar }) {
 export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando = [], montoBs, onConfirm, onGuardarValores, onDevolver, onCopy, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [devolviendo, setDevolviendo] = useState(false);
+  // El paso desde el que se tocó "Devolver" (que salta directo a la decisión): si se cancela, se vuelve a ese paso y no se queda la ventana en la decisión sin haber pasado por lo obligatorio. null si ya estaba en la decisión.
+  const [pasoDeOrigen, setPasoDeOrigen] = useState(null);
   const [motivo, setMotivo] = useState('');
   const [motivoError, setMotivoError] = useState('');
   // Los pasos que aplican a esta orden: revisar lo que cargó el técnico; autorizar el equipo en SmartOLT (solo si hay algo que autorizar: serial, VLAN, tipo de equipo nuevo...; ver requiereAutorizar); el cobro (si lleva); los valores
@@ -111,7 +113,14 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
       if (despues) setTimeout(despues, 320);
     } else if (despues) despues();
   };
-  const irADevolver = () => { setDevolviendo(true); nav.ir('decision'); };
+  const irADevolver = () => { setPasoDeOrigen(nav.clave === 'decision' ? null : nav.clave); setDevolviendo(true); nav.ir('decision'); };
+  // Cancelar la devolución: se cierra el motivo y, si se venía de otro paso, se regresa a él (la decisión de aprobar solo se alcanza pasando por los pasos obligatorios).
+  const cancelarDevolver = () => {
+    setDevolviendo(false);
+    setMotivoError('');
+    if (pasoDeOrigen) nav.ir(pasoDeOrigen);
+    setPasoDeOrigen(null);
+  };
 
   const enfocarValores = (errores) => document.getElementById(errores?.olt ? 'vc-olt' : errores?.onu ? 'vc-onu' : 'vc-guardar')?.focus();
 
@@ -448,6 +457,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
       ? (exigeValores ? 'Guarda los valores del cliente para continuar.' : 'Guarda lo que escribiste en los valores del cliente para continuar.')
       : '');
   const bloqueoParaLlegar = (destino) => motivoNoSePuedeLlegar(claves, clave, destino, motivoDelPaso);
+  // Lo obligatorio que falta antes de la decisión, mirando todos los pasos desde el primero (por si se llegó a la decisión sin pasar por ellos): sin eso no se aprueba.
+  const faltaAntesDeDecidir = motivoNoSePuedeLlegar(claves, claves[0], 'decision', motivoDelPaso);
   const bloqueoSiguiente = motivoDelPaso(clave);
   const indicacion = clave === 'revisar'
     ? 'Revisa lo que cargó el técnico. Es solo lectura.'
@@ -467,14 +478,14 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   const pie = nav.esUltimo
     ? (devolviendo ? (
       <BotonesPasos
-        onAnterior={() => { setDevolviendo(false); setMotivoError(''); }}
+        onAnterior={cancelarDevolver}
         textoAnterior="Volver"
         siguiente={{ onClick: handleDevolver, texto: 'Devolver', icono: Undo2, tono: 'rojo', disabled: isSubmitting || Boolean(cambio), ocupado }}
       />
     ) : (
       <BotonesPasos
         onAnterior={nav.hayAnterior ? nav.anterior : null}
-        siguiente={{ onClick: handleConfirm, texto: nombreCierre, icono: CheckCheck, tono: 'azul', disabled: isSubmitting || guardandoValores || Boolean(cambio), ocupado }}
+        siguiente={{ onClick: handleConfirm, texto: nombreCierre, icono: CheckCheck, tono: 'azul', disabled: isSubmitting || guardandoValores || Boolean(cambio) || Boolean(faltaAntesDeDecidir), titulo: faltaAntesDeDecidir || undefined, ocupado }}
         secundaria={secundariaDevolver}
       />
     ))
@@ -520,7 +531,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         etiquetaPasos="Pasos para revisar la orden"
         pasos={claves.map(PASO_DE)}
         actual={clave}
-        onElegir={(destino) => { if (!bloqueoParaLlegar(destino)) nav.ir(destino); }}
+        onElegir={(destino) => { if (bloqueoParaLlegar(destino)) return; if (destino !== 'decision') { setDevolviendo(false); setPasoDeOrigen(null); } nav.ir(destino); }}
         bloqueo={bloqueoParaLlegar}
         encabezado={encabezado}
         indicacion={indicacion}
@@ -545,6 +556,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           {clave === 'valores' && valoresNode}
           {clave === 'decision' && (
             <>
+              {faltaAntesDeDecidir && !devolviendo && <p role="alert" className="text-xs font-bold text-amber-700 dark:text-amber-300">{faltaAntesDeDecidir} Usa «Cambiar» en el resumen o «Atrás».</p>}
               {resumenFinal}
               {motivoNode}
             </>

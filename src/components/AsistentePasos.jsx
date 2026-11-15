@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Pasos from './Pasos';
 
@@ -8,6 +8,10 @@ import Pasos from './Pasos';
 //   <AsistentePasos pasos={[{ clave: 'revisar', etiqueta: 'Revisar' }, ...]} actual={nav.clave} encabezado={…} indicacion="…" pie={<BotonesPasos … />} clasePanel="max-w-3xl h-[min(92dvh,48rem)] …">{contenido del paso}</AsistentePasos>
 // `pasos`: [{ clave, etiqueta }]; `actual`: la clave del paso visible; `hecho(clave)`: pasos ya completos (visto en el indicador); `onElegir(clave)`: hace clicable el indicador (saltar entre pasos); `bloqueo(clave)`: motivo por el que aún no se puede llegar a un paso ('' si se puede; ese paso se ve bloqueado); `encabezado`: lo de arriba, fijo;
 // `indicacion`: la frase bajo el indicador ("Paso 2 de 3 · …" lo antepone la carcasa); `pie`: lo de abajo, fijo; `clasePanel`: tamaño, borde y colores del panel; `rol`, `ariaLabelledBy`: accesibilidad del diálogo.
+// La barra de desplazamiento solo aparece cuando el paso no cabe de verdad. Si lo único que sobra es el margen de abajo del contenido (hasta TOLERANCIA_PX: los pasos llevan 16 px o más de margen abajo), no hay nada que
+// desplazar y la barra sería ruido. Mide al abrir, al cambiar de paso, al cambiar el contenido y al cambiar el tamaño de la ventana.
+const TOLERANCIA_PX = 16;
+
 export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo, encabezado, indicacion, pie, clasePanel = '', rol = 'dialog', ariaLabelledBy, etiquetaPasos = 'Pasos', children }) {
   const indice = Math.max(0, pasos.findIndex((p) => p.clave === actual));
   const esUltimo = indice === pasos.length - 1;
@@ -16,6 +20,19 @@ export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo
   if (vista.indice !== indice) setVista({ indice, direccion: indice > vista.indice ? 'adelante' : 'atras', animar: true });
   const animacion = !vista.animar ? '' : vista.direccion === 'atras' ? 'animate-paso-atras' : 'animate-paso-adelante';
   // Cada paso nuevo arranca arriba del todo (también cuando se pasa solo).
+  const zona = useRef(null);
+  const [sinBarra, setSinBarra] = useState(false);
+  useEffect(() => {
+    const elemento = zona.current;
+    if (!elemento) return undefined;
+    const medir = () => setSinBarra(elemento.scrollHeight - elemento.clientHeight <= TOLERANCIA_PX);
+    medir();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observador = new ResizeObserver(medir);
+    observador.observe(elemento);
+    if (elemento.firstElementChild) observador.observe(elemento.firstElementChild);
+    return () => observador.disconnect();
+  }, [actual]);
   const alMontarPaso = useCallback((elemento) => { elemento?.parentElement?.scrollTo({ top: 0 }); }, []);
 
   return (
@@ -31,7 +48,7 @@ export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div ref={zona} className={`flex-1 min-h-0 overflow-x-hidden ${sinBarra ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
         <div key={actual} ref={alMontarPaso} className={animacion || undefined}>{children}</div>
       </div>
 

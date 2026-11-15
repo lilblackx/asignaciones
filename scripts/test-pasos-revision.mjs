@@ -53,10 +53,10 @@ const leer = (ruta) => readFileSync(ruta, 'utf8');
 const modal = leer('src/components/modals/AprobarFinalizarModal.jsx');
 check('el modal usa la carcasa global, el hook de pasos y la regla de qué pasos salen', [modal.includes('<AsistentePasos'), modal.includes('usePasosAsistente(claves)'), modal.includes('pasosDeRevision(ticket)'), modal.includes('esAsistenteDeRevision(claves)'), modal.includes('const unaSolaPantalla'), modal.includes('{porPasos ? asistente : unaSolaPantalla}')], [true, true, true, true, true, true]);
 check('la oficina puede saltar entre pasos con el indicador, pero no a un paso al que aún no se puede llegar (aparece bloqueado, con candado)', [
-  modal.includes('if (!bloqueoParaLlegar(destino)) nav.ir(destino)'), modal.includes('bloqueo={bloqueoParaLlegar}'), modal.includes('motivoNoSePuedeLlegar(claves, clave, destino, motivoDelPaso)'),
+  modal.includes('if (bloqueoParaLlegar(destino)) return;'), modal.includes('bloqueo={bloqueoParaLlegar}'), modal.includes('motivoNoSePuedeLlegar(claves, clave, destino, motivoDelPaso)'),
   leer('src/components/Pasos.jsx').includes('bloqueo(clave)'), leer('src/components/Pasos.jsx').includes('<Lock'), leer('src/components/Pasos.jsx').includes('disabled title={razon}'),
 ], [true, true, true, true, true, true]);
-check('"Devolver" está en el pie de todos los pasos (lleva a la decisión con el motivo abierto), no solo en el último; ya devolviendo no se ofrece', [modal.includes("const irADevolver = () => { setDevolviendo(true); nav.ir('decision'); }"), (modal.match(/secundaria=\{secundariaDevolver\}/g) || []).length >= 2, modal.includes('onDevolver && !finalizando && !devolviendo')], [true, true, true]);
+check('"Devolver" está en el pie de todos los pasos (lleva a la decisión con el motivo abierto), no solo en el último; ya devolviendo no se ofrece', [modal.includes("const irADevolver = () => { setPasoDeOrigen(nav.clave === 'decision' ? null : nav.clave); setDevolviendo(true); nav.ir('decision'); };"), (modal.match(/secundaria=\{secundariaDevolver\}/g) || []).length >= 2, modal.includes('onDevolver && !finalizando && !devolviendo')], [true, true, true]);
 check('no se sigue sin un cobro válido ni sin los valores del cliente guardados (donde son obligatorios)', [modal.includes("clavePaso === 'cobro' && !cobroValido"), modal.includes("clavePaso === 'valores' && !valoresListos"), modal.includes('disabled: Boolean(bloqueoSiguiente)')], [true, true, true]);
 check('al aprobar con un problema, salta al paso donde se arregla', [modal.includes("irAlPaso('valores'"), modal.includes("irAlPaso('cobro')")], [true, true]);
 check('el último paso tiene el resumen con cobro, valores y faltantes, y el motivo de la devolución baja y da el foco', [modal.includes('const resumenFinal'), modal.includes('RESUMEN ANTES DE'), modal.includes('<div ref={mostrarMotivo}'), modal.includes("margenInferior: porPasos ? 8 : 88")], [true, true, true, true]);
@@ -68,6 +68,24 @@ check('las órdenes que no necesitan autorizar dicen "Datos del cliente" (y "NAP
   bloqueDatos.includes("{paraAutorizar ? 'Para autorizar en SmartOLT' : 'Datos del cliente'}"), bloqueDatos.includes("paraAutorizar ? 'EQUIPO' : 'NAP'"), modal.includes('paraAutorizar={hayEquipo}'), modal.includes("const hayEquipo = claves.includes('autorizar')"),
 ], [true, true, true, true]);
 check('la revisión de órdenes tiene el botón discreto "Ver detalles" con las fotos, que no pide nada hasta que se toca', [leer('src/components/revision/FilaRevision.jsx').includes('<VerFotosOrden'), leer('src/components/VerFotosOrden.jsx').includes('pedidas ? fotos.map((f) => f.ruta) : []'), leer('src/components/VerFotosOrden.jsx').includes('Ver detalles ('), leer('src/components/VerFotosOrden.jsx').includes('<VisorFotos')], [true, true, true, true]);
+
+// Devolver salta directo a la decisión desde cualquier paso: cancelar tiene que volver al paso de origen (no dejar la ventana en la decisión, lista para aprobar sin haber pasado por lo obligatorio), y Aprobar no se habilita si falta algo.
+check('Devolver recuerda de qué paso viene y al cancelar regresa a ese paso (desde la decisión misma se queda ahí)', [
+  modal.includes("setPasoDeOrigen(nav.clave === 'decision' ? null : nav.clave)"), modal.includes('if (pasoDeOrigen) nav.ir(pasoDeOrigen);'), modal.includes('onAnterior={cancelarDevolver}'),
+], [true, true, true]);
+check('al saltar con el indicador de pasos se sale del modo devolver, y Aprobar queda bloqueado si falta lo obligatorio antes de la decisión (con su aviso)', [
+  modal.includes("if (destino !== 'decision') { setDevolviendo(false); setPasoDeOrigen(null); }"),
+  modal.includes("motivoNoSePuedeLlegar(claves, claves[0], 'decision', motivoDelPaso)"), modal.includes('Boolean(faltaAntesDeDecidir)'), modal.includes('{faltaAntesDeDecidir && !devolviendo && <p role="alert"'),
+], [true, true, true, true]);
+// En el asistente la barra de desplazamiento solo sale cuando el paso no cabe de verdad: si solo sobra el margen de abajo no hay nada que desplazar.
+const carcasa = leer('src/components/AsistentePasos.jsx');
+check('la carcasa del asistente quita la barra cuando solo sobra el margen de abajo (16 px o menos) y la deja cuando el paso no cabe', [
+  carcasa.includes('const TOLERANCIA_PX = 16;'), carcasa.includes('elemento.scrollHeight - elemento.clientHeight <= TOLERANCIA_PX'), carcasa.includes("sinBarra ? 'overflow-y-hidden' : 'overflow-y-auto'"), carcasa.includes('new ResizeObserver(medir)'),
+], [true, true, true, true]);
+// Los pasos llevan 16 px o más de margen abajo (si no, la tolerancia taparía contenido).
+check('el contenido de cada paso de los asistentes lleva 16 px o más de margen abajo', [
+  modal.includes('<div className="p-4 sm:p-5 space-y-4">'), leer('src/components/modals/PreFinalizarModal.jsx').includes('noValidate className="p-4 sm:p-5 space-y-4"'), /<section aria-label="Detalles de la orden" className="px-5 py-4 space-y-3">/.test(leer('src/components/modals/CobroResultanteModal.jsx')),
+], [true, true, true]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron');
