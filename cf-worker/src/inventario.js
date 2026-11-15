@@ -357,7 +357,8 @@ export async function enviarAlInventario(env, ticketId, orden, ahoraMs = Date.no
     };
     // Un registro que ya está escrito con lo mismo (un reenvío) no se vuelve a escribir: su sistema solo deja crear registros, y reescribir uno existente lo rechaza (403) y frena todo el envío.
     const escrito = await leerRegistroMaterial(env, id, ahoraMs);
-    const igual = escrito && ['apc', 'upc', 'drop'].every((k) => Math.abs(Number(escrito[k]) - registro[k]) < 1e-9) && String(escrito.tecnico) === registro.tecnico && String(escrito.cliente) === registro.cliente;
+    // Si ya descuenta lo mismo al mismo técnico, no se reescribe aunque el texto del cliente o el serial del registro sean otros (una orden que se envió antes con otro tipo de visita): ese rechazo frenaba todo el envío.
+    const igual = escrito && ['apc', 'upc', 'drop'].every((k) => Math.abs(Number(escrito[k]) - registro[k]) < 1e-9) && normalizarNombre(escrito.tecnico) === normalizarNombre(registro.tecnico);
     if (!igual) escrituras.push({ update: { name: `projects/${env.TELECOM_PROJECT_ID}/databases/(default)/documents/${rutaTelecom(env)}/materialLogs/${id}`, fields: { id: { doubleValue: id }, ...campos(registro) } } });
   }
 

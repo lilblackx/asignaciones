@@ -591,6 +591,13 @@ registrosTelecom[idSegundo] = { ...primero, id: idSegundo, drop: -0.999 };
 ordenes.rec1 = fieldsDe({ ...recableadoCambio, codigo: 'R1', finalizadoEn: FIN2 });
 r = await llamar('/inventario/reenviar', 'lf-uid', { ticketId: 'rec1' });
 check('si el material ya escrito es distinto de lo que dice la orden, sí se escribe', (commitsTelecom[1] || []).some((w) => w.update.name.endsWith(`/materialLogs/${idSegundo}`)), true);
+// y si ya está escrito con lo mismo pero con otro texto de cliente y sin serial (la orden se había enviado antes como avería simple; el caso de AO225): no se reescribe
+reiniciar();
+const { equipoSerial: _sinSerial, ...sinSerial } = primero;
+registrosTelecom[idRegistro('rec1', FIN)] = { ...sinSerial, cliente: 'Ana Pérez (Incidente: Recableado - Orden #R1)' };
+ordenes.rec1 = fieldsDe({ ...recableadoCambio, codigo: 'R1' });
+r = await enviar('rec1');
+check('material ya escrito con otro texto de cliente y sin serial: no se reescribe, pero el equipo sí se instala', [r.json.estado, (commitsTelecom[0] || []).some((w) => w.update.name.includes('/materialLogs/')), (commitsTelecom[0] || []).some((w) => w.update.name.includes('/inventory/'))], ['ENVIADO', false, true]);
 
 check('la sesión del otro sistema se reutiliza entre órdenes (un solo inicio de sesión)', loginsTelecom.length, 1);
 
