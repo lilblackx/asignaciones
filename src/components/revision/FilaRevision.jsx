@@ -82,10 +82,12 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
   };
 
   const topeOrigen = garantia.origen?.id ? precioOrigen(garantia.origen.id) : null;
-  // Lo que frena la aprobación: lo de siempre y, además, que el técnico no haya registrado el pago del cliente (ver motivoSinPago).
+  // Lo que frena la aprobación: lo de siempre (`bloqueo`) y, además, que el técnico no haya registrado el pago del cliente (ver motivoSinPago) o que falten los detalles de la orden (ver motivoSinDetalles).
+  // Cada motivo se dice una sola vez: el del pago y el de las fotos, arriba junto a la orden; `bloqueo`, debajo de los botones.
+  const bloqueo = estado === 'APROBADA' ? '' : motivoNoAprobable(item);
   const sinPago = estado === 'APROBADA' ? '' : motivoSinPago(item);
   const sinDetalles = estado === 'APROBADA' ? '' : motivoSinDetalles(item);
-  const problema = estado === 'APROBADA' ? '' : motivoNoAprobable(item) || sinPago || sinDetalles;
+  const problema = bloqueo || sinPago || sinDetalles;
   const esGarantiaDeOtro = Boolean(item.garantiaDe);
   const nombreConcepto = (id) => CONCEPTOS_PAGO.find((c) => c.id === id)?.nombre || '';
   const conceptos = [{ value: '', label: item.conceptoOriginal ? `Sin cambio (${nombreConcepto(item.conceptoOriginal)})` : 'Elige el concepto' }, ...CONCEPTOS_PAGO.map((c) => ({ value: c.id, label: c.nombre }))];
@@ -107,7 +109,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {item.tecnico}.</p>}
           {item.corregida && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
           {item.cambioDespues && <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
-          {sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">Falta el pago del cliente: lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}. No se puede aprobar hasta que esté registrado.</p>}
+          {sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">Falta el pago del cliente: lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}; si no puede, regístralo tú. No se puede aprobar hasta que esté registrado.</p>}
           {sinDetalles && !sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">{sinDetalles}</p>}
           <PagoDelCliente orden={item.orden} className="mt-0.5" />
           <VerFotosOrden orden={item.orden} className="mt-0.5" />
@@ -140,8 +142,8 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
         {estado !== 'EXCLUIDA' && estado !== 'RETENIDA' && <button type="button" onClick={() => abrir('CORREGIR')} disabled={ocupado} className={BOTON_FILA}><Pencil className="w-4 h-4" aria-hidden="true" /> Corregir</button>}
         {(estado !== 'PENDIENTE' || item.revision) && <button type="button" onClick={() => onDeshacer(item)} disabled={ocupado} className={BOTON_FILA}><RotateCcw className="w-4 h-4" aria-hidden="true" /> Volver a pendiente</button>}
       </div>
-      {/* El aviso de la garantía sin resolver ya está arriba, con la orden original: no se repite. */}
-      {problema && estado !== 'APROBADA' && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{problema}</p>}
+      {/* El aviso de la garantía sin resolver ya está arriba, con la orden original, y el del pago y el de las fotos también (junto a la orden): no se repiten. Aquí solo va lo que no se dijo arriba (sin concepto, sin técnico). */}
+      {bloqueo && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{bloqueo}</p>}
       {error && !abierto && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
 
       <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR' || abierto === 'SIN_DETALLES') && (
