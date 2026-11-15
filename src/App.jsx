@@ -261,7 +261,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   // Las órdenes de los cierres ya cargados: la búsqueda del dashboard también las encuentra (debajo de las activas, marcadas como archivadas).
   const archivados = useMemo(() => aplanarArchivados(reports), [reports]);
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, cantidadCerradas, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, incluirCerradas: canEditTickets, archivados, ahora });
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, cantidadCerradas, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, incluirPendientesDelTecnico: isTecnico, incluirCerradas: canEditTickets, archivados, ahora });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.

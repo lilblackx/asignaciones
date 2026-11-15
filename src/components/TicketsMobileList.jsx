@@ -24,6 +24,7 @@ import { esPrioritaria, puedeCambiarPrioridad } from '../utils/prioridad';
 import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 import { PENDIENTE_PAGO, pendienteDelTecnico, puedeCorregirDetalles } from '../utils/detallesOrden';
+import FaltaPorCompletar from './FaltaPorCompletar';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -112,6 +113,7 @@ export default function TicketsMobileList({
               <span className={`text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>
                 {ticket.estado}
               </span>
+              {isTecnico && <FaltaPorCompletar ticket={ticket} />}
               {cerrada && (
                 <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
                   {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}

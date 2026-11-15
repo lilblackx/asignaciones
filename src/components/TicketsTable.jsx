@@ -14,6 +14,7 @@ import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import PagoDelCliente from './PagoDelCliente';
 import { PENDIENTE_PAGO, pendienteDelTecnico, puedeCorregirDetalles } from '../utils/detallesOrden';
+import FaltaPorCompletar from './FaltaPorCompletar';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
 import InsigniaGarantia from './InsigniaGarantia';
@@ -211,6 +212,7 @@ export default function TicketsTable({
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-1">
                     {ticket.tecnico && (
                       <NombreTecnico nombre={ticket.tecnico} getTecnicoColor={getTecnicoColor} />
+                    {isTecnico && <FaltaPorCompletar ticket={ticket} />}
                     )}
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
