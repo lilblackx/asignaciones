@@ -30,7 +30,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
 }
 
 // Los pasos de la pantalla con `registro`, uno por vez: 'cobro' (el monto que se le informa al cliente), 'pago' (registrar lo que pagó el cliente, si todavía falta) y 'detalles' (las fotos del trabajo, solo de una
-// orden finalizada que aún no las tiene). Lo que ya está hecho no sale como paso.
+// instalación finalizada que aún no las tiene: las demás órdenes no piden fotos). Lo que ya está hecho no sale como paso.
 const ETIQUETA_PASO = { cobro: 'Cobro', pago: 'Pago', detalles: 'Fotos' };
 const PASO_DE = (clave) => ({ clave, etiqueta: ETIQUETA_PASO[clave] });
 const pendientesDe = (ticket, registro) => ({
@@ -38,6 +38,8 @@ const pendientesDe = (ticket, registro) => ({
   pideDetalles: Boolean(registro?.onSubirDetalles) && faltanDetalles(ticket),
 });
 const pasosDe = ({ pidePago, pideDetalles }) => [...(pidePago ? ['cobro', 'pago'] : []), ...(pideDetalles ? ['detalles'] : [])];
+// Lo que la oficina espera todavía, para el aviso de "Hacerlo después": solo las fotos en una instalación (las demás órdenes no las piden), y no el pago si ya se registró.
+const textoDeLoQueFalta = ({ pidePago, pideDetalles }) => [pidePago && 'registres el pago', pideDetalles && 'subas las fotos'].filter(Boolean).join(' y ') || 'la completes';
 
 // Aviso a pantalla completa para el técnico con el cobro al cliente de una orden suya con cobro (visita de conector, por ejemplo): no puede pasar desapercibido. Sale al finalizarse la orden o, con conector
 // interno, apenas se pre-finaliza. Con cobro, debajo del monto va un botón para copiarlo. Si la oficina guardó los valores de señal del cliente al aprobar la orden, van en su propia tarjeta.
@@ -180,7 +182,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           <BotonesPasos
             onAnterior={nav.hayAnterior ? nav.anterior : null}
             siguiente={clave === 'cobro' ? { onClick: nav.siguiente } : clave === 'pago' && !esUltimo ? { onClick: nav.siguiente, disabled: true, titulo: 'Registra el pago para continuar' } : null}
-            secundaria={registro.onPosponer ? { texto: 'Hacerlo después', onClick: registro.onPosponer, titulo: 'Queda en tu lista con su botón. La oficina no aprueba la orden hasta que registres el pago y subas las fotos.' } : null}
+            secundaria={registro.onPosponer ? { texto: 'Hacerlo después', onClick: registro.onPosponer, titulo: `Queda en tu lista con su botón. La oficina no aprueba la orden hasta que ${textoDeLoQueFalta({ pidePago, pideDetalles })}.` } : null}
             nota={registro.onPosponer ? 'Queda en tu lista; la oficina no la aprueba hasta que esté completa.' : ''}
           />
         )}

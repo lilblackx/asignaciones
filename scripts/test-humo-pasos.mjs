@@ -44,9 +44,22 @@ try {
 
   // --- Cobro del técnico ---
   const Cobro = await cargar('/src/components/modals/CobroResultanteModal.jsx');
-  const orden = { ...base, estado: 'FINALIZADO', finalizadoEn: Date.now() + 5 * 24 * 3600 * 1000, tipoTrabajo: 'AVERÍA', falla: 'LOS', tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' };
-  const cobro = textoPlano(dibujar(Cobro, { ticket: orden, formasPago: [], onCopy: noop, onClose: noop, registro: { onRegistrar: noop, onPagaDespues: noop, otrasOrdenes: [], onPosponer: noop, onSubirDetalles: noop } }));
-  check('el cobro del técnico abre en el paso 1 de 3 (Cobro, Pago, Fotos) con el monto, Siguiente y "Hacerlo después"', [/Paso 1 de 3/.test(cobro), ['Cobro', 'Pago', 'Fotos'].every((p) => cobro.includes(p)), cobro.includes('5.696'), cobro.includes('Siguiente'), cobro.includes('Hacerlo después')], [true, true, true, true, true]);
+  // Las fotos solo se piden en las instalaciones: una avería con cobro tiene el cobro y el pago; una instalación, el cobro, el pago y las fotos.
+  const finalizadoEn = Date.now() + 5 * 24 * 3600 * 1000;
+  const registro = { onRegistrar: noop, onPagaDespues: noop, otrasOrdenes: [], onPosponer: noop, onSubirDetalles: noop };
+  const pantallaDelCobro = (ticket) => dibujar(Cobro, { ticket, formasPago: [], onCopy: noop, onClose: noop, registro });
+  const orden = { ...base, estado: 'FINALIZADO', finalizadoEn, tipoTrabajo: 'AVERÍA', falla: 'LOS', tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' };
+  const htmlCobro = pantallaDelCobro(orden);
+  const cobro = textoPlano(htmlCobro);
+  check('el cobro de una avería abre en el paso 1 de 2 (Cobro, Pago) con el monto, Siguiente y "Hacerlo después", sin paso de fotos', [/Paso 1 de 2/.test(cobro), ['Cobro', 'Pago'].every((p) => cobro.includes(p)), !cobro.includes('Fotos'), cobro.includes('5.696'), cobro.includes('Siguiente'), cobro.includes('Hacerlo después')], [true, true, true, true, true, true]);
+  check('el "Hacerlo después" de la avería dice que la oficina espera solo el pago', [htmlCobro.includes('hasta que registres el pago.'), htmlCobro.includes('subas las fotos')], [true, false]);
+  const instalacionDelTecnico = { ...base, estado: 'FINALIZADO', finalizadoEn, tipoTrabajo: 'INSTALACIÓN', falla: 'SM' };
+  const htmlInstalacion = pantallaDelCobro(instalacionDelTecnico);
+  const cobroInstalacion = textoPlano(htmlInstalacion);
+  check('el cobro de una instalación abre en el paso 1 de 3 (Cobro, Pago, Fotos) con Siguiente y "Hacerlo después", y la oficina espera el pago y las fotos', [/Paso 1 de 3/.test(cobroInstalacion), ['Cobro', 'Pago', 'Fotos'].every((p) => cobroInstalacion.includes(p)), cobroInstalacion.includes('Siguiente'), cobroInstalacion.includes('Hacerlo después'), htmlInstalacion.includes('hasta que registres el pago y subas las fotos.')], [true, true, true, true, true]);
+  const pagoRegistrado = { tipo: 'PAGO', pago: { moneda: 'USD', forma: 'Efectivo', monto: 25, banco: '', titular: '', cuentaEmpresa: '', referencia: '', pagadoEn: finalizadoEn }, nota: '', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'jose', registradoEn: finalizadoEn };
+  const htmlSoloFotos = pantallaDelCobro({ ...instalacionDelTecnico, pagoCliente: pagoRegistrado });
+  check('una instalación con el pago ya registrado abre directo en las fotos y la oficina espera solo las fotos', [textoPlano(htmlSoloFotos).includes('DETALLES DE LA ORDEN'), htmlSoloFotos.includes('hasta que subas las fotos.'), htmlSoloFotos.includes('registres el pago')], [true, true, false]);
 } finally {
   await servidor.close();
 }

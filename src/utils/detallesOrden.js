@@ -1,8 +1,10 @@
 import { diaDe } from './totalesMes.js';
 import { faltaElPago } from './pagoCliente.js';
+import { esInstalacion } from './instalacion.js';
 
-// "Detalles de la orden": las fotos que el técnico sube de su trabajo cuando la oficina finaliza la orden. Se guardan en Cloud Storage (ruta `ordenes/{id de la orden}/...`) y la orden solo lleva sus rutas:
+// "Detalles de la orden": las fotos que el técnico sube de su trabajo cuando la oficina finaliza una instalación. Se guardan en Cloud Storage (ruta `ordenes/{id de la orden}/...`) y la orden solo lleva sus rutas:
 //   detallesOrden: { fotos: [{ ruta, bytes }], subidoPor, subidoEn }
+// Solo se piden en las instalaciones (ver debePedirDetalles): una avería, una visita, un cambio de equipo, etc. no las piden. Las fotos que una orden de otro tipo ya tenga subidas se siguen viendo y se pueden corregir.
 // Es un paso aparte del pago del cliente: la orden sigue en la lista del técnico, y Revisión no la aprueba, hasta que tenga las dos cosas. Un bucket borra las fotos a los 60 días (regla de ciclo de vida).
 
 export const MIN_FOTOS = 2;
@@ -45,9 +47,9 @@ export const rutasQuitadas = (ticket, finales) => {
 // ¿El técnico puede corregir las fotos? Mientras la orden siga finalizada en su lista (el cierre del día la archiva) y ya tenga detalles.
 export const puedeCorregirDetalles = (ticket) => Boolean(ticket) && ticket.estado === 'FINALIZADO' && tieneDetalles(ticket);
 
-// ¿Esta orden pide los detalles? Finalizada, con técnico y desde FECHA_INICIO_DETALLES.
+// ¿Esta orden pide los detalles? Una instalación finalizada, con técnico y desde FECHA_INICIO_DETALLES. Las demás órdenes (averías, visitas, cambios de equipo...) nunca las piden.
 export function debePedirDetalles(ticket, { desde = FECHA_INICIO_DETALLES } = {}) {
-  if (!ticket || ticket.estado !== 'FINALIZADO' || !ticket.tecnico) return false;
+  if (!ticket || ticket.estado !== 'FINALIZADO' || !ticket.tecnico || !esInstalacion(ticket.tipoTrabajo)) return false;
   const finalizada = Number(ticket.finalizadoEn) || 0;
   return finalizada > 0 && diaDe(finalizada) >= desde;
 }
@@ -79,8 +81,6 @@ export function validarDetalles(detalles, ticketId) {
   if (rutas.size !== fotos.length) return { error: 'Hay una foto repetida.' };
   return { ok: true };
 }
-
-export const textoFaltanDetalles = (tecnico) => `Faltan los detalles de la orden (fotos): los sube el técnico${tecnico ? ` (${tecnico})` : ''}.`;
 
 // --- Elegir y subir las fotos desde el teléfono (galería, otra app o la cámara) ---
 // Lo que se sabe de un archivo elegido sin abrirlo: un tipo que no es imagen (un PDF, un video) se rechaza al elegirlo; un tipo vacío o genérico ("octet-stream": algunas apps entregan así la foto) se intenta abrir. El HEIC (algunos iPhone y Samsung)
@@ -130,6 +130,8 @@ export function textoErrorDeGuardado(codigo) {
       return conCodigo('No se pudo guardar la orden con sus fotos. Inténtalo de nuevo; si sigue igual, avisa a la oficina con este código (las fotos se conservan).', codigo ? `firestore/${codigo}` : '');
   }
 }
+
+export const textoFaltanDetalles = (tecnico) => `Faltan los detalles de la orden (fotos): los sube el técnico${tecnico ? ` (${tecnico})` : ''}.`;
 
 // Lo que le falta al técnico en una orden finalizada: 'PAGO' (el pago del cliente), 'DETALLES' (las fotos) o '' (nada). Primero el pago.
 export const PENDIENTE_PAGO = 'PAGO';

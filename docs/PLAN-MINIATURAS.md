@@ -15,7 +15,7 @@ Antes de las miniaturas, probar lo barato: la caché de 60 días de las fotos (y
 
 ## Por qué no ahora
 
-Con ~19–23 órdenes con fotos al día y 7 fotos como máximo:
+Con ~19–23 órdenes con fotos al día y 7 fotos como máximo (estimación de cuando se pedían en todas las órdenes; desde que solo las instalaciones piden fotos el volumen real es menor, así que los números de abajo son un tope):
 
 | Concepto | Uso estimado | Cupo gratis |
 |---|---|---|

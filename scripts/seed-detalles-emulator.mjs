@@ -1,4 +1,4 @@
-// Órdenes de prueba para los "Detalles de la orden" (fotos) en el emulador local. NUNCA toca producción: firebase-admin, al ver estas variables, escribe solo en los emuladores.
+// Órdenes de prueba para los "Detalles de la orden" (fotos, que solo se piden en las instalaciones) en el emulador local. NUNCA toca producción: firebase-admin, al ver estas variables, escribe solo en los emuladores.
 // Requiere `npm run emulators` (Firestore, Auth y Storage) y, antes, `npm run seed:emulator` (usuarios y técnicos). Entra con tecnico1 / Tecnico1234 (GERARDO MOLERO) para ver lo que le falta al técnico,
 // y con admin / Admin1234 para ver las fotos ya subidas (Detalle de la orden y Revisión de órdenes). Para que una orden finalizada hoy pida los detalles, arranca la app con
 // VITE_DETALLES_DESDE=2026-11-01 en .env.development.local (la fecha de inicio por defecto es posterior a hoy).
@@ -32,6 +32,8 @@ const base = (id, codigo, nombre, extra) => ({
   historialEdiciones: [], isAsignado: true, ...extra,
 });
 const pagoDespues = { tipo: 'DESPUES', pago: null, nota: 'Paga el viernes', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'tecnico1', registradoEn: ahora - 5 * MIN };
+// Lo que pagó el cliente de una instalación (una instalación no puede quedar "paga después").
+const pagoInstalacion = { tipo: 'PAGO', pago: { moneda: 'USD', forma: 'Efectivo', monto: 25, banco: '', titular: '', cuentaEmpresa: '', referencia: '', pagadoEn: ahora - 6 * MIN }, nota: '', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'tecnico1', registradoEn: ahora - 5 * MIN };
 
 // Las fotos de muestra (3 imágenes pequeñas) se suben al emulador de Storage para que la galería tenga algo que mostrar.
 async function subirMuestras(id) {
@@ -45,18 +47,23 @@ async function subirMuestras(id) {
   return { fotos, subidoPor: 'tecnico1', subidoEn: ahora - 3 * MIN };
 }
 
+// Las fotos ("Detalles de la orden") solo se piden en las instalaciones: una avería, aunque lleve cobro, solo pide el pago.
 const ordenes = {
-  // Falta el pago y los detalles: la pantalla del técnico muestra el cobro, el formulario del pago y el paso 2 con las fotos.
-  'seed-detalles-cobro': base('seed-detalles-cobro', 'DC1', 'Cliente con cobro (falta pago y fotos)', { tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' }),
-  // Sin cobro ni pago que registrar: solo piden los detalles.
-  'seed-detalles-sin-cobro': base('seed-detalles-sin-cobro', 'DS2', 'Cliente sin cobro (solo fotos)', { falla: 'Sin señal' }),
+  // Avería con cobro: falta solo el pago (la pantalla del técnico muestra el cobro y el formulario del pago, sin paso de fotos).
+  'seed-detalles-cobro': base('seed-detalles-cobro', 'DC1', 'Avería con cobro (falta solo el pago, sin fotos)', { tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA' }),
+  // Avería sin cobro ni pago que registrar: no pide nada (ni fotos), así que no sale en la lista del técnico.
+  'seed-detalles-sin-cobro': base('seed-detalles-sin-cobro', 'DS2', 'Avería sin cobro (no pide nada)', { falla: 'Sin señal' }),
   // Instalación: el técnico anota lo que pagó el cliente y sube las fotos.
   'seed-detalles-instalacion': base('seed-detalles-instalacion', 'DI3', 'Cliente de instalación (falta pago y fotos)', { tipoTrabajo: 'INSTALACIÓN', falla: 'SM', tipoVisita: '', nap: 'NAP 02 - 5' }),
-  // El pago ya está registrado: solo faltan las fotos.
-  'seed-detalles-solo-fotos': base('seed-detalles-solo-fotos', 'DF4', 'Cliente con pago registrado (solo fotos)', { falla: 'Sin señal', pagoCliente: pagoDespues }),
+  // Instalación con el pago ya registrado: solo faltan las fotos.
+  'seed-detalles-solo-fotos': base('seed-detalles-solo-fotos', 'DF4', 'Instalación con pago registrado (solo fotos)', { tipoTrabajo: 'INSTALACIÓN', falla: 'SM', tipoVisita: '', nap: 'NAP 02 - 6', pagoCliente: pagoInstalacion }),
   // Todo completo: con 3 fotos de muestra (se ven en Detalle de la orden y en Revisión).
-  // Es una avería con conector externo (lleva tarifa), para que también aparezca en la Revisión de órdenes de la oficina con su botón "Ver detalles".
-  'seed-detalles-completa': { ...base('seed-detalles-completa', 'DK5', 'Cliente con fotos subidas', { tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', pagoCliente: pagoDespues }), detallesOrden: await subirMuestras('seed-detalles-completa') },
+  // Es una instalación (lleva tarifa), para que también aparezca en la Revisión de órdenes de la oficina con su botón "Ver detalles".
+  'seed-detalles-completa': { ...base('seed-detalles-completa', 'DK5', 'Instalación con fotos subidas', { tipoTrabajo: 'INSTALACIÓN', falla: 'SM', tipoVisita: '', nap: 'NAP 02 - 7', pagoCliente: pagoInstalacion }), detallesOrden: await subirMuestras('seed-detalles-completa') },
+  // Avería con cobro y el pago ya registrado, sin fotos: antes esperaba las fotos para aprobarse; ahora se aprueba directo en Revisión, sin motivo.
+  'seed-detalles-averia-sin-fotos': base('seed-detalles-averia-sin-fotos', 'DA7', 'Avería con pago registrado, sin fotos (se aprueba directo)', { tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', pagoCliente: pagoDespues }),
+  // Avería de antes del cambio que ya tiene fotos subidas: se siguen viendo en el Detalle de la orden y en Revisión.
+  'seed-detalles-averia-con-fotos': { ...base('seed-detalles-averia-con-fotos', 'DV6', 'Avería con fotos de antes (se siguen viendo)', { tipoVisita: 'CONECTOR_EXTERNO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', pagoCliente: pagoDespues }), detallesOrden: await subirMuestras('seed-detalles-averia-con-fotos') },
   // Pre-finalizadas por el técnico, para probar el asistente de la oficina ("Revisar antes de aprobar"; entra con admin / Admin1234).
   // Instalación: revisar, autorizar, valores y decisión (4 pasos).
   'seed-aprobar-instalacion': base('seed-aprobar-instalacion', 'AI7', 'Instalación por aprobar (4 pasos)', {
@@ -86,11 +93,13 @@ const ordenes = {
 
 for (const [id, datos] of Object.entries(ordenes)) await tickets.doc(id).set(datos);
 console.log(`OK  ${Object.keys(ordenes).length} órdenes de ${TECNICO} creadas:`);
-console.log('  DC1  con cobro: falta el pago y las fotos');
-console.log('  DS2  sin cobro: solo faltan las fotos');
+console.log('  DC1  avería con cobro: falta solo el pago (las averías no piden fotos)');
+console.log('  DS2  avería sin cobro: no pide nada, no sale en la lista del técnico');
 console.log('  DI3  instalación: falta el pago y las fotos');
-console.log('  DF4  pago registrado: solo faltan las fotos');
-console.log('  DK5  completa: con 3 fotos subidas (la oficina las ve en el detalle y en Revisión de órdenes)');
+console.log('  DF4  instalación con el pago registrado: solo faltan las fotos');
+console.log('  DK5  instalación completa: con 3 fotos subidas (la oficina las ve en el detalle y en Revisión de órdenes)');
+console.log('  DV6  avería de antes del cambio con 3 fotos subidas: se siguen viendo');
+console.log('  DA7  avería con el pago registrado y sin fotos: se aprueba directo en Revisión (antes esperaba las fotos)');
 console.log('  PI1, PV2, PD3  pendientes por pre-finalizar con tecnico1: instalación (4 pasos), avería (según el tipo de visita) y una devuelta por la oficina');
 console.log('  AI7, AC8, AE9  pre-finalizadas por aprobar en la oficina: instalación (4 pasos), avería con cobro (4) y cambio de equipo (5)');
 console.log('\nEntra con tecnico1 / Tecnico1234 para subir las fotos, y con admin / Admin1234 para verlas.');

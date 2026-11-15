@@ -6,6 +6,7 @@ import {
   BYTES_MAXIMOS_FOTO, ESPERA_SIN_AVANCE_MS, FECHA_INICIO_DETALLES, INTENTOS_POR_FOTO, esFormatoHeic, noEsImagen, sePuedeReintentar, textoErrorDeGuardado, textoErrorDeSubida, textoFotoIlegible, MAX_FOTOS, MIN_FOTOS, PENDIENTE_DETALLES, PENDIENTE_PAGO, armarDetalles, carpetaDeFotos, debePedirDetalles, dimensionesReducidas, faltanDetalles, fotosDe, nombreDeFoto, pendienteDelTecnico, puedeCorregirDetalles, rutasQuitadas, tieneDetalles, validarDetalles,
 } from '../src/utils/detallesOrden.js';
 import { aprobarPendientes, armarRevision, motivoSinDetalles } from '../src/utils/revisionPagos.js';
+import { TIPOS_TRABAJO } from '../src/constants.js';
 
 let failures = 0;
 function check(name, actual, esperado) {
@@ -19,7 +20,9 @@ const DESDE = '2026-11-13';
 const OPC = { desde: DESDE };
 const AHORA = Date.parse('2026-11-14T15:00:00-04:00');
 const ANTES = Date.parse('2026-11-12T15:00:00-04:00');
-const orden = { id: 'T1', codigo: 'AO7', tecnico: 'JOSE', tipoTrabajo: 'AVERÍA', falla: 'LOS', estado: 'FINALIZADO', finalizadoEn: AHORA };
+// Las fotos solo se piden en las instalaciones: `orden` es una instalación y `averia` una orden de otro tipo (que no las pide).
+const orden = { id: 'T1', codigo: 'AI7', tecnico: 'JOSE', tipoTrabajo: 'INSTALACIÓN', falla: 'SM', estado: 'FINALIZADO', finalizadoEn: AHORA };
+const averia = { ...orden, codigo: 'AO7', tipoTrabajo: 'AVERÍA', falla: 'LOS' };
 const foto = (n) => ({ ruta: `ordenes/T1/0${n}-abc.jpg`, bytes: 250000 });
 const detalles = (n) => armarDetalles(Array.from({ length: n }, (_, i) => foto(i + 1)), { por: 'jose', ahora: AHORA });
 
@@ -30,7 +33,13 @@ check('la foto se reduce a 1600 px de lado largo, sin deformarla ni agrandarla',
 check('la carpeta y el nombre de la foto', [carpetaDeFotos('T1'), nombreDeFoto(0, 36 * 36), nombreDeFoto(6, 36 * 36)], ['ordenes/T1', '01-100.jpg', '07-100.jpg']);
 
 // --- Cuándo se piden ---
-check('una orden finalizada desde la fecha de inicio pide los detalles', debePedirDetalles(orden, OPC), true);
+check('una instalación finalizada desde la fecha de inicio pide los detalles', debePedirDetalles(orden, OPC), true);
+check('solo la instalación los pide: ningún otro tipo de trabajo (avería, reconexión, mudanza, garantía, cambio de equipo...) ni una avería LOS', [
+  TIPOS_TRABAJO.filter((tipoTrabajo) => debePedirDetalles({ ...orden, tipoTrabajo }, OPC)),
+  TIPOS_TRABAJO.filter((tipoTrabajo) => !debePedirDetalles({ ...orden, tipoTrabajo }, OPC)).length,
+  debePedirDetalles({ ...orden, tipoTrabajo: 'AVERÍA', falla: 'LOS' }, OPC),
+], [['INSTALACIÓN'], TIPOS_TRABAJO.length - 1, false]);
+check('el tipo se reconoce igual que en el resto de la app (sin importar mayúsculas ni tilde) y una orden sin tipo no los pide', [debePedirDetalles({ ...orden, tipoTrabajo: 'instalacion' }, OPC), debePedirDetalles({ ...orden, tipoTrabajo: 'Instalación' }, OPC), debePedirDetalles({ ...orden, tipoTrabajo: '' }, OPC), debePedirDetalles({ ...orden, tipoTrabajo: undefined }, OPC)], [true, true, false, false]);
 check('una finalizada antes de la fecha de inicio no los pide (no se toca lo anterior)', debePedirDetalles({ ...orden, finalizadoEn: ANTES }, OPC), false);
 check('una pre-finalizada, una pendiente o una cancelada no los piden', ['PRE-FINALIZADO', 'PENDIENTE', 'CANCELADO'].map((estado) => debePedirDetalles({ ...orden, estado }, OPC)), [false, false, false]);
 check('sin técnico o sin hora de finalización no los pide', [debePedirDetalles({ ...orden, tecnico: '' }, OPC), debePedirDetalles({ ...orden, finalizadoEn: null }, OPC), debePedirDetalles(null, OPC)], [false, false, false]);
@@ -40,10 +49,12 @@ check('la fecha de inicio por defecto es una fecha válida', /^\d{4}-\d{2}-\d{2}
 check('sin fotos faltan; con 1 siguen faltando; con 2 ya están', [faltanDetalles(orden, OPC), faltanDetalles({ ...orden, detallesOrden: detalles(1) }, OPC), faltanDetalles({ ...orden, detallesOrden: detalles(2) }, OPC)], [true, true, false]);
 check('con 7 fotos están', [tieneDetalles({ detallesOrden: detalles(7) }), fotosDe({ detallesOrden: detalles(7) }).length], [true, 7]);
 check('fotosDe ignora lo que no es una foto', fotosDe({ detallesOrden: { fotos: [null, {}, { ruta: '' }, foto(1)] } }).length, 1);
-const conCobro = { ...orden, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', tipoVisita: 'CONECTOR_EXTERNO' };
+const conCobro = { ...averia, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', tipoVisita: 'CONECTOR_EXTERNO' };
 const pago = { tipo: 'DESPUES', pago: null, nota: '', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'jose', registradoEn: AHORA };
-check('primero se pide el pago y después los detalles', [pendienteDelTecnico(conCobro, OPC), pendienteDelTecnico({ ...conCobro, pagoCliente: pago }, OPC), pendienteDelTecnico({ ...conCobro, pagoCliente: pago, detallesOrden: detalles(3) }, OPC)], [PENDIENTE_PAGO, PENDIENTE_DETALLES, '']);
-check('una orden sin cobro solo pide los detalles', pendienteDelTecnico(orden, OPC), PENDIENTE_DETALLES);
+check('en una instalación primero se pide el pago y después los detalles', [pendienteDelTecnico(orden, OPC), pendienteDelTecnico({ ...orden, pagoCliente: pago }, OPC), pendienteDelTecnico({ ...orden, pagoCliente: pago, detallesOrden: detalles(3) }, OPC)], [PENDIENTE_PAGO, PENDIENTE_DETALLES, '']);
+check('una avería con cobro solo pide el pago (las fotos no) y, con el pago registrado, ya no pide nada', [pendienteDelTecnico(conCobro, OPC), faltanDetalles(conCobro, OPC), pendienteDelTecnico({ ...conCobro, pagoCliente: pago }, OPC)], [PENDIENTE_PAGO, false, '']);
+check('una avería sin cobro no pide nada: ni el pago ni las fotos', [pendienteDelTecnico(averia, OPC), faltanDetalles(averia, OPC)], ['', false]);
+check('a una avería con fotos ya subidas (de antes de este cambio) no le faltan y se siguen viendo y corrigiendo', [faltanDetalles({ ...averia, detallesOrden: detalles(3) }, OPC), tieneDetalles({ ...averia, detallesOrden: detalles(3) }), fotosDe({ ...averia, detallesOrden: detalles(3) }).length, puedeCorregirDetalles({ ...averia, detallesOrden: detalles(3) })], [false, true, 3, true]);
 
 // --- Corregir las fotos ---
 const guardadas = { ...orden, detallesOrden: detalles(3) };
@@ -65,15 +76,16 @@ check('una foto que pesa de más o vacía no sirve', [validarDetalles({ ...bueno
 check('una foto repetida no sirve', validarDetalles({ ...bueno, fotos: [foto(1), foto(1)] }, 'T1').error, 'Hay una foto repetida.');
 
 // --- Revisión: sin los detalles no se aprueba (la prueba usa la fecha de inicio por defecto con una orden de hoy) ---
-const item = (extra = {}) => ({ clave: 'k1', orden: { ...orden, finalizadoEn: Date.now() + 2 * 24 * 3600 * 1000, ...extra }, estadoRevision: 'PENDIENTE' });
+// Una instalación con el pago ya registrado: lo único que le falta son las fotos.
+const item = (extra = {}) => ({ clave: 'k1', orden: { ...orden, pagoCliente: pago, finalizadoEn: Date.now() + 2 * 24 * 3600 * 1000, ...extra }, estadoRevision: 'PENDIENTE' });
 check('Revisión: una orden sin fotos tiene motivo, con nombre del técnico, y una con fotos no', [motivoSinDetalles(item()).startsWith('Faltan los detalles de la orden'), motivoSinDetalles(item()).includes('(JOSE)'), motivoSinDetalles(item({ detallesOrden: detalles(2) }))], [true, true, '']);
 check('Revisión: la aprobación en bloque deja fuera las que esperan fotos y lo dice', (() => {
-  const { omitidas, documentos } = aprobarPendientes([{ ...item(), concepto: 'AVERIA', conceptoOriginal: 'AVERIA', tecnico: 'JOSE', tecnicoOriginal: 'JOSE', firma: 'f', dia: '2026-11-14' }], { por: 'admin', ahora: AHORA });
+  const { omitidas, documentos } = aprobarPendientes([{ ...item(), concepto: 'INSTALACION', conceptoOriginal: 'INSTALACION', tecnico: 'JOSE', tecnicoOriginal: 'JOSE', firma: 'f', dia: '2026-11-14' }], { por: 'admin', ahora: AHORA });
   return [documentos.length, omitidas.map((o) => [Boolean(o.sinDetalles), o.motivo.startsWith('Faltan los detalles de la orden')])];
 })(), [0, [[true, true]]]);
 
 // Aprobar una orden sin los detalles: solo una por una y con motivo obligatorio.
-const aprobable = { ...item(), concepto: 'AVERIA', conceptoOriginal: 'AVERIA', tecnico: 'JOSE', tecnicoOriginal: 'JOSE', firma: 'f', dia: '2026-11-14' };
+const aprobable = { ...item(), concepto: 'INSTALACION', conceptoOriginal: 'INSTALACION', tecnico: 'JOSE', tecnicoOriginal: 'JOSE', firma: 'f', dia: '2026-11-14' };
 check('Revisión: sin motivo no se aprueba sin detalles (ni vacío ni solo espacios) y con motivo sí, y se guarda', (() => {
   const sin = armarRevision(aprobable, 'APROBAR', { por: 'admin', ahora: AHORA });
   const vacio = armarRevision(aprobable, 'APROBAR', { por: 'admin', ahora: AHORA, sinDetalles: '   ' });
@@ -86,6 +98,14 @@ check('Revisión: una orden con fotos no guarda motivo aunque se mande, y retene
   const r = armarRevision(aprobable, 'RETENER', { por: 'admin', ahora: AHORA, motivo: 'm', sinDetalles: 'x' });
   return ['sinDetalles' in a.datos, 'sinDetalles' in r.datos];
 })(), [false, false]);
+// Las órdenes que no son instalaciones no piden las fotos: se aprueban sin ellas y sin motivo (una por una o en bloque), y no queda ninguna marca de "sin detalles".
+check('Revisión: una avería no espera fotos: no tiene motivo, se aprueba sin motivo (una por una y en bloque) y no guarda marca de "sin detalles"', (() => {
+  const aprobableAveria = { ...aprobable, orden: { ...aprobable.orden, tipoTrabajo: 'AVERÍA', falla: 'LOS' }, concepto: 'AVERIA', conceptoOriginal: 'AVERIA' };
+  const sola = armarRevision(aprobableAveria, 'APROBAR', { por: 'admin', ahora: AHORA });
+  const conMotivo = armarRevision(aprobableAveria, 'APROBAR', { por: 'admin', ahora: AHORA, sinDetalles: 'x' });
+  const lote = aprobarPendientes([aprobableAveria], { por: 'admin', ahora: AHORA });
+  return [motivoSinDetalles(aprobableAveria), sola.error, sola.datos.estado, 'sinDetalles' in sola.datos, 'sinDetalles' in conMotivo.datos, lote.documentos.length, lote.omitidas.length];
+})(), ['', undefined, 'APROBADA', false, false, 1, 0]);
 
 // --- Todo conectado ---
 const leer = (ruta) => readFileSync(ruta, 'utf8');
@@ -106,6 +126,11 @@ check('el paso del cobro muestra el monto, los valores del cliente y los datos d
   return [cobro.includes('cuadroDelCobro') && cobro.includes('valoresDelCliente') && cobro.includes('datosDeLaOrden'), pagoPaso.includes('<FormularioPagoCliente') && !pagoPaso.includes('DetallesOrdenCampo'), fotos.includes('<DetallesOrdenCampo') && !fotos.includes('<FormularioPagoCliente')];
 })(), [true, true, true]);
 check('App le pasa al modal la subida de los detalles', leer('src/App.jsx').includes('onSubirDetalles: subirDetallesDeLaOrden'), true);
+check('el aviso de "Hacerlo después" dice solo lo que falta (el pago y/o las fotos), no siempre las dos cosas', [modal.includes('textoDeLoQueFalta({ pidePago, pideDetalles })'), modal.includes('hasta que registres el pago y subas las fotos.')], [true, false]);
+check('lo que pide fotos sale siempre de faltanDetalles (que exige la instalación): lista del técnico, asistente, Revisión, cierre del día y avisos', [
+  leer('src/utils/detallesOrden.js').includes('!esInstalacion(ticket.tipoTrabajo)'),
+  ...['src/hooks/useTickets.js', 'src/hooks/useReports.js', 'src/utils/pendientesTecnico.js', 'src/utils/revisionPagos.js', 'src/components/modals/CobroResultanteModal.jsx'].map((ruta) => leer(ruta).includes('faltanDetalles')),
+], [true, true, true, true, true, true]);
 const hook = leer('src/hooks/useTickets.js');
 check('useTickets: lo que el técnico debe completar incluye las órdenes sin detalles y sube las fotos', [hook.includes('|| faltanDetalles(t)'), hook.includes('subirDetallesDeOrden(ticket, fotos')], [true, true]);
 check('el técnico corrige las fotos desde su lista (tabla y celular) en un modal propio', [leer('src/components/TicketsTable.jsx').includes('onCorregirFotos(ticket)'), leer('src/components/TicketsMobileList.jsx').includes('Corregir fotos'), leer('src/App.jsx').includes('<CorregirDetallesModal'), leer('src/components/DetallesOrdenCampo.jsx').includes('Cambiar la foto'), leer('src/components/DetallesOrdenCampo.jsx').includes('Quitar la foto')], [true, true, true, true, true]);
@@ -125,22 +150,6 @@ const fuentes = archivosFuente('src');
 const usosDelHook = fuentes.flatMap((f) => [...leer(f).matchAll(/useUrlsDeFotos\(([^;\r\n]*)\)/g)].map((m) => ({ f, arg: m[1] }))).filter((u) => !u.f.endsWith('useUrlsDeFotos.js'));
 check('las fotos no se piden de entrada: todo uso de useUrlsDeFotos va condicionado y es solo en FotosDeOrden y VerFotosOrden', [usosDelHook.map((u) => u.f.split('/').pop()).sort(), usosDelHook.every((u) => /^(cerca|pedidas) \? /.test(u.arg))], [['FotosDeOrden.jsx', 'VerFotosOrden.jsx'], true]);
 check('solo el hook y el campo de fotos del técnico llaman a urlDeFoto', fuentes.filter((f) => /urlDeFoto\(/.test(leer(f)) && !f.endsWith('fotosOrden.js')).map((f) => f.split('/').pop()).sort(), ['DetallesOrdenCampo.jsx', 'useUrlsDeFotos.js']);
-check('el Historial de órdenes ya no repite el historial de cambios afuera: se ve dentro del Detalle completo', [leer('src/components/modals/OrdersHistoryModal.jsx').includes('HistorialTimeline'), leer('src/components/modals/DetalleOrdenModal.jsx').includes('<HistorialTimeline ticket={ticket} />')], [false, true]);
-check('las fotos solo las ve la oficina y solo se piden cuando la sección entra en pantalla; se abren en el visor de la app, no en otra pestaña', [
-  leer('src/components/modals/DetalleOrdenModal.jsx').includes('verCobro && fotosDe(ticket).length > 0'),
-  leer('src/components/FotosDeOrden.jsx').includes('cerca ? fotos.map((f) => f.ruta) : []'), leer('src/components/FotosDeOrden.jsx').includes('IntersectionObserver'),
-  leer('src/components/FotosDeOrden.jsx').includes('<VisorFotos'), leer('src/components/FotosDeOrden.jsx').includes('target="_blank"'),
-], [true, true, true, true, false]);
-check('las fotos se ven en el detalle de la orden y en el de Revisión y Finanzas', [leer('src/components/modals/DetalleOrdenModal.jsx').includes('<FotosDeOrden'), leer('src/components/finanzas/DetalleOrdenFinanzas.jsx').includes('<FotosDeOrden')], [true, true]);
-const reglas = leer('firestore.rules');
-check('las reglas de Firestore dejan al técnico guardar detallesOrden una sola vez, en su orden finalizada', [reglas.includes("'historialEdiciones', 'detallesOrden'])"), reglas.includes('detallesOrdenValido(request.resource.data.detallesOrden, docId)'), /resource\.data\.estado == 'FINALIZADO'\s+&& detallesOrdenValido/.test(reglas)], [true, true, true]);
-const storage = leer('storage.rules');
-check('las reglas de Storage: solo el técnico de la orden finalizada sube un JPEG de hasta 1 MB, sin sobrescribir', [storage.includes("ordenDe(ticketId).estado == 'FINALIZADO'"), storage.includes("request.resource.contentType == 'image/jpeg'"), storage.includes('1024 * 1024'), storage.includes('allow update: if false')], [true, true, true, true]);
-const firebase = JSON.parse(leer('firebase.json'));
-check('firebase.json: reglas de Storage, emulador y las fotos permitidas en la política de seguridad', [firebase.storage?.rules, firebase.emulators.storage?.port, JSON.stringify(firebase.hosting.headers).includes('https://firebasestorage.googleapis.com')], ['storage.rules', 9199, true]);
-
-if (failures) { console.log(`\n${failures} prueba(s) fallaron`); process.exit(1); }
-console.log('\nTodas las pruebas pasaron');
 // --- Elegir y subir las fotos desde el teléfono: galería, otra app o la cámara de la app ---
 check('al elegir solo se rechaza lo que dice no ser imagen: un PDF o un video sí; sin tipo, "octet-stream" (algunas apps) y las imágenes de cualquier formato se intentan abrir', [
   { type: 'application/pdf' }, { type: 'video/mp4' }, { type: '' }, { type: 'application/octet-stream' }, { type: 'image/jpeg' }, { type: 'image/webp' }, { type: 'image/heic' }, {},
@@ -165,3 +174,19 @@ check('al subir se usa la foto ya reducida, con reintento y vigilante de subida 
 ], [true, true, true, true, true, true]);
 check('la foto se abre con respaldos (orientación, sin opciones, etiqueta img) y un PNG con transparencia queda sobre fondo blanco', [fotosLib.includes("imageOrientation: 'from-image'"), fotosLib.includes('await imagen.decode()'), fotosLib.includes("fillStyle = '#ffffff'")], [true, true, true]);
 check('el botón de guardar las fotos no se apaga con menos de 2 (parecería que no hace nada): al tocarlo dice cuántas faltan y qué botones usar', [campo.includes('disabled={subiendo || preparando || !huboCambios}'), campo.includes('fotos.length < MIN_FOTOS) { setError('), campo.includes('toca «Tomar foto» o «Galería»')], [true, true, true]);
+check('el Historial de órdenes ya no repite el historial de cambios afuera: se ve dentro del Detalle completo', [leer('src/components/modals/OrdersHistoryModal.jsx').includes('HistorialTimeline'), leer('src/components/modals/DetalleOrdenModal.jsx').includes('<HistorialTimeline ticket={ticket} />')], [false, true]);
+check('las fotos solo las ve la oficina y solo se piden cuando la sección entra en pantalla; se abren en el visor de la app, no en otra pestaña', [
+  leer('src/components/modals/DetalleOrdenModal.jsx').includes('verCobro && fotosDe(ticket).length > 0'),
+  leer('src/components/FotosDeOrden.jsx').includes('cerca ? fotos.map((f) => f.ruta) : []'), leer('src/components/FotosDeOrden.jsx').includes('IntersectionObserver'),
+  leer('src/components/FotosDeOrden.jsx').includes('<VisorFotos'), leer('src/components/FotosDeOrden.jsx').includes('target="_blank"'),
+], [true, true, true, true, false]);
+check('las fotos se ven en el detalle de la orden y en el de Revisión y Finanzas', [leer('src/components/modals/DetalleOrdenModal.jsx').includes('<FotosDeOrden'), leer('src/components/finanzas/DetalleOrdenFinanzas.jsx').includes('<FotosDeOrden')], [true, true]);
+const reglas = leer('firestore.rules');
+check('las reglas de Firestore dejan al técnico guardar detallesOrden una sola vez, en su orden finalizada', [reglas.includes("'historialEdiciones', 'detallesOrden'])"), reglas.includes('detallesOrdenValido(request.resource.data.detallesOrden, docId)'), /resource\.data\.estado == 'FINALIZADO'\s+&& detallesOrdenValido/.test(reglas)], [true, true, true]);
+const storage = leer('storage.rules');
+check('las reglas de Storage: solo el técnico de la orden finalizada sube un JPEG de hasta 1 MB, sin sobrescribir', [storage.includes("ordenDe(ticketId).estado == 'FINALIZADO'"), storage.includes("request.resource.contentType == 'image/jpeg'"), storage.includes('1024 * 1024'), storage.includes('allow update: if false')], [true, true, true, true]);
+const firebase = JSON.parse(leer('firebase.json'));
+check('firebase.json: reglas de Storage, emulador y las fotos permitidas en la política de seguridad', [firebase.storage?.rules, firebase.emulators.storage?.port, JSON.stringify(firebase.hosting.headers).includes('https://firebasestorage.googleapis.com')], ['storage.rules', 9199, true]);
+
+if (failures) { console.log(`\n${failures} prueba(s) fallaron`); process.exit(1); }
+console.log('\nTodas las pruebas pasaron');
