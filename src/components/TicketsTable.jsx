@@ -51,6 +51,7 @@ export default function TicketsTable({
   onVerHistorial,
   onVerDetalle,
   onPreFinalizar,
+  conBorrador,
   onRegistrarPago,
   onAprobarFinalizar,
   onResponderCobro,
@@ -236,7 +237,7 @@ export default function TicketsTable({
                           <a href={enlaceNavegacion} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar" className="p-1 text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 hover:bg-sky-200 dark:hover:bg-sky-900/50 rounded transition-colors"><Navigation className="w-3.5 h-3.5" /></a>
                         )}
                         {ticket.estado === 'PENDIENTE' ? (
-                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`Pre-finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-xl font-bold transition-colors" title="Pre-finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`${conBorrador?.has(String(ticket.id)) ? 'Continuar el borrador de' : 'Pre-finalizar'} orden ${ticket.codigo || ticket.id}`} className={`p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-xl font-bold transition-colors ${conBorrador?.has(String(ticket.id)) ? 'ring-2 ring-offset-1 ring-amber-300 dark:ring-offset-zinc-900' : ''}`} title={conBorrador?.has(String(ticket.id)) ? 'Continuar borrador guardado' : 'Pre-finalizar orden'}><ClipboardCheck className="w-3.5 h-3.5" /></button>
                         ) : onRegistrarPago && faltaElPago(ticket) ? (
                           <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`Registrar el pago de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-xl font-bold transition-colors" title="Registrar el pago del cliente"><Banknote className="w-3.5 h-3.5" aria-hidden="true" /></button>
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (

@@ -41,6 +41,7 @@ export default function TicketsMobileList({
   onPegarUbicacion,
   onVerDetalle,
   onPreFinalizar,
+  conBorrador,
   onRegistrarPago,
   onAprobarFinalizar,
   onResponderCobro,
@@ -246,7 +247,7 @@ export default function TicketsMobileList({
                 </button>
                 {ticket.estado === 'PENDIENTE' ? (
                   <button onClick={() => onPreFinalizar(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-[13px] transition-colors">
-                    <CheckCircle2 className="w-4 h-4" /> Pre-finalizar
+                    <CheckCircle2 className="w-4 h-4" /> {conBorrador?.has(String(ticket.id)) ? 'Continuar borrador' : 'Pre-finalizar'}
                   </button>
                 ) : onRegistrarPago && faltaElPago(ticket) ? (
                   <button onClick={() => onRegistrarPago(ticket.id)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 flex items-center justify-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 hover:bg-emerald-200 dark:hover:bg-emerald-500/25 font-bold text-[13px] transition-colors">

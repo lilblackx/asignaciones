@@ -44,6 +44,8 @@ import { useCompletarPromotoras } from './hooks/useCompletarPromotoras';
 import { esProgramadaFutura } from './utils/programada';
 import { esVentaDelTecnico } from './utils/tecnicoVenta';
 import { useOperadorEnOrdenes } from './hooks/useOperadorEnOrdenes';
+import { useBorradoresPrefinalizar, useLimpiezaDeBorradores } from './hooks/useBorradoresPrefinalizar';
+import { olvidarBorrador } from './utils/borradorPrefinalizar';
 import { TEXTO_SIN_PLANTILLA, generarMensajeClienteOrden, generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, ordenSinPlantilla, tipoUsaPlantillaPromotora } from './utils/whatsapp';
 import { esCodigoSinNumero } from './utils/correlativo';
 import { stripEmojis } from './utils/sanitizeInput';
@@ -131,6 +133,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     if (ticketsCargados && listaAvisos.length > 0) quitarAtendidas(tickets, canEditTickets);
   }, [tickets, ticketsCargados, listaAvisos, canEditTickets, quitarAtendidas]);
   useOperadorEnOrdenes({ firebaseUser, role, ticketsCargados, tickets, users });
+  // Los borradores de Pre-finalizar que el técnico dejó a medias en este teléfono: se marcan en su lista y se limpian los de órdenes que ya no están pendientes.
+  const borradoresPrefinalizar = useBorradoresPrefinalizar(currentUser, isTecnico);
+  useLimpiezaDeBorradores(currentUser, isTecnico, tickets, ticketsCargados);
   const filasCambiadas = useFilasCambiadas(tickets, ticketsCargados);
   useAvisoCierreAutomatico(firebaseUser, canCerrar, currentUser, notifications.addNotification);
   // El técnico se entera de un pago o un adelanto que Finanzas le registra, también con la app abierta.
@@ -526,6 +531,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     // Conector interno: el cobro se informa ya (y queda en el historial de la orden).
     const monto = avisaCobroAlPreFinalizar(extra.tipoVisita) ? montoBsDe(tasaConfig) : null;
     const ok = await preFinalizarTicket(ticket, { ...extra, montoBs: monto });
+    // Ya se guardó: el borrador de esta orden no hace falta. Si no se pudo, queda para recuperarlo al volver a abrirla.
+    if (ok) olvidarBorrador(currentUser, ticket.id);
     setPreFinalizarTarget(null);
     // Conector interno: el técnico ve el cobro ya, para informárselo al cliente en el momento.
     if (ok && isTecnico && avisaCobroAlPreFinalizar(extra.tipoVisita)) {
@@ -779,6 +786,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onPegarUbicacion={handlePegarUbicacion}
               onVerDetalle={setDetalleTarget}
               onPreFinalizar={setPreFinalizarTarget}
+              conBorrador={borradoresPrefinalizar}
               onRegistrarPago={isTecnico ? setPagoAbierto : undefined}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
@@ -811,6 +819,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onVerDetalle={setDetalleTarget}
               onVerHistorial={setHistorialTarget}
               onPreFinalizar={setPreFinalizarTarget}
+              conBorrador={borradoresPrefinalizar}
               onRegistrarPago={isTecnico ? setPagoAbierto : undefined}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
@@ -1040,6 +1049,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {preFinalizarTarget && (
           <PreFinalizarModal
             ticket={tickets.find(t => t.id === preFinalizarTarget.id) || preFinalizarTarget}
+            usuario={isTecnico ? currentUser : null}
             onConfirm={handleConfirmPreFinalizar}
             onConsultarCobro={consultarCobroRecableado}
             onClose={() => setPreFinalizarTarget(null)}

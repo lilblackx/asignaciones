@@ -4,6 +4,7 @@ import { doc } from 'firebase/firestore';
 import { onSnapshot } from '../lib/medidorFirestore.js';
 import { auth, db, appId, borrarCacheLocal } from '../lib/firebase';
 import { usernameToAuthEmail } from '../utils/authEmail';
+import { olvidarBorradoresDe } from '../utils/borradorPrefinalizar';
 import { MENSAJE_SESION_VENCIDA, msParaVencer, sesionVencida } from '../utils/sesion';
 
 const GENERIC_LOGIN_ERROR = 'Usuario o clave incorrectos.';
@@ -143,6 +144,8 @@ export function useAuth() {
   };
 
   const handleLogout = async () => {
+    // El teléfono puede ser de otra persona: lo que el técnico dejó escrito a medias se borra al cerrar sesión a mano (no cuando la sesión vence sola).
+    olvidarBorradoresDe(profile?.username);
     await signOut(auth);
     setLoginData({ usuario: '', clave: '' });
     await borrarCacheLocal();

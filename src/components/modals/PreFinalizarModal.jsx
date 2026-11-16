@@ -1,5 +1,5 @@
 import { observacionParaTecnico } from '../../utils/observacion';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, MapPin, Plug, Tag, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
@@ -30,61 +30,102 @@ import { calcularMetraje, totalMetraje } from '../../utils/metraje';
 import NapPuertoCampos from './NapPuertoCampos';
 import Spinner from '../Spinner';
 import { claseArea, claseCampo } from '../estilos';
+import { guardarBorrador, leerBorrador, olvidarBorrador, versionDeOrden } from '../../utils/borradorPrefinalizar';
 
 const marcaTexto = (v) => (v == null ? '' : String(v));
 
-// El pago del cliente ya no se pide aquí: el técnico lo registra cuando la oficina finaliza la orden (ver CobroResultanteModal).
-export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro, onClose }) {
+// Lo que el formulario trae al abrir la orden (sin borrador). Es también la base con que se decide si hay algo escrito que guardar como borrador (ver utils/borradorPrefinalizar).
+function valoresDelTicket(ticket) {
   // La NAP y el puerto van en dos campos y son obligatorios con conector externo, drop atenuado y en las instalaciones (ver pideNapPuertoVisita); ahí una NAP "SN" (o vacía) no sirve: el técnico debe escribir la real.
-  const pideNapPuertoInicial = pideNapPuertoVisita(ticket?.tipoVisita) || trabajoEsInstalacion(ticket?.tipoTrabajo);
+  const pideNapPuerto = pideNapPuertoVisita(ticket?.tipoVisita) || trabajoEsInstalacion(ticket?.tipoTrabajo);
   const separado = separarNapPuerto(ticket?.nap);
-  const [nap, setNap] = useState(pideNapPuertoInicial && napSinDato(separado.nap) ? '' : separado.nap);
-  const [puerto, setPuerto] = useState(separado.puerto);
-  // Instalación: lo que la plantilla de la promotora trae vacío (ver utils/instalacion).
-  const [serial, setSerial] = useState(ticket?.instalacion?.serial || '');
-  const [vlan, setVlan] = useState(ticket?.instalacion?.vlan || '');
-  const [metrajeInicial, setMetrajeInicial] = useState(marcaTexto(ticket?.instalacion?.metrajeInicial));
-  const [metrajeFinal, setMetrajeFinal] = useState(marcaTexto(ticket?.instalacion?.metrajeFinal));
-  const [metrajeExiste, setMetrajeExiste] = useState(ticket?.instalacion?.metrajeExistente === true);
-  const [puertosDisponibles, setPuertosDisponibles] = useState(ticket?.instalacion?.puertosDisponibles || '');
-  const [postes, setPostes] = useState(ticket?.instalacion?.posteadura?.length ? ticket.instalacion.posteadura : ['']);
+  const conectoresInst = normalizarConectoresInstalacion(ticket?.instalacion?.conectores);
+  const cantidades = cantidadesConector(ticket);
+  return {
+    nap: pideNapPuerto && napSinDato(separado.nap) ? '' : separado.nap,
+    puerto: separado.puerto,
+    // Instalación: lo que la plantilla de la promotora trae vacío (ver utils/instalacion).
+    serial: ticket?.instalacion?.serial || '',
+    vlan: ticket?.instalacion?.vlan || '',
+    metrajeInicial: marcaTexto(ticket?.instalacion?.metrajeInicial),
+    metrajeFinal: marcaTexto(ticket?.instalacion?.metrajeFinal),
+    metrajeExiste: ticket?.instalacion?.metrajeExistente === true,
+    puertosDisponibles: ticket?.instalacion?.puertosDisponibles || '',
+    postes: ticket?.instalacion?.posteadura?.length ? ticket.instalacion.posteadura : [''],
+    // Instalación: cuántos conectores usó de cada tipo y color (texto, como se escribe; obligatorio al menos 1).
+    instExternoVerde: conectoresInst.externo.verde ? String(conectoresInst.externo.verde) : '',
+    instInternoVerde: conectoresInst.interno.verde ? String(conectoresInst.interno.verde) : '',
+    instInternoAzul: conectoresInst.interno.azul ? String(conectoresInst.interno.azul) : '',
+    // Si ya consultó el cobro de un recableado, la orden se abre en ese recableado con esos metros.
+    tipoVisita: ticket?.tipoVisita || (consultaCobroDe(ticket) ? TIPO_RECABLEADO : ''),
+    observacion: reporteTecnicoInicial(ticket),
+    potencia: ticket?.potenciaDbm != null ? String(ticket.potenciaDbm) : '',
+    potencia1490: ticket?.potencia1490Dbm != null ? String(ticket.potencia1490Dbm) : '',
+    // Recableado: metros de cable (obligatorios) y conectores colocados (opcionales). Visita de conector: el color del conector colocado (el interno es obligatorio).
+    metrosInicial: marcaTexto(ticket?.metrajeInicial),
+    metrosFinal: marcaTexto(ticket?.metrajeFinal),
+    colorExterno: colorConectorExterno(ticket?.conectorExterno),
+    colorInterno: colorConectorInterno(ticket?.conectorInterno),
+    // Visita de conector: cuántos conectores verdes y azules usó (texto, como se escribe).
+    cantVerde: cantidades.verde ? String(cantidades.verde) : '',
+    cantAzul: cantidades.azul ? String(cantidades.azul) : '',
+    // Cambio de equipo: serial del equipo nuevo (obligatorio).
+    serialEquipo: ticket?.serialEquipo || '',
+    tipoEquipo: ticket?.tipoEquipoNuevo || '',
+    // Configuración de VLAN: el número de VLAN configurada (obligatorio).
+    vlanVisita: ticket?.vlanVisita || '',
+  };
+}
+
+// El borrador se lee una sola vez al abrir. "Descartar" lo borra y vuelve a armar el formulario con lo que trae la orden.
+export default function PreFinalizarModal(props) {
+  const { ticket, usuario } = props;
+  const [borrador, setBorrador] = useState(() => (ticket && usuario ? leerBorrador(usuario, ticket.id) : null));
+  const [reinicio, setReinicio] = useState(0);
+  const descartar = () => { olvidarBorrador(usuario, ticket.id); setBorrador(null); setReinicio((n) => n + 1); };
+  return <FormularioPreFinalizar key={reinicio} {...props} borrador={borrador} onDescartarBorrador={descartar} />;
+}
+
+// El pago del cliente ya no se pide aquí: el técnico lo registra cuando la oficina finaliza la orden (ver CobroResultanteModal).
+function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador, onConfirm, onConsultarCobro, onClose }) {
+  // Con borrador, lo que el técnico había escrito pisa a lo que trae la orden.
+  const [ini] = useState(() => ({ ...valoresDelTicket(ticket), ...(borrador?.valores || {}) }));
+  const [nap, setNap] = useState(ini.nap);
+  const [puerto, setPuerto] = useState(ini.puerto);
+  const [serial, setSerial] = useState(ini.serial);
+  const [vlan, setVlan] = useState(ini.vlan);
+  const [metrajeInicial, setMetrajeInicial] = useState(ini.metrajeInicial);
+  const [metrajeFinal, setMetrajeFinal] = useState(ini.metrajeFinal);
+  const [metrajeExiste, setMetrajeExiste] = useState(ini.metrajeExiste);
+  const [puertosDisponibles, setPuertosDisponibles] = useState(ini.puertosDisponibles);
+  const [postes, setPostes] = useState(ini.postes);
   const [instalacionErrores, setInstalacionErrores] = useState({});
-  // Instalación: cuántos conectores usó de cada tipo y color (texto, como se escribe; obligatorio al menos 1).
-  const conectoresPrevios = normalizarConectoresInstalacion(ticket?.instalacion?.conectores);
-  const [instExternoVerde, setInstExternoVerde] = useState(conectoresPrevios.externo.verde ? String(conectoresPrevios.externo.verde) : '');
-  const [instInternoVerde, setInstInternoVerde] = useState(conectoresPrevios.interno.verde ? String(conectoresPrevios.interno.verde) : '');
-  const [instInternoAzul, setInstInternoAzul] = useState(conectoresPrevios.interno.azul ? String(conectoresPrevios.interno.azul) : '');
+  const [instExternoVerde, setInstExternoVerde] = useState(ini.instExternoVerde);
+  const [instInternoVerde, setInstInternoVerde] = useState(ini.instInternoVerde);
+  const [instInternoAzul, setInstInternoAzul] = useState(ini.instInternoAzul);
   const [conectoresInstError, setConectoresInstError] = useState({ campo: '', mensaje: '' });
-  // Si ya consultó el cobro de un recableado, la orden se abre en ese recableado con esos metros.
-  const [tipoVisitaElegido, setTipoVisita] = useState(ticket?.tipoVisita || (consultaCobroDe(ticket) ? TIPO_RECABLEADO : ''));
+  const [tipoVisitaElegido, setTipoVisita] = useState(ini.tipoVisita);
   const [napError, setNapError] = useState('');
   const [puertoError, setPuertoError] = useState('');
-  const [observacion, setObservacion] = useState(() => reporteTecnicoInicial(ticket));
-  const potenciaInicial = ticket?.potenciaDbm != null ? String(ticket.potenciaDbm) : '';
-  const [potencia, setPotenciaCampo] = useState(potenciaInicial);
+  const [observacion, setObservacion] = useState(ini.observacion);
+  const [potencia, setPotenciaCampo] = useState(ini.potencia);
   // La consulta a SmartOLT es asíncrona: lo que hay en el campo y lo último que ella escribió se
   // leen de aquí, no del estado de cuando se tocó el botón (el técnico pudo escribir mientras tanto).
-  const potenciaEscrita = useRef(potenciaInicial);
+  const potenciaEscrita = useRef(ini.potencia);
   const potenciaDeSmartOlt = useRef('');
   const setPotencia = (valor) => { potenciaEscrita.current = valor; setPotenciaCampo(valor); };
-  const [potencia1490, setPotencia1490] = useState(ticket?.potencia1490Dbm != null ? String(ticket.potencia1490Dbm) : '');
-  // Recableado: metros de cable (obligatorios) y conectores colocados (opcionales). Visita de
-  // conector: el color del conector colocado (el interno es obligatorio).
-  const [metrosInicial, setMetrosInicial] = useState(marcaTexto(ticket?.metrajeInicial));
-  const [metrosFinal, setMetrosFinal] = useState(marcaTexto(ticket?.metrajeFinal));
-  const [colorExterno, setColorExterno] = useState(colorConectorExterno(ticket?.conectorExterno));
-  const [colorInterno, setColorInterno] = useState(colorConectorInterno(ticket?.conectorInterno));
-  // Visita de conector: cuántos conectores verdes y azules usó (texto, como se escribe).
-  const cantidadesPrevias = cantidadesConector(ticket);
-  const [cantVerde, setCantVerde] = useState(cantidadesPrevias.verde ? String(cantidadesPrevias.verde) : '');
-  const [cantAzul, setCantAzul] = useState(cantidadesPrevias.azul ? String(cantidadesPrevias.azul) : '');
-  // Cambio de equipo: serial del equipo nuevo (obligatorio).
-  const [serialEquipo, setSerialEquipo] = useState(ticket?.serialEquipo || '');
+  const [potencia1490, setPotencia1490] = useState(ini.potencia1490);
+  const [metrosInicial, setMetrosInicial] = useState(ini.metrosInicial);
+  const [metrosFinal, setMetrosFinal] = useState(ini.metrosFinal);
+  const [colorExterno, setColorExterno] = useState(ini.colorExterno);
+  const [colorInterno, setColorInterno] = useState(ini.colorInterno);
+  const [cantVerde, setCantVerde] = useState(ini.cantVerde);
+  const [cantAzul, setCantAzul] = useState(ini.cantAzul);
+  const [serialEquipo, setSerialEquipo] = useState(ini.serialEquipo);
   const [serialEquipoError, setSerialEquipoError] = useState('');
-  const [tipoEquipo, setTipoEquipo] = useState(ticket?.tipoEquipoNuevo || '');
+  const [tipoEquipo, setTipoEquipo] = useState(ini.tipoEquipo);
   const [tipoEquipoError, setTipoEquipoError] = useState('');
-  // Configuración de VLAN: el número de VLAN configurada (obligatorio).
-  const [vlanVisita, setVlanVisita] = useState(ticket?.vlanVisita || '');
+  const [vlanVisita, setVlanVisita] = useState(ini.vlanVisita);
   const [vlanVisitaError, setVlanVisitaError] = useState('');
   const [tipoVisitaError, setTipoVisitaError] = useState('');
   const [metrosError, setMetrosError] = useState({});
@@ -93,6 +134,15 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
   // Los datos ya validados que se guardarán si el técnico confirma; mientras haya algo aquí se ve el aviso de confirmación.
   const [porConfirmar, setPorConfirmar] = useState(null);
   const [obsError, setObsError] = useState('');
+
+  // Borrador: lo escrito se guarda en el teléfono medio segundo después del último cambio (ver utils/borradorPrefinalizar). Mientras se envía no se toca: al terminar, la app lo borra.
+  const escrito = { nap, puerto, serial, vlan, metrajeInicial, metrajeFinal, metrajeExiste, puertosDisponibles, postes, instExternoVerde, instInternoVerde, instInternoAzul, tipoVisita: tipoVisitaElegido, observacion, potencia, potencia1490, metrosInicial, metrosFinal, colorExterno, colorInterno, cantVerde, cantAzul, serialEquipo, tipoEquipo, vlanVisita };
+  const escritoTexto = JSON.stringify(escrito);
+  useEffect(() => {
+    if (!usuario || !ticket || isSubmitting) return undefined;
+    const espera = setTimeout(() => guardarBorrador(usuario, ticket, JSON.parse(escritoTexto), valoresDelTicket(ticket)), 500);
+    return () => clearTimeout(espera);
+  }, [escritoTexto, usuario, ticket, isSubmitting]);
 
   if (!ticket) return null;
 
@@ -232,6 +282,13 @@ export default function PreFinalizarModal({ ticket, onConfirm, onConsultarCobro,
 
         {/* noValidate: las faltas las revisa handleSubmit, que muestra todos los errores y lleva el cursor al primero. */}
         <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-5 space-y-4">
+          {borrador && (
+            <div role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-xs text-amber-900 dark:text-amber-100 space-y-1.5">
+              <p className="font-bold">Recuperamos lo que llevabas escrito.</p>
+              {borrador.version !== versionDeOrden(ticket) && <p>La oficina cambió esta orden mientras tanto: revisa los datos antes de enviar.</p>}
+              <button type="button" onClick={onDescartarBorrador} className="font-bold underline underline-offset-2">Descartar y empezar de nuevo</button>
+            </div>
+          )}
           <DevolucionAviso ticket={ticket} conValores />
           {/* Resumen compacto de la orden */}
           <div className="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
