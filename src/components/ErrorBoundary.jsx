@@ -91,7 +91,7 @@ export default class ErrorBoundary extends Component {
             </div>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Si se repite, envía el detalle por WhatsApp a quien administra la app.</p>
             {copiado === 'manual' && (
-              <pre className="max-h-40 overflow-auto rounded border border-zinc-300 dark:border-zinc-700 p-2 text-[11px] leading-snug whitespace-pre-wrap break-words text-zinc-700 dark:text-zinc-300">{detalleDelError(error)}</pre>
+              <pre className="max-h-40 overflow-auto rounded border border-zinc-300 dark:border-zinc-700 p-2 text-[11px] max-lg:text-xs leading-snug whitespace-pre-wrap break-words text-zinc-700 dark:text-zinc-300">{detalleDelError(error)}</pre>
             )}
           </div>
         </div>

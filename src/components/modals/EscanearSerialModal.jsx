@@ -112,7 +112,7 @@ export default function EscanearSerialModal({ onLeido, onClose }) {
       <div role="dialog" aria-label="Escanear serial" className="w-full max-w-md h-[min(92dvh,720px)] bg-black rounded-2xl border border-zinc-800 shadow-2xl flex flex-col overflow-hidden">
         <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b-2 border-amber-500">
           <h2 className="text-base font-black text-white">Escanear serial</h2>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="ml-auto inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="ml-auto inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="relative flex-1 min-h-0 bg-zinc-900 overflow-hidden">
@@ -139,7 +139,7 @@ export default function EscanearSerialModal({ onLeido, onClose }) {
           {fase === 'leido' && leido && (
             <>
               <div className="rounded-xl border border-emerald-600 bg-emerald-950/40 px-3 py-2.5 text-center">
-                <p className="text-[11px] font-black tracking-wide text-emerald-300">{leido.etiqueta}</p>
+                <p className="text-[11px] max-lg:text-xs font-black tracking-wide text-emerald-300">{leido.etiqueta}</p>
                 <p className="text-2xl font-black text-white tracking-wide break-all">{leido.serial}</p>
               </div>
               <p className="text-sm text-zinc-300 text-center">Revisa que coincida con la etiqueta de la caja.</p>

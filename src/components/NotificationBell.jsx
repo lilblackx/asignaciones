@@ -86,7 +86,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
           <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
             <span className="text-xs font-black text-white uppercase tracking-wide">Notificaciones</span>
             {notifications.length > 0 && (
-              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="text-zinc-400 hover:text-red-400 transition-colors p-1 rounded-xl hover:bg-zinc-800">
+              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="relative text-zinc-400 hover:text-red-400 transition-colors p-1 rounded-xl max-lg:after:absolute max-lg:after:-inset-2 hover:bg-zinc-800">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}

@@ -41,7 +41,7 @@ export default function VisorFotos({ fotos, indice, onCambiar, onClose, titulo =
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             <span className="text-xs font-bold text-zinc-300 tabular-nums">{indice + 1} / {total}</span>
-            <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" aria-hidden="true" /></button>
+            <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" aria-hidden="true" /></button>
           </div>
         </div>
 

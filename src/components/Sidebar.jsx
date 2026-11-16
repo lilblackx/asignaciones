@@ -95,7 +95,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
           >
             {colapsado ? <ChevronsRight className="w-5 h-5" aria-hidden="true" /> : <ChevronsLeft className="w-5 h-5" aria-hidden="true" />}
           </button>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="flex items-center justify-center p-1.5 rounded-xl text-zinc-300 hover:bg-zinc-800 lg:hidden"><X className="w-5 h-5" aria-hidden="true" /></button>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="relative flex items-center justify-center p-1.5 rounded-xl after:absolute after:-inset-2 text-zinc-300 hover:bg-zinc-800 lg:hidden"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
 
         <div className="relative flex-1 min-h-0 flex flex-col">

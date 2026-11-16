@@ -18,7 +18,7 @@ export default function CorregirPagoModal({ cobro, cuentasEmpresa = [], onCorreg
             <h2 id="corregir-pago-titulo" className="text-base font-black text-white">{registrando ? 'Registrar el pago' : 'Corregir el pago'}</h2>
             <p className="text-xs font-bold text-zinc-300 truncate">{cobro.codigo || 'S/C'} · {cobro.nombre}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center bg-zinc-800 p-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-4 space-y-4">
           <p className="text-xs text-zinc-600 dark:text-zinc-400">

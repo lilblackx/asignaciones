@@ -23,7 +23,7 @@ function MiniaturaGuardada({ ruta, numero }) {
     return () => { vigente = false; };
   }, [ruta]);
   if (estado.vencida) {
-    return <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-center p-1"><ImageOff className="w-5 h-5 text-zinc-500" aria-hidden="true" /><span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400">Foto vencida</span></div>;
+    return <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-center p-1"><ImageOff className="w-5 h-5 text-zinc-500" aria-hidden="true" /><span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Foto vencida</span></div>;
   }
   return estado.url ? <img src={estado.url} alt={`Foto ${numero} guardada`} className="w-full h-full object-cover" /> : <div className="w-full h-full animate-pulse" />;
 }
@@ -148,12 +148,12 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
                 : f.estado === 'error' ? (
                   <div data-error={f.mensaje} className="w-full h-full flex flex-col items-center justify-center gap-1 text-center p-1.5 pr-9">
                     <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0" aria-hidden="true" />
-                    <span className="text-[11px] leading-tight font-bold text-red-700 dark:text-red-300">No se pudo abrir</span>
+                    <span className="text-[11px] max-lg:text-xs leading-tight font-bold text-red-700 dark:text-red-300">No se pudo abrir</span>
                   </div>
                 )
                   : f.estado === 'preparando' ? <div className="w-full h-full flex items-center justify-center" role="status" aria-label={`Preparando la foto ${i + 1}`}><Spinner className="w-6 h-6" /></div>
                     : <img src={f.url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />}
-              <span className="absolute left-1 bottom-1 text-[11px] font-black text-white bg-black/70 rounded px-1.5 py-0.5">{i + 1}</span>
+              <span className="absolute left-1 bottom-1 text-[11px] max-lg:text-xs font-black text-white bg-black/70 rounded px-1.5 py-0.5">{i + 1}</span>
               {!subiendo && (
                 <>
                   <button type="button" onClick={() => cambiar(fotos.filter((_, k) => k !== i))} aria-label={`Quitar la foto ${i + 1}`} className="absolute right-1 top-1 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/70 text-white hover:bg-red-700 transition-colors">
