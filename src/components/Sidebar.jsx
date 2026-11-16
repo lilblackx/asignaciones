@@ -82,8 +82,8 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
         aria-label="Módulos"
         className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:m-4 lg:rounded-card lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-card max-lg:rounded-r-card shadow-card max-lg:overflow-hidden text-foreground overflow-hidden`}
       >
-        <div className={`flex items-center justify-between px-5 h-16 shrink-0 text-foreground ${colapsado ? 'lg:justify-center' : ''}`}>
-          <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className={`flex items-center rounded-campo hover:opacity-80 transition-opacity ${colapsado ? 'lg:hidden' : ''}`}>
+        <div className={`flex items-center justify-between px-5 h-16 shrink-0 text-foreground ${colapsado ? 'lg:flex-col lg:justify-center lg:h-auto lg:gap-1 lg:px-2 lg:pt-4 lg:pb-1' : ''}`}>
+          <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className="flex items-center rounded-boton hover:opacity-80 transition-opacity">
             <span className="flex items-center gap-3"><img src={logos.login192} alt="" width="40" height="40" className="w-10 h-10 rounded-card shrink-0" /><span className={`text-base font-black text-foreground ${colapsado ? 'lg:hidden' : ''}`}>Asignaciones</span></span>
           </button>
           <button
@@ -91,11 +91,11 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
             onClick={alternar}
             aria-label={colapsado ? 'Expandir menú' : 'Contraer menú'}
             title={colapsado ? 'Expandir menú' : 'Contraer menú'}
-            className="hidden lg:block p-2 rounded-campo text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            className="hidden lg:block p-2 rounded-boton text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             {colapsado ? <ChevronsRight className="w-5 h-5" aria-hidden="true" /> : <ChevronsLeft className="w-5 h-5" aria-hidden="true" />}
           </button>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="relative flex items-center justify-center p-1.5 rounded-campo after:absolute after:-inset-2 text-zinc-300 hover:bg-zinc-800 lg:hidden"><X className="w-5 h-5" aria-hidden="true" /></button>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="relative flex items-center justify-center p-1.5 rounded-boton after:absolute after:-inset-2 text-muted-foreground hover:bg-accent lg:hidden"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
 
         <div className="relative flex-1 min-h-0 flex flex-col">
@@ -114,7 +114,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
                       onClick={abrir(accion)}
                       title={nombre}
                       aria-current={actual ? 'page' : undefined}
-                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-1.5 max-lg:py-3 text-sm font-semibold transition-colors ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-200 font-black' : 'text-foreground hover:bg-secondary'}`}
+                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-1.5 max-lg:py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-200 font-black' : 'text-foreground hover:bg-secondary'}`}
                     >
                       <Icono className="w-5 h-5 shrink-0" aria-hidden="true" />
                       <span className={`truncate ${colapsado ? 'lg:hidden' : ''}`}>{nombre}</span>
@@ -139,7 +139,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
               <p className="truncate text-sm font-bold text-foreground">{nombre}</p>
               <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase tracking-wider" title={`${nombre} · conectado`}><span className="w-2 h-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />{rol}</p>
             </div>
-            <button type="button" onClick={onCambiarTema} aria-label="Cambiar tema" title="Cambiar tema" className={`${BOTON_PIE} ${colapsado ? 'lg:hidden' : ''}`}>
+            <button type="button" onClick={onCambiarTema} aria-label="Cambiar tema" title="Cambiar tema" className={BOTON_PIE}>
               {isDarkMode ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
             </button>
             <button type="button" onClick={onSalir} aria-label="Cerrar sesión" title="Cerrar sesión" className={BOTON_PIE}>
