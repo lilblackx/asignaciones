@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LogOut, MonitorSmartphone, Moon, Network, PackageCheck, Settings, ShieldCheck, Sun, TrendingUp, Users, Wallet, X } from 'lucide-react';
+import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LocateFixed, LogOut, MonitorSmartphone, Moon, Network, PackageCheck, Settings, ShieldCheck, Sun, TrendingUp, Users, Wallet, X } from 'lucide-react';
 import { ADMINISTRACION_ACTIVA } from '../constants';
 import { logosDeTemporada } from '../utils/temporada';
 
@@ -16,7 +16,7 @@ const guardarColapsado = (valor) => { try { localStorage.setItem(CLAVE_COLAPSADO
 //   acciones: { inicio, modulo(id) }: `inicio` vuelve a la oficina y `modulo(id)` abre el módulo (CIERRE, REPORTES, HISTORIAL, REVISION, ADMINISTRACION, FINANZAS, TASA, TECNICOS, USUARIOS, ALMACEN, INFRAESTRUCTURA, INVENTARIO o PROMOTORA) como página dentro del marco.
 //   nombre, rol, isDarkMode, onCambiarTema, onSalir: el pie del menú (quién está conectado, el tema y cerrar sesión).
 //   activo: el módulo que está a la vista ('oficina', 'revision', 'finanzas', 'almacen' o 'ventas'); los demás son ventanas que se abren encima.
-export default function Sidebar({ acciones, veInventario = false, veEstaciones = false, alertasInventario = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
+export default function Sidebar({ acciones, veInventario = false, veEstaciones = false, veUbicacion = false, alertasInventario = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
   const [colapsado, setColapsado] = useState(leerColapsado);
   // El logo de Navidad solo en el menú (y en el login), por fechas; el ícono de la app instalada no cambia (ver utils/temporada).
   const logos = logosDeTemporada();
@@ -31,7 +31,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
     obs.observe(e);
     if (e.firstElementChild) obs.observe(e.firstElementChild);
     return () => obs.disconnect();
-  }, [colapsado, abierto, veInventario, veEstaciones]);
+  }, [colapsado, abierto, veInventario, veEstaciones, veUbicacion]);
 
   const alternar = () => setColapsado((c) => { guardarColapsado(!c); return !c; });
 
@@ -59,6 +59,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
     { titulo: 'Equipo', items: [
       { id: 'tecnicos', Icono: Users, nombre: 'Técnicos', accion: () => acciones.modulo('TECNICOS') },
       { id: 'usuarios', Icono: ShieldCheck, nombre: 'Usuarios', accion: () => acciones.modulo('USUARIOS') },
+      ...(veUbicacion ? [{ id: 'ubicacion', Icono: LocateFixed, nombre: 'Ubicación', accion: () => acciones.modulo('UBICACION') }] : []),
       ...(veEstaciones ? [{ id: 'estaciones', Icono: MonitorSmartphone, nombre: 'Estaciones', accion: () => acciones.modulo('ESTACIONES') }] : []),
     ] },
     { titulo: 'Inventario y ventas', items: [

@@ -97,7 +97,7 @@ check('no deja cambiar una función que no existe', (() => { try { cambioDeFunci
 
 // --- Conexión en la app ---
 const app = leer('../src/App.jsx');
-check('la función se escucha solo para el técnico y para Configuración abierta', /useFunciones\(firebaseUser, isTecnico \|\| configuracionAbierta,/.test(app), true);
+check('las funciones se escuchan solo para el técnico y el ADMIN (Configuración y el menú)', /useFunciones\(firebaseUser, isTecnico \|\| isAdmin,/.test(app), true);
 check('el botón de la ruta solo sale con la función encendida (paradasRuta nace de funciones.rutasActivas)', /const paradasRuta = isTecnico && funciones\.rutasActivas \? paradasDeRuta\(ticketsParaVer\) : null;/.test(app), true);
 check('la hoja de la ruta solo se muestra al técnico con la función encendida', /\{isTecnico && funciones\.rutasActivas && rutaAbierta && \(/.test(app), true);
 check('la Configuración solo se monta para el ADMIN', /\{isAdmin && abierta\('CONFIGURACION', false\)/.test(app), true);

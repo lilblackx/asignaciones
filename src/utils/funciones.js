@@ -2,16 +2,18 @@
 // todos los usuarios activos y escribe el ADMIN, ver firestore.rules). Toda función nace APAGADA: sin el documento, o sin su campo,
 // está desactivada, y solo `true` la enciende.
 //
-//   rutasActivas  la "Ruta del día" de los técnicos (ver utils/rutaDelDia.js): el botón y la hoja con sus paradas.
+//   rutasActivas      la "Ruta del día" de los técnicos (ver utils/rutaDelDia.js): el botón y la hoja con sus paradas.
+//   ubicacionActiva   la ubicación de un técnico en la calle, que la oficina pide a demanda (ver utils/ubicacionTecnico.js): el botón "Ubicación" de la oficina y el envío desde el teléfono del técnico.
 
 export const FUNCIONES = {
   RUTAS: 'rutasActivas',
+  UBICACION: 'ubicacionActiva',
 };
 
 // Lo que dice el documento (o nada, si no existe) como un objeto con todas las funciones en true o false.
 export function leerFunciones(datos) {
   const d = datos && typeof datos === 'object' ? datos : {};
-  return { rutasActivas: d[FUNCIONES.RUTAS] === true };
+  return { rutasActivas: d[FUNCIONES.RUTAS] === true, ubicacionActiva: d[FUNCIONES.UBICACION] === true };
 }
 
 // Los campos que se escriben al cambiar una función: el valor, quién lo cambió y cuándo.

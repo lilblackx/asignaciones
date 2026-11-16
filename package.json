@@ -57,6 +57,7 @@
     "test:instalacion": "node scripts/test-instalacion.mjs",
     "test:prioridad": "node scripts/test-prioridad.mjs",
     "test:ruta": "node scripts/test-ruta-del-dia.mjs",
+    "test:ubicacion": "node scripts/test-ubicacion-tecnico.mjs",
     "test:encamino": "node scripts/test-en-camino.mjs",
     "test:esperas": "node scripts/test-esperas-ciclo.mjs",
     "test:cobros": "node scripts/test-cobros-reporte.mjs",
@@ -109,6 +110,7 @@
     "firebase": "^12.19.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
+    "leaflet": "1.9.4",
     "lucide-react": "^1.23.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

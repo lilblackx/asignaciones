@@ -31,6 +31,7 @@ import { veEstaciones } from './utils/estaciones';
 import EstacionesView from './components/EstacionesView';
 import BotonRuta from './components/BotonRuta';
 import { useFunciones } from './hooks/useFunciones';
+import { useCompartirUbicacion } from './hooks/useCompartirUbicacion';
 import { useInterruptorRemoto } from './hooks/useInterruptorRemoto';
 import { paradasDeRuta } from './utils/rutaDelDia';
 import { listarTecnicosInventario } from './lib/inventario';
@@ -58,7 +59,7 @@ import { useTema } from './hooks/useTema';
 import Sidebar from './components/Sidebar';
 import PieVersion from './components/PieVersion';
 import PaginaMarco from './components/PaginaMarco';
-import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, MonitorSmartphone, PackageCheck, Settings, ShieldCheck, Users } from 'lucide-react';
+import { BarChart, Cable, ClipboardCheck, ClipboardList, Coins, History, LocateFixed, MonitorSmartphone, PackageCheck, Settings, ShieldCheck, Users } from 'lucide-react';
 import { aplanarArchivados } from './utils/reincidencia';
 import { buscaEnCerradas } from './utils/ordenesCerradas';
 import { construirNapsConocidas } from './utils/napsConocidas';
@@ -73,6 +74,7 @@ const EditTicketModal = lazy(() => import('./components/modals/EditTicketModal')
 const TechniciansModal = lazy(() => import('./components/modals/TechniciansModal'));
 const UsersModal = lazy(() => import('./components/modals/UsersModal'));
 const ConfiguracionView = lazy(() => import('./components/ConfiguracionView'));
+const UbicacionView = lazy(() => import('./components/UbicacionView'));
 const RutaDelDiaModal = lazy(() => import('./components/modals/RutaDelDiaModal'));
 const ConfirmModal = lazy(() => import('./components/modals/ConfirmModal'));
 const ReportsModal = lazy(() => import('./components/modals/ReportsModal'));
@@ -106,7 +108,7 @@ const EMPTY_FORM = () => ({
 });
 
 // Qué opción del menú lateral se marca según el módulo abierto (sin módulo, la oficina).
-const ACTIVO_EN_MENU = { ADMINISTRACION: 'administracion', FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', CONFIGURACION: 'configuracion', ESTACIONES: 'estaciones', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
+const ACTIVO_EN_MENU = { ADMINISTRACION: 'administracion', FINANZAS: 'finanzas', PROMOTORA: 'ventas', ALMACEN: 'almacen', INFRAESTRUCTURA: 'infraestructura', REVISION: 'revision', CIERRE: 'cierre', REPORTES: 'reportes', HISTORIAL: 'historial', TASA: 'tasa', CONFIGURACION: 'configuracion', UBICACION: 'ubicacion', ESTACIONES: 'estaciones', TECNICOS: 'tecnicos', USUARIOS: 'usuarios', INVENTARIO: 'inventario' };
 
 // `auth`: la sesión (useAuth) la resuelve Root, que decide qué pantalla corresponde al rol.
 // `moduloActivo` / `onAbrirModulo(id)`: el administrador abre cada módulo desde el menú lateral y se ve como página dentro del marco, a la derecha del menú (los demás roles los abren como ventana); Root guarda cuál está abierto
@@ -257,12 +259,14 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   // Funciones que el ADMIN enciende en Configuración (nacen apagadas). Solo las escuchan los técnicos y el módulo Configuración abierto.
   const configuracionAbierta = isAdmin && moduloActivo === 'CONFIGURACION';
-  const { funciones, cargado: funcionesCargadas, error: funcionesError, cambiar: cambiarFuncion } = useFunciones(firebaseUser, isTecnico || configuracionAbierta, currentUserName || currentUser);
+  const { funciones, cargado: funcionesCargadas, error: funcionesError, cambiar: cambiarFuncion } = useFunciones(firebaseUser, isTecnico || isAdmin, currentUserName || currentUser);
   const interruptorRemoto = useInterruptorRemoto(firebaseUser, configuracionAbierta, currentUserName || currentUser);
   // Ruta del día del técnico (ver utils/rutaDelDia.js). La hoja recibe una copia de las paradas al abrirse: así el orden que el técnico ajusta
   // con las flechas no se rehace cada vez que llega un cambio de sus órdenes.
   const paradasRuta = isTecnico && funciones.rutasActivas ? paradasDeRuta(ticketsParaVer) : null;
   const [rutaAbierta, setRutaAbierta] = useState(null);
+  // Ubicación de un técnico en la calle (ver utils/ubicacionTecnico.js), con la función encendida en Configuración: el ADMIN la pide desde el módulo Ubicación del menú y el teléfono del técnico la envía en silencio (sin avisos) mientras la solicitud esté vigente.
+  const { registrarPunto } = useCompartirUbicacion({ firebaseUser, tecnico: tecnicoAsociado, activo: isTecnico && funciones.ubicacionActiva, ahora });
 
   // Las órdenes de los cierres ya cargados: la búsqueda del dashboard también las encuentra (debajo de las activas, marcadas como archivadas).
   const archivados = useMemo(() => aplanarArchivados(reports), [reports]);
@@ -536,6 +540,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
     const ok = await preFinalizarTicket(ticket, { ...extra, montoBs: monto });
     // Ya se guardó: el borrador de esta orden no hace falta. Si no se pudo, queda para recuperarlo al volver a abrirla.
     if (ok) olvidarBorrador(currentUser, ticket.id);
+    // Un punto de ubicación al pre-finalizar (la última ubicación conocida del técnico, sin avisos).
+    if (ok && isTecnico) registrarPunto('prefinalizar', ticket.codigo);
     setPreFinalizarTarget(null);
     // Conector interno: el técnico ve el cobro ya, para informárselo al cliente en el momento.
     if (ok && isTecnico && avisaCobroAlPreFinalizar(extra.tipoVisita)) {
@@ -559,8 +565,9 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   }, 'No se pudo cambiar la prioridad de la orden.');
 
   // TECNICO: avisa a la oficina que va en camino, que llegó, o cancela / deshace el aviso.
-  const handleIniciarViaje = conAviso(iniciarEnCamino, 'No se pudo avisar que vas en camino.');
-  const handleLlegue = conAviso(marcarLlegada, 'No se pudo avisar que llegaste.');
+  // Al avisar que sale y que llega, la app guarda un punto de ubicación (la última ubicación conocida, sin avisos ni esperas).
+  const handleIniciarViaje = conAviso(async (ticket) => { const ok = await iniciarEnCamino(ticket); if (ok) registrarPunto('camino', ticket?.codigo); return ok; }, 'No se pudo avisar que vas en camino.');
+  const handleLlegue = conAviso(async (ticket) => { const ok = await marcarLlegada(ticket); if (ok) registrarPunto('llegada', ticket?.codigo); return ok; }, 'No se pudo avisar que llegaste.');
   const handleCancelarViaje = conAviso(cancelarViaje, 'No se pudo cancelar el viaje.');
 
   const handleConfirmAprobarFinalizar = conAviso(async (ticket, cobro) => {
@@ -677,6 +684,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onCerrar={() => setIsSidebarOpen(false)}
             veInventario={verInventario}
             veEstaciones={verEstaciones}
+            veUbicacion={funciones.ubicacionActiva}
             alertasInventario={enviosInventario.length}
             acciones={{ inicio: () => { onAbrirModulo(null); handleGoHome(); }, modulo: onAbrirModulo }}
           />
@@ -689,6 +697,12 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {isAdmin && abierta('CONFIGURACION', false) && enMarco('Configuración', Settings, (
           <Suspense fallback={null}>
             <ConfiguracionView enPagina funciones={funciones} cargado={funcionesCargadas} error={funcionesError} onCambiar={cambiarFuncion} interruptor={interruptorRemoto} onClose={() => onAbrirModulo(null)} />
+          </Suspense>
+        ))}
+
+        {isAdmin && abierta('UBICACION', false) && enMarco('Ubicación de técnicos', LocateFixed, (
+          <Suspense fallback={null}>
+            <UbicacionView firebaseUser={firebaseUser} technicians={technicians} tickets={tickets} usuario={currentUser} encendida={funciones.ubicacionActiva} rutasActivas={funciones.rutasActivas} cargada={funcionesCargadas} setToastMsg={setToastMsg} getTecnicoColor={getTecnicoColor} />
           </Suspense>
         ))}
 

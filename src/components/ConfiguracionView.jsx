@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, PauseCircle, Route, Settings } from 'lucide-react';
+import { AlertTriangle, LocateFixed, PauseCircle, Route, Settings } from 'lucide-react';
 import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
@@ -16,6 +16,12 @@ const OPCIONES = [
     Icono: Route,
     titulo: 'Ruta del día para los técnicos',
     detalle: 'Muestra a cada técnico el botón "Ruta" junto a su nombre. Arma el recorrido de sus órdenes de hoy (primero las de prioridad alta, luego de la más cercana a la más lejana desde donde esté) y lo abre en Google Maps. Pide la ubicación del teléfono solo al abrir la ruta.',
+  },
+  {
+    clave: FUNCIONES.UBICACION,
+    Icono: LocateFixed,
+    titulo: 'Ubicación de técnicos en la calle',
+    detalle: 'Agrega el módulo "Ubicación" al menú del administrador: al pedir la de un técnico, su teléfono la envía sola cuando abra la app, durante 30 minutos, y se ve en un mapa. Además guarda un punto al marcar En camino, Llegué o pre-finalizar (la última ubicación conocida, por 24 horas). El técnico no recibe ningún aviso: solo funciona con la app abierta y el permiso de ubicación del teléfono activo. Al apagarla se detiene todo en segundos.',
   },
 ];
 

@@ -1109,6 +1109,83 @@ service cloud.firestore {
       allow delete: if llevaAdministracion(appId);
     }
 
+    // Ubicación de un técnico en la calle, para el ADMIN (módulo Ubicación del menú; src/utils/ubicacionTecnico.js). Tres documentos por técnico, con su nombre en mayúsculas como id:
+    //   solicitudesUbicacion/{TECNICO}  el ADMIN la crea (solo con la función encendida en config/funciones) y dura 30 minutos; el ADMIN o el propio técnico la pueden detener.
+    //   ubicaciones/{TECNICO}           el técnico escribe su posición mientras la solicitud está vigente (y la borra al terminar); solo la lee el ADMIN.
+    //   ultimaUbicacion/{TECNICO}       el técnico guarda un punto al marcar En camino y Llegué y al pre-finalizar (solo con la función encendida); solo la lee el ADMIN, que borra los de más de 24 horas.
+    function ubicacionEncendida(appId) {
+      return get(/databases/$(database)/documents/artifacts/$(appId)/public/data/config/funciones).data.get('ubicacionActiva', false) == true;
+    }
+
+    function esAdminDeUbicacion(appId) {
+      return isAdminUser(appId);
+    }
+
+    function esElTecnicoDeUbicacion(appId, tecnicoId) {
+      return isTecnicoRole(appId) && tecnicoAsociado(appId).upper() == tecnicoId;
+    }
+
+    match /artifacts/{appId}/public/data/solicitudesUbicacion/{tecnicoId} {
+      function solicitudValida() {
+        let s = request.resource.data;
+        return s.keys().hasOnly(['pedidaPor', 'pedidaEn', 'venceEn', 'detenidaEn'])
+          && s.keys().hasAll(['pedidaPor', 'pedidaEn', 'venceEn', 'detenidaEn'])
+          && s.pedidaPor == get(profilePath(appId)).data.get('username', '')
+          && s.pedidaEn is int && s.pedidaEn > request.time.toMillis() - 120000 && s.pedidaEn < request.time.toMillis() + 120000
+          && s.venceEn is int && s.venceEn == s.pedidaEn + 1800000
+          && s.detenidaEn == 0;
+      }
+      function detencionValida() {
+        let s = request.resource.data;
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['detenidaEn', 'detenidaPor'])
+          && s.detenidaEn is int && s.detenidaEn > 0
+          && s.detenidaPor is string && s.detenidaPor.size() <= 80;
+      }
+      allow read: if esAdminDeUbicacion(appId) || esElTecnicoDeUbicacion(appId, tecnicoId);
+      allow create, update: if esAdminDeUbicacion(appId)
+        && ubicacionEncendida(appId)
+        && solicitudValida();
+      allow update: if (esAdminDeUbicacion(appId) || esElTecnicoDeUbicacion(appId, tecnicoId)) && detencionValida();
+      allow delete: if isAdminUser(appId);
+    }
+
+    match /artifacts/{appId}/public/data/ubicaciones/{tecnicoId} {
+      function ubicacionValida() {
+        let u = request.resource.data;
+        let solicitud = get(/databases/$(database)/documents/artifacts/$(appId)/public/data/solicitudesUbicacion/$(tecnicoId)).data;
+        return u.en is int && u.en > request.time.toMillis() - 120000 && u.en < request.time.toMillis() + 120000
+          && u.solicitudEn == solicitud.pedidaEn && solicitud.venceEn > request.time.toMillis() && solicitud.detenidaEn == 0
+          && (
+            (u.keys().hasOnly(['lat', 'lng', 'precision', 'en', 'solicitudEn']) && u.keys().hasAll(['lat', 'lng', 'precision', 'en', 'solicitudEn'])
+              && u.lat is number && u.lat >= -90 && u.lat <= 90
+              && u.lng is number && u.lng >= -180 && u.lng <= 180
+              && u.precision is number && u.precision >= 0 && u.precision <= 100000)
+            || (u.keys().hasOnly(['problema', 'en', 'solicitudEn']) && u.keys().hasAll(['problema', 'en', 'solicitudEn'])
+              && u.problema in ['denegado', 'sin-gps'])
+          );
+      }
+      allow read: if esAdminDeUbicacion(appId);
+      allow create, update: if esElTecnicoDeUbicacion(appId, tecnicoId) && ubicacionValida();
+      allow delete: if esElTecnicoDeUbicacion(appId, tecnicoId) || isAdminUser(appId);
+    }
+
+    match /artifacts/{appId}/public/data/ultimaUbicacion/{tecnicoId} {
+      function ultimaValida() {
+        let u = request.resource.data;
+        return u.keys().hasOnly(['lat', 'lng', 'precision', 'en', 'motivo', 'codigo'])
+          && u.keys().hasAll(['lat', 'lng', 'precision', 'en', 'motivo'])
+          && u.lat is number && u.lat >= -90 && u.lat <= 90
+          && u.lng is number && u.lng >= -180 && u.lng <= 180
+          && u.precision is number && u.precision >= 0 && u.precision <= 100000
+          && u.en is int && u.en > request.time.toMillis() - 120000 && u.en < request.time.toMillis() + 120000
+          && u.motivo in ['camino', 'llegada', 'prefinalizar']
+          && (!u.keys().hasAny(['codigo']) || (u.codigo is string && u.codigo.size() <= 40));
+      }
+      allow read: if esAdminDeUbicacion(appId);
+      allow create, update: if esElTecnicoDeUbicacion(appId, tecnicoId) && ubicacionEncendida(appId) && ultimaValida();
+      allow delete: if esElTecnicoDeUbicacion(appId, tecnicoId) || isAdminUser(appId);
+    }
+
     match /artifacts/{appId}/public/data/config/{docId} {
       allow read: if isActiveUser(appId);
       allow write: if isAdminUser(appId);
