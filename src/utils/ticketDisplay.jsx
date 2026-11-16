@@ -12,6 +12,16 @@ export const getEstadoColor = (estado) => {
   return 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200';
 };
 
+// La misma lectura que getEstadoColor (gris = pendiente, ámbar = atención, verde = listo, rojo = cancelado) en pastel, para la tarjeta del celular (estilo D).
+export const getEstadoPastel = (estado) => {
+  const e = estado?.toUpperCase() || '';
+  if (e === 'CANCELADO') return 'bg-red-100 text-red-900 dark:bg-red-500/20 dark:text-red-200';
+  if (e === 'PENDIENTE') return 'bg-accent text-accent-foreground';
+  if (e === 'PRE-FINALIZADO' || e === 'PRE-FINALIZADA') return 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200';
+  if (e === 'FINALIZADO') return 'bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200';
+  return 'bg-accent text-accent-foreground';
+};
+
 // Un color por tipo de trabajo, para su etiqueta (`badge`). Clases completas (Tailwind no detecta clases armadas).
 const TIPO_TRABAJO_ESTILOS = {
   'AVERÍA': { badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },

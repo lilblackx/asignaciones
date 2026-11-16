@@ -47,7 +47,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
         aria-label={`Avisar que vas en camino a la orden ${orden}`}
         className={compact
           ? 'inline-flex items-center gap-1 self-start text-[11px] max-lg:text-xs font-bold px-2 py-1 rounded bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors disabled:opacity-60'
-          : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-700 hover:bg-sky-600 active:bg-sky-700 text-white font-black text-base transition-colors disabled:opacity-60'}
+          : 'w-full flex items-center justify-center gap-2 py-3 rounded-boton shadow-boton bg-sky-700 hover:bg-sky-600 active:bg-sky-700 text-white font-black text-base transition-colors disabled:opacity-60'}
       >
         <Car className={compact ? 'w-3.5 h-3.5' : 'w-5 h-5'} aria-hidden="true" /> Estoy en camino
       </button>
@@ -64,7 +64,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
   const icono = compact ? 'w-3 h-3' : 'w-4 h-4';
 
   return (
-    <div className={`border rounded-xl ${compact ? 'px-2 py-1.5' : 'p-3'} flex flex-col gap-2 ${tono}`} role="status">
+    <div className={`border rounded-campo ${compact ? 'px-2 py-1.5' : 'p-3'} flex flex-col gap-2 ${tono}`} role="status">
       <div className="flex items-center gap-2 font-black leading-tight">
         <Icono className={compact ? 'w-3.5 h-3.5 shrink-0' : 'w-5 h-5 shrink-0'} aria-hidden="true" />
         <span className={compact ? 'text-[11px] max-lg:text-xs' : 'text-sm'}>
@@ -79,7 +79,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
             onClick={ejecutar(onLlegue)}
             disabled={ocupado}
             aria-label={`Avisar que llegaste a la orden ${orden}`}
-            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-black transition-colors disabled:opacity-60 ${boton}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-boton bg-teal-700 hover:bg-teal-600 text-white font-black transition-colors disabled:opacity-60 ${boton}`}
           >
             <MapPin className={icono} aria-hidden="true" /> Llegué
           </button>
@@ -89,7 +89,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
           onClick={ejecutar(onCancelar)}
           disabled={ocupado}
           aria-label={enSitio ? `Deshacer la llegada a la orden ${orden}` : `Cancelar el viaje a la orden ${orden}`}
-          className={`${enSitio ? 'flex-1' : ''} inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/70 dark:bg-zinc-900/60 border border-current/30 font-bold hover:bg-white dark:hover:bg-zinc-900 transition-colors disabled:opacity-60 ${boton}`}
+          className={`${enSitio ? 'flex-1' : ''} inline-flex items-center justify-center gap-1.5 rounded-boton bg-white/70 dark:bg-zinc-900/60 border border-current/30 font-bold hover:bg-white dark:hover:bg-zinc-900 transition-colors disabled:opacity-60 ${boton}`}
         >
           {enSitio ? <><Undo2 className={icono} aria-hidden="true" /> Deshacer</> : <><X className={icono} aria-hidden="true" /> Cancelar</>}
         </button>

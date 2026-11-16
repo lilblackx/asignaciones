@@ -4,8 +4,8 @@
 
 /* El fondo de página de toda la app: un gris claro (más oscuro que las tarjetas blancas, para que éstas resalten) en el tema claro y el negro de siempre en el oscuro. */
 @utility bg-fondo {
-  background-color: var(--color-zinc-200);
-  &:is(.dark *) { background-color: var(--color-zinc-950); }
+  background-color: var(--background);
+  &:is(.dark *) { background-color: var(--background); }
 }
 
 /* Base de colores del rediseño (rama rediseno): nombres con sentido ("fondo", "tarjeta", "marca"...) en vez de zinc-900 o red-600 sueltos por todas las pantallas.
