@@ -189,7 +189,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
 
   return marco(
     <>
-      <div className={enPagina ? 'w-full flex flex-col' : `bg-card rounded-card shadow-2xl w-full max-w-6xl max-h-[92dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? 'w-full flex flex-col' : `bg-card rounded-card shadow-2xl w-full max-w-6xl max-h-[92dvh] overflow-hidden border border-border flex flex-col ${PANEL_COMPLETO}`}>
         {!enPagina && <EncabezadoModulo Icono={ClipboardCheck} titulo="Revisión de órdenes" onClose={onClose} />}
 
         <div className={enPagina ? 'flex-1 min-w-0 bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm max-w-[1400px] mx-auto w-full' : `flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm ${CENTRADO_AMPLIO}`}>
@@ -219,7 +219,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           </div>
 
           {periodo === 'POR_REVISAR' && (
-            <p role="status" className={`${TEXTO_SUAVE} rounded-xl border border-zinc-400 dark:border-zinc-700 bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
+            <p role="status" className={`${TEXTO_SUAVE} rounded-campo border border-input bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
               Pendientes muestra las órdenes de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
             </p>
           )}
@@ -231,19 +231,19 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           />
 
           {porResolver.length > 0 && (
-            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            <p role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
               {porResolver.length === 1 ? '1 garantía de otro técnico espera' : `${porResolver.length} garantías de otro técnico esperan`} tu decisión ({porResolver.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{porResolver.length > 4 ? '...' : ''}): descuenta de la orden original o déjala sin descuento. No se pueden aprobar hasta decidir.
             </p>
           )}
 
           {esperanPago.length > 0 && (
-            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            <p role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
               {esperanPago.length === 1 ? '1 orden espera' : `${esperanPago.length} órdenes esperan`} el pago del cliente y no se {esperanPago.length === 1 ? 'puede' : 'pueden'} aprobar todavía ({esperanPago.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{esperanPago.length > 4 ? '...' : ''}). Lo registra {tecnicosSinPago.length === 1 ? 'el técnico' : 'cada técnico'}{tecnicosSinPago.length > 0 ? ` (${tecnicosSinPago.slice(0, 3).join(', ')}${tecnicosSinPago.length > 3 ? '...' : ''})` : ''}; si no puede, usa "Registrar el pago" en la orden.
             </p>
           )}
 
           {escaladasPendientes.length > 0 && (
-            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            <p role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
               {escaladasPendientes.length === 1 ? '1 orden escalada a infraestructura espera' : `${escaladasPendientes.length} órdenes escaladas a infraestructura esperan`} tu revisión ({escaladasPendientes.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{escaladasPendientes.length > 4 ? '...' : ''}): llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
             </p>
           )}
@@ -266,7 +266,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
               <section key={nombre} aria-label={nombre} className={`${TARJETA} p-4 space-y-3`}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{nombre === SIN_TECNICO ? 'Sin técnico en la ficha' : nombre}</h3>
+                    <h3 className="text-lg font-bold text-foreground">{nombre === SIN_TECNICO ? 'Sin técnico en la ficha' : nombre}</h3>
                     <span className={`${CHIP} bg-white border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100`}>{lista.length} {lista.length === 1 ? 'orden' : 'órdenes'} · {dolares(lista.reduce((s, i) => s + precio(i), 0))}</span>
                   </div>
                   {pendientes.length > 0 && nombre !== SIN_TECNICO && (
@@ -275,7 +275,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
                 </div>
                 {agruparOrdenes(lista.map((i) => (i.concepto ? i : { ...i, concepto: 'AVERIA' })), { masNuevasPrimero: true }).map((g) => (
                   <div key={g.id}>
-                    <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-900 dark:text-white pb-1 border-b border-zinc-400 dark:border-zinc-700"><span>{g.titulo} · {g.items.length}</span></h4>
+                    <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-foreground pb-1 border-b border-input"><span>{g.titulo} · {g.items.length}</span></h4>
                     <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
                       {g.items.map((item) => (
                         <FilaRevision key={item.clave} item={lista.find((i) => i.clave === item.clave)} precio={precio(item)} tasa={tasa} tecnicos={nombresTecnicos} ocupado={datos.ocupado} onAccion={accion} onDeshacer={(i) => datos.deshacer(i)} ordenesBusqueda={ordenes} precioOrigen={precioOrigen} tecnicoDe={tecnicoDe} onVerOrden={setDetalle} onRegistrarPago={setRegistrandoPago} />

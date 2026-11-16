@@ -11,7 +11,7 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligat
   const calidad = parseado.valor !== undefined ? calidadValor(parseado.valor) : null;
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+      <label htmlFor={id} className="text-xs font-bold text-card-foreground ml-1">
         {etiqueta} <span className={`font-normal ${obligatorio ? 'text-red-500' : 'text-zinc-400'}`}>{obligatorio ? '(obligatorio)' : '(opcional)'}</span>
       </label>
       <input
@@ -45,12 +45,12 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
   };
 
   return (
-    <section aria-label="Valores del cliente" className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 space-y-3 text-xs">
+    <section aria-label="Valores del cliente" className="rounded-campo border border-border p-3 space-y-3 text-xs">
       <div>
-        <h3 className="flex items-center gap-2 font-black tracking-wide text-zinc-800 dark:text-zinc-200">
+        <h3 className="flex items-center gap-2 font-black tracking-wide text-foreground">
           <Radio className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> VALORES DEL CLIENTE
         </h3>
-        <p className="ml-6 mt-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
+        <p className="ml-6 mt-1 text-[11px] max-lg:text-xs text-muted-foreground">
           {tecnicoLosVe
             ? 'Los guardas tú y el técnico los ve junto con el cobro. Los que él capturó al pre-finalizar son solo informativos.'
             : 'Los guardas tú y quedan registrados en la orden; el técnico no los ve. Los que él capturó al pre-finalizar son solo informativos.'}
@@ -65,7 +65,7 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
       </div>
 
       {guardados && !sucio ? (
-        <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-300 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-emerald-900 dark:text-emerald-200">
+        <div role="status" className="flex items-start gap-2 rounded-campo border border-emerald-300 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-emerald-900 dark:text-emerald-200">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
           <p className="leading-snug"><span className="font-black">Valores guardados</span>{guardados.guardadoPor ? ` por ${guardados.guardadoPor}` : ''}{obligatorio && tecnicoLosVe ? '. El técnico los verá con el cobro' : ''}. Si los cambias, vuelve a guardar.</p>
         </div>
@@ -80,7 +80,7 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
         type="button"
         onClick={onGuardar}
         disabled={guardando}
-        className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black shadow-sm transition-colors disabled:opacity-60 ${guardados && !sucio ? 'bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200' : 'bg-emerald-700 hover:bg-emerald-800 text-white'}`}
+        className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-campo text-xs font-black shadow-sm transition-colors disabled:opacity-60 ${guardados && !sucio ? 'bg-white dark:bg-zinc-950 border border-input text-zinc-700 dark:text-zinc-200' : 'bg-emerald-700 hover:bg-emerald-800 text-white'}`}
       >
         {guardando ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Save className="w-3.5 h-3.5" aria-hidden="true" />}
         {guardando ? 'Guardando...' : guardados && !sucio ? 'Guardar valores de nuevo' : 'Guardar valores'}

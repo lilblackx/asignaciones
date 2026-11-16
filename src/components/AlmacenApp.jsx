@@ -35,7 +35,7 @@ export default function AlmacenApp({ auth }) {
         <main className="flex-1 w-full">
           {cargado && (
             <AccionesEncabezado
-              className="px-4 sm:px-6 pt-3 flex items-center justify-between gap-2 text-xs text-zinc-600 dark:text-zinc-400"
+              className="px-4 sm:px-6 pt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground"
               encabezado={botonActualizar}
             >
               <span>{error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</span>
@@ -45,7 +45,7 @@ export default function AlmacenApp({ auth }) {
           {error && !actualizadoEn ? (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
-            <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando materiales...</p>
+            <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando materiales...</p>
           ) : (
             <MaterialesModal
               enPagina

@@ -93,9 +93,9 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
             aria-modal="true"
             aria-label={`${texto}: elegir número`}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl p-3 space-y-2"
+            className="w-full max-w-xs bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl p-3 space-y-2 max-lg:shadow-card"
           >
-            <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400 px-1">{texto} a:</p>
+            <p className="text-xs font-bold text-muted-foreground px-1">{texto} a:</p>
             {opciones.map((o, i) => (
               <a
                 key={o.numero}
@@ -103,7 +103,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
                 href={o.href}
                 {...(externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 onClick={() => setAbierto(false)}
-                className="flex items-center gap-2 py-3 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                className="flex items-center gap-2 py-3 px-3 rounded-boton bg-secondary text-zinc-900 dark:text-zinc-100 text-sm font-bold hover:bg-accent transition-colors"
               >
                 <Icon className="w-4 h-4 shrink-0" aria-hidden="true" /> {o.numero}
               </a>
@@ -111,7 +111,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
             <button
               type="button"
               onClick={() => setAbierto(false)}
-              className="w-full py-2 max-lg:min-h-11 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="w-full py-2 max-lg:min-h-11 rounded-campo text-xs font-bold text-muted-foreground hover:bg-secondary transition-colors"
             >
               Cancelar
             </button>

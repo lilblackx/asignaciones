@@ -63,9 +63,9 @@ export default function TicketsMobileList({
       <div className="lg:hidden bg-card rounded-card shadow-card px-4 py-12 text-center text-muted-foreground font-medium transition-colors">
         {isTecnico && !hasAnyTickets ? (
           <div className="flex flex-col items-center gap-2">
-            <Wrench className="w-6 h-6 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
+            <Wrench className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
             <span>No tienes asignaciones en este momento.</span>
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">Cuando te asignen una orden, aparecerá aquí.</span>
+            <span className="text-xs text-muted-foreground">Cuando te asignen una orden, aparecerá aquí.</span>
           </div>
         ) : isTecnico ? (
           'Ninguna de tus asignaciones coincide con los filtros. Quítalos para ver todas.'
@@ -116,7 +116,7 @@ export default function TicketsMobileList({
               </span>
               {isTecnico && <FaltaPorCompletar ticket={ticket} />}
               {cerrada && (
-                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
+                <span className="text-xs font-medium text-muted-foreground leading-tight">
                   {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}
                 </span>
               )}
@@ -261,7 +261,7 @@ export default function TicketsMobileList({
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : onCorregirFotos && puedeCorregirDetalles(ticket) ? (
-                  <button onClick={() => onCorregirFotos(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1.5 text-zinc-800 dark:text-zinc-200 font-bold text-[13px] hover:bg-zinc-50 dark:hover:bg-zinc-700/40 transition-colors">
+                  <button onClick={() => onCorregirFotos(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1.5 text-foreground font-bold text-[13px] hover:bg-zinc-50 dark:hover:bg-zinc-700/40 transition-colors">
                     <Camera className="w-4 h-4" aria-hidden="true" /> Corregir fotos
                   </button>
                 ) : null}
@@ -289,7 +289,7 @@ export default function TicketsMobileList({
                         <CheckCheck className="w-4 h-4" /> Aprobar
                       </button>
                     )}
-                    <button onClick={() => onEdit(ticket)} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-card-foreground font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] transition-colors"><Edit className="w-4 h-4" /> Editar</button>
+                    <button onClick={() => onEdit(ticket)} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-card-foreground font-bold hover:bg-accent text-[13px] transition-colors"><Edit className="w-4 h-4" /> Editar</button>
                     {ticket.estado !== 'CANCELADO' && <button onClick={() => onCancelar(ticket)} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-red-700 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-[13px] transition-colors"><Ban className="w-4 h-4" /> Cancelar</button>}
                   </>
                 ) : (

@@ -22,7 +22,7 @@ const OPCIONES = [
 export default function CobroAcordadoField({ idPrefix, value, onChange, error = '', wrapperClassName = 'space-y-1', cuentasEmpresa = [], pagoRef = null, permitirPagada = false }) {
   const moneda = value.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS;
   const esMonto = value.modo === COBRO_OTRO;
-  const etiqueta = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
+  const etiqueta = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
 
   return (
     <div className={wrapperClassName}>
@@ -40,7 +40,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
               aria-checked={activa}
               onClick={() => onChange({ ...value, modo })}
               className={`min-h-11 lg:min-h-9 px-2 py-1.5 rounded-xl border-2 text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-                activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
+                activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-input bg-white dark:bg-zinc-950 text-card-foreground hover:border-sky-400'
               }`}
             >
               {activa && <Check className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
@@ -51,14 +51,14 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
       </div>
 
       {value.modo === COBRO_PAGADA && value.pagada?.pago && (
-        <p className="rounded-xl border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-2 text-xs font-bold text-emerald-900 dark:text-emerald-300">
+        <p className="rounded-boton border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-2 text-xs font-bold text-emerald-900 dark:text-emerald-300">
           {textoModoAcordado({ modo: COBRO_PAGADA, monto: formatoMontoBs(value.pagada.pago.monto), moneda: value.pagada.pago.moneda, pago: value.pagada.pago })}
           {value.pagada.nota ? ` · ${value.pagada.nota}` : ''}
         </p>
       )}
 
       {value.modo === COBRO_PAGADA && permitirPagada && !value.pagada?.pago && (
-        <div className="rounded-xl border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 space-y-3">
+        <div className="rounded-campo border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 space-y-3">
           <p className="text-xs font-bold text-emerald-900 dark:text-emerald-300">DATOS DEL PAGO</p>
           <FormularioPagoCliente incrustado permitirPagarDespues={false} confirmar={false} cuentasEmpresa={cuentasEmpresa} ref={pagoRef} idPrefijo={`${idPrefix}-pago`} notaEtiqueta="Nota del pago" />
         </div>
@@ -78,7 +78,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
                     aria-checked={activa}
                     onClick={() => onChange({ ...value, moneda: valor })}
                     className={`min-h-11 lg:min-h-9 min-w-11 px-3 rounded-xl border-2 text-xs font-black transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-                      activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
+                      activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-input bg-white dark:bg-zinc-950 text-card-foreground hover:border-sky-400'
                     }`}
                   >
                     {texto}

@@ -30,14 +30,14 @@ const refEstado = () => doc(db, 'artifacts', appId, 'public', 'data', 'estadoFir
 
 function Alerta({ children }) {
   return (
-    <p className="flex items-start gap-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
+    <p className="flex items-start gap-1.5 rounded-boton bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>{children}</span>
     </p>
   );
 }
 function Aviso({ children }) {
   return (
-    <p className="flex items-start gap-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900 px-2.5 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+    <p className="flex items-start gap-1.5 rounded-boton bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900 px-2.5 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>{children}</span>
     </p>
   );
@@ -50,7 +50,7 @@ function Cuota({ etiqueta, valor, tope }) {
   return (
     <div className={`${TARJETA} px-3 py-2.5 min-w-0`}>
       <p className={ETIQUETA}>{etiqueta}</p>
-      <p className="text-lg font-black text-zinc-900 dark:text-white">{numero(valor)} <span className="text-xs font-bold text-zinc-500">de {numero(tope)}</span></p>
+      <p className="text-lg font-black text-foreground">{numero(valor)} <span className="text-xs font-bold text-zinc-500">de {numero(tope)}</span></p>
       <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden mt-1" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(p, 100)} aria-label={`${etiqueta}: ${p}% de la cuota gratis`}>
         <div className={`h-full rounded-full ${estado.barra}`} style={{ width: `${Math.min(p, 100)}%` }} />
       </div>
@@ -90,7 +90,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
         </div>
         {/* Después de las columnas, para que no se pinten encima de la etiqueta; el fondo de la tarjeta la deja legible sobre una columna roja. */}
         <div className="absolute inset-x-0 border-t border-dashed border-red-500/70 pointer-events-none" style={{ bottom: `${(umbral / maximo) * 100}%` }} aria-hidden="true">
-          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-white dark:bg-zinc-900 text-[10px] font-bold text-red-600 dark:text-red-400">umbral {numero(umbral)}</span>
+          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-card text-[10px] font-bold text-red-600 dark:text-red-400">umbral {numero(umbral)}</span>
         </div>
       </div>
       <div className={`flex justify-between mt-1 ${TEXTO_SUAVE}`} aria-hidden="true">
@@ -137,13 +137,13 @@ function PanelProyecto({ estado, cargado, error, ahora }) {
           )}
           {horas.length > 0 && (
             <details className={`${TARJETA} px-3 py-2`}>
-              <summary className="text-xs font-bold cursor-pointer text-zinc-700 dark:text-zinc-300">Ver como tabla</summary>
+              <summary className="text-xs font-bold cursor-pointer text-card-foreground">Ver como tabla</summary>
               <div className="overflow-x-auto mt-2">
                 <table className="w-full text-xs tabular-nums">
                   <thead><tr className="text-left text-zinc-500">{['Hora', 'Lecturas', 'Escrituras', 'Borrados', 'Rechazos'].map((t) => <th key={t} className="py-1 pr-3 font-bold">{t}</th>)}</tr></thead>
                   <tbody>
                     {[...horas].reverse().map((h) => (
-                      <tr key={h.hasta} className="border-t border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200">
+                      <tr key={h.hasta} className="border-t border-border text-foreground">
                         <td className="py-1 pr-3">{horaCaracas(h.hasta - 3600000)}–{horaCaracas(h.hasta)}</td>
                         <td className="py-1 pr-3">{numero(h.lecturas)}</td><td className="py-1 pr-3">{numero(h.escrituras)}</td>
                         <td className="py-1 pr-3">{numero(h.borrados)}</td><td className="py-1 pr-3">{numero(h.rechazos)}</td>
@@ -161,7 +161,7 @@ function PanelProyecto({ estado, cargado, error, ahora }) {
 }
 
 const Dato = ({ etiqueta, children, alerta = false }) => (
-  <div className="min-w-0"><dt className={ETIQUETA}>{etiqueta}</dt><dd className={`font-bold truncate ${alerta ? 'text-red-600 dark:text-red-400' : 'text-zinc-900 dark:text-white'}`}>{children}</dd></div>
+  <div className="min-w-0"><dt className={ETIQUETA}>{etiqueta}</dt><dd className={`font-bold truncate ${alerta ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>{children}</dd></div>
 );
 
 function Estacion({ e, ahora }) {
@@ -177,11 +177,11 @@ function Estacion({ e, ahora }) {
       <div className="flex items-start gap-2">
         <span aria-hidden="true" className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${activa ? 'bg-emerald-500' : 'bg-zinc-400 dark:bg-zinc-600'}`} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black text-zinc-900 dark:text-white truncate">{e.nombre || e.usuario || 'Sin usuario'} <span className="font-normal text-zinc-500">({e.usuario || 's/u'})</span></p>
+          <p className="text-sm font-black text-foreground truncate">{e.nombre || e.usuario || 'Sin usuario'} <span className="font-normal text-zinc-500">({e.usuario || 's/u'})</span></p>
           <p className={TEXTO_SUAVE}>{[equipo.sistema, equipo.navegador, equipo.pantalla, equipo.movil && 'móvil', equipo.instalada && 'app instalada'].filter(Boolean).join(' · ')}</p>
         </div>
         <div className="text-right shrink-0">
-          <span className={`${CHIP} bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200`}>{e.rol || 's/r'}</span>
+          <span className={`${CHIP} bg-zinc-200 dark:bg-zinc-800 text-foreground`}>{e.rol || 's/r'}</span>
           <p className={`${TEXTO_SUAVE} mt-1`}>{activa ? 'En línea' : 'Desconectada'} · {haceCuanto(Number(e.ultimaSenal), ahora)}</p>
         </div>
       </div>
@@ -209,7 +209,7 @@ function Estacion({ e, ahora }) {
         <div className="flex flex-wrap gap-1.5">
           {e.cortacircuitos && <span className={`${CHIP} gap-1 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300`}><ShieldAlert className="w-3.5 h-3.5" aria-hidden="true" /> Freno de escrituras activado</span>}
           {e.automaticasPausadas && <span className={`${CHIP} gap-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300`}><PauseCircle className="w-3.5 h-3.5" aria-hidden="true" /> Automáticas en pausa</span>}
-          {e.visible === false && <span className={`${CHIP} gap-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300`}><EyeOff className="w-3.5 h-3.5" aria-hidden="true" /> Pestaña en segundo plano</span>}
+          {e.visible === false && <span className={`${CHIP} gap-1 bg-zinc-200 dark:bg-zinc-800 text-card-foreground`}><EyeOff className="w-3.5 h-3.5" aria-hidden="true" /> Pestaña en segundo plano</span>}
         </div>
       )}
     </li>
@@ -229,7 +229,7 @@ export default function EstacionesView({ enPagina = false, onClose }) {
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-50" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={MonitorSmartphone} titulo="Estaciones" onClose={onClose} enPagina={enPagina} />
         <div className={`p-4 space-y-5 ${CENTRADO_ESTRECHO}`}>
           <p className={TEXTO_SUAVE}>

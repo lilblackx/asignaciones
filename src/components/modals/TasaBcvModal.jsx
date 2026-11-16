@@ -76,10 +76,10 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Coins} titulo="Tasa y pagos" onClose={onClose} enPagina={enPagina} />
 
-        <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex border-b border-zinc-200 dark:border-zinc-800">
+        <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex border-b border-border">
           {PESTANAS.map(p => (
             <button
               key={p.id}
@@ -89,7 +89,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               aria-selected={pestana === p.id}
               aria-controls={`panel-${p.id}`}
               onClick={() => setPestana(p.id)}
-              className={`flex-1 px-3 py-3 text-xs font-black border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
+              className={`flex-1 px-3 py-3 text-xs font-black border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-muted-foreground hover:text-zinc-900 dark:hover:text-white'}`}
             >
               {p.etiqueta}
             </button>
@@ -103,30 +103,30 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
         ) : (
           <div role="tabpanel" id="panel-tasa" aria-labelledby="tab-tasa" className={`p-6 space-y-5 ${CENTRADO_ESTRECHO}`}>
             {estaDesactualizada && (
-              <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-xl px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-400">
+              <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-boton px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-400">
                 <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
                 {dias === null ? 'Nunca se ha configurado la tasa.' : dias === 1 ? 'Tasa desactualizada: es de ayer.' : `Tasa desactualizada: tiene ${dias} días.`}
               </div>
             )}
-            <div className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-1">
+            <div className="bg-sunken border-2 border-border rounded-campo p-4 space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Tasa actual</span>
-                <span className="font-black text-zinc-900 dark:text-white">{tasaConfig?.tasa ? tasaConfig.tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Sin configurar'}</span>
+                <span className="text-muted-foreground font-bold">Tasa actual</span>
+                <span className="font-black text-foreground">{tasaConfig?.tasa ? tasaConfig.tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Sin configurar'}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Monto base (EUR)</span>
-                <span className="font-black text-zinc-900 dark:text-white">{tasaConfig?.montoBaseEUR ? tasaConfig.montoBaseEUR.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+                <span className="text-muted-foreground font-bold">Monto base (EUR)</span>
+                <span className="font-black text-foreground">{tasaConfig?.montoBaseEUR ? tasaConfig.montoBaseEUR.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Cobro resultante</span>
+                <span className="text-muted-foreground font-bold">Cobro resultante</span>
                 <span className="font-black text-red-600 dark:text-red-400">{montoBsActual ? `${montoBsActual} Bs` : '-'}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-600 dark:text-zinc-400 font-bold">Fuente</span>
-                <span className="font-black text-zinc-900 dark:text-white uppercase">{tasaConfig?.fuente || '-'}</span>
+                <span className="text-muted-foreground font-bold">Fuente</span>
+                <span className="font-black text-foreground uppercase">{tasaConfig?.fuente || '-'}</span>
               </div>
               {tasaConfig?.actualizadoEn && (
-                <div className="flex justify-between text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 pt-1">
+                <div className="flex justify-between text-[11px] max-lg:text-xs text-muted-foreground pt-1">
                   <span>Última actualización</span>
                   <span>{new Date(tasaConfig.actualizadoEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}</span>
                 </div>
@@ -137,10 +137,10 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} /> {isRefreshing ? 'Actualizando...' : 'Actualizar automático'}
             </Boton>
 
-            <form onSubmit={handleManualSubmit} className="border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-4">
-              <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400 block ml-1">AJUSTE MANUAL</label>
+            <form onSubmit={handleManualSubmit} className="border-t border-border pt-4 space-y-4">
+              <label className="text-xs font-bold text-muted-foreground block ml-1">AJUSTE MANUAL</label>
               <div className="space-y-2">
-                <label htmlFor="tasa-manual" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">TASA (Bs por EUR)</label>
+                <label htmlFor="tasa-manual" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TASA (Bs por EUR)</label>
                 <input
                   id="tasa-manual"
                   required
@@ -152,7 +152,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="monto-manual" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">MONTO BASE (EUR)</label>
+                <label htmlFor="monto-manual" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">MONTO BASE (EUR)</label>
                 <input
                   id="monto-manual"
                   required

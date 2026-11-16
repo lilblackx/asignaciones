@@ -41,15 +41,15 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Volver al detalle</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-zinc-900 dark:text-white">Registrar el pago a {fila.tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">Registrar el pago a {fila.tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.POR_PAGAR.clase}`}>Paso 2 de 2</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>{[etiqueta || etiquetaRango(rango), fila.pendientes.length > 0 && textoOrdenes(fila.pendientes.length), fila.bonosGarantia > 0 && `garantías ${dolares(fila.bonosGarantia)}`, fila.adicionales > 0 && `adicionales ${dolares(fila.adicionales)}`, descuento > 0 && `descuentos ${dolares(descuento)}`].filter(Boolean).join(' · ')}</p>
       </div>
 
-      <div className="border-y border-zinc-400 dark:border-zinc-700 py-4">
+      <div className="border-y border-input py-4">
         <p className={ETIQUETA}>Total pendiente por pagar</p>
-        <p className="text-xl font-extrabold tabular-nums text-zinc-900 dark:text-white leading-tight">{dolares(neto)}</p>
+        <p className="text-xl font-extrabold tabular-nums text-foreground leading-tight">{dolares(neto)}</p>
         {tasa > 0 && <p className="text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
       </div>
 
@@ -65,7 +65,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
                   aria-pressed={form.moneda === id}
                   disabled={id === MONEDA_BS && !(tasa > 0)}
                   onClick={() => cambiarMoneda(id)}
-                  className={`flex-1 h-9 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
+                  className={`flex-1 h-9 rounded-campo text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-input text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
                 >{etiqueta}</button>
               ))}
             </div>
@@ -73,9 +73,9 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
             <Colapsable>{error?.campo === 'moneda' && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{error.texto}</p>}</Colapsable>
           </div>
 
-          <div className="border border-zinc-400 dark:border-zinc-700 rounded-xl px-4 py-3">
+          <div className="border border-input rounded-campo px-4 py-3">
             <p className={ETIQUETA}>Monto a entregar</p>
-            <p className="text-lg font-bold tabular-nums text-zinc-900 dark:text-white"><NumeroPulso valor={entregar} /></p>
+            <p className="text-lg font-bold tabular-nums text-foreground"><NumeroPulso valor={entregar} /></p>
             {form.moneda === MONEDA_BS && tasa > 0 && <p className={`${TEXTO_SUAVE} tabular-nums`}>{dolares(neto)} a {tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs por dólar{etiquetaTasa && ` (${etiquetaTasa})`}</p>}
           </div>
 
@@ -120,7 +120,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={confirmar} disabled={ocupado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
+        <button type="button" onClick={confirmar} disabled={ocupado} className={`${BOTON_GRANDE} bg-primary hover:bg-primary-hover text-white`}>
           {ocupado ? <Spinner /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />} Confirmar pago
         </button>
         <button type="button" onClick={onVolver} disabled={ocupado} className={BOTON_CON_BORDE_GRANDE}>Cancelar</button>

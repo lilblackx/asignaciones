@@ -38,7 +38,7 @@ export default function HistorialInfra({ auth, visible, copiar, setToastMsg, ran
     <div className={visible ? 'flex-1 min-h-0 flex flex-col' : 'hidden'}>
       {visible && ranura && createPortal(
         <>
-          <span aria-live="polite" className="hidden sm:inline text-xs text-zinc-600 dark:text-zinc-400 truncate">{!cargado ? '' : error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</span>
+          <span aria-live="polite" className="hidden sm:inline text-xs text-muted-foreground truncate">{!cargado ? '' : error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</span>
           <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando} aria-label="Actualizar" title={actualizadoEn ? `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.` : 'Actualizar'}>
             <span className="hidden sm:inline">{actualizando ? 'Actualizando...' : 'Actualizar'}</span>
           </Boton>
@@ -46,7 +46,7 @@ export default function HistorialInfra({ auth, visible, copiar, setToastMsg, ran
         ranura,
       )}
       {!cargado ? (
-        <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando el historial...</p>
+        <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando el historial...</p>
       ) : error && !actualizadoEn ? (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudo cargar el historial. Revisa tu conexión e intenta de nuevo.</p>
       ) : (

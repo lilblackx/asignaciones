@@ -42,7 +42,7 @@ export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo
       <div className="shrink-0 px-5 pt-3 pb-2.5 space-y-2">
         {pasos.length > 1 && <Pasos pasos={pasos} actual={indice} hecho={hecho} onElegir={onElegir} bloqueo={bloqueo} etiqueta={etiquetaPasos} />}
         {(indicacion || pasos.length > 1) && (
-          <p role="status" className="text-xs text-zinc-700 dark:text-zinc-300 leading-snug">
+          <p role="status" className="text-xs text-card-foreground leading-snug">
             {pasos.length > 1 && <span className="font-black">{`Paso ${indice + 1} de ${pasos.length}${esUltimo ? ' (último)' : ''}`}</span>}{pasos.length > 1 && indicacion ? ' · ' : ''}{indicacion}
           </p>
         )}
@@ -60,7 +60,7 @@ export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo
 const TONOS = {
   verde: 'bg-emerald-700 hover:bg-emerald-800 text-white',
   azul: 'bg-blue-600 hover:bg-blue-700 text-white',
-  rojo: 'bg-red-600 hover:bg-red-700 text-white',
+  rojo: 'bg-primary hover:bg-primary-hover text-white',
   ambar: 'bg-amber-500 hover:bg-amber-400 text-black',
 };
 const TONOS_SECUNDARIA = {

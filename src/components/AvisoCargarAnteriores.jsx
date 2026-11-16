@@ -17,7 +17,7 @@ const TEXTOS = {
 
 export function BotonCargarAnteriores({ cargando, onCargar }) {
   return (
-    <button type="button" onClick={onCargar} disabled={cargando} className="shrink-0 px-5 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+    <button type="button" onClick={onCargar} disabled={cargando} className="shrink-0 px-5 py-2.5 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed max-lg:shadow-card">
       {cargando ? 'Cargando...' : 'Cargar cierres anteriores'}
     </button>
   );
@@ -26,7 +26,7 @@ export function BotonCargarAnteriores({ cargando, onCargar }) {
 export default function AvisoCargarAnteriores({ hayMas, cargando, onCargar, variante = 'reporte', className = '' }) {
   if (!hayMas) return null;
   return (
-    <div role="status" className={`flex flex-col items-center gap-3 py-4 px-4 text-center text-sm text-zinc-600 dark:text-zinc-400 ${className}`}>
+    <div role="status" className={`flex flex-col items-center gap-3 py-4 px-4 text-center text-sm text-muted-foreground ${className}`}>
       <p className="max-w-md">{TEXTOS[variante] || TEXTOS.reporte}</p>
       <BotonCargarAnteriores cargando={cargando} onCargar={onCargar} />
     </div>

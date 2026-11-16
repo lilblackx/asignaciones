@@ -187,7 +187,7 @@ export default function FormularioPagoCliente({
       type="button"
       aria-pressed={form.moneda === m.id}
       onClick={() => cambiarMoneda(m.id)}
-      className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${form.moneda === m.id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:border-zinc-500'}`}
+      className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${form.moneda === m.id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-input text-foreground hover:border-zinc-500'}`}
     >{m.nombre}</button>
   );
   const areaPaga = (
@@ -195,7 +195,7 @@ export default function FormularioPagoCliente({
       <label htmlFor={id('nota-pendiente')} className={ETIQUETA}>¿Cuándo o cómo va a pagar? (obligatorio)</label>
       <textarea id={id('nota-pendiente')} value={notaPendiente} onChange={(e) => { setNotaPendiente(stripEmojis(e.target.value)); setError(null); }} maxLength={300} rows={2} placeholder="Ej. Paga el viernes por pago móvil" className={AREA_TEXTO} />
       <MensajeError texto={texto('notaPendiente')} />
-      <p className="text-xs text-zinc-600 dark:text-zinc-400">Queda anotado en la orden y en el cobro, y ya no tienes que hacer nada más con este pago.</p>
+      <p className="text-xs text-muted-foreground">Queda anotado en la orden y en el cobro, y ya no tienes que hacer nada más con este pago.</p>
     </div>
   );
 
@@ -205,7 +205,7 @@ export default function FormularioPagoCliente({
         <div role="group" aria-label="¿El cliente ya pagó?" className="flex gap-2">
           {[[false, 'El cliente ya pagó'], [true, 'Paga después']].map(([valor, etiqueta]) => (
             <button key={String(valor)} type="button" aria-pressed={pagaDespues === valor} onClick={() => { setPagaDespues(valor); limpiarAvisos(); }}
-              className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${pagaDespues === valor ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:border-zinc-500'}`}
+              className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${pagaDespues === valor ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-input text-foreground hover:border-zinc-500'}`}
             >{etiqueta}</button>
           ))}
         </div>
@@ -261,7 +261,7 @@ export default function FormularioPagoCliente({
           <div>
             <label htmlFor={id('monto')} className={ETIQUETA}>Monto pagado ({form.moneda === MONEDA_USD ? '$' : 'Bs'})</label>
             <input id={id('monto')} value={form.monto} onFocus={(e) => e.target.select()} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} aria-describedby={id('monto-ayuda')} className={`${CAMPO_FORMULARIO} mt-1 text-right text-lg font-black tabular-nums`} />
-            <p id={id('monto-ayuda')} className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Escribe solo los números, sin puntos ni comas: se llenan de derecha a izquierda y los dos últimos son los decimales. Ejemplo: 569600 se ve 5.696,00.</p>
+            <p id={id('monto-ayuda')} className="text-xs text-muted-foreground mt-1">Escribe solo los números, sin puntos ni comas: se llenan de derecha a izquierda y los dos últimos son los decimales. Ejemplo: 569600 se ve 5.696,00.</p>
             <MensajeError texto={texto('monto')} />
             <Colapsable>{diferencia && <p className="text-xs text-amber-800 dark:text-amber-300 font-bold mt-1">El monto es distinto al cobro: escribe en la nota por qué.</p>}</Colapsable>
           </div>
@@ -311,7 +311,7 @@ export default function FormularioPagoCliente({
 
       {!incrustado && (
         <div className="space-y-2 pt-1">
-          <button type="button" onClick={guardar} disabled={bloqueado} className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors">
+          <button type="button" onClick={guardar} disabled={bloqueado} className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-campo bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors">
             {guardando ? <Spinner /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />} {guardarTexto}
           </button>
 

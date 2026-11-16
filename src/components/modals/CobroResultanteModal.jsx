@@ -22,8 +22,8 @@ function Dato({ icon: Icon, etiqueta, valor }) {
     <div className="flex items-start gap-2.5">
       <Icon className="w-4 h-4 mt-0.5 text-zinc-400 shrink-0" aria-hidden="true" />
       <div className="min-w-0">
-        <p className="text-[11px] max-lg:text-xs font-bold tracking-wide text-zinc-600 dark:text-zinc-400">{etiqueta}</p>
-        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{valor}</p>
+        <p className="text-[11px] max-lg:text-xs font-bold tracking-wide text-muted-foreground">{etiqueta}</p>
+        <p className="text-sm font-bold text-foreground break-words">{valor}</p>
       </div>
     </div>
   );
@@ -92,7 +92,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   );
 
   const valoresDelCliente = onCopy && valoresGuardados(ticket) && (
-    <section aria-label="Valores del cliente" className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
+    <section aria-label="Valores del cliente" className="px-5 py-4 border-b border-border">
       <ValoresClienteTarjeta valores={ticket.valoresCliente} onCopy={onCopy} />
     </section>
   );
@@ -123,7 +123,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           copiado={copiado === 'monto'}
           onClick={() => copiar('monto', textoMonto(ticket.cobroBs, moneda), 'Monto copiado.')}
           className="mt-3 ml-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1 border"
-          tono="bg-white dark:bg-zinc-900 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
+          tono="bg-card border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
           tonoCopiado="bg-emerald-700 border-emerald-700 text-white"
           iconoClase="w-3.5 h-3.5"
         >
@@ -144,11 +144,11 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
             {valoresDelCliente}
             {datosDeLaOrden}
           </div>
-          <div className="shrink-0 px-5 py-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="shrink-0 px-5 py-3 bg-card border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-md transition-colors"
+              className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-campo shadow-md transition-colors"
             >
               {restantes > 0 ? `Entendido (${restantes} más por ver)` : 'Entendido'}
             </button>
@@ -197,8 +197,8 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
 
         {clave === 'pago' && (
           <section aria-label="Registrar el pago del cliente" className="px-5 py-4 space-y-3">
-            <h3 className="text-sm font-black tracking-wide text-zinc-900 dark:text-white">REGISTRAR EL PAGO DEL CLIENTE</h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">{instalacion ? 'Anota lo que el cliente pagó por la instalación. Es obligatorio: el cliente paga la instalación de una vez y, sin esto, la oficina no puede aprobar la orden.' : 'Anota lo que el cliente pagó por este cobro. Es obligatorio: si todavía no pagó, di que paga después.'} Antes de guardar te pedimos confirmar los datos.</p>
+            <h3 className="text-sm font-black tracking-wide text-foreground">REGISTRAR EL PAGO DEL CLIENTE</h3>
+            <p className="text-xs text-muted-foreground">{instalacion ? 'Anota lo que el cliente pagó por la instalación. Es obligatorio: el cliente paga la instalación de una vez y, sin esto, la oficina no puede aprobar la orden.' : 'Anota lo que el cliente pagó por este cobro. Es obligatorio: si todavía no pagó, di que paga después.'} Antes de guardar te pedimos confirmar los datos.</p>
             <FormularioPagoCliente
               key={ticket.id}
               ticket={ticket}
@@ -216,8 +216,8 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           <>
             {solo && cuadroDelCobro}
             <section aria-label="Detalles de la orden" className="px-5 py-4 space-y-3">
-              <h3 className="text-sm font-black tracking-wide text-zinc-900 dark:text-white inline-flex items-center gap-2"><Camera className="w-4 h-4" aria-hidden="true" />DETALLES DE LA ORDEN</h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">Sube 7 fotos del trabajo que hiciste (equipo instalado, cableado, conectores, caja...). Son exactamente 7 y es obligatorio: la oficina no puede aprobar la orden sin ellas. Si no las tienes a la mano, puedes hacerlo después y la orden sigue en tu lista.</p>
+              <h3 className="text-sm font-black tracking-wide text-foreground inline-flex items-center gap-2"><Camera className="w-4 h-4" aria-hidden="true" />DETALLES DE LA ORDEN</h3>
+              <p className="text-xs text-muted-foreground">Sube 7 fotos del trabajo que hiciste (equipo instalado, cableado, conectores, caja...). Son exactamente 7 y es obligatorio: la oficina no puede aprobar la orden sin ellas. Si no las tienes a la mano, puedes hacerlo después y la orden sigue en tu lista.</p>
               <DetallesOrdenCampo onSubir={(fotos, onProgreso) => registro.onSubirDetalles(ticket, fotos, onProgreso)} />
             </section>
             {solo && datosDeLaOrden}

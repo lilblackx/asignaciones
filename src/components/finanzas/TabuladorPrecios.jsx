@@ -33,7 +33,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
       <ul className={`${TARJETA} px-4 divide-y divide-zinc-200 dark:divide-zinc-800`}>
         {CONCEPTOS_PAGO.map(({ id, nombre }) => (
           <li key={id} className="py-2.5 grid grid-cols-1 sm:grid-cols-[1fr_11rem_14rem] items-center gap-x-4 gap-y-1">
-            <label htmlFor={`tarifa-${id}`} className="text-sm font-bold text-zinc-900 dark:text-white">{nombre}</label>
+            <label htmlFor={`tarifa-${id}`} className="text-sm font-bold text-foreground">{nombre}</label>
             <div className="relative">
               <input
                 id={`tarifa-${id}`}
@@ -54,7 +54,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
       </ul>
 
       <div className="flex flex-wrap items-center gap-4">
-        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} min-w-[10rem] bg-red-600 hover:bg-red-700 text-white`}>
+        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} min-w-[10rem] bg-primary hover:bg-primary-hover text-white`}>
           {ocupado && <Spinner />}Guardar precios
         </button>
         <span className={`${ETIQUETA} text-sm`}>{cambiado ? 'Hay cambios sin guardar' : 'Precios al día'}</span>

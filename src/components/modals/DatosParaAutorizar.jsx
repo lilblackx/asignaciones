@@ -12,7 +12,7 @@ function Fila({ dato, ticket, copiado, onCopiar }) {
   return (
     <div className="flex items-start justify-between gap-2 py-1.5">
       <div className="min-w-0">
-        <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 block">{dato.etiqueta}</span>
+        <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground block">{dato.etiqueta}</span>
         {dato.tipo === 'cedula' ? (
           <a
             href={buildSmartOltUrl(ticket.cedula, ticket.tipoDocumento)}
@@ -29,7 +29,7 @@ function Fila({ dato, ticket, copiado, onCopiar }) {
             <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> Abrir en Maps
           </a>
         ) : (
-          <span className={`block break-words text-zinc-900 dark:text-white ${destacado ? 'text-base font-black tracking-wide' : 'text-sm font-bold'} ${mono ? 'font-mono' : ''}`}>{dato.valor}</span>
+          <span className={`block break-words text-foreground ${destacado ? 'text-base font-black tracking-wide' : 'text-sm font-bold'} ${mono ? 'font-mono' : ''}`}>{dato.valor}</span>
         )}
       </div>
       <BotonCopiarDato
@@ -45,7 +45,7 @@ function Fila({ dato, ticket, copiado, onCopiar }) {
 function Bloque({ titulo, icono: Icono, datos, ticket, copiado, onCopiar, className = '', tono }) {
   if (datos.length === 0) return null;
   return (
-    <section className={`rounded-xl border p-3 ${tono} ${className}`} aria-label={titulo}>
+    <section className={`rounded-campo border p-3 ${tono} ${className}`} aria-label={titulo}>
       <h3 className="flex items-center gap-2 text-xs font-black tracking-wide text-zinc-700 dark:text-zinc-200 mb-0.5">
         <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {titulo}
       </h3>
@@ -68,14 +68,14 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
     <div className="space-y-3">
       {/* El título de la sección, como los demás del modal (COBRO, RECABLEADO...): más grande, con su ícono rojo y la línea roja de las ventanas de la app. */}
       <div className="flex items-center justify-between gap-2 pb-2 border-b-2 border-red-600">
-        <h3 className="min-w-0 flex items-center gap-2 text-sm font-black tracking-wide uppercase text-zinc-900 dark:text-white">
+        <h3 className="min-w-0 flex items-center gap-2 text-sm font-black tracking-wide uppercase text-foreground">
           {paraAutorizar ? <ShieldCheck className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> : <User className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />}
           <span className="truncate">{paraAutorizar ? 'Para autorizar en SmartOLT' : 'Datos del cliente'}</span>
         </h3>
         <BotonCopiar
           copiado={copiado === 'todo'}
           onClick={() => copiar('todo', texto, 'Datos copiados.')}
-          className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black"
+          className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-campo text-xs font-black"
           tono="bg-blue-600 hover:bg-blue-700 text-white"
           iconoClase="w-3.5 h-3.5"
         >
@@ -101,21 +101,21 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
           ticket={ticket}
           copiado={copiado}
           onCopiar={copiar}
-          tono={`bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 order-2 md:order-1 ${equipo.length === 0 ? 'md:col-span-2' : ''}`}
+          tono={`bg-sunken border-border order-2 md:order-1 ${equipo.length === 0 ? 'md:col-span-2' : ''}`}
         />
       </div>
 
       {ticket.plantillaOriginal && (
-        <details className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+        <details className="group rounded-campo border border-border bg-sunken">
           <summary className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-300 cursor-pointer select-none">
             <FileText className="w-4 h-4 shrink-0" aria-hidden="true" /> Ver plantilla completa de la promotora
           </summary>
           <div className="px-3 pb-3 space-y-2">
-            <pre className="whitespace-pre-wrap break-words text-[11px] max-lg:text-xs leading-snug font-mono text-zinc-700 dark:text-zinc-300 max-h-56 overflow-y-auto">{ticket.plantillaOriginal}</pre>
+            <pre className="whitespace-pre-wrap break-words text-[11px] max-lg:text-xs leading-snug font-mono text-card-foreground max-h-56 overflow-y-auto">{ticket.plantillaOriginal}</pre>
             <BotonCopiar
               copiado={copiado === 'plantilla'}
               onClick={() => copiar('plantilla', ticket.plantillaOriginal, 'Plantilla copiada.')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-campo text-xs font-bold"
               tono="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700"
               iconoClase="w-3.5 h-3.5"
             >

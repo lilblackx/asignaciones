@@ -27,7 +27,7 @@ export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', cla
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu id={id} ariaLabel={`${ariaLabel}: hora`} disabled={disabled} className={claseSelector} value={String(hora12)} onChange={(v) => cambiar(Number(v), minuto, pm)} items={HORAS} /></div>
       <span className="font-black text-zinc-700 dark:text-zinc-200" aria-hidden="true">:</span>
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu ariaLabel={`${ariaLabel}: minutos`} disabled={disabled} className={claseSelector} value={String(minuto)} onChange={(v) => cambiar(hora12, Number(v), pm)} items={MINUTOS} /></div>
-      <div className={`inline-flex ${alto} rounded-xl border border-zinc-400 dark:border-zinc-700 overflow-hidden shrink-0`}>
+      <div className={`inline-flex ${alto} rounded-campo border border-input overflow-hidden shrink-0`}>
         {[['a. m.', false], ['p. m.', true]].map(([texto, esPm]) => (
           <button
             key={texto}
@@ -35,7 +35,7 @@ export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', cla
             disabled={disabled}
             aria-pressed={pm === esPm}
             onClick={() => cambiar(hora12, minuto, esPm)}
-            className={`${claseBoton} h-full font-bold whitespace-nowrap transition-colors disabled:opacity-60 ${pm === esPm ? 'bg-red-600 text-white' : 'bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+            className={`${claseBoton} h-full font-bold whitespace-nowrap transition-colors disabled:opacity-60 ${pm === esPm ? 'bg-red-600 text-white' : 'bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 hover:bg-secondary'}`}
           >{texto}</button>
         ))}
       </div>

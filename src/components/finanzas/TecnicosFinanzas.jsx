@@ -69,7 +69,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   // Lo que tiene un técnico por pagar en pagos adicionales (para avisarlo en el formulario).
   const adicionalDe = (tecnico) => filas.find((f) => f.tecnico === tecnico)?.adicionales ?? 0;
 
-  const alerta = 'rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
+  const alerta = 'rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
 
   return (
     <div className="space-y-5">

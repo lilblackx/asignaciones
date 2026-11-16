@@ -6,7 +6,7 @@ import Spinner from '../Spinner';
 import { claseCampo } from '../estilos';
 
 const INPUT_CLASS = claseCampo('grande');
-const LABEL_CLASS = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
+const LABEL_CLASS = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
 
 // Sin nada guardado todavía (el documento no existe) se precarga con los datos de
 // la empresa para que el ADMIN solo revise y guarde. Si ya hay un documento, manda
@@ -40,14 +40,14 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {formas.length === 0 && (
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center py-2">No hay formas de pago. Agrega una con los botones de abajo.</p>
+        <p className="text-xs text-muted-foreground text-center py-2">No hay formas de pago. Agrega una con los botones de abajo.</p>
       )}
 
       {formas.map((forma, i) => {
         const Icono = ICONO_POR_TIPO[forma.tipo];
         const titulo = TITULO_POR_TIPO[forma.tipo];
         return (
-          <div key={i} role="group" aria-label={`${titulo} ${i + 1}`} className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-3 space-y-2">
+          <div key={i} role="group" aria-label={`${titulo} ${i + 1}`} className="bg-sunken border-2 border-border rounded-campo p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black text-red-600 dark:text-red-400">
                 <Icono className="w-4 h-4" aria-hidden="true" /> {titulo}
@@ -57,7 +57,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
                 onClick={() => quitar(i)}
                 aria-label={`Quitar ${titulo} ${forma.banco || i + 1}`}
                 title="Quitar"
-                className="p-1.5 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="p-1.5 rounded-campo text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <Trash2 className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -85,7 +85,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
             key={tipo}
             type="button"
             onClick={() => agregar(tipo)}
-            className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl font-bold text-xs border-2 border-dashed border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-600 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-campo font-bold text-xs border-2 border-dashed border-input text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-600 transition-colors"
           >
             <Plus className="w-4 h-4 shrink-0" aria-hidden="true" /> {etiqueta}
           </button>
@@ -93,14 +93,14 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
       </div>
 
       {formasPago?.actualizadoEn && (
-        <div className="flex justify-between text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
+        <div className="flex justify-between text-[11px] max-lg:text-xs text-muted-foreground">
           <span>Última actualización{formasPago.actualizadoPor ? ` por ${formasPago.actualizadoPor}` : ''}</span>
           <span>{new Date(formasPago.actualizadoEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}</span>
         </div>
       )}
       {!formasPago && <p className="text-[11px] max-lg:text-xs text-amber-700 dark:text-amber-400 font-bold ml-1">Aún sin guardar: los técnicos no verán estos datos hasta que pulses Guardar.</p>}
 
-      <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-xl transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar formas de pago'}</button>
+      <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-boton transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar formas de pago'}</button>
     </form>
   );
 }

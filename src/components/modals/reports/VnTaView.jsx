@@ -9,7 +9,7 @@ import CampoFecha from '../../CampoFecha';
 import { CAMPO, claseFecha } from '../../estilos';
 import Boton from '../../Boton';
 
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
+const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
 
 // La hoja de VN y TA: la única del Registro de estadísticas que se llena a mano (ver utils/registroVnTa). Arriba el formulario para agregar una fila
 // (o corregir una), debajo las cifras y la lista del periodo con sus botones de editar y borrar.
@@ -79,8 +79,8 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
 
   return (
     <div>
-      {!soloLectura && <form onSubmit={guardar} className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm mb-4">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">{editandoId ? 'Corregir registro' : 'Agregar registro'}</h3>
+      {!soloLectura && <form onSubmit={guardar} className="bg-card border border-border rounded-card p-4 sm:p-5 shadow-sm mb-4">
+        <h3 className="text-sm font-bold text-foreground mb-3">{editandoId ? 'Corregir registro' : 'Agregar registro'}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
             <label htmlFor="vnta-trabajo" className={ETIQUETA}>Trabajo realizado</label>
@@ -110,13 +110,13 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             {guardando ? <Spinner /> : <Plus className="w-4 h-4" aria-hidden="true" />}{editandoId ? 'Guardar cambios' : 'Agregar'}
           </Boton>
           {editandoId && <Boton variante="secundario" tamano="normal" type="button" onClick={limpiar}><X className="w-4 h-4" aria-hidden="true" /> Cancelar</Boton>}
-          {!editandoId && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
+          {!editandoId && <p className="text-[11px] max-lg:text-xs text-muted-foreground">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
         </div>
       </form>}
 
-      {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">{error}</p>}
+      {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-campo px-3 py-2 mb-4">{error}</p>}
       <Cifras items={cifrasVnTa(estadistica)} />
-      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 -mt-1 mb-4">{NOTA_VNTA}</p>
+      <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-1 mb-4">{NOTA_VNTA}</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">
         <TablaReporte titulo="Estadística de VN y TA" columnas={columnasEstadisticaVnTa()} filas={filasEstadisticaVnTa(estadistica)} />
@@ -129,7 +129,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         filas={filas}
         vacio="Ningún registro de VN o TA en este periodo."
       />
-      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
+      <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
     </div>
   );
 }

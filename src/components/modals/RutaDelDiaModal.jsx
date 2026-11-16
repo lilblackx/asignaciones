@@ -14,7 +14,7 @@ const TIPO = {
   'RECONEXIÓN': 'bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-300',
   'MUDANZA': 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300',
 };
-const BOTON_FLECHA = 'shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl border border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors';
+const BOTON_FLECHA = 'shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-campo border border-input text-foreground hover:bg-secondary disabled:opacity-40 disabled:hover:bg-transparent transition-colors';
 
 export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
   // undefined: buscando la ubicación; null: no se pudo saber; { lat, lng }: la del técnico.
@@ -43,20 +43,20 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
 
   return (
     <Modal onClose={onClose}>
-      <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[90dvh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center gap-3 shrink-0">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[90dvh] flex flex-col overflow-hidden border border-border">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center gap-3 shrink-0">
           <h2 className="text-lg font-black text-white flex items-center gap-2 min-w-0"><Route className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /><span className="truncate">Ruta del día</span></h2>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="ml-auto shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="p-4 space-y-3 overflow-y-auto">
           {buscando ? (
-            <p role="status" className="flex items-center gap-2 text-sm font-bold text-zinc-700 dark:text-zinc-300"><LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" /> Buscando tu ubicación...</p>
+            <p role="status" className="flex items-center gap-2 text-sm font-bold text-card-foreground"><LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" /> Buscando tu ubicación...</p>
           ) : paradas.length === 0 ? (
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">Ninguna de tus órdenes de hoy tiene ubicación del cliente ni de la NAP, así que no hay ruta que armar.</p>
+            <p className="text-sm text-card-foreground">Ninguna de tus órdenes de hoy tiene ubicación del cliente ni de la NAP, así que no hay ruta que armar.</p>
           ) : (
             <>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 {orden.length === 1 ? '1 parada. ' : `${orden.length} paradas${km > 0 ? `, unos ${km} km en línea recta` : ''}. `}
                 {posicion ? 'Primero las de prioridad alta y las demás de la más cercana a la más lejana, desde donde estás.' : 'No se pudo saber dónde estás, así que el orden parte de la primera parada. Activa la ubicación del navegador para ordenarlas desde donde estás.'}
                 {orden.length > 1 && ' Puedes cambiarlo con las flechas.'}
@@ -66,12 +66,12 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
               )}
               <ol className="space-y-2">
                 {orden.map((p, i) => (
-                  <li key={p.id} className="flex items-center gap-2 rounded-xl border border-zinc-300 dark:border-zinc-700 p-2">
+                  <li key={p.id} className="flex items-center gap-2 rounded-campo border border-zinc-300 dark:border-zinc-700 p-2">
                     <span className="shrink-0 w-7 h-7 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-black flex items-center justify-center tabular-nums">{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm font-black text-zinc-900 dark:text-white"><span>{p.codigo}</span>{p.tipoTrabajo && <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${TIPO[p.tipoTrabajo] || 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200'}`}>{p.tipoTrabajo}</span>}</p>
-                      {p.nombre && <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">{p.nombre}</p>}
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm font-black text-foreground"><span>{p.codigo}</span>{p.tipoTrabajo && <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${TIPO[p.tipoTrabajo] || 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200'}`}>{p.tipoTrabajo}</span>}</p>
+                      {p.nombre && <p className="text-xs font-bold text-card-foreground truncate">{p.nombre}</p>}
+                      <p className="text-xs text-muted-foreground">
                         {p.prioridad && <><span className="inline-flex items-center gap-1 font-black text-red-700 dark:text-red-400"><Flag className="w-3 h-3" aria-hidden="true" />Prioridad alta</span><span aria-hidden="true"> · </span></>}
                         {p.punto.fuente === FUENTE_NAP ? 'Llega a la NAP' : 'Casa del cliente'}
                       </p>
@@ -86,7 +86,7 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
           )}
 
           {!buscando && sinPunto.length > 0 && (
-            <div role="status" className="rounded-xl border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1.5">
+            <div role="status" className="rounded-campo border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1.5">
               <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><TriangleAlert className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {sinPunto.length === 1 ? '1 orden no entra en la ruta' : `${sinPunto.length} órdenes no entran en la ruta`}</p>
               {sinPunto.map((e) => <p key={e.id} className="text-xs text-amber-900 dark:text-amber-200"><span className="font-bold">{e.codigo}{e.nombre ? ` · ${e.nombre}` : ''}:</span> no tiene ubicación del cliente ni de la NAP.</p>)}
             </div>
@@ -94,9 +94,9 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
         </div>
 
         {!buscando && enlaces.length > 0 && (
-          <div className="shrink-0 p-4 border-t border-zinc-300 dark:border-zinc-800 space-y-2">
+          <div className="shrink-0 p-4 border-t border-border space-y-2">
             {enlaces.map((e) => (
-              <a key={e.desde} href={e.url} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-2 h-11 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-bold text-white transition-colors">
+              <a key={e.desde} href={e.url} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-2 h-11 px-4 rounded-boton bg-primary hover:bg-primary-hover text-sm font-bold text-white transition-colors">
                 <Navigation className="w-4 h-4 shrink-0" aria-hidden="true" />
                 {enlaces.length === 1 ? 'Abrir ruta en Google Maps' : `Ruta ${enlaces.indexOf(e) + 1}: paradas ${e.desde} a ${e.hasta}`}
               </a>

@@ -42,14 +42,14 @@ export default function OrdenesDelPago({ pago, leer, onAnular, ocupado }) {
         <ChevronDown className={`w-4 h-4 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" /> Órdenes del pago{anuladas.length > 0 ? ` (${anuladas.length} anulada${anuladas.length === 1 ? '' : 's'})` : ''}
       </button>
       {abierto && (
-        <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-800 rounded-xl border border-zinc-300 dark:border-zinc-800 px-3">
+        <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-800 rounded-campo border border-border px-3">
           {fallo && <li className="py-2 text-xs font-bold text-red-600 dark:text-red-400">No se pudieron leer las órdenes de este pago. Intenta de nuevo.</li>}
           {ordenes === null && !fallo && <li className={`py-2 ${TEXTO_SUAVE}`}>Leyendo las órdenes...</li>}
           {(ordenes || []).filter((o) => !ordenAnuladaEnPago(pago, o.id)).map((o) => (
             <li key={o.id} className="py-2 flex flex-wrap items-center justify-between gap-2">
-              <span className="min-w-0 text-sm text-zinc-900 dark:text-white"><span className="font-bold">{o.codigo || 'S/C'}</span> <span className={TEXTO_SUAVE}>{nombreConcepto(o.concepto)}</span></span>
+              <span className="min-w-0 text-sm text-foreground"><span className="font-bold">{o.codigo || 'S/C'}</span> <span className={TEXTO_SUAVE}>{nombreConcepto(o.concepto)}</span></span>
               <span className="flex items-center gap-3">
-                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-white">{dolares(o.monto)}</span>
+                <span className="text-sm font-bold tabular-nums text-foreground">{dolares(o.monto)}</span>
                 <button type="button" onClick={() => setElegida(o)} disabled={ocupado} className={`${BOTON_FILA} !border-red-600 !text-red-700 dark:!text-red-400`}>Anular pago de esta orden</button>
               </span>
             </li>
@@ -58,8 +58,8 @@ export default function OrdenesDelPago({ pago, leer, onAnular, ocupado }) {
           {anuladas.map((a) => (
             <li key={a.id} className="py-2">
               <span className="flex flex-wrap items-center justify-between gap-2">
-                <span className="min-w-0 text-sm text-zinc-900 dark:text-white"><span className="font-bold">{a.codigo || 'S/C'}</span> <span className={`${CHIP} ${ESTADO.ANULADO.clase}`}>Pago anulado</span></span>
-                <span className="text-sm font-bold tabular-nums line-through text-zinc-500 dark:text-zinc-400">{dolares(a.monto)}</span>
+                <span className="min-w-0 text-sm text-foreground"><span className="font-bold">{a.codigo || 'S/C'}</span> <span className={`${CHIP} ${ESTADO.ANULADO.clase}`}>Pago anulado</span></span>
+                <span className="text-sm font-bold tabular-nums line-through text-muted-foreground">{dolares(a.monto)}</span>
               </span>
               <span className={`block ${TEXTO_SUAVE}`}>Motivo: {a.motivo} · {a.por} · {fechaHoraLegible(a.en)}</span>
             </li>

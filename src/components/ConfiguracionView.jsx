@@ -50,13 +50,13 @@ function TarjetaCasilla({ id, Icono, titulo, detalle, marcada, cargado, ocupada,
           className="mt-0.5 w-5 h-5 shrink-0 accent-red-600 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         />
         <span className="min-w-0 space-y-1">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black text-zinc-900 dark:text-white">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black text-foreground">
             <Icono className={`w-4 h-4 shrink-0 ${resaltada ? 'text-amber-600 dark:text-amber-400' : 'text-red-500'}`} aria-hidden="true" />
             {titulo}
             <span className={`whitespace-nowrap text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${claseInsignia}`}>{insignia}</span>
           </span>
-          <span className="block text-xs text-zinc-600 dark:text-zinc-400">{detalle}</span>
-          {pie && <span className="block text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">{pie}</span>}
+          <span className="block text-xs text-muted-foreground">{detalle}</span>
+          {pie && <span className="block text-[11px] max-lg:text-xs text-muted-foreground">{pie}</span>}
         </span>
       </label>
     </div>
@@ -82,13 +82,13 @@ export default function ConfiguracionView({ funciones, cargado, error, onCambiar
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-50" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Settings} titulo="Configuración" onClose={onClose} enPagina={enPagina} />
         <div className={`p-4 space-y-4 ${CENTRADO_ESTRECHO}`}>
           <p className={TEXTO_SUAVE}>Funciones de la app que se encienden o se apagan para todos. Los cambios se guardan al marcar la casilla.</p>
 
           {(error || interruptorError) && (
-            <p role="alert" className="flex items-start gap-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
+            <p role="alert" className="flex items-start gap-1.5 rounded-boton bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
               <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>No se pudo leer la configuración. Lo que ves puede no ser lo guardado.</span>
             </p>
           )}

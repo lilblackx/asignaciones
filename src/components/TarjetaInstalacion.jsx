@@ -14,9 +14,9 @@ import { useCopiado } from '../hooks/useCopiado';
 // (ver estilosInstalacion) y la etiqueta de tipo de la tabla (ticketDisplay); esquinas secas y sin sombra, sin íconos delante de los datos.
 
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-semibold text-zinc-600 dark:text-zinc-400';
+const ETIQUETA = 'text-[11px] max-lg:text-xs font-semibold text-muted-foreground';
 const VALOR = 'text-sm text-zinc-900 dark:text-zinc-100 mt-0.5 break-words';
-const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded border border-zinc-400 dark:border-zinc-700 px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors';
+const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded border border-input px-2 py-1 text-zinc-700 dark:text-zinc-200 hover:bg-secondary transition-colors';
 
 // `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
 export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlantilla, onCopy, mostrarTipo = false, ahora }) {
@@ -34,7 +34,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
   const motivo = vista.clave === 'CANCELADA' ? motivoCancelacion(orden) : '';
 
   return (
-    <li className="h-full flex flex-col min-w-0 rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+    <li className="h-full flex flex-col min-w-0 rounded-card border border-border max-lg:border-transparent bg-card overflow-hidden max-lg:shadow-card">
       <div className="bg-black px-3 py-2 flex items-center gap-2">
         <span className="text-lg font-black text-white tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
         {mostrarTipo && <span className={`text-[11px] max-lg:text-xs font-black px-2 py-1 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
@@ -65,7 +65,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
       <div className="p-3 flex-1 flex flex-col gap-3">
         <div className="min-w-0">
           <div className="flex items-start gap-1.5">
-            <h3 className="text-[15px] font-bold text-zinc-900 dark:text-white leading-tight break-words min-w-0">{orden.nombre || 'Sin nombre'}</h3>
+            <h3 className="text-[15px] font-bold text-foreground leading-tight break-words min-w-0">{orden.nombre || 'Sin nombre'}</h3>
             {onCopy && orden.nombre && (
               <BotonCopiar
                 copiado={copiado === 'nombre'}
@@ -79,7 +79,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
               />
             )}
           </div>
-          {cedula && <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-0.5">{cedula}</p>}
+          {cedula && <p className="text-xs tabular-nums text-muted-foreground mt-0.5">{cedula}</p>}
         </div>
 
         <div>
@@ -97,13 +97,13 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
             {orden.tecnico
               ? <p className={VALOR}>{orden.tecnico}</p>
               : programada
-                ? <p className="mt-0.5 text-xs font-black uppercase text-zinc-600 dark:text-zinc-400">Por asignar</p>
+                ? <p className="mt-0.5 text-xs font-black uppercase text-muted-foreground">Por asignar</p>
                 : <p className="mt-0.5 text-xs font-black uppercase text-amber-700 dark:text-amber-400">Sin técnico</p>}
           </div>
         </div>
       </div>
 
-      <div className="border-t border-zinc-200 dark:border-zinc-800 px-3 py-2 min-h-11 flex items-center justify-between gap-2">
+      <div className="border-t border-border px-3 py-2 min-h-11 flex items-center justify-between gap-2">
         <span className={`${ETIQUETA} tabular-nums`}>{cuando ? `${cerrada ? 'Cerrada' : 'Creada'} ${fecha(cuando)}` : ''}</span>
         {conPlantilla && (
           <div className="flex items-center gap-1.5">

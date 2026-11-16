@@ -19,10 +19,10 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
   const rojo = evaluacion.estado === 'error' && (tocado || evaluacion.codigo === 'GOPN');
   const verde = evaluacion.estado === 'ok';
   return (
-    <div className="space-y-3 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+    <div className="space-y-3 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
       {onTipoEquipo && (
         <div className="space-y-1">
-          <label htmlFor="pf-tipo-equipo" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+          <label htmlFor="pf-tipo-equipo" className="text-xs font-bold text-card-foreground ml-1">
             TIPO DE EQUIPO NUEVO <span className="font-normal text-red-500">(obligatorio)</span>
           </label>
           <SelectMenu id="pf-tipo-equipo" ariaLabel="Tipo de equipo nuevo" value={tipoEquipo} onChange={onTipoEquipo} items={ITEMS_TIPO} />
@@ -30,7 +30,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
         </div>
       )}
       <div className="space-y-1">
-      <label htmlFor="pf-serial-equipo" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+      <label htmlFor="pf-serial-equipo" className="text-xs font-bold text-card-foreground ml-1">
         {nuevo ? 'SERIAL DEL EQUIPO NUEVO' : 'SERIAL DEL EQUIPO'} <span className="font-normal text-red-500">(obligatorio)</span>
       </label>
       <div className="flex items-stretch gap-2">

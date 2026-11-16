@@ -40,7 +40,7 @@ export default function CampoFecha({ id, valor, onChange, min, max, ariaLabel, v
   return (
     <div ref={caja} className={`relative ${ancho}`}>
       <button id={id} type="button" disabled={disabled} aria-haspopup="dialog" aria-expanded={abierto} aria-label={`${ariaLabel || 'Fecha'}: ${valor ? fechaCorta(valor) : 'sin fecha'}`} onClick={() => setAbierto((a) => !a)} className={clase}>
-        <span className={valor ? '' : 'text-zinc-600 dark:text-zinc-400'}>{valor ? fechaCorta(valor) : vacio}</span>
+        <span className={valor ? '' : 'text-muted-foreground'}>{valor ? fechaCorta(valor) : vacio}</span>
         <CalendarDays className={grande ? 'w-6 h-6 shrink-0' : 'w-4 h-4 shrink-0'} aria-hidden="true" />
       </button>
       {flotante

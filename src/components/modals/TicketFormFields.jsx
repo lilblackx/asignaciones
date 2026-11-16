@@ -11,18 +11,18 @@ const CAMPOS = { selectTipoDoc: SELECTOR_TIPO_DOC_ORDEN, inputCedula: CAMPO_ORDE
 const STYLES = {
   create: {
     ...CAMPOS,
-    label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
-    labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
-    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
-    hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
+    label: 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1',
+    labelObs: 'text-[11px] max-lg:text-xs font-bold text-muted-foreground',
+    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-muted-foreground cursor-pointer',
+    hint: 'text-[11px] max-lg:text-xs text-muted-foreground ml-1',
     checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
   edit: {
     ...CAMPOS,
-    label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
-    labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
-    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
-    hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
+    label: 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1',
+    labelObs: 'text-[11px] max-lg:text-xs font-bold text-muted-foreground',
+    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-muted-foreground cursor-pointer',
+    hint: 'text-[11px] max-lg:text-xs text-muted-foreground ml-1',
     checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
 };
@@ -172,7 +172,7 @@ export function GarantiaField({ wrapperClassName, idPrefix, value, onChange, ord
       </label>
       {marcada && (
         <div className="space-y-1">
-          <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">Elige la orden original que falló. Al revisar esta orden se decide si se le descuenta algo a su técnico.</p>
+          <p className="text-[11px] max-lg:text-xs text-muted-foreground">Elige la orden original que falló. Al revisar esta orden se decide si se le descuenta algo a su técnico.</p>
           <BuscadorOrden
             id={`${idPrefix}-garantia-orden`}
             etiqueta="Orden original de la garantía"

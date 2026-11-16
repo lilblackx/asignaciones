@@ -35,7 +35,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-zinc-900 dark:text-white">Registrar un adelanto a {tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">Registrar un adelanto a {tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.CON_ADELANTO.clase}`}>Adelanto</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>Un adelanto es siempre en dólares y se resta de lo que el técnico tenga pendiente en su próximo pago.{porDescontar > 0 ? ` Ya tiene ${dolares(porDescontar)} de adelantos por descontar.` : ''}</p>
@@ -94,7 +94,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={guardar} disabled={ocupado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
+        <button type="button" onClick={guardar} disabled={ocupado} className={`${BOTON_GRANDE} bg-primary hover:bg-primary-hover text-white`}>
           {ocupado ? <Spinner /> : <HandCoins className="w-5 h-5" aria-hidden="true" />} Registrar adelanto
         </button>
         <button type="button" onClick={onVolver} disabled={ocupado} className={BOTON_CON_BORDE_GRANDE}>Cancelar</button>

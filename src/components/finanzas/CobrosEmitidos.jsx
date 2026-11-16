@@ -53,7 +53,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
       <section aria-label="Resumen" className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {tarjetas.map(({ etiqueta, valor, detalle }) => (
           <div key={etiqueta} className={`${TARJETA} p-3 min-w-0`}>
-            <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none break-words text-zinc-900 dark:text-white">{valor}</p>
+            <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none break-words text-foreground">{valor}</p>
             <p className="mt-1 text-xs font-semibold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
             {detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
           </div>
@@ -99,7 +99,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                 <p className="text-sm font-bold break-words">{textoDeCobro(c)}</p>
                 <PagoDelCliente orden={c} paraFinanzas />
                 {alerta(c)}
-                {c.estado === ESTADO_COBRO.CARGADO && <p className="text-xs text-zinc-700 dark:text-zinc-300">Cargado por {c.cargadoPor} · {fechaHora(c.cargadoEn)}</p>}
+                {c.estado === ESTADO_COBRO.CARGADO && <p className="text-xs text-card-foreground">Cargado por {c.cargadoPor} · {fechaHora(c.cargadoEn)}</p>}
                 <Boton variante="secundario" tamano="grande" className="w-full" onClick={() => setAbierto(c.id)}>Ver todos los datos</Boton>
               </li>
             ))}
@@ -108,7 +108,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
           {/* Escritorio: tabla. */}
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', 'Cargado por', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -118,11 +118,11 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{c.codigo || 'S/C'}</td>
                     <td className="px-3 py-2.5 min-w-[8rem]">{c.nombre}</td>
                     <td className="px-3 py-2.5 min-w-[7rem]">{c.tecnico}</td>
-                    <td className="px-3 py-2.5 min-w-[8rem] text-zinc-700 dark:text-zinc-300 break-words">{tipoTexto(c)}</td>
+                    <td className="px-3 py-2.5 min-w-[8rem] text-card-foreground break-words">{tipoTexto(c)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{estadoChip(c)}</td>
                     <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoVisibleEnFinanzas(c) ? <PagoDelCliente orden={c} tamano="compacto" paraFinanzas /> : <span className="text-xs text-zinc-400">-</span>}</td>
-                    <td className="px-3 py-2.5 text-xs text-zinc-700 dark:text-zinc-300">{c.estado === ESTADO_COBRO.CARGADO ? <>{c.cargadoPor}<span className="block">{fechaHora(c.cargadoEn)}</span></> : '-'}</td>
+                    <td className="px-3 py-2.5 text-xs text-card-foreground">{c.estado === ESTADO_COBRO.CARGADO ? <>{c.cargadoPor}<span className="block">{fechaHora(c.cargadoEn)}</span></> : '-'}</td>
                     <td className="px-3 py-2.5"><Boton variante="secundario" tamano="compacto" onClick={() => setAbierto(c.id)}>Ver</Boton></td>
                   </tr>
                 ))}

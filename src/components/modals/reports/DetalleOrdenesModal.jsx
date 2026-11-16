@@ -7,8 +7,8 @@ import TablaReporte from './TablaReporte';
 export default function DetalleOrdenesModal({ titulo, subtitulo, columnas, filas, vacio = 'Ninguna orden en este periodo.', onClose }) {
   return (
     <Modal onClose={onClose} zIndexClass="z-[70]">
-      <div className="bg-card rounded-card shadow-2xl w-full max-w-5xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex justify-between items-center shrink-0">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-5xl max-h-[90dvh] overflow-hidden border border-border flex flex-col">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2"><ListChecks className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> <span className="truncate">{titulo}</span></h2>
             {subtitulo && <p className="text-[11px] max-lg:text-xs font-medium text-red-400">{subtitulo}</p>}

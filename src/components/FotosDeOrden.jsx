@@ -34,7 +34,7 @@ export default function FotosDeOrden({ ticket }) {
   const disponibles = fotos.map((f, i) => ({ ruta: f.ruta, url: urls[f.ruta], titulo: `Foto ${i + 1}` })).filter((f) => f.url);
   return (
     <div ref={zona}>
-      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mb-2">
+      <p className="text-[11px] max-lg:text-xs text-muted-foreground mb-2">
         {fotos.length} {fotos.length === 1 ? 'foto' : 'fotos'}{subidoPor ? ` · las subió ${subidoPor}` : ''}{subidoEn ? ` · ${new Date(subidoEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}` : ''}
       </p>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -42,14 +42,14 @@ export default function FotosDeOrden({ ticket }) {
           const url = urls[f.ruta];
           if (url === false) {
             return (
-              <div key={f.ruta} className="aspect-square rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 flex flex-col items-center justify-center gap-1 text-center p-2">
+              <div key={f.ruta} className="aspect-square rounded-campo border border-zinc-300 dark:border-zinc-700 bg-secondary flex flex-col items-center justify-center gap-1 text-center p-2">
                 <ImageOff className="w-5 h-5 text-zinc-500" aria-hidden="true" />
-                <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Foto vencida</span>
+                <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Foto vencida</span>
               </div>
             );
           }
           return (
-            <button key={f.ruta} type="button" disabled={!url} onClick={() => setAbierta(disponibles.findIndex((d) => d.ruta === f.ruta))} aria-label={`Ver la foto ${i + 1} en grande`} className="block aspect-square rounded-xl overflow-hidden border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 cursor-zoom-in">
+            <button key={f.ruta} type="button" disabled={!url} onClick={() => setAbierta(disponibles.findIndex((d) => d.ruta === f.ruta))} aria-label={`Ver la foto ${i + 1} en grande`} className="block aspect-square rounded-campo overflow-hidden border border-zinc-300 dark:border-zinc-700 bg-secondary cursor-zoom-in">
               {url ? <img src={url} alt={`Foto ${i + 1} del trabajo`} loading="lazy" draggable={false} className="w-full h-full object-cover" /> : <div className="w-full h-full animate-pulse" />}
             </button>
           );

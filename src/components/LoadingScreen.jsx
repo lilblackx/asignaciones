@@ -9,14 +9,14 @@ export default function LoadingScreen({ isDarkMode, connectionError }) {
         {connectionError ? (
           <>
             <AlertTriangle className="w-12 h-12 text-red-600 mb-4" />
-            <h2 className="text-zinc-700 dark:text-zinc-300 font-bold mb-1">No se pudo conectar</h2>
-            <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4 max-w-xs">Revisa tu conexión a internet e intenta de nuevo.</p>
-            <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-md">Reintentar</button>
+            <h2 className="text-card-foreground font-bold mb-1">No se pudo conectar</h2>
+            <p className="text-muted-foreground text-sm mb-4 max-w-xs">Revisa tu conexión a internet e intenta de nuevo.</p>
+            <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-red-600 text-white font-bold rounded-boton hover:bg-red-700 transition-colors shadow-md">Reintentar</button>
           </>
         ) : (
           <>
             <Loader2 className="w-12 h-12 text-red-600 animate-spin mb-4" />
-            <h2 className="text-zinc-700 dark:text-zinc-300 font-bold">Conectando a la nube...</h2>
+            <h2 className="text-card-foreground font-bold">Conectando a la nube...</h2>
           </>
         )}
         </div>

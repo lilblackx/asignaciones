@@ -10,7 +10,7 @@ const THEMES = {
     iconBg: 'bg-red-100 dark:bg-red-900/30',
     iconColor: 'text-red-600 dark:text-red-500',
     inputFocus: 'focus:border-red-500',
-    confirmBg: 'bg-red-600 hover:bg-red-700'
+    confirmBg: 'bg-primary hover:bg-primary-hover'
   },
   blue: {
     iconBg: 'bg-blue-100 dark:bg-blue-900/30',
@@ -63,29 +63,29 @@ export default function ConfirmModal({
 
   return (
     <Modal onClose={onCancel} zIndexClass={zIndexClass}>
-      <div className="bg-card rounded-card shadow-2xl w-full max-w-sm overflow-hidden text-center border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-sm overflow-hidden text-center border border-border">
         <div className="pt-6 pb-4 px-6 flex flex-col items-center">
           <div className={`${theme.iconBg} p-4 rounded-full mb-4`}>
             <Icon className={`w-10 h-10 ${theme.iconColor}`} />
           </div>
-          <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">{title}</h2>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">{description}</p>
+          <h2 className="text-xl font-black text-foreground mb-2">{title}</h2>
+          <p className="text-muted-foreground text-sm mb-4">{description}</p>
           {children && <div className="w-full mb-2">{children}</div>}
           {dateInput !== undefined && setDateInput && (
             <div className="w-full space-y-1 text-left">
-              <label htmlFor="confirm-fecha" className="text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1">FECHA DEL REPORTE</label>
+              <label htmlFor="confirm-fecha" className="text-xs font-bold text-muted-foreground ml-1">FECHA DEL REPORTE</label>
               <CampoFecha id="confirm-fecha" ariaLabel="Fecha del reporte" valor={dateInput} onChange={(v) => v && setDateInput(v)} clase={claseFecha('grande')} />
             </div>
           )}
         </div>
-        <div className="p-6 bg-zinc-50 dark:bg-zinc-950 flex gap-3 border-t border-zinc-200 dark:border-zinc-800">
-          <button onClick={onCancel} disabled={isProcessing} className="flex-1 py-3 text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50">
+        <div className="p-6 bg-sunken flex gap-3 border-t border-border">
+          <button onClick={onCancel} disabled={isProcessing} className="flex-1 py-3 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors disabled:opacity-50 max-lg:shadow-card">
             {cancelLabel}
           </button>
           <button
             onClick={handleConfirm}
             disabled={isProcessing}
-            className={`flex-1 py-3 font-bold rounded-xl transition-colors shadow-md text-white ${isProcessing ? 'bg-zinc-400 cursor-not-allowed' : theme.confirmBg}`}
+            className={`flex-1 py-3 font-bold rounded-campo transition-colors shadow-md text-white ${isProcessing ? 'bg-zinc-400 cursor-not-allowed' : theme.confirmBg}`}
           >
             {isProcessing && <Spinner />}{isProcessing ? processingLabel : confirmLabel}
           </button>

@@ -34,15 +34,15 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
         aria-checked={activa}
         onClick={() => onChange({ ...seleccion, modo })}
         className={`w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-xl border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-          activa ? 'border-sky-500 bg-white dark:bg-sky-950/40' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 hover:border-sky-400'
+          activa ? 'border-sky-500 bg-white dark:bg-sky-950/40' : 'border-input bg-white dark:bg-zinc-950 hover:border-sky-400'
         }`}
       >
         <span className={`w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center ${activa ? 'bg-sky-700 border-sky-600 text-white' : 'border-zinc-400 dark:border-zinc-600'}`} aria-hidden="true">
           {activa && <Check className="w-3.5 h-3.5" />}
         </span>
         <span className="min-w-0">
-          <span className="block text-xs font-black text-zinc-900 dark:text-white">{titulo}</span>
-          {detalle && <span className="block text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">{detalle}</span>}
+          <span className="block text-xs font-black text-foreground">{titulo}</span>
+          {detalle && <span className="block text-[11px] max-lg:text-xs text-muted-foreground">{detalle}</span>}
         </span>
       </button>
     );
@@ -69,7 +69,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
                   aria-checked={activa}
                   onClick={() => onChange({ ...seleccion, moneda: valor })}
                   className={`px-3 py-2 rounded-xl border-2 text-xs font-black transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-                    activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 hover:border-sky-400'
+                    activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-input bg-white dark:bg-zinc-950 text-card-foreground hover:border-sky-400'
                   }`}
                 >
                   {texto}
@@ -77,7 +77,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
               );
             })}
           </div>
-          <label htmlFor={`${idBase}-otro`} className="text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">MONTO A COBRAR ({moneda === MONEDA_USD ? '$' : 'Bs'})</label>
+          <label htmlFor={`${idBase}-otro`} className="text-[11px] max-lg:text-xs font-bold text-card-foreground ml-1">MONTO A COBRAR ({moneda === MONEDA_USD ? '$' : 'Bs'})</label>
           <input
             id={`${idBase}-otro`}
             ref={inputRef}
@@ -92,7 +92,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
             aria-describedby={error ? `${idBase}-error` : undefined}
             className={`${claseCampo('grande', error ? 'error' : 'normal')} font-bold text-right tabular-nums`}
           />
-          <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Escribe solo los números: se llenan de derecha a izquierda y los dos últimos son los decimales (569600 se ve 5.696,00).</p>
+          <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Escribe solo los números: se llenan de derecha a izquierda y los dos últimos son los decimales (569600 se ve 5.696,00).</p>
           {error && <p id={`${idBase}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
         </div>
       )}

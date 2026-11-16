@@ -314,7 +314,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   };
 
   const encabezado = (
-        <div className="bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
           <div>
             <div className="flex items-center gap-2">
               <span className="bg-amber-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">
@@ -340,7 +340,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloqueResumen = (
     <>
           {/* Resumen compacto de la orden */}
-          <div className="bg-zinc-50 dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+          <div className="bg-sunken p-3 rounded-campo border border-border space-y-1.5 text-xs text-card-foreground">
             <div className="flex items-center gap-2">
               <Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" />
               <span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>
@@ -351,7 +351,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               <span className="line-clamp-2">{ticket.direccion}</span>
             </div>
             {ticket.cedula && (
-              <div className="flex items-center gap-2 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="flex items-center gap-2 text-[11px] max-lg:text-xs text-muted-foreground">
                 <Tag className="w-3 h-3 text-zinc-400 shrink-0" />
                 <span>C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</span>
                 {ticket.telefono && <span className="ml-2">Telf: {ticket.telefono}</span>}
@@ -365,7 +365,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     <>
           {!esInstalacion && (
           <div className="space-y-1">
-            <label htmlFor="pf-tipo-visita" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+            <label htmlFor="pf-tipo-visita" className="text-xs font-bold text-card-foreground ml-1">
               TIPO DE VISITA <span className="font-normal text-red-500">(obligatorio)</span>
             </label>
             <SelectMenu
@@ -403,7 +403,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloqueAvisoCobro = (
     <>
           {llevaCobro({ tipoTrabajo: ticket.tipoTrabajo }) && (
-            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
+            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-campo p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
               <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
               <p className="leading-tight">
                 {conceptoCobro({ tipoTrabajo: ticket.tipoTrabajo, tipoVisita })}: cuando se finalice la orden, verás el cobro resultante para el cliente.
@@ -416,8 +416,8 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     <>
           {observacionParaTecnico(ticket) && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA DE LA OFICINA</span>
-              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{observacionParaTecnico(ticket)}</p>
+              <span className="text-xs font-bold text-card-foreground ml-1">NOTA DE LA OFICINA</span>
+              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{observacionParaTecnico(ticket)}</p>
             </div>
           )}
     </>
@@ -426,9 +426,9 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloqueRecabladoDatos = (
     <>
       {recableado && (
-            <div className="space-y-4 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+            <div className="space-y-4 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
               <div className="space-y-1">
-                <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+                <p className="text-xs font-bold text-card-foreground ml-1">
                   METRAJE DEL CABLE <span className="font-normal text-zinc-400">marca del cable al empezar y al terminar</span>
                 </p>
                 <MetrajeInicialFinal
@@ -450,7 +450,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloqueRecabladoConectores = (
     <>
       {recableado && (
-            <div className="space-y-4 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+            <div className="space-y-4 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
               <ConectoresRecableado colorExterno={colorExterno} colorInterno={colorInterno} onExterno={setColorExterno} onInterno={setColorInterno} />
         </div>
       )}
@@ -564,7 +564,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   );
   const bloquePotencia = (
           <div className="space-y-1">
-            <label htmlFor="pf-potencia" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+            <label htmlFor="pf-potencia" className="text-xs font-bold text-card-foreground ml-1">
               POTENCIA ÓPTICA (dBm) <span className="font-normal text-zinc-400">(opcional)</span>
             </label>
             <input
@@ -589,15 +589,15 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     <>
           {devolucionPendiente(ticket) && ticket.observacionTecnico?.trim() && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">TU REPORTE ANTERIOR</span>
-              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">{ticket.observacionTecnico}</p>
+              <span className="text-xs font-bold text-card-foreground ml-1">TU REPORTE ANTERIOR</span>
+              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{ticket.observacionTecnico}</p>
             </div>
           )}
     </>
   );
   const bloqueObservacion = (
           <div className="space-y-1">
-            <label htmlFor="pf-obs"className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+            <label htmlFor="pf-obs"className="text-xs font-bold text-card-foreground ml-1">
               OBSERVACIÓN / DETALLES DEL TRABAJO <span className="font-normal text-red-500">(obligatorio)</span>
             </label>
             <textarea
@@ -615,7 +615,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           </div>
   );
   const bloqueAvisoPre = (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
             <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="leading-tight">
               Esta orden quedará en estado <strong>PRE-FINALIZADA</strong> para que el administrador u operador revise y realice la finalización definitiva.
@@ -629,7 +629,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     orden: (
       <>
         {borrador && (
-          <div role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-xs text-amber-900 dark:text-amber-100 space-y-1.5">
+          <div role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-xs text-amber-900 dark:text-amber-100 space-y-1.5">
             <p className="font-bold">Recuperamos lo que llevabas escrito.</p>
             {borrador.version !== versionDeOrden(ticket) && <p>La oficina cambió esta orden mientras tanto: revisa los datos antes de enviar.</p>}
             <button type="button" onClick={onDescartarBorrador} className="font-bold underline underline-offset-2">Descartar y empezar de nuevo</button>
@@ -697,7 +697,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     {/* Con la confirmación abierta, Escape cierra solo la confirmación y no pierde lo escrito en el formulario. */}
     <Modal onClose={() => { if (!porConfirmar) onClose(); }} zIndexClass="z-50">
       <AsistentePasos
-        clasePanel="w-full max-w-lg h-[min(92dvh,50rem)] border border-zinc-300 dark:border-zinc-800"
+        clasePanel="w-full max-w-lg h-[min(92dvh,50rem)] border border-border"
         etiquetaPasos="Pasos para pre-finalizar la orden"
         pasos={claves.map((clave) => ({ clave, etiqueta: ETIQUETA_PASO_PREFINALIZAR[clave] }))}
         actual={nav.clave}

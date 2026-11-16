@@ -75,11 +75,11 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
           role="group"
           aria-label={ariaLabel}
           style={pos}
-          className={`fixed z-[300] rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl p-1.5 ${saliendo ? 'lg:animate-menu-salida' : 'lg:animate-menu-entrada'}`}
+          className={`fixed z-[300] rounded-card border border-zinc-300 dark:border-zinc-700 bg-card shadow-xl p-1.5 ${saliendo ? 'lg:animate-menu-salida' : 'lg:animate-menu-entrada'} max-lg:shadow-card`}
         >
-          {sinNada && <p className="px-2.5 py-2 text-xs text-zinc-600 dark:text-zinc-400">{vacio}</p>}
+          {sinNada && <p className="px-2.5 py-2 text-xs text-muted-foreground">{vacio}</p>}
           {opciones.map((o) => (
-            <label key={o.clave} className={`flex items-start gap-2.5 rounded-xl px-2.5 py-2 text-sm ${o.deshabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+            <label key={o.clave} className={`flex items-start gap-2.5 rounded-campo px-2.5 py-2 text-sm ${o.deshabilitado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-secondary'}`}>
               <input
                 type="checkbox"
                 checked={o.marcado}
@@ -92,20 +92,20 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
               </span>
               <span className="min-w-0">
                 <span className="block font-bold text-zinc-800 dark:text-zinc-100">{o.etiqueta}</span>
-                {o.ayuda && <span className="block text-[11px] max-lg:text-xs leading-snug text-zinc-600 dark:text-zinc-400">{o.ayuda}</span>}
+                {o.ayuda && <span className="block text-[11px] max-lg:text-xs leading-snug text-muted-foreground">{o.ayuda}</span>}
               </span>
             </label>
           ))}
-          {acciones.length > 0 && opciones.length > 0 && <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />}
+          {acciones.length > 0 && opciones.length > 0 && <div className="my-1 border-t border-border" />}
           {acciones.map((a) => (
             <button
               key={a.clave}
               type="button"
               onClick={() => { setAbierto(false); a.onClick(); }}
-              className="w-full text-left rounded-xl px-2.5 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="w-full text-left rounded-campo px-2.5 py-2 text-sm hover:bg-secondary"
             >
               <span className="block font-bold text-zinc-800 dark:text-zinc-100">{a.etiqueta}</span>
-              {a.detalle && <span className="block text-[11px] max-lg:text-xs leading-snug text-zinc-600 dark:text-zinc-400 break-words">{a.detalle}</span>}
+              {a.detalle && <span className="block text-[11px] max-lg:text-xs leading-snug text-muted-foreground break-words">{a.detalle}</span>}
             </button>
           ))}
         </div>,

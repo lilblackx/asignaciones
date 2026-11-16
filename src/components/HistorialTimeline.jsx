@@ -32,7 +32,7 @@ const REPETIDAS = /^(Marcado como PRE-FINALIZADO|Devuelta al técnico|Valores de
 function LineaDetalle({ texto }) {
   const m = texto.match(/^([^:]{1,26}):\s+(.+)$/);
   if (!m) return <>{texto}</>;
-  return <><span className="font-semibold text-zinc-600 dark:text-zinc-400">{m[1]}:</span> {m[2]}</>;
+  return <><span className="font-semibold text-muted-foreground">{m[1]}:</span> {m[2]}</>;
 }
 
 // Línea de tiempo vertical de una orden, del evento más reciente al más antiguo.
@@ -54,11 +54,11 @@ export default function HistorialTimeline({ ticket, compact = false }) {
             </span>
             <div className="min-w-0 flex-1 pb-0.5">
               <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">{titulo}</p>
-              <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 leading-tight">
+              <p className="text-[11px] max-lg:text-xs text-muted-foreground leading-tight">
                 {ev.fecha}{ev.operador && <> · <span className="font-semibold text-zinc-600 dark:text-zinc-300">{ev.operador}</span></>}
               </p>
               {ev.lineas.filter(linea => !REPETIDAS.test(linea)).map((linea, j) => (
-                <p key={j} className="text-xs text-zinc-700 dark:text-zinc-300 leading-snug break-words mt-0.5"><LineaDetalle texto={linea} /></p>
+                <p key={j} className="text-xs text-card-foreground leading-snug break-words mt-0.5"><LineaDetalle texto={linea} /></p>
               ))}
             </div>
           </li>

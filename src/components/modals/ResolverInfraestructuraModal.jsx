@@ -40,8 +40,8 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[92dvh] overflow-y-auto border border-border">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">EN INFRAESTRUCTURA</span>
@@ -60,26 +60,26 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
             <p className="text-sm text-zinc-600 dark:text-zinc-300">Esta orden ya no está esperando a infraestructura.</p>
           ) : (
             <>
-              <div className="rounded-xl border border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30 p-3 space-y-1 text-xs text-orange-900 dark:text-orange-200">
+              <div className="rounded-campo border border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30 p-3 space-y-1 text-xs text-orange-900 dark:text-orange-200">
                 {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></p>}
                 <p className="flex items-start gap-1.5"><HardHat className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" /><span className="min-w-0 break-words">Escalada por {textoOrigen(infra)}{infra.por ? ` (${infra.por})` : ''}: <span className="font-black">{infra.motivo}</span></span></p>
               </div>
 
               <fieldset className="space-y-2">
-                <legend className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1 mb-1">¿CÓMO SIGUE?</legend>
+                <legend className="text-xs font-bold text-card-foreground ml-1 mb-1">¿CÓMO SIGUE?</legend>
                 {OPCIONES.map(({ resultado: valor, titulo, detalle, Icono }) => (
-                  <label key={valor} className={`flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition-colors ${resultado === valor ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/30' : 'border-zinc-400 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
+                  <label key={valor} className={`flex items-start gap-2.5 rounded-campo border p-3 cursor-pointer transition-colors ${resultado === valor ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/30' : 'border-input hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
                     <input type="radio" name="resultado-infraestructura" value={valor} checked={resultado === valor} onChange={() => setResultado(valor)} className="mt-0.5 accent-orange-600" />
                     <span className="min-w-0">
-                      <span className="flex items-center gap-1.5 text-sm font-black text-zinc-900 dark:text-white"><Icono className="w-4 h-4 shrink-0" aria-hidden="true" />{titulo}</span>
-                      <span className="block text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 leading-snug mt-0.5">{detalle}</span>
+                      <span className="flex items-center gap-1.5 text-sm font-black text-foreground"><Icono className="w-4 h-4 shrink-0" aria-hidden="true" />{titulo}</span>
+                      <span className="block text-[11px] max-lg:text-xs text-muted-foreground leading-snug mt-0.5">{detalle}</span>
                     </span>
                   </label>
                 ))}
               </fieldset>
 
               <div className="space-y-1">
-                <label htmlFor="nota-infraestructura" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA PARA EL TÉCNICO <span className="font-normal text-zinc-600 dark:text-zinc-400">(opcional)</span></label>
+                <label htmlFor="nota-infraestructura" className="text-xs font-bold text-card-foreground ml-1">NOTA PARA EL TÉCNICO <span className="font-normal text-muted-foreground">(opcional)</span></label>
                 <textarea
                   id="nota-infraestructura"
                   value={nota}
@@ -92,8 +92,8 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               </div>
 
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
-                <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-xl transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Guardando...' : resultado === RESULTADO_CERRADA ? 'Cerrar como TA' : 'Devolver al técnico'}</button>
+                <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50">Cancelar</button>
+                <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-campo transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Guardando...' : resultado === RESULTADO_CERRADA ? 'Cerrar como TA' : 'Devolver al técnico'}</button>
               </div>
             </>
           )}

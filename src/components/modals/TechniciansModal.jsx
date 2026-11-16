@@ -101,15 +101,15 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Users} titulo="Técnicos" onClose={onClose} enPagina={enPagina} />
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
 
             {/* Los técnicos: estado, nombre en el inventario (solo quien gestiona los envíos) y eliminar, todo en una fila. */}
             <section aria-label="Técnicos" className={`${TARJETA} overflow-hidden`}>
-              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-zinc-300 dark:border-zinc-800">
-                <h3 className={TITULO_SECCION}>Técnicos <span className="font-bold text-zinc-600 dark:text-zinc-400">({technicians.length})</span></h3>
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-border">
+                <h3 className={TITULO_SECCION}>Técnicos <span className="font-bold text-muted-foreground">({technicians.length})</span></h3>
                 {verInventario && technicians.length > 0 && (
                   <Boton icono={RefreshCw} tamano="compacto" onClick={actualizarTecnicosInventario} disabled={tecnicosInventario === null && !errorInventario}>
                     Actualizar inventario
@@ -117,14 +117,14 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                 )}
               </div>
               {verInventario && technicians.length > 0 && (
-                <p className={`${TEXTO_SUAVE} px-4 py-2 border-b border-zinc-200 dark:border-zinc-800`}>
+                <p className={`${TEXTO_SUAVE} px-4 py-2 border-b border-border`}>
                   Elige con qué nombre conoce el inventario del almacén a cada técnico. El material y los equipos se descuentan a ese nombre; un técnico sin elegir no envía sus órdenes. Solo tú ves esto.
                 </p>
               )}
               {errorInventario && <p role="alert" className="px-4 py-2 text-xs font-bold text-red-600 dark:text-red-400">{errorInventario}</p>}
 
               {technicians.length > 0 && (
-                <div className={`hidden md:grid ${columnas} gap-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 ${ETIQUETA}`}>
+                <div className={`hidden md:grid ${columnas} gap-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-950 border-b border-border ${ETIQUETA}`}>
                   <span>Técnico</span>
                   <span>Estado</span>
                   {verInventario && <span>Nombre en el inventario</span>}
@@ -143,7 +143,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   const cargandoInv = tecnicosInventario === null && !errorInventario;
                   return (
                     <li key={t.id} className={`grid ${columnas} gap-x-3 gap-y-2 px-4 py-3 items-center ${verInventario ? 'md:items-start' : ''}`}>
-                      <span className={`order-1 ${verInventario ? 'md:mt-0.5' : ''} inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                      <span className={`order-1 ${verInventario ? 'md:mt-0.5' : ''} inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ring-2 ring-white dark:ring-zinc-950 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
                         <span className="truncate">{t.name}</span>
                       </span>
@@ -196,9 +196,9 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       const tech = technicians.find(t => t.name === nombre);
                       const activo = tech ? tech.activo !== false : false;
                       return (
-                        <li key={nombre} className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-1.5">
-                          <span className="text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400 w-5 text-center shrink-0">{i + 1}</span>
-                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-xl text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}>{nombre}</span>
+                        <li key={nombre} className="flex items-center gap-2 rounded-campo border border-border bg-sunken p-1.5">
+                          <span className="text-[11px] max-lg:text-xs font-black text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
+                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}>{nombre}</span>
                           <Boton variante="discreto" tamano="compacto" icono={ArrowUp} onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="w-8 !px-0" />
                           <Boton variante="discreto" tamano="compacto" icono={ArrowDown} onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="w-8 !px-0" />
                         </li>
@@ -219,7 +219,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   <input id="tech-name" required type="text" maxLength="60" value={newTech.name} onChange={(e) => setNewTech({ ...newTech, name: stripEmojis(e.target.value) })} className={CAMPO_FORMULARIO} placeholder="Ej. LUIS FERNÁNDEZ" />
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`px-2.5 py-1.5 rounded-xl text-xs font-bold ${colorActual}`}>{newTech.name.trim() || 'ETIQUETA'}</span>
+                  <span className={`px-2.5 py-1.5 rounded-campo text-xs font-bold ${colorActual}`}>{newTech.name.trim() || 'ETIQUETA'}</span>
                   <span className={`${TEXTO_SUAVE} flex-1`}>{newTech.color ? 'Color elegido' : 'Color automático'}</span>
                   <Boton tamano="compacto" onClick={cambiarColor}>Cambiar color</Boton>
                 </div>

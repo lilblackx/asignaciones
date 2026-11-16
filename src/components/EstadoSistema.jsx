@@ -11,7 +11,7 @@ import { NIVEL, estadoDeAutomaticas, estadoDeVersion } from '../utils/estadoSist
 const ICONO = {
   [NIVEL.BIEN]: { Icono: CheckCircle2, clase: 'text-emerald-600 dark:text-emerald-400', nombre: 'Bien' },
   [NIVEL.AVISO]: { Icono: AlertTriangle, clase: 'text-amber-600 dark:text-amber-400', nombre: 'Atención' },
-  [NIVEL.INFO]: { Icono: Info, clase: 'text-zinc-500 dark:text-zinc-400', nombre: 'Sin dato' },
+  [NIVEL.INFO]: { Icono: Info, clase: 'text-muted-foreground', nombre: 'Sin dato' },
 };
 
 function Fila({ titulo, nivel, texto, detalle }) {
@@ -20,8 +20,8 @@ function Fila({ titulo, nivel, texto, detalle }) {
     <li className="flex items-start gap-2.5 px-3 py-2.5">
       <Icono className={`w-5 h-5 shrink-0 mt-0.5 ${clase}`} role="img" aria-label={nombre} />
       <div className="min-w-0 space-y-0.5">
-        <p className="text-[11px] max-lg:text-xs font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">{titulo}</p>
-        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{texto}</p>
+        <p className="text-[11px] max-lg:text-xs font-bold uppercase tracking-wide text-muted-foreground">{titulo}</p>
+        <p className="text-sm font-bold text-foreground break-words">{texto}</p>
         {detalle && <p className={TEXTO_SUAVE}>{detalle}</p>}
       </div>
     </li>

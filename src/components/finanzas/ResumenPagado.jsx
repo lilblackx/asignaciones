@@ -32,7 +32,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-base font-bold text-zinc-900 dark:text-white break-words">{f.tecnico}</h3>
+                      <h3 className="text-base font-bold text-foreground break-words">{f.tecnico}</h3>
                       <span className={`${CHIP} ${ESTADO.PAGADO.clase}`}>Pagado</span>
                     </div>
                     <p className="text-sm text-zinc-800 dark:text-zinc-100 mt-1">{frasePagado(f)}</p>
@@ -41,7 +41,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Total pagado</p>
-                    <p className="text-xl font-extrabold tabular-nums text-zinc-900 dark:text-white whitespace-nowrap">{dolares(f.total)}</p>
+                    <p className="text-xl font-extrabold tabular-nums text-foreground whitespace-nowrap">{dolares(f.total)}</p>
                     {f.bs > 0 && <p className="text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{bolivares(f.bs)}</p>}
                   </div>
                 </div>
@@ -55,7 +55,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                       <div className="space-y-5 pt-2">
                         {agruparOrdenes(ordenes).map((g) => (
                           <div key={g.id}>
-                            <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-900 dark:text-white pb-1 border-b border-zinc-400 dark:border-zinc-700">
+                            <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-foreground pb-1 border-b border-input">
                               <span>{g.titulo} · {g.items.length}</span>
                               <span className="tabular-nums">{dolares(g.items.reduce((suma, i) => suma + i.monto, 0))}</span>
                             </h4>
@@ -75,7 +75,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                                   </span>
                                   <span className="flex items-center gap-3">
                                     <span className={`${CHIP} bg-emerald-700 text-white gap-1`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" />Pagada</span>
-                                    <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-white">{dolares(item.monto)}</span>
+                                    <span className="text-sm font-bold tabular-nums text-foreground">{dolares(item.monto)}</span>
                                   </span>
                                 </li>
                               ))}

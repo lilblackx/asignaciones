@@ -32,9 +32,9 @@ export default function VisorFotos({ fotos, indice, onCambiar, onClose, titulo =
       <div
         role="dialog"
         aria-label={`${titulo}: foto ${indice + 1} de ${total}`}
-        className="bg-card rounded-card shadow-2xl w-full max-w-3xl max-h-[94dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col"
+        className="bg-card rounded-card shadow-2xl w-full max-w-3xl max-h-[94dvh] overflow-hidden border border-border flex flex-col"
       >
-        <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
+        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2 uppercase"><Camera className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> {titulo}</h2>
             {subtitulo && <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{subtitulo}</p>}
@@ -65,7 +65,7 @@ export default function VisorFotos({ fotos, indice, onCambiar, onClose, titulo =
         </div>
 
         {total > 1 && (
-          <ul aria-label="Fotos" className="flex gap-2 overflow-x-auto px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 shrink-0">
+          <ul aria-label="Fotos" className="flex gap-2 overflow-x-auto px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-border shrink-0">
             {fotos.map((f, i) => (
               <li key={f.url} className="shrink-0">
                 <button

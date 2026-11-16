@@ -35,6 +35,7 @@
   --border: #d4d4d8;
   --input: #71717a;
   --ring: #dc2626;
+  --sunken: #fafafa;
 }
 .dark {
   --background: #09090b;
@@ -56,9 +57,10 @@
   --success: #34d399;
   --warning: #fbbf24;
   --warning-foreground: #18181b;
-  --border: #3f3f46;
+  --border: #27272a;
   --input: #71717a;
   --ring: #ef4444;
+  --sunken: #09090b;
 }
 @theme inline {
   --color-background: var(--background);
@@ -83,6 +85,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sunken: var(--sunken);
 }
 
 /* Celular = estilo D "tarjetas suaves" (decidido el 2026-11-16): fondo cálido, tarjetas blancas muy redondeadas con sombra suave, botones en cápsula con brillo rojo.
@@ -103,6 +106,7 @@
     --accent: #e7e5e4;
     --accent-foreground: #1c1917;
     --border: #e7e5e4;
+    --sunken: #f5f5f4;
     --input: #78716c;
     --radius-card: 1.75rem;
     --radius-campo: 1.125rem;
@@ -124,10 +128,38 @@
     --accent: #44403c;
     --accent-foreground: #fafaf9;
     --border: #44403c;
+    --sunken: #292524;
     --input: #78716c;
     --shadow-card: 0 4px 14px rgb(0 0 0 / 0.45);
     --shadow-boton: 0 8px 20px rgb(220 38 38 / 0.25);
   }
+}
+
+/* Encabezados de módulos y de ventanas (estilo D, celular): tarjeta clara en vez de la barra negra, con la línea roja corta de la marca sobre el borde de abajo.
+   Los textos y botones oscuros que ya llevan (text-white, bg-zinc-800...) se reemplazan aquí, para no tocar cada ventana. En PC siguen negros por ahora. */
+@media (max-width: 1023.98px) {
+  .encabezado-d {
+    background-color: var(--card);
+    color: var(--foreground);
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+  }
+  .encabezado-d:not(.sticky, .absolute, .fixed) { position: relative; }
+  .encabezado-d::after {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    bottom: -2px;
+    width: 3.5rem;
+    height: 4px;
+    border-radius: 9999px;
+    background-color: var(--primary);
+  }
+  .encabezado-d .text-white { color: var(--foreground); }
+  .encabezado-d .text-zinc-300,
+  .encabezado-d .text-zinc-400 { color: var(--muted-foreground); }
+  .encabezado-d .bg-zinc-800 { background-color: var(--secondary); }
+  .encabezado-d .border-zinc-700 { border-color: transparent; }
 }
 
 @theme {

@@ -30,14 +30,14 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-zinc-900 dark:text-white">Sumar un pago adicional a {tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">Sumar un pago adicional a {tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.PAGADO.clase}`}>Pago adicional</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>Se suma entero a lo que se le paga en su próximo pago. El precio sale del ítem en el Tabulador de precios.{porPagar > 0 ? ` Ya tiene ${dolares(porPagar)} de pagos adicionales por pagar.` : ''}</p>
       </div>
 
       {items.length === 0 ? (
-        <p role="status" className="max-w-xl rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">Todavía no hay ítems de pagos adicionales. Créalos primero en el Tabulador de precios, en la sección «Pagos adicionales».</p>
+        <p role="status" className="max-w-xl rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">Todavía no hay ítems de pagos adicionales. Créalos primero en el Tabulador de precios, en la sección «Pagos adicionales».</p>
       ) : (
         <div className="space-y-5 max-w-xl">
           <div>
@@ -55,9 +55,9 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
           </div>
 
           <Colapsable>{vista && (
-            <p className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-3 py-2 flex items-baseline justify-between gap-3 text-sm">
-              <span className="font-bold text-zinc-900 dark:text-white">{vista.cantidad} × {dolares(vista.item.precio)}</span>
-              <span className="text-right"><span className="block font-bold tabular-nums text-zinc-900 dark:text-white">{dolares(vista.monto)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(vista.monto, tasa))}</span>}</span>
+            <p className="rounded-campo border border-zinc-300 dark:border-zinc-700 px-3 py-2 flex items-baseline justify-between gap-3 text-sm">
+              <span className="font-bold text-foreground">{vista.cantidad} × {dolares(vista.item.precio)}</span>
+              <span className="text-right"><span className="block font-bold tabular-nums text-foreground">{dolares(vista.monto)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(vista.monto, tasa))}</span>}</span>
             </p>
           )}</Colapsable>
 
@@ -76,7 +76,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
 
       <div className="flex flex-wrap items-center gap-3">
         {items.length > 0 && (
-          <button type="button" onClick={guardar} disabled={ocupado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
+          <button type="button" onClick={guardar} disabled={ocupado} className={`${BOTON_GRANDE} bg-primary hover:bg-primary-hover text-white`}>
             {ocupado ? <Spinner /> : <PlusCircle className="w-5 h-5" aria-hidden="true" />} Registrar pago adicional
           </button>
         )}

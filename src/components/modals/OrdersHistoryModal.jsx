@@ -133,10 +133,10 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
     <>
     {/* Con la plantilla abierta, Escape cierra solo la plantilla y no el historial. */}
     <Modal enPagina={enPagina} onClose={plantillaAbierta ? () => {} : onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? clasePagina : `bg-card rounded-card shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? clasePagina : `bg-card rounded-card shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-border flex flex-col ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={History} titulo="Historial de órdenes" onClose={onClose} enPagina={enPagina} />
 
-        <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-zinc-200 dark:border-zinc-800 space-y-3 ${CENTRADO_AMPLIO}`}>
+        <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-border space-y-3 ${CENTRADO_AMPLIO}`}>
           <div className="flex gap-2">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
@@ -148,7 +148,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           </div>
 
           <Colapsable>{filtersOpen && (
-            <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
+            <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 space-y-3 max-lg:shadow-card">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 [&>*]:min-w-0">
                 <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={SELECTOR} />
                 <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={SELECTOR} />
@@ -156,7 +156,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                 <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={CAMPO_FECHA} />
                 <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={CAMPO_FECHA} />
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] max-lg:text-xs text-muted-foreground">
                 <BotonExportar
                   onClick={() => exportOrdersToCsv(filtered, describirFiltros())}
                   disabled={filtered.length === 0}
@@ -173,7 +173,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             </div>
           )}</Colapsable>
 
-          <div className="flex items-center justify-between gap-2 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="flex items-center justify-between gap-2 text-[11px] max-lg:text-xs text-muted-foreground">
             <span>
               {filtered.length} {filtered.length === 1 ? 'orden' : 'órdenes'}
             </span>
@@ -185,16 +185,16 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           {shown.map(o => {
             const isOpen = expandedKey === o._key;
             return (
-              <div key={o._key} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-300 dark:border-zinc-800 shadow-sm">
+              <div key={o._key} className="bg-card rounded-card border border-border max-lg:border-transparent shadow-sm max-lg:shadow-card">
                 <button type="button" onClick={() => setExpandedKey(isOpen ? null : o._key)} aria-expanded={isOpen} className="w-full text-left p-4 flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-red-600 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
                       <span className={`px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
-                      <span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">{o.fecha}</span>
+                      <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{o.fecha}</span>
                     </div>
                     <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight mt-1 truncate">{o.nombre}</h5>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       <span className="font-bold text-red-600 dark:text-red-400">{o.tipoTrabajo}</span>
                       {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
                     </p>
@@ -203,8 +203,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                     <div className="text-right">
                       {o.tecnico
                         ? <NombreTecnico nombre={o.tecnico} getTecnicoColor={getTecnicoColor} />
-                        : <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 italic">Sin técnico</span>}
-                      <div className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-1">{o._origen}</div>
+                        : <span className="text-[11px] max-lg:text-xs text-muted-foreground italic">Sin técnico</span>}
+                      <div className="text-[11px] max-lg:text-xs text-muted-foreground mt-1">{o._origen}</div>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </div>
@@ -212,7 +212,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
 
                 <Colapsable>
                   {isOpen && (
-                    <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 text-xs space-y-1.5 text-zinc-700 dark:text-zinc-300">
+                    <div className="border-t border-border px-4 py-3 text-xs space-y-1.5 text-card-foreground">
                       <p><span className="font-semibold">Cédula:</span> {formatCedula(o.cedula, o.tipoDocumento) || '-'}</p>
                       {o.telefono && <p><span className="font-semibold">Teléfono:</span> {o.telefono}</p>}
                       <p><span className="font-semibold">Dirección:</span> {o.direccion || '-'}</p>
@@ -226,7 +226,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                         <button
                           type="button"
                           onClick={() => setDetalleAbierto(o)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border-2 border-input bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         >
                           <ClipboardList className="w-3.5 h-3.5" aria-hidden="true" /> Ver detalle completo
                         </button>
@@ -235,7 +235,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                           <button
                             type="button"
                             onClick={() => setPlantillaAbierta(o)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border-2 border-input bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                           >
                             <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
                           </button>
@@ -252,7 +252,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
 
           {/* Los cierres más antiguos se leen solo a pedido (cada tanda son lecturas de Firestore): el botón sale al final de la lista, o en lugar de ella si lo buscado no aparece. */}
           {filtered.length === 0 && (
-            <div className="text-center text-zinc-600 dark:text-zinc-400 pt-10 pb-6 text-sm">
+            <div className="text-center text-muted-foreground pt-10 pb-6 text-sm">
               <p>No se encontraron órdenes.</p>
               <AvisoCargarAnteriores variante="vacio" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} />
             </div>
@@ -263,12 +263,12 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         </div>
 
         {totalPages > 1 && (
-          <div className={`px-4 sm:px-6 py-2.5 lg:py-1.5 shrink-0 border-t border-zinc-300 dark:border-zinc-800 bg-fondo flex items-center justify-between gap-3 text-xs max-lg:text-sm font-bold text-zinc-700 dark:text-zinc-300 ${CENTRADO_AMPLIO}`}>
-            <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} aria-label="Página anterior" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <div className={`px-4 sm:px-6 py-2.5 lg:py-1.5 shrink-0 border-t border-border bg-fondo flex items-center justify-between gap-3 text-xs max-lg:text-sm font-bold text-card-foreground ${CENTRADO_AMPLIO}`}>
+            <button type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 0} aria-label="Página anterior" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-campo bg-secondary hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <ChevronLeft className="w-4 h-4 lg:w-3.5 lg:h-3.5" aria-hidden="true" /> <span className="max-sm:hidden">Anterior</span>
             </button>
             <span className="text-center whitespace-nowrap">Página {currentPage + 1} de {totalPages}</span>
-            <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages - 1} aria-label="Página siguiente" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <button type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages - 1} aria-label="Página siguiente" className="flex items-center justify-center gap-1 h-11 min-w-11 px-3 lg:h-8 rounded-campo bg-secondary hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <span className="max-sm:hidden">Siguiente</span> <ChevronRight className="w-4 h-4 lg:w-3.5 lg:h-3.5" aria-hidden="true" />
             </button>
           </div>

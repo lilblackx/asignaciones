@@ -71,7 +71,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
         aria-label={`Notificaciones${contador > 0 ? ` (${contador} pendientes)` : ''}`}
         aria-expanded={isOpen}
         title="Notificaciones"
-        className="relative inline-flex items-center justify-center p-2 max-lg:min-w-12 max-lg:min-h-12 rounded-xl transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700 max-lg:bg-card max-lg:hover:bg-secondary max-lg:text-foreground max-lg:border-transparent max-lg:rounded-boton max-lg:shadow-card"
+        className="relative inline-flex items-center justify-center p-2 max-lg:min-w-12 max-lg:min-h-12 rounded-card transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700 max-lg:bg-card max-lg:hover:bg-secondary max-lg:text-foreground max-lg:border-transparent max-lg:rounded-boton max-lg:shadow-card max-lg:shadow-card"
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
         {contador > 0 && (
@@ -82,11 +82,11 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
       </button>
 
       {montado && (
-        <div className={`fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-80 sm:max-w-[90vw] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-20 ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}>
+        <div className={`fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-80 sm:max-w-[90vw] bg-zinc-900 border border-zinc-700 rounded-campo shadow-2xl overflow-hidden z-20 ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}>
           <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
             <span className="text-xs font-black text-white uppercase tracking-wide">Notificaciones</span>
             {notifications.length > 0 && (
-              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="relative text-zinc-400 hover:text-red-400 transition-colors p-1 rounded-xl max-lg:after:absolute max-lg:after:-inset-2 hover:bg-zinc-800">
+              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="relative text-zinc-400 hover:text-red-400 transition-colors p-1 rounded-campo max-lg:after:absolute max-lg:after:-inset-2 hover:bg-zinc-800">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
@@ -107,7 +107,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-xs text-zinc-600 dark:text-zinc-400 flex flex-col items-center gap-2">
+              <div className="px-4 py-8 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
                 <CheckCheck className="w-5 h-5 text-zinc-600" aria-hidden="true" />
                 Sin notificaciones todavía.
               </div>
@@ -124,7 +124,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
                     {iconoPara(n.type)}
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-zinc-200 leading-snug">{n.text}</p>
-                      <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-medium">{tiempoRelativo(n.timestamp)}</span>
+                      <span className="text-[11px] max-lg:text-xs text-muted-foreground font-medium">{tiempoRelativo(n.timestamp)}</span>
                     </div>
                     {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1" aria-hidden="true" />}
                   </button>

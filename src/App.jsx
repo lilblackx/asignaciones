@@ -783,7 +783,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               última columna de la tabla (ACC), no en el borde exterior. */}
           {/* En móvil el contador y la tasa se apilan (juntos no caben en una línea);
               desde sm: van en fila, contador a la izquierda y tasa a la derecha. */}
-          <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-3 font-medium flex flex-col items-start gap-1 sm:flex-row sm:justify-between sm:items-center lg:pr-2">
+          <div className="text-xs text-muted-foreground mb-3 font-medium flex flex-col items-start gap-1 sm:flex-row sm:justify-between sm:items-center lg:pr-2">
             <span className="whitespace-nowrap">{visibleTickets.length} de {filteredTickets.length} registros</span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               {canEditTickets && !tasaLoading && <TasaIndicador tasaConfig={tasaConfig} onClick={isAdmin ? abrirVentana('TASA', setIsTasaModalOpen) : undefined} />}
@@ -858,8 +858,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           {/* Al buscar, las archivadas solo llegan hasta los cierres cargados (los más recientes): este botón trae los anteriores. */}
           {canEditTickets && canCerrar && hasMoreReports && statusFilter === 'TODOS' && buscaEnCerradas(searchTerm) && (
             <div className="flex flex-col items-center gap-1 mt-4 text-center">
-              <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">¿No aparece la orden que buscas? Puede estar en un cierre más antiguo.</span>
-              <button type="button" onClick={loadMoreReports} disabled={isLoadingReports} className="min-h-11 px-5 py-2 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-sm disabled:opacity-60">
+              <span className="text-xs text-muted-foreground font-medium">¿No aparece la orden que buscas? Puede estar en un cierre más antiguo.</span>
+              <button type="button" onClick={loadMoreReports} disabled={isLoadingReports} className="min-h-11 px-5 py-2 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm disabled:opacity-60 max-lg:shadow-card">
                 {isLoadingReports ? 'Buscando...' : 'Buscar en cierres anteriores'}
               </button>
             </div>
@@ -867,7 +867,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
           {hasMore && (
             <div className="flex justify-center mt-4">
-              <button onClick={loadMore} className="px-6 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-sm">
+              <button onClick={loadMore} className="px-6 py-2.5 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm max-lg:shadow-card">
                 Cargar más ({filteredTickets.length - visibleTickets.length} restantes)
               </button>
             </div>

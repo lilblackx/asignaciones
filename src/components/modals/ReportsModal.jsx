@@ -29,7 +29,7 @@ export default function ReportsModal({
 
   return (
     <Modal enPagina={enPagina} onClose={closeModal} onVolver={selectedReportForDetails ? () => setSelectedReportForDetails(null) : undefined} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-border flex flex-col ${PANEL_COMPLETO}`}>
         {selectedReportForDetails ? (
           <ReportDetailsView
             report={selectedReportForDetails}

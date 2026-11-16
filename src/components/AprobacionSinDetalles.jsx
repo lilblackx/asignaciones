@@ -21,7 +21,7 @@ export default function AprobacionSinDetalles({ orden, className = '' }) {
   // Si el técnico subió las fotos después de la aprobación, el aviso ya no aplica y se quita para no confundir.
   if (revision?.estado !== 'APROBADA' || !revision.sinDetalles || tieneDetalles(orden)) return null;
   return (
-    <div role="status" className={`rounded-xl border flex items-start gap-2 p-2.5 text-xs bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900/50 text-amber-900 dark:text-amber-100 ${className}`}>
+    <div role="status" className={`rounded-campo border flex items-start gap-2 p-2.5 text-xs bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900/50 text-amber-900 dark:text-amber-100 ${className}`}>
       <Camera className="w-4 h-4 shrink-0 mt-px text-amber-700 dark:text-amber-400" aria-hidden="true" />
       <div className="min-w-0">
         <p className="font-black leading-tight">Aprobada sin los detalles de la orden (fotos){revision.por ? ` por ${revision.por}` : ''}{revision.en ? ` · ${fechaHora(revision.en)}` : ''}</p>

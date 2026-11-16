@@ -61,7 +61,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
         type="button"
         onClick={verValores}
         disabled={buscando}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-60"
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-campo border border-input bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-60"
       >
         {buscando ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Radio className="w-3.5 h-3.5" aria-hidden="true" />}
         {buscando ? 'Consultando SmartOLT...' : 'Ver valores'}
@@ -69,7 +69,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
 
       <div role="status" aria-live="polite">
         {estado?.tipo === 'listo' && (
-          <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs text-emerald-900 dark:text-emerald-200 space-y-0.5">
+          <div className="rounded-campo border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs text-emerald-900 dark:text-emerald-200 space-y-0.5">
             {estado.valor !== null
               ? <p><span className="font-bold">OLT Rx · Potencia (1310 nm):</span> <span className="font-black">{estado.valor} dBm</span><Calidad valor={estado.valor} /></p>
               : <p role="alert" className="font-bold text-amber-800 dark:text-amber-300">OLT Rx 1310 nm: SmartOLT no la reportó</p>}
@@ -82,7 +82,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
           </div>
         )}
         {estado?.tipo === 'fueraDeLinea' && (
-          <div role="alert" className="rounded-xl border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-[11px] max-lg:text-xs text-amber-900 dark:text-amber-200 space-y-0.5">
+          <div role="alert" className="rounded-campo border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-[11px] max-lg:text-xs text-amber-900 dark:text-amber-200 space-y-0.5">
             <p className="font-bold">La ONU está fuera de línea en SmartOLT ({estado.onu.estado}). No se capturó la potencia.</p>
             <p>SmartOLT solo guarda la última señal de cuando estuvo en línea{valorSenal(estado.onu.senal1310) !== null ? ` (${valorSenal(estado.onu.senal1310)} dBm)` : ''}, que no es la actual. Escribe la potencia a mano o vuelve a consultar cuando la ONU esté en línea.</p>
           </div>
@@ -97,7 +97,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
           <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Escribe la potencia a mano.</p>
         )}
         {estado?.tipo === 'opciones' && (
-          <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-2">
+          <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-campo border border-zinc-200 dark:border-zinc-700 bg-sunken p-2">
             <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
               Esta cédula tiene {estado.opciones.length} servicios. Elige cuál es:
@@ -108,13 +108,13 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
                   key={onu.idExterno || onu.nombre}
                   type="button"
                   onClick={() => mostrar(onu)}
-                  className="w-full text-left rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                  className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 max-lg:shadow-card"
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{onu.zona || onu.nombre || 'Servicio'}</span>
                     <span className="shrink-0 text-xs font-black text-zinc-600 dark:text-zinc-300">{valorSenal(onu.senal1310) !== null ? `${valorSenal(onu.senal1310)} dBm` : 'sin señal'}</span>
                   </span>
-                  {onu.direccion && <span className="block mt-0.5 text-[11px] max-lg:text-xs leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>}
+                  {onu.direccion && <span className="block mt-0.5 text-[11px] max-lg:text-xs leading-snug font-medium text-muted-foreground">{onu.direccion}</span>}
                 </button>
               ))}
             </div>

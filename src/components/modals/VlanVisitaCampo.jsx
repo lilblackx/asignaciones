@@ -4,8 +4,8 @@ import { claseCampo } from '../estilos';
 // y Editar orden de la oficina.
 export default function VlanVisitaCampo({ vlan, onVlan, error = '' }) {
   return (
-    <div className="space-y-1 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
-      <label htmlFor="pf-vlan-visita" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
+    <div className="space-y-1 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+      <label htmlFor="pf-vlan-visita" className="text-xs font-bold text-card-foreground ml-1">
         VLAN CONFIGURADA <span className="font-normal text-red-500">(obligatorio)</span>
       </label>
       <input

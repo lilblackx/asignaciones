@@ -15,7 +15,7 @@ export default function CobroAcordadoAviso({ ticket }) {
   return (
     <div className="space-y-2 text-left">
       {acordado && (
-        <div role="note" className="rounded-xl border border-sky-300 dark:border-sky-800 bg-white dark:bg-sky-950/40 p-2.5 text-xs text-sky-900 dark:text-sky-100">
+        <div role="note" className="rounded-campo border border-sky-300 dark:border-sky-800 bg-white dark:bg-sky-950/40 p-2.5 text-xs text-sky-900 dark:text-sky-100">
           <p className="flex items-center gap-1.5 font-black tracking-wide"><Handshake className="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400" aria-hidden="true" /> ACORDADO CON EL CLIENTE</p>
           <p className="mt-1 font-bold text-sm">{textoCobroAcordado(acordado)}</p>
           {(acordado.por || acordado.en > 0) && (
@@ -25,7 +25,7 @@ export default function CobroAcordadoAviso({ ticket }) {
         </div>
       )}
       {garantia && (
-        <div role="note" className="rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-2.5 text-xs text-emerald-900 dark:text-emerald-200">
+        <div role="note" className="rounded-campo border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-2.5 text-xs text-emerald-900 dark:text-emerald-200">
           <p className="flex items-center gap-1.5 font-black tracking-wide"><ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" /> ES UNA GARANTÍA</p>
           <p className="mt-1">Las garantías normalmente no se cobran. Te sugerimos exonerarla, salvo que ya hayas acordado otra cosa con el cliente.</p>
         </div>

@@ -31,8 +31,8 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[92dvh] overflow-y-auto border border-border">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">INFRAESTRUCTURA</span>
@@ -64,15 +64,15 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
               className={`${claseArea('normal')} resize-none`}
             />
             {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{error}</p>}
-            <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">
+            <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">
               {esTecnico
                 ? 'La orden sale de tu lista y la oficina recibe un aviso. Cuando infraestructura termine, la oficina decide cómo sigue.'
                 : `La orden sale de la lista del técnico${ticket.tecnico ? ` (${ticket.tecnico})` : ''} y queda esperando en "En infraestructura". Tú decides cómo sigue.`}
             </p>
           </div>
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
-            <button type="button" onClick={confirmar} disabled={enviando || Boolean(cambio)} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-xl transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Escalando...' : 'Escalar a infraestructura'}</button>
+            <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50">Cancelar</button>
+            <button type="button" onClick={confirmar} disabled={enviando || Boolean(cambio)} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-campo transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Escalando...' : 'Escalar a infraestructura'}</button>
           </div>
         </div>
       </div>

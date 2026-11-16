@@ -64,8 +64,8 @@ export default function CorregirEnvioModal({ envio, usuario, onReenviar, onClose
 
   return (
     <Modal onClose={onClose} zIndexClass="z-[80]">
-      <div role="dialog" aria-labelledby="corregir-envio-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-card rounded-card shadow-2xl border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
+      <div role="dialog" aria-labelledby="corregir-envio-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-card rounded-card shadow-2xl border border-border">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
           <div className="min-w-0">
             <h2 id="corregir-envio-titulo" className="text-base font-black text-white">Corregir {envio.codigo || 'S/C'}</h2>
             <p className="text-xs font-bold text-zinc-300 truncate">{envio.cliente}</p>
@@ -74,12 +74,12 @@ export default function CorregirEnvioModal({ envio, usuario, onReenviar, onClose
         </div>
 
         <div className="p-4 space-y-4">
-          {lectura === null && <p className="text-sm text-zinc-600 dark:text-zinc-400 flex items-center gap-2"><Spinner /> Buscando la orden...</p>}
+          {lectura === null && <p className="text-sm text-muted-foreground flex items-center gap-2"><Spinner /> Buscando la orden...</p>}
           {lectura === false && <p role="alert" className="text-sm font-bold text-red-600 dark:text-red-400">No se encontró la orden, ni en la lista ni en un reporte de cierre. No se puede corregir desde aquí.</p>}
           {ticket && !puedeEditar && <p role="alert" className="text-sm font-bold text-red-600 dark:text-red-400">Esta orden no está pre-finalizada ni finalizada: no tiene datos del técnico que corregir.</p>}
           {puedeEditar && (
             <>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 {lectura.origen === 'archivada' ? `La orden ya está cerrada${lectura.fechaCierre ? ` (cierre del ${lectura.fechaCierre})` : ''}: se corrige dentro de su reporte.` : 'La orden sigue en la lista de órdenes.'}
                 {' '}Solo se cambian estos datos; el cobro, el técnico y el estado quedan como están. El cambio queda en el historial de la orden.
               </p>

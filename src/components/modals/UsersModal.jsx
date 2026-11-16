@@ -259,7 +259,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     return { resumen: 'Sin permisos', opciones: [], acciones: [] };
   };
 
-  const ETIQUETA = 'text-sm font-bold text-zinc-700 dark:text-zinc-300 ml-1';
+  const ETIQUETA = 'text-sm font-bold text-card-foreground ml-1';
 
   const filtros = [{ value: 'TODOS', label: 'Todos', n: users.length }, ...ORDEN_ROLES.map((r) => ({ value: r, label: etiquetaRol(r), n: users.filter((u) => u.role === r).length })).filter((f) => f.n > 0)];
   const q = sinTildes(busqueda).trim();
@@ -269,21 +269,21 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-6xl max-h-[94dvh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-6xl max-h-[94dvh] flex flex-col overflow-hidden border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={ShieldCheck} titulo="Usuarios" onClose={onClose} enPagina={enPagina} />
 
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
           {/* Cuentas */}
           <section aria-label="Cuentas" className={`${TARJETA} overflow-hidden`}>
-            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-zinc-300 dark:border-zinc-800">
-              <h3 className={TITULO_SECCION}>Cuentas <span className="font-bold text-zinc-600 dark:text-zinc-400">({users.length})</span></h3>
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
+              <h3 className={TITULO_SECCION}>Cuentas <span className="font-bold text-muted-foreground">({users.length})</span></h3>
               {/* En pantallas angostas el formulario queda debajo de la lista: este botón baja hasta él. */}
               <Boton variante="principal" tamano="compacto" className="lg:hidden" type="button" onClick={() => { const campo = document.getElementById('user-nombre'); campo?.scrollIntoView({ behavior: 'smooth', block: 'center' }); campo?.focus({ preventScroll: true }); }}>
                 <UserPlus className="w-3.5 h-3.5" aria-hidden="true" /> Nuevo usuario
               </Boton>
             </div>
-            <div className="p-3 space-y-3 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="p-3 space-y-3 border-b border-border">
             <div className="flex gap-2">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
@@ -300,7 +300,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={(filtroRol !== 'TODOS' ? 1 : 0)} />
             </div>
             <Colapsable>{filtersOpen && (
-              <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
+              <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 max-lg:shadow-card">
               <div role="group" aria-label="Filtrar por rol" className="flex flex-wrap gap-2">
                 {filtros.map((f) => (
                   <Chip activo={filtroRol === f.value} tamano="compacto" key={f.value} type="button" onClick={() => setFiltroRol(f.value)}>
@@ -313,7 +313,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
             </div>
             {users.length > 0 && (
-              <div className={`hidden md:grid ${COLUMNAS} gap-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 ${ETIQUETA_TABLA}`}>
+              <div className={`hidden md:grid ${COLUMNAS} gap-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-950 border-b border-border ${ETIQUETA_TABLA}`}>
                 <span>Usuario</span>
                 <span>Rol</span>
                 <span>Permisos</span>
@@ -334,15 +334,15 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                             onKeyDown={(e) => e.key === 'Enter' && saveNombre(u.id)}
                             className={CAMPO}
                           />
-                          <button type="button" onClick={() => saveNombre(u.id)} aria-label="Guardar nombre" className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-xl"><Check className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => saveNombre(u.id)} aria-label="Guardar nombre" className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-campo"><Check className="w-4 h-4" /></button>
                         </div>
                       ) : (
-                        <p className="text-sm font-black text-zinc-900 dark:text-white flex items-center gap-1.5 break-words">
+                        <p className="text-sm font-black text-foreground flex items-center gap-1.5 break-words">
                           {u.nombre || u.username}
                           <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"><Pencil className="w-3.5 h-3.5" /></button>
                         </p>
                       )}
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">@{u.username}{u.disabled && ' · deshabilitado'}</p>
+                      <p className="text-xs text-muted-foreground">@{u.username}{u.disabled && ' · deshabilitado'}</p>
                     </div>
 
                   <div className="flex items-center gap-1.5 md:justify-end md:col-start-4 md:row-start-1">
@@ -370,7 +370,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   <div className="col-span-full grid grid-cols-2 gap-2 md:contents">
                   <div className="min-w-0 md:col-start-2 md:row-start-1">
                     {u.username === currentUsername ? (
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-xl ${claseRol(u.role)}`} title="No puedes cambiar tu propio rol">
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-campo ${claseRol(u.role)}`} title="No puedes cambiar tu propio rol">
                         {etiquetaRol(u.role)}
                       </span>
                     ) : (
@@ -381,7 +381,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                         ariaLabel={`Rol de ${u.username}`}
                         items={ROL_ITEMS}
                         chevronClassName="w-3 h-3 right-1.5"
-                        className={`text-xs font-bold pl-2.5 pr-6 py-1 rounded-xl border-0 cursor-pointer disabled:opacity-50 ${claseRol(roleEditId === u.id ? roleDraft : u.role)}`}
+                        className={`text-xs font-bold pl-2.5 pr-6 py-1 rounded-campo border-0 cursor-pointer disabled:opacity-50 ${claseRol(roleEditId === u.id ? roleDraft : u.role)}`}
                       />
                     )}
                   </div>
@@ -393,8 +393,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   {(roleEditId === u.id && (roleDraft === ROLES.PROMOTORA || roleDraft === ROLES.TECNICO)) || resettingId === u.id ? (
                     <div className="col-span-full space-y-3">
                       {roleEditId === u.id && roleDraft === ROLES.PROMOTORA && (
-                    <div className="rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-3 space-y-2.5">
-                      <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                    <div className="rounded-campo border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-3 space-y-2.5">
+                      <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
                         <input type="checkbox" checked={verTodasDraft} onChange={(e) => { setVerTodasDraft(e.target.checked); setPromError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                         Ver todas las instalaciones
                       </label>
@@ -416,7 +416,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   )}
 
                   {roleEditId === u.id && roleDraft === ROLES.TECNICO && (
-                    <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2.5">
+                    <div className="rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2.5">
                       <SelectMenu
                         value={techDraft}
                         onChange={setTechDraft}
@@ -446,8 +446,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                             placeholder="nueva clave"
                             className={CAMPO}
                           />
-                          <button type="button" onClick={() => saveResetPassword(u.id)} disabled={isResetting} aria-label={`Guardar clave de ${u.username}`} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-xl disabled:opacity-50"><Check className="w-4 h-4" /></button>
-                          <button type="button" onClick={() => setResettingId(null)} aria-label="Cancelar" className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"><X className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => saveResetPassword(u.id)} disabled={isResetting} aria-label={`Guardar clave de ${u.username}`} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-campo disabled:opacity-50"><Check className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setResettingId(null)} aria-label="Cancelar" className="p-2 text-zinc-400 hover:bg-secondary rounded-campo"><X className="w-4 h-4" /></button>
                         </div>
                         {resetError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{resetError}</p>}
                       </div>
@@ -457,8 +457,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 </li>
               ))}
             </ul>
-            {users.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-400 py-6">Aún no hay usuarios. Crea el primero con Nuevo usuario.</p>}
-            {users.length > 0 && visibles.length === 0 && <p className="text-sm text-center text-zinc-600 dark:text-zinc-400 py-6">Ningún usuario coincide con la búsqueda. Prueba con otro nombre o quita los filtros.</p>}
+            {users.length === 0 && <p className="text-sm text-center text-muted-foreground py-6">Aún no hay usuarios. Crea el primero con Nuevo usuario.</p>}
+            {users.length > 0 && visibles.length === 0 && <p className="text-sm text-center text-muted-foreground py-6">Ningún usuario coincide con la búsqueda. Prueba con otro nombre o quita los filtros.</p>}
           </section>
 
           {/* Nuevo usuario */}
@@ -477,7 +477,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 <div className="space-y-2 min-w-0">
                   <label htmlFor="user-clave" className={ETIQUETA}>CLAVE</label>
                   <input id="user-clave" required type="password" autoComplete="new-password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
-                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">{PASSWORD_POLICY_HINT}</p>
+                  <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{PASSWORD_POLICY_HINT}</p>
                   {passwordError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
                 <div className="space-y-2 min-w-0">
@@ -495,7 +495,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               </div>
 
               {newUser.role === ROLES.TECNICO && (
-                <div className="space-y-2 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4">
+                <div className="space-y-2 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4">
                   <label htmlFor="user-tecnico" className={ETIQUETA}>VINCULAR CON TÉCNICO REGISTRADO</label>
                   <SelectMenu
                     id="user-tecnico"
@@ -513,27 +513,27 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     className={SELECT_FORM_CLASS}
                     chevronClassName="w-4 h-4 right-3"
                   />
-                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
+                  <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
                 </div>
               )}
 
               {newUser.role === ROLES.INFRAESTRUCTURA && (
-                <div className="space-y-3 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
-                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                <div className="space-y-3 rounded-campo border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
+                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
                     <input type="checkbox" checked={newUser.puedeVerHistorial} onChange={(e) => setNewUser({ ...newUser, puedeVerHistorial: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                     Ver el historial de órdenes
                   </label>
-                  <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Ve todas las órdenes y cierres (con cédula, teléfono y cobros), solo para mirar.</p>
+                  <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Ve todas las órdenes y cierres (con cédula, teléfono y cobros), solo para mirar.</p>
                 </div>
               )}
 
               {newUser.role === ROLES.PROMOTORA && (
-                <div className="space-y-3 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
-                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                <div className="space-y-3 rounded-campo border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
+                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
                     <input type="checkbox" checked={newUser.verTodasInstalaciones} onChange={(e) => { setNewUser({ ...newUser, verTodasInstalaciones: e.target.checked }); setUserError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                     Ver todas las instalaciones
                   </label>
-                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                  <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
                     <input type="checkbox" checked={newUser.puedeCrearVentas} onChange={(e) => setNewUser({ ...newUser, puedeCrearVentas: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                     Puede crear ventas
                   </label>
@@ -548,13 +548,13 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       placeholder="Ej. Sariana"
                       className={SELECT_FORM_CLASS}
                     />
-                    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
+                    <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
                   </div>
                 </div>
               )}
 
               {newUser.role === ROLES.USUARIO && (
-                <label className="flex items-center gap-2 text-sm font-bold text-zinc-700 dark:text-zinc-300 ml-1 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-bold text-card-foreground ml-1 cursor-pointer">
                   <input type="checkbox" checked={newUser.puedeCerrar} onChange={(e) => setNewUser({ ...newUser, puedeCerrar: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
                   Permitir realizar cierres
                 </label>

@@ -16,17 +16,17 @@ export default function ListaTecnicos({ filas, elegido, tasa, onElegir }) {
               type="button"
               onClick={() => onElegir(fila.tecnico)}
               aria-current={seleccionado ? 'true' : undefined}
-              className={`w-full text-left px-3 py-2.5 flex items-center justify-between gap-3 border-l-8 transition-colors ${seleccionado ? 'border-red-600 bg-zinc-100 dark:bg-zinc-800' : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}
+              className={`w-full text-left px-3 py-2.5 flex items-center justify-between gap-3 border-l-8 transition-colors ${seleccionado ? 'border-red-600 bg-secondary' : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}
             >
               <span className="min-w-0">
-                <span className="block text-sm font-bold text-zinc-900 dark:text-white break-words">{fila.tecnico}</span>
+                <span className="block text-sm font-bold text-foreground break-words">{fila.tecnico}</span>
                 <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className={`${CHIP} ${ESTADO[estado].clase}`}>{ESTADO[estado].texto}</span>
                   <span className={TEXTO_SUAVE}>{fila.pendientes.length > 0 ? `${textoOrdenes(fila.pendientes.length)}${fila.bonosGarantia > 0 ? ` · garantía ${dolares(fila.bonosGarantia)}` : ''}${fila.adicionales > 0 ? ` · adicional ${dolares(fila.adicionales)}` : ''}` : fila.bonos > 0 ? [fila.bonosGarantia > 0 && `Garantía ${dolares(fila.bonosGarantia)}`, fila.adicionales > 0 && `Adicional ${dolares(fila.adicionales)}`].filter(Boolean).join(' · ') : fila.adelantos > 0 ? `Adelanto ${dolares(fila.adelantos)}` : fila.descuentosOrden > 0 ? `Descuento ${dolares(fila.descuentosOrden)}` : 'Nada por pagar'}</span>
                 </span>
               </span>
               <span className="text-right shrink-0">
-                <span className="block text-base font-bold tabular-nums text-zinc-900 dark:text-white whitespace-nowrap">{dolares(neto)}</span>
+                <span className="block text-base font-bold tabular-nums text-foreground whitespace-nowrap">{dolares(neto)}</span>
                 {tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">{bolivares(aBs(neto, tasa))}</span>}
               </span>
             </button>

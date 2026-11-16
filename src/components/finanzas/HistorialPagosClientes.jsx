@@ -45,7 +45,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
       <section aria-label="Resumen" className="grid grid-cols-2 lg:grid-cols-3 gap-2">
         {cifrasPagosClientes(visibles).map(({ etiqueta, valor, detalle }) => (
           <div key={etiqueta} className={`${TARJETA} p-3 min-w-0`}>
-            <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none break-words text-zinc-900 dark:text-white">{valor}</p>
+            <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none break-words text-foreground">{valor}</p>
             <p className="mt-1 text-xs font-semibold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
             {detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
           </div>
@@ -101,8 +101,8 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
                   {estadoChip()}
                 </div>
                 <p className="text-sm font-bold break-words">{detalle(p)}</p>
-                {datosExtra(p).map((l) => <p key={l} className="text-xs text-zinc-700 dark:text-zinc-300 break-words">{l}</p>)}
-                {p.nota && <p className="text-xs text-zinc-700 dark:text-zinc-300 break-words">Nota del técnico: {p.nota}</p>}
+                {datosExtra(p).map((l) => <p key={l} className="text-xs text-card-foreground break-words">{l}</p>)}
+                {p.nota && <p className="text-xs text-card-foreground break-words">Nota del técnico: {p.nota}</p>}
                 <Boton variante="secundario" tamano="grande" className="w-full" onClick={() => setAbierto(p.id)}>Ver todos los datos</Boton>
               </li>
             ))}
@@ -111,7 +111,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
           {/* Escritorio: tabla. */}
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>{['Pagado el', 'Código', 'Cliente', 'Técnico', 'Tipo', 'Pago', 'Titular y cuenta', 'Estado', ''].map((c, i) => <th key={`${c}${i}`} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -123,7 +123,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
                     <td className="px-3 py-2.5 min-w-[7rem]">{p.tecnico}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{tipoPagoFinanzas(p)}</td>
                     <td className="px-3 py-2.5 min-w-[12rem] font-bold break-words">{detalle(p)}</td>
-                    <td className="px-3 py-2.5 min-w-[10rem] text-xs text-zinc-700 dark:text-zinc-300 break-words">{datosExtra(p).map((l) => <span key={l} className="block">{l}</span>)}</td>
+                    <td className="px-3 py-2.5 min-w-[10rem] text-xs text-card-foreground break-words">{datosExtra(p).map((l) => <span key={l} className="block">{l}</span>)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{estadoChip()}</td>
                     <td className="px-3 py-2.5"><Boton variante="secundario" tamano="compacto" onClick={() => setAbierto(p.id)}>Ver</Boton></td>
                   </tr>

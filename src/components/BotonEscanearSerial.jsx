@@ -14,7 +14,7 @@ export default function BotonEscanearSerial({ onLeido, disabled = false, classNa
         onClick={() => setAbierto(true)}
         disabled={disabled}
         aria-label="Escanear el serial con la cámara"
-        className={`shrink-0 inline-flex items-center justify-center gap-2 h-11 px-3 rounded-xl border-2 border-red-600 bg-red-600/10 hover:bg-red-600/20 text-red-700 dark:text-white text-sm font-bold transition-colors disabled:opacity-50 ${className}`}
+        className={`shrink-0 inline-flex items-center justify-center gap-2 h-11 px-3 rounded-boton border-2 border-red-600 bg-red-600/10 hover:bg-red-600/20 text-red-700 dark:text-white text-sm font-bold transition-colors disabled:opacity-50 ${className}`}
       >
         <ScanLine className="w-5 h-5 text-red-600 dark:text-red-400" aria-hidden="true" /> Escanear
       </button>

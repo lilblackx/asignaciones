@@ -10,10 +10,10 @@ function FilaCopiable({ id, etiqueta, contexto, valor, copiado, onCopiar }) {
   if (!valor) return null;
   const esteCopiado = copiado === id;
   return (
-    <div className="flex items-center justify-between gap-3 py-2 border-b border-zinc-200 dark:border-zinc-800 last:border-b-0">
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-b-0">
       <div className="min-w-0">
-        <div className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">{etiqueta}</div>
-        <div className="text-sm font-black text-zinc-900 dark:text-white font-mono break-words">{valor}</div>
+        <div className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{etiqueta}</div>
+        <div className="text-sm font-black text-foreground font-mono break-words">{valor}</div>
       </div>
       <BotonCopiarDato
         copiado={esteCopiado}
@@ -32,7 +32,7 @@ function TarjetaForma({ forma, indice, copiado, onCopiar }) {
   const nombre = nombreForma(forma);
   const tarjetaCopiada = copiado === idTarjeta;
   return (
-    <section aria-label={`${TITULO_POR_TIPO[forma.tipo]}: ${nombre}`} className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+    <section aria-label={`${TITULO_POR_TIPO[forma.tipo]}: ${nombre}`} className="bg-sunken border-2 border-border rounded-campo p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
         <h3 className="flex items-center gap-1.5 text-xs font-black text-red-600 dark:text-red-400">
           <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {TITULO_POR_TIPO[forma.tipo]}
@@ -41,7 +41,7 @@ function TarjetaForma({ forma, indice, copiado, onCopiar }) {
           copiado={tarjetaCopiada}
           onClick={() => onCopiar(idTarjeta, textoForma(forma), `Datos de ${nombre} copiados.`)}
           etiqueta={`Copiar todos los datos de ${nombre}`}
-          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] max-lg:text-xs font-bold"
+          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold"
           tono="bg-zinc-800 text-white hover:bg-zinc-700"
           iconoClase="w-3 h-3"
         >
@@ -70,8 +70,8 @@ export default function FormasPagoLista({ formas, onCopy }) {
         <BotonCopiar
           copiado={copiado === 'todas'}
           onClick={() => copiar('todas', textoTodasLasFormas(formas), 'Todas las formas de pago copiadas.')}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-md"
-          tono="bg-red-600 hover:bg-red-700 text-white"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-campo font-bold text-sm shadow-md"
+          tono="bg-primary hover:bg-primary-hover text-white"
           tonoCopiado="bg-emerald-700 text-white"
         >
           Copiar todas las formas de pago

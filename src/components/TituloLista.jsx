@@ -7,6 +7,8 @@ export default function TituloLista({ titulo, ahora, pendientes = 0 }) {
       <p className="mt-1 text-sm font-medium text-muted-foreground first-letter:uppercase">
         {dia} · {pendientes === 1 ? '1 pendiente' : `${pendientes} pendientes`}
       </p>
+      {/* La línea roja de la marca, corta y redonda (la misma del login). */}
+      <div className="mt-3 h-1.5 w-14 rounded-full bg-primary" aria-hidden="true" />
     </div>
   );
 }

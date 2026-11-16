@@ -31,7 +31,7 @@ const fechaProgramada = (iso) => { const [y, m, d] = String(iso || '').split('-'
 // Tarjeta de una sección: el mismo recuadro y título que las tarjetas de valores del cliente y de formas de pago.
 function Seccion({ icono: Icono, titulo, acciones, children }) {
   return (
-    <section aria-label={titulo} className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+    <section aria-label={titulo} className="bg-sunken border-2 border-border rounded-campo p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
         <h3 className="flex items-center gap-1.5 text-xs font-black text-red-600 dark:text-red-400">
           <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {titulo}
@@ -47,9 +47,9 @@ function Seccion({ icono: Icono, titulo, acciones, children }) {
 function Dato({ etiqueta, children }) {
   if (children === undefined || children === null || children === '' || children === false) return null;
   return (
-    <div className="py-2 border-b border-zinc-200 dark:border-zinc-800 last:border-b-0 min-w-0">
-      <div className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">{etiqueta}</div>
-      <div className="text-sm font-bold text-zinc-900 dark:text-white break-words">{children}</div>
+    <div className="py-2 border-b border-border last:border-b-0 min-w-0">
+      <div className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{etiqueta}</div>
+      <div className="text-sm font-bold text-foreground break-words">{children}</div>
     </div>
   );
 }
@@ -77,8 +77,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
 
   return (
     <Modal onClose={onClose} zIndexClass={zIndexClass}>
-      <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
-        <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-hidden border border-border flex flex-col">
+        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-500" aria-hidden="true" /> DETALLE DE LA ORDEN</h2>
             <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
@@ -91,7 +91,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
             <span className={`text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
             <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
             <InsigniaVentaTecnico ticket={ticket} />
-            {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{ticket.falla}</span>}
+            {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-xs font-bold text-card-foreground">{ticket.falla}</span>}
           </div>
 
           <CancelacionAviso ticket={ticket} />
@@ -116,8 +116,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               {ticket.telefono && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span>{ticket.telefono}</span>
-                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
-                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-secondary text-foreground text-xs font-bold hover:bg-accent transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
                 </div>
               )}
             </Dato>
@@ -185,7 +185,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
                   copiado={copiado === 'plantilla'}
                   onClick={() => copiar('plantilla', plantilla, 'Plantilla copiada, lista para WhatsApp.')}
                   etiqueta="Copiar la plantilla"
-                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] max-lg:text-xs font-bold"
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold"
                   tono="bg-zinc-800 text-white hover:bg-zinc-700"
                   iconoClase="w-3 h-3"
                 >
@@ -193,7 +193,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
                 </BotonCopiar>
               )}
             >
-              <pre className="mt-1 whitespace-pre-wrap break-words text-xs text-zinc-800 dark:text-zinc-200 font-mono max-h-56 overflow-y-auto">{plantilla}</pre>
+              <pre className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground font-mono max-h-56 overflow-y-auto">{plantilla}</pre>
             </Seccion>
           )}
 

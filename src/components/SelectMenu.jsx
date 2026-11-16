@@ -140,7 +140,7 @@ export default function SelectMenu({
         role="option"
         aria-selected={isSelected}
         className={`flex items-center justify-between gap-2 px-3 py-2 mx-1 rounded-xl text-sm normal-case font-medium cursor-pointer transition-colors ${
-          i === activeIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
+          i === activeIndex ? 'bg-secondary' : ''
         } ${isSelected ? '!font-bold text-red-600 dark:text-red-400' : 'text-zinc-700 dark:text-zinc-200'}`}
         onPointerEnter={() => setActiveIndex(i)}
         onClick={() => choose(opt)}
@@ -178,11 +178,11 @@ export default function SelectMenu({
             aria-label={iconLabel}
             title={iconLabel}
             disabled={disabled}
-            className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-red-600 outline-none transition-colors disabled:opacity-50"
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-campo text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-secondary focus-visible:ring-2 focus-visible:ring-red-600 outline-none transition-colors disabled:opacity-50"
           >
             <Icon className="w-4 h-4" aria-hidden="true" />
           </button>
-        ) : <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true" />)}
+        ) : <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" aria-hidden="true" />)}
         <ChevronDown className={`absolute top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none transition-transform ${open ? 'rotate-180' : ''} ${chevronClassName}`} aria-hidden="true" />
 
         {montado && pos && portalTarget && createPortal(
@@ -193,12 +193,12 @@ export default function SelectMenu({
             aria-label={ariaLabel}
             onMouseDown={(e) => e.preventDefault()}
             style={pos}
-            className={`fixed z-[300] w-max overflow-auto py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}
+            className={`fixed z-[300] w-max overflow-auto py-1.5 bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'} max-lg:shadow-card`}
           >
             {items.map(it =>
               it.group ? (
                 <li key={it.group} role="presentation">
-                  <div className="px-3 pt-2 pb-1 mt-1 border-t border-zinc-100 dark:border-zinc-800 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                  <div className="px-3 pt-2 pb-1 mt-1 border-t border-border text-[11px] max-lg:text-xs font-bold text-muted-foreground">
                     {it.group}
                   </div>
                   <ul role="group" aria-label={it.group}>

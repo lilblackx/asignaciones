@@ -67,7 +67,7 @@ function Formulario({ items, tasa, ocupado, onGuardar }) {
 
       <div className="flex flex-wrap items-center gap-4">
         <Boton variante="secundario" tamano="normal" icono={Plus} onClick={agregar} disabled={ocupado || filas.length >= MAX_ITEMS_ADICIONALES}>Agregar ítem</Boton>
-        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
+        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} bg-primary hover:bg-primary-hover text-white`}>
           {ocupado && <Spinner />}Guardar ítems
         </button>
         <span className={`${ETIQUETA} text-sm`}>{cambiado ? 'Hay cambios sin guardar' : 'Ítems al día'}</span>

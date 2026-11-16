@@ -78,7 +78,7 @@ export default function TicketsTable({
   const enSeccionCerradas = (t) => cerradasEnBusqueda > 0 && esCerrada(t);
 
   return (
-    <div className="hidden lg:block bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border border-zinc-300 dark:border-zinc-800 overflow-clip transition-colors w-full">
+    <div className="hidden lg:block bg-card rounded-card shadow-md dark:shadow-sm border border-border max-lg:border-transparent overflow-clip transition-colors w-full max-lg:shadow-card">
       <table className="w-full text-xs text-left table-fixed">
         <thead className="sticky z-[5] text-[11px] max-lg:text-xs text-white uppercase bg-black" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
           {/* La raya roja va como sombra interior de cada título: un borde de la tabla no se queda pegado al bajar. */}
@@ -109,14 +109,14 @@ export default function TicketsTable({
             const dia = nuevoDia ? (cerrada ? { texto: `FINALIZADAS Y CANCELADAS (${cerradasEnBusqueda})`, cerradas: true } : prioritaria ? { texto: 'PRIORIDAD ALTA', prioridad: true } : getEtiquetaDia(ticket.fecha, ticket.estado)) : null;
             return [
               nuevoDia && (
-                <tr key={`dia-${ticket._clave || ticket.id}`} className="border-b border-zinc-300 dark:border-zinc-800">
-                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] max-lg:text-xs font-black ${dia.prioridad ? 'bg-red-600' : dia.cerradas ? 'bg-zinc-700 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad || dia.cerradas ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                <tr key={`dia-${ticket._clave || ticket.id}`} className="border-b border-border">
+                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] max-lg:text-xs font-black ${dia.prioridad ? 'bg-red-600' : dia.cerradas ? 'bg-zinc-700 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad || dia.cerradas ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                     {dia.prioridad && <Flag className="inline w-3 h-3 mr-1 -mt-0.5 fill-current" aria-hidden="true" />}{dia.texto}
                   </td>
                 </tr>
               ),
-              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
-                <td className={`px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
+              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
+                <td className={`px-3 py-3 border-r border-border border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} />
@@ -128,13 +128,13 @@ export default function TicketsTable({
                     {prioritaria && isTecnico && <InsigniaPrioridad />}
                   </div>
                 </td>
-                <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight align-middle">
+                <td className="px-3 py-3 border-r border-border whitespace-normal leading-tight align-middle">
                   <div className="flex flex-col justify-center h-full min-h-[2rem] gap-0.5">
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium">{ticket.nombre}</span>
                       {canEditTickets && onVerDetalle && <BotonVerDetalle ticket={ticket} onClick={onVerDetalle} />}
                     </div>
-                    {!agrupado && <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">{ticket.fecha}</span>}
+                    {!agrupado && <span className="text-[11px] max-lg:text-xs text-muted-foreground">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
                     <DevolucionAviso ticket={ticket} compact />
@@ -146,7 +146,7 @@ export default function TicketsTable({
                       <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
                     )}
                     {(isTecnico ? observacionParaTecnico(ticket) : ticket.observacion) && (
-                      <span className="flex items-start gap-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400" title={isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}>
+                      <span className="flex items-start gap-1 text-[11px] max-lg:text-xs text-muted-foreground" title={isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}>
                         <MessageSquareText className="w-3 h-3 shrink-0 mt-px" aria-label="Observación" role="img" />
                         <span className="line-clamp-2">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
                       </span>
@@ -160,7 +160,7 @@ export default function TicketsTable({
                     <PagoDelCliente orden={ticket} tamano="compacto" avisarFalta />
                   </div>
                 </td>
-                <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal align-middle">
+                <td className="px-3 py-3 border-r border-border whitespace-normal align-middle">
                   <div className="flex items-center h-full min-h-[2rem]">
                     {ticket.cedula && !isTecnico ? (
                       <a
@@ -178,10 +178,10 @@ export default function TicketsTable({
                     ) : renderCedulaConSaltos(formatCedula(ticket.cedula, ticket.tipoDocumento))}
                   </div>
                 </td>
-                <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight align-middle">
+                <td className="px-3 py-3 border-r border-border whitespace-normal leading-tight align-middle">
                   <div className="flex items-center h-full min-h-[2rem]"><span className="line-clamp-2" title={ticket.direccion}>{ticket.direccion}</span></div>
                 </td>
-                <td className="px-3 py-3 border-r border-zinc-200 dark:border-zinc-800 whitespace-normal leading-tight font-medium align-middle">
+                <td className="px-3 py-3 border-r border-border whitespace-normal leading-tight font-medium align-middle">
                   <div className="flex flex-col items-start justify-center h-full min-h-[2rem] gap-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
@@ -191,7 +191,7 @@ export default function TicketsTable({
                     {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
                     {instalacionSinUbicacion(ticket) && (
                       canEditTickets ? (
-                        <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Copia el enlace de ubicación y haz clic para guardarlo" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                        <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Copia el enlace de ubicación y haz clic para guardarlo" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded-boton bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
                           <MapPinOff className="w-3 h-3" aria-hidden="true" /> Sin ubicación · pegar
                         </button>
                       ) : (
@@ -202,7 +202,7 @@ export default function TicketsTable({
                     )}
                   </div>
                 </td>
-                <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
+                <td className="px-2 py-3 border-r border-border text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-1">
                     {ticket.tecnico && (
                       <NombreTecnico nombre={ticket.tecnico} getTecnicoColor={getTecnicoColor} />
@@ -210,12 +210,12 @@ export default function TicketsTable({
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
                 </td>
-                <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
+                <td className="px-2 py-3 border-r border-border text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-0.5">
                     <span className={`inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
                     {isTecnico && <FaltaPorCompletar ticket={ticket} />}
                     {cerrada && (
-                      <span className="text-[11px] max-lg:text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
+                      <span className="text-[11px] max-lg:text-xs font-medium text-muted-foreground leading-tight">
                         {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}
                       </span>
                     )}
@@ -225,39 +225,39 @@ export default function TicketsTable({
                   <div className="flex flex-wrap items-center justify-center h-full min-h-[2rem] gap-1">
                     {archivada ? (
                       // Una orden archivada ya no se trabaja: solo se consulta (el ojo junto al nombre abre su detalle).
-                      <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold" title="Archivada por el cierre del día: solo consulta">-</span>
+                      <span className="text-[11px] max-lg:text-xs text-muted-foreground font-bold" title="Archivada por el cierre del día: solo consulta">-</span>
                     ) : isTecnico ? (
                       <>
-                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp'}><MessageCircle className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-campo transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {enlaceNavegacion && (
                           <a href={enlaceNavegacion} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a la orden ${ticket.codigo || ticket.id}`} title="Cómo llegar" className="p-1 text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 hover:bg-sky-200 dark:hover:bg-sky-900/50 rounded transition-colors"><Navigation className="w-3.5 h-3.5" /></a>
                         )}
                         {ticket.estado === 'PENDIENTE' ? (
-                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`${conBorrador?.has(String(ticket.id)) ? 'Continuar el borrador de' : 'Pre-finalizar'} orden ${ticket.codigo || ticket.id}`} className={`p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-xl font-bold transition-colors ${conBorrador?.has(String(ticket.id)) ? 'ring-2 ring-offset-1 ring-amber-300 dark:ring-offset-zinc-900' : ''}`} title={conBorrador?.has(String(ticket.id)) ? 'Continuar borrador guardado' : 'Pre-finalizar orden'}><ClipboardCheck className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => onPreFinalizar(ticket)} aria-label={`${conBorrador?.has(String(ticket.id)) ? 'Continuar el borrador de' : 'Pre-finalizar'} orden ${ticket.codigo || ticket.id}`} className={`p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-campo font-bold transition-colors ${conBorrador?.has(String(ticket.id)) ? 'ring-2 ring-offset-1 ring-amber-300 dark:ring-offset-zinc-900' : ''}`} title={conBorrador?.has(String(ticket.id)) ? 'Continuar borrador guardado' : 'Pre-finalizar orden'}><ClipboardCheck className="w-3.5 h-3.5" /></button>
                         ) : onRegistrarPago && pendienteDelTecnico(ticket) ? (
-                          <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`${pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago' : 'Subir los detalles'} de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-xl font-bold transition-colors" title={pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago del cliente' : 'Subir los detalles de la orden (fotos)'}>{pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? <Banknote className="w-3.5 h-3.5" aria-hidden="true" /> : <Camera className="w-3.5 h-3.5" aria-hidden="true" />}</button>
+                          <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`${pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago' : 'Subir los detalles'} de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-campo font-bold transition-colors" title={pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago del cliente' : 'Subir los detalles de la orden (fotos)'}>{pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? <Banknote className="w-3.5 h-3.5" aria-hidden="true" /> : <Camera className="w-3.5 h-3.5" aria-hidden="true" />}</button>
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
                         ) : onCorregirFotos && puedeCorregirDetalles(ticket) ? (
-                          <button onClick={() => onCorregirFotos(ticket)} aria-label={`Corregir las fotos de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors" title="Corregir las fotos de la orden"><Camera className="w-3.5 h-3.5" aria-hidden="true" /></button>
+                          <button onClick={() => onCorregirFotos(ticket)} aria-label={`Corregir las fotos de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-card-foreground bg-secondary hover:bg-accent rounded-campo transition-colors" title="Corregir las fotos de la orden"><Camera className="w-3.5 h-3.5" aria-hidden="true" /></button>
                         ) : null}
                         {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
                             comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.
                         {onEscalar && puedeEscalar(ticket) && (
-                          <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="p-1 text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-xl transition-colors" title="Escalar a infraestructura"><HardHat className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="p-1 text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-campo transition-colors" title="Escalar a infraestructura"><HardHat className="w-3.5 h-3.5" /></button>
                         )}
                         */}
                       </>
                     ) : (
                       <>
-                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp (marca como enviada)'}><MessageCircle className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? `Copiar plantilla de la orden ${ticket.codigo || ticket.id}: no disponible, falta la plantilla de la promotora` : `Copiar plantilla WhatsApp de orden ${ticket.codigo || ticket.id}`} className="p-1 text-green-700 dark:text-green-500 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-campo transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-100 dark:disabled:hover:bg-green-900/30" title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla WhatsApp (marca como enviada)'}><MessageCircle className="w-3.5 h-3.5" /></button>
                         {canEditTickets ? (
                           <>
                             {ticket.estado === 'PENDIENTE' && !enInfraestructura(ticket) && (
-                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-700 hover:bg-emerald-600 rounded-xl transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => onFinalizar(ticket)} aria-label={`Finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-white bg-emerald-700 hover:bg-emerald-600 rounded-campo transition-colors" title="Finalizar orden"><ClipboardCheck className="w-3.5 h-3.5" /></button>
                             )}
                             {ticket.estado === 'PRE-FINALIZADO' && (
-                              <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-xl transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => onAprobarFinalizar(ticket)} aria-label={`Aprobar y finalizar orden ${ticket.codigo || ticket.id}`} className="p-1 text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-campo transition-colors" title="Aprobar y Finalizar orden"><CheckCheck className="w-3.5 h-3.5" /></button>
                             )}
                             <RowMenu
                               label={`Más acciones de orden ${ticket.codigo || ticket.id}`}
@@ -270,7 +270,7 @@ export default function TicketsTable({
                             />
                           </>
                         ) : (
-                          <span className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold">-</span>
+                          <span className="text-[11px] max-lg:text-xs text-muted-foreground font-bold">-</span>
                         )}
                       </>
                     )}
@@ -281,12 +281,12 @@ export default function TicketsTable({
           })}
           {filteredTickets.length === 0 && (
             <tr>
-              <td colSpan={COLUMNAS} className="px-4 py-12 text-center text-zinc-600 dark:text-zinc-400 font-medium">
+              <td colSpan={COLUMNAS} className="px-4 py-12 text-center text-muted-foreground font-medium">
                 {isTecnico && !hasAnyTickets ? (
                   <div className="flex flex-col items-center gap-2">
-                    <Wrench className="w-6 h-6 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
+                    <Wrench className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
                     <span>No tienes asignaciones en este momento.</span>
-                    <span className="text-xs text-zinc-600 dark:text-zinc-400">Cuando te asignen una orden, aparecerá aquí.</span>
+                    <span className="text-xs text-muted-foreground">Cuando te asignen una orden, aparecerá aquí.</span>
                   </div>
                 ) : isTecnico ? (
                   'Ninguna de tus asignaciones coincide con los filtros. Quítalos para ver todas.'

@@ -57,7 +57,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-zinc-900 dark:text-white">{entraYa ? 'Registrar' : 'Programar'} un descuento a {tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">{entraYa ? 'Registrar' : 'Programar'} un descuento a {tecnico}</h2>
           <span className={`${CHIP} ${ESTADO.CON_ADELANTO.clase}`}>Descuento</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>Un descuento es siempre en dólares y se resta de lo que el técnico tenga pendiente en su próximo pago. Si eliges otra fecha, entra al primer pago que se le haga desde ese día.{porDescontar > 0 ? ` Ya tiene ${dolares(porDescontar)} de descuentos por descontar.` : ''}</p>
@@ -101,7 +101,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
         </div>
 
         <Colapsable>{plan.length > 0 && (
-          <ul aria-label="Cuándo se descuenta" className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-3 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul aria-label="Cuándo se descuenta" className="rounded-campo border border-zinc-300 dark:border-zinc-700 px-3 divide-y divide-zinc-200 dark:divide-zinc-800">
             {plan.map((c) => (
               <li key={c.cuota} className="py-2 flex items-baseline justify-between gap-3 text-sm">
                 <span className="font-bold">{plan.length > 1 ? `Cuota ${c.cuota} de ${c.cuotas}` : 'Descuento'} <span className="font-normal text-zinc-600 dark:text-zinc-300">· desde el {fechaCorta(c.desde)}</span></span>
@@ -118,7 +118,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={guardar} disabled={ocupado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
+        <button type="button" onClick={guardar} disabled={ocupado} className={`${BOTON_GRANDE} bg-primary hover:bg-primary-hover text-white`}>
           {ocupado ? <Spinner /> : <MinusCircle className="w-5 h-5" aria-hidden="true" />} {entraYa ? 'Registrar descuento' : 'Programar descuento'}
         </button>
         <button type="button" onClick={onVolver} disabled={ocupado} className={BOTON_CON_BORDE_GRANDE}>Cancelar</button>

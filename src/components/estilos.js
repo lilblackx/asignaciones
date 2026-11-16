@@ -1,21 +1,21 @@
 // Los estilos comunes de toda la app: los de Finanzas y de Revisión de órdenes, que son los mismos del resto (tarjetas blancas con borde y sombra sobre el fondo gris, letra de 14 px, controles de 36 px con
 // borde fino, títulos en mayúsculas pequeñas). Quien necesite la letra más grande usa el selector "Tamaño de letra" de Finanzas, que agranda todo junto (todo está en rem).
-export const TARJETA = 'bg-white dark:bg-zinc-900 rounded-xl border border-zinc-300 dark:border-zinc-800 shadow-sm';
-export const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-400';
-export const TEXTO_SUAVE = 'text-xs text-zinc-600 dark:text-zinc-400';
-export const TITULO_SECCION = 'text-sm font-black uppercase tracking-wide text-zinc-800 dark:text-zinc-200';
+export const TARJETA = 'bg-card rounded-card border border-border max-lg:border-transparent shadow-sm max-lg:shadow-card';
+export const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold uppercase tracking-wide text-muted-foreground';
+export const TEXTO_SUAVE = 'text-xs text-muted-foreground';
+export const TITULO_SECCION = 'text-sm font-black uppercase tracking-wide text-foreground';
 
 
 // --- Campos: cajas de texto, áreas de texto, selectores y calendarios. SALEN TODOS DE AQUÍ (scripts/test-campos-radio.mjs falla si un campo trae sus clases a mano).
 // Un solo radio (rounded-xl), borde, fondo y foco rojo. Dos alturas fijas: 'compacto' y 'normal' de 36 px (la letra del compacto es más chica) y 'grande' de 44 px, cómoda para el dedo (formularios y
 // pantallas del técnico). `estado`: 'normal', 'error' (borde rojo), 'ok' (borde verde) o 'lectura' (gris, no editable). Las medidas de un campo concreto (ancho, alineación, tipo de letra) se le suman en su sitio; el aspecto, no.
 const CAMPO_BASE = 'w-full border rounded-campo placeholder:text-zinc-500 focus:ring-0 outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
-const FONDO_CAMPO = 'bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white';
+const FONDO_CAMPO = 'bg-white dark:bg-zinc-950 text-foreground';
 const BORDE_CAMPO = {
-  normal: `${FONDO_CAMPO} border-zinc-400 dark:border-zinc-700 hover:border-zinc-500 focus:border-red-600`,
+  normal: `${FONDO_CAMPO} border-input hover:border-zinc-500 focus:border-red-600`,
   error: `${FONDO_CAMPO} border-red-500 focus:border-red-500`,
   ok: `${FONDO_CAMPO} border-emerald-500 focus:border-emerald-500`,
-  lectura: 'bg-zinc-100 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 cursor-default', // dato que se ve pero no se edita (la fecha de la orden)
+  lectura: 'bg-zinc-100 dark:bg-zinc-900/60 text-muted-foreground border-zinc-200 dark:border-zinc-700 cursor-default', // dato que se ve pero no se edita (la fecha de la orden)
 };
 const MEDIDA_CAMPO = { compacto: 'h-9 px-3 text-xs', normal: 'h-9 px-3 text-sm', grande: 'h-11 px-3 text-sm' };
 export const claseCampo = (tamano = 'normal', estado = 'normal') => `${CAMPO_BASE} ${MEDIDA_CAMPO[tamano]} ${BORDE_CAMPO[estado]}`;
@@ -69,15 +69,15 @@ export const BOTON_BARRA_ACTIVO = 'border-primary text-primary dark:text-ring';
 // --- Botones: variante (el color) y tamaño (la medida) se combinan; ver Boton.jsx.
 const BASE_BOTON = 'inline-flex items-center justify-center font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 const VARIANTES_BOTON = {
-  principal: 'bg-red-600 hover:bg-red-700 text-white disabled:opacity-100 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500 disabled:hover:bg-zinc-300 dark:disabled:hover:bg-zinc-800',
-  secundario: 'border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-  peligro: 'border border-red-600 bg-white dark:bg-zinc-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30',
-  discreto: 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800',
+  principal: 'bg-primary hover:bg-primary-hover text-white disabled:opacity-100 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500 disabled:hover:bg-zinc-300 dark:disabled:hover:bg-zinc-800',
+  secundario: 'border border-input bg-card text-zinc-800 dark:text-zinc-100 hover:bg-secondary',
+  peligro: 'border border-red-600 bg-card text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30',
+  discreto: 'text-card-foreground hover:bg-zinc-200 dark:hover:bg-zinc-800',
 };
 const TAMANOS_BOTON = {
-  compacto: 'gap-1.5 h-8 px-2.5 rounded-xl text-xs',
-  normal: 'gap-2 h-9 px-3 rounded-xl text-sm',
-  grande: 'gap-2 h-10 px-4 rounded-xl text-sm',
+  compacto: 'gap-1.5 h-8 px-2.5 rounded-campo text-xs',
+  normal: 'gap-2 h-9 px-3 rounded-campo text-sm',
+  grande: 'gap-2 h-10 px-4 rounded-campo text-sm',
 };
 export const claseBoton = (variante = 'secundario', tamano = 'normal') => `${BASE_BOTON} ${VARIANTES_BOTON[variante]} ${TAMANOS_BOTON[tamano]}`;
 
@@ -87,4 +87,4 @@ const TAMANOS_CHIP = { normal: 'px-3 text-sm', compacto: 'px-3 text-xs', angosto
 export const claseChip = (activo, tamano = 'normal') => `${BASE_CHIP} ${TAMANOS_CHIP[tamano]} ${activo ? 'bg-primary border-primary text-primary-foreground' : 'bg-card border-input text-foreground hover:border-muted-foreground'}`;
 
 // --- Etiqueta de los formularios de órdenes (Crear orden, Editar orden, Nueva venta).
-export const ETIQUETA_ORDEN = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
+export const ETIQUETA_ORDEN = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
