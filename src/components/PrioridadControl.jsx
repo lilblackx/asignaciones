@@ -28,7 +28,7 @@ export function BotonPrioridad({ activa, codigo, onClick }) {
 // Etiqueta que ve todo el que mira una orden con prioridad alta (incluido el técnico).
 export function InsigniaPrioridad({ className = '' }) {
   return (
-    <span className={`inline-flex items-center gap-1 self-start text-[11px] max-lg:text-xs font-black tracking-wide px-1.5 py-0.5 rounded bg-red-600 text-white ${className}`}>
+    <span className={`inline-flex items-center gap-1 self-start shrink-0 whitespace-nowrap text-[11px] max-lg:text-xs font-black tracking-wide px-1.5 py-0.5 rounded bg-red-600 text-white ${className}`}>
       <Flag className="w-2.5 h-2.5 fill-current" aria-hidden="true" /> PRIORIDAD ALTA
     </span>
   );

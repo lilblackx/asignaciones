@@ -94,7 +94,7 @@ export default function TicketsMobileList({
         <div className={`bg-white dark:bg-zinc-900 rounded-xl shadow-md dark:shadow-sm border overflow-hidden flex flex-col transition-colors ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-red-700/60 dark:border-red-800/60' : 'border-emerald-700/60 dark:border-emerald-800/60') : prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-zinc-300 dark:border-zinc-800'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
           <div className={`p-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-start sm:items-center ${cerrada ? 'bg-zinc-200/70 dark:bg-zinc-800/60' : 'bg-zinc-50 dark:bg-zinc-950'}`}>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} vacio="S/C" className="font-black text-lg text-zinc-900 dark:text-white leading-none" />
                 {canEditTickets && puedeCambiarPrioridad(ticket) && (
                   <BotonPrioridad activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
