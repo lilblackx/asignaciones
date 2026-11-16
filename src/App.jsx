@@ -7,6 +7,7 @@ import { monedaDe, tieneCobroFinal } from './utils/cobro';
 import { enInfraestructura } from './utils/infraestructura';
 import TasaIndicador from './components/TasaIndicador';
 import AvisoNotificaciones from './components/AvisoNotificaciones';
+import TituloLista from './components/TituloLista';
 import AvisoSinConexion from './components/AvisoSinConexion';
 import EnviosInventarioModal, { AvisoInventario } from './components/AlertaInventario';
 import { crearConAviso } from './utils/errores';
@@ -760,6 +761,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         <AvisoSinConexion />
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
+          <TituloLista titulo={isTecnico ? 'Mis órdenes' : 'Órdenes'} ahora={ahora} pendientes={ticketsParaVer.filter((t) => t.estado === 'PENDIENTE').length} />
           {verInventario && <AvisoInventario cantidad={enviosInventario.length} pendientes={enviosPendientes.length} onAbrir={abrirVentana('INVENTARIO', setIsInventarioOpen)} />}
           {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} brave={push.brave} onActivar={push.activar} avisarFallo={isTecnico} />}
           <FiltersBar

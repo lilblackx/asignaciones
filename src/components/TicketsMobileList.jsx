@@ -77,7 +77,7 @@ export default function TicketsMobileList({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:hidden">
+    <div className="grid grid-cols-1 gap-5 lg:hidden">
       {filteredTickets.map((ticket, index) => {
         const hayTelefono = parseTelefonos(ticket.telefono).some(t => getEnlaceLlamada(t) || getEnlaceWhatsApp(t));
         const enlaceUbicacion = getEnlaceNavegacion(ticket.ubicacion);
@@ -95,7 +95,7 @@ export default function TicketsMobileList({
           <h2 className="mt-2 px-3 py-2 rounded-campo bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">FINALIZADAS Y CANCELADAS ({cerradasEnBusqueda})</h2>
         )}
         <div className={`bg-card rounded-card shadow-card border overflow-hidden flex flex-col transition-colors ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-red-700/60 dark:border-red-800/60' : 'border-emerald-700/60 dark:border-emerald-800/60') : prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-transparent'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
-          <div className={`p-4 pb-1 flex justify-between items-start sm:items-center ${cerrada ? 'bg-muted' : ''}`}>
+          <div className={`p-5 pb-1 flex justify-between items-start sm:items-center ${cerrada ? 'bg-muted' : ''}`}>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} vacio="S/C" className="font-black text-lg text-foreground leading-none" />
@@ -122,10 +122,10 @@ export default function TicketsMobileList({
               )}
             </div>
           </div>
-          <div className="px-4 pb-4 pt-2 flex-1 flex flex-col gap-3">
+          <div className="px-5 pb-5 pt-2 flex-1 flex flex-col gap-4">
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="font-black text-foreground leading-tight min-w-0 break-words">{ticket.nombre}</h3>
+                <h3 className="text-lg font-black text-foreground leading-tight min-w-0 break-words">{ticket.nombre}</h3>
                 {canEditTickets && onVerDetalle && <BotonVerDetalle ticket={ticket} onClick={onVerDetalle} />}
               </div>
               <p className="text-sm text-muted-foreground font-medium">
@@ -144,8 +144,8 @@ export default function TicketsMobileList({
                 ) : formatCedula(ticket.cedula, ticket.tipoDocumento)}
               </p>
             </div>
-            <div className="flex items-start gap-2 text-sm mt-1">
-              <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <div className="flex items-center gap-3 text-sm">
+              <span className="shrink-0 w-9 h-9 rounded-full bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400 flex items-center justify-center"><MapPin className="w-4 h-4" aria-hidden="true" /></span>
               <span className="text-card-foreground leading-tight">{ticket.direccion}</span>
             </div>
             {instalacionSinUbicacion(ticket) && (
@@ -177,8 +177,8 @@ export default function TicketsMobileList({
                 <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 min-h-11 py-2.5 rounded-campo bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
               </div>
             )}
-            <div className="flex items-start gap-2 text-sm">
-              <Wrench className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 text-sm">
+              <span className="shrink-0 w-9 h-9 rounded-full bg-secondary text-muted-foreground flex items-center justify-center"><Wrench className="w-4 h-4" aria-hidden="true" /></span>
               <div className="flex flex-col">
                 <div className="flex flex-wrap items-center gap-1 mb-0.5">
                   <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
@@ -236,7 +236,7 @@ export default function TicketsMobileList({
 
           {/* Arriba de la barra de acciones del técnico, al alcance del pulgar. */}
           {isTecnico && ticket.estado === 'PENDIENTE' && (
-            <div className="px-4 pb-3">
+            <div className="px-5 pb-4">
               <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} />
             </div>
           )}
@@ -244,7 +244,7 @@ export default function TicketsMobileList({
           {archivada ? (
               <div className="py-3 text-center text-xs text-muted-foreground font-medium bg-muted border-t border-border">Archivada por el cierre del día · solo consulta</div>
             ) : isTecnico ? (
-              <div className="flex gap-2 p-3 border-t border-border">
+              <div className="flex gap-2 px-5 py-4 border-t border-border">
                 <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                   <ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}
                 </button>
@@ -275,7 +275,7 @@ export default function TicketsMobileList({
                 */}
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2 p-3 border-t border-border">
+              <div className="flex flex-wrap gap-2 px-5 py-4 border-t border-border">
                 <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : undefined} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"><ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}</button>
                 {canEditTickets ? (
                   <>
