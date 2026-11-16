@@ -98,7 +98,7 @@
   }
 }
 
-/* Encabezados de módulos y de ventanas (estilo D): tarjeta clara en vez de la barra negra, con la línea roja corta de la marca sobre el borde de abajo.
+/* Encabezados de módulos y de ventanas (estilo D): tarjeta clara en vez de la barra negra, con la línea roja corta de la marca debajo del título.
    Los textos y botones oscuros que ya llevan (text-white, bg-zinc-800...) se reemplazan aquí, para no tocar cada ventana. */
 .encabezado-d {
   background-color: var(--card);
@@ -107,12 +107,13 @@
   box-shadow: none;
 }
 .encabezado-d:not(.sticky, .absolute, .fixed) { position: relative; }
-.encabezado-d::after {
+.encabezado-d :is(h1, h2) { position: relative; padding-bottom: 0.6rem; }
+.encabezado-d :is(h1, h2)::after {
   content: '';
   position: absolute;
-  left: 1rem;
-  bottom: -2px;
-  width: 3.5rem;
+  left: 0;
+  bottom: 0;
+  width: 2.5rem;
   height: 4px;
   border-radius: 9999px;
   background-color: var(--primary);
@@ -122,6 +123,10 @@
 .encabezado-d .text-zinc-400 { color: var(--muted-foreground); }
 .encabezado-d .bg-zinc-800 { background-color: var(--secondary); }
 .encabezado-d .border-zinc-700 { border-color: transparent; }
+/* El encabezado de una pantalla completa en PC (EncabezadoSimple) no es una barra: el título grande va sobre el fondo de la página, como el del Panel principal. */
+@media (min-width: 1024px) {
+  .encabezado-d.encabezado-pagina { background-color: var(--background); border-bottom: 0; }
+}
 .encabezado-d [class*='hover:bg-zinc-']:hover { background-color: var(--accent); }
 .encabezado-d [class*='hover:text-white']:hover { color: var(--foreground); }
 

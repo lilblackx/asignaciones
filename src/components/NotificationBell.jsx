@@ -71,7 +71,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
         aria-label={`Notificaciones${contador > 0 ? ` (${contador} pendientes)` : ''}`}
         aria-expanded={isOpen}
         title="Notificaciones"
-        className="relative inline-flex items-center justify-center p-2 max-lg:min-w-12 max-lg:min-h-12 rounded-card transition-colors border bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700 max-lg:bg-card max-lg:hover:bg-secondary max-lg:text-foreground max-lg:border-transparent max-lg:rounded-boton shadow-card shadow-card"
+        className="relative inline-flex items-center justify-center p-2 max-lg:min-w-12 max-lg:min-h-12 rounded-boton transition-colors border bg-card hover:bg-secondary text-foreground border-transparent shadow-card"
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
         {contador > 0 && (

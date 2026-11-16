@@ -2,7 +2,7 @@ import { observacionParaTecnico } from '../utils/observacion';
 import { useRef } from 'react';
 import { Ban, Banknote, Camera, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
-import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
+import { formatCedula, getEstadoPastel, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
 import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
@@ -33,7 +33,7 @@ const COLUMNAS = 8;
 // Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
 // Se pegan debajo del encabezado de la página (62px, sticky) y el separador debajo del título de columnas (su alto). Si cambia el
 // alto de alguno de los dos, hay que ajustar estas dos cifras.
-const ALTO_ENCABEZADO_PAGINA = 62;
+const ALTO_ENCABEZADO_PAGINA = 96;
 const ALTO_TITULOS = 37;
 
 export default function TicketsTable({
@@ -81,15 +81,15 @@ export default function TicketsTable({
     <div className="hidden lg:block bg-card rounded-card shadow-md dark:shadow-sm border border-transparent overflow-clip transition-colors w-full shadow-card">
       <table className="w-full text-xs text-left table-fixed">
         <thead className="sticky z-[5] text-[11px] max-lg:text-xs text-muted-foreground uppercase bg-secondary" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
-          {/* La raya roja va como sombra interior de cada título: un borde de la tabla no se queda pegado al bajar. */}
-          <tr className="[&>th]:shadow-[inset_0_-2px_0_0_#dc2626]">
-            <th className="px-3 py-3 border-r border-zinc-800 w-[8%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[16%] align-middle text-center">NOMBRE</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[13%] min-[1440px]:w-[12%] align-middle text-center">CÉDULA</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[18%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] align-middle text-center">FALLA / TRABAJO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[14%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
+          
+          <tr>
+            <th className="px-3 py-3 w-[8%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
+            <th className="px-3 py-3 w-[15%] min-[1440px]:w-[16%] align-middle text-center">NOMBRE</th>
+            <th className="px-3 py-3 w-[13%] min-[1440px]:w-[12%] align-middle text-center">CÉDULA</th>
+            <th className="px-3 py-3 w-[15%] min-[1440px]:w-[18%] align-middle text-center">DIRECCIÓN</th>
+            <th className="px-3 py-3 w-[15%] align-middle text-center">FALLA / TRABAJO</th>
+            <th className="px-3 py-3 w-[11%] align-middle text-center">TÉCNICO</th>
+            <th className="px-3 py-3 w-[14%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
             <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
           </tr>
         </thead>
@@ -116,7 +116,7 @@ export default function TicketsTable({
                 </tr>
               ),
               <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
-                <td className={`px-3 py-3 border-r border-border border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
+                <td className={`px-3 py-3 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} />
@@ -128,7 +128,7 @@ export default function TicketsTable({
                     {prioritaria && isTecnico && <InsigniaPrioridad />}
                   </div>
                 </td>
-                <td className="px-3 py-3 border-r border-border whitespace-normal leading-tight align-middle">
+                <td className="px-3 py-3 whitespace-normal leading-tight align-middle">
                   <div className="flex flex-col justify-center h-full min-h-[2rem] gap-0.5">
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium">{ticket.nombre}</span>
@@ -160,7 +160,7 @@ export default function TicketsTable({
                     <PagoDelCliente orden={ticket} tamano="compacto" avisarFalta />
                   </div>
                 </td>
-                <td className="px-3 py-3 border-r border-border whitespace-normal align-middle">
+                <td className="px-3 py-3 whitespace-normal align-middle">
                   <div className="flex items-center h-full min-h-[2rem]">
                     {ticket.cedula && !isTecnico ? (
                       <a
@@ -178,10 +178,10 @@ export default function TicketsTable({
                     ) : renderCedulaConSaltos(formatCedula(ticket.cedula, ticket.tipoDocumento))}
                   </div>
                 </td>
-                <td className="px-3 py-3 border-r border-border whitespace-normal leading-tight align-middle">
+                <td className="px-3 py-3 whitespace-normal leading-tight align-middle">
                   <div className="flex items-center h-full min-h-[2rem]"><span className="line-clamp-2" title={ticket.direccion}>{ticket.direccion}</span></div>
                 </td>
-                <td className="px-3 py-3 border-r border-border whitespace-normal leading-tight font-medium align-middle">
+                <td className="px-3 py-3 whitespace-normal leading-tight font-medium align-middle">
                   <div className="flex flex-col items-start justify-center h-full min-h-[2rem] gap-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
@@ -202,7 +202,7 @@ export default function TicketsTable({
                     )}
                   </div>
                 </td>
-                <td className="px-2 py-3 border-r border-border text-center align-middle">
+                <td className="px-2 py-3 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-1">
                     {ticket.tecnico && (
                       <NombreTecnico nombre={ticket.tecnico} getTecnicoColor={getTecnicoColor} />
@@ -210,9 +210,9 @@ export default function TicketsTable({
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
                 </td>
-                <td className="px-2 py-3 border-r border-border text-center align-middle">
+                <td className="px-2 py-3 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-0.5">
-                    <span className={`inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
+                    <span className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-1 text-[11px] max-lg:text-xs font-black rounded-full leading-tight text-center ${getEstadoPastel(ticket.estado)}`}>{ticket.estado}</span>
                     {isTecnico && <FaltaPorCompletar ticket={ticket} />}
                     {cerrada && (
                       <span className="text-[11px] max-lg:text-xs font-medium text-muted-foreground leading-tight">

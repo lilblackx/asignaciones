@@ -41,14 +41,20 @@ export default function HeaderMovil({
   const y = (fn) => () => { setAbierto(false); fn(); };
 
   return (
-    <header className="lg:hidden sticky top-0 z-10 bg-background px-4 pt-3 pb-3 flex items-center gap-3">
+    <header className="sticky top-0 z-10 bg-background px-4 sm:px-6 pt-3 lg:pt-6 pb-3 lg:pb-4 flex items-center gap-3 lg:gap-4">
       {isAdmin && (
-        <button onClick={onOpenSidebar} aria-label="Abrir menú" className="relative shrink-0 inline-flex items-center justify-center w-12 h-12 rounded-boton bg-card text-foreground shadow-card">
+        <button onClick={onOpenSidebar} aria-label="Abrir menú" className="lg:hidden relative shrink-0 inline-flex items-center justify-center w-12 h-12 rounded-boton bg-card text-foreground shadow-card">
           <Menu className="w-5 h-5" aria-hidden="true" />
           {veInventario && alertasInventario > 0 && <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-primary border-2 border-card" aria-hidden="true" />}
         </button>
       )}
-      <button type="button" onClick={onGoHome} aria-label="Volver al inicio" className="flex items-center gap-3 min-w-0 flex-1 text-left">
+      {isAdmin && (
+        <div className="hidden lg:block min-w-0 flex-1">
+          <h1 className="text-3xl font-black tracking-tight text-foreground truncate">Panel principal</h1>
+          <div className="mt-2 h-1 w-10 rounded-full bg-primary" aria-hidden="true" />
+        </div>
+      )}
+      <button type="button" onClick={onGoHome} aria-label="Volver al inicio" className={`flex items-center gap-3 min-w-0 flex-1 text-left ${isAdmin ? 'lg:hidden' : ''}`}>
         {!isAdmin && <img src={logo} alt="" width="44" height="44" className="w-11 h-11 rounded-card shrink-0" />}
         <span className="min-w-0 leading-tight">
           <span className="block text-base font-black text-foreground truncate">{isAdmin ? 'Asignaciones' : `Hola, ${primerNombre(nombre)}`}</span>
