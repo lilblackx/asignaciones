@@ -58,7 +58,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
   const { toastMsg, setToastMsg } = useToast();
   const notifications = useNotifications(esAdministracion ? currentUser : null);
   // Los avisos de cobros nuevos (pantalla, campana y sonido): solo ADMINISTRACION; el ADMIN no los recibe.
-  useAvisosCobros({ firebaseUser, activo: esAdministracion, onNotify: notifications.addNotification, setToastMsg });
+  useAvisosCobros({ firebaseUser, usuario: currentUser, activo: esAdministracion, onNotify: notifications.addNotification, setToastMsg });
   const ahora = useAhora();
 
   const [periodo, setPeriodo] = useState('30');

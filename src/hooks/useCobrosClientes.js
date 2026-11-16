@@ -3,7 +3,8 @@ import { query, where } from 'firebase/firestore';
 import { getDocs, onSnapshot } from '../lib/medidorFirestore.js';
 import { coleccionCobros } from '../lib/cobrosClientes';
 import { ESTADO_COBRO, avisoDeCobro } from '../utils/cobrosClientes';
-import { playAprobadoSound } from '../utils/notificationSound';
+import { playAprobadoSound, silenciarSonidos } from '../utils/notificationSound';
+import { crearResumenAlVolver, debeResumir } from '../utils/resumenAlVolver';
 import { useVentanaLectura } from './useVentanaLectura';
 
 const aLista = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -41,15 +42,26 @@ export function useCobrosAdministracion(firebaseUser, rango) {
 }
 
 // Los avisos de Administración con la app abierta: cada cobro nuevo sale en pantalla, en la campana y con sonido (con la app cerrada llega la push). Solo avisa de lo que se emite después de abrir
-// la app; lo que ya existía es la base. Solo para ADMINISTRACION (el ADMIN no recibe estos avisos).
-export function useAvisosCobros({ firebaseUser, activo, onNotify, setToastMsg }) {
+// la app; lo que ya existía es la base. Solo para ADMINISTRACION (el ADMIN no recibe estos avisos). Si la app estuvo mucho tiempo sin abrirse, los cobros que llegaron mientras tanto se resumen en un solo aviso
+// con un solo sonido (ver utils/resumenAlVolver); cada uno sigue entrando a la campana. `usuario`: de quién es la última vez que se abrió en este teléfono.
+const VISTO_PREFIJO = 'asignaciones:cobrosAvisados:';
+const leerVisto = (usuario) => { try { return Number(localStorage.getItem(VISTO_PREFIJO + usuario)) || 0; } catch { return 0; } };
+const guardarVisto = (usuario) => { try { localStorage.setItem(VISTO_PREFIJO + usuario, String(Date.now())); } catch { /* sin almacenamiento: solo se pierde el resumen */ } };
+
+export function useAvisosCobros({ firebaseUser, usuario, activo, onNotify, setToastMsg }) {
   const avisarRef = useRef(null);
+  const resumenRef = useRef(null);
+  const toastRef = useRef(setToastMsg);
   useEffect(() => {
+    toastRef.current = setToastMsg;
     avisarRef.current = (cobro) => {
       const { title, body } = avisoDeCobro(cobro);
       const texto = `${title}: ${body}`;
-      setToastMsg?.({ type: 'pagoCliente', text: texto, duration: 9000 });
+      const aviso = { type: 'pagoCliente', text: texto, duration: 9000 };
       onNotify?.({ type: 'pagoCliente', text: texto });
+      // Con el resumen activo el aviso se junta con los demás (y el sonido está silenciado); si no, sale solo como siempre.
+      if (resumenRef.current?.agregar(aviso)) return;
+      setToastMsg?.(aviso);
       playAprobadoSound();
     };
   });
@@ -58,11 +70,26 @@ export function useAvisosCobros({ firebaseUser, activo, onNotify, setToastMsg })
     // Solo lo reciente: el aviso es de lo que se emite ahora (índice automático de un solo campo).
     const desde = Date.now() - 24 * 60 * 60 * 1000;
     let base = true;
-    return onSnapshot(query(coleccionCobros(), where('creadoEn', '>=', desde)), (snap) => {
+    const resumen = crearResumenAlVolver({
+      mostrar: (toast) => toastRef.current?.(toast),
+      silenciar: silenciarSonidos,
+      sonar: () => playAprobadoSound(),
+    });
+    resumenRef.current = resumen;
+    // Mucho tiempo sin abrir la app: se espera la lectura del servidor (la primera puede ser de la caché) y los cobros que llegaron mientras tanto se resumen juntos.
+    if (debeResumir(leerVisto(usuario))) resumen.iniciar();
+    const baja = onSnapshot(query(coleccionCobros(), where('creadoEn', '>=', desde)), (snap) => {
       if (!base) snap.docChanges().filter((c) => c.type === 'added').forEach((c) => avisarRef.current?.({ id: c.doc.id, ...c.doc.data() }));
       base = false;
+      if (resumen.activo && !snap.metadata.fromCache) resumen.terminar();
+      guardarVisto(usuario);
     }, (error) => console.error('No se pudieron leer los avisos de cobros:', error));
-  }, [firebaseUser, activo]);
+    return () => {
+      baja();
+      resumen.terminar();
+      resumenRef.current = null;
+    };
+  }, [firebaseUser, activo, usuario]);
 }
 
 // Finanzas: los cobros emitidos en el rango (días de Caracas "AAAA-MM-DD"), leídos al abrir, al ampliar el rango y con "recargar" (sin listener, como el resto de sus datos).

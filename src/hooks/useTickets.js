@@ -3,7 +3,8 @@ import { collection, doc, query, where } from 'firebase/firestore';
 import { onSnapshot, setDoc, updateDoc, runTransaction } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { generarCodigoBase, generarCorrelativoConCatchUp as generarCorrelativoConCatchUpBase, guardarConNumeracion as guardarConNumeracionBase, sincronizarCorrelativoManual, detectarSaltoManual, esCodigoSinNumero } from '../utils/correlativo';
-import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound, playTecnicoStatusSound } from '../utils/notificationSound';
+import { playAprobadoSound, playDevueltaSound, playNuevaAsignacionSound, playPreFinalizadoSound, playPrioridadSound, playTecnicoStatusSound, silenciarSonidos } from '../utils/notificationSound';
+import { crearResumenAlVolver, debeResumir } from '../utils/resumenAlVolver';
 import { esPrioritaria, mapaPrioridad, prioridadNueva, textoAvisoPrioridad } from '../utils/prioridad';
 import { sendPush } from '../lib/notify';
 import { ESTADO_EN_SITIO, deshacerLlegada, estaEnCamino, estadoViaje, iniciarViaje, mapaViaje, puedeIniciarViaje, registrarLlegada, textoAvisoEnCamino, textoAvisoLlegada, viajeEnCursoDe, viajesNuevos } from '../utils/enCamino';
@@ -87,7 +88,7 @@ function cargarBaseline(usuario) {
     const raw = JSON.parse(localStorage.getItem(BASELINE_PREFIX + usuario));
     if (!raw || Date.now() - raw.t > BASELINE_VIGENCIA_MS) return null;
     // `p` (prioridades) no existía en los guardados viejos: sin él no se sabe qué cambió y no se avisa.
-    return { estados: new Map(raw.e), ubicaciones: new Map(raw.u), prioridades: raw.p ? new Map(raw.p) : null };
+    return { t: raw.t, estados: new Map(raw.e), ubicaciones: new Map(raw.u), prioridades: raw.p ? new Map(raw.p) : null };
   } catch {
     return null;
   }
@@ -442,7 +443,15 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
 
   useEffect(() => {
     if (!firebaseUser) return;
-    const setToastMsg = (...args) => setToastRef.current?.(...args);
+    // Al abrir la app después de mucho tiempo, los avisos en pantalla y los sonidos de lo que cambió mientras no estaba se juntan en uno solo (ver utils/resumenAlVolver). Cada aviso sigue llegando a la campana con su texto.
+    const resumen = crearResumenAlVolver({
+      mostrar: (toast) => setToastRef.current?.(toast),
+      silenciar: silenciarSonidos,
+      sonar: (clave) => ({ prioridad: playPrioridadSound, devuelta: playDevueltaSound, aprobado: playAprobadoSound, prefinalizado: playPreFinalizadoSound }[clave] || playNuevaAsignacionSound)(),
+    });
+    const setToastMsg = (...args) => {
+      if (!resumen.agregar(args[0])) setToastRef.current?.(...args);
+    };
     const onNotify = (...args) => onNotifyRef.current?.(...args);
     const ticketsRef = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
     // TECNICO solo puede leer sus propios tickets (reglas de Firestore lo exigen:
@@ -474,6 +483,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           estadoAnteriorRef.current = guardada.estados;
           ubicacionAnteriorRef.current = guardada.ubicaciones;
           prioridadAnteriorRef.current = guardada.prioridades;
+          // Mucho tiempo fuera: se espera la lectura del servidor (la primera puede venir de la caché del teléfono, sin cambios) y se resume todo junto; si no llega en 8 s (sin cambios no hay segunda lectura), se resume lo que haya.
+          if (debeResumir(guardada.t, Date.now())) resumen.iniciar();
         }
       }
 
@@ -681,6 +692,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       activasVistasRef.current = new Map(loadedTickets.filter(esActiva).map(t => [t.id, { id: t.id, codigo: t.codigo, nombre: t.nombre }]));
       ubicacionAnteriorRef.current = new Map(loadedTickets.map(t => [t.id, t.ubicacion ? 1 : '']));
       prioridadAnteriorRef.current = mapaPrioridad(loadedTickets);
+      if (resumen.activo && !snapshot.metadata.fromCache) resumen.terminar();
       guardarBaseline(currentUserRef.current, estadoAnteriorRef.current, ubicacionAnteriorRef.current, prioridadAnteriorRef.current);
     }, (error) => {
       console.error('No se pudo cargar tickets:', error);
@@ -688,6 +700,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     });
     return () => {
       unsubTickets();
+      // Si la lectura se reinicia con avisos juntados, se muestran ya (sin esperar) y se vuelve a lo normal.
+      resumen.terminar();
       // Otra sesión (otro usuario en el mismo teléfono) no debe heredar este punto de partida:
       // la siguiente lectura lo vuelve a cargar del almacenamiento del usuario que corresponda.
       estadoAnteriorRef.current = null;

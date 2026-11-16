@@ -2,6 +2,9 @@
 // El AudioContext se crea recién al primer uso (no en el import) porque los
 // navegadores lo bloquean si no hay interacción del usuario todavía.
 let audioCtx = null;
+// Mientras se arma el resumen de avisos al volver a la app, ninguno suena por su cuenta: suena uno solo al final (ver utils/resumenAlVolver).
+let silenciado = false;
+export const silenciarSonidos = (valor) => { silenciado = Boolean(valor); };
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -53,6 +56,7 @@ function tone(ctx, freq, startTime, duration, peakGain) {
 
 // Dos "ding-dong" seguidos, más fuerte y con más cuerpo que la versión anterior.
 export function playPreFinalizadoSound() {
+  if (silenciado) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') ctx.resume();
@@ -68,6 +72,7 @@ export function playPreFinalizadoSound() {
 
 // Un solo tono, más grave: se distingue del ding-dong de pre-finalizado.
 export function playTecnicoStatusSound() {
+  if (silenciado) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') ctx.resume();
@@ -80,6 +85,7 @@ export function playTecnicoStatusSound() {
 // Tres tonos ascendentes rápidos ("listo!"): para el técnico cuando le aprueban
 // una orden. Distinto de los otros dos (ni el ding-dong ni el tono grave).
 export function playAprobadoSound() {
+  if (silenciado) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') ctx.resume();
@@ -95,6 +101,7 @@ export function playAprobadoSound() {
 // Tres tonos descendentes ("atención"): para el técnico cuando le devuelven una
 // orden con observaciones. Distinto de los demás patrones.
 export function playDevueltaSound() {
+  if (silenciado) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') ctx.resume();
@@ -110,6 +117,7 @@ export function playDevueltaSound() {
 // Dos tonos agudos cortos ("ping-ping"): para el técnico cuando le llega una
 // orden nueva asignada. Distinto de los otros tres patrones ya usados.
 export function playNuevaAsignacionSound() {
+  if (silenciado) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') ctx.resume();
@@ -124,6 +132,7 @@ export function playNuevaAsignacionSound() {
 // Cuatro tonos alternados, rápidos y fuertes ("alarma"): para el técnico cuando le marcan una
 // orden con prioridad alta. Más urgente que el resto de los patrones.
 export function playPrioridadSound() {
+  if (silenciado) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') ctx.resume();
