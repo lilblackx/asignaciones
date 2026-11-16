@@ -33,7 +33,7 @@ check('existen los archivos de Navidad', ['public/navidad/logo-menu.png', 'publi
 // El ícono de la app instalada no se toca: nada de eso apunta a /navidad ni usa el cálculo por fecha.
 check('el manifest, la barra del navegador, el service worker y las notificaciones no usan el logo de Navidad', ['vite.config.js', 'index.html', 'src/sw.js', 'src/components/modals/reports/CierreAutomaticoConfig.jsx'].map((f) => leer(f).includes('navidad')), [false, false, false, false]);
 check('el manifest sigue con los íconos de siempre', [leer('vite.config.js').includes("src: '/icon-192x192.png'"), leer('vite.config.js').includes("src: '/icon-512x512.png'"), leer('index.html').includes('href="/icon-192x192.png"')], [true, true, true]);
-check('solo el login y el menú lateral usan el logo de temporada', [leer('src/components/LoginScreen.jsx').includes('logosDeTemporada()'), leer('src/components/Sidebar.jsx').includes('logosDeTemporada()'), leer('src/components/LoginScreen.jsx').includes('src={logos.login192}'), leer('src/components/LoginScreen.jsx').includes('src={logos.login512}'), leer('src/components/Sidebar.jsx').includes('src={logos.menu}')], [true, true, true, true, true]);
+check('solo el login y el menú lateral usan el logo de temporada', [leer('src/components/LoginScreen.jsx').includes('logosDeTemporada()'), leer('src/components/Sidebar.jsx').includes('logosDeTemporada()'), leer('src/components/LoginScreen.jsx').includes('src={logos.login192}'), leer('src/components/LoginScreen.jsx').includes('src={logos.login512}'), leer('src/components/Sidebar.jsx').includes('src={logos.login192}')], [true, true, true, true, true]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron');
