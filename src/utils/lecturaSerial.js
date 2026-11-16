@@ -28,7 +28,9 @@ export function leerCodigo(texto) {
     const olt = serialParaOlt(leido);
     const marca = MARCAS[olt.slice(0, 4)] || '';
     const esPonSn = leido === olt;
-    return { tipo: 'ok', leido, serial: leido, etiqueta: `${esPonSn ? 'PON S/N' : 'GPON SN'}${marca ? ` · ${marca}` : ''}`, mensaje: '' };
+    // El "SN" que algunas etiquetas (ACL Fiber) ponen delante de los 16 dígitos no es parte del serial: al campo van solo los 16 dígitos.
+    const serial = /^SN[0-9A-F]{16}$/.test(leido) ? leido.slice(2) : leido;
+    return { tipo: 'ok', leido, serial, etiqueta: `${esPonSn ? 'PON S/N' : 'GPON SN'}${marca ? ` · ${marca}` : ''}`, mensaje: '' };
   }
   if (evaluacion.codigo === 'MAC') return { tipo: 'mac', leido, serial: '', etiqueta: '', mensaje: `Leí ${leido}: es la MAC de la caja.` };
   return { tipo: 'otro', leido, serial: '', etiqueta: '', mensaje: `Leí ${leido}: no es el PON S/N ni el GPON SN.` };

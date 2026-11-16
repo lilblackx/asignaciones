@@ -31,6 +31,10 @@ check('TP-Link: el EAN-13 (1210002603317) se rechaza', tipo('1210002603317'), 'o
 check('BT-PON se acepta', leerCodigo('BTPTDD9BA416').etiqueta, 'PON S/N · BT-PON');
 check('Huawei en texto se acepta', tipo('HWTC10184360'), 'ok');
 check('AmericanPon (XPSN con dos puntos) se acepta', tipo('XPSN:4857544310184360'), 'ok');
+// ACL Fiber (modelo ACL1952): su etiqueta dice "SN 4857544311438685"; la MAC (E028611933CE) y el PROD ID (21500824612SFC060533) de la misma etiqueta no sirven.
+check('ACL Fiber: el SN de la etiqueta con o sin "SN" delante se acepta', ['4857544311438685', 'SN4857544311438685', 'SN:4857544311438685', 'SN 4857544311438685', 'sn: 4857 5443 1143 8685'].map(tipo), ['ok', 'ok', 'ok', 'ok', 'ok']);
+check('ACL Fiber: al campo va solo el SN de 16 dígitos, sin el "SN" delante', ['SN4857544311438685', 'SN:4857544311438685', '4857544311438685'].map((t) => leerCodigo(t).serial), ['4857544311438685', '4857544311438685', '4857544311438685']);
+check('ACL Fiber: la MAC y el PROD ID de su etiqueta se rechazan, y entre todos los códigos gana el SN', [tipo('E028611933CE'), tipo('21500824612SFC060533'), mejorLectura(['E028611933CE', '21500824612SFC060533', 'SN4857544311438685']).serial], ['mac', 'otro', '4857544311438685']);
 check('"GOPN" (GPON al revés) se rechaza', tipo('GOPN54504C47BDAA8E40'), 'otro');
 check('un código demasiado largo se rechaza', tipo('A'.repeat(40)), 'otro');
 check('un código vacío no es una lectura', mejorLectura(['', '  ']), null);
