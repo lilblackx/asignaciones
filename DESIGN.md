@@ -36,6 +36,14 @@ Dirección de diseño de la app de Network Speed Fibra (órdenes, técnicos, Fin
 - Un color nunca va solo: todo estado lleva texto o ícono.
 - Grises de texto sobre blanco: `zinc-600` o más oscuro. `zinc-400` solo sobre fondos oscuros.
 
+### Tokens de color (rediseño, rama `rediseno`)
+
+- Dirección elegida el 2026-11-16: **negro y rojo, afinado**. Neutros zinc, rojo de marca `#DC2626` solo para marca, botón principal y peligro; el botón principal es rojo.
+- Los colores tienen nombre en `src/index.css` (`:root` y `.dark`): `background`, `card`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`, `warning`, `border`, `input`, `ring` y sus `-foreground`. Se usan como `bg-card`, `text-muted-foreground`, `border-border`, `bg-primary`.
+- Pantalla nueva o migrada: usar estos nombres y no `zinc-`/`red-` sueltos. Para cambiar un color de toda la app se cambia solo ahí.
+- Las pantallas que no se han migrado siguen con `zinc-`/`red-` directos y se ven igual que antes. Los componentes de `src/components/ui/` (shadcn) ya usan los tokens.
+
+
 ## Forma
 
 - Radios chicos: `xl` = 8 px, `2xl` = 10 px. Nada de burbujas ni píldoras en tarjetas, ventanas y botones grandes.

@@ -8,6 +8,80 @@
   &:is(.dark *) { background-color: var(--color-zinc-950); }
 }
 
+/* Base de colores del rediseño (rama rediseno): nombres con sentido ("fondo", "tarjeta", "marca"...) en vez de zinc-900 o red-600 sueltos por todas las pantallas.
+   Son los de shadcn/ui, así sus componentes salen con la paleta de la app. Dirección "Negro y rojo, afinado" (ver DESIGN.md): neutros zinc, rojo de marca
+   #DC2626 solo para marca, botón principal y peligro. Cambiar un color aquí lo cambia en todas las pantallas que ya usen estos nombres (bg-card, text-muted-foreground...).
+   Las pantallas actuales siguen con zinc-/red- directos hasta que se migren una por una. El tema oscuro cuelga de la clase .dark del contenedor (App.jsx). */
+:root {
+  --background: #e4e4e7;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #52525b;
+  --accent: #e4e4e7;
+  --accent-foreground: #18181b;
+  --destructive: #b91c1c;
+  --success: #047857;
+  --warning: #f59e0b;
+  --warning-foreground: #18181b;
+  --border: #d4d4d8;
+  --input: #a1a1aa;
+  --ring: #dc2626;
+}
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #3f3f46;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --warning-foreground: #18181b;
+  --border: #3f3f46;
+  --input: #52525b;
+  --ring: #ef4444;
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
 @theme {
   /* Esquinas más rectas (como el login): tarjetas, ventanas y botones grandes dejan de ser "burbujas" de 12 y 16 px. */
   --radius-xl: 0.5rem;
