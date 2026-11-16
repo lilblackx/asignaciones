@@ -1,9 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { BarChart, ClipboardList, History, Landmark, LogOut, Menu, MoreVertical, Moon, PackageCheck, Plus, Sun } from 'lucide-react';
 import { ROLES } from '../constants';
 import NotificationBell from './NotificationBell';
+import HeaderMovil from './HeaderMovil';
 
-export default function Header({
+// Solo se monta uno de los dos encabezados (la campana y su panel comparten estado: dos copias, una oculta, se estorbarían al hacer clic).
+const PC = '(min-width: 1024px)';
+const alCambiarPantalla = (avisar) => {
+  const consulta = window.matchMedia(PC);
+  consulta.addEventListener('change', avisar);
+  return () => consulta.removeEventListener('change', avisar);
+};
+const esPantallaPC = () => window.matchMedia(PC).matches;
+
+export default function Header(props) {
+  const esPC = useSyncExternalStore(alCambiarPantalla, esPantallaPC, () => true);
+  return esPC ? <HeaderPC {...props} /> : <HeaderMovil {...props} />;
+}
+
+// El encabezado de PC (en celular se usa HeaderMovil).
+function HeaderPC({
   currentUser,
   currentUserName,
   role,
@@ -55,7 +71,7 @@ export default function Header({
   };
 
   return (
-    <header className="bg-black text-white max-lg:bg-card max-lg:text-foreground shadow-md max-lg:shadow-card sticky top-0 z-10 border-b-4 border-red-600 max-lg:border-b-[3px] lg:h-[62px]">
+    <header className="max-lg:hidden bg-black text-white max-lg:bg-card max-lg:text-foreground shadow-md max-lg:shadow-card sticky top-0 z-10 border-b-4 border-red-600 max-lg:border-b-[3px] lg:h-[62px]">
       <div className="px-3 min-[360px]:px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
           {isAdmin && (
