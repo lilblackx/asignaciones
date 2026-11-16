@@ -153,7 +153,7 @@ check('reglas de cobros: pagoCliente es opcional y válido; el técnico lo copia
   reglasCobros.includes("'historial', 'pagoCliente'])"), reglasCobros.includes("(!('pagoCliente' in request.resource.data) || pagoClienteValido(request.resource.data.pagoCliente))"), reglasCobros.includes("&& !('pagoCliente' in resource.data)"),
   reglasCobros.includes("affectedKeys().hasOnly(['pagoCliente'])"), reglasCobros.includes("(isAdminUser(appId)\n            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pagoCliente', 'actualizadoEn', 'historial'])\n            && pagoClienteValido(request.resource.data.pagoCliente))"),
 ], [true, true, true, true, true]);
-check('reglas: pagoClienteValido revisa el tipo, los datos del pago, la nota, la otra orden, quién y cuándo', ["p.tipo in ['PAGO', 'DESPUES', 'JUNTO']", "(p.tipo == 'PAGO') == (p.pago != null)", "(p.tipo == 'JUNTO') == (p.compartidoCon != null)", 'p.nota.size() <= 300', "p.pago.forma in ['Pago móvil', 'Transferencia', 'Efectivo', 'Zelle', 'Binance', 'Otro']", 'p.registradoEn is int'].map((t) => reglas.includes(t)), Array(6).fill(true));
+check('reglas: pagoClienteValido revisa el tipo, los datos del pago, la nota, la otra orden, quién y cuándo', ["p.tipo in ['PAGO', 'DESPUES', 'JUNTO']", "(p.tipo == 'PAGO') == (p.pago != null)", "(p.tipo == 'JUNTO') == (p.compartidoCon != null)", 'p.nota.size() <= 300', "p.pago.forma in ['Pago móvil', 'Transferencia', 'Punto de venta', 'Efectivo', 'Zelle', 'Binance', 'Otro']", 'p.registradoEn is int'].map((t) => reglas.includes(t)), Array(6).fill(true));
 
 if (failures > 0) {
   console.log(`\n${failures} prueba(s) fallaron.`);

@@ -110,7 +110,7 @@ service cloud.firestore {
           && p.pago.keys().hasOnly(['moneda', 'forma', 'monto', 'banco', 'titular', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
           && p.pago.keys().hasAll(['moneda', 'forma', 'monto', 'banco', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
           && p.pago.moneda in ['BS', 'USD']
-          && p.pago.forma in ['Pago móvil', 'Transferencia', 'Efectivo', 'Zelle', 'Binance', 'Otro']
+          && p.pago.forma in ['Pago móvil', 'Transferencia', 'Punto de venta', 'Efectivo', 'Zelle', 'Binance', 'Otro']
           && p.pago.monto is number && p.pago.monto > 0 && p.pago.monto <= 999999999
           && p.pago.banco is string && p.pago.banco.size() <= 40
           && (!('titular' in p.pago) || (p.pago.titular is string && p.pago.titular.size() <= 80))
@@ -988,7 +988,7 @@ service cloud.firestore {
             && p.pago.keys().hasOnly(['moneda', 'forma', 'monto', 'banco', 'titular', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
             && p.pago.keys().hasAll(['moneda', 'forma', 'monto', 'banco', 'cuentaEmpresa', 'referencia', 'pagadoEn'])
             && p.pago.moneda in ['BS', 'USD']
-            && p.pago.forma in ['Pago móvil', 'Transferencia', 'Efectivo', 'Zelle', 'Binance', 'Otro']
+            && p.pago.forma in ['Pago móvil', 'Transferencia', 'Punto de venta', 'Efectivo', 'Zelle', 'Binance', 'Otro']
             && p.pago.monto is number && p.pago.monto > 0 && p.pago.monto <= 999999999
             && p.pago.banco is string && p.pago.banco.size() <= 40
             && (!('titular' in p.pago) || (p.pago.titular is string && p.pago.titular.size() <= 80))

@@ -30,13 +30,13 @@ export const FECHA_INICIO_PAGO_CLIENTE = import.meta.env?.VITE_PAGO_CLIENTE_DESD
 
 // Las formas con que paga el cliente, según la moneda.
 export const FORMAS_PAGO_CLIENTE = {
-  [MONEDA_BS]: ['Pago móvil', 'Transferencia', 'Efectivo'],
+  [MONEDA_BS]: ['Pago móvil', 'Transferencia', 'Punto de venta', 'Efectivo'],
   [MONEDA_USD]: ['Zelle', 'Binance', 'Efectivo', 'Otro'],
 };
 export const formasDeCliente = (moneda) => FORMAS_PAGO_CLIENTE[moneda] || [];
 export const MONEDAS_CLIENTE = [{ id: MONEDA_BS, nombre: 'Bolívares (Bs)' }, { id: MONEDA_USD, nombre: 'Dólares ($)' }];
 
-// El banco desde el que pagó el cliente: obligatorio en Pago móvil y Transferencia; en Zelle y Otro es opcional; en efectivo y Binance no hay.
+// El banco desde el que pagó el cliente: obligatorio en Pago móvil y Transferencia; en Zelle, Otro y Punto de venta (el cliente paga en taquilla con su tarjeta) es opcional; en efectivo y Binance no hay.
 export const exigeBancoCliente = (forma) => ['Pago móvil', 'Transferencia'].includes(forma);
 export const aplicaBancoCliente = (forma) => !['Efectivo', 'Binance'].includes(forma);
 export const aplicaCuentaEmpresa = (forma) => forma !== 'Efectivo';
@@ -49,7 +49,8 @@ export const MAX_MONTO_PAGO = 999999999;
 
 // --- Las cuentas de la empresa donde pudo llegar el pago (las formas de pago que carga el ADMIN) ---
 
-const TIPO_POR_FORMA = { 'Pago móvil': TIPO_PAGO_MOVIL, Transferencia: TIPO_CUENTA, Zelle: TIPO_ZELLE, Binance: TIPO_BINANCE };
+// El punto de venta de la taquilla abona a una cuenta bancaria de la empresa.
+const TIPO_POR_FORMA = { 'Pago móvil': TIPO_PAGO_MOVIL, Transferencia: TIPO_CUENTA, 'Punto de venta': TIPO_CUENTA, Zelle: TIPO_ZELLE, Binance: TIPO_BINANCE };
 
 // "Pago Móvil · Banco Nacional de Crédito (BNC) · 0412-1009927", "Transferencia bancaria · Banesco · …8484". Un solo texto: lo que se guarda en el pago.
 export function etiquetaCuenta(cuenta) {

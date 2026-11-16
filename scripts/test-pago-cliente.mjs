@@ -22,9 +22,14 @@ const base = { moneda: 'BS', forma: 'Pago móvil', monto: '5696', banco: 'Banesc
 const parse = (extra = {}, opciones = {}) => parsePagoCliente({ ...base, ...extra }, { ahora: AHORA, ...opciones });
 
 // --- Formas de pago del cliente ---
-check('en bolívares: pago móvil, transferencia y efectivo', formasDeCliente('BS'), ['Pago móvil', 'Transferencia', 'Efectivo']);
+check('en bolívares: pago móvil, transferencia, punto de venta y efectivo', formasDeCliente('BS'), ['Pago móvil', 'Transferencia', 'Punto de venta', 'Efectivo']);
 check('en dólares: Zelle, Binance, efectivo y otro', formasDeCliente('USD'), ['Zelle', 'Binance', 'Efectivo', 'Otro']);
 check('el banco no aplica en efectivo ni en Binance', ['Efectivo', 'Binance', 'Zelle', 'Pago móvil'].map(aplicaBancoCliente), [false, false, true, true]);
+// Punto de venta: el cliente paga en taquilla con su tarjeta. Pide la referencia (la del comprobante); el banco es opcional.
+check('punto de venta: sin referencia no se acepta', parse({ forma: 'Punto de venta', banco: '', referencia: '' }).campo, 'referencia');
+check('punto de venta: con la referencia se acepta, sin banco, y no pide titular', (() => { const r = parse({ forma: 'Punto de venta', banco: '', referencia: '004512', monto: '5696' }); return [r.valor?.pago.forma, r.valor?.pago.banco, r.valor?.pago.referencia, r.valor?.pago.titular, r.valor?.pago.monto]; })(), ['Punto de venta', '', '004512', '', 5696]);
+check('punto de venta: el banco, si se escribe, se guarda', parse({ forma: 'Punto de venta', banco: 'Banesco', referencia: '004512' }).valor?.pago.banco, 'Banesco');
+check('punto de venta no vale con dólares', parse({ moneda: 'USD', forma: 'Punto de venta', referencia: '1' }).campo, 'forma');
 
 // --- Validación de lo que escribe el técnico ---
 const bien = parse();
@@ -58,6 +63,8 @@ const formasEmpresa = normalizarFormasPago({ formas: [
 check('el texto de cada cuenta lleva el tipo, el banco y un dato', formasEmpresa.map(etiquetaCuenta), [
   'Pago Móvil · Banco Nacional de Crédito (BNC) · 0412-1009927', 'Transferencia bancaria · Banesco · …8484', 'Transferencia bancaria · Banco Mercantil · …7920', 'Zelle · pagos@networkspeed.com']);
 check('cada forma ofrece sus cuentas, el efectivo ninguna y Otro todas', [cuentasParaForma(formasEmpresa, 'Pago móvil').length, cuentasParaForma(formasEmpresa, 'Transferencia').length, cuentasParaForma(formasEmpresa, 'Zelle').length, cuentasParaForma(formasEmpresa, 'Binance').length, cuentasParaForma(formasEmpresa, 'Efectivo').length, cuentasParaForma(formasEmpresa, 'Otro').length], [1, 2, 1, 0, 0, 4]);
+check('el punto de venta ofrece las cuentas bancarias de la empresa (donde abona), no el pago móvil ni Zelle', cuentasParaForma(formasEmpresa, 'Punto de venta'), cuentasParaForma(formasEmpresa, 'Transferencia'));
+check('y son más de una: no queda vacío ni con todas', [cuentasParaForma(formasEmpresa, 'Punto de venta').length > 0, cuentasParaForma(formasEmpresa, 'Punto de venta').length < cuentasParaForma(formasEmpresa, 'Otro').length], [true, true]);
 const cuentasPm = cuentasParaForma(formasEmpresa, 'Pago móvil');
 check('con cuentas cargadas, la cuenta es obligatoria y debe ser una de la lista', [parse({}, { cuentas: cuentasPm }).campo, parse({ cuentaEmpresa: 'otra' }, { cuentas: cuentasPm }).campo, parse({ cuentaEmpresa: cuentasPm[0] }, { cuentas: cuentasPm }).valor?.pago.cuentaEmpresa], ['cuentaEmpresa', 'cuentaEmpresa', cuentasPm[0]]);
 check('sin cuentas cargadas para esa forma no se pide', parse({}, { cuentas: [] }).valor !== undefined, true);

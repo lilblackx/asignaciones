@@ -52,6 +52,7 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await orden('g6', { tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO' });
   await orden('g7', { tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO' });
   await orden('g8', { tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO' });
+  await orden('g9', { tecnico: 'GERARDO MOLERO', estado: 'FINALIZADO' });
   await orden('r1', { tecnico: 'REINEL BRAVO', estado: 'FINALIZADO' });
   await orden('r2', { tecnico: 'REINEL BRAVO', estado: 'FINALIZADO' });
   await b.collection('technicians').doc('tec-1').set({ name: 'GERARDO MOLERO', activo: true });
@@ -77,6 +78,7 @@ async function registrar(ctx, doc, { reservar = true, por } = {}) {
 await check('el técnico registra el pago de su orden finalizada: el pago y la reserva de su referencia en un solo lote', () => assertSucceeds(registrar(como('gerardo-uid'), registro('g1'))));
 await check('también el de una orden pre-finalizada (conector interno: el cobro sale al pre-finalizar)', () => assertSucceeds(registrar(como('gerardo-uid'), registro('g2', { extra: { referencia: '222222' } }))));
 await check('en efectivo no hay referencia ni reserva', () => assertSucceeds(registrar(como('gerardo-uid'), registro('g4', { extra: { forma: 'Efectivo', referencia: '', banco: '' } }))));
+await check('el cliente que paga en taquilla con punto de venta: se guarda con su referencia (sin banco) y reserva esa referencia', () => assertSucceeds(registrar(como('gerardo-uid'), registro('g9', { extra: { forma: 'Punto de venta', banco: '', referencia: '004512' } }))));
 await check('sin reservar la referencia, no se guarda', () => assertFails(registrar(como('gerardo-uid'), registro('g5', { extra: { referencia: '555555' } }), { reservar: false })));
 await check('otro técnico no puede repetir la misma referencia (misma forma y banco) en su orden', () => assertFails(registrar(como('reinel-uid'), registro('r1', { por: 'reinel', tecnico: 'REINEL BRAVO' }))));
 await check('con otro banco el mismo número sí es otra referencia', () => assertSucceeds(registrar(como('reinel-uid'), registro('r1', { por: 'reinel', tecnico: 'REINEL BRAVO', extra: { banco: 'Mercantil' } }))));
