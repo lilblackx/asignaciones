@@ -104,7 +104,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
       <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Users} titulo="Técnicos" onClose={onClose} enPagina={enPagina} />
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
 
             {/* Los técnicos: estado, nombre en el inventario (solo quien gestiona los envíos) y eliminar, todo en una fila. */}
             <section aria-label="Técnicos" className={`${TARJETA} overflow-hidden`}>

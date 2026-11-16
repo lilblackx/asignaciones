@@ -35,10 +35,10 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
 
   return (
     <li className="h-full flex flex-col min-w-0 rounded-card border border-border max-lg:border-transparent bg-card overflow-hidden max-lg:shadow-card">
-      <div className="bg-black px-3 py-2 flex items-center gap-2">
-        <span className="text-lg font-black text-white tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
-        {mostrarTipo && <span className={`text-[11px] max-lg:text-xs font-black px-2 py-1 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
-        <span className={`ml-auto shrink-0 text-[11px] max-lg:text-xs font-black uppercase tracking-wide rounded px-2 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
+      <div className="bg-black max-lg:bg-transparent px-3 max-lg:px-5 py-2 max-lg:pt-5 flex items-center gap-2">
+        <span className="text-lg max-lg:text-xl font-black text-white max-lg:text-foreground tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
+        {mostrarTipo && <span className={`text-[11px] max-lg:text-xs font-black px-2 py-1 leading-none rounded max-lg:rounded-full ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
+        <span className={`ml-auto shrink-0 text-[11px] max-lg:text-xs font-black uppercase tracking-wide rounded max-lg:rounded-full px-2 max-lg:px-3 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
       </div>
 
       {atraso && (
