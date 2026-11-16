@@ -437,6 +437,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                           <input
                             autoFocus
                             type="password"
+                            autoComplete="new-password"
                             minLength={8}
                             value={resetDraft}
                             onChange={(e) => { setResetDraft(stripEmojis(e.target.value)); setResetError(''); }}
@@ -475,7 +476,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 </div>
                 <div className="space-y-2 min-w-0">
                   <label htmlFor="user-clave" className={ETIQUETA}>CLAVE</label>
-                  <input id="user-clave" required type="password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
+                  <input id="user-clave" required type="password" autoComplete="new-password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
                   <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">{PASSWORD_POLICY_HINT}</p>
                   {passwordError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
