@@ -250,8 +250,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       .catch((error) => console.warn('No se pudo iniciar el envío al inventario:', error));
   };
 
-  // Al aprobar o finalizar una orden con cobro (o una instalación) se emite su cobro para Administración, que lo sube al portal de la empresa (ver utils/cobrosClientes). Va en segundo plano y nunca
-  // frena ni ensucia el cierre; si no se pudo emitir, queda el aviso en la consola. Con Administración encendida, le llega el aviso (push y campana).
+  // Al aprobar o finalizar una orden con cobro (o una instalación) se emite su cobro para Administración, que lo sube al portal de la empresa (ver utils/cobrosClientes). Si la orden ya tenía cobro (se devolvió y se
+  // vuelve a cerrar, p. ej. ahora exonerada), el cobro la sigue. Va en segundo plano y nunca frena ni ensucia el cierre; si no se pudo, queda el aviso en la consola. Con Administración encendida, le llega el aviso (push y campana).
   const emitirCobroDeOrden = (ticket) => {
     if (!firebaseUser || !ticket?.id) return;
     emitirCobro(ticket, { por: currentUser })

@@ -46,7 +46,22 @@ check('un cobro con el pago se carga igual que uno sin él (el pago no cambia)',
 check('pendiente: si la oficina cambia el monto, se actualiza solo', (({ cambios }) => [cambios.monto, cambios.moneda, cambios.historial.length])(sincronizarCobro(cobro, { ...visita, cobroBs: '8.000' }, { por: 'oficina', ahora: AHORA + 1 })), [8000, 'BS', 2]);
 check('pendiente: si el monto sigue igual no hay nada que cambiar', sincronizarCobro(cobro, visita, { por: 'o', ahora: AHORA + 1 }), null);
 check('pendiente: si la orden se cancela o se exonera, el cobro se retira', [sincronizarCobro(cobro, { ...visita, estado: 'CANCELADO' }, { por: 'o', ahora: AHORA + 1 }).cambios.anulado, sincronizarCobro(cobro, { ...visita, cobroTipo: 'EXONERADO', cobroBs: null }, { por: 'o', ahora: AHORA + 1 }).cambios.anulado], [true, true]);
+// Finalizada con cobro, devuelta a pre-finalizada y cerrada exonerada: el cobro pendiente se retira de la lista de Administración (y vuelve si la orden se reabre con monto).
+const devuelta = { ...visita, estado: 'PRE-FINALIZADO' };
+const cerradaExonerada = { ...visita, cobroTipo: 'EXONERADO', cobroBs: null, cobroMoneda: null };
+check('devuelta a pre-finalizada el cobro pendiente no cambia', sincronizarCobro(cobro, devuelta, { por: 'o', ahora: AHORA + 1 }), null);
+const retirado = { ...cobro, ...sincronizarCobro(cobro, cerradaExonerada, { por: 'o', ahora: AHORA + 2 }).cambios };
+check('cerrada exonerada tras la devolución: el cobro queda anulado y fuera de la lista', [retirado.anulado, filtrarCobros([retirado]).length, filtrarCobros([cobro]).length], [true, 0, 1]);
+check('si esa orden se vuelve a cerrar con monto, el cobro vuelve a estar vigente', (({ cambios }) => [cambios.anulado, cambios.monto])(sincronizarCobro(retirado, { ...visita, cobroBs: '8.000' }, { por: 'o', ahora: AHORA + 3 })), [false, 8000]);
 const cargado = { ...cobro, ...armarCarga(cobro, {}, { por: 'adm', ahora: AHORA + 2 }).cambios };
+// Cargado, la orden se exoneró y Administración confirmó el retiro del portal: si la orden vuelve a tener cobro, el cobro vuelve a estar pendiente de subir.
+const retiradoDelPortal = { ...cargado, ...armarConfirmacionCambio({ ...cargado, montoCambio: { anterior: { monto: 5696, moneda: 'BS' }, nuevo: null } }, { por: 'adm', ahora: AHORA + 3 }).cambios };
+check('cargado y retirado del portal: queda anulado y fuera de la lista', [retiradoDelPortal.anulado, filtrarCobros([retiradoDelPortal]).length], [true, 0]);
+const reactivado = { ...retiradoDelPortal, ...sincronizarCobro(retiradoDelPortal, { ...visita, cobroBs: '8.000' }, { por: 'o', ahora: AHORA + 4 }).cambios };
+check('si esa orden vuelve a tener cobro, el cobro vuelve a la lista como un cambio de monto sin monto anterior (la oficina no cambia el estado)', [reactivado.anulado, reactivado.montoCambio, reactivado.estado, filtrarCobros([reactivado], { estado: 'ALERTA' }).length], [false, { anterior: null, nuevo: { monto: 8000, moneda: 'BS' } }, 'CARGADO', 1]);
+check('solo toca los campos que la oficina puede cambiar', Object.keys(sincronizarCobro(retiradoDelPortal, { ...visita, cobroBs: '8.000' }, { por: 'o', ahora: AHORA + 4 }).cambios).sort(), ['actualizadoEn', 'anulado', 'historial', 'montoCambio']);
+check('Administración lo confirma y queda cargado con el monto nuevo', (({ cambios }) => [cambios.monto, cambios.moneda, cambios.montoCambio])(armarConfirmacionCambio(reactivado, { por: 'adm', ahora: AHORA + 5 })), [8000, 'BS', null]);
+check('si sigue sin cobro, no hay nada que cambiar', sincronizarCobro(retiradoDelPortal, { ...visita, cobroTipo: 'EXONERADO', cobroBs: null }, { por: 'o', ahora: AHORA + 4 }), null);
 check('cargado: si el monto cambia no se toca lo cargado y queda la alerta con el monto anterior y el nuevo', sincronizarCobro(cargado, { ...visita, cobroBs: '8.000' }, { por: 'o', ahora: AHORA + 3 }).cambios.montoCambio, { anterior: { monto: 5696, moneda: 'BS' }, nuevo: { monto: 8000, moneda: 'BS' } });
 check('cargado: si la orden se cancela, la alerta dice que ya no hay cobro', sincronizarCobro(cargado, { ...visita, estado: 'CANCELADO' }, { por: 'o', ahora: AHORA + 3 }).cambios.montoCambio, { anterior: { monto: 5696, moneda: 'BS' }, nuevo: null });
 const conAlerta = { ...cargado, ...sincronizarCobro(cargado, { ...visita, cobroBs: '8.000' }, { por: 'o', ahora: AHORA + 3 }).cambios };

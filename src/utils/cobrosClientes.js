@@ -121,6 +121,13 @@ export function sincronizarCobro(actual, ticket, { por, ahora }) {
   const actualMonto = actual.monto > 0 ? { monto: Number(actual.monto), moneda: actual.moneda } : null;
 
   if (actual.estado === ESTADO_COBRO.CARGADO) {
+    // Ya se retiró del portal (la orden se canceló o dejó de tener cobro y Administración lo confirmó) y la orden volvió a tener cobro: hay que subirlo otra vez. La oficina no cambia el estado de un cobro (las reglas solo se lo
+    // permiten a Administración), así que queda como un cambio de monto sin monto anterior: Administración lo sube al portal y lo confirma.
+    if (actual.anulado) {
+      if (sinCobro) return null;
+      const aSubir = nuevo || actualMonto;
+      return { cambios: { anulado: false, montoCambio: aSubir ? { anterior: null, nuevo: aSubir } : null, actualizadoEn: ahora, historial: [...(actual.historial || []), entrada(por, ahora, `La orden volvió a tener cobro${aSubir ? `: ${textoMonto(formatoMontoBs(aSubir.monto), aSubir.moneda)}` : ''}. Estaba retirado del portal: hay que subirlo otra vez`)] } };
+    }
     if (actual.esInstalacion && !sinCobro) return null;
     const igual = nuevo && actualMonto && nuevo.monto === actualMonto.monto && nuevo.moneda === actualMonto.moneda;
     if (igual && !actual.montoCambio) return null;

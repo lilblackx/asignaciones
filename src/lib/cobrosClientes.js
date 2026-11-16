@@ -8,11 +8,17 @@ import { armarCarga, armarCobro, armarConfirmacionCambio, armarDevolucionCobro, 
 export const coleccionCobros = () => collection(db, 'artifacts', appId, 'public', 'data', 'cobrosClientes');
 const docCobro = (ticketId) => doc(coleccionCobros(), String(ticketId));
 
-// Al finalizarse la orden: emite su cobro (pendiente). Si la orden no lleva cobro o ya tiene el suyo, no hace nada. Devuelve el cobro emitido o null.
+// Al finalizarse la orden: emite su cobro (pendiente). Si ya tenía el suyo (la orden se devolvió y se vuelve a cerrar, quizá con otro monto o exonerada), el cobro la sigue (ver sincronizarCobro) en la misma lectura.
+// Devuelve el cobro emitido, o null si no se emitió ninguno (no lleva cobro, o ya existía).
 export async function emitirCobro(ticket, { por, ahora = Date.now() }) {
+  const snap = await getDoc(docCobro(ticket.id));
+  if (snap.exists()) {
+    const r = sincronizarCobro(snap.data(), ticket, { por, ahora });
+    if (r) await updateDoc(docCobro(ticket.id), r.cambios);
+    return null;
+  }
   const cobro = armarCobro(ticket, { por, ahora });
   if (!cobro) return null;
-  if ((await getDoc(docCobro(ticket.id))).exists()) return null;
   await setDoc(docCobro(ticket.id), cobro);
   return cobro;
 }

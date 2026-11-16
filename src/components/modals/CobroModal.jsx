@@ -66,8 +66,10 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
   };
 
   const pendiente = cobro.estado === ESTADO_COBRO.PENDIENTE;
-  const pideMonto = !soloLectura && pendiente && !(Number(cobro.monto) > 0);
+  const pideMonto = !soloLectura && pendiente && !cobro.anulado && !(Number(cobro.monto) > 0);
   const cambio = cobro.montoCambio;
+  // La orden se canceló, se exoneró o dejó de tener cobro (puede pasar con la ventana abierta): el cobro ya no vale y no se puede cargar ni devolver.
+  const retirado = Boolean(cobro.anulado);
   // El técnico todavía no registró el pago: el cobro se ve, pero no se puede marcar como cargado (ver faltaElPagoDelTecnico).
   const sinPagoDelTecnico = !soloLectura && pendiente && faltaElPagoDelTecnico(cobro);
 
@@ -87,10 +89,18 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
         </div>
 
         <div className="p-4 space-y-4">
+          {retirado && (
+            <div role="alert" className="rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 p-3 space-y-1 text-xs text-red-900 dark:text-red-200">
+              <p className="flex items-center gap-1.5 font-black tracking-wide"><Ban className="w-4 h-4 shrink-0" aria-hidden="true" /> ESTE COBRO SE RETIRÓ</p>
+              <p>La orden se canceló o dejó de tener cobro (por ejemplo, se exoneró). No lo subas al portal.</p>
+            </div>
+          )}
           {cambio && (
             <div role="alert" className="rounded-xl border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1">
-              <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}</p>
-              <p className="text-xs text-amber-900 dark:text-amber-200">Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</p>
+              <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {!cambio.anterior && cambio.nuevo ? 'La orden volvió a tener cobro' : cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}</p>
+              {!cambio.anterior && cambio.nuevo
+                ? <p className="text-xs text-amber-900 dark:text-amber-200">Se había retirado del portal y la orden volvió a tener cobro: <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Súbelo al portal otra vez y confírmalo aquí.</p>
+                : <p className="text-xs text-amber-900 dark:text-amber-200">Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</p>}
             </div>
           )}
 
@@ -150,7 +160,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
 
           <Colapsable>{error && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{error.texto}</p>}</Colapsable>
 
-          {!soloLectura && (
+          {!soloLectura && !retirado && (
           <div className="space-y-2">
             {cambio && <Boton variante="principal" tamano="grande" icono={CheckCircle2} className="w-full" onClick={() => trabajar('confirmar')} disabled={trabajando}>{trabajando ? <Spinner /> : null} Ya lo corregí en el portal</Boton>}
             {pendiente && <Boton variante="principal" tamano="grande" icono={CheckCircle2} className="w-full" onClick={() => trabajar('cargar', { monto, moneda })} disabled={trabajando || sinPagoDelTecnico}>{trabajando ? <Spinner /> : null} Marcar como cargado en el portal</Boton>}
