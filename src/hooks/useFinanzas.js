@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, doc, documentId, limit, orderBy, query, where } from 'firebase/firestore';
 import { onSnapshot, getDocs, getDoc, setDoc, updateDoc, writeBatch } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
-import { armarPago, avisoDeAdelanto, avisoDeAdicional, avisoDeAnulacion, avisoDeDescuento, avisoDePago, tarifasCompletas } from '../utils/finanzas';
+import { armarAnulacionDeOrden, armarPago, avisoDeAdelanto, avisoDeAdicional, avisoDeAnulacion, avisoDeAnulacionDeOrden, avisoDeDescuento, avisoDePago, tarifasCompletas } from '../utils/finanzas';
 import { armarAdicional, itemsAdicionales } from '../utils/adicionales';
 import { pagosIncompletos } from '../utils/detallePagos';
 import { armarAdelanto } from '../utils/adelantos';
@@ -308,5 +308,32 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
     await lote.commit();
   }, 'Pago anulado: las órdenes vuelven a estar por pagar, los adelantos y descuentos por descontar y los pagos adicionales por pagar.', 'No se pudo anular el pago.');
 
-  return { leerOrdenesDePagos, tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas: pagadasVisibles, desdePendientes, registros: registrosVisibles, tiposMudanza, adelantos, ajustes, descuentos, adicionales, itemsPagoAdicional, catalogoCargado: catalogoAdicionales !== null, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto, registrarDescuento, anularDescuento, guardarItemsAdicionales, registrarAdicional, anularAdicional };
+  // Anular el pago de UNA orden de un pago (con un motivo que ve el técnico): el pago sigue vigente y anota la orden; la orden sale de las pagadas y su revisión vuelve a estar por pagar (y la fila de VN y TA, sin pagar), todo en un
+  // lote. Se parte del pago tal como está guardado ahora, no de la copia de la pantalla. `orden`: el documento de ordenesPagadas. Devuelve true si se guardó; al técnico le llega un aviso con el motivo.
+  const anularOrdenDelPago = async (pago, orden, motivo) => {
+    const previo = armarAnulacionDeOrden(pago, orden, motivo, { por: usuario, ahora: Date.now() });
+    if (previo.error) { setToastMsg({ type: 'error', text: previo.error }); return false; }
+    let anulacion = previo.anulacion;
+    const guardado = await ejecutar(async () => {
+      const fresco = await getDoc(documento('pagosTecnicos', pago.id));
+      if (!fresco.exists()) throw new Error('El pago ya no existe.');
+      const r = armarAnulacionDeOrden({ id: fresco.id, ...fresco.data() }, orden, motivo, { por: usuario, ahora: Date.now() });
+      if (r.error) throw new Error(r.error);
+      anulacion = r.anulacion;
+      const lote = writeBatch(db);
+      lote.update(documento('pagosTecnicos', pago.id), r.cambios);
+      lote.delete(documento('ordenesPagadas', orden.id));
+      const revision = await getDoc(documento('revisionPagos', orden.id));
+      if (revision.exists() && revision.data().pagoId === pago.id) lote.update(revision.ref, { pendientePago: true, pagoId: '' });
+      if (String(orden.id).startsWith('vnta_')) {
+        const fila = await getDoc(documento('registroVnTa', String(orden.id).slice(5)));
+        if (fila.exists() && fila.data().pagoId === pago.id) lote.update(fila.ref, { pagoId: '', pagadoEn: 0 });
+      }
+      await lote.commit();
+    }, 'Pago de la orden anulado: la orden vuelve a estar por pagar y el técnico verá el motivo.', 'No se pudo anular el pago de la orden.');
+    if (guardado) await avisarAlTecnico(pago.tecnico, avisoDeAnulacionDeOrden(anulacion), 'pagoTecnico');
+    return guardado;
+  };
+
+  return { anularOrdenDelPago, leerOrdenesDePagos, tarifas, tarifasCargadas: tarifasGuardadas !== null, pagadas: pagadasVisibles, desdePendientes, registros: registrosVisibles, tiposMudanza, adelantos, ajustes, descuentos, adicionales, itemsPagoAdicional, catalogoCargado: catalogoAdicionales !== null, revisiones, idsPagadas, pagos, error, ocupado, guardarTarifas, pagar, anular, guardarTipoMudanza, registrarAdelanto, anularAdelanto, registrarDescuento, anularDescuento, guardarItemsAdicionales, registrarAdicional, anularAdicional };
 }

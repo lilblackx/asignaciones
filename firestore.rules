@@ -540,6 +540,29 @@ service cloud.firestore {
 
     // El tipo (interna o externa) de una mudanza que se hizo antes de que la orden tuviera ese campo y que ya está en un cierre (los cierres no se editan): Finanzas
     // lo elige aquí, con el id de la orden, para saber con qué precio se paga. No toca la orden.
+    // Aviso para Finanzas cuando una orden que pudo haberse pagado se cancela o cambia de tipo (ver utils/avisoOrdenPagada): lo deja la oficina al guardar el cambio y Finanzas lo marca como resuelto.
+    match /artifacts/{appId}/public/data/avisosOrdenPagada/{docId} {
+      allow read: if llevaFinanzas(appId);
+      allow create: if (isAdminUser(appId) || isUsuarioRole(appId))
+        && request.resource.data.keys().hasOnly(['ticketId', 'clave', 'codigo', 'tecnico', 'tipo', 'antes', 'despues', 'por', 'en', 'resuelto'])
+        && request.resource.data.ticketId is string && request.resource.data.ticketId.size() > 0 && request.resource.data.ticketId.size() <= 200
+        && request.resource.data.clave is string && request.resource.data.clave.size() > 0 && request.resource.data.clave.size() <= 200
+        && request.resource.data.codigo is string && request.resource.data.codigo.size() <= 120
+        && request.resource.data.tecnico is string && request.resource.data.tecnico.size() <= 120
+        && request.resource.data.tipo in ['CANCELADA', 'TIPO']
+        && request.resource.data.antes is string && request.resource.data.antes.size() <= 120
+        && request.resource.data.despues is string && request.resource.data.despues.size() <= 120
+        && request.resource.data.por == usuarioFinanzas(appId) && request.resource.data.por != ''
+        && request.resource.data.en is int
+        && request.resource.data.resuelto == false;
+      allow update: if llevaFinanzas(appId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resuelto', 'resueltoPor', 'resueltoEn'])
+        && request.resource.data.resuelto == true
+        && request.resource.data.resueltoPor == usuarioFinanzas(appId)
+        && request.resource.data.resueltoEn is int;
+      allow delete: if false;
+    }
+
     match /artifacts/{appId}/public/data/tiposMudanza/{docId} {
       allow read: if llevaFinanzas(appId);
       allow create, update: if llevaFinanzas(appId)
@@ -581,6 +604,28 @@ service cloud.firestore {
           && p.creadoEn is int
           && p.anulado == false;
       }
+      // Anular el pago de UNA orden: el pago sigue vigente y solo suma a sus dos listas (`anulacionesOrden`: el detalle con el motivo, que ve el técnico; `ultimaOrdenAnulada`: el id de la última) exactamente una orden
+      // nueva, a nombre de quien lo hace. Los totales del pago no se tocan. En el mismo lote se borra la orden de ordenesPagadas y su revisión vuelve a estar por pagar (ver sus reglas).
+      function anulaUnaOrden() {
+        let antes = resource.data;
+        let r = request.resource.data;
+        let detalle = antes.get('anulacionesOrden', []);
+        let nueva = r.get('anulacionesOrden', [{}])[detalle.size()];
+        return antes.get('anulado', false) == false
+          && r.get('anulado', false) == false
+          && r.diff(antes).affectedKeys().hasOnly(['ultimaOrdenAnulada', 'anulacionesOrden'])
+          && r.anulacionesOrden.size() == detalle.size() + 1 && r.anulacionesOrden.size() <= 450
+          && (detalle.size() == 0 || r.anulacionesOrden[0:detalle.size()] == detalle)
+          && nueva.keys().hasOnly(['id', 'codigo', 'concepto', 'monto', 'motivo', 'por', 'en'])
+          && nueva.id == r.ultimaOrdenAnulada
+          && nueva.id is string && nueva.id.size() > 0 && nueva.id.size() <= 200
+          && nueva.codigo is string && nueva.codigo.size() <= 40
+          && nueva.concepto is string && nueva.concepto.size() <= 30
+          && (nueva.monto is int || nueva.monto is float) && nueva.monto >= 0
+          && nueva.motivo is string && nueva.motivo.size() > 0 && nueva.motivo.size() <= 300
+          && nueva.por == usuarioFinanzas(appId)
+          && nueva.en is int;
+      }
       // El técnico lee solo los suyos (para ver el aviso de pago con la app abierta).
       allow read: if llevaFinanzas(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId));
       allow create: if llevaFinanzas(appId) && pagoValido();
@@ -590,6 +635,7 @@ service cloud.firestore {
         && request.resource.data.anuladoPor == usuarioFinanzas(appId)
         && request.resource.data.anuladoEn is int
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['anulado', 'anuladoPor', 'anuladoEn']);
+      allow update: if llevaFinanzas(appId) && anulaUnaOrden();
       allow delete: if false;
     }
 
@@ -616,10 +662,12 @@ service cloud.firestore {
               && r.pendientePago == false && r.get('pagoId', '').size() > 0
               && !exists(pagoDeRevision(appId, r.pagoId)) && existsAfter(pagoDeRevision(appId, r.pagoId))
               && getAfter(pagoDeRevision(appId, r.pagoId)).data.get('anulado', false) == false)
+            // Anular el pago entero, o solo esta orden del pago (el pago sigue vigente pero la anota como `ultimaOrdenAnulada` en este mismo lote).
             || (antes.get('pendientePago', false) == false && antes.get('pagoId', '') != ''
               && r.pendientePago == true && r.get('pagoId', '') == ''
-              && exists(pagoDeRevision(appId, antes.pagoId)) && get(pagoDeRevision(appId, antes.pagoId)).data.get('anulado', false) == false
-              && getAfter(pagoDeRevision(appId, antes.pagoId)).data.get('anulado', false) == true)
+              && (getAfter(pagoDeRevision(appId, antes.pagoId)).data.get('ultimaOrdenAnulada', '') == docId
+                || (get(pagoDeRevision(appId, antes.pagoId)).data.get('anulado', false) == false
+                  && getAfter(pagoDeRevision(appId, antes.pagoId)).data.get('anulado', false) == true)))
           );
       }
       function revisionValida() {
@@ -815,8 +863,10 @@ service cloud.firestore {
         && request.resource.data.codigo is string && request.resource.data.codigo.size() <= 40;
       allow update: if false;
       // Solo se borra al anular el pago: el mismo lote deja anulado el pago de esa orden. Una orden de un pago vigente no se saca de ahí (se podría pagar dos veces).
+      // También se borra al anular solo esa orden del pago: el pago sigue vigente pero la anota como `ultimaOrdenAnulada` en este mismo lote.
       allow delete: if llevaFinanzas(appId)
-        && getAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosTecnicos/$(resource.data.pagoId)).data.get('anulado', false) == true;
+        && (getAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosTecnicos/$(resource.data.pagoId)).data.get('anulado', false) == true
+          || getAfter(/databases/$(database)/documents/artifacts/$(appId)/public/data/pagosTecnicos/$(resource.data.pagoId)).data.get('ultimaOrdenAnulada', '') == docId);
     }
 
     match /artifacts/{appId}/public/data/counters/{counterId} {

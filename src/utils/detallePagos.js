@@ -1,6 +1,6 @@
 // El detalle de cada pago registrado para los Pagos detallados: las órdenes que entraron en él (con su código, cliente, día, concepto y monto) y lo que se le sumó o se le descontó
 // (adelantos, descuentos con motivo, descuentos y pagos por garantía, pagos adicionales). Todo sale de lo que guardó cada pago y de las listas que Finanzas ya tiene leídas. Funciones puras.
-import { CONCEPTOS_PAGO, aBs, bolivares, dolares, fechaHoraLegiblePago, textoOrdenes } from './finanzas.js';
+import { CONCEPTOS_PAGO, aBs, anulacionesDeOrdenes, bolivares, dolares, fechaHoraLegiblePago, textoOrdenes, totalAnuladoDelPago } from './finanzas.js';
 import { MONEDA_BS, MONEDA_USD } from './datosPago.js';
 import { textoAdicional } from './adicionales.js';
 import { textoCuota } from './descuentos.js';
@@ -62,7 +62,8 @@ export const ordenesDePago = (pago, ordenesPagadas, nombreDe = () => '') => orde
 export function pagosIncompletos(pagos, ordenesPagadas) {
   const porPago = new Map();
   for (const o of ordenesPagadas) porPago.set(o.pagoId, (porPago.get(o.pagoId) || 0) + 1);
-  return pagos.filter((p) => (porPago.get(p.id) || 0) < (Number(p.cantidadOrdenes) || 0)).map((p) => p.id);
+  // Las órdenes a las que se les anuló el pago ya no están entre las pagadas: no se esperan.
+  return pagos.filter((p) => (porPago.get(p.id) || 0) < (Number(p.cantidadOrdenes) || 0) - (Array.isArray(p.anulacionesOrden) ? p.anulacionesOrden.length : 0)).map((p) => p.id);
 }
 
 const tasaLegible = (tasa) => Number(tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -83,11 +84,15 @@ export function detalleDePagos({ pagos, ordenesPagadas = [], nombreDe = () => ''
     .map((pago) => {
       const ordenes = ordenesDePago(pago, ordenesPagadas, nombreDe);
       const movimientos = movimientosDePago(pago, { adelantos, ajustes, descuentos, adicionales });
-      const cantidad = Number(pago.cantidadOrdenes) || ordenes.length;
-      const total = redondear(pago.total);
+      // Las órdenes a las que se les anuló el pago no cuentan: el pago conserva su registro original, así que se descuentan aquí y se dejan anotadas en la nota.
+      const anuladas = anulacionesDeOrdenes(pago);
+      const anulado = totalAnuladoDelPago(pago).total;
+      const registradas = Number(pago.cantidadOrdenes) || ordenes.length;
+      const cantidad = Math.max(0, registradas - anuladas.length);
+      const total = redondear(pago.total - anulado);
       const bonos = redondear(pago.bonos);
       const descuento = redondear(pago.descuento);
-      const neto = redondear(pago.neto ?? pago.total);
+      const neto = redondear((pago.neto ?? pago.total) - anulado);
       const tasaDelPago = Number(pago.tasa) > 0 ? Number(pago.tasa) : Number(tasa) > 0 ? Number(tasa) : null;
       const bs = aBs(neto, tasaDelPago);
       const fecha = fechaHoraLegiblePago(marcaDe(pago));
@@ -97,7 +102,7 @@ export function detalleDePagos({ pagos, ordenesPagadas = [], nombreDe = () => ''
         tecnico: pago.tecnico,
         fecha,
         titulo: `Pago del ${fecha} · ${textoOrdenes(cantidad)}`,
-        nota: [forma && `Forma de pago: ${forma}`, pago.nota && `Nota: ${pago.nota}`].filter(Boolean).join('. '),
+        nota: [forma && `Forma de pago: ${forma}`, pago.nota && `Nota: ${pago.nota}`, ...anuladas.map((a) => `Pago anulado de la orden ${a.codigo || 's/c'} (${dolares(a.monto)}): ${a.motivo}`)].filter(Boolean).join('. '),
         cuenta: [
           [`Órdenes pagadas (${cantidad})`, dolares(total)],
           bonos > 0 && ['Pagos adicionales y por garantía', `+ ${dolares(bonos)}`],
@@ -108,7 +113,7 @@ export function detalleDePagos({ pagos, ordenesPagadas = [], nombreDe = () => ''
         neto,
         bs,
         ordenes,
-        faltan: Math.max(0, (Number(pago.cantidadOrdenes) || 0) - ordenes.length),
+        faltan: Math.max(0, (Number(pago.cantidadOrdenes) || 0) - anuladas.length - ordenes.length),
         movimientos,
       };
     })

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { collection, query, where } from 'firebase/firestore';
 import { onSnapshot } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
-import { avisoDeAdelanto, avisoDeAdicional, avisoDeAjuste, avisoDeAnulacion, avisoDeDescuento, avisoDePago } from '../utils/finanzas';
+import { avisoDeAdelanto, avisoDeAdicional, avisoDeAjuste, avisoDeAnulacion, avisoDeAnulacionDeOrden, avisoDeDescuento, avisoDePago } from '../utils/finanzas';
 import { playAprobadoSound } from '../utils/notificationSound';
 
 // Cuántos días hacia atrás se escuchan los pagos, adelantos, descuentos y ajustes del técnico (un pago anulado después de ese plazo ya no se le avisa).
@@ -42,7 +42,15 @@ export function useAvisosPagos({ firebaseUser, tecnico, onNotify, setToastMsg })
     };
     // Un pago anulado después de avisarle al técnico: se le avisa una sola vez.
     const anuladosAvisados = new Set();
+    // Cuántas órdenes tenía anuladas cada pago cuando se supo de él: si crece, se anuló el pago de otra orden y se avisa de la nueva (con su motivo).
+    const ordenesAnuladasVistas = new Map();
     const escucharAnulaciones = () => onSnapshot(datos('pagosTecnicos'), (snap) => {
+      snap.docChanges().forEach((c) => {
+        const lista = Array.isArray(c.doc.data().anulacionesOrden) ? c.doc.data().anulacionesOrden : [];
+        const vistas = ordenesAnuladasVistas.get(c.doc.id);
+        ordenesAnuladasVistas.set(c.doc.id, lista.length);
+        if (c.type === 'modified' && lista.length > (vistas ?? 0)) lista.slice(vistas ?? 0).forEach((a) => avisarRef.current?.('pagoTecnico', avisoDeAnulacionDeOrden(a)));
+      });
       snap.docChanges().filter((c) => c.type === 'modified').forEach((c) => {
         const d = c.doc.data();
         if (d.anulado === true && d.notificado === true && !anuladosAvisados.has(c.doc.id)) {

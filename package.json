@@ -30,6 +30,8 @@
     "test:lecturaserial": "node scripts/test-lectura-serial.mjs",
     "test:confirmarprefinalizar": "node scripts/test-confirmar-prefinalizar.mjs",
     "test:cobroscliente": "node scripts/test-cobros-clientes.mjs",
+    "test:avisoordenpagada": "node scripts/test-aviso-orden-pagada.mjs",
+    "test:anularordenpago": "node scripts/test-anular-orden-pago.mjs",
     "test:borradorprefinalizar": "node scripts/test-borrador-prefinalizar.mjs",
     "test:resumenalvolver": "node scripts/test-resumen-al-volver.mjs",
     "test:llenarolt": "node scripts/test-llenar-olt.mjs",

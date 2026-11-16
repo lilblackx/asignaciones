@@ -10,6 +10,7 @@ import { diaDe } from '../../utils/totalesMes';
 import { useAhora } from '../../hooks/useAhora';
 import InsigniaJM from '../InsigniaJM';
 import PagoDelCliente from '../PagoDelCliente';
+import OrdenesDelPago from './OrdenesDelPago';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 
 // Todo lo de un técnico en una sola pantalla, sin cajas: cuánto se le debe (en grande), lo que se paga por concepto con cantidad, precio y subtotal en $ y Bs, los adelantos,
@@ -56,7 +57,7 @@ function Seccion({ titulo, nota, children }) {
   );
 }
 
-export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, pagos, adelantos, descuentos = [], ajustes = [], adicionales = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onDescuento, onAdicional, onVerOrden, onAnularPago, onAnularAdelanto, onAnularDescuento, onAnularAdicional, onVolver }) {
+export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, pagos, adelantos, descuentos = [], ajustes = [], adicionales = [], garantiasPendientes = new Set(), pagado, ocupado, onPagar, onAdelanto, onDescuento, onAdicional, onVerOrden, onAnularPago, onLeerOrdenesDelPago, onAnularOrdenDelPago, onAnularAdelanto, onAnularDescuento, onAnularAdicional, onVolver }) {
   const sinTarifa = conceptosSinTarifa(fila, tarifas);
   // Los descuentos que salen de esa orden (garantías de otro técnico por las que se le descuenta algo) y todavía no entraron en un pago.
   const descuentosDe = (item) => ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave && saldoAdelanto(a) > 0);
@@ -254,6 +255,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
                   <Monto usd={p.neto ?? p.total} tasa={p.tasa > 0 ? p.tasa : tasa} className={p.anulado ? 'line-through' : ''} />
                   {!p.anulado && <button type="button" onClick={() => onAnularPago(p)} disabled={ocupado} className={BOTON_FILA}>Anular</button>}
                 </span>
+                {!p.anulado && p.cantidadOrdenes > 0 && onLeerOrdenesDelPago && <OrdenesDelPago pago={p} leer={onLeerOrdenesDelPago} onAnular={onAnularOrdenDelPago} ocupado={ocupado} />}
               </li>
             ))}
           </ul>

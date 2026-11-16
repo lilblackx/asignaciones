@@ -35,6 +35,7 @@ import { avisoOrdenReabierta, payloadEnvioInventario } from '../utils/envioInven
 import { llamarInventario, marcarEnvioInventario } from '../lib/inventario';
 import { emitirCobro, sincronizarCobroDeOrden } from '../lib/cobrosClientes';
 import { registrarPagoCliente, registrarPagoPendiente } from '../lib/pagosOrdenes';
+import { avisarCambioDeOrden } from '../lib/avisosOrdenPagada';
 import { avisoDeCobro } from '../utils/cobrosClientes';
 import { cobroEsperadoDe, debePedirPagoCobro, debePedirPagoInstalacion, faltaElPago, piensaPagoCliente } from '../utils/pagoCliente';
 import { ADMINISTRACION_ACTIVA } from '../constants';
@@ -1061,6 +1062,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     setToastMsg({ type: 'success', text: avisoInventario ? `Orden actualizada correctamente. ${avisoInventario}` : 'Orden actualizada correctamente.', ...(avisoInventario ? { duration: 10000 } : {}) });
     notifyTicketChange(originalTicket, ticketToSave);
     if (originalTicket?.estado === 'FINALIZADO') sincronizarCobro(ticketToSave);
+    // Si la orden pudo haberse pagado al técnico y ahora se cancela o cambia de tipo, Finanzas lo ve como aviso (exonerar no cuenta).
+    if (role !== 'TECNICO') avisarCambioDeOrden(originalTicket, ticketToSave, { por: currentUser });
     return true;
   };
 
@@ -1682,6 +1685,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     if (!(await guardarConGuardia(actual, updatedTicket, verificarEstado([actual.estado])))) return false;
     notifyTicketChange(actual, updatedTicket);
     if (actual.estado === 'FINALIZADO') sincronizarCobro(updatedTicket);
+    if (role !== 'TECNICO') avisarCambioDeOrden(actual, updatedTicket, { por: currentUser });
     setToastMsg({ type: 'success', text: 'Orden cancelada.' });
     return true;
   };

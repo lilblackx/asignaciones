@@ -6,6 +6,7 @@ import { useDatosAlmacen } from '../hooks/useDatosAlmacen';
 import { useCargarHastaCubrir } from '../hooks/useCargarHastaCubrir';
 import { useFinanzas } from '../hooks/useFinanzas';
 import { usePagosFinanzas } from '../hooks/usePagosOrdenes';
+import { useAvisosOrdenPagada } from '../hooks/useAvisosOrdenPagada';
 import { useCobrosFinanzas } from '../hooks/useCobrosClientes';
 import { useTasaDolar } from '../hooks/useTasaDolar';
 import { useTasasDolar } from '../hooks/useTasasDolar';
@@ -85,6 +86,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   // Para armar esas órdenes hacen falta sus cierres: se cargan los anteriores hasta cubrir el día más antiguo.
   useCargarHastaCubrir({ activo: soloPendientes, reportes: reports, hayMas: hayMasReportes, cargando: cargandoReportes, onCargarMas: cargarReportesAnteriores, desdeDia: rangoItems.desde });
   // Lo que pagaron los clientes por instalaciones y cambios de equipo (lo registra el técnico); solo se lee cuando se abre esa sección.
+  const avisosOrdenPagada = useAvisosOrdenPagada({ firebaseUser, usuario: currentUser, setToastMsg });
   const pagosClientes = usePagosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
   const cobrosClientes = useCobrosFinanzas(firebaseUser, seccion === 'CLIENTES' ? rango : SIN_LEER);
   // La tasa BCV del dólar, para mostrar los bolívares y pagar (cada pago guarda la de su momento). Se guardan las de los últimos 7 días y se puede pagar con la de un día anterior
@@ -264,6 +266,10 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   items={items}
                   sinTipo={sinTipo}
                   esperandoRevision={esperandoRevision}
+                  avisosOrdenPagada={avisosOrdenPagada.avisos}
+                  onResolverAviso={avisosOrdenPagada.resolver}
+                  onLeerOrdenesDelPago={(pago) => finanzas.leerOrdenesDePagos([pago], finanzas.pagadas)}
+                  onAnularOrdenDelPago={finanzas.anularOrdenDelPago}
                   onTipoMudanza={finanzas.guardarTipoMudanza}
                   tarifas={finanzas.tarifas}
                   pagos={finanzas.pagos}

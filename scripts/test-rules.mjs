@@ -1228,6 +1228,26 @@ await check('Pagar: una mudanza interna y una externa se guardan con su concepto
   await assertSucceeds(guardarPago(asFinanzas(), 'p-mud', pagoDe({ cantidadOrdenes: 2, total: 13 }), [['orden-mi', ordenPagada('p-mud', { concepto: 'MUDANZA_INTERNA', monto: 5 })], ['orden-me', ordenPagada('p-mud', { concepto: 'MUDANZA_EXTERNA', monto: 8 })]]));
   await assertFails(fin(asFinanzas(), 'tarifasPago').doc('actual').set(tarifas({ MUDANZA_EXTERNA: -1 })));
 });
+await check('Aviso de orden pagada que cambió: la oficina lo deja, Finanzas lo lee y lo resuelve a su nombre, y nadie lo borra', async () => {
+  const aviso = { ticketId: 't1', clave: 't1', codigo: 'AN1', tecnico: 'JOSE', tipo: 'CANCELADA', antes: 'FINALIZADO', despues: 'CANCELADO', por: 'admin', en: 5, resuelto: false };
+  await assertSucceeds(fin(asAdmin(), 'avisosOrdenPagada').doc('t1_5').set(aviso));
+  await assertSucceeds(fin(asUsuario(), 'avisosOrdenPagada').doc('t1_6').set({ ...aviso, tipo: 'TIPO', antes: 'AVERÍA', despues: 'INSTALACIÓN', por: 'usuario' }));
+  await assertFails(fin(asUsuario(), 'avisosOrdenPagada').doc('t1_11').set({ ...aviso, por: 'admin' }));
+  await assertFails(fin(asAdmin(), 'avisosOrdenPagada').doc('t1_12').set({ ...aviso, por: '' }));
+  await assertFails(fin(asTecnico(), 'avisosOrdenPagada').doc('t1_7').set(aviso));
+  await assertFails(fin(asAdmin(), 'avisosOrdenPagada').doc('t1_8').set({ ...aviso, tipo: 'OTRO' }));
+  await assertFails(fin(asAdmin(), 'avisosOrdenPagada').doc('t1_9').set({ ...aviso, resuelto: true }));
+  await assertFails(fin(asAdmin(), 'avisosOrdenPagada').doc('t1_10').set({ ...aviso, extra: 1 }));
+  await assertSucceeds(fin(asFinanzas(), 'avisosOrdenPagada').get());
+  await assertFails(fin(asUsuario(), 'avisosOrdenPagada').get());
+  await assertFails(fin(asTecnico(), 'avisosOrdenPagada').get());
+  await assertFails(fin(asFinanzas(), 'avisosOrdenPagada').doc('t1_5').update({ resuelto: true, resueltoPor: 'otro', resueltoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'avisosOrdenPagada').doc('t1_5').update({ resuelto: true, resueltoPor: 'fina', resueltoEn: 9, tipo: 'TIPO' }));
+  await assertFails(fin(asUsuario(), 'avisosOrdenPagada').doc('t1_5').update({ resuelto: true, resueltoPor: 'usuario', resueltoEn: 9 }));
+  await assertSucceeds(fin(asFinanzas(), 'avisosOrdenPagada').doc('t1_5').update({ resuelto: true, resueltoPor: 'fina', resueltoEn: 9 }));
+  await assertFails(fin(asFinanzas(), 'avisosOrdenPagada').doc('t1_5').delete());
+  await assertFails(fin(asAdmin(), 'avisosOrdenPagada').doc('t1_5').delete());
+});
 await check('Tipo de mudanza de un cierre: Finanzas lo elige a su nombre, solo interna o externa, y no se borra', async () => {
   await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').set({ tipo: 'EXTERNA', por: 'fina', en: 1 }));
   await assertSucceeds(fin(asFinanzas(), 'tiposMudanza').doc('orden-vieja').set({ tipo: 'INTERNA', por: 'fina', en: 2 }));

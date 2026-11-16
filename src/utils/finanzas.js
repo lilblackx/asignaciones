@@ -470,15 +470,18 @@ export function resumenPagado(pagos, rango, { tecnico, tasa = null } = {}) {
   for (const p of vigentes) {
     if (!mapa.has(p.tecnico)) mapa.set(p.tecnico, { tecnico: p.tecnico, pagos: 0, ordenes: 0, total: 0, bonos: 0, descuento: 0, neto: 0, cantidades: vacio(), ultimo: 0, bs: 0 });
     const f = mapa.get(p.tecnico);
+    // Las órdenes a las que se les anuló el pago ya no cuentan como pagadas (el pago conserva su registro original).
+    const anuladas = totalAnuladoDelPago(p);
     f.pagos += 1;
-    f.ordenes += Number(p.cantidadOrdenes) || 0;
-    f.total = redondear(f.total + (Number(p.total) || 0));
+    f.ordenes += (Number(p.cantidadOrdenes) || 0) - anuladas.ordenes;
+    f.total = redondear(f.total + (Number(p.total) || 0) - anuladas.total);
     f.bonos = redondear(f.bonos + (Number(p.bonos) || 0));
     f.descuento = redondear(f.descuento + (Number(p.descuento) || 0));
-    f.neto = redondear(f.neto + (Number(p.neto ?? p.total) || 0));
-    f.bs = redondear(f.bs + (aBs(p.total, p.tasa > 0 ? p.tasa : tasa) || 0));
+    f.neto = redondear(f.neto + (Number(p.neto ?? p.total) || 0) - anuladas.total);
+    f.bs = redondear(f.bs + (aBs((Number(p.total) || 0) - anuladas.total, p.tasa > 0 ? p.tasa : tasa) || 0));
     for (const { id } of CONCEPTOS_PAGO) f.cantidades[id] += Number(p.cantidades?.[id]) || 0;
     f.cantidades.AVERIA += Number(p.cantidades?.VISITA) || 0;
+    for (const a of anulacionesDeOrdenes(p)) if (f.cantidades[a.concepto === 'VISITA' ? 'AVERIA' : a.concepto] !== undefined) f.cantidades[a.concepto === 'VISITA' ? 'AVERIA' : a.concepto] -= 1;
     f.ultimo = Math.max(f.ultimo, Number(p.creadoEn) || 0);
   }
   const porTecnico = [...mapa.values()].sort((a, b) => b.total - a.total || a.tecnico.localeCompare(b.tecnico));
@@ -532,6 +535,49 @@ export function avisoDePago(pago) {
 export const avisoDeAnulacion = (pago) => ({
   title: 'Pago anulado',
   body: `Se anuló el pago de ${pago.moneda === MONEDA_BS && pago.montoPagado > 0 ? bolivares(pago.montoPagado) : dolares(pago.neto ?? pago.total)} (${textoOrdenes(pago.cantidadOrdenes)}). Esas órdenes vuelven a estar por pagar.`,
+});
+
+// --- Anular el pago de una sola orden ---
+
+export const MAX_MOTIVO_ANULACION = 300;
+
+// El motivo de anular el pago de una orden: obligatorio; el técnico lo ve.
+export function parseMotivoAnulacion(raw) {
+  const texto = String(raw ?? '').replace(/\|/g, '/').replace(/\s+/g, ' ').trim();
+  if (!texto) return { error: 'Escribe el motivo: el técnico lo verá.' };
+  if (texto.length > MAX_MOTIVO_ANULACION) return { error: `El motivo es demasiado largo (máximo ${MAX_MOTIVO_ANULACION} caracteres).` };
+  return { valor: texto };
+}
+
+// Las órdenes de un pago a las que se les anuló el pago (cada una con su motivo, quién y cuándo).
+export const anulacionesDeOrdenes = (pago) => (Array.isArray(pago?.anulacionesOrden) ? pago.anulacionesOrden : []);
+export const ordenAnuladaEnPago = (pago, id) => anulacionesDeOrdenes(pago).some((a) => a.id === id);
+
+// Lo que se escribe en el pago al anular el pago de una de sus órdenes: { cambios: { ultimaOrdenAnulada, anulacionesOrden }, anulacion } o { error }. `orden`: el documento de ordenesPagadas ({ id, concepto, monto, codigo }).
+// Los totales del pago no se tocan (es el registro de lo que se pagó); las pantallas descuentan lo anulado.
+export function armarAnulacionDeOrden(pago, orden, motivo, { por, ahora }) {
+  if (!pago || pago.anulado) return { error: 'Este pago ya está anulado.' };
+  if (!orden?.id || orden.pagoId !== pago.id) return { error: 'Esta orden no pertenece a este pago.' };
+  if (ordenAnuladaEnPago(pago, orden.id)) return { error: 'El pago de esta orden ya está anulado.' };
+  const m = parseMotivoAnulacion(motivo);
+  if (m.error) return { error: m.error, campo: 'motivo' };
+  const anulacion = { id: String(orden.id), codigo: String(orden.codigo || '').slice(0, 40), concepto: String(orden.concepto || '').slice(0, 30), monto: Number(orden.monto) || 0, motivo: m.valor, por, en: ahora };
+  return {
+    anulacion,
+    cambios: { ultimaOrdenAnulada: anulacion.id, anulacionesOrden: [...anulacionesDeOrdenes(pago), anulacion] },
+  };
+}
+
+// Lo que se anuló de un pago: cuántas órdenes y cuántos dólares.
+export const totalAnuladoDelPago = (pago) => {
+  const lista = anulacionesDeOrdenes(pago);
+  return { ordenes: lista.length, total: redondear(lista.reduce((s, a) => s + (Number(a.monto) || 0), 0)) };
+};
+
+// El aviso que recibe el técnico (push y campana) con el motivo.
+export const avisoDeAnulacionDeOrden = (a) => ({
+  title: 'Pago de una orden anulado',
+  body: `${a.codigo || 'Una orden'}: se anuló el pago de esta orden (${dolares(a.monto)}). Motivo: ${a.motivo}. La orden vuelve a estar por pagar.`,
 });
 
 // El aviso de un descuento o un bono por una garantía de otro técnico (solo se avisa al aprobar la garantía).

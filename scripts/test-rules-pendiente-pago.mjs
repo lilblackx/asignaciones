@@ -197,6 +197,55 @@ await check(`Y anularlo (${N} órdenes borradas y ${N} revisiones que vuelven a 
   await assertSucceeds(anular(asFinanzas(), 'pago-grande', ids));
 });
 
+// ---------- Anular el pago de UNA orden: el pago sigue vigente, la anota con su motivo y solo esa orden vuelve a por pagar ----------
+const anulacion = (id, extra = {}) => ({ id, codigo: id, concepto: 'INSTALACION', monto: 20, motivo: 'La orden se canceló después de pagarse.', por: 'fina', en: 9, ...extra });
+// El lote de la app: anota la orden en el pago, la borra de las pagadas y devuelve su revisión a por pagar.
+const anularOrden = (db, pagoId, id, { previas = [], anotacion = anulacion(id), cambiosPago = null, revision = true } = {}) => {
+  const lote = db.batch();
+  lote.update(col(db, 'pagosTecnicos').doc(pagoId), cambiosPago ?? { ultimaOrdenAnulada: id, anulacionesOrden: [...previas, anotacion] });
+  lote.delete(col(db, 'ordenesPagadas').doc(id));
+  if (revision) lote.update(col(db, 'revisionPagos').doc(id), { pendientePago: true, pagoId: '' });
+  return lote.commit();
+};
+await sembrar({ 'revisionPagos/o-a': revision({ codigo: 'o-a' }), 'revisionPagos/o-b': revision({ codigo: 'o-b' }), 'revisionPagos/o-c': revision({ codigo: 'o-c' }) });
+await pagar(asFinanzas(), 'pago-orden', ['o-a', 'o-b', 'o-c'], { datosPago: pago({ cantidadOrdenes: 3, cantidades: { INSTALACION: 3 }, total: 60 }) });
+await check('Anular una orden: Finanzas la anota con su motivo, la borra de las pagadas y su revisión vuelve a por pagar; el pago sigue vigente y los totales no cambian', async () => {
+  await assertSucceeds(anularOrden(asFinanzas(), 'pago-orden', 'o-a'));
+  const p = await leer('pagosTecnicos', 'pago-orden');
+  if (p.anulado !== false || p.total !== 60 || p.cantidadOrdenes !== 3 || p.anulacionesOrden.length !== 1) throw new Error('el pago no quedó como se esperaba');
+  const r = await leer('revisionPagos', 'o-a');
+  if (r.pendientePago !== true || r.pagoId !== '') throw new Error('la revisión no volvió a por pagar');
+  if ((await leer('ordenesPagadas', 'o-a')) !== undefined) throw new Error('la orden sigue entre las pagadas');
+});
+await check('Anular otra orden después: se suma a la lista (una a la vez), también el ADMIN', async () => {
+  await assertSucceeds(anularOrden(asAdmin(), 'pago-orden', 'o-b', { previas: [anulacion('o-a')], anotacion: anulacion('o-b', { por: 'admin' }) }));
+});
+await check('Sin motivo, con un motivo largo, a nombre de otra persona, con campos de más o con el total cambiado: no', async () => {
+  await sembrar({ 'revisionPagos/o-a': revision({ codigo: 'o-a' }), 'revisionPagos/o-b': revision({ codigo: 'o-b' }) });
+  await pagar(asFinanzas(), 'pago-orden', ['o-a', 'o-b'], { datosPago: pago({ cantidadOrdenes: 2, cantidades: { INSTALACION: 2 }, total: 40 }) });
+  await assertFails(anularOrden(asFinanzas(), 'pago-orden', 'o-a', { anotacion: anulacion('o-a', { motivo: '' }) }));
+  await assertFails(anularOrden(asFinanzas(), 'pago-orden', 'o-a', { anotacion: anulacion('o-a', { motivo: 'x'.repeat(301) }) }));
+  await assertFails(anularOrden(asFinanzas(), 'pago-orden', 'o-a', { anotacion: anulacion('o-a', { por: 'otro' }) }));
+  await assertFails(anularOrden(asFinanzas(), 'pago-orden', 'o-a', { anotacion: anulacion('o-a', { extra: 1 }) }));
+  await assertFails(anularOrden(asFinanzas(), 'pago-orden', 'o-a', { cambiosPago: { ultimaOrdenAnulada: 'o-a', anulacionesOrden: [anulacion('o-a')], total: 1 } }));
+  await assertFails(anularOrden(asFinanzas(), 'pago-orden', 'o-a', { cambiosPago: { ultimaOrdenAnulada: 'o-b', anulacionesOrden: [anulacion('o-a'), anulacion('o-b')] } }));
+});
+await check('No se anota una orden sin sacarla de las pagadas ni sin devolver su revisión (en el mismo lote), ni se saca una que el pago no anotó', async () => {
+  // Anotarla en el pago pero dejarla entre las pagadas o con su revisión pagada: no.
+  const db = asFinanzas();
+  await assertSucceeds(col(db, 'pagosTecnicos').doc('pago-orden').update({ ultimaOrdenAnulada: 'o-a', anulacionesOrden: [anulacion('o-a')] })); // anotar sola es válido (las reglas no obligan a lo demás), pero lo siguiente no:
+  await assertFails(col(db, 'ordenesPagadas').doc('o-b').delete());
+  await assertFails(col(db, 'revisionPagos').doc('o-b').update({ pendientePago: true, pagoId: '' }));
+});
+await check('Nadie más anula el pago de una orden (ADMIN solo por su lote no basta si no es Finanzas/ADMIN, USUARIO y técnico no), y un pago anulado no admite más anulaciones de órdenes', async () => {
+  await sembrar({ 'revisionPagos/o-a': revision({ codigo: 'o-a' }) });
+  await pagar(asFinanzas(), 'pago-orden', ['o-a']);
+  await assertFails(anularOrden(como('usuario-uid'), 'pago-orden', 'o-a'));
+  await assertFails(anularOrden(como('tecnico-uid'), 'pago-orden', 'o-a'));
+  await anular(asFinanzas(), 'pago-orden', ['o-a']);
+  await assertFails(col(asFinanzas(), 'pagosTecnicos').doc('pago-orden').update({ ultimaOrdenAnulada: 'o-a', anulacionesOrden: [anulacion('o-a')] }));
+});
+
 await testEnv.cleanup();
 if (failures > 0) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas de la marca de pago pasaron.');

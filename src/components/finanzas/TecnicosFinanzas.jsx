@@ -15,6 +15,8 @@ import PanelAdicional from './PanelAdicional';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
 import { BOTON_FILA, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
+import { textoDelAviso } from '../../utils/avisoOrdenPagada';
+import { fechaHoraLegible } from '../../utils/formatoFecha';
 import { saldoAdelanto } from '../../utils/adelantos';
 import { textoAdicional } from '../../utils/adicionales';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
@@ -24,7 +26,7 @@ import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 // al elegir uno, su pantalla con un botón para volver). "Pagar", "Adelanto" y "Descuento" abren su formulario en esa misma pantalla, no en una ventana.
 // `adelantos` y `descuentos`: los adelantos y los descuentos con motivo; `onPagar(fila, { datosPago, notificar, nota })`, `onAdelanto(tecnico, entrada, { notificar })`, `onDescuento(tecnico, entrada, { notificar })`,
 // `onAnularAdelanto(adelanto)` y `onAnularDescuento(descuento)` devuelven true si se guardó.
-export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], adicionales = [], itemsAdicionales = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, etiquetaPeriodo, tasa, etiquetaTasa = '', ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento, onAdicional, onAnularAdicional, tecnicosTodos = [] }) {
+export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, avisosOrdenPagada = [], onResolverAviso, onLeerOrdenesDelPago, onAnularOrdenDelPago, sinTipo = [], onTipoMudanza, tarifas, pagos, adelantos = [], descuentos = [], adicionales = [], itemsAdicionales = [], ajustes = [], ajustesTodos = ajustes, garantiasPendientes = new Set(), pagadasPorTecnico, rango, etiquetaPeriodo, tasa, etiquetaTasa = '', ocupado, historial, onPagar, onAnular, onAdelanto, onAnularAdelanto, onDescuento, onAnularDescuento, onAdicional, onAnularAdicional, tecnicosTodos = [] }) {
   const grande = useEsPantallaGrande();
   const [elegido, setElegido] = useState(null);
   const [modo, setModo] = useState('detalle');
@@ -72,6 +74,22 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   return (
     <div className="space-y-5">
       {!enDetalleMovil && <ResumenCifras items={cifrasPagos(tecnicos, sumaPagado(Object.values(pagadasPorTecnico)), tasa)} />}
+
+      {!enDetalleMovil && avisosOrdenPagada.length > 0 && (
+        <div className={alerta} role="status">
+          <p className="flex items-start gap-2 font-bold"><TriangleAlert className="w-6 h-6 shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{avisosOrdenPagada.length === 1 ? 'Una orden que ya se pagó cambió' : `${avisosOrdenPagada.length} órdenes que ya se pagaron cambiaron`}. Revisa si hay que ajustar lo que se le pagó al técnico.</span>
+          </p>
+          <ul className="space-y-2">
+            {avisosOrdenPagada.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/60 dark:bg-black/20 px-3 py-2">
+                <span className="min-w-0 flex-1 basis-60">{textoDelAviso(a)} <span className="opacity-75">Cambió el {fechaHoraLegible(a.en)} ({a.por}).</span></span>
+                <button type="button" onClick={() => onResolverAviso?.(a)} className={BOTON_FILA}>Ya lo revisé</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {!enDetalleMovil && esperandoRevision > 0 && (
         <div className={alerta}>
@@ -196,6 +214,8 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
                   onAdicional={() => setModo('adicional')}
                   onVerOrden={setDetalleOrden}
                   onAnularPago={setAnulando}
+                  onLeerOrdenesDelPago={onLeerOrdenesDelPago}
+                  onAnularOrdenDelPago={onAnularOrdenDelPago}
                   onAnularAdelanto={setAnulandoAdelanto}
                   onAnularDescuento={setAnulandoDescuento}
                   onAnularAdicional={setAnulandoAdicional}
