@@ -38,7 +38,7 @@ export const SELECTOR_TIPO_DOC_ORDEN = `${SELECTOR_ORDEN_NORMAL.replace('w-full'
 export const CAMPO_FECHA = claseFecha('normal');
 export const CAMPO_FECHA_ORDEN = claseFecha('compacto');
 // La pantalla de acceso: el campo más grande de la app (48 px, borde grueso, letra de 16 px).
-export const CAMPO_LOGIN = 'w-full h-12 px-3 bg-white dark:bg-zinc-950 border-2 border-zinc-500 text-zinc-900 dark:text-white text-base rounded-xl focus:border-red-600 focus-visible:ring-4 focus-visible:ring-red-600/30 outline-none';
+export const CAMPO_LOGIN = 'w-full h-12 max-lg:h-14 px-3 bg-card dark:bg-background border-2 border-input text-foreground text-base rounded-campo focus:border-ring focus-visible:ring-4 focus-visible:ring-ring/30 outline-none';
 
 export const BOTON = 'inline-flex items-center justify-center gap-2 h-9 px-3 rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-bold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50';
 export const BOTON_PRINCIPAL = 'inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-bold text-white transition-colors disabled:opacity-50';
