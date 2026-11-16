@@ -51,7 +51,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           onClick={onOpenSinTecnico}
           aria-label={`${sinTecnico} ${sinTecnico === 1 ? 'orden pendiente sin técnico' : 'órdenes pendientes sin técnico'}. Ver lista`}
           title="Ver órdenes pendientes sin técnico"
-          className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] max-lg:text-xs font-bold rounded leading-none bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/40 dark:hover:bg-amber-500/25 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] max-lg:text-xs font-bold rounded max-lg:rounded-boton leading-none bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/40 dark:hover:bg-amber-500/25 transition-colors cursor-pointer"
         >
           SIN TÉCNICO
           <span className="bg-white/60 dark:bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={sinTecnico} /></span>
@@ -68,7 +68,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           onClick={() => onOpenViaje?.(filtro)}
           aria-label={`${cantidad} ${cantidad === 1 ? singular : plural}. Ver lista`}
           title={filtro === 'EN_INFRAESTRUCTURA' ? 'Ver las órdenes en infraestructura' : `Ver órdenes con ${plural}`}
-          className={`inline-flex items-center gap-1.5 px-2 py-1 max-lg:min-h-11 max-lg:px-3 text-[11px] max-lg:text-xs font-bold rounded leading-none border transition-colors cursor-pointer ${clase}`}
+          className={`inline-flex items-center gap-1.5 px-2 py-1 max-lg:min-h-11 max-lg:px-3 text-[11px] max-lg:text-xs font-bold rounded max-lg:rounded-boton leading-none border transition-colors cursor-pointer ${clase}`}
         >
           <Icono className="w-3 h-3" aria-hidden="true" />
           {etiqueta}
@@ -77,7 +77,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
       ))}
       {counts.map(({ id, name, activo, count }) => {
         // El estado va con punto verde o anillo gris, borde punteado y la palabra "inactivo": no depende solo del color.
-        const pillClass = `inline-flex items-center gap-2 px-2.5 py-1.5 text-[11px] max-lg:text-xs font-bold rounded-xl leading-none ${activo ? getTecnicoColor(name) : 'border border-dashed border-zinc-400 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400'}`;
+        const pillClass = `inline-flex items-center gap-2 px-2.5 py-1.5 text-[11px] max-lg:text-xs font-bold rounded-boton leading-none ${activo ? getTecnicoColor(name) : 'border border-dashed border-zinc-400 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400'}`;
         const dot = <span className={`w-2 h-2 rounded-full shrink-0 ${activo ? 'bg-emerald-500' : 'border-2 border-zinc-500'}`} aria-hidden="true" />;
         const label = (
           <>

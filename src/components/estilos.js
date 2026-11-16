@@ -9,7 +9,7 @@ export const TITULO_SECCION = 'text-sm font-black uppercase tracking-wide text-z
 // --- Campos: cajas de texto, áreas de texto, selectores y calendarios. SALEN TODOS DE AQUÍ (scripts/test-campos-radio.mjs falla si un campo trae sus clases a mano).
 // Un solo radio (rounded-xl), borde, fondo y foco rojo. Dos alturas fijas: 'compacto' y 'normal' de 36 px (la letra del compacto es más chica) y 'grande' de 44 px, cómoda para el dedo (formularios y
 // pantallas del técnico). `estado`: 'normal', 'error' (borde rojo), 'ok' (borde verde) o 'lectura' (gris, no editable). Las medidas de un campo concreto (ancho, alineación, tipo de letra) se le suman en su sitio; el aspecto, no.
-const CAMPO_BASE = 'w-full border rounded-xl placeholder:text-zinc-500 focus:ring-0 outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
+const CAMPO_BASE = 'w-full border rounded-campo placeholder:text-zinc-500 focus:ring-0 outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 const FONDO_CAMPO = 'bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white';
 const BORDE_CAMPO = {
   normal: `${FONDO_CAMPO} border-zinc-400 dark:border-zinc-700 hover:border-zinc-500 focus:border-red-600`,
@@ -60,10 +60,10 @@ export const ESTADO = {
 
 // --- Barra de búsqueda y sus botones (Filtros, Exportar): una familia más grande (44 px, borde grueso, esquinas redondeadas) que va siempre junta.
 // El resto de los controles usan la medida normal de arriba (36 px, borde fino).
-export const BUSCADOR = 'w-full bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 pl-9 pr-10 h-11 rounded-xl text-sm text-zinc-900 dark:text-white placeholder:text-zinc-500 focus:ring-0 focus:border-red-600 outline-none transition-colors';
-export const BOTON_BARRA = 'shrink-0 inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl border-2 text-sm font-bold transition-colors bg-white dark:bg-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed';
-export const BOTON_BARRA_NORMAL = 'border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:border-zinc-500';
-export const BOTON_BARRA_ACTIVO = 'border-red-600 text-red-600 dark:text-red-400';
+export const BUSCADOR = 'w-full bg-card border-2 border-input pl-9 pr-10 h-11 max-lg:h-12 rounded-boton text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 focus:border-ring outline-none transition-colors';
+export const BOTON_BARRA = 'shrink-0 inline-flex items-center justify-center gap-1.5 h-11 max-lg:h-12 px-3 rounded-boton border-2 text-sm font-bold transition-colors bg-card disabled:opacity-50 disabled:cursor-not-allowed';
+export const BOTON_BARRA_NORMAL = 'border-input text-foreground hover:border-muted-foreground';
+export const BOTON_BARRA_ACTIVO = 'border-primary text-primary dark:text-ring';
 
 
 // --- Botones: variante (el color) y tamaño (la medida) se combinan; ver Boton.jsx.
@@ -82,9 +82,9 @@ const TAMANOS_BOTON = {
 export const claseBoton = (variante = 'secundario', tamano = 'normal') => `${BASE_BOTON} ${VARIANTES_BOTON[variante]} ${TAMANOS_BOTON[tamano]}`;
 
 // --- Chips de filtro (los botones que se marcan en rojo al elegirlos): periodo, estado, rol... Ver Chip.jsx.
-const BASE_CHIP = 'inline-flex items-center justify-center gap-1 h-9 rounded-xl border font-bold whitespace-nowrap transition-colors';
+const BASE_CHIP = 'inline-flex items-center justify-center gap-1 h-9 rounded-boton border font-bold whitespace-nowrap transition-colors';
 const TAMANOS_CHIP = { normal: 'px-3 text-sm', compacto: 'px-3 text-xs', angosto: 'px-1 sm:px-4 text-xs sm:text-sm' };
-export const claseChip = (activo, tamano = 'normal') => `${BASE_CHIP} ${TAMANOS_CHIP[tamano]} ${activo ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'}`;
+export const claseChip = (activo, tamano = 'normal') => `${BASE_CHIP} ${TAMANOS_CHIP[tamano]} ${activo ? 'bg-primary border-primary text-primary-foreground' : 'bg-card border-input text-foreground hover:border-muted-foreground'}`;
 
 // --- Etiqueta de los formularios de órdenes (Crear orden, Editar orden, Nueva venta).
 export const ETIQUETA_ORDEN = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';

@@ -53,13 +53,13 @@ export default function FiltersBar({
     { group: 'Filtrar por Técnico', options: technicians.map(t => ({ value: 'TEC:' + t.name, label: 'Solo: ' + t.name })) }
   ];
 
-  const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
+  const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
 
   return (
     <div className="mb-3 space-y-3">
       <div className="flex gap-2">
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
           <label htmlFor="ticket-search" className="sr-only">Buscar órdenes</label>
           <input
             id="ticket-search"
@@ -75,7 +75,7 @@ export default function FiltersBar({
       </div>
 
       <Colapsable>{filtersOpen && (
-        <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
+        <div className="rounded-card max-lg:shadow-card border border-border max-lg:border-transparent bg-card p-3 space-y-3">
           <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isTecnico ? 'md:max-w-xl' : 'md:grid-cols-3 md:max-w-3xl'}`}>
             <div className="flex flex-col gap-1 min-w-0">
               <span className={ETIQUETA}>Estado</span>
