@@ -96,7 +96,7 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
         {!buscando && enlaces.length > 0 && (
           <div className="shrink-0 p-4 border-t border-border space-y-2">
             {enlaces.map((e) => (
-              <a key={e.desde} href={e.url} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-2 h-11 px-4 rounded-boton bg-primary hover:bg-primary-hover text-sm font-bold text-white transition-colors">
+              <a key={e.desde} href={e.url} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-2 h-11 px-4 rounded-boton bg-primary hover:bg-primary-hover text-sm font-bold text-white transition-colors shadow-boton">
                 <Navigation className="w-4 h-4 shrink-0" aria-hidden="true" />
                 {enlaces.length === 1 ? 'Abrir ruta en Google Maps' : `Ruta ${enlaces.indexOf(e) + 1}: paradas ${e.desde} a ${e.hasta}`}
               </a>

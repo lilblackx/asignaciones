@@ -69,14 +69,14 @@ export const BOTON_BARRA_ACTIVO = 'border-primary text-primary dark:text-ring';
 // --- Botones: variante (el color) y tamaño (la medida) se combinan; ver Boton.jsx.
 const BASE_BOTON = 'inline-flex items-center justify-center font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 const VARIANTES_BOTON = {
-  principal: 'bg-primary hover:bg-primary-hover text-white disabled:opacity-100 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500 disabled:hover:bg-zinc-300 dark:disabled:hover:bg-zinc-800',
-  secundario: 'border border-input bg-card text-zinc-800 dark:text-zinc-100 hover:bg-secondary',
+  principal: 'bg-primary hover:bg-primary-hover text-white shadow-boton disabled:shadow-none disabled:opacity-100 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500 disabled:hover:bg-zinc-300 dark:disabled:hover:bg-zinc-800',
+  secundario: 'border border-input bg-card text-foreground hover:bg-secondary',
   peligro: 'border border-red-600 bg-card text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30',
-  discreto: 'text-card-foreground hover:bg-zinc-200 dark:hover:bg-zinc-800',
+  discreto: 'text-card-foreground hover:bg-accent',
 };
 const TAMANOS_BOTON = {
-  compacto: 'gap-1.5 h-8 px-2.5 rounded-campo text-xs',
-  normal: 'gap-2 h-9 px-3 rounded-campo text-sm',
+  compacto: 'gap-1.5 h-8 px-2.5 rounded-boton text-xs',
+  normal: 'gap-2 h-9 px-3 rounded-boton text-sm',
   grande: 'gap-2 h-10 px-4 rounded-campo text-sm',
 };
 export const claseBoton = (variante = 'secundario', tamano = 'normal') => `${BASE_BOTON} ${VARIANTES_BOTON[variante]} ${TAMANOS_BOTON[tamano]}`;

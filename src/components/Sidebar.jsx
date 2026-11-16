@@ -82,7 +82,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
         aria-label="Módulos"
         className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:m-4 lg:rounded-card lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-card max-lg:rounded-r-card shadow-card max-lg:overflow-hidden text-foreground overflow-hidden`}
       >
-        <div className={`flex items-center justify-between px-5 h-[72px] shrink-0 text-foreground ${colapsado ? 'lg:justify-center' : ''}`}>
+        <div className={`flex items-center justify-between px-5 h-16 shrink-0 text-foreground ${colapsado ? 'lg:justify-center' : ''}`}>
           <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className={`flex items-center rounded-campo hover:opacity-80 transition-opacity ${colapsado ? 'lg:hidden' : ''}`}>
             <span className="flex items-center gap-3"><img src={logos.login192} alt="" width="40" height="40" className="w-10 h-10 rounded-card shrink-0" /><span className={`text-base font-black text-foreground ${colapsado ? 'lg:hidden' : ''}`}>Asignaciones</span></span>
           </button>
@@ -114,7 +114,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
                       onClick={abrir(accion)}
                       title={nombre}
                       aria-current={actual ? 'page' : undefined}
-                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-2 max-lg:py-3 text-sm font-semibold transition-colors ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-200 font-black' : 'text-foreground hover:bg-secondary'}`}
+                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-1.5 max-lg:py-3 text-sm font-semibold transition-colors ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-200 font-black' : 'text-foreground hover:bg-secondary'}`}
                     >
                       <Icono className="w-5 h-5 shrink-0" aria-hidden="true" />
                       <span className={`truncate ${colapsado ? 'lg:hidden' : ''}`}>{nombre}</span>

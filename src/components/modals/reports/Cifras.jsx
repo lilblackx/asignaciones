@@ -19,7 +19,7 @@ export function CifrasDestacadas({ items }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
       {items.map(({ etiqueta, valor, detalle, onClick }) => {
-        const clases = 'bg-card border border-transparent border-t-4 border-t-red-600 rounded-card px-4 py-4 min-w-0 text-left shadow-card';
+        const clases = 'bg-card border border-transparent rounded-card px-4 py-4 min-w-0 text-left shadow-card';
         const contenido = (
           <>
             <div className="text-sm font-bold text-card-foreground leading-tight">{etiqueta}</div>

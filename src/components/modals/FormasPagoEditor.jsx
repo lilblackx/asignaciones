@@ -100,7 +100,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
       )}
       {!formasPago && <p className="text-[11px] max-lg:text-xs text-amber-700 dark:text-amber-400 font-bold ml-1">Aún sin guardar: los técnicos no verán estos datos hasta que pulses Guardar.</p>}
 
-      <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-boton transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'}`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar formas de pago'}</button>
+      <button type="submit" disabled={isSaving} className={`w-full px-4 py-3 text-white font-bold rounded-boton transition-colors shadow-md ${isSaving ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'} shadow-boton`}>{isSaving && <Spinner />}{isSaving ? 'Guardando...' : 'Guardar formas de pago'}</button>
     </form>
   );
 }

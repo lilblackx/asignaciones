@@ -194,7 +194,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                 >
                   <RefreshCw className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
                 </button>
-                <MenuExportar formatos={['pdf', 'docx', 'csv']} grupos={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs! bg-zinc-800! border-zinc-700! text-white! hover:bg-zinc-700!" />
+                <MenuExportar formatos={['pdf', 'docx', 'csv']} grupos={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs!" />
               </>
             )}
           />

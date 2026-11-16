@@ -82,7 +82,7 @@ export default class ErrorBoundary extends Component {
               La pantalla no se pudo mostrar. Recarga la app para seguir; lo que ya estaba guardado no se pierde.
             </p>
             <div className="flex flex-col gap-2">
-              <button type="button" onClick={this.recargar} className="inline-flex items-center justify-center gap-2 rounded-boton bg-primary hover:bg-primary-hover px-4 py-2.5 text-sm font-bold text-white transition-colors">
+              <button type="button" onClick={this.recargar} className="inline-flex items-center justify-center gap-2 rounded-boton bg-primary hover:bg-primary-hover px-4 py-2.5 text-sm font-bold text-white transition-colors shadow-boton">
                 <RefreshCw className="w-4 h-4" aria-hidden="true" /> Recargar
               </button>
               <button type="button" onClick={this.copiar} className="inline-flex items-center justify-center gap-2 rounded-campo border border-input px-4 py-2.5 text-sm font-bold text-foreground hover:bg-secondary transition-colors">

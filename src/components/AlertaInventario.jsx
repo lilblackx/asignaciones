@@ -50,7 +50,7 @@ export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
               ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
               : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
           </p>
-          <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-boton text-white font-black ${urgente ? 'bg-primary hover:bg-primary-hover' : 'bg-amber-600 hover:bg-amber-700'}`}>Ver</button>
+          <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-boton text-white font-black ${urgente ? 'bg-primary hover:bg-primary-hover' : 'bg-amber-600 hover:bg-amber-700'} shadow-boton`}>Ver</button>
         </div>
       )}
     </Colapsable>

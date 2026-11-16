@@ -45,7 +45,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>}
             {accion && (
-              <button onClick={accion.onClick} disabled={accion.deshabilitado} aria-label={accion.ayuda || accion.texto} title={accion.ayuda || accion.texto} className="bg-primary hover:bg-primary-hover text-white px-3 py-2 rounded-boton flex items-center gap-1 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600">
+              <button onClick={accion.onClick} disabled={accion.deshabilitado} aria-label={accion.ayuda || accion.texto} title={accion.ayuda || accion.texto} className="bg-primary hover:bg-primary-hover text-white px-3 py-2 rounded-boton flex items-center gap-1 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 shadow-boton">
                 <Plus className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">{accion.texto}</span>
               </button>
             )}

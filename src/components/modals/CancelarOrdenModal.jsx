@@ -68,7 +68,7 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50">Volver</button>
-            <button type="button" onClick={confirmar} disabled={enviando || Boolean(cambio)} className="flex-1 py-3 text-xs font-black text-white bg-primary hover:bg-primary-hover rounded-campo transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Cancelando...' : 'Cancelar la orden'}</button>
+            <button type="button" onClick={confirmar} disabled={enviando || Boolean(cambio)} className="flex-1 py-3 text-xs font-black text-white bg-primary hover:bg-primary-hover rounded-boton transition-colors disabled:opacity-50 shadow-boton">{enviando && <Spinner />}{enviando ? 'Cancelando...' : 'Cancelar la orden'}</button>
           </div>
         </div>
       </div>

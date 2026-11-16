@@ -79,7 +79,7 @@ export default function InstallGate({ children }) {
           <button
             onClick={handleInstallClick}
             disabled={installing}
-            className={`w-full text-white font-bold py-3 rounded-campo shadow-md transition-colors ${installing ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'}`}
+            className={`w-full text-white font-bold py-3 rounded-boton shadow-md transition-colors ${installing ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'} shadow-boton`}
           >
             {installing ? 'Instalando...' : 'Instalar app'}
           </button>
