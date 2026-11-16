@@ -1,3 +1,4 @@
+import { ClipboardList } from 'lucide-react';
 import VentanaFinanzas from './VentanaFinanzas';
 import { BOTON } from './estilos';
 import { formatearCedula } from '../../utils/cedula';
@@ -12,6 +13,8 @@ import { TRABAJOS_VNTA, fechaLegible } from '../../utils/registroVnTa';
 import InsigniaJM from '../InsigniaJM';
 import PagoDelCliente from '../PagoDelCliente';
 import CobroClienteDetalle from '../CobroClienteDetalle';
+import FotosDeOrden from '../FotosDeOrden';
+import { fotosDe } from '../../utils/detallesOrden';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
@@ -37,7 +40,8 @@ function textoCobro(orden) {
 }
 
 // `item`: { orden, concepto, tecnico } de ordenesPagables; `tarifas`: el tabulador de precios. `verTodoPago`: Revisión (solo ADMIN) ve el pago del cliente de cualquier orden; Finanzas, solo el de las instalaciones y los cambios de equipo.
-export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose, ajustes = [], verTodoPago = false }) {
+// `onVerCompleto(orden)`: solo Revisión; agrega el botón que abre el Detalle de la orden completo (lo que cargó el técnico, observaciones, fotos, historial). No aplica a una fila del registro de VN y TA.
+export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClose, ajustes = [], verTodoPago = false, onVerCompleto = null }) {
   const { orden, concepto, registro } = item;
   // Una orden ya pagada muestra lo que se le pagó; una por pagar, el precio de hoy.
   const precio = item.pagada ? item.monto : tarifas[concepto] || 0;
@@ -49,7 +53,12 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
   const dePago = ajustes.filter((a) => a.tipo === 'BONO' && a.clave === item.clave);
   const garantiaDe = orden.garantiaDe?.id ? orden.garantiaDe : null;
 
-  const pie = <button type="button" onClick={onClose} className={BOTON}>Cerrar</button>;
+  const pie = (
+    <>
+      {onVerCompleto && !registro && <button type="button" onClick={() => onVerCompleto(orden)} className={BOTON}><ClipboardList className="w-4 h-4" aria-hidden="true" /> Ver detalle completo</button>}
+      <button type="button" onClick={onClose} className={BOTON}>Cerrar</button>
+    </>
+  );
 
   return (
     <VentanaFinanzas titulo={orden.codigo || 'S/C'} estado={{ texto: registro ? 'Registro' : item.pagada ? 'Pagada' : 'Por pagar', clase: item.pagada ? 'bg-emerald-700 text-white' : 'bg-amber-400 text-black' }} onClose={onClose} pie={pie} zIndexClass="z-[70]">
@@ -82,6 +91,13 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           )}
 
           {!registro && <PagoDelCliente orden={orden} bloque paraFinanzas={!verTodoPago} />}
+
+          {!registro && fotosDe(orden).length > 0 && (
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
+              <p className={ETIQUETA}>Detalles de la orden (fotos del técnico)</p>
+              <FotosDeOrden ticket={orden} />
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-3 rounded-xl bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
             <div className="min-w-0">

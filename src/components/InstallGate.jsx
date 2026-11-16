@@ -7,6 +7,10 @@ const isMobileUA = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userA
 const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
+// Al probar la app en local (`npm run dev`, también desde un celular por la red) no se exige instalarla: el servidor de desarrollo no puede instalarse como app ni registra las notificaciones. En producción (la
+// versión compilada) import.meta.env.DEV es siempre false, así que la barrera sigue igual. Para probar la barrera en local: VITE_EXIGIR_INSTALACION=true en .env.development.local.
+const SIN_INSTALAR_EN_LOCAL = Boolean(import.meta.env?.DEV) && import.meta.env?.VITE_EXIGIR_INSTALACION !== 'true';
+
 // Los pushes solo llegan con el teléfono bloqueado / la app cerrada si está
 // instalada (Service Worker persistente). En iPhone es obligatorio para que
 // el push funcione del todo; en Android/desktop es mejora, pero acá se exige
@@ -15,9 +19,11 @@ export default function InstallGate({ children }) {
   const [standalone, setStandalone] = useState(isStandalone());
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installing, setInstalling] = useState(false);
+  // Lo que se le dice a quien toca "Ya la instalé, continuar" y todavía no está abierta como app instalada.
+  const [aviso, setAviso] = useState('');
 
   useEffect(() => {
-    if (!isMobileUA() || standalone) return;
+    if (SIN_INSTALAR_EN_LOCAL || !isMobileUA() || standalone) return;
 
     const onBeforeInstall = (e) => {
       e.preventDefault();
@@ -37,7 +43,7 @@ export default function InstallGate({ children }) {
     };
   }, [standalone]);
 
-  if (!isMobileUA() || standalone) return children;
+  if (SIN_INSTALAR_EN_LOCAL || !isMobileUA() || standalone) return children;
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -84,11 +90,17 @@ export default function InstallGate({ children }) {
         )}
 
         <button
-          onClick={() => setStandalone(isStandalone())}
+          onClick={() => {
+            const instalada = isStandalone();
+            setStandalone(instalada);
+            // Instalada o no, solo cuenta si esta ventana se abrió desde el ícono de la pantalla de inicio; si no, se explica qué hacer.
+            setAviso(instalada ? '' : 'Todavía estás en el navegador, no en la app instalada. Cierra esta pestaña y abre la app desde su ícono en la pantalla de inicio. Si no hay ícono, instálala desde el menú del navegador.');
+          }}
           className="mt-4 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 underline"
         >
           Ya la instalé, continuar
         </button>
+        {aviso && <p role="alert" className="mt-3 text-xs font-bold text-amber-800 dark:text-amber-300 leading-snug">{aviso}</p>}
       </div>
       </div>
       <PieVersion />

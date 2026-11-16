@@ -42,12 +42,12 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
   await b.collection('users').doc('almacen-uid').set({ role: 'ALMACEN', disabled: false, username: 'alma' });
 });
 
-const AHORA = Date.now();
-// Los cobros de estas pruebas nacen antes de que se pidiera el pago al técnico (FECHA_INICIO_PAGO_CLIENTE): Administración puede cargarlos sin que el técnico haya registrado nada. Con la fecha de hoy quedarían esperando ese pago.
-const ANTES_DEL_PAGO = Date.parse('2026-11-01T12:00:00-04:00');
+// Una fecha fija anterior a FECHA_INICIO_PAGO_CLIENTE (10/11/2026): los cobros emitidos desde ese día esperan el pago del técnico y Administración no puede cargarlos hasta que lo registre (ver faltaElPagoDelTecnico). Con la fecha de hoy
+// esta prueba dejó de funcionar al pasar ese día; lo del pago del técnico lo prueban test-pagos-cliente-reglas y test-pago-en-orden.
+const AHORA = Date.parse('2026-11-05T12:00:00-04:00');
 const orden = (id, extra = {}) => ({ id, codigo: id.toUpperCase(), nombre: `Cliente ${id}`, cedula: '12345678', telefono: '0414-1234567', tecnico: 'GERARDO MOLERO', tipoTrabajo: 'AVERÍA', falla: 'LOS', tipoVisita: 'CONECTOR_EXTERNO', estado: 'FINALIZADO', cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', ...extra });
 const instalacion = (id) => orden(id, { tipoTrabajo: 'INSTALACIÓN', tipoVisita: '', cobroBs: '', cobroTipo: '' });
-const emitir = (ctx, id, por = 'usuario', o = orden(id)) => cobros(ctx).doc(id).set(armarCobro(o, { por, ahora: ANTES_DEL_PAGO }));
+const emitir = (ctx, id, por = 'usuario', o = orden(id)) => cobros(ctx).doc(id).set(armarCobro(o, { por, ahora: AHORA }));
 const leer = async (id) => { let d; await testEnv.withSecurityRulesDisabled(async (ctx) => { d = (await cobros(ctx).doc(id).get()).data(); }); return d; };
 
 // --- Emitir ---
@@ -66,7 +66,7 @@ await check('un técnico sin permiso de cierre, Finanzas, Almacén, quien no ini
 });
 await check('el cobro sale a nombre de quien lo emite, pendiente, sin cargar y con el id de la orden', async () => {
   const ctx = como('usuario-uid');
-  const doc = armarCobro(orden('c9'), { por: 'usuario', ahora: ANTES_DEL_PAGO });
+  const doc = armarCobro(orden('c9'), { por: 'usuario', ahora: AHORA });
   await assertFails(cobros(ctx).doc('c9').set({ ...doc, creadoPor: 'otro' }));
   await assertFails(cobros(ctx).doc('c9').set({ ...doc, estado: 'CARGADO', cargadoPor: 'usuario', cargadoEn: AHORA }));
   await assertFails(cobros(ctx).doc('c9').set({ ...doc, anulado: true }));
@@ -114,7 +114,7 @@ await check('no firma la carga a nombre de otro, no cambia los datos de la orden
   await assertFails(cobros(ctx).doc('c3').delete());
 });
 await check('Administración no puede cargar sin monto un cobro que no lo trae', async () => {
-  await testEnv.withSecurityRulesDisabled(async (ctx) => cobros(ctx).doc('i2').set(armarCobro(instalacion('i2'), { por: 'usuario', ahora: ANTES_DEL_PAGO })));
+  await testEnv.withSecurityRulesDisabled(async (ctx) => cobros(ctx).doc('i2').set(armarCobro(instalacion('i2'), { por: 'usuario', ahora: AHORA })));
   const { cambios } = armarCarga(await leer('i2'), { monto: '45', moneda: 'USD' }, { por: 'admon', ahora: AHORA + 1 });
   await assertFails(cobros(como('admon-uid')).doc('i2').update({ ...cambios, monto: null, moneda: '' }));
 });
@@ -126,7 +126,7 @@ await check('la oficina actualiza el monto de un cobro pendiente cuando la orden
   await assertFails(cobros(como('usuario-uid')).doc('c1').update({ ...cambios, estado: 'CARGADO' }));
 });
 await check('cargado, retirado del portal y la orden vuelve a tener cobro: la oficina lo deja como cambio de monto (sin cambiar su estado) y Administración lo confirma', async () => {
-  await testEnv.withSecurityRulesDisabled(async (ctx) => cobros(ctx).doc('c-ret').set(armarCobro(orden('c-ret'), { por: 'usuario', ahora: ANTES_DEL_PAGO })));
+  await testEnv.withSecurityRulesDisabled(async (ctx) => cobros(ctx).doc('c-ret').set(armarCobro(orden('c-ret'), { por: 'usuario', ahora: AHORA })));
   await assertSucceeds(cobros(como('admon-uid')).doc('c-ret').update(armarCarga(await leer('c-ret'), {}, { por: 'admon', ahora: AHORA + 1 }).cambios));
   await assertSucceeds(cobros(como('usuario-uid')).doc('c-ret').update(sincronizarCobro(await leer('c-ret'), orden('c-ret', { cobroTipo: 'EXONERADO', cobroBs: null }), { por: 'usuario', ahora: AHORA + 2 }).cambios));
   await assertSucceeds(cobros(como('admon-uid')).doc('c-ret').update(armarConfirmacionCambio(await leer('c-ret'), { por: 'admon', ahora: AHORA + 3 }).cambios));

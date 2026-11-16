@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import NombreTecnico from '../NombreTecnico';
-import { ChevronDown, ChevronLeft, ChevronRight, FileText, History, Search } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileText, History, Search } from 'lucide-react';
+import DetalleOrdenModal from './DetalleOrdenModal';
 import { TIPOS_TRABAJO } from '../../constants';
 import { motivoCancelacion } from '../../utils/cancelacion';
 import { fechaDeOrden } from '../../utils/fechaOrden';
@@ -10,7 +11,6 @@ import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/expor
 import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
-import HistorialTimeline from '../HistorialTimeline';
 import CampoFecha from '../CampoFecha';
 import SelectMenu from '../SelectMenu';
 import PlantillaFinalModal from './PlantillaFinalModal';
@@ -37,10 +37,11 @@ const fechaDeFiltro = (t, cierreMs = 0, archivadoMs = 0) => fechaDeOrden(t, { di
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 
+// `verCobro` (la oficina que edita órdenes): el "Ver detalle completo" de cada orden incluye su cobro y sus fotos; `verRevision` (solo ADMIN) también si se aprobó sin los detalles.
 // `puedeVerPlantilla` (solo ADMIN y usuarios con permiso de cierre, los que llegan a este historial) muestra en cada orden con
 // plantilla (de cualquier trabajo y estado) el botón "Ver plantilla"; `plantillaDe(orden)` arma el texto (vacío si no hay) y
 // `onCopy(texto, mensaje)` copia y avisa con el toast.
-export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, plantillaDe: armarPlantilla, onCopy, onClose, enPagina = false, clasePagina = PANEL_PAGINA }) {
+export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, getTecnicoColor, puedeVerPlantilla = false, verCobro = false, verRevision = false, plantillaDe: armarPlantilla, onCopy, onClose, enPagina = false, clasePagina = PANEL_PAGINA }) {
   const [search, setSearch] = useState('');
   const [estado, setEstado] = useState('');
   const [tipo, setTipo] = useState('');
@@ -50,6 +51,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   const [page, setPage] = useState(0);
   const [expandedKey, setExpandedKey] = useState(null);
   const [plantillaAbierta, setPlantillaAbierta] = useState(null);
+  const [detalleAbierto, setDetalleAbierto] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const allOrders = useMemo(() => {
@@ -220,8 +222,16 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                       {o.observacionTecnico && <p><span className="font-semibold">Obs. del técnico:</span> {o.observacionTecnico}</p>}
                       {pagoClienteDe(o) && <p><span className="font-semibold">Pago del cliente:</span> {textoDelPago(o)}</p>}
                       {o.creado && <p><span className="font-semibold">Creada por:</span> {o.creado}</p>}
+                      <div className="pt-1.5 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDetalleAbierto(o)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        >
+                          <ClipboardList className="w-3.5 h-3.5" aria-hidden="true" /> Ver detalle completo
+                        </button>
                       {puedeVerPlantilla && armarPlantilla?.(o) && (
-                        <div className="pt-1.5">
+                        <>
                           <button
                             type="button"
                             onClick={() => setPlantillaAbierta(o)}
@@ -229,15 +239,10 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                           >
                             <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
                           </button>
-                        </div>
+                        </>
                       )}
+                      </div>
                       {motivoCancelacion(o) && <p><span className="font-semibold">Motivo de la cancelación:</span> {motivoCancelacion(o)}{o.canceladaPor ? ` (${o.canceladaPor})` : ''}</p>}
-                      {(o.historialEdiciones || []).length > 0 && (
-                        <div className="pt-1.5 mt-1.5 border-t border-zinc-100 dark:border-zinc-800">
-                          <p className="font-semibold mb-2">Historial de cambios</p>
-                          <HistorialTimeline ticket={o} />
-                        </div>
-                      )}
                     </div>
                   )}
                 </Colapsable>
@@ -270,6 +275,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         )}
       </div>
     </Modal>
+    {detalleAbierto && <DetalleOrdenModal ticket={detalleAbierto} verCobro={verCobro} verRevision={verRevision} onCopy={onCopy} onClose={() => setDetalleAbierto(null)} zIndexClass="z-[70]" />}
     {plantillaAbierta && <PlantillaFinalModal orden={plantillaAbierta} texto={armarPlantilla(plantillaAbierta)} titulo="PLANTILLA" onCopy={onCopy} onClose={() => setPlantillaAbierta(null)} zIndexClass="z-[70]" />}
     </>
   );

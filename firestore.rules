@@ -98,6 +98,24 @@ service cloud.firestore {
       return get(profilePath(appId)).data.get('username', '');
     }
 
+    // Los "Detalles de la orden" (`detallesOrden`, ver utils/detallesOrden): las rutas de 2 a 7 fotos que el técnico sube a Cloud Storage (ordenes/{id de la orden}/...) y quién y cuándo. Las reglas no pueden recorrer
+    // la lista: revisan su tamaño y la primera, la segunda y la última foto; los archivos los vigila storage.rules (solo JPEG de hasta 1 MB, solo el técnico de la orden y ya finalizada).
+    function fotoDetalleValida(f, docId) {
+      return f is map
+        && f.keys().hasOnly(['ruta', 'bytes'])
+        && f.ruta is string && f.ruta.matches('^ordenes/' + docId + '/[A-Za-z0-9._-]+[.]jpg$') && f.ruta.size() <= 160
+        && f.bytes is int && f.bytes > 0 && f.bytes <= 1048576;
+    }
+    function detallesOrdenValido(d, docId) {
+      return d is map
+        && d.keys().hasOnly(['fotos', 'subidoPor', 'subidoEn'])
+        && d.keys().hasAll(['fotos', 'subidoPor', 'subidoEn'])
+        && d.fotos is list && d.fotos.size() >= 2 && d.fotos.size() <= 7
+        && fotoDetalleValida(d.fotos[0], docId) && fotoDetalleValida(d.fotos[1], docId) && fotoDetalleValida(d.fotos[d.fotos.size() - 1], docId)
+        && d.subidoPor is string && d.subidoPor.size() <= 100
+        && d.subidoEn is int;
+    }
+
     // La copia resumida del pago del cliente (`pagoCliente`, ver utils/pagoEnOrden) que el técnico deja en su orden y en el cobro: PAGO (con sus datos), DESPUES (el cliente paga después) o JUNTO (pagó junto con
     // otra orden). El documento que manda es el de pagosOrdenes (más abajo); esta copia solo se muestra.
     function pagoClienteValido(p) {
@@ -282,7 +300,7 @@ service cloud.firestore {
           isTecnicoRole(appId)
           && resource.data.tecnico == tecnicoAsociado(appId)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'pagoCliente', 'consultaCobro', 'tipoVisita', 'metrosCable', 'metrajeInicial', 'metrajeFinal', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'tipoEquipoNuevo', 'vlanVisita', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones'])
+               .hasOnly(['estado', 'nap', 'napCoordenadas', 'potenciaDbm', 'potencia1490Dbm', 'observacion', 'observacionInterna', 'observacionTecnico', 'pagoCliente', 'consultaCobro', 'tipoVisita', 'metrosCable', 'metrajeInicial', 'metrajeFinal', 'conectorExterno', 'conectorInterno', 'conectoresUsados', 'serialEquipo', 'tipoEquipoNuevo', 'vlanVisita', 'instalacion', 'enCamino', 'salioEn', 'llegoEn', 'prefinalizadoEn', 'historialEdiciones', 'detallesOrden'])
           // Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, agregar
           // 'infraestructura' a la lista de arriba y esta condición (el técnico solo deja la orden esperando, a su nombre y con motivo):
           // && (
@@ -306,6 +324,11 @@ service cloud.firestore {
               && resource.data.estado in ['PRE-FINALIZADO', 'FINALIZADO']
               && pagoClienteValido(request.resource.data.pagoCliente)
               && request.resource.data.pagoCliente.registradoPor == usuarioFinanzas(appId)))
+          // Los detalles de la orden (fotos): solo con la orden ya finalizada y a nombre de quien los sube. Los puede corregir (quitar o cambiar fotos) mientras la orden siga finalizada en la lista; siempre quedan de 2 a 7.
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['detallesOrden'])
+            || (resource.data.estado == 'FINALIZADO'
+              && detallesOrdenValido(request.resource.data.detallesOrden, docId)
+              && request.resource.data.detallesOrden.subidoPor == usuarioFinanzas(appId)))
           // Las horas del ciclo (reporte de esperas) son números o null; asignadoEn y primerAsignadoEn solo los escribe la oficina.
           && (request.resource.data.get('salioEn', null) == null || request.resource.data.salioEn is int)
           && (request.resource.data.get('llegoEn', null) == null || request.resource.data.llegoEn is int)
@@ -672,13 +695,14 @@ service cloud.firestore {
       }
       function revisionValida() {
         let r = request.resource.data;
-        return r.keys().hasOnly(['estado', 'motivo', 'firma', 'dia', 'codigo', 'tecnico', 'concepto', 'tecnicoCorregido', 'conceptoCorregido', 'descuento', 'descuentoDe', 'garantiaSinDescuento', 'por', 'en', 'historial', 'pendientePago', 'pagoId'])
+        return r.keys().hasOnly(['estado', 'motivo', 'firma', 'dia', 'codigo', 'tecnico', 'concepto', 'tecnicoCorregido', 'conceptoCorregido', 'descuento', 'descuentoDe', 'garantiaSinDescuento', 'sinDetalles', 'por', 'en', 'historial', 'pendientePago', 'pagoId'])
           && r.pendientePago is bool
           && (!('pagoId' in r) || (r.pagoId is string && r.pagoId.size() <= 100))
           && (!('descuento' in r) || ((r.descuento is int || r.descuento is float) && r.descuento >= 0 && r.descuento <= 100000))
           && (!('descuentoDe' in r) || (r.descuentoDe is map && r.descuentoDe.keys().hasOnly(['id', 'codigo', 'tecnico']) && r.descuentoDe.id is string && r.descuentoDe.id.size() > 0 && r.descuentoDe.id.size() <= 200
             && r.descuentoDe.codigo is string && r.descuentoDe.codigo.size() <= 40 && r.descuentoDe.tecnico is string && r.descuentoDe.tecnico.size() > 0 && r.descuentoDe.tecnico.size() <= 100))
           && (!('garantiaSinDescuento' in r) || (r.garantiaSinDescuento is string && r.garantiaSinDescuento.size() > 0 && r.garantiaSinDescuento.size() <= 300))
+          && (!('sinDetalles' in r) || (r.sinDetalles is string && r.sinDetalles.size() > 0 && r.sinDetalles.size() <= 300 && r.estado == 'APROBADA'))
           && r.estado in ['PENDIENTE', 'APROBADA', 'RETENIDA', 'EXCLUIDA']
           && r.motivo is string && r.motivo.size() <= 300
           && (!(r.estado in ['RETENIDA', 'EXCLUIDA']) || r.motivo.size() > 0)
@@ -694,6 +718,8 @@ service cloud.firestore {
           && r.historial is list && r.historial.size() <= 30;
       }
       allow read: if llevaFinanzas(appId);
+      // INFRAESTRUCTURA con permiso de historial lee la revisión de una orden por su id (no la lista): el Detalle de la orden del historial avisa si se aprobó sin los detalles.
+      allow get: if infraVeHistorial(appId);
       allow create: if isAdminUser(appId) && revisionValida()
         && request.resource.data.get('pagoId', '') == ''
         && request.resource.data.pendientePago == (request.resource.data.estado == 'APROBADA');
@@ -924,6 +950,8 @@ service cloud.firestore {
       }
 
       allow read: if llevaAdministracion(appId) || oficinaCierra(appId) || isFinanzasRole(appId);
+      // INFRAESTRUCTURA con permiso de historial lee el cobro de una orden por su id (no la lista), para el Detalle de la orden del historial.
+      allow get: if infraVeHistorial(appId);
       // pagoClienteValido se revisa solo donde el pago se escribe (al emitir un cobro que ya lo trae y en las dos ramas de abajo que lo ponen): validarlo en cada actualización gastaría expresiones de más.
       allow create: if oficinaCierra(appId)
         && cobroValido()
@@ -1049,6 +1077,8 @@ service cloud.firestore {
       // FINANZAS ve el pago, completo y en cualquier estado, de una instalación y de un cambio de equipo (y de ningún otro tipo de orden). Va con igualdades para que sus consultas por tipo se puedan comprobar.
       allow read: if llevaAdministracion(appId) || isUsuarioRole(appId) || (isTecnicoRole(appId) && resource.data.tecnico == tecnicoAsociado(appId))
         || (isFinanzasRole(appId) && (resource.data.tipoTrabajo == 'INSTALACIÓN' || resource.data.tipoTrabajo == 'CAMBIO DE EQUIPO' || resource.data.tipoVisita == 'CAMBIO_EQUIPO'));
+      // INFRAESTRUCTURA con permiso de historial lee el pago de una orden por su id (no la lista), para el Detalle de la orden del historial.
+      allow get: if infraVeHistorial(appId);
       allow create: if pagoOrdenValido() && (tecnicoCreaSuPago(appId) || adminCreaPagoDelTecnico(appId));
       allow update: if llevaAdministracion(appId)
         && pagoOrdenValido()

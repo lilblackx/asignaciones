@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Fotos de los "Detalles de la orden" (ver src/utils/detallesOrden.js): ordenes/{id de la orden}/{archivo}.jpg
+// Los roles y la orden se leen de Firestore (cada petición hace 2 lecturas: el perfil de quien sube y la orden).
+// Sube solo el TECNICO de la orden, cuando ya está FINALIZADA, y solo JPEG de hasta 1 MB. Nadie sobrescribe una foto: para cambiarla se sube otra y se quita la anterior (solo la borra el técnico de la orden mientras siga finalizada); el bucket borra el resto a los 60 días.
+// Leen la oficina (ADMIN y USUARIO), ADMINISTRACION, FINANZAS, el técnico de la orden e INFRAESTRUCTURA con el permiso de historial.
+// IMPORTANTE: estas reglas leen Firestore (firestore.get), y para eso la cuenta de servicio de Storage (service-NUMERO_DEL_PROYECTO@gcp-sa-firebasestorage.iam.gserviceaccount.com) necesita el rol "Firebase Rules Firestore Service Agent"
+// (roles/firebaserules.firestoreServiceAgent). La CLI lo concede, preguntando, al desplegar estas reglas desde una terminal interactiva; en modo no interactivo (sin terminal) lo omite en silencio y TODA subida y lectura de fotos
+// da 403 (storage/unauthorized). Si se cambia de proyecto o de cuenta de servicio, volver a desplegar `storage` desde una terminal y responder que sí. Mantener la sesión igual que firestore.rules (24 h; 7 días si es TECNICO).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function perfilDe(uid) {
+      return firestore.get(/databases/(default)/documents/artifacts/default-app-id/public/data/users/$(uid)).data;
+    }
+
+    function sesionDentroDe(segundos) {
+      return request.auth.token.auth_time > request.time.toMillis() / 1000 - segundos;
+    }
+
+    function perfilActivo() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/artifacts/default-app-id/public/data/users/$(request.auth.uid))
+        && perfilDe(request.auth.uid).get('disabled', false) != true
+        && (sesionDentroDe(87000) || (perfilDe(request.auth.uid).role == 'TECNICO' && sesionDentroDe(605400)));
+    }
+
+    function ordenDe(ticketId) {
+      return firestore.get(/databases/(default)/documents/artifacts/default-app-id/public/data/tickets/$(ticketId)).data;
+    }
+
+    function esTecnicoDeLaOrden(ticketId) {
+      return perfilActivo()
+        && perfilDe(request.auth.uid).role == 'TECNICO'
+        && ordenDe(ticketId).tecnico == perfilDe(request.auth.uid).tecnicoAsociado;
+    }
+
+    match /ordenes/{ticketId}/{archivo} {
+      allow read: if perfilActivo()
+        && (perfilDe(request.auth.uid).role in ['ADMIN', 'USUARIO', 'ADMINISTRACION', 'FINANZAS']
+          || esTecnicoDeLaOrden(ticketId));
+
+      // INFRAESTRUCTURA con el permiso de historial (puedeVerHistorial) ve las fotos en el Detalle de la orden del historial.
+      allow get: if perfilActivo()
+        && perfilDe(request.auth.uid).role == 'INFRAESTRUCTURA'
+        && perfilDe(request.auth.uid).get('puedeVerHistorial', false) == true;
+
+      // `resource == null`: el archivo no existe todavía (una foto ya subida no se puede sobrescribir).
+      allow create: if resource == null
+        && esTecnicoDeLaOrden(ticketId)
+        && ordenDe(ticketId).estado == 'FINALIZADO'
+        && archivo.matches('^[A-Za-z0-9._-]{1,80}[.]jpg$')
+        && request.resource.contentType == 'image/jpeg'
+        && request.resource.size > 0
+        && request.resource.size <= 1024 * 1024;
+
+      // Cambiar una foto es subir otra y quitar la anterior: el técnico de la orden borra mientras la orden siga finalizada. Sobrescribir no se permite.
+      allow delete: if esTecnicoDeLaOrden(ticketId)
+        && ordenDe(ticketId).estado == 'FINALIZADO';
+      allow update: if false;
+    }
+  }
+}

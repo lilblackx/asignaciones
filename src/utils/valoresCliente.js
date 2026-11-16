@@ -2,9 +2,9 @@
 // aprobar o finalizar una orden. El técnico los ve junto al cobro resultante. No son los que el técnico captura
 // al pre-finalizar (`potenciaDbm`, solo informativos): estos van aparte, en `valoresCliente`.
 //
-// Son obligatorios en toda orden con cobro, salvo las que no tienen una ONU del cliente que medir (Retiro de
-// equipo, Validación NAP). Las instalaciones no pasan por el cobro, así que el técnico nunca vería esta tarjeta:
-// en ellas la oficina puede guardar los valores igual, pero es opcional (ver ofreceValoresCliente).
+// Son obligatorios en toda orden con cobro y en las instalaciones, salvo las que no tienen una ONU del cliente que medir (Retiro de
+// equipo, Validación NAP). En las instalaciones el técnico no pasa por el cobro y nunca ve esta tarjeta, pero la oficina igual debe guardarlos
+// (antes eran opcionales ahí; ahora no se cierra una instalación sin ellos).
 
 import { llevaCobro } from './cobro.js';
 import { esInstalacion } from './instalacion.js';
@@ -12,10 +12,10 @@ import { parsePotencia } from './potencia.js';
 
 const SIN_ONU_QUE_MEDIR = ['RETIRO EQUIPO', 'VALIDACION NAP'];
 
-export const exigeValoresCliente = (t) => llevaCobro(t) && !SIN_ONU_QUE_MEDIR.includes(String(t?.tipoTrabajo || '').toUpperCase());
+export const exigeValoresCliente = (t) => Boolean(t) && (llevaCobro(t) || esInstalacion(t.tipoTrabajo)) && !SIN_ONU_QUE_MEDIR.includes(String(t?.tipoTrabajo || '').toUpperCase());
 
-// ¿La oficina puede guardar los valores en esta orden? En las que los exigen y, de forma opcional, en las instalaciones.
-export const ofreceValoresCliente = (t) => exigeValoresCliente(t) || (Boolean(t) && esInstalacion(t.tipoTrabajo));
+// ¿La oficina guarda los valores en esta orden? En las que los exigen: hoy es lo mismo (antes las instalaciones eran solo opcionales).
+export const ofreceValoresCliente = (t) => exigeValoresCliente(t);
 
 // Escala de la ONU (dBm). Bueno: -15 a -28. Regular: -29 a -31. Crítico: -31 a -33 (y por debajo).
 // Los huecos se resuelven hacia el lado más cauto: entre -28 y -29 cuenta como Regular, -31 exacto como

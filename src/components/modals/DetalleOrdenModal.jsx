@@ -2,7 +2,7 @@ import { textoMetrajeConMarcas } from '../../utils/metraje';
 import { observacionEsInterna, observacionParaTecnico } from '../../utils/observacion';
 import PagoDelCliente from '../PagoDelCliente';
 import { pagoClienteDe } from '../../utils/pagoEnOrden';
-import { Cable, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
+import { Cable, Camera, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
 import Modal from '../Modal';
 import HistorialTimeline from '../HistorialTimeline';
 import InsigniaVentaTecnico from '../InsigniaVentaTecnico';
@@ -21,6 +21,9 @@ import { estaExonerado, monedaDe, textoMonto } from '../../utils/cobro';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from '../../utils/whatsapp';
 import { valoresGuardados } from '../../utils/valoresCliente';
 import CancelacionAviso from '../CancelacionAviso';
+import FotosDeOrden from '../FotosDeOrden';
+import AprobacionSinDetalles from '../AprobacionSinDetalles';
+import { fotosDe } from '../../utils/detallesOrden';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 const fechaProgramada = (iso) => { const [y, m, d] = String(iso || '').split('-'); return y && m && d ? `${d}/${m}/${y}` : ''; };
@@ -56,7 +59,8 @@ const ENLACE = 'inline-flex items-center gap-1 max-lg:min-h-11 text-sky-700 dark
 // Todos los datos de una orden en una sola ventana, solo para mirar (desde el ojito junto al nombre en la lista). Editar,
 // aprobar o finalizar siguen en el menú de la fila. `onCopy(texto, mensaje)` copia y avisa con el toast.
 // `verCobro` (la oficina): muestra el cobro de la orden al cliente (pendiente o cargado en el portal) en solo lectura.
-export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = false }) {
+// `verRevision` (solo ADMIN, que lee la revisión de pagos): avisa si la orden se aprobó en Revisión sin los detalles (fotos), con el motivo.
+export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = false, verRevision = false, zIndexClass = 'z-50' }) {
   // La observación marcada como interna solo la ve la oficina (quien ve el cobro); el técnico no.
   const observacionDeOficina = verCobro ? ticket.observacion : observacionParaTecnico(ticket);
   const { copiado, copiar } = useCopiado(onCopy);
@@ -72,7 +76,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
   const cobro = estaExonerado(ticket) ? 'Exonerado' : ticket.cobroBs ? textoMonto(ticket.cobroBs, monedaDe(ticket)) : '';
 
   return (
-    <Modal onClose={onClose} zIndexClass="z-50">
+    <Modal onClose={onClose} zIndexClass={zIndexClass}>
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
         <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
@@ -91,6 +95,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
           </div>
 
           <CancelacionAviso ticket={ticket} />
+          {verRevision && <AprobacionSinDetalles orden={ticket} />}
 
           {verCobro && (
             <Seccion icono={Landmark} titulo="Cobro al cliente">
@@ -163,6 +168,13 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
           )}
 
           {pagoClienteDe(ticket) && <PagoDelCliente orden={ticket} bloque />}
+
+          {/* Solo la oficina ve las fotos (el técnico las corrige desde su lista) y se piden cuando esta sección entra en pantalla, no al abrir el detalle. */}
+          {verCobro && fotosDe(ticket).length > 0 && (
+            <Seccion icono={Camera} titulo="Detalles de la orden (fotos)">
+              <FotosDeOrden ticket={ticket} />
+            </Seccion>
+          )}
 
           {plantilla && (
             <Seccion

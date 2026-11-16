@@ -30,7 +30,16 @@
   --animate-pulso-numero: pulso-numero 0.35s ease-out;
   --animate-crecer-x: crecer-x 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-crecer-y: crecer-y 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-paso-adelante: paso-adelante 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-paso-atras: paso-atras 0.26s cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* Cambio de paso de un asistente (ver components/Pasos.jsx): el contenido nuevo entra deslizándose desde el lado hacia el que se avanza. */
+  @keyframes paso-adelante {
+    from { opacity: 0; transform: translateX(28px); }
+  }
+  @keyframes paso-atras {
+    from { opacity: 0; transform: translateX(-28px); }
+  }
   @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(8px); }
   }

@@ -1,6 +1,6 @@
 import { observacionParaTecnico } from '../utils/observacion';
 import { useRef } from 'react';
-import { ArrowDownAZ, Ban, Banknote, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
+import { Ban, Banknote, Camera, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoColor, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
@@ -13,7 +13,8 @@ import CancelacionAviso from './CancelacionAviso';
 import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
 import PagoDelCliente from './PagoDelCliente';
-import { faltaElPago } from '../utils/pagoCliente';
+import { PENDIENTE_PAGO, pendienteDelTecnico, puedeCorregirDetalles } from '../utils/detallesOrden';
+import FaltaPorCompletar from './FaltaPorCompletar';
 import { BotonPrioridad, InsigniaPrioridad } from './PrioridadControl';
 import InsigniaVentaTecnico from './InsigniaVentaTecnico';
 import InsigniaGarantia from './InsigniaGarantia';
@@ -41,7 +42,6 @@ export default function TicketsTable({
   isTecnico = false,
   hasAnyTickets = true,
   sortBy,
-  setSortBy,
   getTecnicoColor,
   onEdit,
   onCancelar,
@@ -53,6 +53,7 @@ export default function TicketsTable({
   onPreFinalizar,
   conBorrador,
   onRegistrarPago,
+  onCorregirFotos,
   onAprobarFinalizar,
   onResponderCobro,
   onEscalar,
@@ -86,13 +87,7 @@ export default function TicketsTable({
             <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[16%] align-middle text-center">NOMBRE</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[13%] min-[1440px]:w-[12%] align-middle text-center">CÉDULA</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[15%] min-[1440px]:w-[18%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] align-middle text-center group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setSortBy(sortBy === 'TIPO_TRABAJO' ? 'DEFECTO' : 'TIPO_TRABAJO')} title="Ordenar por Tipo de Trabajo">
-              {/* El título va centrado como los demás; el ícono de orden cuelga a su derecha sin correrlo. */}
-              <span className="relative block w-fit mx-auto">
-                FALLA / TRABAJO
-                <ArrowDownAZ className={`absolute left-full top-1/2 -translate-y-1/2 ml-1 w-3 h-3 ${sortBy === 'TIPO_TRABAJO' ? 'text-red-500' : 'text-zinc-400 group-hover:text-zinc-300'}`} />
-              </span>
-            </th>
+            <th className="px-3 py-3 border-r border-zinc-800 w-[15%] align-middle text-center">FALLA / TRABAJO</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[11%] align-middle text-center">TÉCNICO</th>
             <th className="px-3 py-3 border-r border-zinc-800 w-[14%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
             <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
@@ -218,6 +213,7 @@ export default function TicketsTable({
                 <td className="px-2 py-3 border-r border-zinc-200 dark:border-zinc-800 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-0.5">
                     <span className={`inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-tight text-center ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
+                    {isTecnico && <FaltaPorCompletar ticket={ticket} />}
                     {cerrada && (
                       <span className="text-[11px] max-lg:text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
                         {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}
@@ -238,10 +234,12 @@ export default function TicketsTable({
                         )}
                         {ticket.estado === 'PENDIENTE' ? (
                           <button onClick={() => onPreFinalizar(ticket)} aria-label={`${conBorrador?.has(String(ticket.id)) ? 'Continuar el borrador de' : 'Pre-finalizar'} orden ${ticket.codigo || ticket.id}`} className={`p-1 text-black bg-amber-500 hover:bg-amber-400 rounded-xl font-bold transition-colors ${conBorrador?.has(String(ticket.id)) ? 'ring-2 ring-offset-1 ring-amber-300 dark:ring-offset-zinc-900' : ''}`} title={conBorrador?.has(String(ticket.id)) ? 'Continuar borrador guardado' : 'Pre-finalizar orden'}><ClipboardCheck className="w-3.5 h-3.5" /></button>
-                        ) : onRegistrarPago && faltaElPago(ticket) ? (
-                          <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`Registrar el pago de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-xl font-bold transition-colors" title="Registrar el pago del cliente"><Banknote className="w-3.5 h-3.5" aria-hidden="true" /></button>
+                        ) : onRegistrarPago && pendienteDelTecnico(ticket) ? (
+                          <button onClick={() => onRegistrarPago(ticket.id)} aria-label={`${pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago' : 'Subir los detalles'} de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 rounded-xl font-bold transition-colors" title={pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? 'Registrar el pago del cliente' : 'Subir los detalles de la orden (fotos)'}>{pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? <Banknote className="w-3.5 h-3.5" aria-hidden="true" /> : <Camera className="w-3.5 h-3.5" aria-hidden="true" />}</button>
                         ) : ticket.estado === 'PRE-FINALIZADO' ? (
                           <span className="p-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 rounded" title="Pre-finalizada: esperando aprobación de administración"><Clock className="w-3.5 h-3.5" /></span>
+                        ) : onCorregirFotos && puedeCorregirDetalles(ticket) ? (
+                          <button onClick={() => onCorregirFotos(ticket)} aria-label={`Corregir las fotos de la orden ${ticket.codigo || ticket.id}`} className="p-1 text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors" title="Corregir las fotos de la orden"><Camera className="w-3.5 h-3.5" aria-hidden="true" /></button>
                         ) : null}
                         {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
                             comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.

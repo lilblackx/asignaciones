@@ -124,6 +124,8 @@ npx firebase deploy --only hosting
 
 URL: https://seguimientons-f2026.web.app
 
+Las reglas de Storage (las fotos de los detalles de la orden) se publican con `npx firebase deploy --only storage` **desde una terminal interactiva** y respondiendo que sí a "Cloud Storage for Firebase needs an IAM Role to use cross-service rules. Grant the new role?": esas reglas leen Firestore y necesitan ese rol; sin terminal (modo no interactivo) la CLI lo omite en silencio y las fotos dan 403 (`storage/unauthorized`).
+
 Para publicar las reglas de Firestore: `npx firebase deploy --only firestore:rules`. El índice de reportes (`firestore.indexes.json`, usado por la pantalla de almacén) se publica con `npx firebase deploy --only firestore:indexes` y tarda unos minutos en construirse.
 
 ### Workers (Cloudflare)

@@ -34,10 +34,10 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligat
 }
 
 // Valores de señal del cliente que guarda la oficina antes de aprobar o finalizar: OLT Rx (1310 nm) y ONU Rx
-// (1490 nm). El técnico los ve junto al cobro resultante. Son obligatorios: sin guardarlos no se cierra la orden
-// (`obligatorio` false en instalaciones: se pueden guardar, pero no hacen falta y el técnico no los ve).
+// (1490 nm). Son obligatorios: sin guardarlos no se cierra la orden. El técnico los ve junto al cobro resultante; en las instalaciones no hay
+// cobro y no los ve (`tecnicoLosVe` false), pero la oficina igual debe guardarlos.
 // El estado vive en el modal (AprobarFinalizarModal) porque el botón de cerrar también lo necesita.
-export default function ValoresClienteAdmin({ ticket, obligatorio = true, olt, onu, onOlt, onOnu, errores, guardados, sucio, guardando, errorGuardar, onGuardar }) {
+export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnicoLosVe = true, olt, onu, onOlt, onOnu, errores, guardados, sucio, guardando, errorGuardar, onGuardar }) {
   const capturarSenal = (v1310, v1490) => {
     if (v1310 !== null) onOlt(v1310);
     if (v1490 !== null) onOnu(v1490);
@@ -51,9 +51,9 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, olt, o
           <Radio className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> VALORES DEL CLIENTE
         </h3>
         <p className="ml-6 mt-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
-          {obligatorio
+          {tecnicoLosVe
             ? 'Los guardas tú y el técnico los ve junto con el cobro. Los que él capturó al pre-finalizar son solo informativos.'
-            : 'Los guardas tú y quedan registrados en la orden. En las instalaciones son opcionales y el técnico no los ve.'}
+            : 'Los guardas tú y quedan registrados en la orden; el técnico no los ve. Los que él capturó al pre-finalizar son solo informativos.'}
         </p>
       </div>
 
@@ -67,11 +67,11 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, olt, o
       {guardados && !sucio ? (
         <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-300 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-emerald-900 dark:text-emerald-200">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-          <p className="leading-snug"><span className="font-black">Valores guardados</span>{guardados.guardadoPor ? ` por ${guardados.guardadoPor}` : ''}{obligatorio ? '. El técnico los verá con el cobro' : ''}. Si los cambias, vuelve a guardar.</p>
+          <p className="leading-snug"><span className="font-black">Valores guardados</span>{guardados.guardadoPor ? ` por ${guardados.guardadoPor}` : ''}{obligatorio && tecnicoLosVe ? '. El técnico los verá con el cobro' : ''}. Si los cambias, vuelve a guardar.</p>
         </div>
       ) : (
         <p role={errorGuardar ? 'alert' : undefined} className="font-bold text-amber-800 dark:text-amber-300">
-          {errorGuardar || (sucio ? `Cambiaste los valores: guárdalos de nuevo${obligatorio ? ' para que el técnico vea los nuevos' : ''}.` : obligatorio ? 'Aún no guardas los valores: sin ellos no se puede cerrar la orden.' : 'Aún no guardas los valores. Si no los vas a registrar, deja los campos vacíos.')}
+          {errorGuardar || (sucio ? `Cambiaste los valores: guárdalos de nuevo${obligatorio && tecnicoLosVe ? ' para que el técnico vea los nuevos' : ''}.` : obligatorio ? 'Aún no guardas los valores: sin ellos no se puede cerrar la orden.' : 'Aún no guardas los valores. Si no los vas a registrar, deja los campos vacíos.')}
         </p>
       )}
 

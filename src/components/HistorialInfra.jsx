@@ -13,7 +13,8 @@ import OrdersHistoryModal from './modals/OrdersHistoryModal';
 // El historial como página: ocupa lo que queda de la pantalla bajo el encabezado y las franjas de arriba (la pantalla de Infraestructura es una columna de alto fijo mientras se ve).
 const CLASE_PAGINA = 'w-full flex-1 min-h-0 overflow-y-auto bg-fondo flex flex-col';
 
-// El historial de órdenes de INFRAESTRUCTURA con permiso: el mismo que ve el administrador (todas las órdenes, vivas y archivadas en cierres), solo para mirar.
+// El historial de órdenes de INFRAESTRUCTURA con permiso: el mismo que ve el administrador (todas las órdenes, vivas y archivadas en cierres), solo para mirar, con el mismo "Ver detalle completo" (cobro, fotos y
+// si se aprobó sin los detalles; las reglas le dan lectura puntual de eso).
 // Quien la pinta lo monta la primera vez que se abre la pestaña (ahí se leen los datos) y lo deja montado, oculto (`visible`), al cambiar de pestaña.
 // `copiar(texto, mensaje)` copia y avisa con el toast. `ranura` es el hueco (en la fila de pestañas) donde se pinta "Actualizado hace…" y el botón Actualizar, para no gastar otra fila de pantalla.
 export default function HistorialInfra({ auth, visible, copiar, setToastMsg, ranura }) {
@@ -59,6 +60,8 @@ export default function HistorialInfra({ auth, visible, copiar, setToastMsg, ran
           onLoadMoreReports={cargarReportesAnteriores}
           getTecnicoColor={getTecnicoColor}
           puedeVerPlantilla
+          verCobro
+          verRevision
           plantillaDe={plantillaDe}
           onCopy={copiar}
           onClose={() => {}}

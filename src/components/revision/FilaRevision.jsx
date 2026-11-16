@@ -5,7 +5,9 @@ import SelectMenu from '../SelectMenu';
 import Colapsable from '../Colapsable';
 import { BOTON, BOTON_FILA, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
-import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable, motivoSinPago, textoEscaladaRevision } from '../../utils/revisionPagos';
+import VerFotosOrden from '../VerFotosOrden';
+import { tieneDetalles } from '../../utils/detallesOrden';
+import { ETIQUETA_REVISION, MAX_MOTIVO_REVISION, motivoNoAprobable, motivoSinDetalles, motivoSinPago, textoEscaladaRevision } from '../../utils/revisionPagos';
 import { parseMontoAjuste } from '../../utils/ajustes';
 import { montoCalculadora, montoParaCampo } from '../../utils/montoCalculadora';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
@@ -54,7 +56,8 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
   const cerrar = () => { setAbierto(null); setMotivo(''); setError(''); };
 
   const confirmar = async (accion) => {
-    const ok = await onAccion(item, accion, accion === 'CORREGIR' ? { correccion } : { motivo });
+    // "Aprobar sin detalles" es una aprobación que lleva el motivo de no tener las fotos.
+    const ok = accion === 'SIN_DETALLES' ? await onAccion(item, 'APROBAR', { sinDetalles: motivo }) : await onAccion(item, accion, accion === 'CORREGIR' ? { correccion } : { motivo });
     if (ok === true) cerrar(); else if (typeof ok === 'string') setError(ok);
   };
   const guardarGarantia = async () => {
@@ -79,9 +82,12 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
   };
 
   const topeOrigen = garantia.origen?.id ? precioOrigen(garantia.origen.id) : null;
-  // Lo que frena la aprobación: lo de siempre y, además, que el técnico no haya registrado el pago del cliente (ver motivoSinPago).
+  // Lo que frena la aprobación: lo de siempre (`bloqueo`) y, además, que el técnico no haya registrado el pago del cliente (ver motivoSinPago) o que falten los detalles de la orden (ver motivoSinDetalles).
+  // Cada motivo se dice una sola vez: el del pago y el de las fotos, arriba junto a la orden; `bloqueo`, debajo de los botones.
+  const bloqueo = estado === 'APROBADA' ? '' : motivoNoAprobable(item);
   const sinPago = estado === 'APROBADA' ? '' : motivoSinPago(item);
-  const problema = estado === 'APROBADA' ? '' : motivoNoAprobable(item) || sinPago;
+  const sinDetalles = estado === 'APROBADA' ? '' : motivoSinDetalles(item);
+  const problema = bloqueo || sinPago || sinDetalles;
   const esGarantiaDeOtro = Boolean(item.garantiaDe);
   const nombreConcepto = (id) => CONCEPTOS_PAGO.find((c) => c.id === id)?.nombre || '';
   const conceptos = [{ value: '', label: item.conceptoOriginal ? `Sin cambio (${nombreConcepto(item.conceptoOriginal)})` : 'Elige el concepto' }, ...CONCEPTOS_PAGO.map((c) => ({ value: c.id, label: c.nombre }))];
@@ -103,10 +109,13 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {item.tecnico}.</p>}
           {item.corregida && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
           {item.cambioDespues && <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
-          {sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">Falta el pago del cliente: lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}. No se puede aprobar hasta que esté registrado.</p>}
+          {sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">Falta el pago del cliente: lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}; si no puede, regístralo tú. No se puede aprobar hasta que esté registrado.</p>}
+          {sinDetalles && !sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">{sinDetalles}</p>}
           <PagoDelCliente orden={item.orden} className="mt-0.5" />
+          <VerFotosOrden orden={item.orden} className="mt-0.5" />
           {item.revision?.motivo && <p className={TEXTO_SUAVE}>Motivo: {item.revision.motivo} · {item.revision.por}</p>}
           {estado === 'APROBADA' && item.revision && <p className={TEXTO_SUAVE}>Aprobada por {item.revision.por}</p>}
+          {estado === 'APROBADA' && item.revision?.sinDetalles && !tieneDetalles(item.orden) && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Aprobada sin los detalles de la orden (fotos): {item.revision.sinDetalles}</p>}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className={`${CHIP} ${CHIP_ESTADO[estado]}`}>{ETIQUETA_REVISION[estado]}</span>
@@ -122,6 +131,9 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
         {(estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
           <button type="button" onClick={aprobar} disabled={ocupado || Boolean(problema)} title={problema || undefined} className={`${BOTON_FILA} !border-emerald-600 !text-emerald-700 dark:!text-emerald-300`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar</button>
         )}
+        {sinDetalles && !sinPago && !motivoNoAprobable(item) && (estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
+          <button type="button" onClick={() => abrir('SIN_DETALLES')} disabled={ocupado} className={`${BOTON_FILA} !border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar sin detalles</button>
+        )}
         {(estado === 'PENDIENTE' || estado === 'APROBADA') && <button type="button" onClick={() => abrir('RETENER')} disabled={ocupado} className={BOTON_FILA}><PauseCircle className="w-4 h-4" aria-hidden="true" /> Retener</button>}
         {estado !== 'EXCLUIDA' && <button type="button" onClick={() => abrir('EXCLUIR')} disabled={ocupado} className={BOTON_FILA}><XCircle className="w-4 h-4" aria-hidden="true" /> Excluir</button>}
         {(estado === 'PENDIENTE' || estado === 'APROBADA') && (
@@ -130,19 +142,19 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
         {estado !== 'EXCLUIDA' && estado !== 'RETENIDA' && <button type="button" onClick={() => abrir('CORREGIR')} disabled={ocupado} className={BOTON_FILA}><Pencil className="w-4 h-4" aria-hidden="true" /> Corregir</button>}
         {(estado !== 'PENDIENTE' || item.revision) && <button type="button" onClick={() => onDeshacer(item)} disabled={ocupado} className={BOTON_FILA}><RotateCcw className="w-4 h-4" aria-hidden="true" /> Volver a pendiente</button>}
       </div>
-      {/* El aviso de la garantía sin resolver ya está arriba, con la orden original: no se repite. */}
-      {problema && estado !== 'APROBADA' && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{problema}</p>}
+      {/* El aviso de la garantía sin resolver ya está arriba, con la orden original, y el del pago y el de las fotos también (junto a la orden): no se repiten. Aquí solo va lo que no se dijo arriba (sin concepto, sin técnico). */}
+      {bloqueo && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{bloqueo}</p>}
       {error && !abierto && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
 
-      <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR') && (
+      <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR' || abierto === 'SIN_DETALLES') && (
         <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
           <div>
-            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : 'Por qué se excluye (no se paga)'}</label>
+            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : abierto === 'EXCLUIR' ? 'Por qué se excluye (no se paga)' : 'Por qué se aprueba sin los detalles de la orden (obligatorio)'}</label>
             <input id={`motivo-${item.clave}`} value={motivo} onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
             {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-1">{error}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar(abierto)} disabled={ocupado}>{abierto === 'RETENER' ? 'Retener' : 'Excluir'}</Boton>
+            <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar(abierto)} disabled={ocupado}>{abierto === 'RETENER' ? 'Retener' : abierto === 'EXCLUIR' ? 'Excluir' : 'Aprobar sin detalles'}</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>
           </div>
         </div>

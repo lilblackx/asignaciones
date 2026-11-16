@@ -1,6 +1,7 @@
 // La barrera entre las órdenes y Finanzas: un administrador revisa lo que se va a pagar y solo lo aprobado llega a Finanzas. Funciones puras (las usan el módulo Revisión de
 // pagos, Finanzas y las pruebas). Se guarda en la colección revisionPagos, un documento por orden (el id es la clave de la orden, la misma de ordenesPagadas):
-//   { estado, motivo, firma, dia, codigo, tecnico, concepto, tecnicoCorregido?, conceptoCorregido?, descuento?, descuentoDe?, garantiaSinDescuento?, por, en, historial: [{ estado, por, en, motivo }] }
+//   { estado, motivo, firma, dia, codigo, tecnico, concepto, tecnicoCorregido?, conceptoCorregido?, descuento?, descuentoDe?, garantiaSinDescuento?, sinDetalles?, por, en, historial: [{ estado, por, en, motivo }] }
+//   sinDetalles: el motivo por el que se aprobó la orden sin los detalles (fotos) que el técnico no subió; solo existe en una aprobación de ese tipo.
 //   Garantía de otro técnico (ver garantia.js y ajustes.js): una orden con `garantiaDe` no se puede aprobar hasta decidir. `descuento` son los dólares que se descuentan de la orden original (`descuentoDe`:
 //   { id, codigo, tecnico }) y se le pagan al técnico de la garantía; `garantiaSinDescuento` es el motivo de no descontar nada. Con descuento la garantía no se paga como orden.
 //   pendientePago: true mientras la orden está APROBADA y sin pagar; es lo que lee Finanzas para ver "todo lo que falta por pagar" sin importar la fecha (una consulta por esta marca, en vez de leer los
@@ -14,6 +15,7 @@ import { ajustesDeOrden, idsAjustesDeOrden } from './ajustes.js';
 import { RESULTADO_CERRADA, RESULTADO_DEVUELTA } from './infraestructura.js';
 import { diaLegible } from './periodoReporte.js';
 import { faltaElPago } from './pagoCliente.js';
+import { faltanDetalles, textoFaltanDetalles } from './detallesOrden.js';
 import { diaDe } from './totalesMes.js';
 
 export const ESTADOS_REVISION = ['PENDIENTE', 'APROBADA', 'RETENIDA', 'EXCLUIDA'];
@@ -106,6 +108,10 @@ export const motivoSinPago = (item) => (faltaElPago(item?.orden)
   ? `Falta el pago del cliente: lo registra el técnico${item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}. Si no puede, regístralo tú.`
   : '');
 
+// Lo mismo con los detalles de la orden (2 a 7 fotos que sube el técnico, ver utils/detallesOrden): sin ellos la orden no se aprueba, salvo que el administrador la apruebe una por una escribiendo el motivo
+// (`sinDetalles` de armarRevision; la aprobación en bloque no lo hace). '' si no faltan.
+export const motivoSinDetalles = (item) => (faltanDetalles(item?.orden) ? `${textoFaltanDetalles(item.orden.tecnico)} No se puede aprobar hasta que los suba, o apruébala sin ellos con un motivo.` : '');
+
 // Lo que ve Finanzas: lo aprobado y lo que ya se pagó (las ya pagadas siguen a la vista de los reportes). `pagadas`: Set de claves de ordenesPagadas. Una orden aprobada con descuento
 // no se paga como orden a nadie: Finanzas solo ve su descuento y su bono (ajustes).
 export const paraFinanzas = (revisados, pagadas = new Set()) => revisados
@@ -144,7 +150,7 @@ const ajustesVigentes = (rev) => rev?.estado === 'APROBADA' && Number(rev.descue
 // `garantia` (decisión sobre una garantía de otro técnico): { descuento, origen: { id, codigo, tecnico }, tope? } para descontar `descuento` dólares de la orden original (`tope`: lo que cobra esa
 // original; el descuento no puede pasar de ahí) o { sinDescuento: 'motivo' } para no descontar. Sin `garantia` se conserva la decisión anterior. Devuelve { error } o
 // { id, datos, ajustes, borrarAjustes }: los ajustes que hay que crear al aprobar y los que hay que borrar porque la orden ya no está aprobada.
-export function armarRevision(item, accion, { por, ahora, motivo = '', correccion, garantia } = {}) {
+export function armarRevision(item, accion, { por, ahora, motivo = '', correccion, garantia, sinDetalles = null } = {}) {
   const estado = { APROBAR: 'APROBADA', RETENER: 'RETENIDA', EXCLUIR: 'EXCLUIDA', PENDIENTE: 'PENDIENTE' }[accion];
   if (!estado) return { error: 'Acción desconocida.' };
   const previo = item.revision;
@@ -178,16 +184,25 @@ export function armarRevision(item, accion, { por, ahora, motivo = '', correccio
     if (m.error) return { error: m.error };
     texto = m.valor;
   }
+  // Aprobar sin los detalles de la orden (fotos): solo con un motivo; `sinDetalles` en null es "no se pidió" (la aprobación en bloque) y la orden se queda esperándolos.
+  let textoSinDetalles = '';
   if (estado === 'APROBADA') {
     const problema = motivoNoAprobable(efectivo) || motivoSinPago(efectivo);
     if (problema) return { error: problema };
+    const faltan = motivoSinDetalles(efectivo);
+    if (faltan) {
+      if (sinDetalles === null) return { error: faltan };
+      const m = parseMotivoRevision(sinDetalles);
+      if (m.error) return { error: m.error === 'Escribe el motivo.' ? 'Escribe por qué se aprueba sin los detalles de la orden.' : m.error };
+      textoSinDetalles = m.valor;
+    }
   }
   const ajustes = estado === 'APROBADA' ? ajustesDeOrden(efectivo, { por, ahora, sinTecnico: SIN_TECNICO }) : [];
   const anterior = item.revisionAnterior || previo;
   // Si la orden ya está pagada se conserva su pago (aunque la firma ya no valga: `anterior` es el documento que hubo). Una pagada nunca vuelve a estar pendiente de pago.
   const pagoId = String(anterior?.pagoId || '');
   const viejos = ajustesVigentes(anterior) ? idsAjustesDeOrden(item.clave, anterior.firma) : [];
-  const anotacion = { estado, por, en: ahora, ...(texto && { motivo: texto }), ...(correccion && { correccion: [tecnicoCorregido && `técnico ${tecnicoCorregido}`, conceptoCorregido && `concepto ${conceptoCorregido}`].filter(Boolean).join(', ') || 'sin cambios' }), ...(garantia && { garantia: descuento > 0 ? `descuento ${descuento} $ de ${descuentoDe.codigo} (${descuentoDe.tecnico})` : `sin descuento: ${sinDescuento}` }) };
+  const anotacion = { estado, por, en: ahora, ...(texto && { motivo: texto }), ...(textoSinDetalles && { sinDetalles: textoSinDetalles }), ...(correccion && { correccion: [tecnicoCorregido && `técnico ${tecnicoCorregido}`, conceptoCorregido && `concepto ${conceptoCorregido}`].filter(Boolean).join(', ') || 'sin cambios' }), ...(garantia && { garantia: descuento > 0 ? `descuento ${descuento} $ de ${descuentoDe.codigo} (${descuentoDe.tecnico})` : `sin descuento: ${sinDescuento}` }) };
   return {
     id: item.clave,
     datos: {
@@ -203,6 +218,7 @@ export function armarRevision(item, accion, { por, ahora, motivo = '', correccio
       descuento,
       ...(descuento > 0 && { descuentoDe }),
       ...(sinDescuento && { garantiaSinDescuento: sinDescuento }),
+      ...(textoSinDetalles && { sinDetalles: textoSinDetalles }),
       pendientePago: estado === 'APROBADA' && !pagoId,
       ...(pagoId && { pagoId }),
       por,
@@ -224,7 +240,7 @@ export function aprobarPendientes(revisados, { por, ahora }) {
     // Lo escalado a infraestructura se aprueba una por una: quien revisa tiene que ver su alerta.
     if (item.escalada) { omitidas.push({ item, motivo: 'Está escalada a infraestructura: apruébala una por una.', escalada: true }); continue; }
     const r = armarRevision(item, 'APROBAR', { por, ahora });
-    if (r.error) omitidas.push({ item, motivo: r.error, ...(motivoSinPago(item) && !motivoNoAprobable(item) ? { sinPago: true } : {}) }); else documentos.push(r);
+    if (r.error) omitidas.push({ item, motivo: r.error, ...(motivoSinPago(item) && !motivoNoAprobable(item) ? { sinPago: true } : motivoSinDetalles(item) && !motivoNoAprobable(item) ? { sinDetalles: true } : {}) }); else documentos.push(r);
   }
   return { documentos, omitidas };
 }

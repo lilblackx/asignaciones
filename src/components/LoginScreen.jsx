@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { AlertCircle, Loader2, Moon, Sun } from 'lucide-react';
 import { stripEmojis } from '../utils/sanitizeInput';
 import PieVersion from './PieVersion';
+import { logosDeTemporada } from '../utils/temporada';
 import { CAMPO_LOGIN } from './estilos';
-import { logoDeTemporada } from '../utils/navidad';
 
 // Campos de 48 px (el dedo) y borde que se distingue del fondo en los dos temas (3:1). Con el contorno quitado, el foco se ve por el borde rojo y el aro.
 const labelClass = 'block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-1.5';
 
 export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setLoginData, loginError, handleLogin }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const logos = logosDeTemporada();
   const [verClave, setVerClave] = useState(false);
 
   const onSubmit = async (e) => {
@@ -35,19 +36,20 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
 
         <header className="px-6 pt-20 sm:px-8 lg:w-1/2 lg:flex lg:flex-col lg:justify-between lg:px-16 lg:py-14 lg:bg-black lg:border-r-8 lg:border-red-600">
           <div className="flex items-center gap-4 lg:hidden">
-            <img src={logoDeTemporada('/icon-192x192.png', '/navidad/login-192.png')} alt="Network Speed" width="64" height="64" className="w-16 h-16 rounded-xl" />
+            <img src={logos.login192} alt="Network Speed" width="64" height="64" className="w-16 h-16 rounded-xl" />
             <p className="text-base font-bold text-zinc-800 dark:text-zinc-200">Network Speed Fibra</p>
           </div>
           <div className="hidden lg:block" aria-hidden="true" />
           {/* Solo PC: el ícono grande de la marca (512 px, con su textura de ondas de fibra) con los bordes difuminados para que se funda con el negro del panel, sin caja. */}
           <div className="hidden lg:block -ml-6">
             <img
-              src={logoDeTemporada('/icon-512x512.png', '/navidad/login-512.png')}
+              src={logos.login512}
               alt="Network Speed"
               width="512"
               height="512"
+              loading="lazy"
               className="w-[min(36vw,52vh,520px)] h-auto"
-              style={{ WebkitMaskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)' }}
+              style={logos.login512Difuminado ? { WebkitMaskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)' } : undefined}
             />
           </div>
           <div>

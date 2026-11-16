@@ -67,5 +67,9 @@ export function datosAutorizacion(ticket) {
   return { equipo, cliente, texto };
 }
 
+// ¿Hay algo que autorizar en SmartOLT? Sí cuando el equipo trae datos propios de la autorización (serial, VLAN, tipo de equipo nuevo, drop, posteadura, puertos disponibles); la NAP y el puerto solos no cuentan: casi toda orden
+// los trae y no por eso se autoriza un equipo. Es lo que decide si la revisión de la oficina tiene el paso "Autorizar" (ver utils/pasosRevision).
+export const requiereAutorizar = (ticket) => datosAutorizacion(ticket).equipo.some((d) => d.clave !== 'nap' && d.clave !== 'puerto');
+
 // Lo que se copia de un dato: su `copia` o, si no la tiene, lo que se ve.
 export const textoACopiar = (dato) => dato.copia ?? dato.valor;

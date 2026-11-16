@@ -85,6 +85,7 @@ const FormasPagoModal = lazy(() => import('./components/modals/FormasPagoModal')
 const MaterialesModal = lazy(() => import('./components/modals/MaterialesModal'));
 const PreFinalizarModal = lazy(() => import('./components/modals/PreFinalizarModal'));
 const CobroResultanteModal = lazy(() => import('./components/modals/CobroResultanteModal'));
+const CorregirDetallesModal = lazy(() => import('./components/modals/CorregirDetallesModal'));
 const AprobarFinalizarModal = lazy(() => import('./components/modals/AprobarFinalizarModal'));
 const ResponderCobroModal = lazy(() => import('./components/modals/ResponderCobroModal'));
 const CancelarOrdenModal = lazy(() => import('./components/modals/CancelarOrdenModal'));
@@ -125,7 +126,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   const { technicians, getTecnicoColor, handleAddTech, handleDeleteTech, toggleTechnicoActivo, vincularTecnicoInventario } = useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado, currentUser, notifications.addNotification);
   const { users, createUser, setUserDisabled, updateUserNombre, setUserPuedeCerrar, setUserRole, setUserPuedeCrearVentas, setUserPuedeVerHistorial, adminResetPassword } = useUsers(firebaseUser, setToastMsg, role);
-  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, asegurarNumero, guardarUbicacion, preFinalizarTicket, cobrosPorRegistrar, registrarPagoDeOrden, registrarPagoPendienteDeOrden, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
+  const { tickets, ticketsCargados, cobrosPendientes, mostrarCobro, mostrarCobroInmediato, cerrarCobro, createTicket, verificarCodigoManual, updateTicket, cancelarTicket, asegurarNumero, guardarUbicacion, preFinalizarTicket, cobrosPorRegistrar, registrarPagoDeOrden, registrarPagoPendienteDeOrden, subirDetallesDeLaOrden, consultarCobroRecableado, responderConsultaCobro, aprobarFinalizarTicket, guardarValoresCliente, devolverTicket, finalizarTicket, togglePrioridad, escalarAInfraestructura, resolverInfraestructura, iniciarEnCamino, marcarLlegada, cancelarViaje } = useTickets(firebaseUser, currentUser, setToastMsg, role, tecnicoAsociado, notifications.addNotification, currentUserName);
   // Un aviso de una orden que ya se atendió se quita solo (y el contador baja). Corre también cuando entra un aviso o se cargan los guardados,
   // no solo al cambiar las órdenes; sin cambios no hace nada, así que no hay vuelta.
   const { notifications: listaAvisos, quitarAtendidas } = notifications;
@@ -265,7 +266,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   // Las órdenes de los cierres ya cargados: la búsqueda del dashboard también las encuentra (debajo de las activas, marcadas como archivadas).
   const archivados = useMemo(() => aplanarArchivados(reports), [reports]);
-  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, cantidadCerradas, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, incluirCerradas: canEditTickets, archivados, ahora });
+  const { searchTerm, setSearchTerm, statusFilter, setStatusFilter, tipoFilter, setTipoFilter, sortBy, setSortBy, filteredTickets, cantidadCerradas, visibleTickets, hasMore, loadMore } = useFilteredTickets(ticketsParaVer, { ocultarProgramadasFuturas: isTecnico, preFinalizadasArriba: canEditTickets, incluirPendientesDelTecnico: isTecnico, incluirCerradas: canEditTickets, archivados, ahora });
 
   // Contador persistente (no depende de haber visto el toast/sonido): se queda
   // hasta que las aprueben, así nadie se lo pierde por estar lejos de la pantalla.
@@ -338,6 +339,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
   // Pago del cliente que el técnico debe registrar: las que dejó para después (solo esta sesión) y la que abrió a mano desde su orden.
   const [pagoPospuesto, setPagoPospuesto] = useState(() => new Set());
   const [pagoAbierto, setPagoAbierto] = useState(null);
+  // La orden finalizada cuyas fotos (detalles de la orden) está corrigiendo el técnico.
+  const [corregirFotosTarget, setCorregirFotosTarget] = useState(null);
   const [aprobarTarget, setAprobarTarget] = useState(null);
   const [finalizarTarget, setFinalizarTarget] = useState(null);
   const [ubicacionTarget, setUbicacionTarget] = useState(null);
@@ -788,6 +791,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onPreFinalizar={setPreFinalizarTarget}
               conBorrador={borradoresPrefinalizar}
               onRegistrarPago={isTecnico ? setPagoAbierto : undefined}
+              onCorregirFotos={isTecnico ? setCorregirFotosTarget : undefined}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
               onEscalar={canEditTickets ? setEscalarTarget : undefined}
@@ -809,7 +813,6 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               isTecnico={isTecnico}
               hasAnyTickets={hasActiveAssignments}
               sortBy={sortBy}
-              setSortBy={setSortBy}
               getTecnicoColor={getTecnicoColor}
               onEdit={abrirEdicion}
               onCancelar={setCancelarTarget}
@@ -821,6 +824,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               onPreFinalizar={setPreFinalizarTarget}
               conBorrador={borradoresPrefinalizar}
               onRegistrarPago={isTecnico ? setPagoAbierto : undefined}
+              onCorregirFotos={isTecnico ? setCorregirFotosTarget : undefined}
               onAprobarFinalizar={setAprobarTarget}
               onResponderCobro={canEditTickets ? setResponderCobroTarget : undefined}
               onEscalar={canEditTickets ? setEscalarTarget : undefined}
@@ -1004,6 +1008,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             onLoadMoreReports={loadMoreReports}
             getTecnicoColor={getTecnicoColor}
             puedeVerPlantilla={canCerrar}
+            verCobro={canEditTickets}
+            verRevision={isAdmin}
             plantillaDe={plantillaDeHistorial}
             onCopy={copyToClipboard}
             enPagina={isAdmin}
@@ -1086,6 +1092,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         {detalleTarget && (
           <DetalleOrdenModal
             verCobro={canEditTickets}
+            verRevision={isAdmin}
             ticket={tickets.find(t => t.id === detalleTarget.id) || detalleTarget}
             onCopy={(texto, mensaje) => copyToClipboard(texto, mensaje)}
             onClose={() => setDetalleTarget(null)}
@@ -1107,6 +1114,16 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           />
         )}
 
+        {corregirFotosTarget && (
+          <Suspense fallback={null}>
+            <CorregirDetallesModal
+              ticket={tickets.find(t => t.id === corregirFotosTarget.id) || corregirFotosTarget}
+              onGuardar={subirDetallesDeLaOrden}
+              onClose={() => setCorregirFotosTarget(null)}
+            />
+          </Suspense>
+        )}
+
         {pagoActual ? (
           <CobroResultanteModal
             key={pagoActual.id}
@@ -1118,6 +1135,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
             registro={{
               onRegistrar: registrarPagoDeOrden,
               onPagaDespues: registrarPagoPendienteDeOrden,
+              onSubirDetalles: subirDetallesDeLaOrden,
               onPosponer: posponerPago,
               // Otras órdenes del mismo cliente (misma cédula), por si pagó varias con un solo pago.
               otrasOrdenes: otrasOrdenesDelCliente(pagoActual),

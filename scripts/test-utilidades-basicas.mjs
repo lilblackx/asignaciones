@@ -3,6 +3,7 @@
 // Uso: `npm run test:utilidades`.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { arrayUnion } from 'firebase/firestore';
 import { AUTH_EMAIL_DOMAIN } from '../src/constants.js';
 import { normalizeUsername, usernameToAuthEmail } from '../src/utils/authEmail.js';
@@ -117,12 +118,12 @@ check('se busca en cerradas desde 3 letras (sin contar espacios de los lados)', 
 
 // --- El aviso de "cargar cierres anteriores" se redacta en un solo archivo (AvisoCargarAnteriores): ningún otro pinta el texto ni un enlace "cargar más" suelto ---
 const archivosJsx = (dir) => readdirSync(dir).flatMap((n) => { const r = join(dir, n); return statSync(r).isDirectory() ? archivosJsx(r) : r.endsWith('.jsx') ? [r] : []; });
-const conAvisoPropio = archivosJsx(new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')).filter((r) => !r.endsWith('AvisoCargarAnteriores.jsx') && /más antiguos sin cargar|'cargar más'|Cargar reportes anteriores/.test(readFileSync(r, 'utf8')));
+const conAvisoPropio = archivosJsx(fileURLToPath(new URL('../src', import.meta.url))).filter((r) => !r.endsWith('AvisoCargarAnteriores.jsx') && /más antiguos sin cargar|'cargar más'|Cargar reportes anteriores/.test(readFileSync(r, 'utf8')));
 check('el aviso de cargar cierres anteriores sale solo de AvisoCargarAnteriores', conAvisoPropio, []);
 
 // --- Y el aviso va al FINAL de cada pantalla (reportes, estadísticas, Finanzas, Revisión, búsqueda de reportes), nunca arriba: arriba se toca sin querer y cada pulsación gasta lecturas ---
 const PATRON_AVISO = /<AvisoHistorial\b|<AvisoCargarAnteriores variante="(reporte|busqueda)"/;
-const conAviso = archivosJsx(new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')).filter((r) => PATRON_AVISO.test(readFileSync(r, 'utf8')) && !r.endsWith('AvisoHistorial.jsx') && !r.endsWith('AvisoCargarAnteriores.jsx'));
+const conAviso = archivosJsx(fileURLToPath(new URL('../src', import.meta.url))).filter((r) => PATRON_AVISO.test(readFileSync(r, 'utf8')) && !r.endsWith('AvisoHistorial.jsx') && !r.endsWith('AvisoCargarAnteriores.jsx'));
 const arriba = conAviso.filter((r) => {
   const lineas = readFileSync(r, 'utf8').split('\n');
   return lineas.findIndex((l) => PATRON_AVISO.test(l)) / lineas.length < 0.6;

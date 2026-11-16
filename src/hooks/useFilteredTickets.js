@@ -8,6 +8,7 @@ import { enInfraestructura } from '../utils/infraestructura';
 import { codigosAnteriores } from '../utils/correlativo';
 import { fechaDeOrden } from '../utils/fechaOrden';
 import { buscaEnCerradas, buscarCerradas, esCerrada } from '../utils/ordenesCerradas';
+import { esPendienteDelTecnico, pendientesDelTecnicoPrimero } from '../utils/pendientesTecnico';
 
 const PAGE_SIZE = 50;
 
@@ -19,9 +20,10 @@ function parseFecha(fechaStr) {
 // ocultarProgramadasFuturas: el técnico no ve en "Activas" las órdenes cuya
 // fecha programada aún no llega (las encuentra en el filtro "Programadas").
 // preFinalizadasArriba: la oficina ve primero lo que el técnico pre-finalizó, para aprobarlo sin buscarlo (con otro orden pedido, ese orden manda).
+// incluirPendientesDelTecnico: el técnico sigue viendo en "Activas" (arriba de todas) sus órdenes finalizadas a las que les falta el pago del cliente o las fotos; sin esto salen de la lista al finalizarse y no hay nada que le diga que le queda algo por hacer.
 // incluirCerradas: al buscar (3 letras o más) con el filtro en "Activas", debajo de las activas salen también las finalizadas y canceladas de hoy y las
 // ya archivadas por el cierre (`archivados`, las de los reportes cargados). Solo se leen datos que la app ya tiene.
-export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false, preFinalizadasArriba = false, incluirCerradas = false, archivados = [], ahora } = {}) {
+export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false, preFinalizadasArriba = false, incluirPendientesDelTecnico = false, incluirCerradas = false, archivados = [], ahora } = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('TODOS');
   const [tipoFilter, setTipoFilter] = useState('TODOS');
@@ -38,7 +40,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
     let result = tickets.filter(t => {
       const matchesSearch = coincideBusqueda(t);
 
-      const matchesStatus = statusFilter === 'TODOS' ? (t.estado === 'PENDIENTE' || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA') && !(ocultarProgramadasFuturas && esProgramadaFutura(t))
+      const matchesStatus = statusFilter === 'TODOS' ? ((t.estado === 'PENDIENTE' || t.estado === 'PRE-FINALIZADO' || t.estado === 'PRE-FINALIZADA') && !(ocultarProgramadasFuturas && esProgramadaFutura(t))) || (incluirPendientesDelTecnico && esPendienteDelTecnico(t))
         : statusFilter === 'PROG_HOY' ? t.estado === 'PENDIENTE' && ['hoy', 'vencida'].includes(categoriaProgramada(t.fechaProgramada))
         : statusFilter === 'PROG_MANANA' ? t.estado === 'PENDIENTE' && t.fechaProgramada === mananaISO()
         : statusFilter === 'PROG_FUTURAS' ? esProgramadaFutura(t)
@@ -87,6 +89,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
     if (!['TECNICO', 'TIPO_TRABAJO', 'PROGRAMADA'].includes(sortBy)) {
       result = prioritariasPrimero(result);
       if (preFinalizadasArriba) result = preFinalizadasPrimero(result);
+      if (incluirPendientesDelTecnico && statusFilter === 'TODOS') result = pendientesDelTecnicoPrimero(result);
     }
 
     // Las cerradas van al final, aparte, y no cambian el orden de las activas.
@@ -101,7 +104,7 @@ export function useFilteredTickets(tickets, { ocultarProgramadasFuturas = false,
     }
 
     return result;
-  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas, preFinalizadasArriba, incluirCerradas, archivados, ahora]);
+  }, [tickets, searchTerm, statusFilter, tipoFilter, sortBy, ocultarProgramadasFuturas, preFinalizadasArriba, incluirPendientesDelTecnico, incluirCerradas, archivados, ahora]);
 
   // Cuántas de las órdenes de la lista son de la sección de cerradas (0 si la búsqueda no la muestra). En "Activas" una cerrada solo llega por ahí.
   const cantidadCerradas = incluirCerradas && statusFilter === 'TODOS' ? filteredTickets.filter(esCerrada).length : 0;

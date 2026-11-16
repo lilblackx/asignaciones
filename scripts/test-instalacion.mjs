@@ -246,9 +246,10 @@ check('aviso de lo que falta: mismo orden',
   faltantesInstalacion({ tipoTrabajo: 'INSTALACIÓN' }).map(n => NOMBRE_A_CLAVE[n]).filter(c => c !== 'puerto'), ORDEN);
 
 const modal = leer('../src/components/modals/PreFinalizarModal.jsx');
-const cadena = modal.slice(modal.indexOf('El campo queda arriba'), modal.indexOf('if (faltaObs ||'));
+// El orden del cursor es el de la lista de problemas de evaluar() (cada uno con el paso y el campo donde va el cursor).
+const cadena = modal.slice(modal.indexOf('const problemas = ['), modal.indexOf('].filter(([hay])'));
 const ID_A_CLAVE = { 'pf-serial': 'serial', 'pf-vlan': 'vlan', 'pf-nap': 'nap', 'pf-puerto': 'puerto', 'pf-metraje-inicial': 'metraje', 'pf-metraje-final': 'metraje', 'pf-poste-1': 'posteadura', 'pf-puertos-disponibles': 'puertosDisponibles' };
-const foco = [...cadena.matchAll(/getElementById\('([^']+)'\)/g)].map(m => ID_A_CLAVE[m[1]]).filter(Boolean).filter((c, i, todos) => c !== todos[i - 1]);
+const foco = [...cadena.matchAll(/'(pf-[^']+)'\]/g)].map(m => ID_A_CLAVE[m[1]]).filter(Boolean).filter((c, i, todos) => c !== todos[i - 1]);
 check('salto del cursor al validar: mismo orden (con el puerto detrás de la NAP)', foco, ['serial', 'vlan', 'nap', 'puerto', 'metraje', 'posteadura', 'puertosDisponibles']);
 
 // Rótulos: el serial se llama "Serial" en el formulario y en la revisión; el drop conserva su nombre en cada lugar
