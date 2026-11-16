@@ -108,7 +108,7 @@ export const motivoSinPago = (item) => (faltaElPago(item?.orden)
   ? `Falta el pago del cliente: lo registra el técnico${item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}. Si no puede, regístralo tú.`
   : '');
 
-// Lo mismo con los detalles de la orden (2 a 7 fotos que sube el técnico, ver utils/detallesOrden): sin ellos la orden no se aprueba, salvo que el administrador la apruebe una por una escribiendo el motivo
+// Lo mismo con los detalles de la orden (las 7 fotos que sube el técnico, ver utils/detallesOrden): sin ellos la orden no se aprueba, salvo que el administrador la apruebe una por una escribiendo el motivo
 // (`sinDetalles` de armarRevision; la aprobación en bloque no lo hace). '' si no faltan.
 export const motivoSinDetalles = (item) => (faltanDetalles(item?.orden) ? `${textoFaltanDetalles(item.orden.tecnico)} No se puede aprobar hasta que los suba, o apruébala sin ellos con un motivo.` : '');
 

@@ -1,9 +1,9 @@
 import { Camera, X } from 'lucide-react';
 import Modal from '../Modal';
 import DetallesOrdenCampo from '../DetallesOrdenCampo';
-import { MAX_FOTOS, MIN_FOTOS, fotosDe } from '../../utils/detallesOrden';
+import { FOTOS_EXACTAS, fotosDe } from '../../utils/detallesOrden';
 
-// El técnico corrige los "Detalles de la orden" que ya subió: quita o cambia fotos (por si se equivocó) y agrega otras, siempre de 2 a 7. Solo mientras la orden siga finalizada en su lista (el cierre del día la archiva).
+// El técnico corrige los "Detalles de la orden" que ya subió: quita o cambia fotos (por si se equivocó) y agrega otras, siempre 7. Solo mientras la orden siga finalizada en su lista (el cierre del día la archiva).
 // `onGuardar(ticket, fotos, onProgreso)` -> { ok } | { error } (ver DetallesOrdenCampo); al guardar se cierra solo.
 export default function CorregirDetallesModal({ ticket, onGuardar, onClose }) {
   if (!ticket) return null;
@@ -20,7 +20,7 @@ export default function CorregirDetallesModal({ ticket, onGuardar, onClose }) {
           </button>
         </div>
         <div className="p-4 sm:p-5 space-y-3">
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">Quita con la X una foto equivocada o cámbiala por otra con la flecha, y agrega las que falten. Quedan de {MIN_FOTOS} a {MAX_FOTOS} fotos. Se corrige mientras la orden siga en tu lista de finalizadas.</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Quita con la X una foto equivocada o cámbiala por otra con la flecha, y agrega las que falten. Tienen que quedar exactamente {FOTOS_EXACTAS} fotos. Se corrige mientras la orden siga en tu lista de finalizadas.</p>
           <DetallesOrdenCampo
             iniciales={fotosDe(ticket)}
             textoGuardar="Guardar las correcciones"

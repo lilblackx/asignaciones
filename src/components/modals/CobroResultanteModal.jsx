@@ -217,7 +217,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
             {solo && cuadroDelCobro}
             <section aria-label="Detalles de la orden" className="px-5 py-4 space-y-3">
               <h3 className="text-sm font-black tracking-wide text-zinc-900 dark:text-white inline-flex items-center gap-2"><Camera className="w-4 h-4" aria-hidden="true" />DETALLES DE LA ORDEN</h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">Fotos del trabajo que hiciste (equipo instalado, cableado, conectores, caja...). Es obligatorio: la oficina no puede aprobar la orden sin ellas. Si no las tienes a la mano, puedes hacerlo después y la orden sigue en tu lista.</p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">Sube 7 fotos del trabajo que hiciste (equipo instalado, cableado, conectores, caja...). Son exactamente 7 y es obligatorio: la oficina no puede aprobar la orden sin ellas. Si no las tienes a la mano, puedes hacerlo después y la orden sigue en tu lista.</p>
               <DetallesOrdenCampo onSubir={(fotos, onProgreso) => registro.onSubirDetalles(ticket, fotos, onProgreso)} />
             </section>
             {solo && datosDeLaOrden}

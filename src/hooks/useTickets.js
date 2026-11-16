@@ -215,7 +215,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       return { error: 'No se pudo guardar el pago. Revisa tu conexión e intenta de nuevo.' };
     }
   };
-  // El técnico sube los detalles de la orden (2 a 7 fotos): se reducen, se suben a Storage y la orden guarda sus rutas (ver lib/fotosOrden). La orden sale de su lista cuando ya tiene el pago y los detalles.
+  // El técnico sube los detalles de la orden (7 fotos): se reducen, se suben a Storage y la orden guarda sus rutas (ver lib/fotosOrden). La orden sale de su lista cuando ya tiene el pago y los detalles.
   const subirDetallesDeLaOrden = async (ticket, fotos, onProgreso) => {
     if (!firebaseUser) return { error: 'No hay sesión iniciada.' };
     try {

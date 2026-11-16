@@ -98,7 +98,7 @@ service cloud.firestore {
       return get(profilePath(appId)).data.get('username', '');
     }
 
-    // Los "Detalles de la orden" (`detallesOrden`, ver utils/detallesOrden): las rutas de 2 a 7 fotos que el técnico sube a Cloud Storage (ordenes/{id de la orden}/...) y quién y cuándo. Las reglas no pueden recorrer
+    // Los "Detalles de la orden" (`detallesOrden`, ver utils/detallesOrden): las rutas de las 7 fotos (exactamente 7) que el técnico sube a Cloud Storage (ordenes/{id de la orden}/...) y quién y cuándo. Las reglas no pueden recorrer
     // la lista: revisan su tamaño y la primera, la segunda y la última foto; los archivos los vigila storage.rules (solo JPEG de hasta 1 MB, solo el técnico de la orden y ya finalizada).
     function fotoDetalleValida(f, docId) {
       return f is map
@@ -110,7 +110,7 @@ service cloud.firestore {
       return d is map
         && d.keys().hasOnly(['fotos', 'subidoPor', 'subidoEn'])
         && d.keys().hasAll(['fotos', 'subidoPor', 'subidoEn'])
-        && d.fotos is list && d.fotos.size() >= 2 && d.fotos.size() <= 7
+        && d.fotos is list && d.fotos.size() == 7
         && fotoDetalleValida(d.fotos[0], docId) && fotoDetalleValida(d.fotos[1], docId) && fotoDetalleValida(d.fotos[d.fotos.size() - 1], docId)
         && d.subidoPor is string && d.subidoPor.size() <= 100
         && d.subidoEn is int;

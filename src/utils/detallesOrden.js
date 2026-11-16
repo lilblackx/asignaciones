@@ -7,8 +7,14 @@ import { esInstalacion } from './instalacion.js';
 // Solo se piden en las instalaciones (ver debePedirDetalles): una avería, una visita, un cambio de equipo, etc. no las piden. Las fotos que una orden de otro tipo ya tenga subidas se siguen viendo y se pueden corregir.
 // Es un paso aparte del pago del cliente: la orden sigue en la lista del técnico, y Revisión no la aprueba, hasta que tenga las dos cosas. Un bucket borra las fotos a los 60 días (regla de ciclo de vida).
 
-export const MIN_FOTOS = 2;
-export const MAX_FOTOS = 7;
+// Siempre son exactamente 7 fotos (ni más ni menos). MIN_FOTOS y MAX_FOTOS se conservan por las pantallas que los usan.
+export const FOTOS_EXACTAS = 7;
+export const MIN_FOTOS = FOTOS_EXACTAS;
+export const MAX_FOTOS = FOTOS_EXACTAS;
+// Desde este día (Caracas) se piden exactamente 7. Antes alcanzaban de 2 a 7: lo que ya se subió con 2 a 6 fotos antes de este cambio sigue valiendo (no se le vuelve a pedir al técnico lo que ya entregó);
+// si se corrige, se guarda con 7. Una subida de después del cambio con menos de 7 no cuenta.
+export const FECHA_SIETE_FOTOS = import.meta.env?.VITE_SIETE_FOTOS_DESDE ?? '2026-11-17';
+const MINIMO_ANTERIOR = 2;
 // Lado más largo de la foto ya comprimida, su calidad JPEG y el tope de peso: unos 300 KB por foto, 2 MB por orden con las 7.
 export const LADO_MAXIMO_FOTO = 1600;
 export const CALIDAD_FOTO = 0.7;
@@ -36,7 +42,13 @@ export function dimensionesReducidas(ancho, alto, maximo = LADO_MAXIMO_FOTO) {
 }
 
 export const fotosDe = (ticket) => (Array.isArray(ticket?.detallesOrden?.fotos) ? ticket.detallesOrden.fotos.filter((f) => f && typeof f.ruta === 'string' && f.ruta) : []);
-export const tieneDetalles = (ticket) => fotosDe(ticket).length >= MIN_FOTOS;
+// ¿Tiene los detalles completos? Las 7 fotos, o las de 2 a 6 que se subieron antes de que se pidieran siempre 7. `sieteDesde`: el día del cambio (se cambia solo en las pruebas).
+export function tieneDetalles(ticket, { sieteDesde = FECHA_SIETE_FOTOS } = {}) {
+  const n = fotosDe(ticket).length;
+  if (n >= FOTOS_EXACTAS) return true;
+  const subidoEn = Number(ticket?.detallesOrden?.subidoEn) || 0;
+  return n >= MINIMO_ANTERIOR && subidoEn > 0 && diaDe(subidoEn) < sieteDesde;
+}
 
 // Las rutas de las fotos que la orden tenía y ya no están en la lista final (se quitaron o se cambiaron): se borran del bucket cuando la orden ya guardó la lista nueva.
 export const rutasQuitadas = (ticket, finales) => {
@@ -55,7 +67,7 @@ export function debePedirDetalles(ticket, { desde = FECHA_INICIO_DETALLES } = {}
 }
 
 // ¿A esta orden le faltan los detalles? Es lo que la deja en la lista del técnico y frena la aprobación en Revisión.
-export const faltanDetalles = (ticket, opciones) => debePedirDetalles(ticket, opciones) && !tieneDetalles(ticket);
+export const faltanDetalles = (ticket, opciones) => debePedirDetalles(ticket, opciones) && !tieneDetalles(ticket, opciones);
 
 // Lo que se guarda en la orden: solo las rutas (nunca las fotos) y quién y cuándo las subió.
 export function armarDetalles(fotos, { por, ahora = Date.now() }) {
@@ -69,8 +81,7 @@ export function armarDetalles(fotos, { por, ahora = Date.now() }) {
 // { error } si lo que se va a guardar no sirve; { ok: true } si sí. La misma forma que exigen las reglas de Firestore.
 export function validarDetalles(detalles, ticketId) {
   const fotos = detalles?.fotos;
-  if (!Array.isArray(fotos) || fotos.length < MIN_FOTOS) return { error: `Sube al menos ${MIN_FOTOS} fotos.` };
-  if (fotos.length > MAX_FOTOS) return { error: `Son ${MAX_FOTOS} fotos como máximo.` };
+  if (!Array.isArray(fotos) || fotos.length !== FOTOS_EXACTAS) return { error: `Sube exactamente ${FOTOS_EXACTAS} fotos.` };
   const carpeta = `${carpetaDeFotos(ticketId)}/`;
   const rutas = new Set();
   for (const f of fotos) {

@@ -3,7 +3,7 @@
 // Uso: `npm run test:detalles`.
 import { readFileSync, readdirSync } from 'node:fs';
 import {
-  BYTES_MAXIMOS_FOTO, ESPERA_SIN_AVANCE_MS, FECHA_INICIO_DETALLES, INTENTOS_POR_FOTO, esFormatoHeic, noEsImagen, sePuedeReintentar, textoErrorDeGuardado, textoErrorDeSubida, textoFotoIlegible, MAX_FOTOS, MIN_FOTOS, PENDIENTE_DETALLES, PENDIENTE_PAGO, armarDetalles, carpetaDeFotos, debePedirDetalles, dimensionesReducidas, faltanDetalles, fotosDe, nombreDeFoto, pendienteDelTecnico, puedeCorregirDetalles, rutasQuitadas, tieneDetalles, validarDetalles,
+  BYTES_MAXIMOS_FOTO, ESPERA_SIN_AVANCE_MS, FECHA_INICIO_DETALLES, FECHA_SIETE_FOTOS, INTENTOS_POR_FOTO, esFormatoHeic, noEsImagen, sePuedeReintentar, textoErrorDeGuardado, textoErrorDeSubida, textoFotoIlegible, MAX_FOTOS, MIN_FOTOS, PENDIENTE_DETALLES, PENDIENTE_PAGO, armarDetalles, carpetaDeFotos, debePedirDetalles, dimensionesReducidas, faltanDetalles, fotosDe, nombreDeFoto, pendienteDelTecnico, puedeCorregirDetalles, rutasQuitadas, tieneDetalles, validarDetalles,
 } from '../src/utils/detallesOrden.js';
 import { aprobarPendientes, armarRevision, motivoSinDetalles } from '../src/utils/revisionPagos.js';
 import { TIPOS_TRABAJO } from '../src/constants.js';
@@ -27,7 +27,7 @@ const foto = (n) => ({ ruta: `ordenes/T1/0${n}-abc.jpg`, bytes: 250000 });
 const detalles = (n) => armarDetalles(Array.from({ length: n }, (_, i) => foto(i + 1)), { por: 'jose', ahora: AHORA });
 
 // --- Las cantidades y el peso ---
-check('de 2 a 7 fotos', [MIN_FOTOS, MAX_FOTOS], [2, 7]);
+check('exactamente 7 fotos', [MIN_FOTOS, MAX_FOTOS], [7, 7]);
 check('una foto pesa como máximo 1 MB', BYTES_MAXIMOS_FOTO, 1024 * 1024);
 check('la foto se reduce a 1600 px de lado largo, sin deformarla ni agrandarla', [dimensionesReducidas(4000, 3000), dimensionesReducidas(3000, 4000), dimensionesReducidas(800, 600), dimensionesReducidas(0, 10)], [{ ancho: 1600, alto: 1200 }, { ancho: 1200, alto: 1600 }, { ancho: 800, alto: 600 }, { ancho: 0, alto: 0 }]);
 check('la carpeta y el nombre de la foto', [carpetaDeFotos('T1'), nombreDeFoto(0, 36 * 36), nombreDeFoto(6, 36 * 36)], ['ordenes/T1', '01-100.jpg', '07-100.jpg']);
@@ -46,7 +46,11 @@ check('sin técnico o sin hora de finalización no los pide', [debePedirDetalles
 check('la fecha de inicio por defecto es una fecha válida', /^\d{4}-\d{2}-\d{2}$/.test(FECHA_INICIO_DETALLES), true);
 
 // --- Qué le falta ---
-check('sin fotos faltan; con 1 siguen faltando; con 2 ya están', [faltanDetalles(orden, OPC), faltanDetalles({ ...orden, detallesOrden: detalles(1) }, OPC), faltanDetalles({ ...orden, detallesOrden: detalles(2) }, OPC)], [true, true, false]);
+// Las fotos que se subieron antes del cambio (`detalles(n)` lleva la fecha de la prueba, anterior a FECHA_SIETE_FOTOS) valen desde 2; las de después, solo con 7.
+const detallesNuevos = (n) => ({ ...detalles(n), subidoEn: Date.parse(`${FECHA_SIETE_FOTOS}T12:00:00-04:00`) });
+check('ahora hacen falta 7: con menos, subidas después del cambio, faltan; con 7 no', [0, 1, 2, 6, 7].map((n) => faltanDetalles({ ...orden, detallesOrden: n ? detallesNuevos(n) : undefined }, OPC)), [true, true, true, true, false]);
+check('lo ya entregado antes del cambio con 2 a 6 fotos sigue valiendo; con 1 no', [1, 2, 3, 6].map((n) => faltanDetalles({ ...orden, detallesOrden: detalles(n) }, OPC)), [true, false, false, false]);
+check('la fecha del cambio es una fecha válida y el día del cambio ya exige 7', [/^\d{4}-\d{2}-\d{2}$/.test(FECHA_SIETE_FOTOS), tieneDetalles({ detallesOrden: detallesNuevos(3) }), tieneDetalles({ detallesOrden: detalles(3) })], [true, false, true]);
 check('con 7 fotos están', [tieneDetalles({ detallesOrden: detalles(7) }), fotosDe({ detallesOrden: detalles(7) }).length], [true, 7]);
 check('fotosDe ignora lo que no es una foto', fotosDe({ detallesOrden: { fotos: [null, {}, { ruta: '' }, foto(1)] } }).length, 1);
 const conCobro = { ...averia, cobroBs: '5.696', cobroTipo: 'VISITA_TECNICA', tipoVisita: 'CONECTOR_EXTERNO' };
@@ -62,18 +66,20 @@ check('las fotos que se quitaron o se cambiaron son las que ya no están en la l
 check('el técnico corrige mientras la orden siga finalizada y ya tenga detalles', [puedeCorregirDetalles(guardadas), puedeCorregirDetalles(orden), puedeCorregirDetalles({ ...guardadas, estado: 'PRE-FINALIZADO' }), puedeCorregirDetalles(null)], [true, false, false, false]);
 
 // --- Lo que se guarda ---
-const bueno = detalles(3);
+const bueno = detalles(7);
 check('lo que se guarda: solo rutas y pesos, quién y cuándo', [Object.keys(bueno), bueno.fotos[0], bueno.subidoPor, bueno.subidoEn], [['fotos', 'subidoPor', 'subidoEn'], foto(1), 'jose', AHORA]);
-check('3 fotos de la orden sirven', validarDetalles(bueno, 'T1'), { ok: true });
-check('menos de 2 fotos no sirven', validarDetalles(detalles(1), 'T1').error, 'Sube al menos 2 fotos.');
-check('más de 7 fotos no sirven', validarDetalles({ ...bueno, fotos: Array.from({ length: 8 }, (_, i) => ({ ruta: `ordenes/T1/0${i}-x${i}.jpg`, bytes: 1000 })) }, 'T1').error, 'Son 7 fotos como máximo.');
-check('una foto de otra orden no sirve', validarDetalles({ ...bueno, fotos: [foto(1), { ruta: 'ordenes/OTRA/01-abc.jpg', bytes: 1000 }] }, 'T1').error, 'Una de las fotos no es de esta orden.');
+check('7 fotos de la orden sirven', validarDetalles(bueno, 'T1'), { ok: true });
+check('menos de 7 fotos no sirven (ni 1, ni 2, ni 6)', [1, 2, 6].map((n) => validarDetalles(detalles(n), 'T1').error), ['Sube exactamente 7 fotos.', 'Sube exactamente 7 fotos.', 'Sube exactamente 7 fotos.']);
+check('más de 7 fotos no sirven', validarDetalles({ ...bueno, fotos: Array.from({ length: 8 }, (_, i) => ({ ruta: `ordenes/T1/0${i}-x${i}.jpg`, bytes: 1000 })) }, 'T1').error, 'Sube exactamente 7 fotos.');
+// Seis fotos buenas y una última que es la que se prueba (así se comprueba el defecto de esa foto y no la cantidad).
+const conUltima = (ultima) => [1, 2, 3, 4, 5, 6].map(foto).concat([ultima]);
+check('una foto de otra orden no sirve', validarDetalles({ ...bueno, fotos: conUltima({ ruta: 'ordenes/OTRA/01-abc.jpg', bytes: 1000 }) }, 'T1').error, 'Una de las fotos no es de esta orden.');
 check('una ruta que no es un JPEG o que sale de la carpeta no sirve', [
-  validarDetalles({ ...bueno, fotos: [foto(1), { ruta: 'ordenes/T1/02-abc.png', bytes: 1000 }] }, 'T1').error,
-  validarDetalles({ ...bueno, fotos: [foto(1), { ruta: 'ordenes/T1/../x/02.jpg', bytes: 1000 }] }, 'T1').error,
+  validarDetalles({ ...bueno, fotos: conUltima({ ruta: 'ordenes/T1/02-abc.png', bytes: 1000 }) }, 'T1').error,
+  validarDetalles({ ...bueno, fotos: conUltima({ ruta: 'ordenes/T1/../x/02.jpg', bytes: 1000 }) }, 'T1').error,
 ], ['Una de las fotos no es de esta orden.', 'Una de las fotos no es de esta orden.']);
-check('una foto que pesa de más o vacía no sirve', [validarDetalles({ ...bueno, fotos: [foto(1), { ...foto(2), bytes: BYTES_MAXIMOS_FOTO + 1 }] }, 'T1').error, validarDetalles({ ...bueno, fotos: [foto(1), { ...foto(2), bytes: 0 }] }, 'T1').error], ['Una de las fotos pesa demasiado.', 'Una de las fotos pesa demasiado.']);
-check('una foto repetida no sirve', validarDetalles({ ...bueno, fotos: [foto(1), foto(1)] }, 'T1').error, 'Hay una foto repetida.');
+check('una foto que pesa de más o vacía no sirve', [validarDetalles({ ...bueno, fotos: conUltima({ ...foto(7), bytes: BYTES_MAXIMOS_FOTO + 1 }) }, 'T1').error, validarDetalles({ ...bueno, fotos: conUltima({ ...foto(7), bytes: 0 }) }, 'T1').error], ['Una de las fotos pesa demasiado.', 'Una de las fotos pesa demasiado.']);
+check('una foto repetida no sirve', validarDetalles({ ...bueno, fotos: conUltima(foto(1)) }, 'T1').error, 'Hay una foto repetida.');
 
 // --- Revisión: sin los detalles no se aprueba (la prueba usa la fecha de inicio por defecto con una orden de hoy) ---
 // Una instalación con el pago ya registrado: lo único que le falta son las fotos.
@@ -173,7 +179,7 @@ check('al subir se usa la foto ya reducida, con reintento y vigilante de subida 
   leer('src/hooks/useTickets.js').includes('error instanceof ErrorDeFotos'),
 ], [true, true, true, true, true, true]);
 check('la foto se abre con respaldos (orientación, sin opciones, etiqueta img) y un PNG con transparencia queda sobre fondo blanco', [fotosLib.includes("imageOrientation: 'from-image'"), fotosLib.includes('await imagen.decode()'), fotosLib.includes("fillStyle = '#ffffff'")], [true, true, true]);
-check('el botón de guardar las fotos no se apaga con menos de 2 (parecería que no hace nada): al tocarlo dice cuántas faltan y qué botones usar', [campo.includes('disabled={subiendo || preparando || !huboCambios}'), campo.includes('fotos.length < MIN_FOTOS) { setError('), campo.includes('toca «Tomar foto» o «Galería»')], [true, true, true]);
+check('el botón de guardar las fotos no se apaga con menos de 7 (parecería que no hace nada): al tocarlo dice cuántas faltan y qué botones usar', [campo.includes('disabled={subiendo || preparando || !huboCambios}'), campo.includes('fotos.length < MIN_FOTOS) { setError('), campo.includes('toca «Tomar foto» o «Galería»')], [true, true, true]);
 check('el Historial de órdenes ya no repite el historial de cambios afuera: se ve dentro del Detalle completo', [leer('src/components/modals/OrdersHistoryModal.jsx').includes('HistorialTimeline'), leer('src/components/modals/DetalleOrdenModal.jsx').includes('<HistorialTimeline ticket={ticket} />')], [false, true]);
 check('las fotos solo las ve la oficina y solo se piden cuando la sección entra en pantalla; se abren en el visor de la app, no en otra pestaña', [
   leer('src/components/modals/DetalleOrdenModal.jsx').includes('verCobro && fotosDe(ticket).length > 0'),

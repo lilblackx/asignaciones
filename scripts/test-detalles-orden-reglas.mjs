@@ -57,36 +57,32 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
 });
 
 const AHORA = Date.now();
-const fotosDe = (id, n = 3) => Array.from({ length: n }, (_, i) => ({ ruta: `ordenes/${id}/0${i + 1}-abc.jpg`, bytes: 250000 }));
-const detalles = (id, { n = 3, por = 'gerardo', fotos } = {}) => armarDetalles(fotos || fotosDe(id, n), { por, ahora: AHORA });
+const fotosDe = (id, n = 7) => Array.from({ length: n }, (_, i) => ({ ruta: `ordenes/${id}/0${i + 1}-abc.jpg`, bytes: 250000 }));
+const detalles = (id, { n = 7, por = 'gerardo', fotos } = {}) => armarDetalles(fotos || fotosDe(id, n), { por, ahora: AHORA });
 const guardar = (ctx, id, d, extra = {}) => orden(ctx, id).update({ detallesOrden: d, ...extra });
 
 // --- Firestore: el técnico guarda los detalles de su orden finalizada ---
-await check('el técnico guarda los detalles de su orden finalizada (3 fotos)', () => assertSucceeds(guardar(como('gerardo-uid'), 'g1', detalles('g1'))));
-await check('con el mínimo (2) y el máximo (7) de fotos', async () => {
-  await assertSucceeds(guardar(como('gerardo-uid'), 'g2', detalles('g2', { n: 2 })));
-  await assertSucceeds(guardar(como('gerardo-uid'), 'g4', detalles('g4', { n: 7 })));
+await check('el técnico guarda los detalles de su orden finalizada (7 fotos)', () => assertSucceeds(guardar(como('gerardo-uid'), 'g1', detalles('g1'))));
+await check('tienen que ser exactamente 7 fotos: con 1, 2, 3, 6 u 8 se rechazan', async () => {
+  for (const n of [1, 2, 3, 6, 8]) await assertFails(guardar(como('gerardo-uid'), 'g5', detalles('g5', { n })));
+  await assertSucceeds(guardar(como('gerardo-uid'), 'g2', detalles('g2', { n: 7 })));
 });
-await check('una sola foto o más de 7 se rechazan', async () => {
-  await assertFails(guardar(como('gerardo-uid'), 'g5', detalles('g5', { n: 1 })));
-  await assertFails(guardar(como('gerardo-uid'), 'g5', detalles('g5', { n: 8 })));
-});
-await check('el historial puede crecer con la entrada de los detalles', () => assertSucceeds(guardar(como('gerardo-uid'), 'g5', detalles('g5'), { historialEdiciones: [{ fecha: '12/11/26', operador: 'gerardo', tipo: 'detallesOrden', detalle: 'Subió los detalles de la orden: 3 fotos' }] })));
+await check('el historial puede crecer con la entrada de los detalles', () => assertSucceeds(guardar(como('gerardo-uid'), 'g5', detalles('g5'), { historialEdiciones: [{ fecha: '12/11/26', operador: 'gerardo', tipo: 'detallesOrden', detalle: 'Subió los detalles de la orden: 7 fotos' }] })));
 await check('no los guarda en una orden pre-finalizada (solo cuando la oficina la finaliza)', () => assertFails(guardar(como('gerardo-uid'), 'gp', detalles('gp'))));
 await check('no los guarda en la orden de otro técnico', () => assertFails(guardar(como('gerardo-uid'), 'r1', detalles('r1'))));
-await check('el técnico corrige los detalles ya guardados (quita o cambia fotos), siempre de 2 a 7', async () => {
-  await assertSucceeds(guardar(como('gerardo-uid'), 'g3', detalles('g3', { n: 3 })));
-  await assertSucceeds(guardar(como('gerardo-uid'), 'g3', detalles('g3', { n: 2 })));
-  await assertFails(guardar(como('gerardo-uid'), 'g3', detalles('g3', { n: 1 })));
+await check('el técnico corrige los detalles ya guardados (g3 se guardó antes con 2 fotos), siempre dejándolos en 7', async () => {
+  await assertFails(guardar(como('gerardo-uid'), 'g3', detalles('g3', { n: 3 })));
+  await assertFails(guardar(como('gerardo-uid'), 'g3', detalles('g3', { n: 2 })));
+  await assertSucceeds(guardar(como('gerardo-uid'), 'g3', detalles('g3', { n: 7 })));
 });
 await check('otro técnico no corrige los detalles de la orden de Gerardo', () => assertFails(guardar(como('reinel-uid'), 'g3', detalles('g3', { por: 'reinel' }))));
 await check('las fotos tienen que ser de la propia orden', async () => {
-  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: [{ ruta: 'ordenes/r1/01-a.jpg', bytes: 1000 }, { ruta: 'ordenes/r1/02-a.jpg', bytes: 1000 }] })));
-  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: [...fotosDe('g6', 2), { ruta: 'ordenes/g6/03-a.jpg', bytes: 1000 }, { ruta: 'ordenes/OTRA/04-a.jpg', bytes: 1000 }] })));
+  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: fotosDe('r1', 7) })));
+  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: [...fotosDe('g6', 6), { ruta: 'ordenes/OTRA/07-a.jpg', bytes: 1000 }] })));
 });
 await check('una ruta que no es JPEG o que pesa más de 1 MB se rechaza', async () => {
-  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: [{ ruta: 'ordenes/g6/01-a.png', bytes: 1000 }, { ruta: 'ordenes/g6/02-a.jpg', bytes: 1000 }] })));
-  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: [{ ruta: 'ordenes/g6/01-a.jpg', bytes: 1048577 }, { ruta: 'ordenes/g6/02-a.jpg', bytes: 1000 }] })));
+  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: [...fotosDe('g6', 6), { ruta: 'ordenes/g6/07-a.png', bytes: 1000 }] })));
+  await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { fotos: [...fotosDe('g6', 6), { ruta: 'ordenes/g6/07-a.jpg', bytes: 1048577 }] })));
 });
 await check('tiene que ir a nombre de quien los sube y sin campos de más', async () => {
   await assertFails(guardar(como('gerardo-uid'), 'g6', detalles('g6', { por: 'reinel' })));

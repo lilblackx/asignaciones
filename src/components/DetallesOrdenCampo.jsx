@@ -4,7 +4,7 @@ import Spinner from './Spinner';
 import { comprimirFoto, urlDeFoto } from '../lib/fotosOrden';
 import { MAX_FOTOS, MIN_FOTOS, noEsImagen } from '../utils/detallesOrden';
 
-// Los "Detalles de la orden": el técnico agrega de 2 a 7 fotos de su trabajo y las sube. Puede tomarlas en el momento con la cámara ("Tomar foto", una por toque) o elegirlas de la galería o de otra app ("Galería",
+// Los "Detalles de la orden": el técnico agrega 7 fotos de su trabajo (exactamente 7) y las sube. Puede tomarlas en el momento con la cámara ("Tomar foto", una por toque) o elegirlas de la galería o de otra app ("Galería",
 // varias a la vez). Cada foto se reduce apenas se elige (así se ve enseguida si el teléfono no la puede abrir, y se sube liviana); `onSubir` solo las sube.
 // Cada foto se puede quitar o cambiar por otra. `iniciales` son las fotos que la orden ya tiene guardadas (para corregirlas: se ven, se quitan o se cambian, y se agregan nuevas).
 // `onSubir(fotos, onProgreso)` recibe la lista final en orden: { tipo: 'guardada', ruta, bytes } (ya está en el bucket) o { tipo: 'nueva', blob } (hay que subirla); devuelve { ok: true } o { error }.
@@ -88,7 +88,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
       return;
     }
     const sobran = fotos.length + imagenes.length - MAX_FOTOS;
-    setError(avisoNoImagen || (sobran > 0 ? `Son ${MAX_FOTOS} fotos como máximo: se quedaron las primeras.` : ''));
+    setError(avisoNoImagen || (sobran > 0 ? `Son ${MAX_FOTOS} fotos y ya estaban completas: se quedaron las primeras.` : ''));
     const aceptadas = imagenes.slice(0, Math.max(0, MAX_FOTOS - fotos.length));
     cambiar([...fotos, ...aceptadas.map(crear)]);
   };
@@ -114,7 +114,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
   const subir = async () => {
     // El botón no se apaga con pocas fotos (parecería que no hace nada): al tocarlo dice qué falta.
     if (conError > 0) { setError(`${conError === 1 ? 'Una foto no se pudo abrir' : `${conError} fotos no se pudieron abrir`}: quítala${conError === 1 ? '' : 's'} (con la X) o cámbiala${conError === 1 ? '' : 's'} por otra.`); return; }
-    if (fotos.length < MIN_FOTOS) { setError(`${faltan === 1 ? 'Falta 1 foto' : `Faltan ${faltan} fotos`}: toca «Tomar foto» o «Galería» y agrega ${faltan === 1 ? 'otra' : 'más'}. Son ${MIN_FOTOS} como mínimo.`); return; }
+    if (fotos.length < MIN_FOTOS) { setError(`${faltan === 1 ? 'Falta 1 foto' : `Faltan ${faltan} fotos`}: toca «Tomar foto» o «Galería» y agrega ${faltan === 1 ? 'otra' : 'más'}. Son exactamente ${MIN_FOTOS}.`); return; }
     setError('');
     setProgreso(0);
     setSubiendo(true);
@@ -186,7 +186,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
       </div>
 
       <p className={`text-xs font-bold text-center ${apremia ? 'text-amber-700 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-400'}`} aria-live="polite">
-        {fotos.length} de {MAX_FOTOS} fotos{faltan > 0 ? ` · faltan ${faltan} como mínimo` : lleno ? ' · máximo alcanzado' : ''}
+        {fotos.length} de {MAX_FOTOS} fotos{faltan > 0 ? ` · faltan ${faltan}` : ' · completas'}
       </p>
 
       {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 text-center">{error}</p>}
