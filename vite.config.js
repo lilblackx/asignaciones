@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 // La versión de la app (package.json) y de qué compilación es (fecha y commit), para el pie discreto de la app.
 const version = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')).version
@@ -22,6 +23,8 @@ const versionJson = () => ({
 })
 
 export default defineConfig({
+  // `@/` apunta a src/ (lo usan los componentes de shadcn/ui, ver components.json).
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   define: {
     __APP_VERSION__: JSON.stringify(version),
     __APP_BUILD__: JSON.stringify(build),
