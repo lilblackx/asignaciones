@@ -10,7 +10,7 @@ export default function BuscadorOrden({ id, etiqueta, valor, onElegir, buscar, d
 
   if (valor) {
     return (
-      <div className={`flex items-center justify-between gap-3 rounded-card border border-input bg-card px-3 py-2 ${className} max-lg:shadow-card`}>
+      <div className={`flex items-center justify-between gap-3 rounded-card border border-input bg-card px-3 py-2 ${className} shadow-card`}>
         <span className="min-w-0 text-xs text-zinc-900 dark:text-zinc-100">
           <span className="font-bold">{valor.codigo || 'S/C'}</span>{valor.cliente ? ` · ${valor.cliente}` : ''}
           <span className="block text-muted-foreground">Técnico {valor.tecnico}{detalle && valor.detalle ? ` · ${valor.detalle}` : ''}</span>
@@ -27,7 +27,7 @@ export default function BuscadorOrden({ id, etiqueta, valor, onElegir, buscar, d
         <input id={id} type="search" aria-label={etiqueta} value={texto} onChange={(e) => setTexto(e.target.value)} autoComplete="off" placeholder="Buscar orden..." className={claseCampo('normal').replace('px-3', 'pl-9 pr-3')} />
       </div>
       {resultados.length > 0 ? (
-        <ul role="listbox" aria-label="Resultados" className="mt-1 max-h-56 overflow-y-auto rounded-card border border-zinc-300 dark:border-zinc-700 bg-card divide-y divide-zinc-200 dark:divide-zinc-800 max-lg:shadow-card">
+        <ul role="listbox" aria-label="Resultados" className="mt-1 max-h-56 overflow-y-auto rounded-card border border-zinc-300 dark:border-zinc-700 bg-card divide-y divide-zinc-200 dark:divide-zinc-800 shadow-card">
           {resultados.map((o) => (
             <li key={o.id ?? `${o.codigo}-${o.createdAt}`} role="option" aria-selected="false">
               <button type="button" onClick={() => onElegir(o)} className="w-full text-left px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 hover:bg-secondary">

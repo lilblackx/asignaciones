@@ -32,7 +32,7 @@ export default function TotalesMes({ mes, meses, onCambiarMes, totales, error })
           {meses.length > 1 ? (
             <SelectMenu id="totales-mes" ariaLabel="Mes de los totales" icon={CalendarDays} value={mes} onChange={onCambiarMes} items={meses.map((m) => ({ value: m, label: nombreMes(m) }))} />
           ) : (
-            <p className="flex items-center gap-2 rounded-card border border-border max-lg:border-transparent bg-card py-2.5 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 shadow-sm max-lg:shadow-card">
+            <p className="flex items-center gap-2 rounded-card border border-transparent bg-card py-2.5 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 shadow-sm shadow-card">
               <CalendarDays className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> {nombreMes(mes)}
             </p>
           )}

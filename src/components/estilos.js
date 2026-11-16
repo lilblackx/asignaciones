@@ -1,6 +1,6 @@
 // Los estilos comunes de toda la app: los de Finanzas y de Revisión de órdenes, que son los mismos del resto (tarjetas blancas con borde y sombra sobre el fondo gris, letra de 14 px, controles de 36 px con
 // borde fino, títulos en mayúsculas pequeñas). Quien necesite la letra más grande usa el selector "Tamaño de letra" de Finanzas, que agranda todo junto (todo está en rem).
-export const TARJETA = 'bg-card rounded-card border border-border max-lg:border-transparent shadow-sm max-lg:shadow-card';
+export const TARJETA = 'bg-card rounded-card border border-transparent shadow-sm shadow-card';
 export const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold uppercase tracking-wide text-muted-foreground';
 export const TEXTO_SUAVE = 'text-xs text-muted-foreground';
 export const TITULO_SECCION = 'text-sm font-black uppercase tracking-wide text-foreground';

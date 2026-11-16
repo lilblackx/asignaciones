@@ -79,7 +79,7 @@ export default function ConfirmModal({
           )}
         </div>
         <div className="p-6 bg-sunken flex gap-3 border-t border-border">
-          <button onClick={onCancel} disabled={isProcessing} className="flex-1 py-3 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors disabled:opacity-50 max-lg:shadow-card">
+          <button onClick={onCancel} disabled={isProcessing} className="flex-1 py-3 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors disabled:opacity-50 shadow-card">
             {cancelLabel}
           </button>
           <button

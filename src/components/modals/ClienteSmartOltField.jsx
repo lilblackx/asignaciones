@@ -68,7 +68,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
                 key={onu.idExterno || onu.nombre}
                 type="button"
                 onClick={() => cliente.elegir(onu)}
-                className="group w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 max-lg:shadow-card"
+                className="group w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-card"
               >
                 <span className="flex items-center gap-2">
                   {onu.zona && (

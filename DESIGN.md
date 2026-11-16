@@ -43,12 +43,14 @@ Dirección de diseño de la app de Network Speed Fibra (órdenes, técnicos, Fin
 - Pantalla nueva o migrada: usar estos nombres y no `zinc-`/`red-` sueltos. Para cambiar un color de toda la app se cambia solo ahí.
 - Las pantallas que no se han migrado siguen con `zinc-`/`red-` directos y se ven igual que antes. Los componentes de `src/components/ui/` (shadcn) ya usan los tokens.
 
-### Celular: estilo D "tarjetas suaves" (rediseño, decidido el 2026-11-16)
+### Estilo D (celular y PC) "tarjetas suaves" (rediseño, decidido el 2026-11-16)
 
 - Por debajo de `lg` (1024 px) las pantallas migradas se ven en estilo D: fondo cálido (`#F4F2EF`, en oscuro `#0C0A09`), tarjetas blancas (`#1C1917` en oscuro) muy redondeadas con sombra suave, etiquetas de estado en pastel y botones principales en cápsula con brillo rojo. La PC no cambia.
 - Se logra con tokens de forma que cambian por breakpoint en `src/index.css`: `rounded-card` (22 px en celular, 10 px en PC), `rounded-campo` (16 / 8 px), `rounded-boton` (cápsula / 8 px), `shadow-card` y `shadow-boton`. Una pantalla migrada usa solo estos nombres y no repite reglas por tamaño.
 - Esto **sustituye en celular** a la regla de "radios chicos, sombras solo en modales y menús" de más abajo, en las pantallas migradas. En PC y en las pantallas sin migrar sigue valiendo esa regla.
 - Se mantiene: contraste 4.5:1, controles de 44 px mínimo, texto de 12 px mínimo en celular, borde de campo a 3:1 (`--input`), la línea roja como motivo de marca y el color nunca solo.
+
+- **Actualización (2026-11-16):** el estilo D vale ahora para **todas** las pantallas y tamaños, no solo el celular. Mismos colores en PC y celular (fondo cálido `#F4F2EF`, `#0C0A09` en oscuro). Las formas cambian por tamaño: tarjetas de 20 px en PC y 28 px en celular, campos de 14 y 18 px, botones en cápsula en los dos. Los encabezados de módulos y ventanas (`encabezado-d`) son claros con la línea roja corta de la marca; el encabezado de la app, el menú lateral y las tablas también. Lo que el párrafo anterior llama "PC no cambia" y la regla de radios chicos de más abajo quedan **sustituidos** por esto.
 
 
 

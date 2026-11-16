@@ -24,7 +24,7 @@ export default function WhatsAppMessageModal({ mensaje, onCopy, onClose }) {
             className={`${claseArea('compacto')} whitespace-pre-wrap`}
           />
           <div className="flex gap-2 justify-end">
-            <button type="button" onClick={onClose} className="px-4 py-1.5 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card text-xs transition-colors max-lg:shadow-card">Cerrar</button>
+            <button type="button" onClick={onClose} className="px-4 py-1.5 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card text-xs transition-colors shadow-card">Cerrar</button>
             <button type="button" onClick={onCopy} className="px-4 py-1.5 flex items-center gap-1.5 text-white font-bold bg-green-700 hover:bg-green-800 rounded-boton text-xs shadow-md transition-colors"><Copy className="w-3.5 h-3.5" /> Copiar mensaje</button>
           </div>
         </div>

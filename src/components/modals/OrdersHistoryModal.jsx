@@ -148,7 +148,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           </div>
 
           <Colapsable>{filtersOpen && (
-            <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 space-y-3 max-lg:shadow-card">
+            <div className="rounded-card border border-transparent bg-card p-3 space-y-3 shadow-card">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 [&>*]:min-w-0">
                 <SelectMenu ariaLabel="Estado" value={estado} onChange={withResetValue(setEstado)} items={estadoItems} className={SELECTOR} />
                 <SelectMenu ariaLabel="Tipo de trabajo" value={tipo} onChange={withResetValue(setTipo)} items={tipoItems} className={SELECTOR} />
@@ -185,7 +185,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
           {shown.map(o => {
             const isOpen = expandedKey === o._key;
             return (
-              <div key={o._key} className="bg-card rounded-card border border-border max-lg:border-transparent shadow-sm max-lg:shadow-card">
+              <div key={o._key} className="bg-card rounded-card border border-transparent shadow-sm shadow-card">
                 <button type="button" onClick={() => setExpandedKey(isOpen ? null : o._key)} aria-expanded={isOpen} className="w-full text-left p-4 flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">

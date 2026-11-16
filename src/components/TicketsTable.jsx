@@ -78,9 +78,9 @@ export default function TicketsTable({
   const enSeccionCerradas = (t) => cerradasEnBusqueda > 0 && esCerrada(t);
 
   return (
-    <div className="hidden lg:block bg-card rounded-card shadow-md dark:shadow-sm border border-border max-lg:border-transparent overflow-clip transition-colors w-full max-lg:shadow-card">
+    <div className="hidden lg:block bg-card rounded-card shadow-md dark:shadow-sm border border-transparent overflow-clip transition-colors w-full shadow-card">
       <table className="w-full text-xs text-left table-fixed">
-        <thead className="sticky z-[5] text-[11px] max-lg:text-xs text-white uppercase bg-black" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
+        <thead className="sticky z-[5] text-[11px] max-lg:text-xs text-muted-foreground uppercase bg-secondary" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
           {/* La raya roja va como sombra interior de cada título: un borde de la tabla no se queda pegado al bajar. */}
           <tr className="[&>th]:shadow-[inset_0_-2px_0_0_#dc2626]">
             <th className="px-3 py-3 border-r border-zinc-800 w-[8%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>

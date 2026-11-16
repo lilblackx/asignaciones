@@ -75,7 +75,7 @@ export default function FiltersBar({
       </div>
 
       <Colapsable>{filtersOpen && (
-        <div className="rounded-card max-lg:shadow-card border border-border max-lg:border-transparent bg-card p-3 space-y-3">
+        <div className="rounded-card shadow-card border border-transparent bg-card p-3 space-y-3">
           <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isTecnico ? 'md:max-w-xl' : 'md:grid-cols-3 md:max-w-3xl'}`}>
             <div className="flex flex-col gap-1 min-w-0">
               <span className={ETIQUETA}>Estado</span>

@@ -17,7 +17,7 @@ function todayIsoDate() {
 export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onRequestCierre, onViewReport, isAdmin, usuario }) {
   return (
     <>
-      <div className="mb-4 p-6 bg-card border border-border max-lg:border-transparent rounded-card shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between max-lg:shadow-card">
+      <div className="mb-4 p-6 bg-card border border-transparent rounded-card shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between shadow-card">
         <div>
           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
             <FileText className="w-5 h-5 text-red-500" /> Cierre de Jornada
@@ -44,7 +44,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {reports.map((rep) => (
-            <div key={rep.id} className="bg-card border border-border max-lg:border-transparent rounded-card p-4 shadow-sm flex flex-col justify-between max-lg:shadow-card">
+            <div key={rep.id} className="bg-card border border-transparent rounded-card p-4 shadow-sm flex flex-col justify-between shadow-card">
               <div>
                 <div className="flex justify-between items-start mb-3 border-b border-border pb-3">
                   <div>

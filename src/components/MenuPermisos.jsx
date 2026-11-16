@@ -75,7 +75,7 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
           role="group"
           aria-label={ariaLabel}
           style={pos}
-          className={`fixed z-[300] rounded-card border border-zinc-300 dark:border-zinc-700 bg-card shadow-xl p-1.5 ${saliendo ? 'lg:animate-menu-salida' : 'lg:animate-menu-entrada'} max-lg:shadow-card`}
+          className={`fixed z-[300] rounded-card border border-zinc-300 dark:border-zinc-700 bg-card shadow-xl p-1.5 ${saliendo ? 'lg:animate-menu-salida' : 'lg:animate-menu-entrada'} shadow-card`}
         >
           {sinNada && <p className="px-2.5 py-2 text-xs text-muted-foreground">{vacio}</p>}
           {opciones.map((o) => (

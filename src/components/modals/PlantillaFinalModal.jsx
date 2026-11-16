@@ -33,7 +33,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors max-lg:shadow-card"
+            className="px-4 py-1.5 text-xs text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors shadow-card"
           >
             Cerrar
           </button>

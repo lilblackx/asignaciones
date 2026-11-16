@@ -58,7 +58,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
           <h4 className="text-xs font-bold text-muted-foreground mb-3">Distribución de Trabajos</h4>
           <div className="flex flex-wrap gap-2">
             {Object.entries(report.desglose || {}).map(([tipo, count]) => (
-              <span key={tipo} className="bg-card border border-border max-lg:border-transparent px-3.5 py-2 rounded-card text-xs font-bold text-card-foreground shadow-sm max-lg:shadow-card">
+              <span key={tipo} className="bg-card border border-transparent px-3.5 py-2 rounded-card text-xs font-bold text-card-foreground shadow-sm shadow-card">
                 {tipo}: <span className="text-red-600 dark:text-red-400 font-black ml-1">{count}</span>
               </span>
             ))}
@@ -67,7 +67,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
 
         <h4 className="text-xs font-bold text-muted-foreground mb-3">Detalles de la Carga de Trabajo</h4>
 
-        <div className="hidden md:block bg-card rounded-card border border-border max-lg:border-transparent overflow-hidden shadow-sm max-lg:shadow-card">
+        <div className="hidden md:block bg-card rounded-card border border-transparent overflow-hidden shadow-sm shadow-card">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-zinc-100 dark:bg-zinc-950 text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
@@ -113,7 +113,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
 
         <div className="grid grid-cols-1 gap-3 md:hidden">
           {(report.ticketsDetalle || []).map((ticket) => (
-            <div key={ticket.id} className="bg-card p-4 rounded-card border border-border max-lg:border-transparent shadow-sm flex flex-col gap-2 max-lg:shadow-card">
+            <div key={ticket.id} className="bg-card p-4 rounded-card border border-transparent shadow-sm flex flex-col gap-2 shadow-card">
               <div className="flex justify-between items-center">
                 <span className="font-black text-red-600 dark:text-red-400 text-sm">{ticket.codigo}{conCanceladas && <span className={`ml-2 text-[11px] max-lg:text-xs uppercase ${ticket.estado === 'CANCELADO' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{ticket.estado === 'CANCELADO' ? 'Cancelada' : 'Finalizada'}</span>}</span>
                 <span className="text-muted-foreground text-xs font-bold">{ticket.fecha}</span>

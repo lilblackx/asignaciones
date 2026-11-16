@@ -255,7 +255,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           )}
 
           <Colapsable>{verFiltros && (
-            <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 space-y-4 max-lg:shadow-card">
+            <div className="rounded-card border border-transparent bg-card p-3 space-y-4 shadow-card">
               <div className="space-y-1.5">
                 <p className={ETIQUETA_FILTRO}>Estado</p>
                 <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">

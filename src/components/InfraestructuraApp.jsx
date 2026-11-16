@@ -182,7 +182,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
               </div>
 
               <Colapsable>{filtersOpen && (
-                <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 max-lg:shadow-card">
+                <div className="rounded-card border border-transparent bg-card p-3 shadow-card">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex flex-wrap gap-2" role="group" aria-label="Período">{[...PERIODOS_INFRAESTRUCTURA, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(chip)}</div>
                   {periodo === PERIODO_RANGO && (
@@ -208,7 +208,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   {/* Celular: una tarjeta por instalación. */}
                   <ul className="md:hidden flex flex-col gap-2">
                     {filas.map((f) => (
-                      <li key={f.id} className="rounded-card border border-border max-lg:border-transparent bg-card p-3 space-y-2 max-lg:shadow-card">
+                      <li key={f.id} className="rounded-card border border-transparent bg-card p-3 space-y-2 shadow-card">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-bold text-sm break-words">{f.cliente || 'Sin nombre'}</p>
@@ -228,7 +228,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   </ul>
 
                   {/* Escritorio: tabla. */}
-                  <div className="hidden md:block rounded-card border border-border max-lg:border-transparent bg-card overflow-x-auto max-lg:shadow-card">
+                  <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
                         <tr>

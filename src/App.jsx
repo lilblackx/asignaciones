@@ -859,7 +859,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           {canEditTickets && canCerrar && hasMoreReports && statusFilter === 'TODOS' && buscaEnCerradas(searchTerm) && (
             <div className="flex flex-col items-center gap-1 mt-4 text-center">
               <span className="text-xs text-muted-foreground font-medium">¿No aparece la orden que buscas? Puede estar en un cierre más antiguo.</span>
-              <button type="button" onClick={loadMoreReports} disabled={isLoadingReports} className="min-h-11 px-5 py-2 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm disabled:opacity-60 max-lg:shadow-card">
+              <button type="button" onClick={loadMoreReports} disabled={isLoadingReports} className="min-h-11 px-5 py-2 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm disabled:opacity-60 shadow-card">
                 {isLoadingReports ? 'Buscando...' : 'Buscar en cierres anteriores'}
               </button>
             </div>
@@ -867,7 +867,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
           {hasMore && (
             <div className="flex justify-center mt-4">
-              <button onClick={loadMore} className="px-6 py-2.5 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm max-lg:shadow-card">
+              <button onClick={loadMore} className="px-6 py-2.5 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm shadow-card">
                 Cargar más ({filteredTickets.length - visibleTickets.length} restantes)
               </button>
             </div>

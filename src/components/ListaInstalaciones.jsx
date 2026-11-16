@@ -81,7 +81,7 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, onCopiarPl
   return (
     <div className={className}>
       {/* Celular: filas apiladas. */}
-      <ul className="md:hidden rounded-card border border-border max-lg:border-transparent bg-card divide-y divide-zinc-200 dark:divide-zinc-800 overflow-hidden max-lg:shadow-card">
+      <ul className="md:hidden rounded-card border border-transparent bg-card divide-y divide-zinc-200 dark:divide-zinc-800 overflow-hidden shadow-card">
         {filas.map(({ orden, d }) => (
           <li key={orden.id} className="px-3 py-2.5 space-y-1.5 min-w-0">
             <div className="flex items-center gap-2">
@@ -103,9 +103,9 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, onCopiarPl
       </ul>
 
       {/* Pantallas anchas: tabla. */}
-      <div className="hidden md:block rounded-card border border-border max-lg:border-transparent bg-card overflow-x-auto max-lg:shadow-card">
+      <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
         <table className="w-full text-sm text-left">
-          <thead className="bg-black text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-300">
+          <thead className="bg-secondary text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               {ENCABEZADOS.map((c, i) => <th key={c || i} scope="col" className="px-3 py-2.5 font-bold">{c || <span className="sr-only">Plantilla</span>}</th>)}
             </tr>

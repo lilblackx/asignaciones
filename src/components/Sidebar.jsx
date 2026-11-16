@@ -80,12 +80,11 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
       {abierto && <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={onCerrar} aria-hidden="true" />}
       <aside
         aria-label="Módulos"
-        className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-0 lg:h-dvh lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-white dark:bg-black max-lg:bg-card max-lg:rounded-r-card max-lg:shadow-card max-lg:overflow-hidden text-foreground border-r border-border overflow-hidden`}
+        className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-0 lg:h-dvh lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-card max-lg:rounded-r-card shadow-card max-lg:overflow-hidden text-foreground border-r border-border overflow-hidden`}
       >
         <div className={`flex items-center justify-between px-5 h-[62px] encabezado-d shrink-0 border-b-4 border-red-600 bg-black text-white ${colapsado ? 'lg:justify-center' : ''}`}>
           <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className={`flex items-center rounded-campo hover:opacity-80 transition-opacity ${colapsado ? 'lg:hidden' : ''}`}>
-            <img src={logos.menu} alt="" width={logos.menuAncho} height={logos.menuAlto} className={`${logos.menuClase} max-lg:hidden`} />
-            <span className="lg:hidden flex items-center gap-3"><img src={logos.login192} alt="" width="40" height="40" className="w-10 h-10 rounded-card" /><span className="text-base font-black text-foreground">Asignaciones</span></span>
+            <span className="flex items-center gap-3"><img src={logos.login192} alt="" width="40" height="40" className="w-10 h-10 rounded-card shrink-0" /><span className={`text-base font-black text-foreground ${colapsado ? 'lg:hidden' : ''}`}>Asignaciones</span></span>
           </button>
           <button
             type="button"
@@ -115,7 +114,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
                       onClick={abrir(accion)}
                       title={nombre}
                       aria-current={actual ? 'page' : undefined}
-                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-2.5 max-lg:py-3 text-sm font-semibold transition-colors ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-primary text-primary-foreground max-lg:shadow-boton' : 'text-foreground hover:bg-secondary'}`}
+                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-2.5 max-lg:py-3 text-sm font-semibold transition-colors ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-primary text-primary-foreground shadow-boton' : 'text-foreground hover:bg-secondary'}`}
                     >
                       <Icono className="w-5 h-5 shrink-0" aria-hidden="true" />
                       <span className={`truncate ${colapsado ? 'lg:hidden' : ''}`}>{nombre}</span>
@@ -130,12 +129,12 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
             </section>
           ))}
         </nav>
-        <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white dark:from-black max-lg:from-card to-transparent transition-opacity duration-200 ${masAbajo ? 'opacity-100' : 'opacity-0'}`} />
+        <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card to-transparent transition-opacity duration-200 ${masAbajo ? 'opacity-100' : 'opacity-0'}`} />
         </div>
 
         {/* El pie es una tarjeta redondeada que flota dentro del menú (como las demás tarjetas de la app), no una franja recta. */}
         <div className="shrink-0 p-2">
-          <div className={`rounded-campo border border-border bg-zinc-100/80 dark:bg-zinc-900/70 max-lg:bg-secondary p-2 flex items-center gap-2 ${colapsado ? 'lg:flex-col lg:p-1.5' : ''}`}>
+          <div className={`rounded-campo border border-border bg-secondary p-2 flex items-center gap-2 ${colapsado ? 'lg:flex-col lg:p-1.5' : ''}`}>
             <div className={`min-w-0 flex-1 leading-tight ${colapsado ? 'lg:hidden' : ''}`}>
               <p className="truncate text-sm font-bold text-foreground">{nombre}</p>
               <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase tracking-wider" title={`${nombre} · conectado`}><span className="w-2 h-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />{rol}</p>

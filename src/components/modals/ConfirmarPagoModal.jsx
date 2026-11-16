@@ -41,7 +41,7 @@ export default function ConfirmarPagoModal({ ticket, decision, cobro = null, isS
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex-1 min-h-[48px] py-3 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors disabled:opacity-50 max-lg:shadow-card">
+            className="flex-1 min-h-[48px] py-3 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors disabled:opacity-50 shadow-card">
             Volver
           </button>
           <button

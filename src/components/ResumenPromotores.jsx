@@ -10,7 +10,7 @@ export default function ResumenPromotores({ filas, vista, elegida, onElegir }) {
 
   if (filas.length === 0) return <p className="text-sm text-muted-foreground text-center py-3">No hay órdenes para resumir.</p>;
   return (
-    <div className="overflow-x-auto rounded-card border border-border max-lg:border-transparent bg-card max-lg:shadow-card">
+    <div className="overflow-x-auto rounded-card border border-transparent bg-card shadow-card">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border">

@@ -115,7 +115,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
     const porCargar = clave === ESTADO_COBRO.PENDIENTE;
     return (
       <button key={clave} type="button" onClick={() => setEstado(estado === clave ? 'TODOS' : clave)} aria-pressed={estado === clave}
-        className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'border-red-600' : 'border-border max-lg:border-transparent hover:border-zinc-500'} max-lg:shadow-card`}>
+        className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'border-red-600' : 'border-transparent hover:border-zinc-500'} shadow-card`}>
         <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{r.cantidad}</p>
         <p className="text-xs font-bold">{titulo}</p>
         {(montos.length > 0 || (porCargar && r.cantidad > 0)) && <p className={`${ETIQUETA} tabular-nums`}>{[...montos, porCargar && r.cantidad > 0 && 'de cualquier fecha'].filter(Boolean).join(' · ')}</p>}
@@ -125,7 +125,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
   };
   const tarjetaAlertas = (
     <button type="button" onClick={() => setEstado(estado === 'ALERTA' ? 'TODOS' : 'ALERTA')} aria-pressed={estado === 'ALERTA'}
-      className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${estado === 'ALERTA' || resumen.alertas > 0 ? 'border-amber-500' : 'border-border max-lg:border-transparent hover:border-zinc-500'} max-lg:shadow-card`}>
+      className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${estado === 'ALERTA' || resumen.alertas > 0 ? 'border-amber-500' : 'border-transparent hover:border-zinc-500'} shadow-card`}>
       <p className={`text-2xl font-black tabular-nums ${resumen.alertas > 0 ? 'text-amber-700 dark:text-amber-400' : ''}`}>{resumen.alertas}</p>
       <p className="text-xs font-bold">Con cambio de monto</p>
       {resumen.alertas > 0 && <p className={ETIQUETA}>corrígelos en el portal</p>}
@@ -195,7 +195,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
               </div>
 
               <Colapsable>{filtersOpen && (
-                <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 space-y-3 max-lg:shadow-card">
+                <div className="rounded-card border border-transparent bg-card p-3 space-y-3 shadow-card">
                   <div className="flex flex-wrap gap-2" role="group" aria-label="Estado">{FILTROS_ESTADO_COBRO.map(chipEstado)}</div>
                   <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Período">
                     {[...PERIODOS, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(({ valor, etiqueta }) => (
@@ -219,7 +219,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                   {/* Celular: una tarjeta por cobro. */}
                   <ul className="md:hidden flex flex-col gap-2">
                     {filas.map((c) => (
-                      <li key={c.id} className="rounded-card border border-border max-lg:border-transparent bg-card p-3 space-y-2 max-lg:shadow-card">
+                      <li key={c.id} className="rounded-card border border-transparent bg-card p-3 space-y-2 shadow-card">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-black text-sm">{c.codigo || 'S/C'} <span className="font-bold">· {c.nombre}</span></p>
@@ -240,7 +240,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                   </ul>
 
                   {/* Escritorio: tabla. */}
-                  <div className="hidden md:block rounded-card border border-border max-lg:border-transparent bg-card overflow-x-auto max-lg:shadow-card">
+                  <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
                         <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>

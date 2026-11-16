@@ -109,7 +109,7 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCo
   };
 
   return (
-    <li className="bg-card border-2 border-red-200 dark:border-red-900/50 rounded-card p-3 space-y-2 max-lg:shadow-card">
+    <li className="bg-card border-2 border-red-200 dark:border-red-900/50 rounded-card p-3 space-y-2 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-black text-foreground break-words">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
@@ -380,7 +380,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={(filtro !== 'TODOS' ? 1 : 0)} />
             </div>
             <Colapsable>{filtersOpen && (
-              <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 max-lg:shadow-card">
+              <div className="rounded-card border border-transparent bg-card p-3 shadow-card">
               <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
                 {FILTROS.map((f) => (
                   <ChipFiltro activo={filtro === f.clave} tamano="compacto" key={f.clave} type="button" onClick={() => setFiltro(f.clave)}>

@@ -431,7 +431,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           )}
 
           <div className="col-span-2 pt-2 mt-1 flex gap-2 justify-end border-t border-border">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card text-xs transition-colors max-lg:shadow-card">Cancelar</button>
+            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card text-xs transition-colors shadow-card">Cancelar</button>
             <button type="submit" disabled={isSubmitting} className={`min-w-[8.5rem] px-6 py-1.5 text-white font-bold rounded-boton text-xs transition-colors shadow-md ${isSubmitting ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Actualizar'}</button>
           </div>
         </form>

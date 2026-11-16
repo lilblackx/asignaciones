@@ -13,54 +13,54 @@
    #DC2626 solo para marca, botón principal y peligro. Cambiar un color aquí lo cambia en todas las pantallas que ya usen estos nombres (bg-card, text-muted-foreground...).
    Las pantallas actuales siguen con zinc-/red- directos hasta que se migren una por una. El tema oscuro cuelga de la clase .dark del contenedor (App.jsx). */
 :root {
-  --background: #e4e4e7;
-  --foreground: #18181b;
+  --background: #f4f2ef;
+  --foreground: #1c1917;
   --card: #ffffff;
-  --card-foreground: #18181b;
+  --card-foreground: #1c1917;
   --popover: #ffffff;
-  --popover-foreground: #18181b;
+  --popover-foreground: #1c1917;
   --primary: #dc2626;
   --primary-foreground: #ffffff;
   --primary-hover: #b91c1c;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #52525b;
-  --accent: #e4e4e7;
-  --accent-foreground: #18181b;
+  --secondary: #f5f5f4;
+  --secondary-foreground: #1c1917;
+  --muted: #f5f5f4;
+  --muted-foreground: #57534e;
+  --accent: #e7e5e4;
+  --accent-foreground: #1c1917;
   --destructive: #b91c1c;
   --success: #047857;
   --warning: #f59e0b;
   --warning-foreground: #18181b;
-  --border: #d4d4d8;
-  --input: #71717a;
+  --border: #e7e5e4;
+  --input: #78716c;
   --ring: #dc2626;
-  --sunken: #fafafa;
+  --sunken: #f5f5f4;
 }
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
+  --background: #0c0a09;
+  --foreground: #fafaf9;
+  --card: #1c1917;
+  --card-foreground: #fafaf9;
+  --popover: #1c1917;
+  --popover-foreground: #fafaf9;
   --primary: #dc2626;
   --primary-foreground: #ffffff;
   --primary-hover: #b91c1c;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #3f3f46;
-  --accent-foreground: #fafafa;
+  --secondary: #292524;
+  --secondary-foreground: #fafaf9;
+  --muted: #292524;
+  --muted-foreground: #a8a29e;
+  --accent: #44403c;
+  --accent-foreground: #fafaf9;
   --destructive: #ef4444;
   --success: #34d399;
   --warning: #fbbf24;
   --warning-foreground: #18181b;
-  --border: #27272a;
-  --input: #71717a;
+  --border: #44403c;
+  --input: #78716c;
   --ring: #ef4444;
-  --sunken: #09090b;
+  --sunken: #292524;
 }
 @theme inline {
   --color-background: var(--background);
@@ -88,90 +88,53 @@
   --color-sunken: var(--sunken);
 }
 
-/* Celular = estilo D "tarjetas suaves" (decidido el 2026-11-16): fondo cálido, tarjetas blancas muy redondeadas con sombra suave, botones en cápsula con brillo rojo.
-   Se logra cambiando los mismos tokens por debajo de lg (1024 px): las pantallas migradas no repiten reglas, solo usan bg-card, rounded-card, shadow-card, etc.
-   La PC no cambia. Va después de :root y .dark para ganarles al tener la misma especificidad. */
+/* Estilo D "tarjetas suaves" (decidido el 2026-11-16) en toda la app: fondo cálido, tarjetas blancas redondeadas con sombra suave, botones en cápsula con brillo rojo.
+   Los colores de arriba valen para todas las pantallas; en celular (menos de lg, 1024 px) las formas y las sombras son más grandes que en PC (tarjetas de 28 px contra 20 px). */
 @media (max-width: 1023.98px) {
   :root {
-    --background: #f4f2ef;
-    --foreground: #1c1917;
-    --card: #ffffff;
-    --card-foreground: #1c1917;
-    --popover: #ffffff;
-    --popover-foreground: #1c1917;
-    --secondary: #f5f5f4;
-    --secondary-foreground: #1c1917;
-    --muted: #f5f5f4;
-    --muted-foreground: #57534e;
-    --accent: #e7e5e4;
-    --accent-foreground: #1c1917;
-    --border: #e7e5e4;
-    --sunken: #f5f5f4;
-    --input: #78716c;
     --radius-card: 1.75rem;
     --radius-campo: 1.125rem;
-    --radius-boton: 9999px;
     --shadow-card: 0 1px 2px rgb(28 25 23 / 0.04), 0 10px 28px rgb(28 25 23 / 0.09);
-    --shadow-boton: 0 8px 20px rgb(220 38 38 / 0.35);
-  }
-  .dark {
-    --background: #0c0a09;
-    --foreground: #fafaf9;
-    --card: #1c1917;
-    --card-foreground: #fafaf9;
-    --popover: #1c1917;
-    --popover-foreground: #fafaf9;
-    --secondary: #292524;
-    --secondary-foreground: #fafaf9;
-    --muted: #292524;
-    --muted-foreground: #a8a29e;
-    --accent: #44403c;
-    --accent-foreground: #fafaf9;
-    --border: #44403c;
-    --sunken: #292524;
-    --input: #78716c;
-    --shadow-card: 0 4px 14px rgb(0 0 0 / 0.45);
-    --shadow-boton: 0 8px 20px rgb(220 38 38 / 0.25);
   }
 }
 
-/* Encabezados de módulos y de ventanas (estilo D, celular): tarjeta clara en vez de la barra negra, con la línea roja corta de la marca sobre el borde de abajo.
-   Los textos y botones oscuros que ya llevan (text-white, bg-zinc-800...) se reemplazan aquí, para no tocar cada ventana. En PC siguen negros por ahora. */
-@media (max-width: 1023.98px) {
-  .encabezado-d {
-    background-color: var(--card);
-    color: var(--foreground);
-    border-bottom: 1px solid var(--border);
-    box-shadow: none;
-  }
-  .encabezado-d:not(.sticky, .absolute, .fixed) { position: relative; }
-  .encabezado-d::after {
-    content: '';
-    position: absolute;
-    left: 1rem;
-    bottom: -2px;
-    width: 3.5rem;
-    height: 4px;
-    border-radius: 9999px;
-    background-color: var(--primary);
-  }
-  .encabezado-d .text-white { color: var(--foreground); }
-  .encabezado-d .text-zinc-300,
-  .encabezado-d .text-zinc-400 { color: var(--muted-foreground); }
-  .encabezado-d .bg-zinc-800 { background-color: var(--secondary); }
-  .encabezado-d .border-zinc-700 { border-color: transparent; }
+/* Encabezados de módulos y de ventanas (estilo D): tarjeta clara en vez de la barra negra, con la línea roja corta de la marca sobre el borde de abajo.
+   Los textos y botones oscuros que ya llevan (text-white, bg-zinc-800...) se reemplazan aquí, para no tocar cada ventana. */
+.encabezado-d {
+  background-color: var(--card);
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+  box-shadow: none;
 }
+.encabezado-d:not(.sticky, .absolute, .fixed) { position: relative; }
+.encabezado-d::after {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  bottom: -2px;
+  width: 3.5rem;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: var(--primary);
+}
+.encabezado-d .text-white { color: var(--foreground); }
+.encabezado-d .text-zinc-300,
+.encabezado-d .text-zinc-400 { color: var(--muted-foreground); }
+.encabezado-d .bg-zinc-800 { background-color: var(--secondary); }
+.encabezado-d .border-zinc-700 { border-color: transparent; }
+.encabezado-d [class*='hover:bg-zinc-']:hover { background-color: var(--accent); }
+.encabezado-d [class*='hover:text-white']:hover { color: var(--foreground); }
 
 @theme {
   /* Esquinas más rectas (como el login): tarjetas, ventanas y botones grandes dejan de ser "burbujas" de 12 y 16 px. */
   --radius-xl: 0.5rem;
   --radius-2xl: 0.625rem;
   /* Forma por tipo de pieza (rediseño): en PC siguen los radios chicos de siempre; en celular, el estilo D "tarjetas suaves" (ver el bloque @media de abajo). */
-  --radius-card: 0.625rem;
-  --radius-campo: 0.5rem;
-  --radius-boton: 0.5rem;
-  --shadow-card: none;
-  --shadow-boton: none;
+  --radius-card: 1.25rem;
+  --radius-campo: 0.875rem;
+  --radius-boton: 9999px;
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.04), 0 6px 18px rgb(28 25 23 / 0.07);
+  --shadow-boton: 0 6px 16px rgb(220 38 38 / 0.28);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 
   /* Transiciones de entrada: cortas (120-200 ms), sin fill-mode para no dejar transform residual sobre el elemento. */

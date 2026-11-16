@@ -458,7 +458,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           />
 
           <div className="col-span-2 sm:col-span-5 pt-1 flex gap-2 justify-end mt-1">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card text-xs transition-colors max-lg:shadow-card">Cancelar</button>
+            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-1.5 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card text-xs transition-colors shadow-card">Cancelar</button>
             <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`min-w-[8.5rem] px-4 py-1.5 text-white font-bold rounded-boton text-xs shadow-md transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>
@@ -498,7 +498,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               <button
                 onClick={() => setShowDuplicateConfirm(false)}
                 disabled={isSubmitting}
-                className="flex-1 py-3 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors disabled:opacity-50 max-lg:shadow-card">
+                className="flex-1 py-3 text-card-foreground font-bold bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors disabled:opacity-50 shadow-card">
                 Cancelar
               </button>
               <button

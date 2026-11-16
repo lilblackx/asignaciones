@@ -22,7 +22,7 @@ export default function TiempoAtencionView({ ordenes, rango, tecnico, metaHoras,
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Meta de atención</span>
-        <div role="group" aria-label="Meta de atención" className="flex rounded-card border border-input overflow-hidden bg-card max-lg:shadow-card">
+        <div role="group" aria-label="Meta de atención" className="flex rounded-card border border-input overflow-hidden bg-card shadow-card">
           {META_HORAS.map((h) => (
             <button key={h} type="button" aria-pressed={metaHoras === h} onClick={() => onMeta(h)} className={`px-3 py-1.5 text-xs font-bold transition-colors ${metaHoras === h ? 'bg-red-600 text-white' : 'text-zinc-600 dark:text-zinc-300 hover:bg-secondary'}`}>
               {h < 72 ? `${h} h` : `${h / 24} días`}

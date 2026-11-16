@@ -17,7 +17,7 @@ const TEXTOS = {
 
 export function BotonCargarAnteriores({ cargando, onCargar }) {
   return (
-    <button type="button" onClick={onCargar} disabled={cargando} className="shrink-0 px-5 py-2.5 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed max-lg:shadow-card">
+    <button type="button" onClick={onCargar} disabled={cargando} className="shrink-0 px-5 py-2.5 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-card">
       {cargando ? 'Cargando...' : 'Cargar cierres anteriores'}
     </button>
   );

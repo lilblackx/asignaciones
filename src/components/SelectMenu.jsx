@@ -193,7 +193,7 @@ export default function SelectMenu({
             aria-label={ariaLabel}
             onMouseDown={(e) => e.preventDefault()}
             style={pos}
-            className={`fixed z-[300] w-max overflow-auto py-1.5 bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'} max-lg:shadow-card`}
+            className={`fixed z-[300] w-max overflow-auto py-1.5 bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'} shadow-card`}
           >
             {items.map(it =>
               it.group ? (

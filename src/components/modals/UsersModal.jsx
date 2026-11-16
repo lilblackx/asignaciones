@@ -300,7 +300,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={(filtroRol !== 'TODOS' ? 1 : 0)} />
             </div>
             <Colapsable>{filtersOpen && (
-              <div className="rounded-card border border-border max-lg:border-transparent bg-card p-3 max-lg:shadow-card">
+              <div className="rounded-card border border-transparent bg-card p-3 shadow-card">
               <div role="group" aria-label="Filtrar por rol" className="flex flex-wrap gap-2">
                 {filtros.map((f) => (
                   <Chip activo={filtroRol === f.value} tamano="compacto" key={f.value} type="button" onClick={() => setFiltroRol(f.value)}>

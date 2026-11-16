@@ -108,7 +108,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
                   key={onu.idExterno || onu.nombre}
                   type="button"
                   onClick={() => mostrar(onu)}
-                  className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 max-lg:shadow-card"
+                  className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 shadow-card"
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{onu.zona || onu.nombre || 'Servicio'}</span>

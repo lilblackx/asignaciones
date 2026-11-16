@@ -122,7 +122,7 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
                 key={`${p.nombre}-${p.lat}-${p.lng}`}
                 type="button"
                 onClick={() => { aplicar(p); setEstado({ tipo: 'listo', codigo: consulta, nombre: p.nombre }); }}
-                className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 max-lg:shadow-card"
+                className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-card"
               >
                 <span className="block text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{p.nombre}</span>
                 <span className="block mt-0.5 text-[11px] max-lg:text-xs font-medium text-muted-foreground">{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</span>

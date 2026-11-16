@@ -22,7 +22,7 @@ export default function Calendario({ valor, min, max, hoy: hoyElegido, onElegir,
   const ir = (pasos) => setVista((v) => mover(v.anio, v.mes, pasos));
 
   return (
-    <div role="group" aria-label="Calendario" className={`w-full ${grande ? 'max-w-sm p-4' : 'max-w-xs p-3'} bg-card border border-border max-lg:border-transparent rounded-card shadow-sm max-lg:shadow-card`}>
+    <div role="group" aria-label="Calendario" className={`w-full ${grande ? 'max-w-sm p-4' : 'max-w-xs p-3'} bg-card border border-transparent rounded-card shadow-sm shadow-card`}>
       <div className="flex items-center justify-between mb-2">
         <button type="button" onClick={() => ir(-1)} disabled={!hayAnterior} aria-label="Mes anterior" className={`${grande ? 'p-2.5' : 'p-1.5'} rounded-campo text-zinc-600 dark:text-zinc-300 hover:bg-secondary transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed`}>
           <ChevronLeft className={grande ? 'w-6 h-6' : 'w-4 h-4'} aria-hidden="true" />

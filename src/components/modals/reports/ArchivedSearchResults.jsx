@@ -6,7 +6,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
     <div>
       <h3 className="text-sm font-bold text-muted-foreground mb-2">Resultados de Búsqueda ({archivedSearchResults.length})</h3>
 
-      <div className="hidden md:block bg-card rounded-card border border-border max-lg:border-transparent overflow-hidden shadow-sm max-lg:shadow-card">
+      <div className="hidden md:block bg-card rounded-card border border-transparent overflow-hidden shadow-sm shadow-card">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-zinc-100 dark:bg-zinc-950 text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
@@ -53,7 +53,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
 
       <div className="grid grid-cols-1 gap-3 md:hidden">
         {archivedSearchResults.map((ticket, i) => (
-          <div key={`${ticket.id}-${i}`} className="bg-card p-4 rounded-card border border-border max-lg:border-transparent shadow-sm flex flex-col gap-2 relative max-lg:shadow-card">
+          <div key={`${ticket.id}-${i}`} className="bg-card p-4 rounded-card border border-transparent shadow-sm flex flex-col gap-2 relative shadow-card">
             <div className="absolute top-4 right-4 text-right">
               <div className="text-[11px] max-lg:text-xs font-black text-muted-foreground">{ticket._reportFecha}</div>
               <div className={`text-[8px] font-bold mt-0.5 px-1 py-0.5 rounded w-max ml-auto ${ticket._reportTipo === 'CANCELADOS' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>

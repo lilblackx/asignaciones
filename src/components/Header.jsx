@@ -71,7 +71,7 @@ function HeaderPC({
   };
 
   return (
-    <header className="max-lg:hidden bg-black text-white max-lg:bg-card max-lg:text-foreground shadow-md max-lg:shadow-card sticky top-0 z-10 border-b-4 border-red-600 max-lg:border-b-[3px] lg:h-[62px]">
+    <header className="encabezado-d max-lg:hidden bg-black text-white max-lg:bg-card max-lg:text-foreground shadow-md shadow-card sticky top-0 z-10 border-b-4 border-red-600 max-lg:border-b-[3px] lg:h-[62px]">
       <div className="px-3 min-[360px]:px-4 py-2 min-h-[60px] lg:min-h-0 lg:h-full flex justify-between items-center max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-2">
           {isAdmin && (
@@ -155,7 +155,7 @@ function HeaderPC({
                 {veInventario && alertasInventario > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-black max-lg:border-card" aria-hidden="true" />}
               </button>
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-zinc-700 rounded-card shadow-2xl overflow-hidden z-20 max-lg:bg-card max-lg:border-border max-lg:border-transparent max-lg:rounded-card max-lg:shadow-card max-lg:shadow-card">
+                <div className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-zinc-700 rounded-card shadow-2xl overflow-hidden z-20 max-lg:bg-card max-lg:border-transparent max-lg:rounded-card shadow-card shadow-card">
                   {canCerrar && (
                     <>
                       <button onClick={runAndClose(onOpenReports)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 transition-colors max-lg:text-foreground max-lg:hover:bg-secondary">

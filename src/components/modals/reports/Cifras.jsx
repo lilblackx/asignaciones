@@ -19,7 +19,7 @@ export function CifrasDestacadas({ items }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
       {items.map(({ etiqueta, valor, detalle, onClick }) => {
-        const clases = 'bg-card border border-border max-lg:border-transparent border-t-4 border-t-red-600 rounded-card px-4 py-4 min-w-0 text-left max-lg:shadow-card';
+        const clases = 'bg-card border border-transparent border-t-4 border-t-red-600 rounded-card px-4 py-4 min-w-0 text-left shadow-card';
         const contenido = (
           <>
             <div className="text-sm font-bold text-card-foreground leading-tight">{etiqueta}</div>
@@ -38,7 +38,7 @@ export function CifrasDestacadas({ items }) {
 // El resto de las cifras, en una sola tarjeta: nombre a la izquierda, valor a la derecha y el detalle debajo.
 export function CifrasLista({ items }) {
   return (
-    <dl className="bg-card border border-border max-lg:border-transparent rounded-card divide-y divide-zinc-200 dark:divide-zinc-800 mb-4 max-lg:shadow-card">
+    <dl className="bg-card border border-transparent rounded-card divide-y divide-zinc-200 dark:divide-zinc-800 mb-4 shadow-card">
       {items.map(({ etiqueta, valor, detalle, onClick }) => {
         const fila = (
           <>

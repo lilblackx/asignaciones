@@ -111,7 +111,7 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
       )}
 
       {abierto && !conPanel && (
-        <div role="menu" ref={mantenerEnPantalla} className={`absolute ${alinear === 'izquierda' ? 'left-0' : 'right-0'} mt-2 w-64 max-w-[calc(100vw-1rem)] z-20 rounded-card border border-zinc-200 dark:border-zinc-700 bg-card shadow-xl overflow-hidden max-lg:shadow-card`}>
+        <div role="menu" ref={mantenerEnPantalla} className={`absolute ${alinear === 'izquierda' ? 'left-0' : 'right-0'} mt-2 w-64 max-w-[calc(100vw-1rem)] z-20 rounded-card border border-zinc-200 dark:border-zinc-700 bg-card shadow-xl overflow-hidden shadow-card`}>
           {formatos.map((f) => {
             const { etiqueta, detalle, Icono } = OPCIONES[f];
             return (

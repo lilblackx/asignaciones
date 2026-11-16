@@ -93,7 +93,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
             aria-modal="true"
             aria-label={`${texto}: elegir número`}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xs bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl p-3 space-y-2 max-lg:shadow-card"
+            className="w-full max-w-xs bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl p-3 space-y-2 shadow-card"
           >
             <p className="text-xs font-bold text-muted-foreground px-1">{texto} a:</p>
             {opciones.map((o, i) => (

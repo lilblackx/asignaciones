@@ -23,7 +23,7 @@ export default function TendenciaMensualView({ contadores, cargando, error, tick
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Meses a mostrar</span>
-        <div role="group" aria-label="Meses a mostrar" className="flex rounded-card border border-input overflow-hidden bg-card max-lg:shadow-card">
+        <div role="group" aria-label="Meses a mostrar" className="flex rounded-card border border-input overflow-hidden bg-card shadow-card">
           {VENTANAS_MESES.map((n) => (
             <button key={n} type="button" aria-pressed={ventana === n} onClick={() => onVentana(n)} className={`px-3 py-1.5 text-xs font-bold transition-colors ${ventana === n ? 'bg-red-600 text-white' : 'text-zinc-600 dark:text-zinc-300 hover:bg-secondary'}`}>{n}</button>
           ))}

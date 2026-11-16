@@ -72,7 +72,7 @@ export default class ErrorBoundary extends Component {
     return (
       <div role="alert" className="min-h-dvh bg-fondo flex flex-col">
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-sm rounded-card border border-border max-lg:border-transparent bg-card overflow-hidden max-lg:shadow-card">
+        <div className="w-full max-w-sm rounded-card border border-transparent bg-card overflow-hidden shadow-card">
           <div className="bg-black px-4 py-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
             <h1 className="text-sm font-black uppercase tracking-wide text-white">Algo salió mal</h1>
