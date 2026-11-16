@@ -32,7 +32,7 @@ export default function VisorFotos({ fotos, indice, onCambiar, onClose, titulo =
       <div
         role="dialog"
         aria-label={`${titulo}: foto ${indice + 1} de ${total}`}
-        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[94dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col"
+        className="bg-card rounded-card shadow-2xl w-full max-w-3xl max-h-[94dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col"
       >
         <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">

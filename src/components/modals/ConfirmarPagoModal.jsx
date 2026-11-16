@@ -19,7 +19,7 @@ const AVISO = {
 export default function ConfirmarPagoModal({ ticket, decision, cobro = null, isSubmitting = false, onCancel, onConfirm }) {
   return (
     <Modal onClose={onCancel} zIndexClass="z-[120]">
-      <div role="alertdialog" aria-labelledby="confirmar-pago-titulo" className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[92dvh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
+      <div role="alertdialog" aria-labelledby="confirmar-pago-titulo" className="bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[92dvh] flex flex-col overflow-hidden border border-zinc-300 dark:border-zinc-800">
         <div className="overflow-y-auto px-6 pt-6 pb-4 text-center">
           <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
             <ClipboardCheck className="w-9 h-9 text-amber-600 dark:text-amber-500" aria-hidden="true" />

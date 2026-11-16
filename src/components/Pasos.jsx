@@ -10,7 +10,7 @@ export default function Pasos({ pasos, actual, hecho = () => false, onElegir = n
   if (!pasos?.length) return null;
   return (
     <nav aria-label={etiqueta} className={className}>
-      <ol className="flex items-center gap-1.5 rounded-full border border-zinc-200 dark:border-zinc-700/70 bg-zinc-100/70 dark:bg-zinc-800/50 px-3 py-1.5">
+      <ol className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5">
         {pasos.map(({ clave, etiqueta: nombre }, i) => {
           const completo = i !== actual && (hecho(clave) || i < actual);
           const esActual = i === actual;

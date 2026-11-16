@@ -40,14 +40,14 @@ export const CAMPO_FECHA_ORDEN = claseFecha('compacto');
 // La pantalla de acceso: el campo más grande de la app (48 px, borde grueso, letra de 16 px).
 export const CAMPO_LOGIN = 'w-full h-12 max-lg:h-14 px-3 bg-card dark:bg-background border-2 border-input text-foreground text-base rounded-campo focus:border-ring focus-visible:ring-4 focus-visible:ring-ring/30 outline-none';
 
-export const BOTON = 'inline-flex items-center justify-center gap-2 h-9 px-3 rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-bold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50';
-export const BOTON_PRINCIPAL = 'inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-bold text-white transition-colors disabled:opacity-50';
+export const BOTON = 'inline-flex items-center justify-center gap-2 h-9 px-3 rounded-boton border border-input bg-card text-sm font-bold text-foreground hover:bg-secondary transition-colors disabled:opacity-50';
+export const BOTON_PRINCIPAL = 'inline-flex items-center justify-center gap-2 h-9 px-4 rounded-boton shadow-boton bg-primary hover:bg-primary-hover text-sm font-bold text-primary-foreground transition-colors disabled:opacity-50';
 // Los botones de acción de un técnico (Pagar, Adelanto): un poco más grandes que el resto.
-export const BOTON_GRANDE = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-50';
+export const BOTON_GRANDE = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-boton text-sm font-bold transition-colors disabled:opacity-50';
 // El botón con borde (Cancelar, Volver) al lado de uno grande: la misma altura que BOTON_GRANDE.
 export const BOTON_CON_BORDE_GRANDE = BOTON.replace('h-9 px-3', 'h-10 px-4');
 // Un botón pequeño dentro de una fila (Anular, Aprobar, Retener...).
-export const BOTON_FILA = 'inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50';
+export const BOTON_FILA = 'inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-boton border border-input bg-card text-xs font-bold text-foreground hover:bg-secondary transition-colors disabled:opacity-50';
 
 export const CHIP = 'inline-flex items-center rounded-md px-2 py-0.5 text-[11px] max-lg:text-xs font-bold';
 export const ESTADO = {

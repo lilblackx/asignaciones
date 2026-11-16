@@ -137,7 +137,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   if (!porPasos) {
     return (
       <Modal onClose={() => {}} zIndexClass="z-[110]">
-        <div role="alertdialog" aria-labelledby="cobro-titulo" className="w-full max-w-2xl h-[calc(100dvh-2rem)] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border-2 border-emerald-500 flex flex-col overflow-hidden">
+        <div role="alertdialog" aria-labelledby="cobro-titulo" className="w-full max-w-2xl h-[calc(100dvh-2rem)] bg-card rounded-card shadow-2xl border-2 border-emerald-500 flex flex-col overflow-hidden">
           {encabezado}
           <div className="flex-1 min-h-0 overflow-y-auto">
             {cuadroDelCobro}

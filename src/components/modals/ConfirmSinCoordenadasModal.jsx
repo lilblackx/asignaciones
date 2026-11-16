@@ -7,7 +7,7 @@ import Spinner from '../Spinner';
 export default function ConfirmSinCoordenadasModal({ nap, isSubmitting, onCancel, onConfirm, textoConfirmar }) {
   return (
     <Modal onClose={onCancel} zIndexClass="z-[70]">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-center border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-sm overflow-hidden text-center border border-zinc-300 dark:border-zinc-800">
         <div className="pt-6 pb-4 px-6 flex flex-col items-center">
           <div className="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full mb-4">
             <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-500" />

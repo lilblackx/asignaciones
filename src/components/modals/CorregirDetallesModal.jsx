@@ -9,7 +9,7 @@ export default function CorregirDetallesModal({ ticket, onGuardar, onClose }) {
   if (!ticket) return null;
   return (
     <Modal onClose={onClose} zIndexClass="z-[60]">
-      <div role="dialog" aria-labelledby="corregir-detalles-titulo" className="w-full max-w-lg max-h-[92dvh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-300 dark:border-zinc-800">
+      <div role="dialog" aria-labelledby="corregir-detalles-titulo" className="w-full max-w-lg max-h-[92dvh] overflow-y-auto bg-card rounded-card shadow-2xl border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-emerald-600 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <p className="text-xs font-bold text-emerald-400">{ticket.codigo || 'S/C'}</p>

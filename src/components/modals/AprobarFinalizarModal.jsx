@@ -380,7 +380,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   // Una sola pantalla (2 pasos o menos): todo seguido, con la barra de botones fija abajo, como siempre.
   const unaSolaPantalla = (
     <Modal onClose={confirmando ? () => {} : onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-3xl max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-lg md:max-w-3xl max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
         {encabezado}
         <div className="p-4 sm:p-5 space-y-4">
           {aviso}

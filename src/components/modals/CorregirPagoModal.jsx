@@ -12,7 +12,7 @@ export default function CorregirPagoModal({ cobro, cuentasEmpresa = [], onCorreg
   const esperado = Number(cobro.monto) > 0 ? { monto: Number(cobro.monto), moneda: cobro.moneda } : null;
   return (
     <Modal onClose={onClose} zIndexClass="z-[90]">
-      <div role="dialog" aria-labelledby="corregir-pago-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-300 dark:border-zinc-800">
+      <div role="dialog" aria-labelledby="corregir-pago-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-card rounded-card shadow-2xl border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
           <div className="min-w-0">
             <h2 id="corregir-pago-titulo" className="text-base font-black text-white">{registrando ? 'Registrar el pago' : 'Corregir el pago'}</h2>

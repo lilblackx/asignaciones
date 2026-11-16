@@ -23,7 +23,7 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-md border border-zinc-300 dark:border-zinc-800">
         <div className="bg-black px-4 py-3 border-b-2 border-sky-500 flex justify-between items-center">
           <div>
             <h2 className="text-sm font-black text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-sky-400" aria-hidden="true" /> UBICACIÓN</h2>

@@ -10,7 +10,7 @@ import { ETIQUETA } from '../estilos';
 export default function ConfirmPreFinalizarModal({ ticket, visita, datos = [], isSubmitting, onCancel, onConfirm }) {
   return (
     <Modal onClose={onCancel} zIndexClass="z-[70]">
-      <div role="alertdialog" aria-labelledby="confirmar-prefinalizar-titulo" className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[92dvh] flex flex-col overflow-hidden text-center border border-zinc-300 dark:border-zinc-800">
+      <div role="alertdialog" aria-labelledby="confirmar-prefinalizar-titulo" className="bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[92dvh] flex flex-col overflow-hidden text-center border border-zinc-300 dark:border-zinc-800">
         <div className="overflow-y-auto pt-6 pb-4 px-6 flex flex-col items-center">
           <div className="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full mb-4">
             <ClipboardCheck className="w-10 h-10 text-amber-600 dark:text-amber-500" aria-hidden="true" />
