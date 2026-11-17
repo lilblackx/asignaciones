@@ -484,7 +484,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               <p className="text-xs text-muted-foreground ml-1">Enlace de Google Maps o coordenadas.</p>
               {mostrarFaltaUbicacion && <p role="alert" className={AVISO}>{MENSAJE_UBICACION_OBLIGATORIA}</p>}
               {ubicacionParseada.error && <p role="alert" className={AVISO}>{ubicacionParseada.error}</p>}
-              {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
+              {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 max-lg:min-h-11 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
             </div>
 
             {pideCobroAcordado && (

@@ -25,7 +25,7 @@ function Fila({ dato, ticket, copiado, onCopiar }) {
             <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
           </a>
         ) : dato.tipo === 'ubicacion' ? (
-          <a href={dato.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-700 dark:text-blue-400 font-bold hover:underline">
+          <a href={dato.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 max-lg:min-h-11 text-sm text-blue-700 dark:text-blue-400 font-bold hover:underline">
             <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> Abrir en Maps
           </a>
         ) : (

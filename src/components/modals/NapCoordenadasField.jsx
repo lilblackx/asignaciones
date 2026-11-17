@@ -134,7 +134,7 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
           </div>
         </div>
       )}
-      {parseada.enlace && <a href={parseada.enlace} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Ver NAP en el mapa</a>}
+      {parseada.enlace && <a href={parseada.enlace} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Ver NAP en el mapa</a>}
     </div>
   );
 }

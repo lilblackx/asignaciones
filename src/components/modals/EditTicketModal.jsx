@@ -340,7 +340,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             <input id="ed-ubicacion" disabled={isTecnico} type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={editingTicket.ubicacion || ''} onChange={handleEditChange} aria-invalid={!!ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion)} className={claseCampo('compacto', ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion) ? 'error' : 'normal')} />
             {faltaUbicacion && intentoSinUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
             {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
-            {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Cómo llegar</a>}
+            {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Cómo llegar</a>}
           </div>
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-potencia" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">POTENCIA ÓPTICA (dBm)</label>
