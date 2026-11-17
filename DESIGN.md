@@ -96,12 +96,16 @@ Dirección de diseño de la app de Network Speed Fibra (órdenes, técnicos, Fin
 
 ## Pendiente del rediseño (rama `rediseno`)
 
-Hecho hasta el commit "Rediseño: revisión de accesibilidad y contraste": tokens, login, lista del técnico, Pre-finalizar, panel, Finanzas, Reportes, Usuarios, Tasa, Configuración y Nueva asignación. Contraste medido en 40 combinaciones de pantalla, tamaño y tema: 0 fallos.
+Herramienta: `npm run auditar:diseno` (carpeta `scripts/auditoria-diseno/`). Por cada pantalla, en PC (1440 px), celular (390 px) y 320 px, en claro y en oscuro, mide el contraste, el tamaño mínimo de texto, el desborde horizontal, las áreas táctiles de 44 px (celular) y los controles o ventanas sin nombre, y guarda una captura. Requiere `npm run dev` y los emuladores con `npm run seed:emulator`; lanza su propio navegador con un perfil temporal y lo borra al terminar. Los escenarios están en `escenarios.mjs`. No detecta textos cortados ni desalineaciones: hay que mirar las capturas.
 
-Falta:
+Revisado: login (formulario y error); técnico en PC, celular y 320 (lista, notificaciones, cuenta, filtros, Pre-finalizar de una visita y de una instalación hasta la confirmación); Reportes en PC (11 vistas, menú Exportar, detalle de órdenes). Contraste medido de verdad: un lector que daba NaN contó "0 fallos" en la primera versión.
 
-1. **Modales de PC sin recorrer:** pasos de fotos, metraje y cobro de Pre-finalizar, y los modales de Reportes.
-2. **Pantallas sin auditar:** módulo Ubicación (apagado) y los roles almacén, promotora, finanzas e infraestructura en PC. Oficina, técnico y administrador sí están medidos.
-3. **Revisión final:** repasar el login oscuro y las pantallas con datos reales (las capturas usan órdenes de prueba).
-4. **Despliegue:** nada está subido. La rama `rediseno` está bloqueada para desplegar por el candado; no desplegar hasta que se levante.
-5. **Disco:** las pruebas con Chrome dejan perfiles temporales en la carpeta temporal; borrarlos al terminar (C: llegó a 0 de espacio).
+Falta, en este orden, cada módulo en PC y en celular:
+
+1. **Oficina:** Panel principal, Nueva orden, Cierre, Historial, Revisión de órdenes, Técnicos, Usuarios, Tasa y pagos, Configuración, y los modales de cada uno (editar, detalle, historial, cancelar, aprobar).
+2. **Dinero:** Administración y Finanzas.
+3. **Inventario y ventas:** Almacén, Envíos al inventario, Ventas e Infraestructura.
+4. **Otros roles y módulos:** promotora, almacén, finanzas, infraestructura y administración en sus propias vistas, y Ubicación (apagado).
+5. **Flujo de cobro:** "Consultar cobro a la oficina" y el cobro resultante, en PC y celular. Escriben en el emulador.
+6. **Revisión final:** login oscuro y pantallas con datos reales (las capturas usan órdenes de prueba); `npm run build`.
+7. **Despliegue:** nada está subido. La rama `rediseno` está bloqueada para desplegar por el candado; no desplegar hasta que se levante.
