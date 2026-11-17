@@ -141,7 +141,7 @@ check('si el valor ya trae el prefijo no se duplica (V-V-22222222)', [formatearC
 check('el RIF y los demás documentos van sin puntos de miles; la cédula V los conserva', [formatearCedula('407.162.578', 'J'), formatearCedula('J-407.162.578', 'J'), formatearCedula('81.234.567', 'E'), formatearCedula('20.000.000', 'G'), formatearCedula('12.345.678', 'V'), formatearCedula('12.345.678'), formatearCedula('V-12.345.678')],
   ['J-407162578', 'J-407162578', 'E-81234567', 'G-20000000', 'V-12.345.678', 'V-12.345.678', 'V-12.345.678']);
 check('la tarjeta y la exportación usan esa misma función', [/formatearCedula\(orden\.cedula, orden\.tipoDocumento\)/.test(leer('../src/components/TarjetaInstalacion.jsx')), /formatearCedula\(o\.cedula, o\.tipoDocumento\)/.test(leer('../src/utils/exportarOrdenes.js'))], [true, true]);
-check('la tarjeta usa la etiqueta de tipo de la tabla de la oficina, el estado sólido y la franja de atraso con la misma función (atrasoOrden)', [/getTipoTrabajoEstilo\(esLos \? 'AVERÍA' : 'INSTALACIÓN'\)/.test(leer('../src/components/TarjetaInstalacion.jsx')), /ESTILO_ESTADO_PROMOTORA_SOLIDO\[vista\.clave\]/.test(leer('../src/components/TarjetaInstalacion.jsx')), /atraso\.que/.test(leer('../src/components/TarjetaInstalacion.jsx'))], [true, true, true]);
+check('la tarjeta usa la etiqueta de tipo de la tabla de la oficina, el estado y la franja de atraso con la misma función (atrasoOrden)', [/getTipoTrabajoEstilo\(esLos \? 'AVERÍA' : 'INSTALACIÓN'\)/.test(leer('../src/components/TarjetaInstalacion.jsx')), /ESTILO_ESTADO_PROMOTORA\[vista\.clave\]/.test(leer('../src/components/TarjetaInstalacion.jsx')), /atraso\.que/.test(leer('../src/components/TarjetaInstalacion.jsx'))], [true, true, true]);
 
 // --- Exportar a Excel ---
 const exportables = [
