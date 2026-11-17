@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
-import Chip from '../Chip';
+import Segmentado from '../Segmentado';
 import { legible } from '../../utils/nombreTecnico';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import Boton from '../Boton';
@@ -67,20 +67,16 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
         </ul>
       )}
 
-      <div className="space-y-2">
-        <div className="relative">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="relative basis-full lg:basis-auto lg:flex-1 lg:min-w-72">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input type="search" aria-label="Buscar por código, cliente, cédula, técnico o referencia" placeholder="Código, cliente, cédula o referencia" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={BUSCADOR} />
           <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div role="group" aria-label="Tipo de orden" className="flex flex-wrap gap-1.5">
-            {FILTROS_TIPO_PAGO.map(({ valor, etiqueta }) => <Chip activo={tipo === valor} tamano="compacto" key={valor || 'todos'} type="button" onClick={() => setTipo(valor)}>{etiqueta}</Chip>)}
-          </div>
-          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex">
-            <SelectMenu ariaLabel="Forma de pago" className={SELECTOR} value={forma} onChange={setForma} items={[{ value: '', label: 'Todas las formas' }, ...formas.map((f) => ({ value: f, label: f }))]} />
-            <SelectMenu ariaLabel="Moneda" className={SELECTOR} value={moneda} onChange={setMoneda} items={[{ value: '', label: 'Bs y $' }, { value: 'BS', label: 'Bolívares (Bs)' }, { value: 'USD', label: 'Dólares ($)' }]} />
-          </div>
+        <Segmentado compacto ariaLabel="Tipo de orden" opciones={FILTROS_TIPO_PAGO.map(({ valor, etiqueta }) => ({ id: valor, etiqueta }))} valor={tipo} onCambiar={setTipo} />
+        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex">
+          <SelectMenu ariaLabel="Forma de pago" className={SELECTOR} value={forma} onChange={setForma} items={[{ value: '', label: 'Todas las formas' }, ...formas.map((f) => ({ value: f, label: f }))]} />
+          <SelectMenu ariaLabel="Moneda" className={SELECTOR} value={moneda} onChange={setMoneda} items={[{ value: '', label: 'Bs y $' }, { value: 'BS', label: 'Bolívares (Bs)' }, { value: 'USD', label: 'Dólares ($)' }]} />
         </div>
       </div>
 

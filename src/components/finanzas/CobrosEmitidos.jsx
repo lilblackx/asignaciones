@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
-import Chip from '../Chip';
+import Segmentado from '../Segmentado';
 import { legible } from '../../utils/nombreTecnico';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import Boton from '../Boton';
@@ -64,21 +64,14 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
       <h2 className={TITULO_SECCION}>Cobros a los clientes · {etiquetaRango(rango)}</h2>
       <p className={TEXTO_SUAVE}>Cada orden con cobro, y cada instalación, genera un cobro al finalizarse. Administración lo sube al portal de la empresa y lo marca como cargado; el cliente ve su factura y paga allá.</p>
 
-      <div className="space-y-2">
-        <div className="relative">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="relative basis-full lg:basis-auto lg:flex-1 lg:min-w-72">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input type="search" aria-label="Buscar por código, cliente, cédula o técnico" placeholder="Código, cliente o cédula" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={BUSCADOR} />
           <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div role="group" aria-label="Estado del cobro" className="flex flex-wrap gap-1.5">
-            {FILTROS_ESTADO.map(({ valor, etiqueta }) => <Chip activo={estado === valor} tamano="compacto" key={valor} type="button" onClick={() => setEstado(valor)}>{etiqueta}</Chip>)}
-          </div>
-          <span aria-hidden="true" className="hidden sm:block w-px h-6 bg-border" />
-          <div role="group" aria-label="Tipo de orden" className="flex flex-wrap gap-1.5">
-            {FILTROS_TIPO.map(({ valor, etiqueta }) => <Chip activo={tipo === valor} tamano="compacto" key={valor || 'todas'} type="button" onClick={() => setTipo(valor)}>{etiqueta}</Chip>)}
-          </div>
-        </div>
+        <Segmentado compacto ariaLabel="Estado del cobro" opciones={FILTROS_ESTADO.map(({ valor, etiqueta }) => ({ id: valor, etiqueta }))} valor={estado} onCambiar={setEstado} />
+        <Segmentado compacto ariaLabel="Tipo de orden" opciones={FILTROS_TIPO.map(({ valor, etiqueta }) => ({ id: valor, etiqueta }))} valor={tipo} onCambiar={setTipo} />
       </div>
 
       <p className={TEXTO_SUAVE} aria-live="polite">{visibles.length} {visibles.length === 1 ? 'cobro' : 'cobros'}</p>

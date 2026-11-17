@@ -185,6 +185,14 @@ export default [
   // Infraestructura (instalaciones realizadas): la lista y su panel de filtros.
   { id: 'infraestructura', usuario: 'infra', clave: 'Infra1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }] },
   // Las secciones de la vista propia de Finanzas (cada rol tiene su vista, distinta de la del administrador). La pestaña Historial de Infraestructura solo existe con el permiso `puedeVerHistorial` (se marca en Usuarios): sin él no hay nada que abrir.
+  // El calendario del campo de fecha (Rango de Finanzas): el desplegable "Desde" abierto.
+  { id: 'finanzas-calendario', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'rango-desde', preparar: async (n) => { await clicTexto(n, 'rango'); await n.dormir(700); return n.clicEtiqueta('^desde:'); }, limpiar: (n) => n.esc(), espera: 1200 },
+  ] },
+  // Anular el pago de una orden: Reporte de pagos > las órdenes de un técnico > Anular.
+  { id: 'finanzas-anular', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'anular-orden', preparar: async (n) => { await n.clic('gerardo molero'); await n.dormir(900); const abre = (re) => n.ev((r) => { const b = [...document.querySelectorAll('button')].find((e) => new RegExp(r, 'i').test((e.innerText || '').trim()) && e.getBoundingClientRect().width > 0); if (!b) return false; b.click(); return true; }, re); if (!(await abre('^órdenes del pago'))) return false; await n.dormir(1200); return abre('^anular pago de esta orden'); }, limpiar: (n) => n.esc(), espera: 1200 },
+  ] },
   { id: 'finanzas-secciones', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
     { id: 'pagos-de-clientes', preparar: async (n) => (await n.clic('pagos de clientes')) || n.clic('clientes'), espera: 1800 },
     { id: 'pagos-historial', preparar: async (n) => { await (async () => (await n.clic('pagos de clientes')) || n.clic('clientes'))(); await n.dormir(800); return clicTexto(n, 'historial de pagos'); }, espera: 1800 },
