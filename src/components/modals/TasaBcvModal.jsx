@@ -106,7 +106,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
             {estaDesactualizada && (
               <Aviso nivel="atencion" compact>{dias === null ? 'Nunca se ha configurado la tasa.' : dias === 1 ? 'Tasa desactualizada: es de ayer.' : `Tasa desactualizada: tiene ${dias} días.`}</Aviso>
             )}
-            <div className="bg-sunken border-2 border-border rounded-campo p-4 space-y-1">
+            <div className="bg-sunken rounded-campo p-4 space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground font-bold">Tasa actual</span>
                 <span className="font-black text-foreground">{tasaConfig?.tasa ? tasaConfig.tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Sin configurar'}</span>

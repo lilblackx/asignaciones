@@ -2,6 +2,7 @@ import { Radio } from 'lucide-react';
 import BotonCopiar, { BotonCopiarDato } from '../BotonCopiar';
 import { useCopiado } from '../../hooks/useCopiado';
 import { calidadValor, textoDbm, textoValorConCalidad, textoValoresCliente } from '../../utils/valoresCliente';
+import { TARJETA_SECCION, TITULO_TARJETA } from '../estilos';
 
 function Fila({ id, etiqueta, valor, copiado, onCopiar }) {
   const calidad = calidadValor(valor);
@@ -30,9 +31,9 @@ function Fila({ id, etiqueta, valor, copiado, onCopiar }) {
 export default function ValoresClienteTarjeta({ valores, onCopy }) {
   const { copiado, copiar } = useCopiado(onCopy);
   return (
-    <section aria-label="Valores del cliente" className="bg-sunken border-2 border-border rounded-campo p-4">
+    <section aria-label="Valores del cliente" className={TARJETA_SECCION}>
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400">
+        <h3 className={TITULO_TARJETA}>
           <Radio className="w-4 h-4 shrink-0" aria-hidden="true" /> Valores del cliente
         </h3>
         <BotonCopiar

@@ -2,6 +2,7 @@ import BotonCopiar, { BotonCopiarDato } from '../BotonCopiar';
 import { useCopiado } from '../../hooks/useCopiado';
 import { CAMPOS_POR_TIPO, TITULO_POR_TIPO, nombreForma, textoForma, textoTodasLasFormas } from '../../utils/formasPago';
 import { ICONO_POR_TIPO } from './formasPagoIconos';
+import { TARJETA_SECCION, TITULO_TARJETA } from '../estilos';
 
 // Fila "etiqueta + valor + botón copiar". `id` identifica cuál se copió para
 // mostrar el check un instante; `contexto` distingue los botones de cada tarjeta
@@ -32,9 +33,9 @@ function TarjetaForma({ forma, indice, copiado, onCopiar }) {
   const nombre = nombreForma(forma);
   const tarjetaCopiada = copiado === idTarjeta;
   return (
-    <section aria-label={`${TITULO_POR_TIPO[forma.tipo]}: ${nombre}`} className="bg-sunken border-2 border-border rounded-campo p-4">
+    <section aria-label={`${TITULO_POR_TIPO[forma.tipo]}: ${nombre}`} className={TARJETA_SECCION}>
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400">
+        <h3 className={TITULO_TARJETA}>
           <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {TITULO_POR_TIPO[forma.tipo]}
         </h3>
         <BotonCopiar

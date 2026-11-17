@@ -96,3 +96,8 @@ export const ETIQUETA_ORDEN = 'text-[11px] max-lg:text-xs font-bold text-muted-f
 // (tarjeta clara con sombra suave, sin borde, en cápsula). `BOTON_ENCABEZADO_ICONO` es el redondo con solo un ícono.
 export const BOTON_ENCABEZADO = 'inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-boton border border-transparent bg-card hover:bg-secondary text-foreground text-xs font-bold shadow-card transition-colors whitespace-nowrap disabled:opacity-60';
 export const BOTON_ENCABEZADO_ICONO = 'inline-flex items-center justify-center shrink-0 p-2 max-lg:min-w-11 max-lg:min-h-11 lg:h-9 lg:w-9 lg:p-0 rounded-boton border border-transparent bg-card hover:bg-secondary text-foreground shadow-card transition-colors';
+
+// --- Tarjetas de sección de las ventanas de datos (detalle de la orden, valores del cliente, formas de pago): fondo suave sin borde, título en tinta y el ícono en el rojo de marca.
+export const TARJETA_SECCION = 'bg-sunken rounded-campo p-4';
+export const TITULO_TARJETA = 'flex items-center gap-2 text-sm font-black text-foreground';
+export const ICONO_TARJETA = 'w-4 h-4 shrink-0 text-red-700 dark:text-red-400';

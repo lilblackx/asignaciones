@@ -11,7 +11,7 @@ import TelefonoAccion from '../TelefonoAccion';
 import BotonCopiar from '../BotonCopiar';
 import ValoresClienteTarjeta from './ValoresClienteTarjeta';
 import { useCopiado } from '../../hooks/useCopiado';
-import { formatCedula, getEstadoColor, getTipoTrabajoEstilo } from '../../utils/ticketDisplay';
+import { formatCedula, getEstadoPastel, getTipoTrabajoEstilo } from '../../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../../utils/smartolt';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap } from '../../utils/ubicacion';
 import { esInstalacion, napConPuerto } from '../../utils/instalacion';
@@ -25,17 +25,20 @@ import FotosDeOrden from '../FotosDeOrden';
 import AprobacionSinDetalles from '../AprobacionSinDetalles';
 import { fotosDe } from '../../utils/detallesOrden';
 import BotonCerrar from '../BotonCerrar';
+import { legible } from '../../utils/nombreTecnico';
+import { fallaVisible } from '../../utils/fallaVisible';
+import { ICONO_TARJETA, TARJETA_SECCION, TITULO_TARJETA } from '../estilos';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 const fechaProgramada = (iso) => { const [y, m, d] = String(iso || '').split('-'); return y && m && d ? `${d}/${m}/${y}` : ''; };
 
-// Tarjeta de una sección: el mismo recuadro y título que las tarjetas de valores del cliente y de formas de pago.
+// Tarjeta de una sección: el mismo fondo suave y título (ver estilos) que las tarjetas de valores del cliente y de formas de pago.
 function Seccion({ icono: Icono, titulo, acciones, children }) {
   return (
-    <section aria-label={titulo} className="bg-sunken border-2 border-border rounded-campo p-4">
+    <section aria-label={titulo} className={TARJETA_SECCION}>
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400">
-          <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {titulo}
+        <h3 className={TITULO_TARJETA}>
+          <Icono className={ICONO_TARJETA} aria-hidden="true" /> {titulo}
         </h3>
         {acciones}
       </div>
@@ -55,7 +58,7 @@ function Dato({ etiqueta, children }) {
   );
 }
 
-const ENLACE = 'inline-flex items-center gap-1 max-lg:min-h-11 text-sky-700 dark:text-sky-400 underline decoration-dotted underline-offset-2 hover:decoration-solid';
+const ENLACE = 'relative inline-flex items-center gap-1 max-lg:after:absolute max-lg:after:-inset-x-1 max-lg:after:-inset-y-3 text-sky-700 dark:text-sky-400 underline decoration-dotted underline-offset-2 hover:decoration-solid';
 
 // Todos los datos de una orden en una sola ventana, solo para mirar (desde el ojito junto al nombre en la lista). Editar,
 // aprobar o finalizar siguen en el menú de la fila. `onCopy(texto, mensaje)` copia y avisa con el toast.
@@ -82,17 +85,17 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-700 dark:text-red-400" aria-hidden="true" /> DETALLE DE LA ORDEN</h2>
-            <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
+            <p className="text-[11px] max-lg:text-xs font-medium text-muted-foreground truncate"><span className="font-black text-foreground">{ticket.codigo || 'S/C'}</span> · {ticket.nombre}</p>
           </div>
           <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 overflow-y-auto space-y-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className={`text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
+            <span className={`text-[11px] max-lg:text-xs font-black px-2.5 py-0.5 rounded-full ${getEstadoPastel(ticket.estado)}`}>{ticket.estado}</span>
             <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
             <InsigniaVentaTecnico ticket={ticket} />
-            {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-xs font-bold text-card-foreground">{ticket.falla}</span>}
+            {fallaVisible(ticket) && <span className="text-xs font-bold text-card-foreground">{fallaVisible(ticket)}</span>}
           </div>
 
           <CancelacionAviso ticket={ticket} />
@@ -117,8 +120,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               {ticket.telefono && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span>{ticket.telefono}</span>
-                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-secondary text-foreground text-xs font-bold hover:bg-accent transition-colors" />
-                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton border border-input bg-card text-foreground text-xs font-bold hover:bg-secondary transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton border border-green-300 dark:border-green-800 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
                 </div>
               )}
             </Dato>
@@ -134,7 +137,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
           </Seccion>
 
           <Seccion icono={Wrench} titulo="Orden">
-            <Dato etiqueta="Técnico">{ticket.tecnico}</Dato>
+            <Dato etiqueta="Técnico">{legible(ticket.tecnico || '')}</Dato>
             <Dato etiqueta="Promotor">{promotora}</Dato>
             <Dato etiqueta="Creada">{[fechaHora(ticket.createdAt) || ticket.fecha, (ticket.creadoNombre || ticket.creado) && `por ${ticket.creadoNombre || ticket.creado}`].filter(Boolean).join(' · ')}</Dato>
             <Dato etiqueta="Programada para">{fechaProgramada(ticket.fechaProgramada)}</Dato>
@@ -187,7 +190,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
                   onClick={() => copiar('plantilla', plantilla, 'Plantilla copiada, lista para WhatsApp.')}
                   etiqueta="Copiar la plantilla"
                   className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold"
-                  tono="bg-zinc-800 text-white hover:bg-zinc-700"
+                  tono="bg-secondary text-foreground hover:bg-accent"
                   iconoClase="w-3 h-3"
                 >
                   Copiar
