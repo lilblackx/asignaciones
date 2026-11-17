@@ -263,7 +263,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                 <h3 className="flex items-center gap-2 font-black tracking-wide">
                   <Banknote className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" /> COBRO
                 </h3>
-                <p className="ml-6 mt-1"><span className="opacity-70">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
+                <p className="ml-6 mt-1"><span className="font-medium">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
                 {consultaCobroDe(ticket) && (
                   <p className="ml-6 mt-1 text-[11px] max-lg:text-xs font-bold">
                     {respuestaVigente(ticket)
