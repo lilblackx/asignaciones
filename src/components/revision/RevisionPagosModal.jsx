@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ChevronDown, ClipboardCheck, RefreshCw, Search } from 'lucide-react';
+import { ClipboardCheck, RefreshCw, Search } from 'lucide-react';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import SelectMenu from '../SelectMenu';
@@ -24,9 +24,9 @@ import { diaDe } from '../../utils/totalesMes';
 import { useRevisionPagos } from '../../hooks/useRevisionPagos';
 import { useCargarHastaCubrir } from '../../hooks/useCargarHastaCubrir';
 import { useTasaDolar } from '../../hooks/useTasaDolar';
-import Chip from '../Chip';
+import BarraFiltros from '../BarraFiltros';
 import Boton from '../Boton';
-import RangoFechas from '../RangoFechas';
+import Aviso, { AvisosAgrupados } from '../Aviso';
 
 // `enPagina`: el mismo contenido como página dentro del marco del administrador (sin ventana ni barra negra propia: el título y el menú los pone la pantalla que la contiene).
 // Revisión de órdenes (solo ADMIN): la barrera entre las órdenes y Finanzas. Aquí un administrador revisa lo que se va a pagar y solo lo que aprueba llega a Finanzas. Lo ya pagado no
@@ -45,31 +45,6 @@ function textoOmitidas(omitidas, verbo) {
     escaladas > 0 && `${escaladas} ${escaladas === 1 ? 'está escalada' : 'están escaladas'} a infraestructura y se ${escaladas === 1 ? 'aprueba' : 'aprueban'} una por una`,
   ].filter(Boolean);
   return partes.length > 0 ? ` ${partes.join('; ')}.` : '';
-}
-
-// Un aviso ámbar de la pantalla: con ícono, texto más chico en celular (había dos de cuatro líneas que empujaban lo importante fuera de la pantalla) y sin el borde grueso.
-function Aviso({ children }) {
-  return (
-    <p role="status" className="flex items-start gap-2.5 rounded-campo border border-amber-300 max-lg:border-transparent dark:border-amber-900/60 dark:max-lg:border-transparent bg-amber-50 dark:bg-amber-950/30 px-3.5 py-3 text-xs sm:text-sm leading-snug text-amber-900 dark:text-amber-100">
-      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-      <span className="min-w-0">{children}</span>
-    </p>
-  );
-}
-
-// Los avisos de la pantalla, agrupados en uno solo que se despliega: en PC arrancan abiertos y en celular cerrados, para que lo importante (las órdenes) no quede fuera de la pantalla.
-function AvisosAgrupados({ total, children }) {
-  const [abierto, setAbierto] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
-  if (total === 0) return null;
-  return (
-    <div className="space-y-2">
-      <button type="button" aria-expanded={abierto} onClick={() => setAbierto((a) => !a)} className="w-full min-h-11 px-3.5 flex items-center justify-between gap-2 rounded-campo border border-amber-300 max-lg:border-transparent dark:border-amber-900/60 dark:max-lg:border-transparent bg-amber-50 dark:bg-amber-950/30 text-sm font-black text-amber-900 dark:text-amber-100">
-        <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" /> {total === 1 ? '1 aviso por atender' : `${total} avisos por atender`}</span>
-        <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
-      </button>
-      {abierto && <div className="space-y-2">{children}</div>}
-    </div>
-  );
 }
 
 export default function RevisionPagosModal({ technicians, tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onActualizar, usuario, firebaseUser, formasPago = null, setToastMsg, onClose, enPagina = false }) {
@@ -218,24 +193,18 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
         {!enPagina && <EncabezadoModulo Icono={ClipboardCheck} titulo="Revisión de órdenes" onClose={onClose} />}
 
         <div className={enPagina ? 'flex-1 min-w-0 bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm max-w-[1400px] mx-auto w-full' : `flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm ${CENTRADO_AMPLIO}`}>
-          <p className={TEXTO_SUAVE}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{corteTodaviaNoLlega() ? ` Comienza a contar a partir del ${textoFechaCorte()}.` : ''}</p>
+          <p className={`${TEXTO_SUAVE} max-sm:hidden`}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{corteTodaviaNoLlega() ? ` Comienza a contar a partir del ${textoFechaCorte()}.` : ''}</p>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-            <div role="group" aria-label="Periodo" className="grid grid-cols-3 gap-2 w-full sm:flex sm:w-auto">
-              {[['POR_REVISAR', 'Pendientes'], ...PERIODOS].map(([id, texto]) => (
-                <Chip activo={periodo === id} tamano="angosto" key={id} type="button" onClick={() => setPeriodo(id)}>{texto}</Chip>
-              ))}
-            </div>
-            {periodo === 'RANGO' && (
-              <RangoFechas desde={personalizado.desde} hasta={personalizado.hasta} onDesde={(v) => setPersonalizado({ ...personalizado, desde: v })} onHasta={(v) => setPersonalizado({ ...personalizado, hasta: v })} maximo={hoy} grande />
+          <BarraFiltros
+            periodos={[['POR_REVISAR', 'Pendientes'], ...PERIODOS]}
+            periodo={periodo}
+            onPeriodo={setPeriodo}
+            rango={{ desde: personalizado.desde, hasta: personalizado.hasta, onDesde: (v) => setPersonalizado({ ...personalizado, desde: v }), onHasta: (v) => setPersonalizado({ ...personalizado, hasta: v }), maximo: hoy, grande: true }}
+            selector={<SelectMenu id="revision-tecnico" ariaLabel="Técnico" className={SELECTOR} value={tecnico} onChange={setTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...nombresTecnicos.map((t) => ({ value: t, label: t }))]} />}
+            acciones={onActualizar && (
+              <button type="button" onClick={onActualizar} disabled={isLoadingReports} aria-label="Actualizar" className={`${BOTON} max-sm:px-0 max-sm:w-11 max-sm:shrink-0`}><RefreshCw className={`w-4 h-4 ${isLoadingReports ? 'animate-spin' : ''}`} aria-hidden="true" /> <span className="max-sm:hidden">Actualizar</span></button>
             )}
-            <div className="w-full sm:w-60 min-w-0">
-              <SelectMenu id="revision-tecnico" ariaLabel="Técnico" className={SELECTOR} value={tecnico} onChange={setTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...nombresTecnicos.map((t) => ({ value: t, label: t }))]} />
-            </div>
-            {onActualizar && (
-              <button type="button" onClick={onActualizar} disabled={isLoadingReports} className={BOTON}><RefreshCw className={`w-4 h-4 ${isLoadingReports ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar</button>
-            )}
-          </div>
+          />
 
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -244,7 +213,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           </div>
 
           {periodo === 'POR_REVISAR' && (
-            <p role="status" className={`${TEXTO_SUAVE} rounded-campo border border-input bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
+            <p role="status" className={`${TEXTO_SUAVE} max-sm:hidden rounded-campo border border-input bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
               Pendientes muestra las órdenes de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
             </p>
           )}
@@ -257,23 +226,38 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           />
 
           <AvisosAgrupados total={[porResolver, esperanPago, escaladasPendientes].filter((a) => a.length > 0).length}>
-          {porResolver.length > 0 && (
-            <Aviso>
-              {porResolver.length === 1 ? '1 garantía de otro técnico espera' : `${porResolver.length} garantías de otro técnico esperan`} tu decisión ({porResolver.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{porResolver.length > 4 ? '...' : ''}): descuenta de la orden original o déjala sin descuento. No se pueden aprobar hasta decidir.
-            </Aviso>
-          )}
+            {porResolver.length > 0 && (
+              <Aviso
+                plegable
+                titulo={`${porResolver.length} ${porResolver.length === 1 ? 'garantía de otro técnico espera' : 'garantías de otro técnico esperan'} tu decisión`}
+                codigos={porResolver.map((i) => i.orden.codigo || 'S/C')}
+                onElegirCodigo={setBusqueda}
+              >
+                Descuenta de la orden original o déjala sin descuento. No se pueden aprobar hasta decidir.
+              </Aviso>
+            )}
 
-          {esperanPago.length > 0 && (
-            <Aviso>
-              {esperanPago.length === 1 ? '1 orden espera' : `${esperanPago.length} órdenes esperan`} el pago del cliente y no se {esperanPago.length === 1 ? 'puede' : 'pueden'} aprobar todavía ({esperanPago.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{esperanPago.length > 4 ? '...' : ''}). Lo registra {tecnicosSinPago.length === 1 ? 'el técnico' : 'cada técnico'}{tecnicosSinPago.length > 0 ? ` (${tecnicosSinPago.slice(0, 3).join(', ')}${tecnicosSinPago.length > 3 ? '...' : ''})` : ''}; si no puede, usa "Registrar el pago" en la orden.
-            </Aviso>
-          )}
+            {esperanPago.length > 0 && (
+              <Aviso
+                plegable
+                titulo={`${esperanPago.length} ${esperanPago.length === 1 ? 'orden espera' : 'órdenes esperan'} el pago del cliente`}
+                codigos={esperanPago.map((i) => i.orden.codigo || 'S/C')}
+                onElegirCodigo={setBusqueda}
+              >
+                No se {esperanPago.length === 1 ? 'puede' : 'pueden'} aprobar todavía. Lo registra {tecnicosSinPago.length === 1 ? 'el técnico' : 'cada técnico'}{tecnicosSinPago.length > 0 ? ` (${tecnicosSinPago.slice(0, 3).join(', ')}${tecnicosSinPago.length > 3 ? '...' : ''})` : ''}; si no puede, usa "Registrar el pago" en la orden.
+              </Aviso>
+            )}
 
-          {escaladasPendientes.length > 0 && (
-            <Aviso>
-              {escaladasPendientes.length === 1 ? '1 orden escalada a infraestructura espera' : `${escaladasPendientes.length} órdenes escaladas a infraestructura esperan`} tu revisión ({escaladasPendientes.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{escaladasPendientes.length > 4 ? '...' : ''}): llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
-            </Aviso>
-          )}
+            {escaladasPendientes.length > 0 && (
+              <Aviso
+                plegable
+                titulo={`${escaladasPendientes.length} ${escaladasPendientes.length === 1 ? 'orden escalada a infraestructura espera' : 'órdenes escaladas a infraestructura esperan'} tu revisión`}
+                codigos={escaladasPendientes.map((i) => i.orden.codigo || 'S/C')}
+                onElegirCodigo={setBusqueda}
+              >
+                Llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
+              </Aviso>
+            )}
           </AvisosAgrupados>
 
           <div className="flex flex-wrap items-center justify-between gap-3">

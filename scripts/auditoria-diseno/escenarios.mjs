@@ -166,6 +166,8 @@ export default [
         .map((nombre) => ({ id: nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, '-'), preparar: vistaReporte(nombre), espera: 2200 })),
     ],
   },
+  // Finanzas con su propio usuario: su pantalla de inicio con la barra de filtros.
+  { id: 'finanzas', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
   { id: 'tecnico1', usuario: 'tecnico1', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarVisita] },
   { id: 'tecnico2', usuario: 'tecnico2', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarInstalacion] },
 ];

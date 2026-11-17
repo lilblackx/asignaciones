@@ -27,7 +27,7 @@ function mantenerEnPantalla(menu) {
 //   grupos: cuando la pantalla tiene más de un reporte para bajar, en vez de `formatos`: [{ clave, titulo, detalle, formatos }]. Se abre un panel con dos pasos: el reporte (desplegable) y el formato
 //     (botones grandes: al tocar uno se descarga). `onElegir` recibe el formato y la clave del reporte. En el celular el panel sale pegado abajo y ocupa el ancho de la pantalla.
 //   extra: clases que se suman al botón; alinear: de qué lado se abre ('derecha' por defecto: pegado al borde derecho del botón).
-export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extra = '', alinear = 'derecha' }) {
+export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extra = '', alinear = 'derecha', soloIconoEnMovil = false }) {
   const [abierto, setAbierto] = useState(false);
   const [clave, setClave] = useState(grupos?.[0]?.clave);
   const raiz = useRef(null);
@@ -61,11 +61,12 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
         disabled={Boolean(ocupado)}
         aria-haspopup={conPanel ? 'dialog' : 'menu'}
         aria-expanded={abierto}
-        className={`${claseBoton('secundario', 'normal')} ${extra}`}
+        aria-label={soloIconoEnMovil ? 'Exportar' : undefined}
+        className={`${claseBoton('secundario', 'normal')} ${soloIconoEnMovil ? 'max-sm:px-3' : ''} ${extra}`}
       >
         {ocupado ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Download className="w-3.5 h-3.5" aria-hidden="true" />}
-        {ocupado ? 'Generando...' : 'Exportar'}
-        {!ocupado && <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
+        <span className={soloIconoEnMovil ? 'max-sm:hidden' : ''}>{ocupado ? 'Generando...' : 'Exportar'}</span>
+        {!ocupado && <ChevronDown className={`w-3.5 h-3.5 ${soloIconoEnMovil ? 'max-sm:hidden' : ''}`} aria-hidden="true" />}
       </button>
 
       {abierto && conPanel && (
