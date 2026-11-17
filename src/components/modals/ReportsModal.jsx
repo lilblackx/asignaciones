@@ -45,7 +45,7 @@ export default function ReportsModal({
                   <div className="relative mb-6">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
                     <label htmlFor="report-search" className="sr-only">Buscar en el archivo</label>
-                    <input id="report-search" type="text" placeholder="Buscar en el archivo por código, nombre o cédula..." className={BUSCADOR} value={reportSearchTerm} onChange={(e) => setReportSearchTerm(e.target.value)} />
+                    <input id="report-search" type="text" placeholder="Código, nombre o cédula..." className={BUSCADOR} value={reportSearchTerm} onChange={(e) => setReportSearchTerm(e.target.value)} />
                     {reportSearchTerm && (
                       <button onClick={() => setReportSearchTerm('')} aria-label="Limpiar búsqueda" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-zinc-600 dark:hover:text-zinc-200"><X className="w-5 h-5" /></button>
                     )}

@@ -141,7 +141,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
               <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
-              <input id="history-search" type="search" value={search} onChange={withReset(setSearch)} placeholder="Buscar por código, nombre, cédula, dirección, teléfono o técnico..." className={BUSCADOR} />
+              <input id="history-search" type="search" value={search} onChange={withReset(setSearch)} placeholder="Código, nombre o cédula..." title="Busca por código, nombre, cédula, dirección, teléfono o técnico" className={BUSCADOR} />
               <BotonLimpiarBusqueda valor={search} onLimpiar={() => { setSearch(''); setPage(0); setExpandedKey(null); }} />
             </div>
             <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={activeFiltersCount} />

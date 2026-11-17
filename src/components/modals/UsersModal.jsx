@@ -290,7 +290,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 <input
                   type="search"
                   aria-label="Buscar usuario"
-                  placeholder="Buscar por nombre o usuario"
+                  placeholder="Nombre o usuario..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   className={BUSCADOR}
