@@ -64,7 +64,7 @@ export default function FiltersBar({
           <input
             id="ticket-search"
             type="search"
-            placeholder="Buscar por nombre, código o cédula..."
+            placeholder="Nombre, código o cédula..."
             className={BUSCADOR}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

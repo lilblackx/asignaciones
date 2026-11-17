@@ -60,7 +60,7 @@ export const ESTADO = {
 
 // --- Barra de búsqueda y sus botones (Filtros, Exportar): una familia más grande (44 px, borde grueso, esquinas redondeadas) que va siempre junta.
 // El resto de los controles usan la medida normal de arriba (36 px, borde fino).
-export const BUSCADOR = 'w-full bg-card border-2 border-input pl-9 pr-10 h-11 max-lg:h-12 rounded-boton text-sm text-foreground placeholder:text-muted-foreground focus:ring-0 focus:border-ring outline-none transition-colors';
+export const BUSCADOR = 'w-full bg-card border-2 border-input pl-9 pr-10 h-11 max-lg:h-12 rounded-boton text-sm text-ellipsis text-foreground placeholder:text-muted-foreground focus:ring-0 focus:border-ring outline-none transition-colors';
 export const BOTON_BARRA = 'shrink-0 inline-flex items-center justify-center gap-1.5 h-11 max-lg:h-12 px-3 rounded-boton border-2 text-sm font-bold transition-colors bg-card disabled:opacity-50 disabled:cursor-not-allowed';
 export const BOTON_BARRA_NORMAL = 'border-input text-foreground hover:border-muted-foreground';
 export const BOTON_BARRA_ACTIVO = 'border-primary text-primary dark:text-ring';

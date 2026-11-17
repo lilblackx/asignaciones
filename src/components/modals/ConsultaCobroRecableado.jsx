@@ -54,7 +54,7 @@ export default function ConsultaCobroRecableado({ ticket, metros, onConsultar })
         type="button"
         onClick={consultar}
         disabled={enviando || Boolean(metrosEscritos.error)}
-        className="w-full min-h-[40px] inline-flex items-center justify-center gap-2 rounded-campo border border-amber-400 dark:border-amber-700 bg-amber-100/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full min-h-[40px] max-lg:min-h-11 inline-flex items-center justify-center gap-2 rounded-campo border border-amber-400 dark:border-amber-700 bg-amber-100/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Banknote className="w-3.5 h-3.5" aria-hidden="true" />
         {enviando && <Spinner />}{enviando ? 'Enviando...' : esperando ? 'Volver a avisar a la oficina' : 'Consultar cobro a la oficina'}

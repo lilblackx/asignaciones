@@ -12,7 +12,7 @@ import Pasos from './Pasos';
 // desplazar y la barra sería ruido. Mide al abrir, al cambiar de paso, al cambiar el contenido y al cambiar el tamaño de la ventana.
 const TOLERANCIA_PX = 16;
 
-export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo, encabezado, indicacion, pie, clasePanel = '', rol = 'dialog', ariaLabelledBy, etiquetaPasos = 'Pasos', children }) {
+export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo, encabezado, indicacion, pie, clasePanel = '', rol, ariaLabelledBy, etiquetaPasos = 'Pasos', children }) {
   const indice = Math.max(0, pasos.findIndex((p) => p.clave === actual));
   const esUltimo = indice === pasos.length - 1;
   // La dirección de la transición se saca de cómo cambió el paso visible (se ajusta al dibujar, no en un efecto). El primer paso no se anima: la ventana ya tiene su propia entrada.

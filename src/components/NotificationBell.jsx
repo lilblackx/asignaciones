@@ -82,11 +82,11 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
       </button>
 
       {montado && (
-        <div className={`fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-80 sm:max-w-[90vw] bg-zinc-900 border border-zinc-700 rounded-campo shadow-2xl overflow-hidden z-20 ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}>
-          <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
-            <span className="text-xs font-black text-white uppercase tracking-wide">Notificaciones</span>
+        <div className={`fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-80 sm:max-w-[90vw] bg-card border border-border rounded-campo shadow-2xl overflow-hidden z-20 ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}>
+          <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+            <span className="text-xs font-black text-foreground uppercase tracking-wide">Notificaciones</span>
             {notifications.length > 0 && (
-              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="relative text-muted-foreground hover:text-red-400 transition-colors p-1 rounded-campo max-lg:after:absolute max-lg:after:-inset-2 hover:bg-zinc-800">
+              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="relative text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 rounded-campo max-lg:after:absolute max-lg:after:-inset-2 hover:bg-secondary">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
@@ -98,7 +98,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
               className="w-full flex items-center gap-2.5 px-4 py-3 bg-amber-500/10 hover:bg-amber-500/20 border-b border-amber-500/30 transition-colors text-left"
             >
               <Clock className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
-              <span className="text-xs font-bold text-amber-400 flex-1">
+              <span className="text-xs font-bold text-amber-800 dark:text-amber-400 flex-1">
                 {preFinalizadoCount} orden{preFinalizadoCount === 1 ? '' : 'es'} esperando aprobación
               </span>
               <ChevronRight className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
@@ -108,13 +108,13 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
-                <CheckCheck className="w-5 h-5 text-zinc-600" aria-hidden="true" />
+                <CheckCheck className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                 Sin notificaciones todavía.
               </div>
             ) : (
               notifications.map(n => (
                 // La fila son dos botones hermanos: el texto lleva a la orden y quita el aviso; la X solo lo quita (una X dentro del botón de la fila también lo activaba).
-                <div key={n.id} className={`border-t border-zinc-800 first:border-t-0 flex items-stretch hover:bg-zinc-800 transition-colors ${n.read ? '' : 'bg-zinc-800/60'}`}>
+                <div key={n.id} className={`border-t border-border first:border-t-0 flex items-stretch hover:bg-secondary transition-colors ${n.read ? '' : 'bg-secondary/60'}`}>
                   <button
                     type="button"
                     onClick={() => { dismissNotification(n.id); setIsOpen(false); onOpenNotification?.(n); }}
@@ -123,7 +123,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
                   >
                     {iconoPara(n.type)}
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-zinc-200 leading-snug">{n.text}</p>
+                      <p className="text-xs text-foreground leading-snug">{n.text}</p>
                       <span className="text-[11px] max-lg:text-xs text-muted-foreground font-medium">{tiempoRelativo(n.timestamp)}</span>
                     </div>
                     {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1" aria-hidden="true" />}
@@ -133,7 +133,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
                     onClick={() => dismissNotification(n.id)}
                     aria-label="Quitar esta notificación"
                     title="Quitar sin abrir la orden"
-                    className="shrink-0 px-3 max-lg:min-w-11 flex items-center justify-center text-zinc-500 hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-500 transition-colors"
+                    className="shrink-0 px-3 max-lg:min-w-11 flex items-center justify-center text-muted-foreground hover:text-red-600 dark:hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-500 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
