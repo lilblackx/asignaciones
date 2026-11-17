@@ -63,6 +63,8 @@ const preFinalizarInstalacion = [
 // Lo que comparten los técnicos antes de abrir una orden.
 const inicioTecnico = [
   { id: 'lista', preparar: async () => true },
+  // Con órdenes finalizadas por avisar, el técnico ve primero los avisos de cobro: "Hacerlo después" los pasa y deja ver las tarjetas.
+  { id: 'tarjetas', preparar: async (n) => { for (let i = 0; i < 5; i += 1) { if (!(await n.clic('hacerlo después'))) break; await n.dormir(900); } return true; } },
   { id: 'lista-abajo', preparar: desplazarAbajo('body'), limpiar: async (n) => { await n.ev(() => { document.scrollingElement.scrollTop = 0; document.querySelectorAll('*').forEach((e) => { if (e.scrollTop) e.scrollTop = 0; }); }); } },
   { id: 'notificaciones', preparar: (n) => n.clicEtiqueta('^notificaciones$') },
   { id: 'cuenta', preparar: (n) => n.clicEtiqueta('mi cuenta') },
@@ -72,8 +74,14 @@ const inicioTecnico = [
 // ¿Se está viendo la versión de celular? (solo ella tiene el botón "Abrir menú").
 const esMovil = (n) => n.existe('button[aria-label="Abrir menú"]');
 // Una acción de una orden de la lista: en PC está en el menú "Más acciones de la orden"; en celular son botones sueltos en la tarjeta.
-const accionOrden = ({ pc, movil, codigo = 'as2' }) => async (n) => {
-  if (await esMovil(n)) return n.clic(movil);
+const accionOrden = ({ pc, movil, movilMenu, codigo = 'as2' }) => async (n) => {
+  // En celular, Editar y Finalizar son botones de la tarjeta; el resto (plantilla, escalar, cancelar) está en el menú "Más acciones de la orden".
+  if (await esMovil(n)) {
+    if (!movilMenu) return n.clic(movil);
+    if (!(await n.clicEtiqueta(`^más acciones de la orden ${codigo}$`))) return false;
+    await n.dormir(500);
+    return n.clic(movilMenu, { en: '[role="menu"]' });
+  }
   if (!(await n.clicEtiqueta(`^más acciones de orden ${codigo}$`))) return false;
   await n.dormir(500);
   return n.clic(pc, { en: '[role="menu"]' });
@@ -116,8 +124,8 @@ export default [
       { id: 'detalle', preparar: (n) => n.clicEtiqueta('^ver detalle de la orden as2$') },
       { id: 'editar', preparar: accionOrden({ pc: 'editar', movil: 'editar' }) },
       { id: 'historial-orden', viewports: ['pc'], preparar: accionOrden({ pc: 'historial', movil: '' }) },
-      { id: 'cancelar-orden', preparar: accionOrden({ pc: 'cancelar orden', movil: 'cancelar' }) },
-      { id: 'escalar', preparar: accionOrden({ pc: 'escalar', movil: 'escalar a infraestructura', codigo: 'as1' }) },
+      { id: 'cancelar-orden', preparar: accionOrden({ pc: 'cancelar orden', movilMenu: 'cancelar orden' }) },
+      { id: 'escalar', preparar: accionOrden({ pc: 'escalar', movilMenu: 'escalar a infraestructura', codigo: 'as1' }) },
       { id: 'finalizar-datos', preparar: (n) => n.clic('finalizar'), limpiar: seguir },
       { id: 'finalizar-valores', preparar: (n) => n.clic('siguiente', { dentro: true }) },
     ],
@@ -132,11 +140,15 @@ export default [
       { id: 'cierre-ejecutar', preparar: (n) => n.clic('ejecutar cierre') },
       { id: 'historial', preparar: (n) => n.irAModulo('Historial') },
       { id: 'historial-filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
+      { id: 'historial-fila', preparar: (n) => n.ev(() => { const b = [...document.querySelectorAll('button[aria-expanded="false"]')].find((e) => e.className.includes('text-left')); if (!b) return false; b.click(); return true; }) },
       { id: 'revision', preparar: (n) => n.irAModulo('Revisión de órdenes') },
+      { id: 'revision-menu', preparar: (n) => n.ev(() => { const b = document.querySelector('button[aria-haspopup="menu"][aria-label^="Más acciones de la orden"]'); if (!b) return false; b.scrollIntoView({ block: 'center' }); b.click(); return true; }) },
       { id: 'tecnicos', preparar: (n) => n.irAModulo('Técnicos') },
       { id: 'usuarios', preparar: (n) => n.irAModulo('Usuarios') },
-      // En PC el formulario de "Nuevo usuario" es una columna fija a la derecha, sin botón que abrir.
-      { id: 'usuarios-nuevo', viewports: ['movil', '320'], preparar: (n) => n.clic('nuevo usuario') },
+      // El formulario de "Nuevo usuario" se abre con el botón rojo de la lista (a la derecha en PC; debajo en celular).
+      { id: 'usuarios-nuevo', preparar: (n) => n.clic('nuevo usuario') },
+      // Con el formulario de "Nuevo usuario" a la vista (en PC es la columna de la derecha; en celular, la ventana recién abierta).
+      { id: 'usuarios-rol', preparar: (n) => n.ev(() => { const r = document.querySelector('#user-role'); if (!r) return false; r.click(); return true; }) },
       { id: 'tasa-y-pagos', preparar: (n) => n.irAModulo('Tasa y pagos') },
       { id: 'formas-de-pago', preparar: (n) => n.clic('formas de pago') },
       { id: 'configuracion', preparar: (n) => n.irAModulo('Configuración') },
