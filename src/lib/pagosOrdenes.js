@@ -29,8 +29,11 @@ const reservaDe = (doc, por, ahora) => ({ ticketId: doc.ticketId, codigo: doc.co
 
 // La copia del pago en el cobro de la orden (los técnicos no leen los cobros, así que no se sabe si ya existe): va aparte y sin esperar, y si el cobro todavía no existe (una instalación se registra al pre-finalizar,
 // antes de que la oficina emita el cobro; entonces el cobro nace con la copia que trae la orden) o no se pudo escribir, no pasa nada: el pago ya quedó en la orden. Nunca falla hacia afuera.
-function copiarAlCobro(ticketId, resumen) {
-  updateDoc(docCobro(ticketId), { pagoCliente: resumen }).catch((error) => {
+// `entrada` (la del ADMIN, que registra el pago a nombre del técnico): las reglas le permiten cambiar `pagoCliente` solo si el mismo cambio suma una entrada al historial del cobro y toca `actualizadoEn`;
+// sin ella la copia se rechazaba en silencio y Administración seguía viendo "Técnico sin registrar el pago" aunque la oficina ya lo había registrado. El técnico copia solo `pagoCliente`.
+function copiarAlCobro(ticketId, resumen, entrada = null) {
+  const cambios = entrada ? { pagoCliente: resumen, actualizadoEn: entrada.en, historial: arrayUnion(entrada) } : { pagoCliente: resumen };
+  updateDoc(docCobro(ticketId), cambios).catch((error) => {
     if (error?.code !== 'not-found' && error?.code !== 'permission-denied') console.error('No se pudo copiar el pago al cobro:', error);
   });
 }
@@ -90,7 +93,7 @@ export async function registrarPagoPorAdmin(ticket, { valor = null, nota = '', p
   if (clave) lote.set(docReferencia(clave), reservaDe(documento, por, ahora));
   if (orden.exists()) lote.update(docOrden(ticket.id), { pagoCliente: resumen, historialEdiciones: arrayUnion(entradaHistorialPago(resumen, { fecha: fechaCorta(), operador: por })) });
   const aTiempo = await esperarConLimite(lote.commit());
-  copiarAlCobro(ticket.id, resumen);
+  copiarAlCobro(ticket.id, resumen, { en: ahora, por, detalle: `Pago del cliente registrado por la oficina a nombre del técnico: ${lineaDePago(resumen)}` });
   return { ok: true, documento, resumen, enCola: !aTiempo };
 }
 
