@@ -307,34 +307,36 @@ input[type="search"]::-webkit-search-decoration {
   appearance: none;
 }
 
-/* Scrollbar a tono con la app: fino, sin flechas y con la pista transparente, para que se funda con la superficie que lo lleva (tarjeta, ventana o página) en vez de verse como una tira negra.
+/* Scrollbar discreto: fino, sin flechas, con la pista transparente y la barra semitransparente (se oscurece al pasar el cursor). Va separada de los bordes de arriba y abajo para no chocar con las esquinas redondeadas de las ventanas y tarjetas.
    En Chrome y Brave se pinta con ::-webkit-scrollbar. No se declaran scrollbar-width ni scrollbar-color ahí: con ellos Chrome ignora las reglas -webkit- y vuelve al scrollbar nativo con flechas.
-   Los navegadores sin ::-webkit-scrollbar (Firefox) usan las propiedades estándar. La barra pasa de 3:1 contra la superficie. */
+   Los navegadores sin ::-webkit-scrollbar (Firefox) usan las propiedades estándar. */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+::-webkit-scrollbar-track:vertical { margin-block: 10px; }
+::-webkit-scrollbar-track:horizontal { margin-inline: 10px; }
 ::-webkit-scrollbar-button {
   display: none;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #8d8781;
-  border: 3px solid transparent;
+  background-color: rgb(120 113 108 / 0.45);
+  border: 2px solid transparent;
   background-clip: content-box;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #57534e;
+  background-color: rgb(87 83 78 / 0.8);
 }
 .dark ::-webkit-scrollbar-thumb {
-  background-color: #78716c;
+  background-color: rgb(168 162 158 / 0.35);
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #a8a29e;
+  background-color: rgb(214 211 209 / 0.7);
 }
 @supports not selector(::-webkit-scrollbar) {
   * {
