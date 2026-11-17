@@ -3,6 +3,7 @@ import { Car, HardHat, MapPin } from 'lucide-react';
 import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
 import NumeroPulso from './NumeroPulso';
+import { iniciales, legible } from '../utils/nombreTecnico';
 
 // `rutaBoton`: el atajo a la Ruta del día (solo el técnico, y solo con la función encendida en Configuración); va al final de la misma fila, a la derecha.
 export default function TechnicianWorkload({ tickets, technicians, getTecnicoColor, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje, rutaBoton = null }) {
@@ -76,15 +77,18 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
         </button>
       ))}
       {counts.map(({ id, name, activo, count }) => {
-        // El estado va con punto verde o anillo gris, borde punteado y la palabra "inactivo": no depende solo del color.
-        const pillClass = `inline-flex items-center gap-2 px-2.5 py-1.5 text-[11px] max-lg:text-xs font-bold rounded-boton leading-none ${activo ? getTecnicoColor(name) : 'border border-dashed border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`;
-        const dot = <span className={`w-2 h-2 rounded-full shrink-0 ${activo ? 'bg-emerald-500' : 'border-2 border-zinc-500'}`} aria-hidden="true" />;
+        // El avatar lleva el color del técnico y un punto de estado (verde: activo; gris: inactivo). El estado no depende solo del color: el inactivo
+        // lleva borde punteado y la palabra "inactivo".
+        const pillClass = `inline-flex items-center gap-2 rounded-boton border bg-card pl-1 pr-3 py-1 text-xs font-bold ${activo ? 'border-input text-foreground' : 'border-dashed border-input text-muted-foreground'}`;
         const label = (
           <>
-            {dot}
-            {name}
-            {!activo && <span className="font-semibold">· inactivo</span>}
-            {count > 0 && <span className="font-semibold"><NumeroPulso valor={count} /></span>}
+            <span aria-hidden="true" className={`relative shrink-0 w-7 h-7 max-lg:w-8 max-lg:h-8 rounded-full border inline-flex items-center justify-center text-[11px] max-lg:text-xs font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
+              {iniciales(name)}
+              <span className={`absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${activo ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-zinc-500'}`} />
+            </span>
+            <span className="whitespace-nowrap">{legible(name)}</span>
+            {!activo && <span className="text-[11px] max-lg:text-xs font-semibold">inactivo</span>}
+            {count > 0 && <span className="rounded-full bg-secondary text-foreground px-2 py-0.5 text-[11px] max-lg:text-xs font-black leading-none"><NumeroPulso valor={count} /></span>}
           </>
         );
         return canToggle ? (
@@ -94,7 +98,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
             onClick={() => onToggleActivo(id, !activo)}
             aria-label={`Marcar ${name} como ${activo ? 'inactivo' : 'activo'}`}
             title={activo ? 'Activo - click para marcar inactivo' : 'Inactivo - click para marcar activo'}
-            className={`${pillClass} max-lg:min-h-11 max-lg:px-3 hover:brightness-95 dark:hover:brightness-125 cursor-pointer`}
+            className={`${pillClass} max-lg:min-h-11 hover:bg-secondary transition-colors cursor-pointer`}
           >
             {label}
           </button>
