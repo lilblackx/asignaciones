@@ -53,7 +53,8 @@ async function consultar(codigo, signal, aplicar, setEstado, conocidas = [], sal
 // Coordenadas de la NAP. Al pegar "Lat: X / Lng: Y" el campo queda solo con
 // "X, Y". Si el campo NAP trae un código (ej. N10D14), las coordenadas se piden
 // a Tomodat: solas al crear (autoBuscar, si el campo está vacío) o con el botón.
-export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false, napsConocidas }) {
+// `suave`: la etiqueta en minúscula normal (lo usa la orden nueva).
+export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, value, onChange, autoBuscar = false, napsConocidas, suave = false }) {
   
   const codigo = extraerCodigoNap(nap);
   // Cajas sin código en su nombre ("NAP EDIF A-3", "NAP EBANO"): se busca el texto
@@ -97,7 +98,9 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
   return (
     <div className={wrapperClassName}>
       <div className="flex items-end justify-between gap-2">
-        <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>COORDENADAS NAP <span className="font-normal normal-case text-muted-foreground">(Lat / Lng, opcional)</span></label>
+        {suave
+          ? <label htmlFor={`${idPrefix}-nap-coords`} className="text-xs font-semibold text-muted-foreground ml-1">Coordenadas de la NAP <span className="font-normal text-muted-foreground">(opcional)</span></label>
+          : <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>COORDENADAS NAP <span className="font-normal normal-case text-muted-foreground">(Lat / Lng, opcional)</span></label>}
         {consulta && (
           <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 hover:underline disabled:opacity-60">
             {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat
