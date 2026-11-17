@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { legible } from '../../utils/nombreTecnico';
 import { ArrowLeft, PlusCircle } from 'lucide-react';
 import Colapsable from '../Colapsable';
 import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
-import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
+import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CHIP, ESTADO, SELECTOR, TEXTO_SUAVE, ETIQUETA_CAMPO } from './estilos';
 import { aBs, bolivares, dolares } from '../../utils/finanzas';
 import { MAX_NOTA_ADICIONAL, parseAdicional } from '../../utils/adicionales';
 import { stripEmojis } from '../../utils/sanitizeInput';
@@ -31,7 +32,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-foreground">Sumar un pago adicional a {tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">Sumar un pago adicional a {legible(tecnico)}</h2>
           <span className={`${CHIP} ${ESTADO.PAGADO.clase}`}>Pago adicional</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>Se suma entero a lo que se le paga en su próximo pago. El precio sale del ítem en el Tabulador de precios.{porPagar > 0 ? ` Ya tiene ${dolares(porPagar)} de pagos adicionales por pagar.` : ''}</p>
@@ -42,7 +43,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
       ) : (
         <div className="space-y-5 max-w-xl">
           <div>
-            <label htmlFor="adicional-item" className={ETIQUETA}>Ítem</label>
+            <label htmlFor="adicional-item" className={ETIQUETA_CAMPO}>Ítem</label>
             <div className="mt-1">
               <SelectMenu id="adicional-item" ariaLabel="Ítem del pago adicional" className={SELECTOR} value={form.itemId} onChange={(v) => cambiar('itemId', v)} items={[{ value: '', label: 'Elige el ítem' }, ...items.map((i) => ({ value: i.id, label: `${i.nombre} · ${dolares(i.precio)}` }))]} />
             </div>
@@ -50,7 +51,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
           </div>
 
           <div>
-            <label htmlFor="adicional-cantidad" className={ETIQUETA}>Cantidad <span className="font-normal">(por ejemplo, cuántos domingos)</span></label>
+            <label htmlFor="adicional-cantidad" className={ETIQUETA_CAMPO}>Cantidad <span className="font-normal">(por ejemplo, cuántos domingos)</span></label>
             <input id="adicional-cantidad" value={form.cantidad} onChange={(e) => cambiar('cantidad', stripEmojis(e.target.value))} inputMode="numeric" autoComplete="off" aria-invalid={error?.campo === 'cantidad'} className={`${CAMPO} mt-1 text-sm font-bold`} />
             <Colapsable>{texto('cantidad') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('cantidad')}</p>}</Colapsable>
           </div>
@@ -63,7 +64,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
           )}</Colapsable>
 
           <div>
-            <label htmlFor="adicional-nota" className={ETIQUETA}>Nota <span className="font-normal">(opcional, la ve el técnico)</span></label>
+            <label htmlFor="adicional-nota" className={ETIQUETA_CAMPO}>Nota <span className="font-normal">(opcional, la ve el técnico)</span></label>
             <input id="adicional-nota" value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={MAX_NOTA_ADICIONAL} autoComplete="off" aria-invalid={error?.campo === 'nota'} className={`${CAMPO} mt-1`} />
             <Colapsable>{texto('nota') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('nota')}</p>}</Colapsable>
           </div>

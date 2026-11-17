@@ -6,11 +6,10 @@ import Cifras from './Cifras';
 import TablaReporte from './TablaReporte';
 import Spinner from '../../Spinner';
 import CampoFecha from '../../CampoFecha';
-import { CAMPO, claseFecha } from '../../estilos';
+import { CAMPO, claseFecha, ETIQUETA_CAMPO } from '../../estilos';
 import Boton from '../../Boton';
 import Aviso from '../../Aviso';
 
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
 
 // La hoja de VN y TA: la única del Registro de estadísticas que se llena a mano (ver utils/registroVnTa). Arriba el formulario para agregar una fila
 // (o corregir una), debajo las cifras y la lista del periodo con sus botones de editar y borrar.
@@ -84,24 +83,24 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         <h3 className="text-sm font-bold text-foreground mb-3">{editandoId ? 'Corregir registro' : 'Agregar registro'}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
-            <label htmlFor="vnta-trabajo" className={ETIQUETA}>Trabajo realizado</label>
+            <label htmlFor="vnta-trabajo" className={ETIQUETA_CAMPO}>Trabajo realizado</label>
             <select id="vnta-trabajo" value={form.trabajo} onChange={(e) => cambiar('trabajo', e.target.value)} disabled={Boolean(editandoId)} className={`${CAMPO} disabled:opacity-60`}>
               {Object.entries(TRABAJOS_VNTA).map(([clave, { nombre }]) => <option key={clave} value={clave}>{nombre}</option>)}
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="vnta-tecnico" className={ETIQUETA}>Técnico que apoyó <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-tecnico" className={ETIQUETA_CAMPO}>Técnico que apoyó <span className="font-normal normal-case">(opcional)</span></label>
             <select id="vnta-tecnico" value={form.tecnico} onChange={(e) => cambiar('tecnico', e.target.value)} className={CAMPO}>
               <option value="">Sin técnico</option>
               {tecnicos.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="vnta-fecha" className={ETIQUETA}>Fecha</label>
+            <label htmlFor="vnta-fecha" className={ETIQUETA_CAMPO}>Fecha</label>
             <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase={claseFecha('normal')} />
           </div>
           <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-            <label htmlFor="vnta-observacion" className={ETIQUETA}>Observación <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-observacion" className={ETIQUETA_CAMPO}>Observación <span className="font-normal normal-case">(opcional)</span></label>
             <textarea id="vnta-observacion" value={form.observacion} onChange={(e) => cambiar('observacion', stripEmojis(e.target.value))} rows={2} maxLength={MAX_LARGO_OBSERVACION} placeholder="Ej. Apoyo en reparar NAP en residencia la colina" className={`${CAMPO} resize-none`} />
           </div>
         </div>

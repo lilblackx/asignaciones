@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowLeft, ChevronDown, HandCoins, CheckCircle2, ListChecks, MinusCircle, PlusCircle, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, ChevronDown, HandCoins, CheckCircle2, ListChecks, MinusCircle, PlusCircle } from 'lucide-react';
 import Colapsable from '../Colapsable';
+import { legible } from '../../utils/nombreTecnico';
 import { BOTON, BOTON_FILA, BOTON_GRANDE, CHIP, ESTADO, ETIQUETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { aBs, agruparOrdenes, bolivares, conceptosSinTarifa, desglosePorConcepto, dolares, estadoDeAdelanto, estadoDeFila, fechaHoraLegiblePago, grupoDePago, textoDatosPago, textoGrupos, textoOrdenes, tienePorPagar } from '../../utils/finanzas';
 import { saldoAdelanto, sePuedeAnularAdelanto } from '../../utils/adelantos';
@@ -9,6 +10,7 @@ import { sePuedeAnularAdicional, textoAdicional } from '../../utils/adicionales'
 import { diaDe } from '../../utils/totalesMes';
 import { useAhora } from '../../hooks/useAhora';
 import InsigniaJM from '../InsigniaJM';
+import Aviso from '../Aviso';
 import PagoDelCliente from '../PagoDelCliente';
 import OrdenesDelPago from './OrdenesDelPago';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
@@ -95,7 +97,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
       <div>
         {onVolver && <button type="button" onClick={onVolver} className={`${BOTON} mb-3 lg:hidden`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Técnicos</button>}
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-lg font-bold text-foreground break-words">{fila.tecnico}</h2>
+          <h2 className="text-lg font-bold text-foreground break-words">{legible(fila.tecnico)}</h2>
           <span className={`${CHIP} ${estado.clase}`}>{estado.texto}</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>{etiqueta || etiquetaRango(rango)}</p>
@@ -105,15 +107,18 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
         <p className={ETIQUETA}>Total pendiente por pagar</p>
         <p className="text-2xl font-extrabold tabular-nums text-foreground leading-tight">{dolares(neto)}</p>
         {tasa > 0 && <p className="text-base font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
-        {fila.adelantos > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Adelanto: {dolares(fila.adelantos)}</p>}
-        {bonos > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Pago por garantías: {dolares(bonos)}</p>}
-        {extras > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Pagos adicionales: {dolares(extras)}</p>}
-        {fila.descuentosOrden > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuento por garantías: {dolares(fila.descuentosOrden)}</p>}
-        {libres > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-2">Descuentos: {dolares(libres)}</p>}
+        {[['Adelanto', fila.adelantos], ['Pago por garantías', bonos], ['Pagos adicionales', extras], ['Descuento por garantías', fila.descuentosOrden], ['Descuentos', libres]].some(([, v]) => v > 0) && (
+          <dl className="mt-3 max-w-sm rounded-campo bg-sunken px-3 py-2 text-sm divide-y divide-border">
+            {[['Adelanto', fila.adelantos], ['Pago por garantías', bonos], ['Pagos adicionales', extras], ['Descuento por garantías', fila.descuentosOrden], ['Descuentos', libres]].filter(([, v]) => v > 0).map(([titulo, valor]) => (
+              <div key={titulo} className="flex justify-between gap-3 py-1.5 first:pt-0 last:pb-0">
+                <dt className="text-muted-foreground">{titulo}</dt>
+                <dd className="font-bold tabular-nums text-foreground">{dolares(valor)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
         {sinTarifa.length > 0 && (
-          <p role="alert" className="mt-3 inline-flex items-start gap-2 rounded-boton bg-amber-400 text-black text-sm font-bold px-3 py-2">
-            <TriangleAlert className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" /> Sin precio: {sinTarifa.join(', ')}. Ponlo en el Tabulador de precios antes de pagar.
-          </p>
+          <Aviso nivel="atencion" compact className="mt-3">Sin precio: {sinTarifa.join(', ')}. Ponlo en el Tabulador de precios antes de pagar.</Aviso>
         )}
         <div className="mt-3 flex flex-wrap gap-2">
           {tienePorPagar(fila) && (
@@ -121,17 +126,17 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
               <CheckCircle2 className="w-5 h-5" aria-hidden="true" /> Pagar
             </button>
           )}
-          <button type="button" onClick={onAdelanto} disabled={ocupado} className={`${BOTON_GRANDE} border border-input bg-white dark:bg-zinc-950 text-foreground hover:bg-secondary`}>
+          <button type="button" onClick={onAdelanto} disabled={ocupado} className={`${BOTON_GRANDE} border border-input bg-card text-foreground hover:bg-secondary`}>
             <HandCoins className="w-5 h-5" aria-hidden="true" /> Adelanto
           </button>
-          <button type="button" onClick={onDescuento} disabled={ocupado} className={`${BOTON_GRANDE} border border-input bg-white dark:bg-zinc-950 text-foreground hover:bg-secondary`}>
+          <button type="button" onClick={onDescuento} disabled={ocupado} className={`${BOTON_GRANDE} border border-input bg-card text-foreground hover:bg-secondary`}>
             <MinusCircle className="w-5 h-5" aria-hidden="true" /> Descuento
           </button>
-          <button type="button" onClick={onAdicional} disabled={ocupado} className={`${BOTON_GRANDE} border border-input bg-white dark:bg-zinc-950 text-foreground hover:bg-secondary`}>
+          <button type="button" onClick={onAdicional} disabled={ocupado} className={`${BOTON_GRANDE} border border-input bg-card text-foreground hover:bg-secondary`}>
             <PlusCircle className="w-5 h-5" aria-hidden="true" /> Pago adicional
           </button>
           {descuentos.length > 0 && (
-            <button type="button" onClick={() => setVerDescuentos((v) => !v)} aria-expanded={verDescuentos} aria-controls="descuentos-del-tecnico" className={`${BOTON_GRANDE} border border-input bg-white dark:bg-zinc-950 text-foreground hover:bg-secondary`}>
+            <button type="button" onClick={() => setVerDescuentos((v) => !v)} aria-expanded={verDescuentos} aria-controls="descuentos-del-tecnico" className={`${BOTON_GRANDE} border border-input bg-card text-foreground hover:bg-secondary`}>
               <ListChecks className="w-5 h-5" aria-hidden="true" /> Ver descuentos{pendientesDescontar > 0 ? ` (${pendientesDescontar})` : ''}
               <ChevronDown className={`w-4 h-4 transition-transform ${verDescuentos ? 'rotate-180' : ''}`} aria-hidden="true" />
             </button>

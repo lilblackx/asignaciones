@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { legible } from '../../utils/nombreTecnico';
 import { montoCalculadora } from '../../utils/montoCalculadora';
 import { ArrowLeft, HandCoins } from 'lucide-react';
 import Colapsable from '../Colapsable';
 import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
 import CampoBanco from './CampoBanco';
-import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
+import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, SELECTOR, TEXTO_SUAVE, ETIQUETA_CAMPO } from './estilos';
 import CampoFecha from '../CampoFecha';
 import CampoHora from '../CampoHora';
 import { aBs, bolivares, dolares } from '../../utils/finanzas';
@@ -35,7 +36,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-foreground">Registrar un adelanto a {tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">Registrar un adelanto a {legible(tecnico)}</h2>
           <span className={`${CHIP} ${ESTADO.CON_ADELANTO.clase}`}>Adelanto</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>Un adelanto es siempre en dólares y se resta de lo que el técnico tenga pendiente en su próximo pago.{porDescontar > 0 ? ` Ya tiene ${dolares(porDescontar)} de adelantos por descontar.` : ''}</p>
@@ -44,7 +45,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
       <div className="grid gap-5 lg:grid-cols-2 max-w-4xl">
         <div className="space-y-5">
           <div>
-            <label htmlFor="adelanto-monto" className={ETIQUETA}>Monto en dólares</label>
+            <label htmlFor="adelanto-monto" className={ETIQUETA_CAMPO}>Monto en dólares</label>
             <div className="relative mt-1">
               <input id="adelanto-monto" value={form.monto} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold text-right tabular-nums`} />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
@@ -53,7 +54,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
           </div>
 
           <div>
-            <label htmlFor="adelanto-forma" className={ETIQUETA}>Forma de pago</label>
+            <label htmlFor="adelanto-forma" className={ETIQUETA_CAMPO}>Forma de pago</label>
             <div className="mt-1">
               <SelectMenu id="adelanto-forma" ariaLabel="Forma de pago" className={SELECTOR} value={form.forma} onChange={(v) => setForm((f) => ({ ...f, forma: v, banco: esZelle(f.forma) === esZelle(v) ? f.banco : '' }))} items={[{ value: '', label: 'Elige la forma de pago' }, ...formasDeMoneda(MONEDA_USD).map((f) => ({ value: f, label: f }))]} />
             </div>
@@ -65,23 +66,23 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
 
         <div className="space-y-5">
           <div>
-            <label htmlFor="adelanto-referencia" className={ETIQUETA}>Referencia {form.forma && !exigeReferencia(form.forma) && <span className="font-normal">(no aplica en efectivo)</span>}</label>
+            <label htmlFor="adelanto-referencia" className={ETIQUETA_CAMPO}>Referencia {form.forma && !exigeReferencia(form.forma) && <span className="font-normal">(no aplica en efectivo)</span>}</label>
             <input id="adelanto-referencia" value={form.referencia} onChange={(e) => cambiar('referencia', stripEmojis(e.target.value))} maxLength={MAX_REFERENCIA} autoComplete="off" aria-invalid={error?.campo === 'referencia'} className={`${CAMPO} mt-1`} />
             <Colapsable>{texto('referencia') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('referencia')}</p>}</Colapsable>
           </div>
 
           <div>
-            <label htmlFor="adelanto-fecha" className={ETIQUETA}>Fecha</label>
+            <label htmlFor="adelanto-fecha" className={ETIQUETA_CAMPO}>Fecha</label>
             <div className="mt-1"><CampoFecha id="adelanto-fecha" ariaLabel="Fecha del adelanto" valor={form.fecha} max={hoy} onChange={(v) => cambiar('fecha', v)} grande clase={CAMPO_FECHA} /></div>
           </div>
           <div>
-            <label htmlFor="adelanto-hora" className={ETIQUETA}>Hora</label>
+            <label htmlFor="adelanto-hora" className={ETIQUETA_CAMPO}>Hora</label>
             <div className="mt-1"><CampoHora id="adelanto-hora" ariaLabel="Hora del adelanto" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} claseBoton="px-2.5 min-[400px]:px-4 text-sm" alto="h-9" /></div>
           </div>
           <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
 
           <div>
-            <label htmlFor="adelanto-nota" className={ETIQUETA}>Nota <span className="font-normal">(opcional)</span></label>
+            <label htmlFor="adelanto-nota" className={ETIQUETA_CAMPO}>Nota <span className="font-normal">(opcional)</span></label>
             <input id="adelanto-nota" value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={MAX_NOTA} autoComplete="off" className={`${CAMPO} mt-1`} />
             <Colapsable>{texto('nota') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('nota')}</p>}</Colapsable>
           </div>

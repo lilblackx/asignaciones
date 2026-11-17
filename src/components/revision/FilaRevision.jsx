@@ -3,7 +3,7 @@ import { CheckCircle2, PauseCircle, Pencil, RotateCcw, ShieldAlert, XCircle } fr
 import BuscadorOrden from '../BuscadorOrden';
 import SelectMenu from '../SelectMenu';
 import Colapsable from '../Colapsable';
-import { BOTON, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
+import { BOTON, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE, ETIQUETA_CAMPO } from '../finanzas/estilos';
 import RowMenu from '../RowMenu';
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
 import VerFotosOrden from '../VerFotosOrden';
@@ -162,7 +162,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR' || abierto === 'SIN_DETALLES') && (
         <div className="mt-1 rounded-campo border border-input p-3 space-y-3">
           <div>
-            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : abierto === 'EXCLUIR' ? 'Por qué se excluye (no se paga)' : 'Por qué se aprueba sin los detalles de la orden (obligatorio)'}</label>
+            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA_CAMPO}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : abierto === 'EXCLUIR' ? 'Por qué se excluye (no se paga)' : 'Por qué se aprueba sin los detalles de la orden (obligatorio)'}</label>
             <input id={`motivo-${item.clave}`} value={motivo} onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
             {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 mt-1">{error}</p>}
           </div>
@@ -224,7 +224,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
                 {garantia.origen?.id && <p className={`${TEXTO_SUAVE} mt-1`}>{topeOrigen > 0 ? `Esa orden cobra ${dolares(topeOrigen)}: el descuento no puede pasar de ahí.` : 'No se pudo calcular lo que cobra esa orden: revisa bien el monto.'} Si ya se le pagó, el monto se descuenta de su próximo pago.</p>}
               </div>
               <div className="max-w-xs">
-                <label htmlFor={`monto-${item.clave}`} className={ETIQUETA}>Monto a descontar (en dólares)</label>
+                <label htmlFor={`monto-${item.clave}`} className={ETIQUETA_CAMPO}>Monto a descontar (en dólares)</label>
                 <div className="relative mt-1">
                   <input id={`monto-${item.clave}`} value={garantia.monto} onChange={(e) => { setGarantia((g) => ({ ...g, monto: montoCalculadora(e.target.value) })); setError(''); }} inputMode="numeric" autoComplete="off" placeholder="0,00" className={`${CAMPO} pr-9 text-right tabular-nums`} />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none" aria-hidden="true">$</span>
@@ -234,7 +234,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           )}
           {garantia.modo === 'SIN' && (
             <div>
-              <label htmlFor={`sin-${item.clave}`} className={ETIQUETA}>Por qué no se descuenta nada</label>
+              <label htmlFor={`sin-${item.clave}`} className={ETIQUETA_CAMPO}>Por qué no se descuenta nada</label>
               <input id={`sin-${item.clave}`} value={garantia.sinDescuento} onChange={(e) => { setGarantia((g) => ({ ...g, sinDescuento: stripEmojis(e.target.value) })); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
             </div>
           )}

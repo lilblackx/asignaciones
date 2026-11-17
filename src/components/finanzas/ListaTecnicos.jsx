@@ -1,3 +1,4 @@
+import { legible } from '../../utils/nombreTecnico';
 import { CHIP, ESTADO, TARJETA, TEXTO_SUAVE } from './estilos';
 import { aBs, bolivares, dolares, estadoDeFila, textoOrdenes } from '../../utils/finanzas';
 
@@ -19,7 +20,7 @@ export default function ListaTecnicos({ filas, elegido, tasa, onElegir }) {
               className={`w-full text-left px-3 py-2.5 flex items-center justify-between gap-3 border-l-8 transition-colors ${seleccionado ? 'border-red-600 bg-secondary' : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}
             >
               <span className="min-w-0">
-                <span className="block text-sm font-bold text-foreground break-words">{fila.tecnico}</span>
+                <span className="block text-sm font-bold text-foreground break-words">{legible(fila.tecnico)}</span>
                 <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className={`${CHIP} ${ESTADO[estado].clase}`}>{ESTADO[estado].texto}</span>
                   <span className={TEXTO_SUAVE}>{fila.pendientes.length > 0 ? `${textoOrdenes(fila.pendientes.length)}${fila.bonosGarantia > 0 ? ` · garantía ${dolares(fila.bonosGarantia)}` : ''}${fila.adicionales > 0 ? ` · adicional ${dolares(fila.adicionales)}` : ''}` : fila.bonos > 0 ? [fila.bonosGarantia > 0 && `Garantía ${dolares(fila.bonosGarantia)}`, fila.adicionales > 0 && `Adicional ${dolares(fila.adicionales)}`].filter(Boolean).join(' · ') : fila.adelantos > 0 ? `Adelanto ${dolares(fila.adelantos)}` : fila.descuentosOrden > 0 ? `Descuento ${dolares(fila.descuentosOrden)}` : 'Nada por pagar'}</span>

@@ -8,7 +8,7 @@ import CampoFecha from './CampoFecha';
 import CampoHora from './CampoHora';
 import CampoBanco from './finanzas/CampoBanco';
 import ConfirmarPagoModal from './modals/ConfirmarPagoModal';
-import { AREA_TEXTO, BOTON, CAMPO_FECHA, CAMPO_FORMULARIO, ETIQUETA } from './estilos';
+import { AREA_TEXTO, BOTON, CAMPO_FECHA, CAMPO_FORMULARIO, ETIQUETA, ETIQUETA_CAMPO } from './estilos';
 import { SELECTOR } from './finanzas/estilos';
 import { MAX_REFERENCIA, MAX_TITULAR } from '../utils/datosPago';
 import { stripEmojis } from '../utils/sanitizeInput';
@@ -193,7 +193,7 @@ export default function FormularioPagoCliente({
   );
   const areaPaga = (
     <div className="space-y-2 rounded-lg border border-zinc-300 dark:border-zinc-700 p-3">
-      <label htmlFor={id('nota-pendiente')} className={ETIQUETA}>¿Cuándo o cómo va a pagar? (obligatorio)</label>
+      <label htmlFor={id('nota-pendiente')} className={ETIQUETA_CAMPO}>¿Cuándo o cómo va a pagar? (obligatorio)</label>
       <textarea id={id('nota-pendiente')} value={notaPendiente} onChange={(e) => { setNotaPendiente(stripEmojis(e.target.value)); setError(null); }} maxLength={300} rows={2} placeholder="Ej. Paga el viernes por pago móvil" className={AREA_TEXTO} />
       <MensajeError texto={texto('notaPendiente')} />
       <p className="text-xs text-muted-foreground">Queda anotado en la orden y en el cobro, y ya no tienes que hacer nada más con este pago.</p>
@@ -222,7 +222,7 @@ export default function FormularioPagoCliente({
           </div>
 
           <div>
-            <label htmlFor={id('forma')} className={ETIQUETA}>Forma de pago</label>
+            <label htmlFor={id('forma')} className={ETIQUETA_CAMPO}>Forma de pago</label>
             <div className="mt-1">
               <SelectMenu id={id('forma')} ariaLabel="Forma de pago" className={SELECTOR} value={form.forma} onChange={elegirForma} items={[{ value: '', label: 'Elige la forma de pago' }, ...formasDeCliente(form.moneda).map((f) => ({ value: f, label: f }))]} />
             </div>
@@ -231,7 +231,7 @@ export default function FormularioPagoCliente({
 
           <Colapsable>{form.forma && cuentas.length > 0 && (
             <div>
-              <label htmlFor={id('cuenta')} className={ETIQUETA}>Cuenta de la empresa donde llegó el pago</label>
+              <label htmlFor={id('cuenta')} className={ETIQUETA_CAMPO}>Cuenta de la empresa donde llegó el pago</label>
               <div className="mt-1">
                 <SelectMenu id={id('cuenta')} ariaLabel="Cuenta de la empresa donde llegó el pago" className={SELECTOR} value={form.cuentaEmpresa} onChange={(v) => cambiar('cuentaEmpresa', v)} items={[{ value: '', label: 'Elige la cuenta' }, ...cuentas.map((c) => ({ value: c, label: c }))]} />
               </div>
@@ -245,7 +245,7 @@ export default function FormularioPagoCliente({
 
           <Colapsable>{exigeTitularCliente(form.forma) && (
             <div>
-              <label htmlFor={id('titular')} className={ETIQUETA}>Titular de la cuenta Zelle</label>
+              <label htmlFor={id('titular')} className={ETIQUETA_CAMPO}>Titular de la cuenta Zelle</label>
               <input id={id('titular')} value={form.titular} onChange={(e) => cambiar('titular', stripEmojis(e.target.value))} maxLength={MAX_TITULAR} autoComplete="off" placeholder="Nombre de quien hizo el Zelle" aria-invalid={error?.campo === 'titular'} className={`${CAMPO_FORMULARIO} mt-1`} />
               <MensajeError texto={texto('titular')} />
             </div>
@@ -253,14 +253,14 @@ export default function FormularioPagoCliente({
 
           <Colapsable>{form.forma && exigeReferencia(form.forma) && (
             <div>
-              <label htmlFor={id('referencia')} className={ETIQUETA}>Referencia</label>
+              <label htmlFor={id('referencia')} className={ETIQUETA_CAMPO}>Referencia</label>
               <input id={id('referencia')} value={form.referencia} onChange={(e) => cambiar('referencia', stripEmojis(e.target.value))} maxLength={MAX_REFERENCIA} autoComplete="off" inputMode="text" aria-invalid={error?.campo === 'referencia'} className={`${CAMPO_FORMULARIO} mt-1`} />
               <MensajeError texto={texto('referencia')} />
             </div>
           )}</Colapsable>
 
           <div>
-            <label htmlFor={id('monto')} className={ETIQUETA}>Monto pagado ({form.moneda === MONEDA_USD ? '$' : 'Bs'})</label>
+            <label htmlFor={id('monto')} className={ETIQUETA_CAMPO}>Monto pagado ({form.moneda === MONEDA_USD ? '$' : 'Bs'})</label>
             <input id={id('monto')} value={form.monto} onFocus={(e) => e.target.select()} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} aria-describedby={id('monto-ayuda')} className={`${CAMPO_FORMULARIO} mt-1 text-right text-lg font-black tabular-nums`} />
             <p id={id('monto-ayuda')} className="text-xs text-muted-foreground mt-1">Escribe solo los números, sin puntos ni comas: se llenan de derecha a izquierda y los dos últimos son los decimales. Ejemplo: 569600 se ve 5.696,00.</p>
             <MensajeError texto={texto('monto')} />
@@ -269,18 +269,18 @@ export default function FormularioPagoCliente({
 
           <div className="grid grid-cols-1 gap-3">
             <div className="min-w-0">
-              <label htmlFor={id('fecha')} className={ETIQUETA}>Fecha</label>
+              <label htmlFor={id('fecha')} className={ETIQUETA_CAMPO}>Fecha</label>
               <div className="mt-1"><CampoFecha id={id('fecha')} ariaLabel="Fecha del pago" valor={form.fecha} max={hoy} onChange={(v) => cambiar('fecha', v)} grande clase={CAMPO_FECHA} /></div>
             </div>
             <div className="min-w-0">
-              <label htmlFor={id('hora')} className={ETIQUETA}>Hora</label>
+              <label htmlFor={id('hora')} className={ETIQUETA_CAMPO}>Hora</label>
               <div className="mt-1"><CampoHora id={id('hora')} ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR_HORA} /></div>
             </div>
           </div>
           <MensajeError texto={texto('fecha')} />
 
           <div>
-            <label htmlFor={id('nota')} className={ETIQUETA}>{notaEtiqueta} {!diferencia && !notaObligatoria && <span className="font-normal">(opcional)</span>}</label>
+            <label htmlFor={id('nota')} className={ETIQUETA_CAMPO}>{notaEtiqueta} {!diferencia && !notaObligatoria && <span className="font-normal">(opcional)</span>}</label>
             <textarea id={id('nota')} value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={300} rows={2} placeholder={notaObligatoria ? undefined : 'Ej. El cliente me pagó en efectivo'} className={`${AREA_TEXTO} mt-1`} />
             <MensajeError texto={texto('nota')} />
           </div>

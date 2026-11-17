@@ -12,7 +12,7 @@ import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
 
 import MenuPermisos from '../MenuPermisos';
-import { BUSCADOR, CAMPO, CAMPO_FORMULARIO, ETIQUETA as ETIQUETA_TABLA, TARJETA, TITULO_SECCION, claseSelector } from '../estilos';
+import { BUSCADOR, CAMPO, CAMPO_FORMULARIO, ETIQUETA as ETIQUETA_TABLA, TARJETA, TITULO_SECCION, claseSelector, ETIQUETA_CAMPO } from '../estilos';
 import Boton from '../Boton';
 import Chip from '../Chip';
 
@@ -262,7 +262,6 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     return { resumen: 'Sin permisos', opciones: [], acciones: [] };
   };
 
-  const ETIQUETA = 'text-xs font-semibold text-muted-foreground ml-1';
   const abrirNuevo = () => {
     setNuevoAbierto(true);
     setTimeout(() => { const campo = document.getElementById('user-nombre'); campo?.scrollIntoView({ behavior: 'smooth', block: 'center' }); campo?.focus({ preventScroll: true }); }, 60);
@@ -479,21 +478,21 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               </div>
               <div className="grid gap-4 grid-cols-[minmax(0,1fr)] sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)]">
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-nombre" className={ETIQUETA}>Nombre completo</label>
+                  <label htmlFor="user-nombre" className={ETIQUETA_CAMPO}>Nombre completo</label>
                   <input id="user-nombre" required type="text" maxLength="80" value={newUser.nombre} onChange={(e) => setNewUser({ ...newUser, nombre: stripEmojis(e.target.value) })} className={CAMPO_FORMULARIO} placeholder="Ej. Luis Fernández" />
                 </div>
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-usuario" className={ETIQUETA}>Usuario</label>
+                  <label htmlFor="user-usuario" className={ETIQUETA_CAMPO}>Usuario</label>
                   <input id="user-usuario" required type="text" maxLength="40" value={newUser.usuario} onChange={(e) => setNewUser({ ...newUser, usuario: stripEmojis(e.target.value) })} className={CAMPO_FORMULARIO} placeholder="Ej: lfernandez" />
                 </div>
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-clave" className={ETIQUETA}>Clave</label>
+                  <label htmlFor="user-clave" className={ETIQUETA_CAMPO}>Clave</label>
                   <input id="user-clave" required type="password" autoComplete="new-password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
                   <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{PASSWORD_POLICY_HINT}</p>
                   {passwordError && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-role" className={ETIQUETA}>Rol</label>
+                  <label htmlFor="user-role" className={ETIQUETA_CAMPO}>Rol</label>
                   <SelectMenu
                     id="user-role"
                     ariaLabel="Rol"
@@ -508,7 +507,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
               {newUser.role === ROLES.TECNICO && (
                 <div className="space-y-2 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4">
-                  <label htmlFor="user-tecnico" className={ETIQUETA}>Vincular con el técnico registrado</label>
+                  <label htmlFor="user-tecnico" className={ETIQUETA_CAMPO}>Vincular con el técnico registrado</label>
                   <SelectMenu
                     id="user-tecnico"
                     ariaLabel="Vincular con técnico registrado"
@@ -550,7 +549,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     Puede crear ventas
                   </label>
                   <div className="space-y-2">
-                    <label htmlFor="user-promotora" className={ETIQUETA}>Nombre en las plantillas{newUser.verTodasInstalaciones && <span className="font-normal text-muted-foreground"> (opcional)</span>}</label>
+                    <label htmlFor="user-promotora" className={ETIQUETA_CAMPO}>Nombre en las plantillas{newUser.verTodasInstalaciones && <span className="font-normal text-muted-foreground"> (opcional)</span>}</label>
                     <input
                       id="user-promotora"
                       type="text"

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { legible } from '../../utils/nombreTecnico';
 import { montoCalculadora } from '../../utils/montoCalculadora';
 import { ArrowLeft, MinusCircle } from 'lucide-react';
 import Colapsable from '../Colapsable';
@@ -6,7 +7,7 @@ import CampoFecha from '../CampoFecha';
 import SelectMenu from '../SelectMenu';
 import ConfirmModal from '../modals/ConfirmModal';
 import Spinner from '../Spinner';
-import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
+import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CHIP, ESTADO, SELECTOR, TEXTO_SUAVE, ETIQUETA_CAMPO } from './estilos';
 import { CAMPO_FECHA } from '../estilos';
 import { aBs, bolivares, dolares } from '../../utils/finanzas';
 import { FRECUENCIAS, MAX_CUOTAS, MAX_MOTIVO, parseDescuento, parseMontoDescuento, parseProgramacion, planDeCuotas, saldoTrasDescuento } from '../../utils/descuentos';
@@ -57,7 +58,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> {volverTexto}</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-foreground">{entraYa ? 'Registrar' : 'Programar'} un descuento a {tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">{entraYa ? 'Registrar' : 'Programar'} un descuento a {legible(tecnico)}</h2>
           <span className={`${CHIP} ${ESTADO.CON_ADELANTO.clase}`}>Descuento</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>Un descuento es siempre en dólares y se resta de lo que el técnico tenga pendiente en su próximo pago. Si eliges otra fecha, entra al primer pago que se le haga desde ese día.{porDescontar > 0 ? ` Ya tiene ${dolares(porDescontar)} de descuentos por descontar.` : ''}</p>
@@ -65,7 +66,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
 
       <div className="space-y-5 max-w-xl">
         <div>
-          <label htmlFor="descuento-monto" className={ETIQUETA}>{enCuotas ? 'Monto total en dólares' : 'Monto en dólares'}</label>
+          <label htmlFor="descuento-monto" className={ETIQUETA_CAMPO}>{enCuotas ? 'Monto total en dólares' : 'Monto en dólares'}</label>
           <div className="relative mt-1">
             <input id="descuento-monto" value={form.monto} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold text-right tabular-nums`} />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
@@ -74,26 +75,26 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
         </div>
 
         <div>
-          <label htmlFor="descuento-motivo" className={ETIQUETA}>Motivo <span className="font-normal">(obligatorio, lo ve el técnico)</span></label>
+          <label htmlFor="descuento-motivo" className={ETIQUETA_CAMPO}>Motivo <span className="font-normal">(obligatorio, lo ve el técnico)</span></label>
           <input id="descuento-motivo" value={form.motivo} onChange={(e) => cambiar('motivo', stripEmojis(e.target.value))} maxLength={MAX_MOTIVO} autoComplete="off" aria-invalid={error?.campo === 'motivo'} className={`${CAMPO} mt-1`} />
           <Colapsable>{texto('motivo') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('motivo')}</p>}</Colapsable>
         </div>
 
         <div>
-          <label htmlFor="descuento-desde" className={ETIQUETA}>Aplicar desde</label>
+          <label htmlFor="descuento-desde" className={ETIQUETA_CAMPO}>Aplicar desde</label>
           <div className="mt-1"><CampoFecha id="descuento-desde" ariaLabel="Aplicar el descuento desde" valor={form.desde} min={hoy} onChange={(v) => cambiar('desde', v)} grande clase={CAMPO_FECHA} /></div>
           <Colapsable>{texto('desde') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('desde')}</p>}</Colapsable>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="descuento-cuotas" className={ETIQUETA}>¿En cuántas cuotas?</label>
+            <label htmlFor="descuento-cuotas" className={ETIQUETA_CAMPO}>¿En cuántas cuotas?</label>
             <div className="mt-1"><SelectMenu id="descuento-cuotas" ariaLabel="Cuotas del descuento" className={SELECTOR} value={form.cuotas} onChange={(v) => cambiar('cuotas', v)} items={Array.from({ length: MAX_CUOTAS }, (_, i) => ({ value: String(i + 1), label: i === 0 ? 'Un solo descuento' : `${i + 1} cuotas` }))} /></div>
             <Colapsable>{texto('cuotas') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('cuotas')}</p>}</Colapsable>
           </div>
           <Colapsable>{enCuotas && (
             <div>
-              <label htmlFor="descuento-frecuencia" className={ETIQUETA}>Cada cuánto</label>
+              <label htmlFor="descuento-frecuencia" className={ETIQUETA_CAMPO}>Cada cuánto</label>
               <div className="mt-1"><SelectMenu id="descuento-frecuencia" ariaLabel="Cada cuánto se descuenta una cuota" className={SELECTOR} value={form.frecuencia} onChange={(v) => cambiar('frecuencia', v)} items={FRECUENCIAS.map((f) => ({ value: f.id, label: f.etiqueta }))} /></div>
               <Colapsable>{texto('frecuencia') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('frecuencia')}</p>}</Colapsable>
             </div>
@@ -128,7 +129,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
         <ConfirmModal
           color="yellow"
           title="El descuento es mayor a lo que tiene por cobrar"
-          description={`${tecnico} tiene ${dolares(Math.max(0, neto))} por cobrar ahora. Del descuento de ${dolares(confirmando.entrada.monto)} se le restan ${dolares(Math.max(0, neto))} en su próximo pago y quedarán ${dolares(saldoTrasDescuento(confirmando.entrada.monto, neto))} por descontar en pagos siguientes.`}
+          description={`${legible(tecnico)} tiene ${dolares(Math.max(0, neto))} por cobrar ahora. Del descuento de ${dolares(confirmando.entrada.monto)} se le restan ${dolares(Math.max(0, neto))} en su próximo pago y quedarán ${dolares(saldoTrasDescuento(confirmando.entrada.monto, neto))} por descontar en pagos siguientes.`}
           confirmLabel="Sí, registrar"
           processingLabel="Guardando..."
           onCancel={() => setConfirmando(null)}

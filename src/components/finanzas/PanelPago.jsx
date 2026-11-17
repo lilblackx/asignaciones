@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { legible } from '../../utils/nombreTecnico';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import Colapsable from '../Colapsable';
 import NumeroPulso from '../NumeroPulso';
 import SelectMenu from '../SelectMenu';
 import Spinner from '../Spinner';
 import CampoBanco from './CampoBanco';
-import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE } from './estilos';
+import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CAMPO_FECHA, CHIP, ESTADO, ETIQUETA, SELECTOR, TEXTO_SUAVE, ETIQUETA_CAMPO } from './estilos';
 import CampoFecha from '../CampoFecha';
 import CampoHora from '../CampoHora';
 import { aBs, bolivares, dolares, textoOrdenes } from '../../utils/finanzas';
@@ -41,7 +42,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Volver al detalle</button>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-bold text-foreground">Registrar el pago a {fila.tecnico}</h2>
+          <h2 className="text-base font-bold text-foreground">Registrar el pago a {legible(fila.tecnico)}</h2>
           <span className={`${CHIP} ${ESTADO.POR_PAGAR.clase}`}>Paso 2 de 2</span>
         </div>
         <p className={`${TEXTO_SUAVE} mt-1`}>{[etiqueta || etiquetaRango(rango), fila.pendientes.length > 0 && textoOrdenes(fila.pendientes.length), fila.bonosGarantia > 0 && `garantías ${dolares(fila.bonosGarantia)}`, fila.adicionales > 0 && `adicionales ${dolares(fila.adicionales)}`, descuento > 0 && `descuentos ${dolares(descuento)}`].filter(Boolean).join(' · ')}</p>
@@ -56,7 +57,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
       <div className="grid gap-5 lg:grid-cols-2 max-w-4xl">
         <div className="space-y-5">
           <div>
-            <p className={ETIQUETA}>Moneda</p>
+            <p className={ETIQUETA_CAMPO}>Moneda</p>
             <div role="group" aria-label="Moneda del pago" className="mt-1 flex gap-2">
               {[[MONEDA_BS, 'Bolívares (Bs)'], [MONEDA_USD, 'Dólares ($)']].map(([id, etiqueta]) => (
                 <button
@@ -65,7 +66,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
                   aria-pressed={form.moneda === id}
                   disabled={id === MONEDA_BS && !(tasa > 0)}
                   onClick={() => cambiarMoneda(id)}
-                  className={`flex-1 h-9 rounded-campo text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-input text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
+                  className={`flex-1 h-9 rounded-campo text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-card border-input text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
                 >{etiqueta}</button>
               ))}
             </div>
@@ -80,7 +81,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
           </div>
 
           <div>
-            <label htmlFor="pago-forma" className={ETIQUETA}>Forma de pago</label>
+            <label htmlFor="pago-forma" className={ETIQUETA_CAMPO}>Forma de pago</label>
             <div className="mt-1">
               <SelectMenu id="pago-forma" ariaLabel="Forma de pago" className={SELECTOR} value={form.forma} onChange={(v) => setForm((f) => ({ ...f, forma: v, banco: esZelle(f.forma) === esZelle(v) ? f.banco : '' }))} items={[{ value: '', label: 'Elige la forma de pago' }, ...formasDeMoneda(form.moneda).map((f) => ({ value: f, label: f }))]} />
             </div>
@@ -92,23 +93,23 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
 
         <div className="space-y-5">
           <div>
-            <label htmlFor="pago-referencia" className={ETIQUETA}>Referencia {form.forma && !exigeReferencia(form.forma) && <span className="font-normal">(no aplica en efectivo)</span>}</label>
+            <label htmlFor="pago-referencia" className={ETIQUETA_CAMPO}>Referencia {form.forma && !exigeReferencia(form.forma) && <span className="font-normal">(no aplica en efectivo)</span>}</label>
             <input id="pago-referencia" value={form.referencia} onChange={(e) => cambiar('referencia', stripEmojis(e.target.value))} maxLength={MAX_REFERENCIA} autoComplete="off" aria-invalid={error?.campo === 'referencia'} className={`${CAMPO} mt-1`} />
             <Colapsable>{texto('referencia') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('referencia')}</p>}</Colapsable>
           </div>
 
           <div>
-            <label htmlFor="pago-fecha" className={ETIQUETA}>Fecha</label>
+            <label htmlFor="pago-fecha" className={ETIQUETA_CAMPO}>Fecha</label>
             <div className="mt-1"><CampoFecha id="pago-fecha" ariaLabel="Fecha del pago" valor={form.fecha} max={hoy} onChange={(v) => cambiar('fecha', v)} grande clase={CAMPO_FECHA} /></div>
           </div>
           <div>
-            <label htmlFor="pago-hora" className={ETIQUETA}>Hora</label>
+            <label htmlFor="pago-hora" className={ETIQUETA_CAMPO}>Hora</label>
             <div className="mt-1"><CampoHora id="pago-hora" ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} claseBoton="px-2.5 min-[400px]:px-4 text-sm" alto="h-9" /></div>
           </div>
           <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
 
           <div>
-            <label htmlFor="pago-nota" className={ETIQUETA}>Nota <span className="font-normal">(opcional)</span></label>
+            <label htmlFor="pago-nota" className={ETIQUETA_CAMPO}>Nota <span className="font-normal">(opcional)</span></label>
             <input id="pago-nota" value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={300} autoComplete="off" className={`${CAMPO} mt-1`} />
           </div>
 

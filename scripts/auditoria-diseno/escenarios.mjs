@@ -93,6 +93,14 @@ const vistaReporte = (nombre) => async (n) => {
   return elegirOpcion(nombre)(n);
 };
 
+// Clic en el botón visible cuyo texto es exactamente `texto` (sin distinguir mayúsculas).
+const clicTexto = (n, texto) => n.ev((t) => {
+  const el = [...document.querySelectorAll('button')].find((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && (e.innerText || '').trim().toLowerCase() === t; });
+  if (!el) return false;
+  el.click();
+  return true;
+}, texto);
+
 export default [
   {
     id: 'login',
@@ -181,6 +189,14 @@ export default [
     { id: 'pagos-de-clientes', preparar: async (n) => (await n.clic('pagos de clientes')) || n.clic('clientes'), espera: 1800 },
     { id: 'tabulador', preparar: async (n) => (await n.clic('tabulador de precios')) || n.clic('precios'), espera: 1800 },
     { id: 'reporte-de-pagos', preparar: async (n) => (await n.clic('reporte de pagos')) || n.clic('reporte'), espera: 1800 },
+  ] },
+  // Finanzas por dentro (con scripts/seed-finanzas-emulator.mjs): el técnico elegido y los paneles de pago, adelanto, descuento y pago adicional.
+  { id: 'finanzas-tecnico', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'tecnico', preparar: (n) => n.clic('gerardo molero'), espera: 1500 },
+    { id: 'pagar', preparar: (n) => clicTexto(n, 'pagar'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
+    { id: 'descuento', preparar: (n) => clicTexto(n, 'descuento'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
+    { id: 'adelanto', preparar: (n) => clicTexto(n, 'adelanto'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
+    { id: 'adicional', preparar: (n) => clicTexto(n, 'pago adicional'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
   ] },
   // Los demás roles en su propia vista: la cabecera de cada uno.
   { id: 'almacen', usuario: 'almacen', clave: 'Almacen1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },

@@ -13,7 +13,7 @@ import PanelAdelanto from './PanelAdelanto';
 import PanelDescuento from './PanelDescuento';
 import PanelAdicional from './PanelAdicional';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
-import { BOTON_FILA, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
+import { BOTON_FILA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION, ETIQUETA_CAMPO } from './estilos';
 import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
 import { textoDelAviso } from '../../utils/avisoOrdenPagada';
 import { fechaHoraLegible } from '../../utils/formatoFecha';
@@ -147,7 +147,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
             <p className={TEXTO_SUAVE}>{general === 'adicional' ? 'Elige a quién. No hace falta que tenga órdenes por pagar: se suma a su próximo pago.' : 'Elige a quién. No hace falta que tenga órdenes por pagar: queda por descontar de su próximo pago.'}</p>
           </div>
           <div>
-            <label htmlFor="general-tecnico" className={ETIQUETA}>Técnico</label>
+            <label htmlFor="general-tecnico" className={ETIQUETA_CAMPO}>Técnico</label>
             <div className="mt-1">
               <SelectMenu id="general-tecnico" ariaLabel={general === 'descuento' ? 'Técnico del descuento' : general === 'adicional' ? 'Técnico del pago adicional' : 'Técnico del adelanto'} className={SELECTOR} value={tecnicoGeneral} onChange={setTecnicoGeneral} items={[{ value: '', label: 'Elige el técnico' }, ...tecnicosTodos.map((t) => ({ value: t, label: t }))]} />
             </div>

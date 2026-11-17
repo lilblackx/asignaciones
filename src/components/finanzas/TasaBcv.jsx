@@ -13,6 +13,11 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
   const elegida = opcionElegida(opciones, dia);
   const masReciente = opciones[0] || null;
   const viejo = elegida && masReciente && elegida.dia !== masReciente.dia;
+  const botonActualizar = (
+    <button type="button" onClick={onActualizar} disabled={cargando} aria-label="Actualizar la tasa BCV" title="Actualizar la tasa BCV" className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-campo border border-input text-zinc-700 dark:text-zinc-200 hover:bg-secondary disabled:opacity-60 transition-colors">
+      <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" />
+    </button>
+  );
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
@@ -22,8 +27,11 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
               <CircleDollarSign className="w-5 h-5 text-red-600 shrink-0" aria-hidden="true" />
               <label htmlFor="finanzas-tasa-dia">Tasa BCV para los pagos</label>
             </span>
-            <div className="w-full sm:w-auto sm:min-w-[17rem]">
+            <div className="w-full sm:w-auto sm:min-w-[17rem] flex items-center gap-2">
+              <div className="min-w-0 flex-1">
               <SelectMenu id="finanzas-tasa-dia" ariaLabel="Tasa BCV para los pagos" className={`${claseSelector('normal')} aria-expanded:border-red-600 tabular-nums`} value={elegida.dia} onChange={onElegir} items={opciones.map((o) => ({ value: o.dia, label: o.texto }))} />
+              </div>
+              {botonActualizar}
             </div>
           </>
         ) : (
@@ -38,9 +46,7 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
           </>
         )}
         {error && <span role="alert" className="font-bold text-amber-800 dark:text-amber-300">{tasa ? 'No se pudo actualizar la tasa.' : 'No se pudo consultar la tasa: los bolívares no se muestran.'}</span>}
-        <button type="button" onClick={onActualizar} disabled={cargando} aria-label="Actualizar la tasa BCV" title="Actualizar la tasa BCV" className="inline-flex items-center justify-center h-9 w-9 rounded-campo border border-input text-zinc-700 dark:text-zinc-200 hover:bg-secondary disabled:opacity-60 transition-colors">
-          <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" />
-        </button>
+        {!elegida && botonActualizar}
       </div>
       {viejo && (
         <p role="status" className="flex items-start gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
