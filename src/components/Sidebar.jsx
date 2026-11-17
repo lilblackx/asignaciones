@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, ClipboardList, Coins, History, Home, Landmark, LocateFixed, LogOut, MonitorSmartphone, Moon, Network, PackageCheck, Settings, ShieldCheck, Sun, TrendingUp, Users, Wallet, X } from 'lucide-react';
 import { ADMINISTRACION_ACTIVA } from '../constants';
 import { logosDeTemporada } from '../utils/temporada';
+import { iniciales } from '../utils/nombreTecnico';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 // Los botones del pie (tema y cerrar sesión): cuadrados redondeados con su propio fondo y borde, no iconos sueltos.
@@ -134,10 +135,15 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
 
         {/* El pie es una tarjeta redondeada que flota dentro del menú (como las demás tarjetas de la app), no una franja recta. */}
         <div className="shrink-0 p-2">
-          <div className={`rounded-campo border border-border bg-secondary p-2 flex items-center gap-2 ${colapsado ? 'lg:flex-col lg:p-1.5' : ''}`}>
-            <div className={`min-w-0 flex-1 leading-tight ${colapsado ? 'lg:hidden' : ''}`}>
-              <p className="truncate text-sm font-bold text-foreground">{nombre}</p>
-              <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase tracking-wider" title={`${nombre} · conectado`}><span className="w-2 h-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />{rol}</p>
+          <div className={`rounded-campo bg-secondary p-2 flex items-center gap-2.5 ${colapsado ? 'lg:flex-col lg:p-1.5' : ''}`}>
+            {/* Las iniciales en un círculo (como los técnicos de la lista) con el punto verde de "conectado" en la esquina; el nombre y el rol al lado. */}
+            <span aria-hidden="true" className="relative shrink-0 w-9 h-9 rounded-full bg-foreground text-background inline-flex items-center justify-center text-xs font-black leading-none">
+              {iniciales(nombre)}
+              <span className="absolute -right-0.5 -bottom-0.5 w-3 h-3 rounded-full bg-emerald-600 dark:bg-emerald-400 border-2 border-secondary" />
+            </span>
+            <div className={`min-w-0 flex-1 leading-tight ${colapsado ? 'lg:hidden' : ''}`} title={`${nombre} · conectado`}>
+              <p className="truncate text-sm font-black text-foreground">{nombre}</p>
+              <p className="truncate text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase">{rol}</p>
             </div>
             <button type="button" onClick={onCambiarTema} aria-label="Cambiar tema" title="Cambiar tema" className={BOTON_PIE}>
               {isDarkMode ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
