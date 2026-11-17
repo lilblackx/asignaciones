@@ -18,6 +18,7 @@ import Colapsable from '../Colapsable';
 import BotonExportar from '../BotonExportar';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import BotonFiltros from '../BotonFiltros';
+import Chip from '../Chip';
 import { BUSCADOR, CAMPO_FECHA, SELECTOR } from '../estilos';
 
 const PAGE_SIZE = 25;
@@ -147,6 +148,17 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={activeFiltersCount} />
           </div>
 
+          {/* Atajos por estado, siempre a la vista (antes solo estaban dentro del panel de Filtros). */}
+          <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+            <Chip activo={estado === ''} tamano="compacto" type="button" onClick={() => withResetValue(setEstado)('')}>Todas <span className="font-medium">({allOrders.length})</span></Chip>
+            {ESTADOS.map((s) => {
+              const n = allOrders.filter((o) => o.estado === s).length;
+              return n > 0 ? (
+                <Chip key={s} activo={estado === s} tamano="compacto" type="button" onClick={() => withResetValue(setEstado)(estado === s ? '' : s)}>{s} <span className="font-medium">({n})</span></Chip>
+              ) : null;
+            })}
+          </div>
+
           <Colapsable>{filtersOpen && (
             <div className="rounded-card border border-transparent bg-card p-3 space-y-3 shadow-card">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 [&>*]:min-w-0">
@@ -182,24 +194,34 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         </div>
 
         <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-fondo space-y-3 ${CENTRADO_AMPLIO}`}>
+          {/* El encabezado de las columnas (solo PC), alineado con las filas. */}
+          {shown.length > 0 && (
+            <div className="hidden lg:flex gap-3 px-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              <div className="flex-1 grid grid-cols-[17rem_minmax(0,1fr)] gap-6"><span>Orden</span><span>Cliente y trabajo</span></div>
+              <span className="w-56 text-right pr-6">Técnico</span>
+            </div>
+          )}
           {shown.map(o => {
             const isOpen = expandedKey === o._key;
             return (
               <div key={o._key} className="bg-card rounded-card border border-transparent shadow-sm shadow-card">
-                <button type="button" onClick={() => setExpandedKey(isOpen ? null : o._key)} aria-expanded={isOpen} className="w-full text-left p-4 flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
+                <button type="button" onClick={() => setExpandedKey(isOpen ? null : o._key)} aria-expanded={isOpen} className="w-full text-left p-4 flex items-start lg:items-center justify-between gap-3">
+                  {/* En PC la fila va en columnas (código y estado | cliente y trabajo | técnico) para que se lea de corrido y no quede un hueco en el medio. */}
+                  <div className="min-w-0 flex-1 lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-center lg:gap-6">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-red-700 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
                       <span className={`px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
                       <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{o.fecha}</span>
                     </div>
-                    <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight mt-1 truncate">{o.nombre}</h5>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      <span className="font-bold text-red-700 dark:text-red-400">{o.tipoTrabajo}</span>
-                      {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
-                    </p>
+                    <div className="min-w-0 mt-1 lg:mt-0">
+                      <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight truncate">{o.nombre}</h5>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        <span className="font-bold text-red-700 dark:text-red-400">{o.tipoTrabajo}</span>
+                        {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center justify-end gap-2 shrink-0 lg:w-56">
                     <div className="text-right">
                       {o.tecnico
                         ? <NombreTecnico nombre={o.tecnico} getTecnicoColor={getTecnicoColor} />
