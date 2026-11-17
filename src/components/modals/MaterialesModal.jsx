@@ -11,6 +11,7 @@ import Colapsable from '../Colapsable';
 import Chip from '../Chip';
 import { TARJETA } from '../estilos';
 import Aviso from '../Aviso';
+import { legible } from '../../utils/nombreTecnico';
 
 const numero = (n) => Number(n).toLocaleString('es-VE');
 const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-');
@@ -47,15 +48,29 @@ function Dato({ etiqueta, valor, detalle }) {
 function FilaTecnico({ fila, abierto, onToggle }) {
   const idDetalle = `materiales-${fila.tecnico.replace(/\W+/g, '-')}`;
   const conDatos = fila.detalle.length > 0;
+  const conectores = totalConectores(fila);
+  const partes = [
+    fila.ordenes > 0 && `${fila.ordenes} recableado${fila.ordenes === 1 ? '' : 's'}`,
+    fila.instalaciones > 0 && `${fila.instalaciones} instalaci${fila.instalaciones === 1 ? 'ón' : 'ones'}`,
+    fila.visitas > 0 && `${fila.visitas} visita${fila.visitas === 1 ? '' : 's'} de conector`,
+    fila.cambiosEquipo > 0 && `${fila.cambiosEquipo} cambio${fila.cambiosEquipo === 1 ? '' : 's'} de equipo`,
+    conectores > 0 && `${conectores} conector${conectores === 1 ? '' : 'es'}`,
+  ].filter(Boolean);
   const resumen = (
     <div className="min-w-0 flex-1 space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-black text-foreground truncate">{fila.tecnico}</span>
+        <span className="text-sm font-black text-foreground truncate">{legible(fila.tecnico)}</span>
         <span className={`shrink-0 text-lg font-black ${conDatos ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground'}`}>{numero(fila.metros)} <span className="text-xs">m</span></span>
       </div>
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground">
-        {fila.ordenes} recableado{fila.ordenes === 1 ? '' : 's'} · {fila.instalaciones} instalaci{fila.instalaciones === 1 ? 'ón' : 'ones'} · {fila.visitas} visita{fila.visitas === 1 ? '' : 's'} de conector · {fila.cambiosEquipo} cambio{fila.cambiosEquipo === 1 ? '' : 's'} de equipo · {totalConectores(fila)} conector{totalConectores(fila) === 1 ? '' : 'es'}
-      </p>
+      {conDatos ? (
+        <ul className="flex flex-wrap gap-1.5" aria-label={`Lo que hizo ${legible(fila.tecnico)}`}>
+          {partes.map((t) => (
+            <li key={t} className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] max-lg:text-xs font-bold text-foreground">{t}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[11px] max-lg:text-xs text-muted-foreground">Sin movimientos en este período.</p>
+      )}
       {conDatos && <Conectores fila={fila} />}
     </div>
   );
@@ -126,7 +141,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
 
   const contenido = (
         <div className={`p-4 sm:p-6 space-y-4 ${enPagina ? CENTRADO_AMPLIO : CENTRADO_ESTRECHO}`}>
-          <p className="text-xs text-muted-foreground max-w-4xl">Metros de cable y conectores usados en los recableados, las instalaciones y las visitas de conector ya aprobados, en total y por técnico. Las instalaciones y los cambios de equipo se listan con su serial.</p>
+          <p className="text-xs text-muted-foreground max-w-4xl max-sm:hidden">Metros de cable y conectores usados en los recableados, las instalaciones y las visitas de conector ya aprobados, en total y por técnico. Las instalaciones y los cambios de equipo se listan con su serial.</p>
 
           <div role="group" aria-label="Período" className="flex flex-wrap gap-2">
             {PERIODOS.map((p) => (

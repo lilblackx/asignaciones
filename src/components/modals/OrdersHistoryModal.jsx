@@ -6,7 +6,7 @@ import { TIPOS_TRABAJO } from '../../constants';
 import { motivoCancelacion } from '../../utils/cancelacion';
 import { fechaDeOrden } from '../../utils/fechaOrden';
 import { pagoClienteDe, textoDelPago } from '../../utils/pagoEnOrden';
-import { formatCedula, getEstadoColor } from '../../utils/ticketDisplay';
+import { formatCedula, getEstadoPastel, getTipoTrabajoEstilo } from '../../utils/ticketDisplay';
 import { exportOrdersToCsv, exportResumenTecnicosToCsv } from '../../utils/exportReport';
 import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
@@ -20,6 +20,7 @@ import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import BotonFiltros from '../BotonFiltros';
 import Chip from '../Chip';
 import { BUSCADOR, CAMPO_FECHA, SELECTOR } from '../estilos';
+import { fallaVisible } from '../../utils/fallaVisible';
 
 const PAGE_SIZE = 25;
 const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'];
@@ -209,24 +210,24 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                   {/* En PC la fila va en columnas (código y estado | cliente y trabajo | técnico) para que se lea de corrido y no quede un hueco en el medio. */}
                   <div className="min-w-0 flex-1 lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-center lg:gap-6">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-black text-red-700 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
-                      <span className={`px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
+                      <span className="font-black text-foreground text-sm">{o.codigo || 'S/C'}</span>
+                      <span className={`px-2.5 py-0.5 text-[11px] max-lg:text-xs font-black rounded-full leading-tight ${getEstadoPastel(o.estado)}`}>{o.estado}</span>
                       <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{o.fecha}</span>
                     </div>
                     <div className="min-w-0 mt-1 lg:mt-0">
                       <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight truncate">{o.nombre}</h5>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        <span className="font-bold text-red-700 dark:text-red-400">{o.tipoTrabajo}</span>
-                        {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                        <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(o.tipoTrabajo || 'AVERÍA').badge}`}>{o.tipoTrabajo || 'AVERÍA'}</span>
+                        {fallaVisible(o) && <span className="font-medium text-card-foreground">{fallaVisible(o)}</span>}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center justify-end gap-2 shrink-0 lg:w-56">
-                    <div className="text-right">
+                    <div className="flex flex-col items-end gap-1 min-w-0">
                       {o.tecnico
                         ? <NombreTecnico nombre={o.tecnico} getTecnicoColor={getTecnicoColor} />
                         : <span className="text-[11px] max-lg:text-xs text-muted-foreground italic">Sin técnico</span>}
-                      <div className="text-[11px] max-lg:text-xs text-muted-foreground mt-1">{o._origen}</div>
+                      {o._origen !== 'Activa' && <span className="text-[11px] max-lg:text-xs font-semibold text-muted-foreground">{o._origen}</span>}
                     </div>
                     <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </div>
