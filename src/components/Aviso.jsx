@@ -36,7 +36,10 @@ export default function Aviso({ nivel = 'atencion', titulo, children, codigos, o
   const Icono = IconoPropio || n.Icono;
   const [desplegado, setDesplegado] = useState(abierto);
   const idDetalle = useId();
-  const hayDetalle = Boolean(children) || (codigos && codigos.length > 0);
+  // Sin `titulo`, el contenido es el mensaje mismo (un aviso de una sola frase): va como línea principal y no hay detalle.
+  const textoPrincipal = titulo ?? children;
+  const detalle = titulo ? children : null;
+  const hayDetalle = Boolean(detalle) || (codigos && codigos.length > 0);
   const mostrarDetalle = hayDetalle && (!plegable || desplegado);
   const tamanoIcono = compact ? 'w-3.5 h-3.5' : 'w-4 h-4';
 
@@ -59,7 +62,7 @@ export default function Aviso({ nivel = 'atencion', titulo, children, codigos, o
       <div className="flex items-start gap-2.5">
         <Icono className={`${tamanoIcono} shrink-0 mt-0.5 ${n.icono}`} aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="font-black leading-snug break-words">{titulo}</p>
+          <div className={`${titulo ? 'font-black' : 'font-bold'} leading-snug break-words`}>{textoPrincipal}</div>
           {plegable && hayDetalle && (
             <button
               type="button"
@@ -74,7 +77,7 @@ export default function Aviso({ nivel = 'atencion', titulo, children, codigos, o
           )}
           {mostrarDetalle && (
             <div id={idDetalle}>
-              {children && <div className="leading-snug break-words whitespace-pre-wrap mt-0.5 font-normal">{children}</div>}
+              {detalle && <div className="leading-snug break-words whitespace-pre-wrap mt-0.5 font-normal">{detalle}</div>}
               <CodigosAviso codigos={codigos} onElegir={onElegirCodigo} compact={compact} />
             </div>
           )}

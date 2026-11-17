@@ -1,5 +1,6 @@
 import { Handshake, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { avisoCambioDeTrabajo, cobroAcordadoDe, sugiereExonerar, textoCobroAcordado } from '../../utils/cobroAcordado';
+import Aviso from '../Aviso';
 
 const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 
@@ -25,10 +26,7 @@ export default function CobroAcordadoAviso({ ticket }) {
         </div>
       )}
       {garantia && (
-        <div role="note" className="rounded-campo border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-2.5 text-xs text-emerald-900 dark:text-emerald-200">
-          <p className="flex items-center gap-1.5 font-black tracking-wide"><ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" /> ES UNA GARANTÍA</p>
-          <p className="mt-1">Las garantías normalmente no se cobran. Te sugerimos exonerarla, salvo que ya hayas acordado otra cosa con el cliente.</p>
-        </div>
+        <Aviso nivel="info" role="note" icono={ShieldCheck} compact titulo="Es una garantía">Las garantías normalmente no se cobran. Te sugerimos exonerarla, salvo que ya hayas acordado otra cosa con el cliente.</Aviso>
       )}
     </div>
   );

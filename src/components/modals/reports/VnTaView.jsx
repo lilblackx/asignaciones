@@ -8,6 +8,7 @@ import Spinner from '../../Spinner';
 import CampoFecha from '../../CampoFecha';
 import { CAMPO, claseFecha } from '../../estilos';
 import Boton from '../../Boton';
+import Aviso from '../../Aviso';
 
 const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
 
@@ -114,7 +115,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         </div>
       </form>}
 
-      {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-campo px-3 py-2 mb-4">{error}</p>}
+      {error &&<Aviso nivel="error" compact className="mb-4">{error}</Aviso>}
       <Cifras items={cifrasVnTa(estadistica)} />
       <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-1 mb-4">{NOTA_VNTA}</p>
 

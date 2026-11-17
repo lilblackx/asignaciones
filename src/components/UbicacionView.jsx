@@ -7,6 +7,7 @@ import { TARJETA, TEXTO_SUAVE } from './estilos';
 import { useUbicacionTecnicos } from '../hooks/useUbicacionTecnicos';
 import { kmDeRuta, ordenSugerido, paradasDeRuta } from '../utils/rutaDelDia';
 import { ESTADOS, MOTIVOS_PUNTO, enlaceGoogleMaps, estadoUbicacion, haceCuanto, idDeTecnico, posicionesHuerfanas, solicitudVigente, tiempoRestante, ultimaVigente, ultimasViejas } from '../utils/ubicacionTecnico';
+import Aviso from './Aviso';
 
 // El módulo Ubicación del administrador (menú lateral): pide la ubicación de un técnico en la calle y la ve en un mapa completo (ver utils/ubicacionTecnico.js). El técnico no recibe ningún aviso: su app la envía
 // sola cuando la abra, durante los 30 minutos de la solicitud. Además muestra la última ubicación conocida (un punto al marcar En camino, Llegué o pre-finalizar). Solo escucha con el módulo abierto y la función encendida.
@@ -136,7 +137,7 @@ export default function UbicacionView({ firebaseUser, technicians, tickets, usua
       <div className="grid gap-4 lg:grid-cols-[minmax(20rem,24rem)_minmax(0,1fr)] items-start">
         <section aria-label="Técnicos" className="order-2 lg:order-1 space-y-3 min-w-0">
           <p className={TEXTO_SUAVE}>Pide la ubicación de un técnico: no recibe ningún aviso. Su teléfono la envía sola en cuanto abra la app, durante 30 minutos (al abrirla cada 30 segundos y luego cada 2 minutos). Además, al marcar En camino, Llegué o pre-finalizar queda un punto: la última ubicación conocida, por 24 horas.</p>
-          {error && <p role="alert" className="rounded-boton bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">No se pudo leer la ubicación. Lo que ves puede estar desactualizado.</p>}
+          {error && <Aviso nivel="error" compact>No se pudo leer la ubicación. Lo que ves puede estar desactualizado.</Aviso>}
           {!cargado && !error && <p role="status" className={TEXTO_SUAVE}>Cargando...</p>}
           {cargado && filas.length === 0 && <p className="text-sm text-card-foreground">No hay técnicos activos.</p>}
 

@@ -3,6 +3,7 @@ import { AlertTriangle, Loader2, Radio } from 'lucide-react';
 import { consultarSenalOnu } from '../../lib/smartolt';
 import { onuEnLinea, valorSenal } from '../../utils/senalOnu';
 import { calidadValor } from '../../utils/valoresCliente';
+import Aviso from '../Aviso';
 
 // Calidad con la escala de la empresa (la misma de los campos de valores del cliente), no la de SmartOLT: con dos
 // escalas distintas el aviso y el campo se contradecían (SmartOLT decía "Muy buena" y el campo "Regular").
@@ -82,10 +83,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
           </div>
         )}
         {estado?.tipo === 'fueraDeLinea' && (
-          <div role="alert" className="rounded-campo border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-[11px] max-lg:text-xs text-amber-900 dark:text-amber-200 space-y-0.5">
-            <p className="font-bold">La ONU está fuera de línea en SmartOLT ({estado.onu.estado}). No se capturó la potencia.</p>
-            <p>SmartOLT solo guarda la última señal de cuando estuvo en línea{valorSenal(estado.onu.senal1310) !== null ? ` (${valorSenal(estado.onu.senal1310)} dBm)` : ''}, que no es la actual. Escribe la potencia a mano o vuelve a consultar cuando la ONU esté en línea.</p>
-          </div>
+          <Aviso nivel="atencion" role="alert" compact titulo={<>La ONU está fuera de línea en SmartOLT ({estado.onu.estado}). No se capturó la potencia.</>}>SmartOLT solo guarda la última señal de cuando estuvo en línea{valorSenal(estado.onu.senal1310) !== null ? ` (${valorSenal(estado.onu.senal1310)} dBm)` : ''}, que no es la actual. Escribe la potencia a mano o vuelve a consultar cuando la ONU esté en línea.</Aviso>
         )}
         {estado?.tipo === 'sinSenal' && (
           <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">SmartOLT no tiene una señal registrada para esta ONU (¿apagada o sin sincronizar?). Escríbela a mano.</p>

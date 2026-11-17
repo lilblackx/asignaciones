@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, Coins, RefreshCw } from 'lucide-react';
+import { Coins, RefreshCw } from 'lucide-react';
 import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import FormasPagoEditor from './FormasPagoEditor';
@@ -7,6 +7,7 @@ import { diasDesactualizada } from '../../utils/tasa';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
 import { claseCampo } from '../estilos';
+import Aviso from '../Aviso';
 
 // Convierte una tasa/monto (número) a los dígitos que representarían sus centavos,
 // para poder editarlos como una calculadora: cada dígito que se escribe entra por la derecha.
@@ -103,10 +104,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
         ) : (
           <div role="tabpanel" id="panel-tasa" aria-labelledby="tab-tasa" className={`p-6 space-y-5 ${CENTRADO_ESTRECHO}`}>
             {estaDesactualizada && (
-              <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-boton px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-400">
-                <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                {dias === null ? 'Nunca se ha configurado la tasa.' : dias === 1 ? 'Tasa desactualizada: es de ayer.' : `Tasa desactualizada: tiene ${dias} días.`}
-              </div>
+              <Aviso nivel="atencion" compact>{dias === null ? 'Nunca se ha configurado la tasa.' : dias === 1 ? 'Tasa desactualizada: es de ayer.' : `Tasa desactualizada: tiene ${dias} días.`}</Aviso>
             )}
             <div className="bg-sunken border-2 border-border rounded-campo p-4 space-y-1">
               <div className="flex justify-between text-xs">

@@ -3,6 +3,7 @@ import SenalSmartOlt from './SenalSmartOlt';
 import { calidadValor } from '../../utils/valoresCliente';
 import { parsePotencia } from '../../utils/potencia';
 import { claseCampo } from '../estilos';
+import Aviso from '../Aviso';
 
 const NOTA_SMARTOLT = 'Los valores quedaron en los campos de abajo. Es la última medición de SmartOLT; puedes corregirlos y luego guardarlos.';
 
@@ -65,10 +66,7 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
       </div>
 
       {guardados && !sucio ? (
-        <div role="status" className="flex items-start gap-2 rounded-campo border border-emerald-300 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-emerald-900 dark:text-emerald-200">
-          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-          <p className="leading-snug"><span className="font-black">Valores guardados</span>{guardados.guardadoPor ? ` por ${guardados.guardadoPor}` : ''}{obligatorio && tecnicoLosVe ? '. El técnico los verá con el cobro' : ''}. Si los cambias, vuelve a guardar.</p>
-        </div>
+        <Aviso nivel="exito" icono={CheckCircle2} compact titulo={<>Valores guardados{guardados.guardadoPor ? ` por ${guardados.guardadoPor}` : ''}{obligatorio && tecnicoLosVe ? '. El técnico los verá con el cobro' : ''}. Si los cambias, vuelve a guardar.</>} />
       ) : (
         <p role={errorGuardar ? 'alert' : undefined} className="font-bold text-amber-800 dark:text-amber-300">
           {errorGuardar || (sucio ? `Cambiaste los valores: guárdalos de nuevo${obligatorio && tecnicoLosVe ? ' para que el técnico vea los nuevos' : ''}.` : obligatorio ? 'Aún no guardas los valores: sin ellos no se puede cerrar la orden.' : 'Aún no guardas los valores. Si no los vas a registrar, deja los campos vacíos.')}

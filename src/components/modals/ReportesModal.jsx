@@ -26,6 +26,7 @@ import { diaDe } from '../../utils/totalesMes';
 import { useRegistroVnTa } from '../../hooks/useRegistroVnTa';
 import { rangoDe } from '../../utils/periodoReporte';
 import { claseCampo } from '../estilos';
+import Aviso from '../Aviso';
 
 // Los reportes, agrupados por tema. Para sumar uno: agrega aquí su entrada y su vista más abajo.
 //   documento(contexto): el contenido del PDF y del Word (ver modelosReporte.js). contexto = { eventos, ordenes, rango, tecnico, metaHoras, contadores, tickets, ventana, ahora, generadoPor }.
@@ -254,7 +255,7 @@ export default function ReportesModal({
             <p className="-mt-2 mb-3 text-[11px] max-lg:text-xs text-muted-foreground">
               Los datos de Reportes se actualizan cada 15 minutos{reporte.usaLog || reporte.usaTotales ? '; usa Actualizar para ver lo último' : ''}.
             </p>
-            {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-campo px-3 py-2 mb-4">{errorExportar}</p>}
+            {errorExportar && <Aviso nivel="error" compact className="mb-4">{errorExportar}</Aviso>}
             <div key={reporteId} className="lg:animate-fade-in">
               {reporteId === 'RESUMEN' && <ResumenEjecutivoView ordenes={ordenes} eventos={logTecnicos.eventos} contadores={totalesMensuales.contadores} tickets={tickets} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'REGISTRO' && <RegistroEstadisticasView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} onDetalleAbierto={setDetalleAbierto} vnta={{ ...vnta, tecnicos: nombresTecnicos, hoy, puedeBorrar: (r) => esAdmin || r.creadoPor === usuario }} />}

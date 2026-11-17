@@ -3,6 +3,7 @@ import { Banknote, Hourglass } from 'lucide-react';
 import { consultaCobroDe, consultaPendiente, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
 import { parseMetros } from '../../utils/tipoVisita';
 import Spinner from '../Spinner';
+import Aviso from '../Aviso';
 
 // Bloque de Pre-finalizar con recableado: con los metros ya escritos, el técnico le pregunta a la oficina cuánto se cobra
 // y aquí ve la respuesta. `ticket` es la orden al día (la respuesta llega mientras el modal está abierto).
@@ -36,10 +37,7 @@ export default function ConsultaCobroRecableado({ ticket, metros, onConsultar })
   return (
     <div className="space-y-2">
       {esperando ? (
-        <div role="status" className="rounded-campo border border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 p-3 flex items-start gap-2 text-xs text-amber-900 dark:text-amber-200">
-          <Hourglass className="w-4 h-4 shrink-0 mt-px text-amber-600 dark:text-amber-400" aria-hidden="true" />
-          <p className="leading-snug"><span className="font-black">Consulta enviada ({consulta.metros} m).</span> Te avisaremos cuando la oficina responda; esta pantalla se actualiza sola.</p>
-        </div>
+        <Aviso nivel="atencion" icono={Hourglass} compact titulo={`Consulta enviada (${consulta.metros} m)`}>Te avisaremos cuando la oficina responda; esta pantalla se actualiza sola.</Aviso>
       ) : (
         <>
           {respuesta && !mismosMetros && (

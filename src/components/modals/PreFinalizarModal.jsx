@@ -35,6 +35,7 @@ import NapPuertoCampos from './NapPuertoCampos';
 import Spinner from '../Spinner';
 import { claseArea, claseCampo } from '../estilos';
 import { guardarBorrador, leerBorrador, olvidarBorrador, versionDeOrden } from '../../utils/borradorPrefinalizar';
+import Aviso from '../Aviso';
 
 const marcaTexto = (v) => (v == null ? '' : String(v));
 
@@ -403,12 +404,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloqueAvisoCobro = (
     <>
           {llevaCobro({ tipoTrabajo: ticket.tipoTrabajo }) && (
-            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-campo p-3 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
-              <Plug className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="leading-tight">
-                {conceptoCobro({ tipoTrabajo: ticket.tipoTrabajo, tipoVisita })}: cuando se finalice la orden, verás el cobro resultante para el cliente.
-              </p>
-            </div>
+            <Aviso nivel="info" icono={Plug} compact>{conceptoCobro({ tipoTrabajo: ticket.tipoTrabajo, tipoVisita })}: cuando se finalice la orden, verás el cobro resultante para el cliente.</Aviso>
           )}
     </>
   );
@@ -615,12 +611,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           </div>
   );
   const bloqueAvisoPre = (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
-            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <p className="leading-tight">
-              Esta orden quedará en estado <strong>PRE-FINALIZADA</strong> para que el administrador u operador revise y realice la finalización definitiva.
-            </p>
-          </div>
+          <Aviso nivel="atencion" icono={AlertCircle} compact>Esta orden quedará en estado <strong>PRE-FINALIZADA</strong> para que el administrador u operador revise y realice la finalización definitiva.</Aviso>
   );
 
   // El contenido de cada paso. Si la oficina devolvió la orden, su motivo se ve completo en el primer paso y resumido en los demás.
@@ -629,11 +620,10 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     orden: (
       <>
         {borrador && (
-          <div role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-xs text-amber-900 dark:text-amber-100 space-y-1.5">
-            <p className="font-bold">Recuperamos lo que llevabas escrito.</p>
-            {borrador.version !== versionDeOrden(ticket) && <p>La oficina cambió esta orden mientras tanto: revisa los datos antes de enviar.</p>}
-            <button type="button" onClick={onDescartarBorrador} className="font-bold underline underline-offset-2">Descartar y empezar de nuevo</button>
-          </div>
+          <Aviso nivel="atencion" compact titulo="Recuperamos lo que llevabas escrito"
+            accion={{ etiqueta: "Descartar y empezar de nuevo", onClick: onDescartarBorrador }}>
+            {borrador.version !== versionDeOrden(ticket) && <span>La oficina cambió esta orden mientras tanto: revisa los datos antes de enviar.</span>}
+          </Aviso>
         )}
         <DevolucionAviso ticket={ticket} conValores />
         {bloqueResumen}

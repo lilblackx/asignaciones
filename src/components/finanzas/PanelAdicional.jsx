@@ -7,6 +7,7 @@ import { BOTON, BOTON_CON_BORDE_GRANDE, BOTON_GRANDE, CAMPO, CHIP, ESTADO, ETIQU
 import { aBs, bolivares, dolares } from '../../utils/finanzas';
 import { MAX_NOTA_ADICIONAL, parseAdicional } from '../../utils/adicionales';
 import { stripEmojis } from '../../utils/sanitizeInput';
+import Aviso from '../Aviso';
 
 // Sumarle un pago adicional a un técnico: eliges un ítem del tabulador, la cantidad y, si quieres, una nota. El monto es el precio por la cantidad, siempre en dólares, y entra entero en su próximo
 // pago. La fecha y la hora son las de ahora. Va en la misma pantalla (no es una ventana). `items`: los ítems del tabulador; `onGuardar(entrada, { notificar })` devuelve true si se guardó.
@@ -37,7 +38,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
       </div>
 
       {items.length === 0 ? (
-        <p role="status" className="max-w-xl rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">Todavía no hay ítems de pagos adicionales. Créalos primero en el Tabulador de precios, en la sección «Pagos adicionales».</p>
+        <Aviso nivel="atencion" className="max-w-xl">Todavía no hay ítems de pagos adicionales. Créalos primero en el Tabulador de precios, en la sección «Pagos adicionales».</Aviso>
       ) : (
         <div className="space-y-5 max-w-xl">
           <div>

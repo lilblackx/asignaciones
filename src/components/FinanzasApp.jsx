@@ -35,6 +35,7 @@ import ResumenPagado from './finanzas/ResumenPagado';
 import PagosClientes from './finanzas/PagosClientes';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
 import TabuladorAdicionales from './finanzas/TabuladorAdicionales';
+import Aviso from './Aviso';
 
 // "3:45 p. m." (hora de Caracas) de cuando se leyeron las órdenes por última vez.
 const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(ms));
@@ -251,8 +252,8 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   exportando={exportando}
                 />
               )}
-              {errorExportar && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-campo px-4 py-3">{errorExportar}</p>}
-              {finanzas.error && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-campo px-4 py-3">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
+              {errorExportar && <Aviso nivel="error">{errorExportar}</Aviso>}
+              {finanzas.error && <Aviso nivel="error">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</Aviso>}
 
               {seccion === 'PAGOS' && corteTodaviaNoLlega() && (
                 <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-input rounded-campo px-4 py-3">

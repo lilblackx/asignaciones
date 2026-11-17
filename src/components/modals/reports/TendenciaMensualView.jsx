@@ -5,6 +5,7 @@ import { useAhora } from '../../../hooks/useAhora';
 import { cifrasTendencia } from '../../../utils/modelosReporte';
 import Cifras from './Cifras';
 import GraficoColumnas from './GraficoColumnas';
+import Aviso from '../../Aviso';
 
 // Colores de las series (azul y naranja de la paleta de dataviz, con su paso para modo oscuro). Cada tipo de trabajo conserva el suyo en todos los gráficos.
 const INSTALACIONES = { nombre: 'Instalaciones', color: 'bg-[#2a78d6] dark:bg-[#3987e5]' };
@@ -19,7 +20,7 @@ export default function TendenciaMensualView({ contadores, cargando, error, tick
 
   return (
     <div>
-      {error && <p className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-campo px-3 py-2 mb-4">No se pudieron cargar los totales. Intenta actualizar.</p>}
+      {error && <Aviso nivel="error" compact className="mb-4">No se pudieron cargar los totales. Intenta actualizar.</Aviso>}
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Meses a mostrar</span>

@@ -10,6 +10,7 @@ import AvisoCargarAnteriores from '../AvisoCargarAnteriores';
 import Colapsable from '../Colapsable';
 import Chip from '../Chip';
 import { TARJETA } from '../estilos';
+import Aviso from '../Aviso';
 
 const numero = (n) => Number(n).toLocaleString('es-VE');
 const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-');
@@ -145,9 +146,9 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
           </div>
 
           {porAprobarTotal > 0 && (
-            <p role="status" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-boton px-3 py-2">
+            <Aviso nivel="atencion" compact>
               {textoPorAprobar} espera{porAprobarTotal === 1 ? '' : 'n'} aprobación y todavía no se suma{porAprobarTotal === 1 ? '' : 'n'}.
-            </p>
+            </Aviso>
           )}
 
           {filas.length === 0 ? (

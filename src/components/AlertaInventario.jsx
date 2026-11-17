@@ -11,6 +11,7 @@ import { BUSCADOR } from './estilos';
 import ChipFiltro from './Chip';
 import Boton from './Boton';
 import CorregirEnvioModal from './modals/CorregirEnvioModal';
+import Aviso from './Aviso';
 
 const ETIQUETA_ESTADO = {
   SERIAL_NO_ENCONTRADO: 'Serial no existe',
@@ -43,15 +44,16 @@ export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
   return (
     <Colapsable>
       {(cantidad > 0 || pendientes > 0) && (
-        <div role="alert" className={`mb-3 rounded-campo border p-3 flex items-center gap-3 text-xs ${urgente ? 'border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-200' : 'border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200'}`}>
-          <PackageX className={`w-5 h-5 shrink-0 ${urgente ? 'text-red-700 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} aria-hidden="true" />
-          <p className="flex-1 font-bold leading-snug">
-            {urgente
-              ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
-              : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
-          </p>
-          <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-boton text-white font-black ${urgente ? 'bg-primary hover:bg-primary-hover shadow-boton' : 'bg-amber-600 hover:bg-amber-700 shadow-boton-ambar'}`}>Ver</button>
-        </div>
+        <Aviso
+          className="mb-3"
+          nivel={urgente ? 'error' : 'atencion'}
+          role="alert"
+          icono={PackageX}
+          titulo={urgente
+            ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
+            : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
+          accion={{ etiqueta: 'Ver', onClick: onAbrir }}
+        />
       )}
     </Colapsable>
   );

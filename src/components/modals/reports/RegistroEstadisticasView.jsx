@@ -6,6 +6,7 @@ import TablaReporte from './TablaReporte';
 import AvisoHistorial from './AvisoHistorial';
 import VnTaView from './VnTaView';
 import DetalleOrdenesModal from './DetalleOrdenesModal';
+import Aviso from '../../Aviso';
 
 // Registro de estadísticas: lo que el departamento lleva en su hoja de cálculo, armado desde las órdenes. Una pestaña por hoja (visitas técnicas,
 // averías e instalaciones), cada una con sus cifras, el cuadro de estadística, los materiales y la lista de cada orden.
@@ -44,7 +45,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
       <>
       <Cifras items={hoja.cifras.map((c) => (c.id ? { ...c, detalle: c.detalle ? `${c.detalle} · ver detalle` : 'ver detalle', onClick: () => setDetalle({ tipo: 'CIFRA', id: c.id }) } : c))} />
       <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-1 mb-4">{hoja.nota}</p>
-      {hoja.aviso && <p role="status" className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-campo px-3 py-2 mb-4">{hoja.aviso}</p>}
+      {hoja.aviso && <Aviso nivel="atencion" compact className="mb-4">{hoja.aviso}</Aviso>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">
         <TablaReporte titulo={hoja.tituloEstadistica} columnas={hoja.columnasEstadistica} filas={hoja.filasEstadistica} />

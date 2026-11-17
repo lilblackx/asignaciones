@@ -15,6 +15,7 @@ import PagoDelCliente from '../PagoDelCliente';
 import CobroClienteDetalle from '../CobroClienteDetalle';
 import FotosDeOrden from '../FotosDeOrden';
 import { fotosDe } from '../../utils/detallesOrden';
+import Aviso from '../Aviso';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
@@ -111,16 +112,10 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           </div>
 
           {garantiaDe && (
-            <div className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-100">
-              <p className="font-bold">Garantía de otro técnico</p>
-              <p>De la orden {garantiaDe.codigo || 's/c'} ({garantiaDe.tecnico}).{dePago.length > 0 ? ` Se le paga ${dolares(dePago[0].monto)} al técnico de esta garantía, descontados de la orden original; esta orden no se paga como orden.` : ''}</p>
-            </div>
+            <Aviso nivel="atencion" titulo="Garantía de otro técnico">De la orden {garantiaDe.codigo || 's/c'} ({garantiaDe.tecnico}).{dePago.length > 0 ? ` Se le paga ${dolares(dePago[0].monto)} al técnico de esta garantía, descontados de la orden original; esta orden no se paga como orden.` : ''}</Aviso>
           )}
           {delDescuento.map((a) => (
-            <div key={a.id} className="rounded-campo border border-sky-500 bg-sky-50 dark:bg-sky-950/30 px-3 py-2.5 text-sm text-sky-900 dark:text-sky-100">
-              <p className="font-bold">Descuento por garantía: − {dolares(a.monto)}</p>
-              <p>Por la garantía {a.codigo || 's/c'} hecha por {a.a}. A esta orden le quedan {dolares(Math.max(0, precio - a.monto))} de los {dolares(precio)}.{Number(a.aplicado) > 0 ? ` Ya se descontó ${dolares(a.aplicado)} en un pago.` : ''}</p>
-            </div>
+            <Aviso key={a.id} nivel="info" titulo={`Descuento por garantía: − ${dolares(a.monto)}`}>Por la garantía {a.codigo || 's/c'} hecha por {a.a}. A esta orden le quedan {dolares(Math.max(0, precio - a.monto))} de los {dolares(precio)}.{Number(a.aplicado) > 0 ? ` Ya se descontó ${dolares(a.aplicado)} en un pago.` : ''}</Aviso>
           ))}
 
           {orden.observacion && <Dato etiqueta="Observación">{orden.observacion}</Dato>}

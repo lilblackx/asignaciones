@@ -5,6 +5,7 @@ import { diaLegible } from '../../../utils/periodoReporte';
 import { cifrasActivacion } from '../../../utils/modelosReporte';
 import { useAhora } from '../../../hooks/useAhora';
 import Cifras from './Cifras';
+import Aviso from '../../Aviso';
 
 const HORAS_EJE = [0, 6, 12, 18, 24];
 const hora = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms));
@@ -52,8 +53,8 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
 
   return (
     <div>
-      {error && <p className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-campo px-3 py-2 mb-4">No se pudo cargar el registro. Intenta actualizar.</p>}
-      {truncado && <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-campo px-3 py-2 mb-4">Solo se leyeron los últimos movimientos; los más antiguos no cuentan.</p>}
+      {error && <Aviso nivel="error" compact className="mb-4">No se pudo cargar el registro. Intenta actualizar.</Aviso>}
+      {truncado && <Aviso nivel="atencion" compact className="mb-4">Solo se leyeron los últimos movimientos; los más antiguos no cuentan.</Aviso>}
 
       <Cifras items={cifrasActivacion(activacion)} />
 

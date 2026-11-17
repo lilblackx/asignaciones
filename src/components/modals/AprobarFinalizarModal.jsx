@@ -28,6 +28,7 @@ import AvisoRevision from '../AvisoRevision';
 import { cambioMientrasAbierta } from '../../utils/concurrencia';
 import { claseArea } from '../estilos';
 import PagoDelCliente from '../PagoDelCliente';
+import Aviso from '../Aviso';
 
 const PASO_ETIQUETA = { revisar: 'Revisar', autorizar: 'Autorizar', cobro: 'Cobro', valores: 'Valores', decision: 'Decisión' };
 const PASO_DE = (clave) => ({ clave, etiqueta: PASO_ETIQUETA[clave] });
@@ -215,10 +216,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   const faltantesNode = (
     <>
           {faltantes.length > 0 && (
-            <div role="alert" className="flex items-start gap-2 rounded-campo border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-800 dark:text-red-300">
-              <CircleAlert className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="leading-snug"><span className="font-black">Faltan datos de la instalación:</span> {faltantes.join(', ')}.{finalizando ? ' Si la finalizas así, no quedarán registrados.' : ''}</p>
-            </div>
+            <Aviso nivel="error" role="alert" compact titulo="Faltan datos de la instalación">{faltantes.join(', ')}.{finalizando ? ' Si la finalizas así, no quedarán registrados.' : ''}</Aviso>
           )}
     </>
   );

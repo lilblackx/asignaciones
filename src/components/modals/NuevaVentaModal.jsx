@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, MapPin, Star, X } from 'lucide-react';
+import { MapPin, Star, X } from 'lucide-react';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { MAX_OBSERVACION, TIPO_VENTA, camposDePlantillaVenta, instaladorDePlantilla, tecnicoRegistradoDePlantilla } from '../../utils/ventaPromotora';
 import { leerTecnicos } from '../../hooks/useCrearVenta';
@@ -15,6 +15,7 @@ import { CedulaField } from './TicketFormFields';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
 import { CAMPO_ORDEN, ETIQUETA_ORDEN, SELECTOR_ORDEN, claseCampo } from '../estilos';
+import Aviso from '../Aviso';
 
 const TIPOS_ITEMS = [{ value: '', label: 'Seleccione...' }, ...(TIPOS_POR_TRABAJO[TIPO_VENTA] || []).map((t) => ({ value: t, label: t }))];
 // "GERARDO MOLERO" -> "Gerardo Molero" (los técnicos se guardan en mayúsculas).
@@ -101,10 +102,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
 
           <CedulaField variant="edit" wrapperClassName="col-span-2 space-y-0.5" idPrefix="nv" tipoDocumento={form.tipoDocumento} cedula={form.cedula} onChange={cambiar} />
           {duplicada && (
-            <div role="status" className="col-span-2 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded-campo px-2.5 py-2 text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
-              <span>Ya hay una orden <strong>{duplicada.estado}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</span>
-            </div>
+            <Aviso nivel="atencion" compact className="col-span-2">Ya hay una orden <strong>{duplicada.estado}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</Aviso>
           )}
 
           <div className="col-span-2 space-y-0.5">

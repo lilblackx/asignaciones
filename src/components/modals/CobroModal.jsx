@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { montoCalculadora } from '../../utils/montoCalculadora';
-import { AlertTriangle, Ban, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
+import { Ban, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import Colapsable from '../Colapsable';
@@ -14,6 +14,7 @@ import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, MENSAJE_SIN_PAGO_DEL_TECNICO, diasEsperando, faltaElPagoDelTecnico, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
 import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
+import Aviso from '../Aviso';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
@@ -90,18 +91,14 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
 
         <div className="p-4 space-y-4">
           {retirado && (
-            <div role="alert" className="rounded-campo border-2 border-red-500 bg-red-50 dark:bg-red-950/30 p-3 space-y-1 text-xs text-red-900 dark:text-red-200">
-              <p className="flex items-center gap-1.5 font-black tracking-wide"><Ban className="w-4 h-4 shrink-0" aria-hidden="true" /> ESTE COBRO SE RETIRÓ</p>
-              <p>La orden se canceló o dejó de tener cobro (por ejemplo, se exoneró). No lo subas al portal.</p>
-            </div>
+            <Aviso nivel="error" role="alert" icono={Ban} titulo="Este cobro se retiró">La orden se canceló o dejó de tener cobro (por ejemplo, se exoneró). No lo subas al portal.</Aviso>
           )}
           {cambio && (
-            <div role="alert" className="rounded-campo border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1">
-              <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {!cambio.anterior && cambio.nuevo ? 'La orden volvió a tener cobro' : cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}</p>
+            <Aviso nivel="atencion" role="alert" titulo={!cambio.anterior && cambio.nuevo ? 'La orden volvió a tener cobro' : cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}>
               {!cambio.anterior && cambio.nuevo
-                ? <p className="text-xs text-amber-900 dark:text-amber-200">Se había retirado del portal y la orden volvió a tener cobro: <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Súbelo al portal otra vez y confírmalo aquí.</p>
-                : <p className="text-xs text-amber-900 dark:text-amber-200">Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</p>}
-            </div>
+                ? <span>Se había retirado del portal y la orden volvió a tener cobro: <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Súbelo al portal otra vez y confírmalo aquí.</span>
+                : <span>Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</span>}
+            </Aviso>
           )}
 
           {/* Lo que el técnico registró del pago del cliente (por ejemplo, que le pagó en efectivo): se ve antes de subir el cobro al portal. No va en lo que se copia. */}
@@ -152,10 +149,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
           )}
 
           {sinPagoDelTecnico && (
-            <div role="alert" className="rounded-campo border-2 border-red-500 bg-red-50 dark:bg-red-950/30 p-3 space-y-1 text-xs text-red-900 dark:text-red-200">
-              <p className="flex items-center gap-1.5 font-black tracking-wide"><Ban className="w-4 h-4 shrink-0" aria-hidden="true" /> EL TÉCNICO AÚN NO REGISTRÓ EL PAGO</p>
-              <p>{MENSAJE_SIN_PAGO_DEL_TECNICO}</p>
-            </div>
+            <Aviso nivel="error" role="alert" icono={Ban} titulo="El técnico aún no registró el pago">{MENSAJE_SIN_PAGO_DEL_TECNICO}</Aviso>
           )}
 
           <Colapsable>{error && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold">{error.texto}</p>}</Colapsable>

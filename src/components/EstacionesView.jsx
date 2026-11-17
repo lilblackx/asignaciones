@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, EyeOff, MonitorSmartphone, PauseCircle, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, EyeOff, MonitorSmartphone, PauseCircle, ShieldAlert } from 'lucide-react';
 import { collection, doc } from 'firebase/firestore';
 import { onSnapshot } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
@@ -10,6 +10,7 @@ import { useAhora } from '../hooks/useAhora';
 import { CHIP, ETIQUETA, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { EN_LINEA_MS, avisosDePantalla, enLinea, haceCuanto, ordenarEstaciones } from '../utils/estaciones';
 import { CUOTA_GRATIS, UMBRALES_PROYECTO } from '../utils/usoFirestore';
+import Aviso from './Aviso';
 
 // Estaciones (solo para los usuarios de USUARIOS_ESTACIONES): todo lo que puede afectar a producción en Firestore. Arriba, el uso del proyecto
 // entero (lo calcula el Worker cada 15 minutos con las métricas de Google Cloud: estadoFirestore/actual); abajo, cada navegador con la app abierta,
@@ -27,21 +28,6 @@ function useEnVivo(ref, inicial) {
 }
 const refEstaciones = () => collection(db, 'artifacts', appId, 'public', 'data', 'estaciones');
 const refEstado = () => doc(db, 'artifacts', appId, 'public', 'data', 'estadoFirestore', 'actual');
-
-function Alerta({ children }) {
-  return (
-    <p className="flex items-start gap-1.5 rounded-boton bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
-      <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>{children}</span>
-    </p>
-  );
-}
-function Aviso({ children }) {
-  return (
-    <p className="flex items-start gap-1.5 rounded-boton bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900 px-2.5 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
-      <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>{children}</span>
-    </p>
-  );
-}
 
 // Cuánto va del día contra la cuota gratis: el número, el porcentaje escrito y una barra (el color es de estado y nunca va solo: el texto lo dice).
 function Cuota({ etiqueta, valor, tope }) {
@@ -101,7 +87,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
 }
 
 function PanelProyecto({ estado, cargado, error, ahora }) {
-  if (error) return <Alerta>No se pudo leer el uso del proyecto.</Alerta>;
+  if (error) return <Aviso nivel="error" compact>No se pudo leer el uso del proyecto.</Aviso>;
   if (!cargado) return <p className={TEXTO_SUAVE}>Cargando el uso del proyecto…</p>;
   if (!estado) return <p className={TEXTO_SUAVE}>Todavía no hay resumen del proyecto: el Worker lo calcula cada 15 minutos.</p>;
   const viejo = ahora - (Number(estado.actualizadoEn) || 0) > 40 * 60 * 1000;
@@ -112,9 +98,9 @@ function PanelProyecto({ estado, cargado, error, ahora }) {
         <h3 id="uso-proyecto" className={TITULO_SECCION}>Todo el proyecto</h3>
         <span className={TEXTO_SUAVE}>actualizado {haceCuanto(Number(estado.actualizadoEn), ahora)}</span>
       </div>
-      {estado.error && <Alerta>{estado.error}</Alerta>}
-      {viejo && <Aviso>El resumen no se actualiza desde hace más de 40 minutos: revisa que el cron del Worker esté corriendo.</Aviso>}
-      {(estado.alertas || []).map((a) => <Alerta key={a}>{a}</Alerta>)}
+      {estado.error && <Aviso nivel="error" compact>{estado.error}</Aviso>}
+      {viejo && <Aviso nivel="atencion" compact>El resumen no se actualiza desde hace más de 40 minutos: revisa que el cron del Worker esté corriendo.</Aviso>}
+      {(estado.alertas || []).map((a) => <Aviso key={a} nivel="error" compact>{a}</Aviso>)}
       {!estado.error && !(estado.alertas || []).length && !viejo && (
         <p className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Uso normal en el proyecto.</p>
       )}
@@ -186,8 +172,8 @@ function Estacion({ e, ahora }) {
         </div>
       </div>
 
-      {alertas.map((a) => <Alerta key={a}>{a}</Alerta>)}
-      {avisos.map((a) => <Aviso key={a}>{a}</Aviso>)}
+      {alertas.map((a) => <Aviso key={a} nivel="error" compact>{a}</Aviso>)}
+      {avisos.map((a) => <Aviso key={a} nivel="atencion" compact>{a}</Aviso>)}
 
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <Dato etiqueta={`Lecturas (${minutos} min)`}>{numero(v.lecturas)} <span className="font-normal text-zinc-500">· sesión {numero(e.total?.lecturas)}</span></Dato>
@@ -248,7 +234,7 @@ export default function EstacionesView({ enPagina = false, onClose }) {
               <ChipFiltro activo={soloEnLinea} onClick={() => setSoloEnLinea(true)}>En línea ({activas.length})</ChipFiltro>
               <ChipFiltro activo={!soloEnLinea} onClick={() => setSoloEnLinea(false)}>Últimos 7 días ({recientes.length})</ChipFiltro>
             </div>
-            {estaciones.error && <Alerta>No se pudieron leer las estaciones.</Alerta>}
+            {estaciones.error && <Aviso nivel="error" compact>No se pudieron leer las estaciones.</Aviso>}
             {!estaciones.cargado && <p className={TEXTO_SUAVE}>Cargando…</p>}
             {estaciones.cargado && !estaciones.error && visibles.length === 0 && (
               <p className={TEXTO_SUAVE}>{soloEnLinea ? 'No hay estaciones en línea ahora.' : 'Ninguna estación reportó en los últimos 7 días.'}</p>

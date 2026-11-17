@@ -14,6 +14,7 @@ import { MAX_REFERENCIA, MAX_TITULAR } from '../utils/datosPago';
 import { stripEmojis } from '../utils/sanitizeInput';
 import { montoCalculadora, montoParaCampo } from '../utils/montoCalculadora';
 import { TIPO_PAGO } from '../utils/pagoEnOrden';
+import Aviso from './Aviso';
 import {
   MONEDA_BS, MONEDA_USD, MONEDAS_CLIENTE, aplicaBancoCliente, claveReferencia, cuentasParaForma, exigeReferencia, exigeTitularCliente, fechaHoraDeMarca, formasDeCliente, notaPagoCompartido, parsePagoCliente,
 } from '../utils/pagoCliente';
@@ -287,9 +288,8 @@ export default function FormularioPagoCliente({
       )}
 
       {repetida && (
-        <div role="alert" className="rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-950/40 p-3 space-y-2">
-          <p className="text-sm font-bold text-red-800 dark:text-red-300">Esa referencia ya está registrada en la orden {repetida.codigo || 'de otra orden'}. No se puede usar de nuevo.</p>
-          <p className="text-xs text-red-800 dark:text-red-300">Si te equivocaste al escribirla, corrígela. Si el cliente pagó varias órdenes con un solo pago, usa "Pagó junto con otra orden".</p>
+        <Aviso nivel="error" role="alert" titulo={<>Esa referencia ya está registrada en la orden {repetida.codigo || 'de otra orden'}. No se puede usar de nuevo.</>}>
+          <p>Si te equivocaste al escribirla, corrígela. Si el cliente pagó varias órdenes con un solo pago, usa "Pagó junto con otra orden".</p>
           {(onPagaDespues || incrustado) && candidatas.length > 0 && (
             <div className="space-y-2 pt-1">
               <SelectMenu id={id('otra')} ariaLabel="Otra orden" className={SELECTOR} value={otraElegida} onChange={(v) => { setOtraElegida(v); setError(null); }} items={[{ value: '', label: 'Elige la otra orden' }, ...candidatas.map((c) => ({ value: c.id, label: c.etiqueta }))]} />
@@ -299,14 +299,11 @@ export default function FormularioPagoCliente({
               </button>
             </div>
           )}
-        </div>
+        </Aviso>
       )}
 
       {compartidoCon && (
-        <div role="status" className="rounded-lg border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 p-3 space-y-1">
-          <p className="text-sm font-bold text-emerald-900 dark:text-emerald-200">Pagó junto con la orden {compartidoCon.codigo || 'elegida'}.</p>
-          <p className="text-xs text-emerald-900 dark:text-emerald-200">Al confirmar, queda anotado en la orden. Si te equivocaste, cambia cualquier dato del pago para volver a elegir.</p>
-        </div>
+        <Aviso nivel="exito" titulo={<>Pagó junto con la orden {compartidoCon.codigo || 'elegida'}.</>}>Al confirmar, queda anotado en la orden. Si te equivocaste, cambia cualquier dato del pago para volver a elegir.</Aviso>
       )}
 
       {!incrustado && (

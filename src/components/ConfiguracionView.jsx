@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { AlertTriangle, LocateFixed, PauseCircle, Route, Settings } from 'lucide-react';
+import { LocateFixed, PauseCircle, Route, Settings } from 'lucide-react';
 import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
 import EstadoSistema from './EstadoSistema';
 import { TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { FUNCIONES } from '../utils/funciones';
+import Aviso from './Aviso';
 
 // Configuración (solo ADMIN): las funciones que se encienden o se apagan para toda la app, el interruptor remoto de emergencia y el estado del sistema. Cada
 // función es una casilla con su explicación y nace desactivada (ver utils/funciones.js). Aquí irán sumándose más ajustes. Los cambios se guardan al marcar la casilla
@@ -88,9 +89,7 @@ export default function ConfiguracionView({ funciones, cargado, error, onCambiar
           <p className={TEXTO_SUAVE}>Funciones de la app que se encienden o se apagan para todos. Los cambios se guardan al marcar la casilla.</p>
 
           {(error || interruptorError) && (
-            <p role="alert" className="flex items-start gap-1.5 rounded-boton bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-900 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:text-red-300">
-              <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> <span>No se pudo leer la configuración. Lo que ves puede no ser lo guardado.</span>
-            </p>
+            <Aviso nivel="error" compact>No se pudo leer la configuración. Lo que ves puede no ser lo guardado.</Aviso>
           )}
 
           <section aria-labelledby="config-funciones" className="space-y-3">

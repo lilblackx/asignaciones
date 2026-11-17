@@ -24,6 +24,7 @@ import { COBRO_PAGADA, resolverCobroAcordado } from '../../utils/cobroAcordado';
 import { llevaCobro } from '../../utils/cobro';
 import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, claseCampo, claseSelector } from '../estilos';
 import { MENSAJE_PROMOTOR_CAMPO, claveNombre } from '../../utils/promotora';
+import Aviso from '../Aviso';
 
 const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
 const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
@@ -287,10 +288,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
                 Firestore trae el ticket recién creado (misma cédula, PENDIENTE)
                 antes de que este modal termine de cerrarse, y se compara consigo mismo. */}
             {ticketDuplicado && !isSubmitting && (
-              <div className="col-span-2 sm:col-span-5 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. Puedes seguir creando igual si es una avería distinta.</span>
-              </div>
+              <Aviso nivel="atencion" compact className="col-span-2 sm:col-span-5">Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. Puedes seguir creando igual si es una avería distinta.</Aviso>
             )}
 
             {reincidencias.length > 0 && !isSubmitting && (
@@ -403,10 +401,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             )}
 
             {esInstalacion && esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
-              <div className="col-span-2 sm:col-span-5 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-emerald-800 dark:text-emerald-300">
-                <Star className="w-3.5 h-3.5 shrink-0 fill-current" aria-hidden="true" />
-                <span>Venta de <strong>{formData.tecnico}</strong>: se asigna directo y no consume el turno{turnoSugerido ? <> (el turno sugerido sigue siendo <strong>{turnoSugerido}</strong>)</> : null}.</span>
-              </div>
+              <Aviso nivel="exito" icono={Star} compact className="col-span-2 sm:col-span-5">Venta de <strong>{formData.tecnico}</strong>: se asigna directo y no consume el turno{turnoSugerido ? <> (el turno sugerido sigue siendo <strong>{turnoSugerido}</strong>)</> : null}.</Aviso>
             )}
 
             {esInstalacion && turnoSugerido && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (

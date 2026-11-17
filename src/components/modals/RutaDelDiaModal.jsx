@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Flag, LoaderCircle, MapPin, Navigation, Route, TriangleAlert, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Flag, LoaderCircle, MapPin, Navigation, Route, X } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import { FUENTE_NAP, enlacesDeRuta, kmDeRuta, ordenSugerido } from '../../utils/rutaDelDia';
+import Aviso from '../Aviso';
 
 // La Ruta del día del técnico (ver utils/rutaDelDia.js): sus paradas en el orden sugerido (primero la prioridad alta, luego de la más cercana a la
 // más lejana desde donde está), con flechas para cambiarlo y el botón que abre el recorrido en Google Maps. Al abrirse pide la ubicación una sola vez;
@@ -86,10 +87,9 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
           )}
 
           {!buscando && sinPunto.length > 0 && (
-            <div role="status" className="rounded-campo border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1.5">
-              <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><TriangleAlert className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {sinPunto.length === 1 ? '1 orden no entra en la ruta' : `${sinPunto.length} órdenes no entran en la ruta`}</p>
-              {sinPunto.map((e) => <p key={e.id} className="text-xs text-amber-900 dark:text-amber-200"><span className="font-bold">{e.codigo}{e.nombre ? ` · ${e.nombre}` : ''}:</span> no tiene ubicación del cliente ni de la NAP.</p>)}
-            </div>
+            <Aviso nivel="atencion" titulo={sinPunto.length === 1 ? '1 orden no entra en la ruta' : `${sinPunto.length} órdenes no entran en la ruta`}>
+              {sinPunto.map((e) => <span key={e.id} className="block"><span className="font-bold">{e.codigo}{e.nombre ? ` · ${e.nombre}` : ''}:</span> no tiene ubicación del cliente ni de la NAP.</span>)}
+            </Aviso>
           )}
         </div>
 
