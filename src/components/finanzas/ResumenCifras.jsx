@@ -2,7 +2,30 @@
 // items: [{ etiqueta, valor, detalle?, clave? }]. Si se pasa `onElegir`, cada cifra es un botón que elige su `clave` (la elegida, `elegida`, va en rojo y subrayada).
 import { TARJETA } from './estilos';
 
-export default function ResumenCifras({ items, onElegir, elegida }) {
+// `variante="tarjetas"`: una tarjeta por cifra, con el número grande (Revisión de órdenes); la elegida lleva borde rojo. Sin ella, la fila única de siempre (Finanzas).
+export default function ResumenCifras({ items, onElegir, elegida, variante = 'unica' }) {
+  if (variante === 'tarjetas') {
+    return (
+      <section aria-label="Resumen" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {items.map(({ etiqueta, valor, detalle, clave }) => {
+          const elegido = Boolean(onElegir) && elegida === clave;
+          const clases = `min-w-0 text-left p-4 bg-card rounded-card shadow-card border-2 ${elegido ? 'border-red-600' : 'border-transparent'}`;
+          const contenido = (
+            <>
+              <p className="text-xs font-semibold text-muted-foreground">{etiqueta}</p>
+              <p className={`mt-1 text-3xl font-black tabular-nums leading-none break-words ${elegido ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>{valor}</p>
+              {detalle && <p className="mt-1.5 text-xs font-semibold text-muted-foreground break-words">{detalle}</p>}
+            </>
+          );
+          return onElegir ? (
+            <button key={etiqueta} type="button" onClick={() => onElegir(clave)} aria-pressed={elegido} className={`${clases} hover:shadow-md transition-shadow`}>{contenido}</button>
+          ) : (
+            <div key={etiqueta} className={clases}>{contenido}</div>
+          );
+        })}
+      </section>
+    );
+  }
   return (
     <section aria-label="Resumen" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }} className={`${TARJETA} grid gap-x-3 sm:gap-x-8 p-4`}>
       {items.map(({ etiqueta, valor, detalle, clave }, i) => {

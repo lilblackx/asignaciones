@@ -3,7 +3,8 @@ import { CheckCircle2, PauseCircle, Pencil, RotateCcw, ShieldAlert, XCircle } fr
 import BuscadorOrden from '../BuscadorOrden';
 import SelectMenu from '../SelectMenu';
 import Colapsable from '../Colapsable';
-import { BOTON, BOTON_FILA, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
+import { BOTON, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
+import RowMenu from '../RowMenu';
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
 import VerFotosOrden from '../VerFotosOrden';
 import { tieneDetalles } from '../../utils/detallesOrden';
@@ -30,6 +31,9 @@ const CHIP_ESTADO = {
 };
 
 // `ordenesBusqueda`: las órdenes entre las que se busca la original; `precioOrigen(id)`: lo que cobra esa original (null si no se sabe); `tecnicoDe(orden)`: su técnico efectivo en la revisión.
+// El botón de la acción principal de una fila: 36 px en PC y 44 en celular.
+const BOTON_PRINCIPAL_FILA = 'inline-flex items-center justify-center gap-1.5 min-h-9 max-lg:min-h-11 px-4 rounded-boton text-sm font-bold disabled:cursor-not-allowed disabled:opacity-70 transition-colors';
+
 export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, onAccion, onDeshacer, onVerOrden, onRegistrarPago = null, ordenesBusqueda = [], precioOrigen = () => null, tecnicoDe = (o) => o.tecnico }) {
   const [abierto, setAbierto] = useState(null);
   const [motivo, setMotivo] = useState('');
@@ -93,8 +97,18 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
   const conceptos = [{ value: '', label: item.conceptoOriginal ? `Sin cambio (${nombreConcepto(item.conceptoOriginal)})` : 'Elige el concepto' }, ...CONCEPTOS_PAGO.map((c) => ({ value: c.id, label: c.nombre }))];
   const nombresTecnicos = [{ value: '', label: `Sin cambio (${item.tecnicoOriginal})` }, ...tecnicos.map((t) => ({ value: t, label: t }))];
 
+  // La garantía de otro técnico sin resolver es una decisión que bloquea la orden: va a la vista. El resto de las acciones, en el menú.
+  const garantiaPendiente = esGarantiaDeOtro && !item.garantiaResuelta && (estado === 'PENDIENTE' || estado === 'APROBADA');
+  const itemsMenu = [
+    ...((estado === 'PENDIENTE' || estado === 'APROBADA') ? [{ label: 'Retener', icon: PauseCircle, onClick: () => abrir('RETENER'), disabled: ocupado }] : []),
+    ...(estado !== 'EXCLUIDA' ? [{ label: 'Excluir', icon: XCircle, onClick: () => abrir('EXCLUIR'), disabled: ocupado }] : []),
+    ...((estado === 'PENDIENTE' || estado === 'APROBADA') && !garantiaPendiente ? [{ label: esGarantiaDeOtro ? 'Garantía' : 'Descuento por garantía', icon: ShieldAlert, onClick: () => abrir('GARANTIA'), disabled: ocupado }] : []),
+    ...(estado !== 'EXCLUIDA' && estado !== 'RETENIDA' ? [{ label: 'Corregir', icon: Pencil, onClick: () => abrir('CORREGIR'), disabled: ocupado }] : []),
+    ...((estado !== 'PENDIENTE' || item.revision) ? [{ label: 'Volver a pendiente', icon: RotateCcw, onClick: () => onDeshacer(item), disabled: ocupado }] : []),
+  ];
+
   return (
-    <li className="py-3 space-y-2">
+    <li className="py-4 space-y-2">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-64">
           <p className="text-sm text-zinc-900 dark:text-zinc-100 break-words">
@@ -126,21 +140,19 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {sinPago && onRegistrarPago && <button type="button" onClick={() => onRegistrarPago(item)} disabled={ocupado} className={`${BOTON_FILA} !border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200`}>Registrar el pago</button>}
+      {/* Una acción principal a la vista (la que sigue en esa orden) y el resto en el menú "⋯": antes eran hasta siete botones iguales por fila. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {sinPago && onRegistrarPago && <button type="button" onClick={() => onRegistrarPago(item)} disabled={ocupado} className={`${BOTON_PRINCIPAL_FILA} bg-amber-500 hover:bg-amber-400 text-black`}>Registrar el pago</button>}
         {(estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
-          <button type="button" onClick={aprobar} disabled={ocupado || Boolean(problema)} title={problema || undefined} className={`${BOTON_FILA} !border-emerald-600 !text-emerald-700 dark:!text-emerald-300`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar</button>
+          <button type="button" onClick={aprobar} disabled={ocupado || Boolean(problema)} title={problema || undefined} className={`${BOTON_PRINCIPAL_FILA} bg-emerald-700 hover:bg-emerald-800 text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar</button>
         )}
         {sinDetalles && !sinPago && !motivoNoAprobable(item) && (estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
-          <button type="button" onClick={() => abrir('SIN_DETALLES')} disabled={ocupado} className={`${BOTON_FILA} !border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar sin detalles</button>
+          <button type="button" onClick={() => abrir('SIN_DETALLES')} disabled={ocupado} className={`${BOTON_PRINCIPAL_FILA} bg-amber-500 hover:bg-amber-400 text-black`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar sin detalles</button>
         )}
-        {(estado === 'PENDIENTE' || estado === 'APROBADA') && <button type="button" onClick={() => abrir('RETENER')} disabled={ocupado} className={BOTON_FILA}><PauseCircle className="w-4 h-4" aria-hidden="true" /> Retener</button>}
-        {estado !== 'EXCLUIDA' && <button type="button" onClick={() => abrir('EXCLUIR')} disabled={ocupado} className={BOTON_FILA}><XCircle className="w-4 h-4" aria-hidden="true" /> Excluir</button>}
-        {(estado === 'PENDIENTE' || estado === 'APROBADA') && (
-          <button type="button" onClick={() => abrir('GARANTIA')} disabled={ocupado} className={`${BOTON_FILA} ${esGarantiaDeOtro && !item.garantiaResuelta ? '!border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200' : ''}`}><ShieldAlert className="w-4 h-4" aria-hidden="true" /> {esGarantiaDeOtro && !item.garantiaResuelta ? 'Resolver garantía' : esGarantiaDeOtro ? 'Garantía' : 'Descuento por garantía'}</button>
+        {garantiaPendiente && (
+          <button type="button" onClick={() => abrir('GARANTIA')} disabled={ocupado} className={`${BOTON_PRINCIPAL_FILA} bg-amber-500 hover:bg-amber-400 text-black`}><ShieldAlert className="w-4 h-4" aria-hidden="true" /> Resolver garantía</button>
         )}
-        {estado !== 'EXCLUIDA' && estado !== 'RETENIDA' && <button type="button" onClick={() => abrir('CORREGIR')} disabled={ocupado} className={BOTON_FILA}><Pencil className="w-4 h-4" aria-hidden="true" /> Corregir</button>}
-        {(estado !== 'PENDIENTE' || item.revision) && <button type="button" onClick={() => onDeshacer(item)} disabled={ocupado} className={BOTON_FILA}><RotateCcw className="w-4 h-4" aria-hidden="true" /> Volver a pendiente</button>}
+        {itemsMenu.length > 0 && <RowMenu grande label={`Más acciones de la orden ${item.orden.codigo || 'sin código'}`} items={itemsMenu} />}
       </div>
       {/* El aviso de la garantía sin resolver ya está arriba, con la orden original, y el del pago y el de las fotos también (junto a la orden): no se repiten. Aquí solo va lo que no se dijo arriba (sin concepto, sin técnico). */}
       {bloqueo && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{bloqueo}</p>}

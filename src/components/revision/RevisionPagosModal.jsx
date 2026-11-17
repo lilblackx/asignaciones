@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ClipboardCheck, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ClipboardCheck, RefreshCw, Search } from 'lucide-react';
 import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import SelectMenu from '../SelectMenu';
@@ -45,6 +45,31 @@ function textoOmitidas(omitidas, verbo) {
     escaladas > 0 && `${escaladas} ${escaladas === 1 ? 'está escalada' : 'están escaladas'} a infraestructura y se ${escaladas === 1 ? 'aprueba' : 'aprueban'} una por una`,
   ].filter(Boolean);
   return partes.length > 0 ? ` ${partes.join('; ')}.` : '';
+}
+
+// Un aviso ámbar de la pantalla: con ícono, texto más chico en celular (había dos de cuatro líneas que empujaban lo importante fuera de la pantalla) y sin el borde grueso.
+function Aviso({ children }) {
+  return (
+    <p role="status" className="flex items-start gap-2.5 rounded-campo border border-amber-300 max-lg:border-transparent dark:border-amber-900/60 dark:max-lg:border-transparent bg-amber-50 dark:bg-amber-950/30 px-3.5 py-3 text-xs sm:text-sm leading-snug text-amber-900 dark:text-amber-100">
+      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+      <span className="min-w-0">{children}</span>
+    </p>
+  );
+}
+
+// Los avisos de la pantalla, agrupados en uno solo que se despliega: en PC arrancan abiertos y en celular cerrados, para que lo importante (las órdenes) no quede fuera de la pantalla.
+function AvisosAgrupados({ total, children }) {
+  const [abierto, setAbierto] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
+  if (total === 0) return null;
+  return (
+    <div className="space-y-2">
+      <button type="button" aria-expanded={abierto} onClick={() => setAbierto((a) => !a)} className="w-full min-h-11 px-3.5 flex items-center justify-between gap-2 rounded-campo border border-amber-300 max-lg:border-transparent dark:border-amber-900/60 dark:max-lg:border-transparent bg-amber-50 dark:bg-amber-950/30 text-sm font-black text-amber-900 dark:text-amber-100">
+        <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" /> {total === 1 ? '1 aviso por atender' : `${total} avisos por atender`}</span>
+        <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      {abierto && <div className="space-y-2">{children}</div>}
+    </div>
+  );
 }
 
 export default function RevisionPagosModal({ technicians, tickets, reports, hasMoreReports, isLoadingReports, onLoadMoreReports, onActualizar, usuario, firebaseUser, formasPago = null, setToastMsg, onClose, enPagina = false }) {
@@ -227,26 +252,29 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           <ResumenCifras
             items={ESTADOS_REVISION.map((e) => ({ clave: e, etiqueta: e === 'PENDIENTE' ? 'Pendientes' : `${ETIQUETA_REVISION[e]}s`, valor: resumen[e].cantidad, detalle: dolares(resumen[e].total) }))}
             elegida={filtroEstado}
+            variante="tarjetas"
             onElegir={(e) => setFiltroEstado((actual) => (actual === e ? 'TODAS' : e))}
           />
 
+          <AvisosAgrupados total={[porResolver, esperanPago, escaladasPendientes].filter((a) => a.length > 0).length}>
           {porResolver.length > 0 && (
-            <p role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            <Aviso>
               {porResolver.length === 1 ? '1 garantía de otro técnico espera' : `${porResolver.length} garantías de otro técnico esperan`} tu decisión ({porResolver.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{porResolver.length > 4 ? '...' : ''}): descuenta de la orden original o déjala sin descuento. No se pueden aprobar hasta decidir.
-            </p>
+            </Aviso>
           )}
 
           {esperanPago.length > 0 && (
-            <p role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            <Aviso>
               {esperanPago.length === 1 ? '1 orden espera' : `${esperanPago.length} órdenes esperan`} el pago del cliente y no se {esperanPago.length === 1 ? 'puede' : 'pueden'} aprobar todavía ({esperanPago.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{esperanPago.length > 4 ? '...' : ''}). Lo registra {tecnicosSinPago.length === 1 ? 'el técnico' : 'cada técnico'}{tecnicosSinPago.length > 0 ? ` (${tecnicosSinPago.slice(0, 3).join(', ')}${tecnicosSinPago.length > 3 ? '...' : ''})` : ''}; si no puede, usa "Registrar el pago" en la orden.
-            </p>
+            </Aviso>
           )}
 
           {escaladasPendientes.length > 0 && (
-            <p role="status" className="rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            <Aviso>
               {escaladasPendientes.length === 1 ? '1 orden escalada a infraestructura espera' : `${escaladasPendientes.length} órdenes escaladas a infraestructura esperan`} tu revisión ({escaladasPendientes.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{escaladasPendientes.length > 4 ? '...' : ''}): llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
-            </p>
+            </Aviso>
           )}
+          </AvisosAgrupados>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className={TEXTO_SUAVE}>Pulsa una cifra para ver esas órdenes; vuelve a pulsarla para verlas todas.</p>
