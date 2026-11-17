@@ -11,7 +11,7 @@ export function BotonPrioridad({ activa, codigo, onClick, compacto = false }) {
       aria-pressed={activa}
       aria-label={activa ? `Quitar la prioridad alta de ${orden}` : `Marcar ${orden} con prioridad alta`}
       title={activa ? 'Prioridad alta: toca para quitarla' : 'Dar prioridad alta (se le avisa al técnico)'}
-      className="group inline-flex items-center justify-center rounded-full focus:outline-none max-lg:min-w-11 max-lg:min-h-11"
+      className="group relative inline-flex items-center justify-center rounded-full focus:outline-none max-lg:after:absolute max-lg:after:-inset-3"
     >
       {/* En celular el botón mide 44 px para el dedo; el círculo que se ve sigue siendo chico. */}
       <span className={`inline-flex ${compacto ? 'p-0.5' : 'p-1'} rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-red-500 ${

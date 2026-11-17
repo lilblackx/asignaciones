@@ -29,6 +29,7 @@ import FaltaPorCompletar from './FaltaPorCompletar';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoPastel, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
+import { fallaVisible } from '../utils/fallaVisible';
 
 export default function TicketsMobileList({
   filteredTickets,
@@ -96,9 +97,10 @@ export default function TicketsMobileList({
           <h2 className="mt-2 px-3 py-2 rounded-campo bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">FINALIZADAS Y CANCELADAS ({cerradasEnBusqueda})</h2>
         )}
         <div className={`bg-card rounded-card shadow-card border overflow-hidden flex flex-col transition-colors ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-red-700/60 dark:border-red-800/60' : 'border-emerald-700/60 dark:border-emerald-800/60') : prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-transparent'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
-          <div className={`px-5 pt-5 pb-1 flex justify-between items-start gap-3 ${cerrada ? 'bg-muted' : ''}`}>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {/* Cabecera en una cuadrícula de dos columnas: fila 1 = código con la bandera y el estado, fila 2 = tipo y falla con la fecha. Así todo comparte el centro de su fila. */}
+          <div className={`px-5 pt-3 pb-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 ${cerrada ? 'bg-muted' : ''}`}>
+            <div className="contents">
+              <div className="col-start-1 row-start-1 min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} vacio="S/C" className="font-black text-lg text-foreground leading-none" />
                 {canEditTickets && puedeCambiarPrioridad(ticket) && (
                   <BotonPrioridad activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
@@ -107,24 +109,26 @@ export default function TicketsMobileList({
                 {prioritaria && isTecnico && <InsigniaPrioridad />}
               </div>
               {/* El tipo de trabajo y la falla van bajo el código (antes, en una fila aparte con un ícono): la tarjeta pierde una fila entera. */}
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
-                {/* Sin falla, la orden guarda el tipo de trabajo como falla: no se repite. */}
-                {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-card-foreground">{ticket.falla}</span>}
-                <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
-                {!isTecnico && <InsigniaGarantia ticket={ticket} />}
+              <div className="col-start-1 row-start-2 min-w-0 flex flex-col items-start gap-1 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
+                  <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
+                  {!isTecnico && <InsigniaGarantia ticket={ticket} />}
+                </div>
+                {/* La falla o el tipo (por ejemplo "MTV") va debajo de la etiqueta del trabajo, como en la tabla. Sin falla, o igual al tipo de trabajo, no se repite. */}
+                {fallaVisible(ticket) && <span className="text-sm font-medium text-card-foreground leading-tight">{fallaVisible(ticket)}</span>}
               </div>
               {/* Lo que le falta al técnico en una orden finalizada: bajo la falla, en una línea, para no empujar el estado ni la fecha. */}
               {isTecnico && <FaltaPorCompletar ticket={ticket} className="mt-2" />}
             </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <span className={`text-xs font-black px-3 py-1 rounded-full ${getEstadoPastel(ticket.estado)}`}>
+            <div className="contents">
+              <span className={`col-start-2 row-start-1 justify-self-end text-xs font-black px-3 py-1 rounded-full ${getEstadoPastel(ticket.estado)}`}>
                 {ticket.estado}
               </span>
-              <span className={`text-xs font-bold flex items-center gap-1 ${getFechaStyles(ticket.fecha, ticket.estado)}`}><Calendar className="w-3.5 h-3.5" /> {ticket.fecha}</span>
-              {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
+              <span className={`col-start-2 row-start-2 self-start justify-self-end text-xs font-bold flex items-center gap-1 ${getFechaStyles(ticket.fecha, ticket.estado)}`}><Calendar className="w-3.5 h-3.5" /> {ticket.fecha}</span>
+              {ticket.estado === 'PENDIENTE' && <div className="col-start-2 row-start-3 justify-self-end">{renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}</div>}
               {cerrada && (
-                <span className="text-xs font-medium text-muted-foreground leading-tight">
+                <span className="col-start-2 row-start-3 justify-self-end text-xs font-medium text-muted-foreground leading-tight">
                   {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}
                 </span>
               )}
@@ -144,7 +148,7 @@ export default function TicketsMobileList({
                     rel="noopener noreferrer"
                     title="Buscar cliente en SmartOLT"
                     aria-label={`Buscar cédula ${ticket.cedula} en SmartOLT`}
-                    className="inline-flex items-center gap-1 min-h-11 min-w-11 text-sky-700 dark:text-sky-400 underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    className="relative inline-flex items-center gap-1 after:absolute after:-inset-x-1 after:-inset-y-3 text-sky-700 dark:text-sky-400 underline decoration-dotted underline-offset-2 hover:decoration-solid"
                   >
                     {formatCedula(ticket.cedula, ticket.tipoDocumento)}
                     <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
@@ -152,8 +156,8 @@ export default function TicketsMobileList({
                 ) : formatCedula(ticket.cedula, ticket.tipoDocumento)}
               </p>
             </div>
-            <div className="flex items-start gap-2 text-sm">
-              <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
               <span className="min-w-0 flex-1 text-card-foreground leading-snug">{ticket.direccion}</span>
               {/* Instalación sin ubicación: un ícono (como en la tabla de PC) en vez de una etiqueta con texto. El círculo mide 32 px y el área táctil, 44. */}
               {instalacionSinUbicacion(ticket) && (

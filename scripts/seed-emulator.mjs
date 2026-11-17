@@ -79,7 +79,7 @@ await base.collection('tickets').doc('seed-ticket-reinel').set({
   fecha: new Date().toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
   fechaProgramada: '', codigo: 'AS2', nombre: 'Cliente de Reinel', cedula: 'V-22222222',
   direccion: 'Dirección de prueba 2', telefono: '04120000002', nap: '',
-  tipoTrabajo: 'INSTALACIÓN', falla: 'Instalación nueva', tecnico: 'REINEL BRAVO',
+  tipoTrabajo: 'INSTALACIÓN', falla: 'MTV', tecnico: 'REINEL BRAVO',
   observacion: '', observacionInterna: false, estado: 'PENDIENTE',
   creado: 'usuario', createdAt: Date.now(), historialEdiciones: [], isAsignado: true
 });

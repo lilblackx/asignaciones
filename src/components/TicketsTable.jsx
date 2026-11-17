@@ -28,6 +28,7 @@ import { TEXTO_SIN_PLANTILLA, ordenSinPlantilla } from '../utils/whatsapp';
 import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 import { useDeslizarPreFinalizadas } from '../hooks/useDeslizarPreFinalizadas';
 import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
+import { fallaVisible } from '../utils/fallaVisible';
 
 const COLUMNAS = 8;
 // Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
@@ -189,7 +190,7 @@ export default function TicketsTable({
                       {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
+                      {fallaVisible(ticket)}
                       {instalacionSinUbicacion(ticket) && (
                         canEditTickets ? (
                           <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Sin ubicación: copia el enlace y haz clic para guardarlo" aria-label="Sin ubicación: pegar el enlace de ubicación" className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full border border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">

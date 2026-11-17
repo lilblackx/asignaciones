@@ -12,7 +12,7 @@ export default function CodigoOrden({ ticket, onCopiar, className = '', vacio = 
       onClick={() => onCopiar(ticket)}
       title="Copiar mensaje para el cliente"
       aria-label={`Copiar el mensaje para el cliente de la orden ${ticket.codigo}`}
-      className={`${className} cursor-pointer hover:underline max-lg:inline-flex max-lg:items-center max-lg:min-h-11 max-lg:min-w-11 max-lg:underline max-lg:decoration-dotted max-lg:underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500 rounded-sm`}
+      className={`${className} cursor-pointer hover:underline max-lg:relative max-lg:inline-flex max-lg:items-center max-lg:after:absolute max-lg:after:-inset-x-2 max-lg:after:-inset-y-3 max-lg:underline max-lg:decoration-dotted max-lg:underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500 rounded-sm`}
     >
       {codigo}
     </button>
