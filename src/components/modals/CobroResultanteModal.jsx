@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Camera, CheckCheck, Clock, MapPin, Plug, Tag, User, Wrench } from 'lucide-react';
+import { Camera, CheckCheck, ChevronDown, Clock, Landmark, MapPin, Plug, Tag, User, Wrench } from 'lucide-react';
 import Modal from '../Modal';
 import AsistentePasos, { BotonesPasos } from '../AsistentePasos';
 import BotonCopiar from '../BotonCopiar';
+import FormasPagoLista from './FormasPagoLista';
+import Colapsable from '../Colapsable';
 import FormularioPagoCliente from '../FormularioPagoCliente';
 import DetallesOrdenCampo from '../DetallesOrdenCampo';
 import { useCopiado } from '../../hooks/useCopiado';
@@ -56,6 +58,8 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   const { pidePago, pideDetalles } = pendientesDe(ticket, registro);
   // Los pasos se fijan al abrir (el indicador no cambia aunque ya se registre el pago).
   const [pasos] = useState(() => pasosDe({ pidePago, pideDetalles }));
+  // Las formas de pago de la empresa, plegadas hasta que el técnico las pida (el cliente a veces pregunta a dónde pagar).
+  const [verFormas, setVerFormas] = useState(false);
   // Lo hecho se salta: al registrar el pago se pasa solo a las fotos.
   const hecho = (clave) => (clave === 'pago' && !pidePago) || (clave === 'detalles' && !pideDetalles);
   const nav = usePasosAsistente(pasos, hecho);
@@ -134,6 +138,30 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
     </div>
   );
 
+  // Las formas de pago de la empresa, junto al monto: por si el cliente pregunta a dónde pagar. Cada dato se copia con un toque. No salen en una orden exonerada (no hay nada que pagar) ni cuando solo faltan las fotos.
+  const formasDelCobro = onCopy && formas.length > 0 && !exonerado && !solo && (
+    <section aria-label="Formas de pago de la empresa" className="mx-5 mt-3">
+      <button
+        type="button"
+        onClick={() => setVerFormas((v) => !v)}
+        aria-expanded={verFormas}
+        aria-controls="cobro-formas-de-pago"
+        className="w-full min-h-11 px-4 inline-flex items-center justify-between gap-2 rounded-boton border border-input bg-card hover:bg-secondary text-sm font-bold text-foreground transition-colors"
+      >
+        <span className="inline-flex items-center gap-2"><Landmark className="w-4 h-4 text-red-700 dark:text-red-400" aria-hidden="true" /> Formas de pago de la empresa</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${verFormas ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      <Colapsable>
+        {verFormas && (
+          <div id="cobro-formas-de-pago" className="pt-3 space-y-3">
+            <p className="text-xs text-muted-foreground">Si el cliente las necesita, aquí están los datos para pagar el monto de arriba. Toca para copiar cada uno.</p>
+            <FormasPagoLista formas={formas} onCopy={onCopy} />
+          </div>
+        )}
+      </Colapsable>
+    </section>
+  );
+
   // Escape no lo cierra: el técnico debe confirmar con el botón.
   if (!porPasos) {
     return (
@@ -142,6 +170,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           {encabezado}
           <div className="flex-1 min-h-0 overflow-y-auto">
             {cuadroDelCobro}
+            {formasDelCobro}
             {valoresDelCliente}
             {datosDeLaOrden}
           </div>
@@ -191,6 +220,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
         {clave === 'cobro' && (
           <>
             {cuadroDelCobro}
+            {formasDelCobro}
             {valoresDelCliente}
             {datosDeLaOrden}
           </>

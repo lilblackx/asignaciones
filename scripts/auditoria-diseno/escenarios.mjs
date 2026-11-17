@@ -63,6 +63,8 @@ const preFinalizarInstalacion = [
 // Lo que comparten los técnicos antes de abrir una orden.
 const inicioTecnico = [
   { id: 'lista', preparar: async () => true },
+  // La pantalla del cobro con las formas de pago de la empresa desplegadas (el técnico las abre si el cliente las pide).
+  { id: 'cobro-formas', preparar: async (n) => { await n.dormir(600); return clicTexto(n, 'formas de pago de la empresa'); }, espera: 1200 },
   // Con órdenes finalizadas por avisar, el técnico ve primero los avisos de cobro: "Hacerlo después" los pasa y deja ver las tarjetas.
   { id: 'tarjetas', preparar: async (n) => { for (let i = 0; i < 5; i += 1) { if (!(await n.clic('hacerlo después'))) break; await n.dormir(900); } return true; } },
   { id: 'lista-abajo', preparar: desplazarAbajo('body'), limpiar: async (n) => { await n.ev(() => { document.scrollingElement.scrollTop = 0; document.querySelectorAll('*').forEach((e) => { if (e.scrollTop) e.scrollTop = 0; }); }); } },
