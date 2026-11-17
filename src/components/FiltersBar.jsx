@@ -42,7 +42,7 @@ export default function FiltersBar({
     { value: 'CANCELADO', label: 'Cancelados' }
   ];
   const tipoItems = [
-    { value: 'TODOS', label: 'Todos los trabajos' },
+    { value: 'TODOS', label: 'Todos' },
     ...TIPOS_TRABAJO.map(tipo => ({ value: tipo.toUpperCase(), label: tipo }))
   ];
   const sortItems = [
@@ -75,9 +75,23 @@ export default function FiltersBar({
       </div>
 
       <Colapsable>{filtersOpen && (
-        <div className="rounded-card shadow-card border border-transparent bg-card p-3 space-y-3">
-          <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isTecnico ? 'md:max-w-xl' : 'md:grid-cols-3 md:max-w-3xl'}`}>
-            <div className="flex flex-col gap-1 min-w-0">
+        <div className="rounded-card shadow-card border border-transparent bg-card p-3 space-y-2.5">
+          {/* El título del panel y, a la derecha, "Limpiar filtros" (solo con algún filtro puesto): siempre en el mismo sitio, sin gastar una fila debajo. */}
+          <div className="flex items-center justify-between gap-2 min-h-8">
+            <h3 className="text-sm font-black text-foreground">Filtros</h3>
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="relative inline-flex items-center gap-1 px-1 font-bold text-xs text-red-700 dark:text-red-400 hover:underline max-lg:after:absolute max-lg:after:-inset-x-1 max-lg:after:-inset-y-3"
+              >
+                <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar filtros ({activeFiltersCount})
+              </button>
+            )}
+          </div>
+          {/* PC: los tres desplegables se reparten el ancho. Celular: el estado (las opciones más largas) arriba y, debajo, el trabajo y el orden lado a lado. */}
+          <div className={`grid gap-2.5 ${isTecnico ? 'grid-cols-2' : 'grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:grid-cols-3'}`}>
+            <div className={`flex flex-col gap-1 min-w-0 ${isTecnico ? '' : 'max-md:col-span-2'}`}>
               <span className={ETIQUETA}>Estado</span>
               <SelectMenu id="status-filter" ariaLabel="Filtrar por estado" icon={Filter} value={statusFilter} onChange={setStatusFilter} items={statusItems} />
             </div>
@@ -94,15 +108,6 @@ export default function FiltersBar({
               </div>
             )}
           </div>
-          {activeFiltersCount > 0 && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="inline-flex items-center gap-1 font-bold text-xs text-red-700 dark:text-red-400 hover:underline"
-            >
-              <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar filtros
-            </button>
-          )}
         </div>
       )}</Colapsable>
     </div>
