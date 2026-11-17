@@ -55,7 +55,7 @@ export default function HeaderMovil({
         </div>
       )}
       <button type="button" onClick={onGoHome} aria-label="Volver al inicio" className={`flex items-center gap-3 min-w-0 flex-1 text-left ${isAdmin ? 'lg:hidden' : ''}`}>
-        {!isAdmin && <img src={logo} alt="" width="44" height="44" className="w-11 h-11 rounded-card shrink-0" />}
+        {!isAdmin && <img src={logo} alt="" width="44" height="44" className="w-11 h-11 rounded-campo shrink-0" />}
         <span className="min-w-0 leading-tight">
           <span className="block text-base font-black text-foreground truncate">{isAdmin ? 'Asignaciones' : `Hola, ${primerNombre(nombre)}`}</span>
           <span className="block text-xs font-bold text-muted-foreground truncate">{isAdmin ? primerNombre(nombre) : (ETIQUETA_ROL[role] || role)}</span>

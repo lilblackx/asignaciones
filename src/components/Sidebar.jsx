@@ -82,18 +82,18 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
         aria-label="Módulos"
         className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:m-4 lg:rounded-card lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-card max-lg:rounded-r-card shadow-card max-lg:overflow-hidden text-foreground overflow-hidden`}
       >
-        <div className={`flex items-center justify-between px-5 h-16 shrink-0 text-foreground ${colapsado ? 'lg:flex-col lg:justify-center lg:h-auto lg:gap-1 lg:px-2 lg:pt-4 lg:pb-1' : ''}`}>
-          <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className="flex items-center rounded-boton hover:opacity-80 transition-opacity">
-            <span className="flex items-center gap-3"><img src={logos.login192} alt="" width="40" height="40" className="w-10 h-10 rounded-card shrink-0" /><span className={`text-base font-black text-foreground ${colapsado ? 'lg:hidden' : ''}`}>Asignaciones</span></span>
+        <div className={`flex items-center justify-between gap-2 px-3 h-16 shrink-0 border-b border-border text-foreground ${colapsado ? 'lg:flex-col lg:justify-center lg:h-auto lg:gap-1 lg:px-2 lg:pt-4 lg:pb-3' : ''}`}>
+          <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className="flex items-center min-w-0 rounded-boton hover:opacity-80 transition-opacity">
+            <span className="flex items-center gap-2.5 min-w-0"><img src={logos.login192} alt="" width="40" height="40" className="w-10 h-10 rounded-campo shrink-0" /><span className={`min-w-0 text-left leading-tight ${colapsado ? 'lg:hidden' : ''}`}><span className="block text-sm font-black text-foreground truncate">Network Speed</span><span className="block text-xs text-muted-foreground truncate">Asignaciones</span></span></span>
           </button>
           <button
             type="button"
             onClick={alternar}
             aria-label={colapsado ? 'Expandir menú' : 'Contraer menú'}
             title={colapsado ? 'Expandir menú' : 'Contraer menú'}
-            className="hidden lg:block p-2 rounded-boton text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="hidden lg:flex shrink-0 items-center justify-center w-7 h-7 rounded-boton text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
-            {colapsado ? <ChevronsRight className="w-5 h-5" aria-hidden="true" /> : <ChevronsLeft className="w-5 h-5" aria-hidden="true" />}
+            {colapsado ? <ChevronsRight className="w-4 h-4" aria-hidden="true" /> : <ChevronsLeft className="w-4 h-4" aria-hidden="true" />}
           </button>
           <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="relative flex items-center justify-center p-1.5 rounded-boton after:absolute after:-inset-2 text-muted-foreground hover:bg-accent lg:hidden"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>

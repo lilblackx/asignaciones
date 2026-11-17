@@ -36,7 +36,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
 
         <header className="px-6 pt-20 sm:px-8 lg:w-1/2 lg:flex lg:flex-col lg:justify-between lg:px-16 lg:py-14 lg:bg-black lg:border-r-8 lg:border-primary">
           <div className="flex items-center gap-4 lg:hidden">
-            <img src={logos.login192} alt="Network Speed" width="64" height="64" className="w-16 h-16 rounded-card" />
+            <img src={logos.login192} alt="Network Speed" width="64" height="64" className="w-16 h-16 rounded-campo" />
             <p className="text-base font-bold text-foreground">Network Speed Fibra</p>
           </div>
           <div className="hidden lg:block" aria-hidden="true" />
