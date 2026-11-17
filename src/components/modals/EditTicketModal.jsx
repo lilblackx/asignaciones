@@ -2,7 +2,6 @@ import { observacionParaTecnico } from '../../utils/observacion';
 import { useMemo, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion, ubicacionObligatoria } from '../../utils/ubicacion';
-import ContactoCliente from '../ContactoCliente';
 import Modal from '../Modal';
 import SelectMenu from '../SelectMenu';
 import ConfirmCodigoAltoModal from './ConfirmCodigoAltoModal';
@@ -18,6 +17,7 @@ import { formularioDatosTecnico, formularioModificado, tieneDatosDelTecnico, val
 import { todasLasOrdenes } from '../../utils/gestionTecnicos';
 import { CedulaField, GarantiaField, ObservacionField, ObservacionTecnicoField, TecnicoField, TipoTrabajoField, TurnoSugeridoBanner } from './TicketFormFields';
 import { promotoraDeOrden, tipoUsaPlantillaPromotora } from '../../utils/whatsapp';
+import { claveNombre, MENSAJE_PROMOTOR_CAMPO } from '../../utils/promotora';
 import { devolucionPendiente } from '../../utils/devolucion';
 import { MAX_LARGO_MOTIVO_CANCELACION, cancelaAhora, parseMotivoCancelacion } from '../../utils/cancelacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
@@ -74,6 +74,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   const cobroResuelto = pideCobroAcordado ? resolverCobroAcordado(cobroSel) : null;
 
   const esInstalacion = editingTicket.tipoTrabajo?.toUpperCase().includes('INSTAL');
+  const faltaPromotor = !isTecnico && esInstalacion && !claveNombre(editingTicket.promotora ?? promotoraDeOrden(editingTicket) ?? '');
   // Instalación o reconexión que se creó sin la plantilla de la promotora: aquí se puede pegar. Si ya la tiene, no se
   // edita (la original no se toca). Se decide al abrir, para que el campo no desaparezca mientras se pega.
   const [faltabaPlantilla] = useState(() => tipoUsaPlantillaPromotora(editingTicket.tipoTrabajo) && !isTecnico && !String(editingTicket.plantillaOriginal || '').trim());
@@ -252,7 +253,6 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             />
             {veFalta(faltaTelefono) && <p role="alert" className={AVISO}>Escribe el teléfono del cliente.</p>}
           </div>
-          <ContactoCliente telefono={editingTicket.telefono} nombre={editingTicket.nombre} className="col-span-2" />
           <Seccion>Trabajo</Seccion>
           <TipoTrabajoField
             variant="create"
@@ -355,13 +355,15 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           )}
           {esInstalacion && !isTecnico && (
             <PromotorField
+              suave
               id="ed-promotora"
               value={editingTicket.promotora ?? promotoraDeOrden(editingTicket)}
               onChange={handleEditChange}
               wrapperClassName="col-span-2 space-y-0.5"
               labelClassName={ETIQUETA}
-              inputClassName={CAMPO_ORDEN}
+              inputClassName={claseCampo('compacto', veFalta(faltaPromotor) ? 'error' : 'normal')}
               ayuda="(con él lo ve el promotor)"
+              error={veFalta(faltaPromotor) ? MENSAJE_PROMOTOR_CAMPO : ''}
             />
           )}
           {faltabaPlantilla && (

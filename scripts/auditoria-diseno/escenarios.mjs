@@ -185,6 +185,11 @@ export default [
   // Los demás roles en su propia vista: la cabecera de cada uno.
   { id: 'almacen', usuario: 'almacen', clave: 'Almacen1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
   { id: 'promotora', usuario: 'promotora', clave: 'Promotora1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
+  // Nueva venta: la usuaria "ventas" (promotora con permiso de crear ventas; la siembra es scripts/seed-ventas-emulator.mjs).
+  { id: 'ventas', usuario: 'ventas', clave: 'Ventas1234', pantallas: [
+    { id: 'nueva-venta', preparar: (n) => n.clic('nueva venta'), limpiar: (n) => n.esc(), espera: 1500 },
+    { id: 'nueva-venta-errores', preparar: async (n) => { await n.clic('nueva venta'); await n.dormir(800); return n.clic('guardar', { dentro: true }); }, limpiar: (n) => n.esc() },
+  ] },
   { id: 'usuario', usuario: 'usuario', clave: 'Usuario1234', pantallas: [{ id: 'panel', preparar: async () => true, espera: 2200 }] },
   // Los módulos del administrador que no estaban: cada uno con su cabecera.
   {
