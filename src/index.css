@@ -119,6 +119,8 @@
   background-color: var(--primary);
 }
 .encabezado-d .text-white { color: var(--foreground); }
+/* Lo que lleva un fondo de color sólido dentro del encabezado (el botón principal, las insignias rojas) conserva su texto blanco: con el texto oscuro del encabezado daba 3.65:1 sobre el rojo. */
+.encabezado-d :is(.bg-primary, .bg-red-500, .bg-red-600, .bg-red-700, .bg-emerald-600, .bg-emerald-700, .bg-blue-600, .bg-blue-700).text-white { color: #fff; }
 .encabezado-d .text-amber-400 { color: #b45309; }
 .dark .encabezado-d .text-amber-400 { color: #fbbf24; }
 /* Los acentos claros (-400) de los encabezados no se leen sobre el encabezado claro: en claro van en su tono -700 (4.5:1 o más sobre blanco); en oscuro se quedan como estaban. */

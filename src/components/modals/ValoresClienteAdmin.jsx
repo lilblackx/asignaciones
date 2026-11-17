@@ -12,7 +12,7 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligat
   return (
     <div className="space-y-1">
       <label htmlFor={id} className="text-xs font-bold text-card-foreground ml-1">
-        {etiqueta} <span className={`font-normal ${obligatorio ? 'text-red-500' : 'text-muted-foreground'}`}>{obligatorio ? '(obligatorio)' : '(opcional)'}</span>
+        {etiqueta} <span className={`font-normal ${obligatorio ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground'}`}>{obligatorio ? '(obligatorio)' : '(opcional)'}</span>
       </label>
       <input
         id={id}
