@@ -6,7 +6,7 @@ import { iniciales } from '../utils/nombreTecnico';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 // Los botones del pie (tema y cerrar sesión): cuadrados redondeados con su propio fondo y borde, no iconos sueltos.
-const BOTON_PIE = 'shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-boton bg-card text-muted-foreground hover:text-foreground hover:bg-accent shadow-card transition-colors';
+const BOTON_PIE = 'shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-boton bg-card text-muted-foreground hover:text-foreground hover:bg-accent shadow-card transition-colors';
 
 const leerColapsado = () => { try { return localStorage.getItem(CLAVE_COLAPSADO) === '1'; } catch { return false; } };
 const guardarColapsado = (valor) => { try { localStorage.setItem(CLAVE_COLAPSADO, valor ? '1' : '0'); } catch { /* sin almacenamiento: queda solo en esta sesión */ } };
@@ -135,11 +135,11 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
 
         {/* El pie es una tarjeta redondeada que flota dentro del menú (como las demás tarjetas de la app), no una franja recta. */}
         <div className="shrink-0 p-2">
-          <div className={`rounded-campo bg-secondary p-2 flex items-center gap-2.5 ${colapsado ? 'lg:flex-col lg:p-1.5' : ''}`}>
+          <div className={`rounded-campo bg-secondary p-1.5 flex items-center gap-2 ${colapsado ? 'lg:flex-col lg:p-1.5' : ''}`}>
             {/* Las iniciales en un círculo (como los técnicos de la lista) con el punto verde de "conectado" en la esquina; el nombre y el rol al lado. */}
-            <span aria-hidden="true" className="relative shrink-0 w-9 h-9 rounded-full bg-foreground text-background inline-flex items-center justify-center text-xs font-black leading-none">
+            <span aria-hidden="true" className="relative shrink-0 w-8 h-8 rounded-full bg-foreground text-background inline-flex items-center justify-center text-[11px] font-black leading-none">
               {iniciales(nombre)}
-              <span className="absolute -right-0.5 -bottom-0.5 w-3 h-3 rounded-full bg-emerald-600 dark:bg-emerald-400 border-2 border-secondary" />
+              <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400 border-2 border-secondary" />
             </span>
             <div className={`min-w-0 flex-1 leading-tight ${colapsado ? 'lg:hidden' : ''}`} title={`${nombre} · conectado`}>
               <p className="truncate text-sm font-black text-foreground">{nombre}</p>
