@@ -22,9 +22,9 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      {/* En PC son dos mitades: la marca a la izquierda (siempre sobre negro, es el color de la marca) y el formulario a la derecha.
+      {/* En PC son dos mitades sueltas sobre el fondo cálido: la marca a la izquierda (una tarjeta negra, el color de la marca) y el formulario a la derecha, en su propia tarjeta.
           En celular la marca queda arriba del formulario. */}
-      <div className="relative min-h-dvh bg-background font-sans flex flex-col lg:flex-row">
+      <div className="relative min-h-dvh bg-background font-sans flex flex-col lg:flex-row lg:gap-4 lg:p-4">
         <button
           type="button"
           onClick={() => setIsDarkMode(!isDarkMode)}
@@ -34,7 +34,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
           {isDarkMode ? <Sun className="w-5 h-5" aria-hidden="true" /> : <Moon className="w-5 h-5" aria-hidden="true" />}
         </button>
 
-        <header className="px-6 pt-20 sm:px-8 lg:w-1/2 lg:flex lg:flex-col lg:justify-between lg:px-16 lg:py-14 lg:bg-black lg:border-r-8 lg:border-primary">
+        <header className="px-6 pt-20 sm:px-8 lg:w-1/2 lg:flex lg:flex-col lg:justify-between lg:px-14 lg:py-12 lg:bg-black lg:rounded-card lg:overflow-hidden dark:lg:border dark:lg:border-border">
           <div className="flex items-center gap-4 lg:hidden">
             <img src={logos.login192} alt="Network Speed" width="64" height="64" className="w-16 h-16 rounded-campo" />
             <p className="text-base font-bold text-foreground">Network Speed Fibra</p>
@@ -56,14 +56,14 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
             <h1 className="mt-6 lg:mt-0 text-3xl sm:text-4xl lg:text-6xl font-black leading-[1.05] tracking-tight text-foreground lg:text-white">
               Control de<br />Asignaciones
             </h1>
-            {/* La línea roja del encabezado de la app, gruesa. En PC es el borde entre las dos mitades. */}
-            <div className="mt-6 h-1.5 w-16 rounded-full bg-primary lg:hidden" aria-hidden="true" />
+            {/* La línea roja corta de la marca, bajo el título. */}
+            <div className="mt-6 lg:mt-5 h-1.5 w-16 rounded-full bg-primary" aria-hidden="true" />
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col lg:w-1/2 lg:bg-card">
-          <div className="flex-1 w-full max-w-md mx-auto px-6 pt-8 pb-10 sm:px-8 lg:max-w-sm lg:px-0 lg:pt-0 lg:flex lg:flex-col lg:justify-center">
-            <form onSubmit={onSubmit} className="space-y-5 max-lg:bg-card max-lg:rounded-card max-lg:shadow-card max-lg:p-5">
+        <main className="flex-1 flex flex-col lg:w-1/2">
+          <div className="flex-1 w-full max-w-md mx-auto px-6 pt-8 pb-10 sm:px-8 lg:max-w-sm lg:px-0 lg:pt-0 lg:pb-0 lg:flex lg:flex-col lg:justify-center">
+            <form onSubmit={onSubmit} className="space-y-5 bg-card rounded-card shadow-card p-5 lg:p-8">
               <div>
                 <label htmlFor="login-usuario" className={labelClass}>Usuario</label>
                 <input
