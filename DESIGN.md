@@ -93,3 +93,15 @@ Dirección de diseño de la app de Network Speed Fibra (órdenes, técnicos, Fin
 
 - Rediseñar sin mostrar capturas antes y sin respetar esta dirección.
 - Cambiar reglas de negocio al ajustar la interfaz.
+
+## Pendiente del rediseño (rama `rediseno`)
+
+Hecho hasta el commit "Rediseño: revisión de accesibilidad y contraste": tokens, login, lista del técnico, Pre-finalizar, panel, Finanzas, Reportes, Usuarios, Tasa, Configuración y Nueva asignación. Contraste medido en 40 combinaciones de pantalla, tamaño y tema: 0 fallos.
+
+Falta:
+
+1. **Modales de PC sin recorrer:** pasos de fotos, metraje y cobro de Pre-finalizar, y los modales de Reportes.
+2. **Pantallas sin auditar:** módulo Ubicación (apagado) y los roles almacén, promotora, finanzas e infraestructura en PC. Oficina, técnico y administrador sí están medidos.
+3. **Revisión final:** repasar el login oscuro y las pantallas con datos reales (las capturas usan órdenes de prueba).
+4. **Despliegue:** nada está subido. La rama `rediseno` está bloqueada para desplegar por el candado; no desplegar hasta que se levante.
+5. **Disco:** las pruebas con Chrome dejan perfiles temporales en la carpeta temporal; borrarlos al terminar (C: llegó a 0 de espacio).
