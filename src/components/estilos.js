@@ -2,8 +2,11 @@
 // borde fino, títulos en mayúsculas pequeñas). Quien necesite la letra más grande usa el selector "Tamaño de letra" de Finanzas, que agranda todo junto (todo está en rem).
 export const TARJETA = 'bg-card rounded-card border border-transparent shadow-sm shadow-card';
 export const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold uppercase tracking-wide text-muted-foreground';
+// La etiqueta de un campo de formulario va en minúscula normal; las mayúsculas con espaciado son solo para encabezados de tabla (ETIQUETA).
+export const ETIQUETA_CAMPO = 'text-xs font-semibold text-muted-foreground';
 export const TEXTO_SUAVE = 'text-xs text-muted-foreground';
-export const TITULO_SECCION = 'text-sm font-black uppercase tracking-wide text-foreground';
+// El título de una tarjeta o sección: minúscula normal, como pide DESIGN.md (las mayúsculas son para encabezados de tabla, estados y la marca).
+export const TITULO_SECCION = 'text-base font-black text-foreground';
 
 
 // --- Campos: cajas de texto, áreas de texto, selectores y calendarios. SALEN TODOS DE AQUÍ (scripts/test-campos-radio.mjs falla si un campo trae sus clases a mano).

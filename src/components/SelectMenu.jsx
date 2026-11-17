@@ -146,7 +146,12 @@ export default function SelectMenu({
         onPointerEnter={() => setActiveIndex(i)}
         onClick={() => choose(opt)}
       >
-        <span className="truncate">{opt.label}</span>
+        {opt.descripcion ? (
+          <span className="min-w-0">
+            <span className="block truncate">{opt.label}</span>
+            <span className="block text-xs font-normal text-muted-foreground">{opt.descripcion}</span>
+          </span>
+        ) : <span className="truncate">{opt.label}</span>}
         {isSelected && <Check className="w-4 h-4 shrink-0" aria-hidden="true" />}
       </li>
     );
