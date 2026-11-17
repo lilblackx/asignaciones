@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, X } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import Spinner from '../Spinner';
@@ -8,6 +8,7 @@ import { leerOrdenParaCorregir, guardarOrdenCorregida } from '../../lib/ordenesC
 import { esInstalacion } from '../../utils/instalacion';
 import { corregirDatosParaEnvio } from '../../utils/correccionEnvio';
 import { formularioDatosTecnico, tieneDatosDelTecnico } from '../../utils/edicionDatosTecnico';
+import BotonCerrar from '../BotonCerrar';
 
 // Corrige lo que viaja al almacén de una orden (serial, metraje, conectores...) desde "Envíos al inventario", aunque la orden ya esté cerrada
 // (entonces vive dentro de su reporte de cierre). Solo esos datos: el cobro, el técnico y el estado no se tocan. Después se reenvía.
@@ -70,7 +71,7 @@ export default function CorregirEnvioModal({ envio, usuario, onReenviar, onClose
             <h2 id="corregir-envio-titulo" className="text-base font-black text-white">Corregir {envio.codigo || 'S/C'}</h2>
             <p className="text-xs font-bold text-zinc-300 truncate">{envio.cliente}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

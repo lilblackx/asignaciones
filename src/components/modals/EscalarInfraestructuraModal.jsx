@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HardHat, X } from 'lucide-react';
+import { HardHat } from 'lucide-react';
 import Modal from '../Modal';
 import { AccionesConfirmacion } from './DialogoConfirmacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
@@ -8,6 +8,7 @@ import { cambioMientrasAbierta } from '../../utils/concurrencia';
 import AvisoCambioDeOrden from '../AvisoCambioDeOrden';
 import AvisoRevision from '../AvisoRevision';
 import { claseArea } from '../estilos';
+import BotonCerrar from '../BotonCerrar';
 
 // El técnico (o la oficina) deja la orden esperando a infraestructura, con el motivo (ver utils/infraestructura).
 // `onConfirmar(ticket, motivo)` guarda y avisa; devuelve true si se pudo. `esTecnico` solo cambia lo que se explica.
@@ -42,9 +43,7 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
             <AvisoCambioDeOrden texto={cambio} encabezado />
             {!cambio && <AvisoRevision nombres={otrosRevisando} encabezado />}
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

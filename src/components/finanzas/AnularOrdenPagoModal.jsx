@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Ban, X } from 'lucide-react';
+import { Ban } from 'lucide-react';
 import Modal from '../Modal';
 import { AccionesConfirmacion } from '../modals/DialogoConfirmacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { MAX_MOTIVO_ANULACION, dolares, parseMotivoAnulacion } from '../../utils/finanzas';
 import { claseArea } from '../estilos';
+import BotonCerrar from '../BotonCerrar';
 
 // Anular el pago de UNA orden de un pago: pide el motivo, que el técnico ve en su aviso. La orden vuelve a estar por pagar; el pago sigue vigente con el resto de sus órdenes.
 // `onConfirmar(motivo)` guarda y avisa al técnico; devuelve true si se pudo.
@@ -33,9 +34,7 @@ export default function AnularOrdenPagoModal({ orden, tecnico, onConfirmar, onCl
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{tecnico} · {dolares(orden.monto)}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

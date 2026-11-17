@@ -1,7 +1,8 @@
-import { Camera, X } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import Modal from '../Modal';
 import DetallesOrdenCampo from '../DetallesOrdenCampo';
 import { FOTOS_EXACTAS, fotosDe } from '../../utils/detallesOrden';
+import BotonCerrar from '../BotonCerrar';
 
 // El técnico corrige los "Detalles de la orden" que ya subió: quita o cambia fotos (por si se equivocó) y agrega otras, siempre 7. Solo mientras la orden siga finalizada en su lista (el cierre del día la archiva).
 // `onGuardar(ticket, fotos, onProgreso)` -> { ok } | { error } (ver DetallesOrdenCampo); al guardar se cierra solo.
@@ -15,9 +16,7 @@ export default function CorregirDetallesModal({ ticket, onGuardar, onClose }) {
             <p className="text-xs font-bold text-emerald-400">{ticket.codigo || 'S/C'}</p>
             <h2 id="corregir-detalles-titulo" className="text-sm font-black text-white mt-0.5 truncate inline-flex items-center gap-2"><Camera className="w-4 h-4 shrink-0" aria-hidden="true" />Corregir las fotos de la orden</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
         <div className="p-4 sm:p-5 space-y-3">
           <p className="text-xs text-muted-foreground">Quita con la X una foto equivocada o cámbiala por otra con la flecha, y agrega las que falten. Tienen que quedar exactamente {FOTOS_EXACTAS} fotos. Se corrige mientras la orden siga en tu lista de finalizadas.</p>

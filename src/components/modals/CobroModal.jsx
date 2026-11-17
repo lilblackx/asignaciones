@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { montoCalculadora } from '../../utils/montoCalculadora';
-import { Ban, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
+import { Ban, Check, CheckCircle2, Copy, Pencil, Undo2 } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import Colapsable from '../Colapsable';
@@ -15,6 +15,7 @@ import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, MENSAJE_SIN_PAGO_DEL_TECNICO, diasEsperando, faltaElPagoDelTecnico, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
 import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
 import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
@@ -86,7 +87,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
             </div>
             <p className="text-xs font-bold text-zinc-300 truncate">{cobro.nombre}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

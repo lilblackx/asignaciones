@@ -1,4 +1,4 @@
-import { Check, Copy, X } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import { useState } from 'react';
 import Modal from '../Modal';
 import TelefonoAccion from '../TelefonoAccion';
@@ -6,6 +6,7 @@ import { ETIQUETA } from '../estilos';
 import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { CLASE_PAGO_FINANZAS, ETIQUETA_PAGO_FINANZAS, textoPago } from '../../utils/pagoCliente';
+import BotonCerrar from '../BotonCerrar';
 
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 
@@ -39,7 +40,7 @@ export default function PagoRegistradoModal({ pago, onClose }) {
             </div>
             <p className="text-xs font-bold text-zinc-300 truncate">{pago.nombre}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

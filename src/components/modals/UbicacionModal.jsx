@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { MapPin, X } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import Modal from '../Modal';
 import { normalizarUbicacion } from '../../utils/ubicacion';
 import Spinner from '../Spinner';
 import { claseCampo } from '../estilos';
+import BotonCerrar from '../BotonCerrar';
 
 // Pegado manual de la ubicación de una orden. Se abre cuando el portapapeles no
 // tenía un enlace válido, o para cambiar una ubicación ya guardada.
@@ -29,7 +30,7 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
             <h2 className="text-sm font-black text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-sky-400" aria-hidden="true" /> UBICACIÓN</h2>
             <p className="text-[11px] max-lg:text-xs font-medium text-sky-400">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
         <form onSubmit={onSubmit} className="p-4 space-y-3">
           {!ticket.ubicacion && (

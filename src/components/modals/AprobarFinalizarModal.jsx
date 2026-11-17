@@ -1,6 +1,6 @@
 import { textoMetrajeConMarcas } from '../../utils/metraje';
 import { useState } from 'react';
-import { Banknote, Cable, CheckCheck, CircleAlert, Eye, Undo2, User, Wrench, X } from 'lucide-react';
+import { Banknote, Cable, CheckCheck, CircleAlert, Eye, Undo2, User, Wrench } from 'lucide-react';
 import Modal from '../Modal';
 import AsistentePasos, { BotonesPasos } from '../AsistentePasos';
 import { usePasosAsistente } from '../../hooks/usePasosAsistente';
@@ -29,6 +29,7 @@ import { cambioMientrasAbierta } from '../../utils/concurrencia';
 import { claseArea } from '../estilos';
 import PagoDelCliente from '../PagoDelCliente';
 import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
 
 const PASO_ETIQUETA = { revisar: 'Revisar', autorizar: 'Autorizar', cobro: 'Cobro', valores: 'Valores', decision: 'Decisión' };
 const PASO_DE = (clave) => ({ clave, etiqueta: PASO_ETIQUETA[clave] });
@@ -202,9 +203,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
             <AvisoCambioDeOrden texto={cambio} encabezado />
             {!cambio && <AvisoRevision nombres={otrosRevisando} encabezado />}
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
   );
   const aviso = (

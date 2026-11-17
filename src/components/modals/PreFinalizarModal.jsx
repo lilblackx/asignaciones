@@ -1,6 +1,6 @@
 import { observacionParaTecnico } from '../../utils/observacion';
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, MapPin, Plug, Tag, Wrench, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, MapPin, Plug, Tag, Wrench } from 'lucide-react';
 import Modal from '../Modal';
 import AsistentePasos, { BotonesPasos } from '../AsistentePasos';
 import { usePasosAsistente } from '../../hooks/usePasosAsistente';
@@ -36,6 +36,7 @@ import Spinner from '../Spinner';
 import { claseArea, claseCampo } from '../estilos';
 import { guardarBorrador, leerBorrador, olvidarBorrador, versionDeOrden } from '../../utils/borradorPrefinalizar';
 import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
 
 const marcaTexto = (v) => (v == null ? '' : String(v));
 
@@ -329,13 +330,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               {ticket.nombre}
             </h2>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
   );
   const bloqueResumen = (

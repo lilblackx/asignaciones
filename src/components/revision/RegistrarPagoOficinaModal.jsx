@@ -1,8 +1,8 @@
-import { X } from 'lucide-react';
 import Modal from '../Modal';
 import FormularioPagoCliente from '../FormularioPagoCliente';
 import { cobroEsperadoDe } from '../../utils/pagoCliente';
 import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
 
 // Solo el ADMIN, desde Revisión: registra el pago del cliente de una orden a nombre del técnico, cuando el técnico no lo ha registrado y la orden está esperando para aprobarse. Pide escribir por qué lo registra
 // la oficina y queda marcado en la orden, en el pago y en el historial ("registrado por la oficina a nombre del técnico"). Si el cliente todavía no pagó, también puede dejarlo como "paga después".
@@ -18,7 +18,7 @@ export default function RegistrarPagoOficinaModal({ orden, cuentasEmpresa = [], 
             <h2 id="oficina-pago-titulo" className="text-base font-black text-white">Registrar el pago a nombre del técnico</h2>
             <p className="text-xs font-bold text-zinc-300 truncate">{orden.codigo || 'S/C'} · {orden.nombre}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" aria-hidden="true" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
         <div className="p-4 space-y-4">
           <p className="text-xs text-muted-foreground">

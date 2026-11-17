@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, MapPin, Repeat, Star, X } from 'lucide-react';
+import { AlertTriangle, MapPin, Repeat, Star } from 'lucide-react';
 import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { REINCIDENCIA_MUY_RECIENTE_DIAS, VENTANA_REINCIDENCIA_DIAS, aplanarArchivados, buscarHistorialCliente, textoHace } from '../../utils/reincidencia';
@@ -25,6 +25,7 @@ import { llevaCobro } from '../../utils/cobro';
 import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, claseCampo, claseSelector } from '../estilos';
 import { MENSAJE_PROMOTOR_CAMPO, claveNombre } from '../../utils/promotora';
 import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
 
 const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
 const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
@@ -265,7 +266,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             <h2 className="text-sm font-black text-white">NUEVA ASIGNACIÓN</h2>
             <p className="text-xs text-zinc-300 mt-1">Fecha de la orden: {formData.fecha}</p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <form onSubmit={onSubmit} onInvalidCapture={alInvalidar} onInput={() => { if (mensajeInvalido) setMensajeInvalido(''); }} className="flex flex-col min-h-0 flex-1">

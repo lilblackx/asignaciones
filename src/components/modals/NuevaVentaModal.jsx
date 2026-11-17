@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MapPin, Star, X } from 'lucide-react';
+import { MapPin, Star } from 'lucide-react';
 import { TIPOS_POR_TRABAJO } from '../../constants';
 import { MAX_OBSERVACION, TIPO_VENTA, camposDePlantillaVenta, instaladorDePlantilla, tecnicoRegistradoDePlantilla } from '../../utils/ventaPromotora';
 import { leerTecnicos } from '../../hooks/useCrearVenta';
@@ -16,6 +16,7 @@ import Spinner from '../Spinner';
 import Boton from '../Boton';
 import { CAMPO_ORDEN, ETIQUETA_ORDEN, SELECTOR_ORDEN, claseCampo } from '../estilos';
 import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
 
 const TIPOS_ITEMS = [{ value: '', label: 'Seleccione...' }, ...(TIPOS_POR_TRABAJO[TIPO_VENTA] || []).map((t) => ({ value: t, label: t }))];
 // "GERARDO MOLERO" -> "Gerardo Molero" (los técnicos se guardan en mayúsculas).
@@ -91,7 +92,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
       <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-y-auto border border-border">
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center">
           <h2 className="text-sm font-black text-white">NUEVA VENTA</h2>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <form onSubmit={enviar} className="p-4 grid grid-cols-2 gap-2">

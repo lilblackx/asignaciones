@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { CheckCircle2, HardHat, Undo2, User, X } from 'lucide-react';
+import { CheckCircle2, HardHat, Undo2, User } from 'lucide-react';
 import Modal from '../Modal';
 import Spinner from '../Spinner';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import AvisoRevision from '../AvisoRevision';
 import { MAX_LARGO_MOTIVO, RESULTADO_CERRADA, RESULTADO_DEVUELTA, enInfraestructura, infraestructuraDe, textoOrigen } from '../../utils/infraestructura';
 import { claseArea } from '../estilos';
+import BotonCerrar from '../BotonCerrar';
 
 const OPCIONES = [
   {
@@ -50,9 +51,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
             <AvisoRevision nombres={otrosRevisando} encabezado />
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

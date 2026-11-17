@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cable, User, X } from 'lucide-react';
+import { Cable, User } from 'lucide-react';
 import Modal from '../Modal';
 import CobroSelector from './CobroSelector';
 import CobroAcordadoAviso from './CobroAcordadoAviso';
@@ -7,6 +7,7 @@ import { cobroInicialDeOrden } from '../../utils/cobroAcordado';
 import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, MONEDA_BS, parseMontoBs } from '../../utils/cobro';
 import { consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
 import Spinner from '../Spinner';
+import BotonCerrar from '../BotonCerrar';
 
 // La oficina responde cuánto se cobra el recableado que consultó el técnico (ver utils/consultaCobro). Si ya había una
 // respuesta para esos metros se puede cambiar. `onResponder(ticket, { exonerado, otro, moneda })` guarda y avisa al técnico.
@@ -44,9 +45,7 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

@@ -1,5 +1,6 @@
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { BOTON_ENCABEZADO } from './estilos';
+import BotonCerrar from './BotonCerrar';
 
 // La barra negra de arriba de los módulos: el título y, a la derecha, las acciones propias del módulo y la X, que cierra el módulo entero.
 //   onVolver (opcional): un "Volver" a la izquierda (solo en PC) para subir un nivel dentro del módulo; sin él no hay Volver, porque la X ya cierra. Sin onClose (página) no hay X.
@@ -19,7 +20,7 @@ export default function EncabezadoModulo({ Icono, titulo, onClose, onVolver, acc
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {acciones}
         {onClose && (
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-5 h-5" /></button>
+          <BotonCerrar onClick={onClose} grande />
         )}
       </div>
     </div>

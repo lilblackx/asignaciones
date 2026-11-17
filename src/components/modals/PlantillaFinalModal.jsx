@@ -1,7 +1,7 @@
-import { X } from 'lucide-react';
 import Modal from '../Modal';
 import BotonCopiar from '../BotonCopiar';
 import { useCopiado } from '../../hooks/useCopiado';
+import BotonCerrar from '../BotonCerrar';
 
 // La plantilla final de una instalación finalizada, ya llena por el técnico, para que la promotora la lea y la copie
 // (por ejemplo para pegarla en WhatsApp). Solo lectura. `onCopy(texto, mensaje)` copia y avisa con el toast (devuelve si pudo).
@@ -21,7 +21,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
               {orden.nombre && <span className="text-sm font-bold text-zinc-300 truncate">{orden.nombre}</span>}
             </h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors shrink-0"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 overflow-y-auto space-y-1.5">

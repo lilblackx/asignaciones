@@ -1,6 +1,6 @@
 import { observacionParaTecnico } from '../../utils/observacion';
 import { useMemo, useRef, useState } from 'react';
-import { MapPin, X } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion, ubicacionObligatoria } from '../../utils/ubicacion';
 import ContactoCliente from '../ContactoCliente';
 import Modal from '../Modal';
@@ -27,6 +27,7 @@ import CampoFecha from '../CampoFecha';
 import CobroAcordadoField from './CobroAcordadoField';
 import { COBRO_PAGADA, formularioCobroAcordado, resolverCobroAcordado } from '../../utils/cobroAcordado';
 import { llevaCobro } from '../../utils/cobro';
+import BotonCerrar from '../BotonCerrar';
 
 export default function EditTicketModal({ editingTicket, handleEditChange, handleEditSubmit, verificarCodigoManual, technicians, tickets = [], reports = [], napsConocidas, turnoSugerido, cuentasEmpresa = [], onClose, isTecnico = false, esAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -191,7 +192,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             <h2 className="text-sm font-black text-white">{isTecnico ? 'DETALLES / PRE-FINALIZAR' : 'EDITAR ORDEN'}</h2>
             <p className="text-[11px] max-lg:text-xs font-medium text-red-400">Cliente: {editingTicket.nombre}</p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1">
