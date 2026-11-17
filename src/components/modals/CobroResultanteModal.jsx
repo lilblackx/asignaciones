@@ -22,7 +22,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
     <div className="flex items-start gap-2.5">
       <Icon className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" aria-hidden="true" />
       <div className="min-w-0">
-        <p className="text-[11px] max-lg:text-xs font-bold tracking-wide text-muted-foreground">{etiqueta}</p>
+        <p className="text-[11px] max-lg:text-xs font-semibold text-muted-foreground">{etiqueta}</p>
         <p className="text-sm font-bold text-foreground break-words">{valor}</p>
       </div>
     </div>
@@ -72,22 +72,23 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   const clave = nav.clave;
 
   const encabezado = (
-    <div className="bg-emerald-700 text-white px-5 py-4 flex items-center gap-3 shrink-0">
-      <IconoEstado className="w-7 h-7 shrink-0" aria-hidden="true" />
+    <div className="encabezado-d px-5 py-4 flex items-center gap-3 shrink-0">
+      <span className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center ${preFinalizada ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'}`}><IconoEstado className="w-6 h-6" aria-hidden="true" /></span>
       <div className="min-w-0">
         <h2 id="cobro-titulo" className="text-lg sm:text-xl font-black leading-tight">{preFinalizada ? 'Orden pre-finalizada' : 'Orden finalizada'}</h2>
-        <p className="text-xs font-bold opacity-90 truncate">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
+        <p className="text-xs font-medium text-muted-foreground truncate">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
       </div>
     </div>
   );
 
   const datosDeLaOrden = (
     <div className="px-5 py-4 space-y-3">
-      <Dato icon={User} etiqueta="CLIENTE" valor={ticket.nombre} />
-      <Dato icon={Tag} etiqueta="CÉDULA" valor={ticket.cedula ? formatCedula(ticket.cedula, ticket.tipoDocumento) : ''} />
-      <Dato icon={Wrench} etiqueta="TRABAJO" valor={[ticket.tipoTrabajo, ticket.falla].filter(Boolean).join(' - ')} />
-      <Dato icon={MapPin} etiqueta="DIRECCIÓN" valor={ticket.direccion} />
-      <Dato icon={Tag} etiqueta="NAP / CAJA / PUERTO" valor={ticket.nap} />
+      <h3 className="text-base font-black text-foreground">Datos de la orden</h3>
+      <Dato icon={User} etiqueta="Cliente" valor={ticket.nombre} />
+      <Dato icon={Tag} etiqueta="Cédula" valor={ticket.cedula ? formatCedula(ticket.cedula, ticket.tipoDocumento) : ''} />
+      <Dato icon={Wrench} etiqueta="Trabajo" valor={[ticket.tipoTrabajo, ticket.falla].filter(Boolean).join(' - ')} />
+      <Dato icon={MapPin} etiqueta="Dirección" valor={ticket.direccion} />
+      <Dato icon={Tag} etiqueta="NAP / caja / puerto" valor={ticket.nap} />
     </div>
   );
 
@@ -100,8 +101,8 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   // El cuadro verde grande: el monto que se le informa al cliente (o, si solo faltan las fotos, lo que toca hacer).
   const solo = porPasos && clave === 'detalles' && pasos.length === 1;
   const cuadroDelCobro = (
-    <div className="px-5 py-6 text-center bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-900/50">
-      <p className="text-xs sm:text-sm font-black tracking-widest text-emerald-800 dark:text-emerald-300">{solo ? 'DETALLES DE LA ORDEN' : instalacion ? 'PAGO DE LA INSTALACIÓN' : 'COBRO RESULTANTE AL CLIENTE'}</p>
+    <div className="mx-5 mt-3 px-4 py-5 text-center rounded-card bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50">
+      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{solo ? 'Detalles de la orden' : instalacion ? 'Pago de la instalación' : 'Cobro resultante al cliente'}</p>
       {solo ? (
         <p className="mt-2 text-lg font-black text-emerald-800 dark:text-emerald-300 leading-tight">Sube las fotos de tu trabajo para terminar con esta orden.</p>
       ) : instalacion ? (
@@ -117,15 +118,15 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
         </p>
       )}
       {!solo && preFinalizada && !instalacion && <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Informa este monto al cliente ahora. La orden queda pendiente de aprobación.</p>}
-      {!solo && visita && !instalacion && <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-900/50 rounded-full px-3 py-1"><Plug className="w-3.5 h-3.5" aria-hidden="true" /> {visita}</p>}
+      {!solo && visita && !instalacion && <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><Plug className="w-4 h-4" aria-hidden="true" /> {visita}</p>}
       {!solo && !exonerado && !instalacion && onCopy && ticket.cobroBs && (
         <BotonCopiar
           copiado={copiado === 'monto'}
           onClick={() => copiar('monto', textoMonto(ticket.cobroBs, moneda), 'Monto copiado.')}
-          className="mt-3 ml-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1 border"
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 text-sm font-bold rounded-boton px-4 py-2 border"
           tono="bg-card border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
           tonoCopiado="bg-emerald-700 border-emerald-700 text-white"
-          iconoClase="w-3.5 h-3.5"
+          iconoClase="w-4 h-4"
         >
           Copiar monto
         </BotonCopiar>
@@ -137,7 +138,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   if (!porPasos) {
     return (
       <Modal onClose={() => {}} zIndexClass="z-[110]">
-        <div role="alertdialog" aria-labelledby="cobro-titulo" className="w-full max-w-2xl h-[calc(100dvh-2rem)] bg-card rounded-card shadow-2xl border-2 border-emerald-500 flex flex-col overflow-hidden">
+        <div role="alertdialog" aria-labelledby="cobro-titulo" className="w-full max-w-lg max-h-[calc(100dvh-2rem)] bg-card rounded-card shadow-2xl border border-border flex flex-col overflow-hidden">
           {encabezado}
           <div className="flex-1 min-h-0 overflow-y-auto">
             {cuadroDelCobro}
@@ -148,7 +149,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-campo shadow-md transition-colors"
+              className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-boton shadow-md transition-colors"
             >
               {restantes > 0 ? `Entendido (${restantes} más por ver)` : 'Entendido'}
             </button>
@@ -171,7 +172,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
       <AsistentePasos
         rol="alertdialog"
         ariaLabelledBy="cobro-titulo"
-        clasePanel="w-full max-w-2xl h-[calc(100dvh-2rem)] border-2 border-emerald-500"
+        clasePanel="w-full max-w-xl h-[calc(100dvh-2rem)] lg:h-[min(94dvh,54rem)] border border-border"
         etiquetaPasos="Pasos para terminar con la orden"
         pasos={pasos.map(PASO_DE)}
         actual={clave}
@@ -197,7 +198,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
 
         {clave === 'pago' && (
           <section aria-label="Registrar el pago del cliente" className="px-5 py-4 space-y-3">
-            <h3 className="text-sm font-black tracking-wide text-foreground">REGISTRAR EL PAGO DEL CLIENTE</h3>
+            <h3 className="text-base font-black text-foreground">Registrar el pago del cliente</h3>
             <p className="text-xs text-muted-foreground">{instalacion ? 'Anota lo que el cliente pagó por la instalación. Es obligatorio: el cliente paga la instalación de una vez y, sin esto, la oficina no puede aprobar la orden.' : 'Anota lo que el cliente pagó por este cobro. Es obligatorio: si todavía no pagó, di que paga después.'} Antes de guardar te pedimos confirmar los datos.</p>
             <FormularioPagoCliente
               key={ticket.id}
@@ -216,7 +217,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
           <>
             {solo && cuadroDelCobro}
             <section aria-label="Detalles de la orden" className="px-5 py-4 space-y-3">
-              <h3 className="text-sm font-black tracking-wide text-foreground inline-flex items-center gap-2"><Camera className="w-4 h-4" aria-hidden="true" />DETALLES DE LA ORDEN</h3>
+              <h3 className="text-base font-black text-foreground inline-flex items-center gap-2"><Camera className="w-4 h-4" aria-hidden="true" />Detalles de la orden</h3>
               <p className="text-xs text-muted-foreground">Sube 7 fotos del trabajo que hiciste (equipo instalado, cableado, conectores, caja...). Son exactamente 7 y es obligatorio: la oficina no puede aprobar la orden sin ellas. Si no las tienes a la mano, puedes hacerlo después y la orden sigue en tu lista.</p>
               <DetallesOrdenCampo onSubir={(fotos, onProgreso) => registro.onSubirDetalles(ticket, fotos, onProgreso)} />
             </section>
