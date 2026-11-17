@@ -7,7 +7,7 @@ import EncabezadoModulo from '../EncabezadoModulo';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
 import SelectMenu from '../SelectMenu';
-import { CAMPO_FORMULARIO, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../estilos';
+import { CAMPO_FORMULARIO, ETIQUETA_CAMPO, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../estilos';
 
 // Arranca del orden guardado (filtrando técnicos que ya no existen) y agrega
 // al final cualquiera que todavía no esté en la lista (técnico nuevo, o la
@@ -91,8 +91,6 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
     setDeletingId(null);
   };
 
-  // En el celular la fila es: nombre, estado y eliminar (y debajo, el nombre del inventario); en PC son columnas.
-  const columnas = verInventario ? 'grid-cols-[minmax(0,1fr)_auto_auto] md:grid-cols-[minmax(0,1.1fr)_8rem_minmax(0,1.4fr)_2.25rem]' : 'grid-cols-[minmax(0,1fr)_auto_auto] md:grid-cols-[minmax(0,1fr)_8rem_2.25rem]';
   const itemsInventario = (opciones, elegido, noEstaEnLista, cargando) => [
     { value: '', label: cargando ? 'Cargando...' : 'Sin elegir' },
     ...(noEstaEnLista ? [{ value: elegido, label: `${elegido} (no está en el inventario)` }] : []),
@@ -106,9 +104,9 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
 
-            {/* Los técnicos: estado, nombre en el inventario (solo quien gestiona los envíos) y eliminar, todo en una fila. */}
-            <section aria-label="Técnicos" className={`${TARJETA} overflow-hidden`}>
-              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-border">
+            {/* Los técnicos: una tarjeta por persona, con su avatar de color, el interruptor de activo y (solo quien gestiona los envíos) su nombre en el inventario. */}
+            <section aria-label="Técnicos" className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className={TITULO_SECCION}>Técnicos <span className="font-bold text-muted-foreground">({technicians.length})</span></h3>
                 {verInventario && technicians.length > 0 && (
                   <Boton icono={RefreshCw} tamano="compacto" onClick={actualizarTecnicosInventario} disabled={tecnicosInventario === null && !errorInventario}>
@@ -117,22 +115,13 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                 )}
               </div>
               {verInventario && technicians.length > 0 && (
-                <p className={`${TEXTO_SUAVE} px-4 py-2 border-b border-border`}>
+                <p className={TEXTO_SUAVE}>
                   Elige con qué nombre conoce el inventario del almacén a cada técnico. El material y los equipos se descuentan a ese nombre; un técnico sin elegir no envía sus órdenes. Solo tú ves esto.
                 </p>
               )}
-              {errorInventario && <p role="alert" className="px-4 py-2 text-xs font-bold text-red-700 dark:text-red-400">{errorInventario}</p>}
+              {errorInventario && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{errorInventario}</p>}
 
-              {technicians.length > 0 && (
-                <div className={`hidden md:grid ${columnas} gap-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-950 border-b border-border ${ETIQUETA}`}>
-                  <span>Técnico</span>
-                  <span>Estado</span>
-                  {verInventario && <span>Nombre en el inventario</span>}
-                  <span className="sr-only">Eliminar</span>
-                </div>
-              )}
-
-              <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <ul className="grid gap-3 sm:grid-cols-2">
                 {technicians.map(t => {
                   const activo = t.activo !== false;
                   const elegido = t.tecnicoInventario || '';
@@ -142,22 +131,35 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   const inactivoAlla = Boolean(elegido) && !noEstaEnLista && (tecnicosInventario || []).some(o => normalizar(o.nombre) === normalizar(elegido) && !o.activo);
                   const cargandoInv = tecnicosInventario === null && !errorInventario;
                   return (
-                    <li key={t.id} className={`grid ${columnas} gap-x-3 gap-y-2 px-4 py-3 items-center ${verInventario ? 'md:items-start' : ''}`}>
-                      <span className={`order-1 ${verInventario ? 'md:mt-0.5' : ''} inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>
-                        <span className={`w-2 h-2 rounded-full shrink-0 ring-2 ring-white dark:ring-zinc-950 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
-                        <span className="truncate">{t.name}</span>
-                      </span>
-                      <Boton
-                        tamano="compacto"
-                        onClick={() => onToggleActivo(t.id, !activo)}
-                        aria-label={`Marcar ${t.name} como ${activo ? 'inactivo' : 'activo'}`}
-                        title={activo ? 'Marcar como inactivo' : 'Marcar como activo'}
-                        className={`order-2 w-fit ${verInventario ? 'md:mt-0.5' : ''} ${activo ? '!border-emerald-600 !text-emerald-700 dark:!text-emerald-300' : ''}`}
-                      >
-                        {activo ? 'Activo' : 'Inactivo'}
-                      </Boton>
+                    <li key={t.id} className={`${TARJETA} p-4 flex flex-col gap-3 ${activo ? '' : 'opacity-80'}`}>
+                      <div className="flex items-center gap-3">
+                        <span aria-hidden="true" className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-black ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>{(t.name || '?').trim().charAt(0).toUpperCase()}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-black text-foreground leading-tight truncate">{t.name}</p>
+                          <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
+                            {activo ? 'Activo' : 'Inactivo'}
+                          </p>
+                        </div>
+                        <Boton variante="peligro" tamano="compacto" icono={Trash2} onClick={() => onDelete(t.id)} disabled={deletingId === t.id} aria-label={`Eliminar técnico ${t.name}`} title="Eliminar técnico" className="w-9 !px-0 shrink-0" />
+                      </div>
+                      <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+                        <span id={`recibe-${t.id}`} className="text-sm font-semibold text-card-foreground">Recibe órdenes</span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={activo}
+                          aria-labelledby={`recibe-${t.id}`}
+                          onClick={() => onToggleActivo(t.id, !activo)}
+                          title={activo ? 'Marcar como inactivo' : 'Marcar como activo'}
+                          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activo ? 'bg-emerald-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                        >
+                          <span aria-hidden="true" className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
                       {verInventario && (
-                        <div className="order-4 md:order-3 space-y-1 min-w-0 col-span-full md:col-span-1">
+                        <div className="space-y-1 min-w-0 border-t border-border pt-3">
+                          <p className="text-xs font-semibold text-muted-foreground">Nombre en el inventario</p>
                           <SelectMenu
                             id={`inv-${t.id}`}
                             ariaLabel={`Nombre en el inventario de ${t.name}`}
@@ -172,11 +174,10 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                           </span>
                         </div>
                       )}
-                      <Boton variante="peligro" tamano="compacto" icono={Trash2} onClick={() => onDelete(t.id)} disabled={deletingId === t.id} aria-label={`Eliminar técnico ${t.name}`} title="Eliminar técnico" className={`order-3 md:order-4 w-9 !px-0 justify-self-end ${verInventario ? 'md:mt-0.5' : ''}`} />
                     </li>
                   );
                 })}
-                {technicians.length === 0 && <li className={`${TEXTO_SUAVE} text-center py-6`}>Aún no hay técnicos. Agrega el primero en Nuevo técnico.</li>}
+                {technicians.length === 0 && <li className={`${TARJETA} ${TEXTO_SUAVE} text-center py-8 sm:col-span-2`}>Aún no hay técnicos. Agrega el primero en Nuevo técnico.</li>}
               </ul>
             </section>
 
@@ -215,7 +216,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
               <form onSubmit={onSubmit} className={`${TARJETA} p-4 space-y-4`}>
                 <h3 className={TITULO_SECCION}>Nuevo técnico</h3>
                 <div className="space-y-1">
-                  <label htmlFor="tech-name" className={ETIQUETA}>Nombre</label>
+                  <label htmlFor="tech-name" className={ETIQUETA_CAMPO}>Nombre</label>
                   <input id="tech-name" required type="text" maxLength="60" value={newTech.name} onChange={(e) => setNewTech({ ...newTech, name: stripEmojis(e.target.value) })} className={CAMPO_FORMULARIO} placeholder="Ej. LUIS FERNÁNDEZ" />
                 </div>
                 <div className="flex items-center gap-3">
