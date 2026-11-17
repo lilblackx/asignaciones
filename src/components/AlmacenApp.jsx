@@ -10,6 +10,7 @@ import PieVersion from './PieVersion';
 import Boton from './Boton';
 import AccionesEncabezado from './AccionesEncabezado';
 import MaterialesModal from './modals/MaterialesModal';
+import { BOTON_ENCABEZADO } from './estilos';
 
 // Pantalla del ALMACÉN: el módulo de Materiales tal como lo ve el admin, a pantalla completa y solo para mirar y contar.
 export default function AlmacenApp({ auth }) {
@@ -26,6 +27,13 @@ export default function AlmacenApp({ auth }) {
     </Boton>
   );
 
+  // En el encabezado de la pantalla (PC), el mismo botón que usan los demás módulos.
+  const botonActualizarEncabezado = (
+    <button type="button" onClick={actualizar} disabled={actualizando} className={BOTON_ENCABEZADO}>
+      <RefreshCw className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
+    </button>
+  );
+
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
@@ -36,7 +44,7 @@ export default function AlmacenApp({ auth }) {
           {cargado && (
             <AccionesEncabezado
               className="px-4 sm:px-6 pt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground"
-              encabezado={botonActualizar}
+              encabezado={botonActualizarEncabezado}
             >
               <span>{error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</span>
               {botonActualizar}

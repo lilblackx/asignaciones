@@ -1,4 +1,5 @@
 import { ArrowLeft, X } from 'lucide-react';
+import { BOTON_ENCABEZADO } from './estilos';
 
 // La barra negra de arriba de los módulos: el título y, a la derecha, las acciones propias del módulo y la X, que cierra el módulo entero.
 //   onVolver (opcional): un "Volver" a la izquierda (solo en PC) para subir un nivel dentro del módulo; sin él no hay Volver, porque la X ya cierra. Sin onClose (página) no hay X.
@@ -8,7 +9,7 @@ export default function EncabezadoModulo({ Icono, titulo, onClose, onVolver, acc
   return (
     <div className={`encabezado-d bg-black px-4 sm:px-6 py-3.5 border-b-2 border-red-600 flex items-center gap-3 shrink-0 sticky top-0 z-10 ${className}`}>
       {onVolver && (
-        <button onClick={onVolver} className="hidden lg:inline-flex items-center gap-1.5 shrink-0 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-white pl-2.5 pr-3 py-1.5 rounded-campo border border-zinc-700 transition-colors">
+        <button onClick={onVolver} className={`${BOTON_ENCABEZADO} hidden lg:inline-flex shrink-0 pl-2.5`}>
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Volver
         </button>
       )}

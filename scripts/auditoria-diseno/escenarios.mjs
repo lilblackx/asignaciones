@@ -172,6 +172,17 @@ export default [
   { id: 'administracion', usuario: 'administracion', clave: 'Administracion1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }] },
   // Infraestructura (instalaciones realizadas): la lista y su panel de filtros.
   { id: 'infraestructura', usuario: 'infra', clave: 'Infra1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }] },
+  // Los demás roles en su propia vista: la cabecera de cada uno.
+  { id: 'almacen', usuario: 'almacen', clave: 'Almacen1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
+  { id: 'promotora', usuario: 'promotora', clave: 'Promotora1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
+  { id: 'usuario', usuario: 'usuario', clave: 'Usuario1234', pantallas: [{ id: 'panel', preparar: async () => true, espera: 2200 }] },
+  // Los módulos del administrador que no estaban: cada uno con su cabecera.
+  {
+    id: 'admin-resto',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: ['Administración', 'Finanzas', 'Ubicación', 'Almacén', 'Envíos al inventario', 'Infraestructura', 'Ventas'].map((nombre) => ({ id: nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, '-'), preparar: (n) => n.irAModulo(nombre), espera: 2200 })),
+  },
   { id: 'tecnico1', usuario: 'tecnico1', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarVisita] },
   { id: 'tecnico2', usuario: 'tecnico2', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarInstalacion] },
 ];

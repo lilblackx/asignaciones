@@ -36,6 +36,7 @@ import PagosClientes from './finanzas/PagosClientes';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
 import TabuladorAdicionales from './finanzas/TabuladorAdicionales';
 import Aviso from './Aviso';
+import { BOTON_ENCABEZADO } from './estilos';
 
 // "3:45 p. m." (hora de Caracas) de cuando se leyeron las órdenes por última vez.
 const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(ms));
@@ -191,11 +192,11 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   type="button"
                   onClick={actualizar}
                   disabled={actualizando}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-boton border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white disabled:opacity-60 transition-colors whitespace-nowrap"
+                  className={BOTON_ENCABEZADO}
                 >
                   <RefreshCw className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
                 </button>
-                <MenuExportar formatos={['pdf', 'docx', 'csv']} grupos={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs!" />
+                <MenuExportar formatos={['pdf', 'docx', 'csv']} grupos={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs! border-transparent! shadow-card!" />
               </>
             )}
           />

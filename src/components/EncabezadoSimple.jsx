@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from 'react';
 import { LogOut, Menu, Moon, Plus, Sun } from 'lucide-react';
 import { ID_ACCIONES_ENCABEZADO } from './AccionesEncabezado';
 import AvisoSinConexion from './AvisoSinConexion';
+import { BOTON_ENCABEZADO_ICONO } from './estilos';
 
 const ConfirmModal = lazy(() => import('./modals/ConfirmModal'));
 
@@ -23,7 +24,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
       <header className="encabezado-d encabezado-pagina bg-black text-white shadow-md sticky top-0 z-10 border-b-4 border-red-600">
         <div className="px-4 sm:px-6 py-2 lg:pt-6 lg:pb-3 min-h-[60px] lg:min-h-0 flex justify-between items-center gap-2 max-w-[1400px] mx-auto w-full">
           {onAbrirMenu && (
-            <button type="button" onClick={onAbrirMenu} aria-label="Abrir menú" title="Menú" className="shrink-0 inline-flex items-center justify-center p-2 rounded-campo bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:hidden">
+            <button type="button" onClick={onAbrirMenu} aria-label="Abrir menú" title="Menú" className={`${BOTON_ENCABEZADO_ICONO} lg:hidden`}>
               <Menu className="w-4 h-4" aria-hidden="true" />
             </button>
           )}
@@ -41,7 +42,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
               <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">{rol}</span>
             </div>}
             {campana && <div className="flex items-center lg:order-4">{campana}</div>}
-            {!enMarco && <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="inline-flex items-center justify-center p-2 lg:order-5 lg:h-9 lg:w-9 lg:p-0 rounded-campo bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:bg-transparent lg:border-transparent lg:hover:bg-zinc-800">
+            {!enMarco && <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className={`${BOTON_ENCABEZADO_ICONO} lg:order-5`}>
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>}
             {accion && (
@@ -52,7 +53,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
             {!enMarco && (
               <>
                 <div className="w-px h-8 bg-zinc-800 hidden sm:block lg:hidden mx-1"></div>
-                <button onClick={() => setConfirmando(true)} aria-label="Cerrar sesión" title="Cerrar Sesión" className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 lg:order-6 lg:h-9 lg:w-9 lg:p-0 rounded-campo inline-flex items-center justify-center transition-colors border border-zinc-700 lg:bg-transparent lg:border-transparent lg:hover:bg-zinc-800">
+                <button onClick={() => setConfirmando(true)} aria-label="Cerrar sesión" title="Cerrar Sesión" className={`${BOTON_ENCABEZADO_ICONO} lg:order-6`}>
                   <LogOut className="w-4 h-4" />
                 </button>
               </>

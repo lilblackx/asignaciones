@@ -91,3 +91,8 @@ export const claseChip = (activo, tamano = 'normal') => `${BASE_CHIP} ${TAMANOS_
 
 // --- Etiqueta de los formularios de órdenes (Crear orden, Editar orden, Nueva venta).
 export const ETIQUETA_ORDEN = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
+
+// --- Botones del encabezado de cada módulo (Actualizar, Exportar, tema, cerrar sesión, menú, Volver): el mismo estilo que la campana del panel principal
+// (tarjeta clara con sombra suave, sin borde, en cápsula). `BOTON_ENCABEZADO_ICONO` es el redondo con solo un ícono.
+export const BOTON_ENCABEZADO = 'inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-boton border border-transparent bg-card hover:bg-secondary text-foreground text-xs font-bold shadow-card transition-colors whitespace-nowrap disabled:opacity-60';
+export const BOTON_ENCABEZADO_ICONO = 'inline-flex items-center justify-center shrink-0 p-2 max-lg:min-w-11 max-lg:min-h-11 lg:h-9 lg:w-9 lg:p-0 rounded-boton border border-transparent bg-card hover:bg-secondary text-foreground shadow-card transition-colors';
