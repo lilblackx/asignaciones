@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Spinner from '../Spinner';
-import { BOTON_GRANDE, CAMPO, ETIQUETA, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
+import { BOTON_GRANDE, CAMPO, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { CONCEPTOS_PAGO, aBs, bolivares, parseTarifa } from '../../utils/finanzas';
 
@@ -57,7 +57,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
         <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} min-w-[10rem] bg-primary hover:bg-primary-hover text-white`}>
           {ocupado && <Spinner />}Guardar precios
         </button>
-        <span className={`${ETIQUETA} text-sm`}>{cambiado ? 'Hay cambios sin guardar' : 'Precios al día'}</span>
+        <span className="text-sm font-semibold text-muted-foreground">{cambiado ? 'Hay cambios sin guardar' : 'Precios al día'}</span>
       </div>
     </section>
   );

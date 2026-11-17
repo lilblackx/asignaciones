@@ -8,9 +8,10 @@ import BarraFiltros from '../BarraFiltros';
 
 // Los filtros de Finanzas (diseño común en BarraFiltros): periodo, técnico y, en pantallas angostas, Actualizar y Exportar.
 // Periodo y técnico valen para las tres secciones.
-export default function BarraFinanzas({ periodo, onPeriodo, conPorPagar = false, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar, gruposExportar, onExportar, exportando }) {
+export default function BarraFinanzas({ tasa = null, periodo, onPeriodo, conPorPagar = false, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar, gruposExportar, onExportar, exportando }) {
   return (
     <BarraFiltros
+      derecha={tasa}
       periodos={conPorPagar ? [['POR_PAGAR', 'Por pagar'], ...PERIODOS] : PERIODOS}
       periodo={periodo}
       onPeriodo={onPeriodo}

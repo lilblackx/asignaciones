@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import Chip from '../Chip';
+import { legible } from '../../utils/nombreTecnico';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import Boton from '../Boton';
 import SelectMenu from '../SelectMenu';
@@ -96,7 +97,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-black text-sm">{p.codigo || 'S/C'} <span className="font-bold">· {p.nombre}</span></p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300">{tipoPagoFinanzas(p)} · {p.tecnico} · {fechaHora(p.pago?.pagadoEn || p.creadoEn)}</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-300">{tipoPagoFinanzas(p)} · {legible(p.tecnico)} · {fechaHora(p.pago?.pagadoEn || p.creadoEn)}</p>
                   </div>
                   {estadoChip()}
                 </div>
@@ -120,7 +121,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
                     <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(p.pago?.pagadoEn || p.creadoEn)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{p.codigo || 'S/C'}</td>
                     <td className="px-3 py-2.5 min-w-[8rem]">{p.nombre}</td>
-                    <td className="px-3 py-2.5 min-w-[7rem]">{p.tecnico}</td>
+                    <td className="px-3 py-2.5 min-w-[7rem]">{legible(p.tecnico)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{tipoPagoFinanzas(p)}</td>
                     <td className="px-3 py-2.5 min-w-[12rem] font-bold break-words">{detalle(p)}</td>
                     <td className="px-3 py-2.5 min-w-[10rem] text-xs text-card-foreground break-words">{datosExtra(p).map((l) => <span key={l} className="block">{l}</span>)}</td>

@@ -187,6 +187,7 @@ export default [
   // Las secciones de la vista propia de Finanzas (cada rol tiene su vista, distinta de la del administrador). La pestaña Historial de Infraestructura solo existe con el permiso `puedeVerHistorial` (se marca en Usuarios): sin él no hay nada que abrir.
   { id: 'finanzas-secciones', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
     { id: 'pagos-de-clientes', preparar: async (n) => (await n.clic('pagos de clientes')) || n.clic('clientes'), espera: 1800 },
+    { id: 'pagos-historial', preparar: async (n) => { await (async () => (await n.clic('pagos de clientes')) || n.clic('clientes'))(); await n.dormir(800); return clicTexto(n, 'historial de pagos'); }, espera: 1800 },
     { id: 'tabulador', preparar: async (n) => (await n.clic('tabulador de precios')) || n.clic('precios'), espera: 1800 },
     { id: 'reporte-de-pagos', preparar: async (n) => (await n.clic('reporte de pagos')) || n.clic('reporte'), espera: 1800 },
   ] },

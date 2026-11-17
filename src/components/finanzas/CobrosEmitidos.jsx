@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
 import Chip from '../Chip';
+import { legible } from '../../utils/nombreTecnico';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import Boton from '../Boton';
 import CobroModal from '../modals/CobroModal';
@@ -73,6 +74,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
           <div role="group" aria-label="Estado del cobro" className="flex flex-wrap gap-1.5">
             {FILTROS_ESTADO.map(({ valor, etiqueta }) => <Chip activo={estado === valor} tamano="compacto" key={valor} type="button" onClick={() => setEstado(valor)}>{etiqueta}</Chip>)}
           </div>
+          <span aria-hidden="true" className="hidden sm:block w-px h-6 bg-border" />
           <div role="group" aria-label="Tipo de orden" className="flex flex-wrap gap-1.5">
             {FILTROS_TIPO.map(({ valor, etiqueta }) => <Chip activo={tipo === valor} tamano="compacto" key={valor || 'todas'} type="button" onClick={() => setTipo(valor)}>{etiqueta}</Chip>)}
           </div>
@@ -92,7 +94,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-black text-sm">{c.codigo || 'S/C'} <span className="font-bold">· {c.nombre}</span></p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300">{tipoTexto(c)} · {c.tecnico} · {fechaHora(c.creadoEn)}</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-300">{tipoTexto(c)} · {legible(c.tecnico)} · {fechaHora(c.creadoEn)}</p>
                   </div>
                   {estadoChip(c)}
                 </div>
@@ -117,7 +119,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                     <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(c.creadoEn)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{c.codigo || 'S/C'}</td>
                     <td className="px-3 py-2.5 min-w-[8rem]">{c.nombre}</td>
-                    <td className="px-3 py-2.5 min-w-[7rem]">{c.tecnico}</td>
+                    <td className="px-3 py-2.5 min-w-[7rem]">{legible(c.tecnico)}</td>
                     <td className="px-3 py-2.5 min-w-[8rem] text-card-foreground break-words">{tipoTexto(c)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{estadoChip(c)}</td>

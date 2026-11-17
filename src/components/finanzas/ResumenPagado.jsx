@@ -4,6 +4,7 @@ import ResumenCifras from './ResumenCifras';
 import Colapsable from '../Colapsable';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
 import { BOTON, CHIP, ESTADO, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
+import { legible } from '../../utils/nombreTecnico';
 import { agruparOrdenes, bolivares, cifrasResumenPagado, dolares, frasePagado, grupoDePago, textoGrupos, textoOrdenes } from '../../utils/finanzas';
 import { diaDe } from '../../utils/totalesMes';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
@@ -32,14 +33,14 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-base font-bold text-foreground break-words">{f.tecnico}</h3>
+                      <h3 className="text-base font-bold text-foreground break-words">{legible(f.tecnico)}</h3>
                       <span className={`${CHIP} ${ESTADO.PAGADO.clase}`}>Pagado</span>
                     </div>
-                    <p className="text-sm text-zinc-800 dark:text-zinc-100 mt-1">{frasePagado(f)}</p>
+                    <p className="text-sm text-zinc-800 dark:text-zinc-100 mt-1">{frasePagado({ ...f, tecnico: legible(f.tecnico) })}</p>
                     <p className={TEXTO_SUAVE}>{textoGrupos(f.cantidades) || '-'} · {f.pagos === 1 ? '1 pago' : `${f.pagos} pagos`} · último {diaLegible(diaDe(f.ultimo))}</p>
                     {f.descuento > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-1">Adelantos descontados {dolares(f.descuento)} · neto entregado {dolares(f.neto)}</p>}
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-left sm:text-right shrink-0">
                     <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Total pagado</p>
                     <p className="text-xl font-extrabold tabular-nums text-foreground whitespace-nowrap">{dolares(f.total)}</p>
                     {f.bs > 0 && <p className="text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{bolivares(f.bs)}</p>}

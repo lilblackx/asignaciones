@@ -3,8 +3,7 @@ import { NIVELES } from '../../hooks/useTamanoLetra';
 // El selector de tamaño de letra de Finanzas (ver useTamanoLetra): tres "A" de distinto tamaño.
 export default function TamanoLetra({ nivel, onNivel }) {
   return (
-    <div role="group" aria-label="Tamaño de letra" className="inline-flex items-center gap-2">
-      <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 hidden sm:inline">Tamaño de letra</span>
+    <div role="group" aria-label="Tamaño de letra" title="Tamaño de letra" className="inline-flex items-center gap-2">
       <span className="inline-flex rounded-campo border border-input overflow-hidden">
         {NIVELES.map((n) => (
           <button
@@ -14,7 +13,7 @@ export default function TamanoLetra({ nivel, onNivel }) {
             aria-label={`Letra ${n.texto.toLowerCase()}`}
             title={n.texto}
             onClick={() => onNivel(n.id)}
-            className={`h-9 min-w-10 max-lg:min-w-11 px-2.5 font-bold transition-colors ${n.muestra} ${nivel === n.id ? 'bg-red-600 text-white' : 'bg-card text-zinc-800 dark:text-zinc-100 hover:bg-secondary'}`}
+            className={`h-8 max-lg:h-11 min-w-9 max-lg:min-w-11 px-2 font-bold transition-colors ${n.muestra} ${nivel === n.id ? 'bg-red-600 text-white' : 'bg-card text-zinc-800 dark:text-zinc-100 hover:bg-secondary'}`}
           >A</button>
         ))}
       </span>

@@ -16,7 +16,8 @@ export function FilaDeslizable({ children, ariaLabel, className = '' }) {
 //   selector: el desplegable (por ejemplo el de técnico). acciones: botones que van junto al selector (en celular, de solo ícono).
 //   accionesALaDerecha: en PC las acciones se pegan al borde derecho de la barra.
 //   sinPeriodos: oculta periodos y rango (una vista que solo tiene acciones).
-export default function BarraFiltros({ periodos = [], periodo, onPeriodo, rango, selector, acciones, accionesALaDerecha = false, sinPeriodos = false, className = '' }) {
+//   derecha: algo que va solo, pegado al borde derecho de la barra en PC y en su propia fila en celular (la tasa del dólar de Finanzas).
+export default function BarraFiltros({ periodos = [], periodo, onPeriodo, rango, selector, acciones, accionesALaDerecha = false, sinPeriodos = false, derecha = null, className = '' }) {
   return (
     <div className={`flex flex-wrap items-center gap-x-3 gap-y-2.5 ${className}`}>
       {!sinPeriodos && (
@@ -37,6 +38,8 @@ export default function BarraFiltros({ periodos = [], periodo, onPeriodo, rango,
           {acciones && <div className={`flex items-center gap-2 ${accionesALaDerecha ? 'sm:ml-auto' : ''}`}>{acciones}</div>}
         </div>
       )}
+
+      {derecha && <div className="min-w-0 max-sm:basis-full sm:ml-auto">{derecha}</div>}
     </div>
   );
 }

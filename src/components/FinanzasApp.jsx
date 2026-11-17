@@ -144,6 +144,9 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   );
 
   const actual = SECCIONES.find((s) => s.id === seccion);
+  const tasaNodo = <TasaBcv tasa={tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={() => { bcv.actualizar(); tasas.actualizar(); }} opciones={tasas.opciones} dia={tasaElegida?.dia ?? null} onElegir={(dia) => setDiaTasa(dia === tasas.opciones[0]?.dia ? null : dia)} conBotonActualizar={seccion === 'PRECIOS'} />;
+  // "Actualizar" vuelve a leer los pagos y también la tasa del dólar (el Tabulador, que no tiene Actualizar, deja el botón junto a la tasa).
+  const actualizarTodo = () => { actualizar(); bcv.actualizar(); tasas.actualizar(); };
 
   // El cliente de cada orden pagada, si se conoce (las órdenes leídas y las filas del periodo): los Pagos detallados lo ponen junto al código.
   const clientePorClave = useMemo(() => {
@@ -190,7 +193,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
               <>
                 <button
                   type="button"
-                  onClick={actualizar}
+                  onClick={actualizarTodo}
                   disabled={actualizando}
                   className={BOTON_ENCABEZADO}
                 >
@@ -203,8 +206,8 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
         )}
 
         <main className="p-4 sm:p-6 w-full flex-1 space-y-3 text-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div role="tablist" aria-label="Secciones de Finanzas" className="flex gap-2 w-full md:w-auto">
+          <div className="flex items-end justify-between gap-4 border-b border-border">
+            <div role="tablist" aria-label="Secciones de Finanzas" className="flex w-full lg:w-auto">
               {SECCIONES.map(({ id, nombre, corto }) => (
                 <button
                   key={id}
@@ -212,21 +215,23 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   role="tab"
                   aria-selected={seccion === id}
                   onClick={() => elegirSeccion(id)}
-                  className={`flex-1 md:flex-none min-w-0 h-9 px-1 sm:px-4 rounded-campo text-sm max-sm:text-[13px] font-semibold border transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-input text-zinc-800 dark:text-zinc-100 hover:bg-secondary'}`}
+                  className={`flex-1 lg:flex-none min-w-0 h-11 px-1 sm:px-5 text-sm max-sm:text-[13px] font-bold border-b-2 -mb-px transition-colors ${seccion === id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-zinc-300 dark:hover:border-zinc-600'}`}
                 >
                   <span className="sm:hidden">{corto}</span><span className="hidden sm:inline">{nombre}</span>
                 </button>
               ))}
             </div>
+            <div className="hidden lg:block pb-1.5"><TamanoLetra nivel={nivelLetra} onNivel={setNivelLetra} /></div>
+          </div>
+
+          {/* En celular: la última actualización y el tamaño de letra comparten una fila (en PC la hora va en el encabezado y el tamaño junto a las pestañas). */}
+          <div className="flex items-center justify-between gap-3 lg:hidden">
+            <span role="status" className="text-xs text-muted-foreground">{cargado ? (error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`) : ''}</span>
             <TamanoLetra nivel={nivelLetra} onNivel={setNivelLetra} />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-            <TasaBcv tasa={tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={() => { bcv.actualizar(); tasas.actualizar(); }} opciones={tasas.opciones} dia={tasaElegida?.dia ?? null} onElegir={(dia) => setDiaTasa(dia === tasas.opciones[0]?.dia ? null : dia)} />
-            {cargado && (
-              <span role="status" className="sm:ml-auto lg:hidden text-xs text-zinc-600 dark:text-zinc-300">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
-            )}
-          </div>
+          {/* La tasa va dentro de la barra de filtros; el Tabulador no tiene barra, así que la muestra sola. */}
+          {seccion === 'PRECIOS' && tasaNodo}
 
           {error && !actualizadoEn ? (
             <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
@@ -236,6 +241,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
             <>
               {seccion !== 'PRECIOS' && (
                 <BarraFinanzas
+                  tasa={tasaNodo}
                   periodo={periodo}
                   onPeriodo={setPeriodo}
                   conPorPagar={seccion === 'PAGOS'}
@@ -246,7 +252,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onTecnico={setTecnico}
                   tecnicos={nombresTecnicos}
                   cargando={actualizando}
-                  onRecargar={() => { actualizar(); if (seccion === 'CLIENTES') { pagosClientes.recargar(); cobrosClientes.recargar(); } }}
+                  onRecargar={() => { actualizarTodo(); if (seccion === 'CLIENTES') { pagosClientes.recargar(); cobrosClientes.recargar(); } }}
                   formatosExportar={['pdf', 'docx', 'csv']}
                   gruposExportar={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined}
                   onExportar={exportar}

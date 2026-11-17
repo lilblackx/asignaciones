@@ -9,7 +9,7 @@ import { claseSelector } from '../estilos';
 // actualizó el BCV. Sin conexión a la API avisa, y si ya tenía una tasa la conserva.
 const NUMERO = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
 
-export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, opciones = [], dia = null, onElegir }) {
+export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, opciones = [], dia = null, onElegir, conBotonActualizar = true }) {
   const elegida = opcionElegida(opciones, dia);
   const masReciente = opciones[0] || null;
   const viejo = elegida && masReciente && elegida.dia !== masReciente.dia;
@@ -20,18 +20,18 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
   );
   return (
     <div className="space-y-1.5">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+      <div className={`flex items-center gap-x-3 gap-y-1.5 text-sm ${elegida ? '' : 'flex-wrap'}`}>
         {elegida ? (
           <>
             <span className="inline-flex items-center gap-2 font-bold text-zinc-800 dark:text-zinc-100">
               <CircleDollarSign className="w-5 h-5 text-red-600 shrink-0" aria-hidden="true" />
-              <label htmlFor="finanzas-tasa-dia">Tasa BCV para los pagos</label>
+              <label htmlFor="finanzas-tasa-dia" className="max-sm:sr-only" title="Tasa BCV para los pagos">Tasa BCV</label>
             </span>
-            <div className="w-full sm:w-auto sm:min-w-[17rem] flex items-center gap-2">
+            <div className="min-w-0 flex-1 sm:flex-none sm:w-72 flex items-center gap-2">
               <div className="min-w-0 flex-1">
               <SelectMenu id="finanzas-tasa-dia" ariaLabel="Tasa BCV para los pagos" className={`${claseSelector('normal')} aria-expanded:border-red-600 tabular-nums`} value={elegida.dia} onChange={onElegir} items={opciones.map((o) => ({ value: o.dia, label: o.texto }))} />
               </div>
-              {botonActualizar}
+              {conBotonActualizar && botonActualizar}
             </div>
           </>
         ) : (
@@ -46,7 +46,7 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
           </>
         )}
         {error && <span role="alert" className="font-bold text-amber-800 dark:text-amber-300">{tasa ? 'No se pudo actualizar la tasa.' : 'No se pudo consultar la tasa: los bolívares no se muestran.'}</span>}
-        {!elegida && botonActualizar}
+        {!elegida && conBotonActualizar && botonActualizar}
       </div>
       {viejo && (
         <p role="status" className="flex items-start gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">

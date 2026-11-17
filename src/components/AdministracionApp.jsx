@@ -6,6 +6,7 @@ import BotonFiltros from './BotonFiltros';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import Boton from './Boton';
 import Chip from './Chip';
+import { legible } from '../utils/nombreTecnico';
 import Colapsable from './Colapsable';
 import EncabezadoSimple from './EncabezadoSimple';
 import NotificationBell from './NotificationBell';
@@ -252,7 +253,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                             <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(c.creadoEn)}{c.estado === ESTADO_COBRO.PENDIENTE && <span className={`block ${ETIQUETA}`}>{diasEsperando(c, ahora)} d esperando</span>}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{c.codigo || 'S/C'}</td>
                             <td className="px-3 py-2.5 min-w-[8rem]">{c.nombre}</td>
-                            <td className="px-3 py-2.5 min-w-[7rem]">{c.tecnico}</td>
+                            <td className="px-3 py-2.5 min-w-[7rem]">{legible(c.tecnico)}</td>
                             <td className="px-3 py-2.5 min-w-[8rem] text-card-foreground break-words">{tipoTexto(c)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                             <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1">{estadoChip(c)}{sinPago(c)}</div></td>
