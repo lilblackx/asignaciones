@@ -3,7 +3,7 @@ import { MapPin } from 'lucide-react';
 import Modal from '../Modal';
 import { normalizarUbicacion } from '../../utils/ubicacion';
 import Spinner from '../Spinner';
-import { claseCampo } from '../estilos';
+import { ETIQUETA_CAMPO, claseCampo } from '../estilos';
 import BotonCerrar from '../BotonCerrar';
 
 // Pegado manual de la ubicación de una orden. Se abre cuando el portapapeles no
@@ -24,11 +24,11 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-card rounded-card shadow-2xl w-full max-w-md border border-border">
-        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-sky-500 flex justify-between items-center">
-          <div>
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-md overflow-hidden border border-border">
+        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-sky-500 flex justify-between items-center gap-3">
+          <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-sky-400" aria-hidden="true" /> UBICACIÓN</h2>
-            <p className="text-[11px] max-lg:text-xs font-medium text-sky-400">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
+            <p className="text-xs font-medium text-sky-400">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
           </div>
           <BotonCerrar onClick={onClose} />
         </div>
@@ -39,7 +39,7 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
             </p>
           )}
           <div className="space-y-1">
-            <label htmlFor="ub-valor" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">ENLACE DE GOOGLE MAPS O COORDENADAS</label>
+            <label htmlFor="ub-valor" className={`${ETIQUETA_CAMPO} ml-1`}>Enlace de Google Maps o coordenadas</label>
             <input
               id="ub-valor"
               autoFocus
@@ -52,11 +52,11 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
               aria-invalid={!!parseada.error}
               className={claseCampo('grande', parseada.error ? 'error' : 'normal')}
             />
-            {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{parseada.error}</p>}
-            {parseada.valor && <a href={parseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
+            {parseada.error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1">{parseada.error}</p>}
+            {parseada.valor && <a href={parseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
           <div className="flex gap-2 justify-end">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 text-xs font-bold text-card-foreground bg-card border-2 border-input hover:bg-secondary rounded-card transition-colors shadow-card">Cancelar</button>
+            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 text-xs font-bold text-card-foreground bg-card border-2 border-input hover:bg-secondary rounded-boton transition-colors">Cancelar</button>
             <button type="submit" disabled={!parseada.valor || isSubmitting} className="min-w-[8.5rem] px-4 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-boton transition-colors">{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
           </div>
         </form>

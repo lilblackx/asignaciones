@@ -133,6 +133,8 @@ export default [
       { id: 'tecnicos-lista', preparar: (n) => n.clic('técnicos ·'), limpiar: (n) => n.clic('técnicos ·') },
       // La campana de la oficina con sus avisos (el pre-finalizado de la siembra y los que genera la app).
       { id: 'notificaciones', preparar: (n) => n.clicEtiqueta('^notificaciones'), limpiar: (n) => n.esc() },
+      // El pegado manual de la ubicación (el ícono "Sin ubicación" de una orden): la ventana con su encabezado y esquinas.
+      { id: 'ubicacion-pegar', preparar: (n) => n.clicEtiqueta('^sin ubicación: pegar'), limpiar: (n) => n.esc(), espera: 1200 },
       { id: 'nueva-orden', preparar: (n) => n.clic('nueva orden'), limpiar: seguir },
       { id: 'nueva-orden-errores', preparar: (n) => n.clic('guardar', { dentro: true }) },
       { id: 'detalle', preparar: (n) => n.clicEtiqueta('^ver detalle de la orden as2$') },
