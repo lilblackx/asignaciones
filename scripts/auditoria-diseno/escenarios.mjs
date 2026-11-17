@@ -168,6 +168,8 @@ export default [
   },
   // Finanzas con su propio usuario: su pantalla de inicio con la barra de filtros.
   { id: 'finanzas', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
+  // Administración (concilia los cobros de los clientes): la lista y su panel de filtros.
+  { id: 'administracion', usuario: 'administracion', clave: 'Administracion1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }] },
   { id: 'tecnico1', usuario: 'tecnico1', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarVisita] },
   { id: 'tecnico2', usuario: 'tecnico2', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarInstalacion] },
 ];

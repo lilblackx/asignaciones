@@ -1,6 +1,13 @@
 import Chip from './Chip';
 import RangoFechas from './RangoFechas';
 
+// Una fila de chips: en celular es UNA sola línea que se desliza (en vez de varias que se envuelven); desde `sm` se envuelve normal.
+export function FilaDeslizable({ children, ariaLabel, className = '' }) {
+  return (
+    <div role="group" aria-label={ariaLabel} className={`flex gap-2 max-sm:min-w-0 max-sm:overflow-x-auto max-sm:pb-1 max-sm:[&>*]:shrink-0 sm:flex-wrap sm:items-center ${className}`}>{children}</div>
+  );
+}
+
 // La barra de filtros de los módulos con periodo (Revisión, Finanzas, Reportes...). Un solo diseño para todos:
 //  - PC: periodos, rango (si se elige), selector y acciones en una fila que se envuelve.
 //  - Celular: los periodos en UNA fila que se desliza, y debajo el selector con las acciones al lado (botones de ícono), para ocupar dos filas en vez de cuatro.
@@ -13,11 +20,11 @@ export default function BarraFiltros({ periodos = [], periodo, onPeriodo, rango,
   return (
     <div className={`flex flex-wrap items-center gap-x-3 gap-y-2.5 ${className}`}>
       {!sinPeriodos && (
-        <div role="group" aria-label="Periodo" className="flex gap-2 max-sm:basis-full max-sm:min-w-0 max-sm:overflow-x-auto max-sm:pb-1 max-sm:[&>*]:shrink-0">
+        <FilaDeslizable ariaLabel="Periodo" className="max-sm:basis-full sm:flex-nowrap">
           {periodos.map(([id, texto]) => (
             <Chip activo={periodo === id} tamano="angosto" key={id} type="button" onClick={() => onPeriodo(id)}>{texto}</Chip>
           ))}
-        </div>
+        </FilaDeslizable>
       )}
 
       {!sinPeriodos && periodo === 'RANGO' && rango && (

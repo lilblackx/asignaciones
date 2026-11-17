@@ -11,6 +11,7 @@ import EncabezadoSimple from './EncabezadoSimple';
 import NotificationBell from './NotificationBell';
 import PieVersion from './PieVersion';
 import RangoFechas from './RangoFechas';
+import { FilaDeslizable } from './BarraFiltros';
 import SelectMenu from './SelectMenu';
 import Toast from './Toast';
 import CobroModal from './modals/CobroModal';
@@ -196,14 +197,14 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
 
               <Colapsable>{filtersOpen && (
                 <div className="rounded-card border border-transparent bg-card p-3 space-y-3 shadow-card">
-                  <div className="flex flex-wrap gap-2" role="group" aria-label="Estado">{FILTROS_ESTADO_COBRO.map(chipEstado)}</div>
-                  <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Período">
+                  <FilaDeslizable ariaLabel="Estado">{FILTROS_ESTADO_COBRO.map(chipEstado)}</FilaDeslizable>
+                  <FilaDeslizable ariaLabel="Período">
                     {[...PERIODOS, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(({ valor, etiqueta }) => (
                       <Chip activo={periodo === valor} tamano="compacto" key={valor} type="button" onClick={() => setPeriodo(valor)}>{etiqueta}</Chip>
                     ))}
-                    {periodo === PERIODO_RANGO && <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} maximo={fechaISO(ahora)} />}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  </FilaDeslizable>
+                  {periodo === PERIODO_RANGO && <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} maximo={fechaISO(ahora)} />}
+                  <div className="grid grid-cols-2 gap-2">
                     <SelectMenu ariaLabel="Técnico" className={SELECTOR} value={tecnico} onChange={setTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...tecnicos.map((t) => ({ value: t, label: t }))]} />
                     <SelectMenu ariaLabel="Tipo de orden" className={SELECTOR} value={tipo} onChange={setTipo} items={TIPOS} />
                   </div>
