@@ -69,6 +69,22 @@ const inicioTecnico = [
   { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$') },
 ];
 
+// ¿Se está viendo la versión de celular? (solo ella tiene el botón "Abrir menú").
+const esMovil = (n) => n.existe('button[aria-label="Abrir menú"]');
+// Una acción de una orden de la lista: en PC está en el menú "Más acciones de la orden"; en celular son botones sueltos en la tarjeta.
+const accionOrden = ({ pc, movil, codigo = 'as2' }) => async (n) => {
+  if (await esMovil(n)) return n.clic(movil);
+  if (!(await n.clicEtiqueta(`^más acciones de orden ${codigo}$`))) return false;
+  await n.dormir(500);
+  return n.clic(pc, { en: '[role="menu"]' });
+};
+// Elige un reporte del selector de la pantalla Reportes.
+const vistaReporte = (nombre) => async (n) => {
+  await n.ev(() => document.querySelector('button[aria-haspopup="listbox"]')?.click());
+  await n.dormir(500);
+  return elegirOpcion(nombre)(n);
+};
+
 export default [
   {
     id: 'login',
@@ -85,6 +101,57 @@ export default [
           return n.existe('#login-error');
         },
       },
+    ],
+  },
+  // El Panel principal del administrador y los modales de sus órdenes (AS2: instalación; AS1: avería).
+  {
+    id: 'admin-panel',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: [
+      { id: 'panel', preparar: (n) => n.irAModulo('Panel principal') },
+      { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
+      { id: 'nueva-orden', preparar: (n) => n.clic('nueva orden'), limpiar: seguir },
+      { id: 'nueva-orden-errores', preparar: (n) => n.clic('guardar', { dentro: true }) },
+      { id: 'detalle', preparar: (n) => n.clicEtiqueta('^ver detalle de la orden as2$') },
+      { id: 'editar', preparar: accionOrden({ pc: 'editar', movil: 'editar' }) },
+      { id: 'historial-orden', viewports: ['pc'], preparar: accionOrden({ pc: 'historial', movil: '' }) },
+      { id: 'cancelar-orden', preparar: accionOrden({ pc: 'cancelar orden', movil: 'cancelar' }) },
+      { id: 'escalar', preparar: accionOrden({ pc: 'escalar', movil: 'escalar a infraestructura', codigo: 'as1' }) },
+      { id: 'finalizar-datos', preparar: (n) => n.clic('finalizar'), limpiar: seguir },
+      { id: 'finalizar-valores', preparar: (n) => n.clic('siguiente', { dentro: true }) },
+    ],
+  },
+  // Los módulos de la oficina (Cierre, Historial, Revisión de órdenes, Técnicos, Usuarios, Tasa y pagos, Configuración).
+  {
+    id: 'admin-modulos',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: [
+      { id: 'cierre', preparar: (n) => n.irAModulo('Cierre') },
+      { id: 'cierre-ejecutar', preparar: (n) => n.clic('ejecutar cierre') },
+      { id: 'historial', preparar: (n) => n.irAModulo('Historial') },
+      { id: 'historial-filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
+      { id: 'revision', preparar: (n) => n.irAModulo('Revisión de órdenes') },
+      { id: 'tecnicos', preparar: (n) => n.irAModulo('Técnicos') },
+      { id: 'usuarios', preparar: (n) => n.irAModulo('Usuarios') },
+      // En PC el formulario de "Nuevo usuario" es una columna fija a la derecha, sin botón que abrir.
+      { id: 'usuarios-nuevo', viewports: ['movil', '320'], preparar: (n) => n.clic('nuevo usuario') },
+      { id: 'tasa-y-pagos', preparar: (n) => n.irAModulo('Tasa y pagos') },
+      { id: 'formas-de-pago', preparar: (n) => n.clic('formas de pago') },
+      { id: 'configuracion', preparar: (n) => n.irAModulo('Configuración') },
+    ],
+  },
+  // Reportes: las once vistas y sus menús.
+  {
+    id: 'admin-reportes',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: [
+      { id: 'resumen-ejecutivo', preparar: (n) => n.irAModulo('Reportes') },
+      { id: 'exportar', preparar: (n) => n.clic('exportar'), limpiar: (n) => n.esc() },
+      ...['Estadísticas', 'Registro de estadísticas', 'Causas de avería', 'Cobros y exoneraciones', 'Tendencia mensual', 'Tiempo de atención', 'Esperas del ciclo', 'Productividad', 'Calidad y reincidencias', 'Activación de técnicos']
+        .map((nombre) => ({ id: nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, '-'), preparar: vistaReporte(nombre), espera: 2200 })),
     ],
   },
   { id: 'tecnico1', usuario: 'tecnico1', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarVisita] },

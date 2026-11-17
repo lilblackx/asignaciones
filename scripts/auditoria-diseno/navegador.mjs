@@ -85,9 +85,9 @@ export async function abrirPestana({ puerto = 9333, url }) {
     el.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
   }, selector, valor);
-  // Clic en el primer control visible cuyo texto o aria-label contenga `texto`. Con `dentro`, solo entre los controles de la ventana de encima.
-  n.clic = (texto, { dentro = false } = {}) => ev((t, d) => {
-    const raiz = d ? ([...document.querySelectorAll('[role="dialog"]')].pop() || document) : document;
+  // Clic en el primer control visible cuyo texto o aria-label contenga `texto`. Con `dentro`, solo entre los controles de la ventana de encima; con `en`, solo dentro del último elemento que cumpla ese selector (un menú, un panel).
+  n.clic = (texto, { dentro = false, en = null } = {}) => ev((t, d, s) => {
+    const raiz = s ? ([...document.querySelectorAll(s)].pop() || document) : d ? ([...document.querySelectorAll('[role="dialog"]')].pop() || document) : document;
     const el = [...raiz.querySelectorAll('button, a, [role="button"], [role="tab"], [role="menuitem"], [role="option"], summary')].find((e) => {
       const r = e.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && `${e.innerText || ''} ${e.getAttribute('aria-label') || ''}`.toLowerCase().includes(t.toLowerCase());
@@ -95,7 +95,7 @@ export async function abrirPestana({ puerto = 9333, url }) {
     if (!el) return false;
     el.click();
     return true;
-  }, texto, dentro);
+  }, texto, dentro, en);
   // Clic en el primer control visible cuyo aria-label cumpla la expresión (sin distinguir mayúsculas).
   n.clicEtiqueta = (patron) => ev((p) => {
     const re = new RegExp(p, 'i');
@@ -104,6 +104,18 @@ export async function abrirPestana({ puerto = 9333, url }) {
     el.click();
     return true;
   }, patron);
+  // Va a un módulo del menú lateral por su nombre exacto ("Panel principal", "Cierre"...). En celular el menú es un panel: primero lo abre con "Abrir menú".
+  n.irAModulo = async (nombre) => {
+    if (await n.clicEtiqueta('^abrir menú$')) await dormir(700);
+    const ok = await ev((t) => {
+      const el = [...document.querySelectorAll('aside[aria-label="Módulos"] nav button')].find((e) => (e.innerText || '').trim().toLowerCase() === t.toLowerCase());
+      if (!el) return false;
+      el.click();
+      return true;
+    }, nombre);
+    await dormir(1500);
+    return ok;
+  };
   n.existe = (selector) => ev((s) => { const el = document.querySelector(s); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }, selector);
   n.textoDe = (selector) => ev((s) => (document.querySelector(s)?.innerText || '').split('\n').join(' / ').slice(0, 1500), selector);
   n.cerrar = async () => { ws.close(); try { await fetch(`http://127.0.0.1:${puerto}/json/close/${pestana.id}`); } catch { /* el navegador ya se cerró */ } };
