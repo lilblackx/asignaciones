@@ -4,11 +4,14 @@ import { normalizarConectoresInstalacion } from '../utils/conectoresInstalacion'
 // UNA sola forma de mostrar un conector en toda la app: una insignia (píldora) con el color del conector, su punto y su nombre, y la cantidad si hay ("Verde ×2").
 // El color se lee en el texto y en el fondo, nunca solo en uno de los dos. `apagada`: sin elegir o en cero. No dibujes un conector con texto suelto ni con un punto aparte: usa esta.
 const ESTILO_COLOR = { VERDE: 'bg-emerald-700 text-white', AZUL: 'bg-blue-600 text-white' };
+// Apagada no usa opacidad: atenuar un texto blanco hacia un fondo claro lo deja ilegible. Lleva su propio tono suave, con el contraste medido (4.5:1 o más) en claro y en oscuro.
+const ESTILO_COLOR_APAGADA = { VERDE: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200', AZUL: 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200' };
 
 export default function InsigniaConector({ color, cantidad = null, children = null, apagada = false, className = '' }) {
+  const estilo = apagada ? (ESTILO_COLOR_APAGADA[color] || 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200') : (ESTILO_COLOR[color] || 'bg-zinc-600 text-white');
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${ESTILO_COLOR[color] || 'bg-zinc-600 text-white'} ${apagada ? 'opacity-50' : ''} ${className}`}>
-      <span className="w-2.5 h-2.5 rounded-full bg-white/90 shrink-0" aria-hidden="true" />
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${estilo} ${className}`}>
+      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${apagada ? 'bg-current opacity-60' : 'bg-white/90'}`} aria-hidden="true" />
       {children ?? ETIQUETA_COLOR[color] ?? color}{cantidad !== null && <> ×{cantidad}</>}
     </span>
   );

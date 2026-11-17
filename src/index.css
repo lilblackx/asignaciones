@@ -121,6 +121,19 @@
 .encabezado-d .text-white { color: var(--foreground); }
 .encabezado-d .text-amber-400 { color: #b45309; }
 .dark .encabezado-d .text-amber-400 { color: #fbbf24; }
+/* Los acentos claros (-400) de los encabezados no se leen sobre el encabezado claro: en claro van en su tono -700 (4.5:1 o más sobre blanco); en oscuro se quedan como estaban. */
+.encabezado-d .text-red-400 { color: #b91c1c; }
+.encabezado-d .text-blue-400 { color: #1d4ed8; }
+.encabezado-d .text-emerald-400 { color: #047857; }
+.encabezado-d .text-green-400 { color: #15803d; }
+.encabezado-d .text-orange-400 { color: #c2410c; }
+.encabezado-d .text-sky-400 { color: #0369a1; }
+.dark .encabezado-d .text-red-400 { color: #f87171; }
+.dark .encabezado-d .text-blue-400 { color: #60a5fa; }
+.dark .encabezado-d .text-emerald-400 { color: #34d399; }
+.dark .encabezado-d .text-green-400 { color: #4ade80; }
+.dark .encabezado-d .text-orange-400 { color: #fb923c; }
+.dark .encabezado-d .text-sky-400 { color: #38bdf8; }
 .encabezado-d .text-zinc-300,
 .encabezado-d .text-zinc-400 { color: var(--muted-foreground); }
 .encabezado-d .bg-zinc-800 { background-color: var(--secondary); }
@@ -292,42 +305,43 @@ input[type="search"]::-webkit-search-decoration {
   appearance: none;
 }
 
-/* Scrollbar a tono con la app (zinc/red), en vez del gris por defecto del navegador. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #d4d4d8 #f4f4f5;
-}
-
-.dark * {
-  scrollbar-color: #52525b #09090b;
-}
-
+/* Scrollbar a tono con la app: fino, sin flechas y con la pista transparente, para que se funda con la superficie que lo lleva (tarjeta, ventana o página) en vez de verse como una tira negra.
+   En Chrome y Brave se pinta con ::-webkit-scrollbar. No se declaran scrollbar-width ni scrollbar-color ahí: con ellos Chrome ignora las reglas -webkit- y vuelve al scrollbar nativo con flechas.
+   Los navegadores sin ::-webkit-scrollbar (Firefox) usan las propiedades estándar. La barra pasa de 3:1 contra la superficie. */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
-
-::-webkit-scrollbar-track {
-  background: #f4f4f5;
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
-
-.dark ::-webkit-scrollbar-track {
-  background: #09090b;
+::-webkit-scrollbar-button {
+  display: none;
 }
-
 ::-webkit-scrollbar-thumb {
-  background-color: #d4d4d8;
+  background-color: #8d8781;
+  border: 3px solid transparent;
+  background-clip: content-box;
   border-radius: 9999px;
-  border: 2px solid #f4f4f5;
 }
-
-.dark ::-webkit-scrollbar-thumb {
-  background-color: #52525b;
-  border-color: #09090b;
-}
-
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #dc2626;
+  background-color: #57534e;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #78716c;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a29e;
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #8d8781 transparent;
+  }
+  .dark * {
+    scrollbar-color: #78716c transparent;
+  }
 }
 
 /* La lista de módulos del menú lateral va sin barra de desplazamiento (ni flechas): un degradado sobre el pie avisa de que sigue, y la rueda, el dedo y el teclado la mueven. */

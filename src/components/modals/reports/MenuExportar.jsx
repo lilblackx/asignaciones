@@ -39,14 +39,14 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
     if (!abierto) return undefined;
     // La lista del desplegable de reportes se pinta aparte (en un portal): tocarla no es tocar fuera del panel.
     const fuera = (e) => { if (raiz.current && !raiz.current.contains(e.target) && !e.target.closest?.('[role="listbox"]')) setAbierto(false); };
-    const tecla = (e) => { if (e.key === 'Escape' && conPanel) setAbierto(false); };
+    const tecla = (e) => { if (e.key === 'Escape') { setAbierto(false); raiz.current?.querySelector('button')?.focus(); } };
     document.addEventListener('pointerdown', fuera);
     document.addEventListener('keydown', tecla);
     return () => {
       document.removeEventListener('pointerdown', fuera);
       document.removeEventListener('keydown', tecla);
     };
-  }, [abierto, conPanel]);
+  }, [abierto]);
 
   const elegir = (formato, claveDelReporte) => {
     setAbierto(false);

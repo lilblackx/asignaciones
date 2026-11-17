@@ -51,7 +51,8 @@ export default function SelectMenu({
     const espacioDerecha = window.innerWidth - rect.left - VIEWPORT_MARGIN;
     const espacioIzquierda = rect.right - VIEWPORT_MARGIN;
     const alignRight = espacioDerecha < PANEL_MAX_WIDTH && espacioIzquierda > espacioDerecha;
-    const maxWidth = Math.min(PANEL_MAX_WIDTH, window.innerWidth - VIEWPORT_MARGIN * 2);
+    // El tope del panel nunca es menor que el propio campo: un campo ancho no abre una lista más angosta que él.
+    const maxWidth = Math.min(Math.max(PANEL_MAX_WIDTH, rect.width), window.innerWidth - VIEWPORT_MARGIN * 2);
     setPos({
       ...(alignRight
         ? { right: Math.max(VIEWPORT_MARGIN, window.innerWidth - rect.right), maxWidth: Math.min(maxWidth, espacioIzquierda) }
