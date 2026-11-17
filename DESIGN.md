@@ -94,18 +94,37 @@ Dirección de diseño de la app de Network Speed Fibra (órdenes, técnicos, Fin
 - Rediseñar sin mostrar capturas antes y sin respetar esta dirección.
 - Cambiar reglas de negocio al ajustar la interfaz.
 
-## Pendiente del rediseño (rama `rediseno`)
+## Estado del rediseño y lo que sigue (rama `rediseno`, al 2026-11-17)
 
-Herramienta: `npm run auditar:diseno` (carpeta `scripts/auditoria-diseno/`). Por cada pantalla, en PC (1440 px), celular (390 px) y 320 px, en claro y en oscuro, mide el contraste, el tamaño mínimo de texto, el desborde horizontal, las áreas táctiles de 44 px (celular) y los controles o ventanas sin nombre, y guarda una captura. Requiere `npm run dev` y los emuladores con `npm run seed:emulator`; lanza su propio navegador con un perfil temporal y lo borra al terminar. Los escenarios están en `escenarios.mjs`. No detecta textos cortados ni desalineaciones: hay que mirar las capturas.
+### Cómo se revisa
 
-Revisado: login (formulario y error); técnico en PC, celular y 320 (lista, notificaciones, cuenta, filtros, Pre-finalizar de una visita y de una instalación hasta la confirmación); Reportes en PC (11 vistas, menú Exportar, detalle de órdenes). Contraste medido de verdad: un lector que daba NaN contó "0 fallos" en la primera versión.
+`npm run auditar:diseno` (carpeta `scripts/auditoria-diseno/`). Por cada pantalla, en PC (1440 px), celular (390 px) y 320 px, en claro y en oscuro, mide el contraste, el tamaño mínimo de texto, el desborde horizontal, las áreas táctiles de 44 px (celular) y los controles o ventanas sin nombre, y guarda una captura. Requiere `npm run dev` y los emuladores con `npm run seed:emulator` (Revisión de órdenes necesita además `node scripts/seed-revision-minimo.mjs`). Lanza su propio navegador con un perfil temporal y lo borra al terminar. Los escenarios están en `escenarios.mjs` (login, tecnico1, tecnico2, admin-panel, admin-modulos, admin-reportes). La herramienta no ve textos cortados ni desalineaciones: hay que mirar las capturas. Una orden con todos los datos (NAP con coordenadas, ubicación, teléfono, observación, técnico, prioridad alta, cobro acordado) enseña problemas que las órdenes simples esconden: se crea a mano en el emulador desde "Nueva asignación".
 
-Falta, en este orden, cada módulo en PC y en celular:
+### Decisiones tomadas (2026-11-17)
 
-1. **Oficina:** Panel principal, Nueva orden, Cierre, Historial, Revisión de órdenes, Técnicos, Usuarios, Tasa y pagos, Configuración, y los modales de cada uno (editar, detalle, historial, cancelar, aprobar).
-2. **Dinero:** Administración y Finanzas.
-3. **Inventario y ventas:** Almacén, Envíos al inventario, Ventas e Infraestructura.
-4. **Otros roles y módulos:** promotora, almacén, finanzas, infraestructura y administración en sus propias vistas, y Ubicación (apagado).
-5. **Flujo de cobro:** "Consultar cobro a la oficina" y el cobro resultante, en PC y celular. Escriben en el emulador.
-6. **Revisión final:** login oscuro y pantallas con datos reales (las capturas usan órdenes de prueba); `npm run build`.
-7. **Despliegue:** nada está subido. La rama `rediseno` está bloqueada para desplegar por el candado; no desplegar hasta que se levante.
+- **Tarjeta de orden en celular** (oficina y técnico, `TicketsMobileList`): el tipo de trabajo y la falla van bajo el código; sin círculos de ícono; la observación va en un bloque suave. En la oficina, una acción principal (Finalizar o Aprobar, en verde o azul sólido), una secundaria (Editar) y el menú "⋯" (`RowMenu` con `grande`) con Copiar plantilla, Escalar a infraestructura y Cancelar orden. La tarjeta de ventas, promotora e infraestructura (`TarjetaInstalacion`) solo se alineó (márgenes de 20 px y el tipo bajo el código).
+- **El brillo de un botón es del color del botón.** `shadow-boton` (rojo) solo en los botones rojos; para los demás, `shadow-boton-azul`, `shadow-boton-verde` y `shadow-boton-ambar`. Un botón desactivado no lleva brillo.
+- **Títulos de tarjeta y etiquetas de campo en minúscula normal** (`TITULO_SECCION`, `ETIQUETA_CAMPO`). Las mayúsculas con espaciado quedan para los encabezados de tabla (`ETIQUETA`), los estados, el rol y la marca.
+- **Scrollbar discreto** en toda la app (fino, sin flechas, pista transparente, separado de las esquinas). No se declaran `scrollbar-width` ni `scrollbar-color` fuera del respaldo de Firefox: con ellos Chrome ignora las reglas `-webkit-`.
+- **Nueva asignación:** campos agrupados (Cliente, Trabajo, Ubicación y red, Cobro acordado, Observación), errores en texto junto al campo (sin la burbuja del navegador), botones fijos abajo, cobro acordado plegable. Las opciones nuevas de los campos compartidos (`suave`, `error`) están apagadas por defecto: Editar orden y Nueva venta siguen como estaban.
+- **Técnicos:** tarjetas con avatar de color, estado e interruptor "Recibe órdenes". **Usuarios:** lista a todo el ancho con avatar del color del rol, filtros por rol siempre visibles (en celular, en una fila que se desliza) y el formulario de "Nuevo usuario" solo cuando se pide con el botón rojo. **Historial:** atajos de estado con cantidades y encabezado de columnas en PC. **Revisión de órdenes:** cifras en tarjetas grandes, avisos agrupados en uno que se despliega, y por fila una acción principal con el resto en el menú "⋯".
+- **Controles táctiles:** los enlaces de texto dentro de los modales miden 44 px de alto en celular. Un número dentro de un chip activo no lleva opacidad (da menos de 4.5:1 sobre el rojo).
+- **Cabecera del menú lateral:** "Network Speed" con "Asignaciones" debajo y el logo cuadrado (también en el login móvil y en la cabecera móvil del técnico).
+
+### Hecho
+
+Con commits: la herramienta de auditoría; login, técnico en celular (lista, notificaciones, cuenta, filtros y los pasos de Pre-finalizar de visita e instalación); Reportes en PC (11 vistas y menús); Pre-finalizar en PC; Nueva asignación; modal "Orden finalizada" del técnico; menú lateral; scrollbar; buscadores con placeholder corto.
+
+En el árbol de trabajo, sin commit al escribir esto: la tarjeta de orden en celular, Técnicos, Usuarios, Historial, Revisión de órdenes, las sombras por color, los enlaces táctiles, los estilos compartidos de título y etiqueta, y la descripción por opción en `SelectMenu` (el rol de Usuarios).
+
+### Pendiente
+
+1. **Rediseñar los avisos.** Hoy son bloques de color con dos o tres líneas de texto corrido (por ejemplo, en Revisión: "1 garantía de otro técnico espera tu decisión (AS499): ..." y "6 órdenes esperan el pago del cliente ..."). Ideas: un solo estilo de aviso con niveles (información, atención, error); un título corto y el detalle plegado; los códigos de orden como chips que filtran la lista; una acción clara ("Ver las 6 órdenes"). Revisar todos los de la app: `AvisoNotificaciones`, `AvisoRevision`, `DevolucionAviso`, `CancelacionAviso`, `CobroAviso`, `ConsultaCobroAviso`, `InfraestructuraAviso`, los de Finanzas y los avisos de estado vacío. Hoy hay un `Aviso` y un `AvisosAgrupados` locales en `RevisionPagosModal`: son un primer paso, no el sistema final.
+2. **Módulos sin revisar con la herramienta ni a ojo:** Dinero (Administración, Finanzas), Inventario y ventas (Almacén, Envíos al inventario, Ventas, Infraestructura), los otros roles en su propia vista (promotora, almacén, finanzas, infraestructura, administración) y Ubicación (apagado). Tasa y pagos y Configuración solo están medidos, no rediseñados.
+3. **Reportes en celular:** las 11 vistas están medidas, pero no revisadas a ojo.
+4. **Flujo de cobro:** "Consultar cobro a la oficina" y el cobro resultante, en PC y celular. Escriben en el emulador.
+5. **Editar orden** con el mismo diseño que Nueva asignación (grupos, errores en texto, botones fijos). Los componentes ya admiten `suave`.
+6. **Decisiones de diseño abiertas:** el botón "Siguiente" verde de los asistentes (sistema de tonos) frente al rojo de marca; "Estoy en camino" en azul; los títulos de los modales en mayúsculas ("NUEVA ASIGNACIÓN", "DETALLE DE LA ORDEN") frente a la regla de minúscula normal; en Tasa y pagos y Configuración el título va a la izquierda y el contenido va centrado y más angosto.
+7. **Tabla de órdenes en PC** (`TicketsTable`) y sus modales, revisados con una orden completa.
+8. **Revisión final:** login oscuro y pantallas con datos reales (las capturas usan órdenes de prueba); `npm run build`.
+9. **Despliegue:** nada está subido. La rama `rediseno` está bloqueada para desplegar por el candado; no desplegar hasta que se levante.
