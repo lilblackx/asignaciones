@@ -37,7 +37,7 @@ check('la confirmación recibe los datos que se envían (y ya no el pago, que se
 // Los botones viven en el diálogo común (modals/DialogoConfirmacion): ahí "Volver" va primero en el DOM, y la confirmación de pre-finalizar lo usa.
 const dialogo = leer('../src/components/modals/DialogoConfirmacion.jsx');
 check('"Volver" es el primer botón (recibe el cursor al abrir): un toque de más no envía', confirmacion.includes('<DialogoConfirmacion') && dialogo.indexOf('onClick={onCancel}') < dialogo.indexOf('onClick={onConfirm}'), true);
-check('la confirmación muestra los datos que se envían', confirmacion.includes('DATOS QUE SE ENVÍAN') && confirmacion.includes('datos.map('), true);
+check('la confirmación muestra los datos que se envían', confirmacion.includes('Datos que se envían') && confirmacion.includes('datos.map('), true);
 check('Escape con la confirmación abierta cierra solo la confirmación (no pierde lo escrito)', modal.includes('if (!porConfirmar) onClose()'), true);
 
 if (failures > 0) {

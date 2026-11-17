@@ -254,7 +254,7 @@ check('salto del cursor al validar: mismo orden (con el puerto detrás de la NAP
 
 // Rótulos: el serial se llama "Serial" en el formulario y en la revisión; el drop conserva su nombre en cada lugar
 check('rótulo del serial en el formulario', /SERIAL <span/.test(formulario), true);
-check('el rótulo del drop en el formulario no cambia', /METRAJE DEL DROP <span/.test(formulario), true);
+check('el rótulo del drop en el formulario no cambia', /Metraje del drop <span/.test(formulario), true);
 check('rótulos en el modal de revisión', datosAutorizacion({ ...instalacionOk, nombre: 'Ana' }).equipo.map(d => d.etiqueta).slice(0, 5), ['Serial', 'VLAN', 'NAP', 'Puerto del cliente', 'Drop']);
 
 // --- "Metraje existente": el cliente ya tenía el drop y el técnico lo reutiliza ---
