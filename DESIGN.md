@@ -142,6 +142,7 @@ En el árbol de trabajo, sin commit al escribir esto: la tarjeta de orden en cel
 11. **Estados vacíos:** hoy son una frase centrada suelta ("Todavía no hay cobros...", "Todavía no hay instalaciones...", "Ninguna orden pagable..."). Hacer un componente `EstadoVacio` (ícono en círculo suave, frase corta y, si hay, la acción) y usarlo en todas las listas.
 12. **Aviso de infraestructura en la tarjeta de la orden** (captura del 2026-11-17): título largo en dos líneas, motivo y botón "Resolver" en naranja; revisar el color (hoy se ve naranja y rojizo en oscuro, fuera de los cuatro niveles), el orden y el tamaño. Debería pasar a `Aviso` de atención con el ícono de infraestructura.
 13. **Decisiones de diseño abiertas:** el botón "Siguiente" verde de los asistentes frente al rojo de marca; "Estoy en camino" en azul; los títulos de los modales en mayúscula ("NUEVA ASIGNACIÓN", "DETALLE DE LA ORDEN") frente a la regla de minúscula normal; los títulos de Tasa y pagos y Configuración.
+14. **Revisión general de la fuente de la app:** revisar la tipografía completa (familia, pesos, tamaños, interlineado, números y legibilidad en celular y PC) y decidir si se mantiene o se cambia. Hoy se mezclan `font-black`, `font-bold` y `font-semibold` según la pantalla, y quedan textos de 10-11 px y títulos en mayúscula con tracking. Definir una escala única (títulos, subtítulos, cuerpo, etiquetas, cifras) como tokens y aplicarla en todo.
 
 **B. Migrar a los tokens de la app (trabajo mecánico, por grupos de archivos)**
 

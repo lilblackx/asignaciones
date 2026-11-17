@@ -377,7 +377,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             </div>
 
             <div className="col-span-2 sm:col-span-5 space-y-0.5">
-              <label htmlFor="tk-fecha-prog" className={ETIQUETA}>Fecha programada{OPCIONAL}</label>
+              <label htmlFor="tk-fecha-prog" className={ETIQUETA}>Programada{OPCIONAL}</label>
               <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase={CAMPO_FECHA_ORDEN} />
             </div>
 
