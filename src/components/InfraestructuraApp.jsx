@@ -21,6 +21,7 @@ import { BUSCADOR } from './estilos';
 import Chip from './Chip';
 import Boton from './Boton';
 import RangoFechas from './RangoFechas';
+import { FilaDeslizable } from './BarraFiltros';
 import HistorialInfra from './HistorialInfra';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
@@ -183,23 +184,24 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
 
               <Colapsable>{filtersOpen && (
                 <div className="rounded-card border border-transparent bg-card p-3 shadow-card">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex flex-wrap gap-2" role="group" aria-label="Período">{[...PERIODOS_INFRAESTRUCTURA, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(chip)}</div>
-                  {periodo === PERIODO_RANGO && (
-                    <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} minimo={limites.min} maximo={limites.max} />
-                  )}
+                  <div className="space-y-2">
+                    <FilaDeslizable ariaLabel="Período">{[...PERIODOS_INFRAESTRUCTURA, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(chip)}</FilaDeslizable>
+                    {periodo === PERIODO_RANGO && (
+                      <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} minimo={limites.min} maximo={limites.max} />
+                    )}
+                    <FilaDeslizable ariaLabel="Anotadas">{FILTROS_ANOTADA.map(chipAnotada)}</FilaDeslizable>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2" role="group" aria-label="Anotadas">{FILTROS_ANOTADA.map(chipAnotada)}</div>
                 </div>
               )}</Colapsable>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xs text-muted-foreground ml-auto" aria-live="polite">{filas.length} {filas.length === 1 ? 'instalación' : 'instalaciones'}</p>
-                <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando}>
-                  {actualizando ? 'Actualizando...' : 'Actualizar'}
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground min-w-0" aria-live="polite">
+                  <span className="font-bold text-foreground">{filas.length} {filas.length === 1 ? 'instalación' : 'instalaciones'}</span> · {error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}
+                </p>
+                <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando} aria-label="Actualizar" title="Actualizar" className="shrink-0 max-sm:!px-0 max-sm:w-11">
+                  <span className="max-sm:hidden">{actualizando ? 'Actualizando...' : 'Actualizar'}</span>
                 </Boton>
               </div>
-              <p className="text-xs text-muted-foreground -mt-1">{error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</p>
 
               {!filas.length ? (
                 <p className="text-sm text-muted-foreground text-center py-10">{instalaciones.length ? 'Ninguna instalación coincide con lo que buscas.' : 'Todavía no hay instalaciones realizadas.'}</p>
