@@ -8,9 +8,9 @@ import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
 import SelectMenu from '../SelectMenu';
-import Colapsable from '../Colapsable';
+
 import Spinner from '../Spinner';
-import BotonFiltros from '../BotonFiltros';
+
 import MenuPermisos from '../MenuPermisos';
 import { BUSCADOR, CAMPO, CAMPO_FORMULARIO, ETIQUETA as ETIQUETA_TABLA, TARJETA, TITULO_SECCION, claseSelector } from '../estilos';
 import Boton from '../Boton';
@@ -19,15 +19,16 @@ import Chip from '../Chip';
 // En el celular la fila es: nombre y botones arriba, y debajo el rol y los permisos lado a lado; en PC son cuatro columnas.
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.1fr)_9.5rem_minmax(0,1.3fr)_5.5rem]';
 const ROL_ITEMS = [ROLES.USUARIO, ROLES.TECNICO, ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ...(ADMINISTRACION_ACTIVA ? [ROLES.ADMINISTRACION] : []), ROLES.ADMIN].map(r => ({ value: r, label: etiquetaRol(r) }));
+// El nombre del rol va en el campo y su explicación en la lista (antes todo en una línea, que se cortaba con "...").
 const ROL_NUEVO_ITEMS = [
-  { value: ROLES.USUARIO, label: 'USUARIO (sin Técnicos/Usuarios/Tasa y pagos)' },
-  { value: ROLES.TECNICO, label: 'TÉCNICO (asignaciones propias y pre-finalizar)' },
-  { value: ROLES.ALMACEN, label: 'ALMACÉN (solo ve Materiales)' },
-  { value: ROLES.PROMOTORA, label: 'VENTAS (ve sus instalaciones, o todas con "Ver todas")' },
-  { value: ROLES.FINANZAS, label: 'FINANZAS (cobros, pago a técnicos y reportes; no toca las órdenes)' },
-  { value: ROLES.INFRAESTRUCTURA, label: 'INFRAESTRUCTURA (ve las instalaciones con su NAP y puerto)' },
-  ...(ADMINISTRACION_ACTIVA ? [{ value: ROLES.ADMINISTRACION, label: 'ADMINISTRACIÓN (concilia los pagos de los clientes; no toca las órdenes)' }] : []),
-  { value: ROLES.ADMIN, label: 'ADMIN (acceso total)' }
+  { value: ROLES.USUARIO, label: 'USUARIO', descripcion: 'Sin Técnicos, Usuarios ni Tasa y pagos' },
+  { value: ROLES.TECNICO, label: 'TÉCNICO', descripcion: 'Sus asignaciones y pre-finalizar' },
+  { value: ROLES.ALMACEN, label: 'ALMACÉN', descripcion: 'Solo ve Materiales' },
+  { value: ROLES.PROMOTORA, label: 'VENTAS', descripcion: 'Ve sus instalaciones, o todas con "Ver todas"' },
+  { value: ROLES.FINANZAS, label: 'FINANZAS', descripcion: 'Cobros, pago a técnicos y reportes; no toca las órdenes' },
+  { value: ROLES.INFRAESTRUCTURA, label: 'INFRAESTRUCTURA', descripcion: 'Ve las instalaciones con su NAP y puerto' },
+  ...(ADMINISTRACION_ACTIVA ? [{ value: ROLES.ADMINISTRACION, label: 'ADMINISTRACIÓN', descripcion: 'Concilia los pagos de los clientes; no toca las órdenes' }] : []),
+  { value: ROLES.ADMIN, label: 'ADMIN', descripcion: 'Acceso total' }
 ];
 const SELECT_FORM_CLASS = claseSelector('grande');
 
@@ -51,7 +52,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
   const [verTodasDraft, setVerTodasDraft] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState('TODOS');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  // El formulario de "Nuevo usuario" solo se ve cuando se pide: la lista ocupa todo el ancho el resto del tiempo.
+  const [nuevoAbierto, setNuevoAbierto] = useState(false);
   const [promError, setPromError] = useState('');
 
   const cancelRoleEdit = () => {
@@ -181,6 +183,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     await createUser(newUser);
     setIsSubmitting(false);
     setNewUser(EMPTY_NEW_USER);
+    setNuevoAbierto(false);
   };
 
   const onToggleDisabled = async (id, disabled) => {
@@ -259,7 +262,11 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
     return { resumen: 'Sin permisos', opciones: [], acciones: [] };
   };
 
-  const ETIQUETA = 'text-sm font-bold text-card-foreground ml-1';
+  const ETIQUETA = 'text-xs font-semibold text-muted-foreground ml-1';
+  const abrirNuevo = () => {
+    setNuevoAbierto(true);
+    setTimeout(() => { const campo = document.getElementById('user-nombre'); campo?.scrollIntoView({ behavior: 'smooth', block: 'center' }); campo?.focus({ preventScroll: true }); }, 60);
+  };
 
   const filtros = [{ value: 'TODOS', label: 'Todos', n: users.length }, ...ORDEN_ROLES.map((r) => ({ value: r, label: etiquetaRol(r), n: users.filter((u) => u.role === r).length })).filter((f) => f.n > 0)];
   const q = sinTildes(busqueda).trim();
@@ -273,13 +280,13 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
         <EncabezadoModulo Icono={ShieldCheck} titulo="Usuarios" onClose={onClose} enPagina={enPagina} />
 
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+          <div className={`grid gap-4 lg:items-start ${nuevoAbierto ? 'lg:grid-cols-[minmax(0,1fr)_24rem]' : ''}`}>
           {/* Cuentas */}
           <section aria-label="Cuentas" className={`${TARJETA} overflow-hidden`}>
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
               <h3 className={TITULO_SECCION}>Cuentas <span className="font-bold text-muted-foreground">({users.length})</span></h3>
-              {/* En pantallas angostas el formulario queda debajo de la lista: este botón baja hasta él. */}
-              <Boton variante="principal" tamano="compacto" className="lg:hidden" type="button" onClick={() => { const campo = document.getElementById('user-nombre'); campo?.scrollIntoView({ behavior: 'smooth', block: 'center' }); campo?.focus({ preventScroll: true }); }}>
+              {/* Abre el formulario (a la derecha en PC; debajo de la lista en celular) y pone el cursor en el nombre. */}
+              <Boton variante="principal" tamano="compacto" type="button" onClick={abrirNuevo}>
                 <UserPlus className="w-3.5 h-3.5" aria-hidden="true" /> Nuevo usuario
               </Boton>
             </div>
@@ -297,19 +304,16 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 />
                 <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
               </div>
-              <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={(filtroRol !== 'TODOS' ? 1 : 0)} />
+
             </div>
-            <Colapsable>{filtersOpen && (
-              <div className="rounded-card border border-transparent bg-card p-3 shadow-card">
-              <div role="group" aria-label="Filtrar por rol" className="flex flex-wrap gap-2">
-                {filtros.map((f) => (
-                  <Chip activo={filtroRol === f.value} tamano="compacto" key={f.value} type="button" onClick={() => setFiltroRol(f.value)}>
-                    {f.label} <span className="opacity-80">({f.n})</span>
-                  </Chip>
-                ))}
-              </div>
-              </div>
-            )}</Colapsable>
+            {/* Los filtros por rol siempre a la vista (antes estaban escondidos tras el botón Filtros). */}
+            <div role="group" aria-label="Filtrar por rol" className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+              {filtros.map((f) => (
+                <Chip activo={filtroRol === f.value} tamano="compacto" key={f.value} type="button" onClick={() => setFiltroRol(f.value)}>
+                  {f.label} <span className="font-medium">({f.n})</span>
+                </Chip>
+              ))}
+            </div>
 
             </div>
             {users.length > 0 && (
@@ -322,8 +326,11 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
             )}
             <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {visibles.map(u => (
-                <li key={u.id} className={`grid ${COLUMNAS} gap-x-3 gap-y-2 px-4 py-3 items-center ${u.disabled ? 'bg-zinc-100 dark:bg-zinc-950/60 opacity-60' : ''}`}>
-                  <div className="min-w-0 md:col-start-1 md:row-start-1">
+                <li key={u.id} className={`grid ${COLUMNAS} gap-x-3 gap-y-2 px-4 py-4 items-center ${u.disabled ? 'bg-zinc-100 dark:bg-zinc-950/60 opacity-60' : ''}`}>
+                  <div className="min-w-0 md:col-start-1 md:row-start-1 flex items-center gap-3">
+                    {/* La inicial en un círculo del color de su rol: se reconoce quién es quién de un vistazo. */}
+                    <span aria-hidden="true" className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-base font-black ${claseRol(u.role)}`}>{(u.nombre || u.username || '?').trim().charAt(0).toUpperCase()}</span>
+                    <div className="min-w-0 flex-1">
                       {editingNombreId === u.id ? (
                         <div className="flex items-center gap-1.5">
                           <input
@@ -344,6 +351,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       )}
                       <p className="text-xs text-muted-foreground">@{u.username}{u.disabled && ' · deshabilitado'}</p>
                     </div>
+                  </div>
 
                   <div className="flex items-center gap-1.5 md:justify-end md:col-start-4 md:row-start-1">
                     {resettingId !== u.id && (
@@ -367,7 +375,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     )}
                   </div>
 
-                  <div className="col-span-full grid grid-cols-2 gap-2 md:contents">
+                  <div className="col-span-full grid grid-cols-[auto_minmax(0,1fr)] max-[350px]:grid-cols-1 gap-2 md:contents">
                   <div className="min-w-0 md:col-start-2 md:row-start-1">
                     {u.username === currentUsername ? (
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-campo ${claseRol(u.role)}`} title="No puedes cambiar tu propio rol">
@@ -462,26 +470,30 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
           </section>
 
           {/* Nuevo usuario */}
+          {nuevoAbierto && (
           <section aria-label="Nuevo usuario" className={`${TARJETA} p-4`}>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <h3 className={TITULO_SECCION}>Nuevo usuario</h3>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className={TITULO_SECCION}>Nuevo usuario</h3>
+                <Boton variante="discreto" tamano="compacto" icono={X} type="button" onClick={() => setNuevoAbierto(false)} aria-label="Cerrar el formulario de nuevo usuario" title="Cerrar" className="w-9 !px-0" />
+              </div>
               <div className="grid gap-4 grid-cols-[minmax(0,1fr)] sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)]">
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-nombre" className={ETIQUETA}>NOMBRE COMPLETO</label>
+                  <label htmlFor="user-nombre" className={ETIQUETA}>Nombre completo</label>
                   <input id="user-nombre" required type="text" maxLength="80" value={newUser.nombre} onChange={(e) => setNewUser({ ...newUser, nombre: stripEmojis(e.target.value) })} className={CAMPO_FORMULARIO} placeholder="Ej. Luis Fernández" />
                 </div>
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-usuario" className={ETIQUETA}>USUARIO</label>
+                  <label htmlFor="user-usuario" className={ETIQUETA}>Usuario</label>
                   <input id="user-usuario" required type="text" maxLength="40" value={newUser.usuario} onChange={(e) => setNewUser({ ...newUser, usuario: stripEmojis(e.target.value) })} className={CAMPO_FORMULARIO} placeholder="Ej: lfernandez" />
                 </div>
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-clave" className={ETIQUETA}>CLAVE</label>
+                  <label htmlFor="user-clave" className={ETIQUETA}>Clave</label>
                   <input id="user-clave" required type="password" autoComplete="new-password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
                   <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{PASSWORD_POLICY_HINT}</p>
                   {passwordError && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
                 <div className="space-y-2 min-w-0">
-                  <label htmlFor="user-role" className={ETIQUETA}>ROL</label>
+                  <label htmlFor="user-role" className={ETIQUETA}>Rol</label>
                   <SelectMenu
                     id="user-role"
                     ariaLabel="Rol"
@@ -496,7 +508,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
               {newUser.role === ROLES.TECNICO && (
                 <div className="space-y-2 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4">
-                  <label htmlFor="user-tecnico" className={ETIQUETA}>VINCULAR CON TÉCNICO REGISTRADO</label>
+                  <label htmlFor="user-tecnico" className={ETIQUETA}>Vincular con el técnico registrado</label>
                   <SelectMenu
                     id="user-tecnico"
                     ariaLabel="Vincular con técnico registrado"
@@ -538,7 +550,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     Puede crear ventas
                   </label>
                   <div className="space-y-2">
-                    <label htmlFor="user-promotora" className={ETIQUETA}>NOMBRE EN LAS PLANTILLAS{newUser.verTodasInstalaciones && <span className="font-normal text-muted-foreground"> (opcional)</span>}</label>
+                    <label htmlFor="user-promotora" className={ETIQUETA}>Nombre en las plantillas{newUser.verTodasInstalaciones && <span className="font-normal text-muted-foreground"> (opcional)</span>}</label>
                     <input
                       id="user-promotora"
                       type="text"
@@ -568,6 +580,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               </div>
             </form>
           </section>
+          )}
           </div>
         </div>
       </div>
