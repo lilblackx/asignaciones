@@ -516,7 +516,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             <p role="alert" className="min-w-0 text-xs font-bold text-red-700 dark:text-red-400">{mensajeInvalido}</p>
             <div className="flex gap-2 shrink-0 ml-auto">
               <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 text-card-foreground text-sm font-bold bg-card border-2 border-input hover:bg-secondary rounded-boton transition-colors">Cancelar</button>
-              <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`min-w-[8.5rem] px-4 py-2 text-white text-sm font-bold rounded-boton transition-colors shadow-boton ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
+              <button type="submit" disabled={isSubmitting || verificandoCodigo} className={`min-w-[8.5rem] px-4 py-2 text-white text-sm font-bold rounded-boton transition-colors ${isSubmitting || verificandoCodigo ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover shadow-boton'}`}>{isSubmitting && <Spinner />}{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
             </div>
           </div>
         </form>
