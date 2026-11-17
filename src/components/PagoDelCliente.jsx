@@ -4,6 +4,7 @@ import { ETIQUETA } from './estilos';
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
 import { faltaElPago } from '../utils/pagoCliente';
 import { TIPO_PAGO, avisosDePago, lineaDePago, pagoClienteDe, pagoVisibleEnFinanzas } from '../utils/pagoEnOrden';
+import { EtiquetaFalta } from './FaltaPorCompletar';
 
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
@@ -81,7 +82,7 @@ export default function PagoDelCliente({ orden, bloque = false, tamano = 'normal
   const p = pagoClienteDe(orden);
   // `avisarFalta` (las listas de órdenes): una orden finalizada que debe pago y todavía no lo tiene lo dice, para que se vea cuáles están pendientes de registrarlo.
   if (!p && avisarFalta && !paraFinanzas && faltaElPago(orden)) {
-    return <div className={`min-w-0 break-words font-bold ${TAMANO[tamano]} ${TONO.atencion.linea} ${className}`}>Falta registrar el pago del cliente</div>;
+    return <div className={className}><EtiquetaFalta texto="Falta pago" completo="Falta registrar el pago del cliente" /></div>;
   }
   if (!p || (paraFinanzas && !pagoVisibleEnFinanzas(orden))) return null;
   const tono = TONO[tonoDe(p)];

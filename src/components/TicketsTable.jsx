@@ -157,7 +157,7 @@ export default function TicketsTable({
                         <span className="line-clamp-2">{ticket.observacionTecnico}</span>
                       </span>
                     )}
-                    <PagoDelCliente orden={ticket} tamano="compacto" avisarFalta />
+                    <PagoDelCliente orden={ticket} tamano="compacto" avisarFalta={!isTecnico} />
                   </div>
                 </td>
                 <td className="px-3 py-3 whitespace-normal align-middle">

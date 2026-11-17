@@ -13,5 +13,13 @@ export const esPendienteDelTecnico = (ticket, opciones) => faltantesDelTecnico(t
 // "pago del cliente", "fotos" o "pago del cliente y fotos".
 export const textoFaltante = (ticket, opciones) => faltantesDelTecnico(ticket, opciones).map((f) => (f === 'PAGO' ? 'pago del cliente' : 'fotos')).join(' y ');
 
+// La versión corta para la etiqueta de la orden: "Falta pago", "Faltan fotos" o "Falta pago y fotos".
+export function textoFaltanteCorto(ticket, opciones) {
+  const f = faltantesDelTecnico(ticket, opciones);
+  if (f.length === 0) return '';
+  if (f.length === 2) return 'Falta pago y fotos';
+  return f[0] === 'PAGO' ? 'Falta pago' : 'Faltan fotos';
+}
+
 // Las que le faltan completar van primero, sin cambiar el orden entre ellas ni el del resto.
 export const pendientesDelTecnicoPrimero = (lista, opciones) => [...lista.filter((t) => esPendienteDelTecnico(t, opciones)), ...lista.filter((t) => !esPendienteDelTecnico(t, opciones))];

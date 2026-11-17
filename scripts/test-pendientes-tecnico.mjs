@@ -80,7 +80,7 @@ try {
     textoPlano(etiqueta(hoy(conCobro))),
     etiqueta(hoy({ ...instalacion, pagoCliente: pago, detallesOrden: fotos })),
     etiqueta(hoy(sinCobro)),
-  ], ['Falta: pago del cliente y fotos', 'Falta: fotos', 'Falta: pago del cliente', '', '']);
+  ], ['Falta pago y fotos Falta: pago del cliente y fotos', 'Faltan fotos Falta: fotos', 'Falta pago Falta: pago del cliente', '', '']);
 } finally {
   await servidor.close();
 }
@@ -90,7 +90,7 @@ const leer = (ruta) => readFileSync(ruta, 'utf8');
 const app = leer('src/App.jsx');
 check('App: la lista del técnico incluye sus pendientes (y la oficina no)', [app.includes('incluirPendientesDelTecnico: isTecnico'), app.includes('preFinalizadasArriba: canEditTickets, incluirPendientesDelTecnico: isTecnico')], [true, true]);
 check('no hay un aviso grande arriba de la lista del técnico: la indicación es la etiqueta en cada orden', [app.includes('AvisoPendientesTecnico'), existsSync('src/components/AvisoPendientesTecnico.jsx')], [false, false]);
-check('la etiqueta está en las tarjetas del celular y en las filas de la tabla, solo para el técnico', [leer('src/components/TicketsMobileList.jsx').includes('{isTecnico && <FaltaPorCompletar ticket={ticket} />}'), leer('src/components/TicketsTable.jsx').includes('{isTecnico && <FaltaPorCompletar ticket={ticket} />}')], [true, true]);
+check('la etiqueta está en las tarjetas del celular y en las filas de la tabla, solo para el técnico', [leer('src/components/TicketsMobileList.jsx').includes('{isTecnico && <FaltaPorCompletar ticket={ticket} className="mt-2" />}'), leer('src/components/TicketsTable.jsx').includes('{isTecnico && <FaltaPorCompletar ticket={ticket} />}')], [true, true]);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron');

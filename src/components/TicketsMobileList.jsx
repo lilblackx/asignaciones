@@ -114,6 +114,8 @@ export default function TicketsMobileList({
                 <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
                 {!isTecnico && <InsigniaGarantia ticket={ticket} />}
               </div>
+              {/* Lo que le falta al técnico en una orden finalizada: bajo la falla, en una línea, para no empujar el estado ni la fecha. */}
+              {isTecnico && <FaltaPorCompletar ticket={ticket} className="mt-2" />}
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
               <span className={`text-xs font-black px-3 py-1 rounded-full ${getEstadoPastel(ticket.estado)}`}>
@@ -121,7 +123,6 @@ export default function TicketsMobileList({
               </span>
               <span className={`text-xs font-bold flex items-center gap-1 ${getFechaStyles(ticket.fecha, ticket.estado)}`}><Calendar className="w-3.5 h-3.5" /> {ticket.fecha}</span>
               {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
-              {isTecnico && <FaltaPorCompletar ticket={ticket} />}
               {cerrada && (
                 <span className="text-xs font-medium text-muted-foreground leading-tight">
                   {fechaCierreTexto(ticket)}{archivada && ' · Archivada'}
@@ -204,7 +205,7 @@ export default function TicketsMobileList({
                 <span className="text-amber-800 dark:text-amber-300 leading-tight">{ticket.observacionTecnico}</span>
               </div>
             )}
-            <PagoDelCliente orden={ticket} tamano="grande" avisarFalta />
+            <PagoDelCliente orden={ticket} tamano="grande" avisarFalta={!isTecnico} />
           </div>
           {/* El técnico solo ve sus propias órdenes: repetir su nombre (y el creador,
               que no le sirve) en cada tarjeta solo gasta alto de pantalla. */}
