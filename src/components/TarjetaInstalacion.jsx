@@ -35,34 +35,37 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
 
   return (
     <li className="h-full flex flex-col min-w-0 rounded-card border border-transparent bg-card overflow-hidden shadow-card">
-      <div className="px-5 pt-5 pb-2 flex items-center gap-2">
-        <span className="text-xl font-black text-foreground tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
-        {mostrarTipo && <span className={`text-[11px] max-lg:text-xs font-black px-2 py-1 leading-none rounded max-lg:rounded-full ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
-        <span className={`ml-auto shrink-0 text-[11px] max-lg:text-xs font-black uppercase tracking-wide rounded max-lg:rounded-full px-2 max-lg:px-3 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
+      {/* Igual que la tarjeta de la oficina: el código y debajo su tipo, y el estado a la derecha; todo con los mismos márgenes de 20 px. */}
+      <div className="px-5 pt-5 pb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="text-xl font-black text-foreground tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
+          {mostrarTipo && <div className="mt-2"><span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span></div>}
+        </div>
+        <span className={`shrink-0 text-[11px] max-lg:text-xs font-black uppercase tracking-wide rounded max-lg:rounded-full px-2 max-lg:px-3 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
       </div>
 
       {atraso && (
-        <div className={`w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black uppercase tracking-wide ${atraso.nivel === 'urgente' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'}`}>
+        <div className={`w-full px-5 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black uppercase tracking-wide ${atraso.nivel === 'urgente' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'}`}>
           <AlarmClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>{atraso.que} · {atraso.dias === 1 ? '1 día' : `${atraso.dias} días`}</span>
         </div>
       )}
 
       {programada && (
-        <div className="w-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black uppercase tracking-wide bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+        <div className="w-full px-5 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black uppercase tracking-wide bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
           <CalendarClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>Programada para el {programada}</span>
         </div>
       )}
 
       {motivo && (
-        <div className="w-full px-3 py-1.5 bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200 text-[11px] max-lg:text-xs leading-snug">
+        <div className="w-full px-5 py-1.5 bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200 text-[11px] max-lg:text-xs leading-snug">
           <p className="font-black">Motivo de la cancelación</p>
           <p className="break-words whitespace-pre-wrap">{motivo}</p>
         </div>
       )}
 
-      <div className="p-3 flex-1 flex flex-col gap-3">
+      <div className="px-5 pb-4 pt-1 flex-1 flex flex-col gap-3">
         <div className="min-w-0">
           <div className="flex items-start gap-1.5">
             <h3 className="text-[15px] font-bold text-foreground leading-tight break-words min-w-0">{orden.nombre || 'Sin nombre'}</h3>
@@ -103,7 +106,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
         </div>
       </div>
 
-      <div className="border-t border-border px-3 py-2 min-h-11 flex items-center justify-between gap-2">
+      <div className="border-t border-border px-5 py-2 min-h-11 flex items-center justify-between gap-2">
         <span className={`${ETIQUETA} tabular-nums`}>{cuando ? `${cerrada ? 'Cerrada' : 'Creada'} ${fecha(cuando)}` : ''}</span>
         {conPlantilla && (
           <div className="flex items-center gap-1.5">

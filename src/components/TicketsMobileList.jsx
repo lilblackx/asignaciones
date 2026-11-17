@@ -5,6 +5,7 @@ import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
 import { Ban, Banknote, Calendar, Camera, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
+import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
 import InfraestructuraAviso from './InfraestructuraAviso';
@@ -95,8 +96,8 @@ export default function TicketsMobileList({
           <h2 className="mt-2 px-3 py-2 rounded-campo bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">FINALIZADAS Y CANCELADAS ({cerradasEnBusqueda})</h2>
         )}
         <div className={`bg-card rounded-card shadow-card border overflow-hidden flex flex-col transition-colors ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-red-700/60 dark:border-red-800/60' : 'border-emerald-700/60 dark:border-emerald-800/60') : prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-transparent'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
-          <div className={`p-5 pb-1 flex justify-between items-start sm:items-center ${cerrada ? 'bg-muted' : ''}`}>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <div className={`px-5 pt-5 pb-1 flex justify-between items-start gap-3 ${cerrada ? 'bg-muted' : ''}`}>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} vacio="S/C" className="font-black text-lg text-foreground leading-none" />
                 {canEditTickets && puedeCambiarPrioridad(ticket) && (
@@ -105,15 +106,21 @@ export default function TicketsMobileList({
                 {/* El aviso "PRIORIDAD ALTA" es para el técnico; la oficina ya la ve con la bandera y el separador de grupo. */}
                 {prioritaria && isTecnico && <InsigniaPrioridad />}
               </div>
-              <div className="flex flex-col">
-                <span className={`text-xs font-bold flex items-center gap-1 ${getFechaStyles(ticket.fecha, ticket.estado)}`}><Calendar className="w-3.5 h-3.5" /> {ticket.fecha}</span>
-                {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
+              {/* El tipo de trabajo y la falla van bajo el código (antes, en una fila aparte con un ícono): la tarjeta pierde una fila entera. */}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
+                {/* Sin falla, la orden guarda el tipo de trabajo como falla: no se repite. */}
+                {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-card-foreground">{ticket.falla}</span>}
+                <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
+                {!isTecnico && <InsigniaGarantia ticket={ticket} />}
               </div>
             </div>
-            <div className="self-center flex flex-col items-end gap-0.5">
+            <div className="flex flex-col items-end gap-1 shrink-0">
               <span className={`text-xs font-black px-3 py-1 rounded-full ${getEstadoPastel(ticket.estado)}`}>
                 {ticket.estado}
               </span>
+              <span className={`text-xs font-bold flex items-center gap-1 ${getFechaStyles(ticket.fecha, ticket.estado)}`}><Calendar className="w-3.5 h-3.5" /> {ticket.fecha}</span>
+              {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
               {isTecnico && <FaltaPorCompletar ticket={ticket} />}
               {cerrada && (
                 <span className="text-xs font-medium text-muted-foreground leading-tight">
@@ -122,7 +129,7 @@ export default function TicketsMobileList({
               )}
             </div>
           </div>
-          <div className="px-5 pb-5 pt-2 flex-1 flex flex-col gap-4">
+          <div className="px-5 pb-4 pt-2 flex-1 flex flex-col gap-3">
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="text-lg font-black text-foreground leading-tight min-w-0 break-words">{ticket.nombre}</h3>
@@ -144,9 +151,9 @@ export default function TicketsMobileList({
                 ) : formatCedula(ticket.cedula, ticket.tipoDocumento)}
               </p>
             </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="shrink-0 w-9 h-9 rounded-full bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400 flex items-center justify-center"><MapPin className="w-4 h-4" aria-hidden="true" /></span>
-              <span className="text-card-foreground leading-tight">{ticket.direccion}</span>
+            <div className="flex items-start gap-2 text-sm">
+              <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
+              <span className="text-card-foreground leading-snug">{ticket.direccion}</span>
             </div>
             {instalacionSinUbicacion(ticket) && (
               canEditTickets ? (
@@ -177,33 +184,16 @@ export default function TicketsMobileList({
                 <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="flex-1 min-w-0 flex items-center justify-center gap-1 min-h-11 py-2.5 rounded-campo bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
               </div>
             )}
-            <div className="flex items-start gap-3 text-sm">
-              <span className="shrink-0 w-9 h-9 rounded-full bg-secondary text-muted-foreground flex items-center justify-center"><Wrench className="w-4 h-4" aria-hidden="true" /></span>
-              <div className="flex flex-col">
-                <div className="flex flex-wrap items-center gap-1 mb-0.5">
-                  <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
-                  <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
-                      {!isTecnico && <InsigniaGarantia ticket={ticket} />}
-                </div>
-                {/* Sin falla, la orden guarda el tipo de trabajo como falla: no se repite. */}
-                {ticket.falla && ticket.falla !== ticket.tipoTrabajo && (
-                  <span className="text-card-foreground font-medium leading-tight">{ticket.falla}</span>
-                )}
-              </div>
-            </div>
+            {/* El tipo de trabajo y la falla van en la cabecera de la tarjeta. */}
             <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
             <DevolucionAviso ticket={ticket} />
             <CancelacionAviso ticket={ticket} />
             <CobroAviso ticket={ticket} />
             <ConsultaCobroAviso ticket={ticket} onResponder={onResponderCobro} />
             <InfraestructuraAviso ticket={ticket} onResolver={canEditTickets ? onResolverInfra : undefined} />
-            {canEditTickets && onEscalar && puedeEscalar(ticket) && (
-              <button type="button" onClick={() => onEscalar(ticket)} className="self-start inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-3 py-1.5 rounded-boton bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
-                <HardHat className="w-4 h-4" aria-hidden="true" /> Escalar a infraestructura
-              </button>
-            )}
+            {/* "Escalar a infraestructura" está en el menú "Más acciones" de abajo (solo la oficina). */}
             {(isTecnico ? observacionParaTecnico(ticket) : ticket.observacion) && (
-              <div className="flex items-start gap-2 text-sm">
+              <div className="rounded-campo bg-secondary/60 px-3 py-2 flex items-start gap-2 text-sm">
                 <MessageSquareText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" aria-label="Observación" role="img" />
                 <span className="text-card-foreground leading-tight">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
               </div>
@@ -275,25 +265,40 @@ export default function TicketsMobileList({
                 */}
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2 px-5 py-4 border-t border-border">
-                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : undefined} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"><ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}</button>
+              <div className="flex gap-2 px-5 py-4 border-t border-border">
                 {canEditTickets ? (
                   <>
+                    {/* Una acción principal (la que sigue en la orden), una secundaria y el menú con el resto: la tarjeta pasa de cuatro botones iguales a una jerarquía clara. */}
                     {ticket.estado === 'PENDIENTE' && !enInfraestructura(ticket) && (
-                      <button onClick={() => onFinalizar(ticket)} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-[13px] transition-colors">
-                        <CheckCircle2 className="w-4 h-4" /> Finalizar
+                      <button onClick={() => onFinalizar(ticket)} className="flex-1 min-w-0 min-h-11 rounded-boton bg-emerald-700 hover:bg-emerald-800 text-white shadow-boton-verde font-black text-sm flex items-center justify-center gap-1.5 transition-colors">
+                        <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Finalizar
                       </button>
                     )}
                     {(ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA') && (
-                      <button onClick={() => onAprobarFinalizar(ticket)} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 text-[13px] transition-colors">
-                        <CheckCheck className="w-4 h-4" /> Aprobar
+                      <button onClick={() => onAprobarFinalizar(ticket)} className="flex-1 min-w-0 min-h-11 rounded-boton bg-blue-700 hover:bg-blue-800 text-white shadow-boton-azul font-black text-sm flex items-center justify-center gap-1.5 transition-colors">
+                        <CheckCheck className="w-4 h-4" aria-hidden="true" /> Aprobar
                       </button>
                     )}
-                    <button onClick={() => onEdit(ticket)} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-card-foreground font-bold hover:bg-accent text-[13px] transition-colors"><Edit className="w-4 h-4" /> Editar</button>
-                    {ticket.estado !== 'CANCELADO' && <button onClick={() => onCancelar(ticket)} className="flex-1 basis-[calc(50%-0.25rem)] min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-red-700 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-[13px] transition-colors"><Ban className="w-4 h-4" /> Cancelar</button>}
+                    <button onClick={() => onEdit(ticket)} className="flex-1 min-w-0 min-h-11 rounded-boton bg-secondary text-card-foreground hover:bg-accent font-bold text-sm flex items-center justify-center gap-1.5 transition-colors">
+                      <Edit className="w-4 h-4" aria-hidden="true" /> Editar
+                    </button>
+                    <RowMenu
+                      grande
+                      label={`Más acciones de la orden ${ticket.codigo || ticket.id}`}
+                      items={[
+                        { label: 'Copiar plantilla', icon: ClipboardCopy, onClick: () => onCopyWhatsApp(ticket), disabled: sinPlantilla, titulo: sinPlantilla ? TEXTO_SIN_PLANTILLA : undefined },
+                        ...(onEscalar && puedeEscalar(ticket) ? [{ label: 'Escalar a infraestructura', icon: HardHat, onClick: () => onEscalar(ticket) }] : []),
+                        ...(ticket.estado !== 'CANCELADO' ? [{ label: 'Cancelar orden', icon: Ban, onClick: () => onCancelar(ticket), danger: true }] : []),
+                      ]}
+                    />
                   </>
                 ) : (
-                  <div className="flex-1 py-3 text-center text-xs text-muted-foreground font-medium">Solo visualización</div>
+                  <>
+                    <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : undefined} className="min-h-11 px-4 rounded-boton bg-secondary text-card-foreground hover:bg-accent font-bold text-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                      <ClipboardCopy className="w-4 h-4" aria-hidden="true" /> Plantilla
+                    </button>
+                    <div className="flex-1 py-3 text-center text-xs text-muted-foreground font-medium">Solo visualización</div>
+                  </>
                 )}
               </div>
             )}
