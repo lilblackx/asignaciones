@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { legible } from '../../utils/nombreTecnico';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import Segmentado from '../Segmentado';
 import Colapsable from '../Colapsable';
 import NumeroPulso from '../NumeroPulso';
 import SelectMenu from '../SelectMenu';
@@ -58,18 +59,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
         <div className="space-y-5">
           <div>
             <p className={ETIQUETA_CAMPO}>Moneda</p>
-            <div role="group" aria-label="Moneda del pago" className="mt-1 flex gap-2">
-              {[[MONEDA_BS, 'Bolívares (Bs)'], [MONEDA_USD, 'Dólares ($)']].map(([id, etiqueta]) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={form.moneda === id}
-                  disabled={id === MONEDA_BS && !(tasa > 0)}
-                  onClick={() => cambiarMoneda(id)}
-                  className={`flex-1 h-9 rounded-campo text-sm font-semibold border transition-colors disabled:opacity-40 ${form.moneda === id ? 'bg-red-600 border-red-600 text-white' : 'bg-card border-input text-zinc-800 dark:text-zinc-100 hover:border-zinc-500'}`}
-                >{etiqueta}</button>
-              ))}
-            </div>
+            <Segmentado llena grande className="mt-1" ariaLabel="Moneda del pago" opciones={[{ id: MONEDA_BS, etiqueta: 'Bolívares (Bs)', deshabilitado: !(tasa > 0) }, { id: MONEDA_USD, etiqueta: 'Dólares ($)' }]} valor={form.moneda} onCambiar={cambiarMoneda} />
             <Colapsable>{!(tasa > 0) && <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">No hay tasa BCV: solo se puede pagar en dólares hasta que se actualice.</p>}</Colapsable>
             <Colapsable>{error?.campo === 'moneda' && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{error.texto}</p>}</Colapsable>
           </div>
@@ -104,7 +94,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
           </div>
           <div>
             <label htmlFor="pago-hora" className={ETIQUETA_CAMPO}>Hora</label>
-            <div className="mt-1"><CampoHora id="pago-hora" ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} claseBoton="px-2.5 min-[400px]:px-4 text-sm" alto="h-9" /></div>
+            <div className="mt-1"><CampoHora id="pago-hora" ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} alto="h-9" /></div>
           </div>
           <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
 

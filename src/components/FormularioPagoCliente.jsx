@@ -8,13 +8,14 @@ import CampoFecha from './CampoFecha';
 import CampoHora from './CampoHora';
 import CampoBanco from './finanzas/CampoBanco';
 import ConfirmarPagoModal from './modals/ConfirmarPagoModal';
-import { AREA_TEXTO, BOTON, CAMPO_FECHA, CAMPO_FORMULARIO, ETIQUETA, ETIQUETA_CAMPO } from './estilos';
+import { AREA_TEXTO, BOTON, CAMPO_FECHA, CAMPO_FORMULARIO, ETIQUETA_CAMPO } from './estilos';
 import { SELECTOR } from './finanzas/estilos';
 import { MAX_REFERENCIA, MAX_TITULAR } from '../utils/datosPago';
 import { stripEmojis } from '../utils/sanitizeInput';
 import { montoCalculadora, montoParaCampo } from '../utils/montoCalculadora';
 import { TIPO_PAGO } from '../utils/pagoEnOrden';
 import Aviso from './Aviso';
+import Segmentado from './Segmentado';
 import {
   MONEDA_BS, MONEDA_USD, MONEDAS_CLIENTE, aplicaBancoCliente, claveReferencia, cuentasParaForma, exigeReferencia, exigeTitularCliente, fechaHoraDeMarca, formasDeCliente, notaPagoCompartido, parsePagoCliente,
 } from '../utils/pagoCliente';
@@ -182,15 +183,6 @@ export default function FormularioPagoCliente({
 
   const bloqueado = ocupado || guardando;
   const id = (campo) => `${idPrefijo}-${campo}`;
-  const botonMoneda = (m) => (
-    <button
-      key={m.id}
-      type="button"
-      aria-pressed={form.moneda === m.id}
-      onClick={() => cambiarMoneda(m.id)}
-      className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${form.moneda === m.id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-input text-foreground hover:border-zinc-500'}`}
-    >{m.nombre}</button>
-  );
   const areaPaga = (
     <div className="space-y-2 rounded-lg border border-zinc-300 dark:border-zinc-700 p-3">
       <label htmlFor={id('nota-pendiente')} className={ETIQUETA_CAMPO}>¿Cuándo o cómo va a pagar? (obligatorio)</label>
@@ -215,8 +207,8 @@ export default function FormularioPagoCliente({
       {incrustado && pagaDespues && permitirPagarDespues ? areaPaga : (
         <>
           <div>
-            <p className={ETIQUETA}>Moneda del pago</p>
-            <div role="group" aria-label="Moneda del pago" className="mt-1 flex gap-2">{MONEDAS_CLIENTE.map(botonMoneda)}</div>
+            <p className={ETIQUETA_CAMPO}>Moneda del pago</p>
+            <Segmentado llena grande className="mt-1" ariaLabel="Moneda del pago" opciones={MONEDAS_CLIENTE.map((m) => ({ id: m.id, etiqueta: m.nombre }))} valor={form.moneda} onCambiar={cambiarMoneda} />
             <MensajeError texto={texto('moneda')} />
             <Colapsable>{monedaDistinta && <p className="text-xs text-amber-800 dark:text-amber-300 font-bold mt-1">El cobro es en {cobro.moneda === MONEDA_USD ? 'dólares' : 'bolívares'} y el cliente pagó en otra moneda: se guarda tal cual y quedará marcado.</p>}</Colapsable>
           </div>
