@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Car, HardHat, MapPin } from 'lucide-react';
+import { useId, useMemo, useState } from 'react';
+import { Car, ChevronDown, HardHat, MapPin } from 'lucide-react';
 import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
 import NumeroPulso from './NumeroPulso';
@@ -10,6 +10,9 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
   // TECNICO solo recibe (por query scoping) su propio técnico en `technicians`,
   // así que dejarlo togglear acá nunca le da acceso al badge de otro.
   const canToggle = canEditTickets || isTecnico;
+  // En celular, con más de un técnico las píldoras ocupaban media pantalla: se pliegan en un resumen ("Técnicos · 8 activos · 62 pendientes") que despliega la lista.
+  const [abierto, setAbierto] = useState(false);
+  const idLista = useId();
   const counts = useMemo(() => {
     const byTech = new Map(technicians.map(t => [t.name.toUpperCase(), 0]));
     tickets.forEach(t => {
@@ -44,6 +47,10 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
 
   if (counts.length === 0 && sinTecnico === 0 && enInfra === 0 && !rutaBoton) return null;
 
+  const agrupar = counts.length > 1;
+  const activos = counts.filter((t) => t.activo).length;
+  const pendientes = counts.reduce((a, t) => a + t.count, 0);
+
   return (
     <div className="mb-3 flex flex-wrap gap-1.5" aria-label="Técnicos y sus asignaciones activas">
       {sinTecnico > 0 && (
@@ -76,6 +83,50 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           <span className="bg-white/60 dark:bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={cantidad} /></span>
         </button>
       ))}
+      {agrupar && (
+        <div className="basis-full lg:hidden">
+          <button
+            type="button"
+            aria-expanded={abierto}
+            aria-controls={idLista}
+            onClick={() => setAbierto((a) => !a)}
+            className="w-full min-h-11 px-4 rounded-boton border border-input bg-card hover:bg-secondary flex items-center justify-between gap-2 text-sm font-black text-foreground transition-colors"
+          >
+            <span>Técnicos <span className="font-bold text-muted-foreground text-xs">· {activos} {activos === 1 ? 'activo' : 'activos'} · {pendientes} {pendientes === 1 ? 'pendiente' : 'pendientes'}</span></span>
+            <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+          {abierto && (
+            <ul id={idLista} className="mt-1.5 rounded-card bg-card shadow-card divide-y divide-border overflow-hidden">
+              {counts.map(({ id, name, activo, count }) => (
+                <li key={name} className="flex items-center gap-3 px-3 min-h-14">
+                  <span aria-hidden="true" className={`relative shrink-0 w-8 h-8 rounded-full border inline-flex items-center justify-center text-xs font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
+                    {iniciales(name)}
+                    <span className={`absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${activo ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-zinc-500'}`} />
+                  </span>
+                  <span className={`min-w-0 flex-1 text-sm font-bold ${activo ? 'text-foreground' : 'text-muted-foreground'}`}>{legible(name)}{!activo && <span className="ml-1.5 text-xs font-semibold">inactivo</span>}</span>
+                  {count > 0 && <span className="rounded-full bg-secondary text-foreground px-2 py-0.5 text-xs font-black leading-none"><NumeroPulso valor={count} /></span>}
+                  {canToggle ? (
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={activo}
+                      aria-label={`${legible(name)}: ${activo ? 'activo' : 'inactivo'}`}
+                      title={activo ? 'Activo - toca para marcar inactivo' : 'Inactivo - toca para marcar activo'}
+                      onClick={() => onToggleActivo(id, !activo)}
+                      className="relative shrink-0 w-11 h-11 inline-flex items-center justify-center"
+                    >
+                      <span className={`relative block w-10 h-6 rounded-full transition-colors ${activo ? 'bg-emerald-600' : 'bg-zinc-400 dark:bg-zinc-600'}`}>
+                        <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${activo ? 'right-0.5' : 'left-0.5'}`} />
+                      </span>
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <div className={agrupar ? 'hidden lg:contents' : 'contents'}>
       {counts.map(({ id, name, activo, count }) => {
         // El avatar lleva el color del técnico y un punto de estado (verde: activo; gris: inactivo). El estado no depende solo del color: el inactivo
         // lleva borde punteado y la palabra "inactivo".
@@ -108,6 +159,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           </span>
         );
       })}
+      </div>
       {rutaBoton && <div className="ml-auto">{rutaBoton}</div>}
     </div>
   );

@@ -119,6 +119,8 @@ export default [
     pantallas: [
       { id: 'panel', preparar: (n) => n.irAModulo('Panel principal') },
       { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
+      // En celular las píldoras de técnicos van plegadas en un resumen: se abre para ver la lista con sus interruptores.
+      { id: 'tecnicos-lista', preparar: (n) => n.clic('técnicos ·'), limpiar: (n) => n.clic('técnicos ·') },
       { id: 'nueva-orden', preparar: (n) => n.clic('nueva orden'), limpiar: seguir },
       { id: 'nueva-orden-errores', preparar: (n) => n.clic('guardar', { dentro: true }) },
       { id: 'detalle', preparar: (n) => n.clicEtiqueta('^ver detalle de la orden as2$') },
