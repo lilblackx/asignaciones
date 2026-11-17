@@ -2,7 +2,7 @@ import { Flag } from 'lucide-react';
 
 // Botón junto al código de la orden (solo ADMIN y USUARIO): marca o quita la prioridad alta.
 // Al marcarla, el técnico asignado recibe un aviso.
-export function BotonPrioridad({ activa, codigo, onClick }) {
+export function BotonPrioridad({ activa, codigo, onClick, compacto = false }) {
   const orden = codigo ? `la orden ${codigo}` : 'la orden';
   return (
     <button
@@ -14,12 +14,12 @@ export function BotonPrioridad({ activa, codigo, onClick }) {
       className="group inline-flex items-center justify-center rounded-full focus:outline-none max-lg:min-w-11 max-lg:min-h-11"
     >
       {/* En celular el botón mide 44 px para el dedo; el círculo que se ve sigue siendo chico. */}
-      <span className={`inline-flex p-1 rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-red-500 ${
+      <span className={`inline-flex ${compacto ? 'p-0.5' : 'p-1'} rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-red-500 ${
         activa
           ? 'bg-red-600 text-white group-hover:bg-red-500'
           : 'bg-zinc-200 dark:bg-zinc-800 text-muted-foreground group-hover:bg-red-100 dark:group-hover:bg-red-900/40 group-hover:text-red-600 dark:group-hover:text-red-400'
       }`}>
-        <Flag className={`w-3.5 h-3.5 ${activa ? 'fill-current' : ''}`} aria-hidden="true" />
+        <Flag className={`${compacto ? 'w-3 h-3' : 'w-3.5 h-3.5'} ${activa ? 'fill-current' : ''}`} aria-hidden="true" />
       </span>
     </button>
   );

@@ -118,11 +118,11 @@ export default function TicketsTable({
               <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
                 <td className={`px-3 py-3 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
-                    <div className="flex flex-wrap items-center gap-1">
-                      <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} />
+                    <div className="flex items-center gap-1.5">
                       {canEditTickets && puedeCambiarPrioridad(ticket) && (
-                        <BotonPrioridad activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
+                        <BotonPrioridad compacto activa={Boolean(ticket.prioridadAlta)} codigo={ticket.codigo} onClick={() => onTogglePrioridad(ticket)} />
                       )}
+                      <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} />
                     </div>
                     {/* El aviso "PRIORIDAD ALTA" es para el técnico; la oficina ya la ve con la bandera y el separador de grupo. */}
                     {prioritaria && isTecnico && <InsigniaPrioridad />}
@@ -188,24 +188,26 @@ export default function TicketsTable({
                       <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
                       {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                     </div>
-                    {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
-                    {instalacionSinUbicacion(ticket) && (
-                      canEditTickets ? (
-                        <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Copia el enlace de ubicación y haz clic para guardarlo" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded-boton bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
-                          <MapPinOff className="w-3 h-3" aria-hidden="true" /> Sin ubicación · pegar
-                        </button>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
-                          <MapPinOff className="w-3 h-3" aria-hidden="true" /> Sin ubicación
-                        </span>
-                      )
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {ticket.falla !== ticket.tipoTrabajo && ticket.falla}
+                      {instalacionSinUbicacion(ticket) && (
+                        canEditTickets ? (
+                          <button type="button" onClick={() => onPegarUbicacion(ticket)} title="Sin ubicación: copia el enlace y haz clic para guardarlo" aria-label="Sin ubicación: pegar el enlace de ubicación" className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full border border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
+                            <MapPinOff className="w-3.5 h-3.5" aria-hidden="true" />
+                          </button>
+                        ) : (
+                          <span role="img" title="Sin ubicación" aria-label="Sin ubicación" className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full border border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
+                            <MapPinOff className="w-3.5 h-3.5" aria-hidden="true" />
+                          </span>
+                        )
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td className="px-2 py-3 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-1">
                     {ticket.tecnico && (
-                      <NombreTecnico nombre={ticket.tecnico} getTecnicoColor={getTecnicoColor} />
+                      <NombreTecnico corto nombre={ticket.tecnico} getTecnicoColor={getTecnicoColor} />
                     )}
                     {!isTecnico && <EtiquetaViaje ticket={ticket} ahora={ahora} />}
                   </div>
