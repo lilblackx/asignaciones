@@ -176,6 +176,15 @@ export default [
   { id: 'administracion', usuario: 'administracion', clave: 'Administracion1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }] },
   // Infraestructura (instalaciones realizadas): la lista y su panel de filtros.
   { id: 'infraestructura', usuario: 'infra', clave: 'Infra1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }] },
+  // Las secciones de la vista propia de Finanzas y la pestaña Historial de Infraestructura (cada rol tiene su vista, distinta de la del administrador).
+  { id: 'finanzas-secciones', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'pagos-de-clientes', preparar: (n) => n.clic('pagos de clientes'), espera: 1800 },
+    { id: 'tabulador', preparar: (n) => n.clic('tabulador de precios'), espera: 1800 },
+    { id: 'reporte-de-pagos', preparar: (n) => n.clic('reporte de pagos'), espera: 1800 },
+  ] },
+  { id: 'infraestructura-historial', usuario: 'infra', clave: 'Infra1234', pantallas: [
+    { id: 'historial', preparar: (n) => n.clic('historial'), espera: 1800 },
+  ] },
   // Los demás roles en su propia vista: la cabecera de cada uno.
   { id: 'almacen', usuario: 'almacen', clave: 'Almacen1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
   { id: 'promotora', usuario: 'promotora', clave: 'Promotora1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },

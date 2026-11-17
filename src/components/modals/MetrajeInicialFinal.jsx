@@ -13,7 +13,7 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
   const campo = (id, valor, onChange, error, nombre) => (
     <div className="space-y-1 min-w-0 flex-1">
       <label htmlFor={id} className={etiqueta}>
-        {nombre} {!compacto && <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>}
+        {compacto ? nombre : (nombre === 'METRAJE INICIAL' ? 'Inicial' : 'Final')}
       </label>
       <input
         id={id}
@@ -34,7 +34,9 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
   );
 
   return (
-    <div className="space-y-1.5">
+    <fieldset className="space-y-1.5 min-w-0">
+      {/* Formulario del técnico: un solo título para las dos marcas (con "obligatorio" una sola vez) y cada campo con su rótulo corto, de una línea, para que los dos queden alineados. */}
+      {!compacto && <legend className={`${etiqueta} mb-1`}>Metraje del cable <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span></legend>}
       <div className="flex items-start gap-2">
         {campo(idInicial, inicial, onInicial, errorInicial, 'METRAJE INICIAL')}
         {campo(idFinal, final, onFinal, errorFinal, 'METRAJE FINAL')}
@@ -48,6 +50,6 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
             : 'Marca del cable al empezar y al terminar: el total de metros se calcula solo.'}
         </p>
       )}
-    </div>
+    </fieldset>
   );
 }

@@ -126,7 +126,7 @@ export default function TicketsTable({
                       <CodigoOrden ticket={ticket} onCopiar={onCopiarMensajeCliente} />
                     </div>
                     {/* El aviso "PRIORIDAD ALTA" es para el técnico; la oficina ya la ve con la bandera y el separador de grupo. */}
-                    {prioritaria && isTecnico && <InsigniaPrioridad />}
+                    {prioritaria && isTecnico && <InsigniaPrioridad corta />}
                   </div>
                 </td>
                 <td className="px-3 py-3 whitespace-normal leading-tight align-middle">
