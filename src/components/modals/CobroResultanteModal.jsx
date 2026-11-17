@@ -106,7 +106,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
   const solo = porPasos && clave === 'detalles' && pasos.length === 1;
   const cuadroDelCobro = (
     <div className="mx-5 mt-3 px-4 py-5 text-center rounded-card bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50">
-      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{solo ? 'Detalles de la orden' : instalacion ? 'Pago de la instalación' : 'Cobro resultante al cliente'}</p>
+      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{solo ? 'Falta subir las fotos' : instalacion ? 'Pago de la instalación' : 'Cobro resultante al cliente'}</p>
       {solo ? (
         <p className="mt-2 text-lg font-black text-emerald-800 dark:text-emerald-300 leading-tight">Sube las fotos de tu trabajo para terminar con esta orden.</p>
       ) : instalacion ? (

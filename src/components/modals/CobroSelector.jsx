@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { montoCalculadora } from '../../utils/montoCalculadora';
 import { Check } from 'lucide-react';
 import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, ETIQUETA_COBRO, MONEDA_BS, MONEDA_USD } from '../../utils/cobro';
-import { claseCampo } from '../estilos';
+import { ETIQUETA_CAMPO, claseCampo } from '../estilos';
+import Segmentado from '../Segmentado';
 
 // Qué cobro se le informa al técnico al finalizar la orden: "Visita técnica" (el monto de
 // siempre), "Otro monto" (escrito a mano; es el que verá el técnico en su aviso final) o
@@ -33,16 +34,16 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
         role="radio"
         aria-checked={activa}
         onClick={() => onChange({ ...seleccion, modo })}
-        className={`w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-xl border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-          activa ? 'border-sky-500 bg-white dark:bg-sky-950/40' : 'border-input bg-white dark:bg-zinc-950 hover:border-sky-400'
+        className={`w-full flex items-center gap-3 text-left px-3 py-3 rounded-campo border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
+          activa ? 'border-red-600 bg-red-50 dark:bg-red-950/30' : 'border-input bg-card hover:border-zinc-500'
         }`}
       >
-        <span className={`w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center ${activa ? 'bg-sky-700 border-sky-600 text-white' : 'border-zinc-400 dark:border-zinc-600'}`} aria-hidden="true">
-          {activa && <Check className="w-3.5 h-3.5" />}
+        <span className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center ${activa ? 'bg-red-600 border-red-600 text-white' : 'border-zinc-400 dark:border-zinc-500'}`} aria-hidden="true">
+          {activa && <Check className="w-3 h-3" />}
         </span>
         <span className="min-w-0">
-          <span className="block text-xs font-black text-foreground">{titulo}</span>
-          {detalle && <span className="block text-[11px] max-lg:text-xs text-muted-foreground">{detalle}</span>}
+          <span className="block text-sm font-bold text-foreground">{titulo}</span>
+          {detalle && <span className="block text-xs text-muted-foreground">{detalle}</span>}
         </span>
       </button>
     );
@@ -50,7 +51,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
 
   return (
     <div className="space-y-2 text-left">
-      <p id={`${idBase}-titulo`} className="text-xs font-black text-sky-900 dark:text-sky-200">COBRO QUE VERÁ EL TÉCNICO</p>
+      <p id={`${idBase}-titulo`} className={`${ETIQUETA_CAMPO} ml-1`}>Cobro que verá el técnico</p>
       <div role="radiogroup" aria-labelledby={`${idBase}-titulo`} className="space-y-2">
         {modos.includes(COBRO_VISITA) && opcion(COBRO_VISITA, ETIQUETA_COBRO[COBRO_VISITA], montoVisita ? `${montoVisita} Bs (monto de siempre, con la tasa de hoy; siempre en Bs)` : 'La tasa no está configurada: el técnico no verá monto.')}
         {modos.includes(COBRO_OTRO) && opcion(COBRO_OTRO, tituloOtro, 'Escribe el monto que se debe cobrar, en Bs o en $')}
@@ -58,26 +59,8 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
       </div>
       {esOtro && (
         <div className="space-y-1">
-          <div role="radiogroup" aria-label="Moneda del cobro" className="grid grid-cols-2 gap-2">
-            {[[MONEDA_BS, 'Bs (bolívares)'], [MONEDA_USD, '$ (dólares)']].map(([valor, texto]) => {
-              const activa = moneda === valor;
-              return (
-                <button
-                  key={valor}
-                  type="button"
-                  role="radio"
-                  aria-checked={activa}
-                  onClick={() => onChange({ ...seleccion, moneda: valor })}
-                  className={`px-3 py-2 rounded-xl border-2 text-xs font-black transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
-                    activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-input bg-white dark:bg-zinc-950 text-card-foreground hover:border-sky-400'
-                  }`}
-                >
-                  {texto}
-                </button>
-              );
-            })}
-          </div>
-          <label htmlFor={`${idBase}-otro`} className="text-[11px] max-lg:text-xs font-bold text-card-foreground ml-1">MONTO A COBRAR ({moneda === MONEDA_USD ? '$' : 'Bs'})</label>
+          <Segmentado llena grande ariaLabel="Moneda del cobro" opciones={[{ id: MONEDA_BS, etiqueta: 'Bs (bolívares)' }, { id: MONEDA_USD, etiqueta: '$ (dólares)' }]} valor={moneda} onCambiar={(valor) => onChange({ ...seleccion, moneda: valor })} />
+          <label htmlFor={`${idBase}-otro`} className={`${ETIQUETA_CAMPO} ml-1`}>Monto a cobrar ({moneda === MONEDA_USD ? '$' : 'Bs'})</label>
           <input
             id={`${idBase}-otro`}
             ref={inputRef}
@@ -92,8 +75,8 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
             aria-describedby={error ? `${idBase}-error` : undefined}
             className={`${claseCampo('grande', error ? 'error' : 'normal')} font-bold text-right tabular-nums`}
           />
-          <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Escribe solo los números: se llenan de derecha a izquierda y los dos últimos son los decimales (569600 se ve 5.696,00).</p>
-          {error && <p id={`${idBase}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
+          <p className="text-xs text-muted-foreground ml-1">Escribe solo los números: se llenan de derecha a izquierda y los dos últimos son los decimales (569600 se ve 5.696,00).</p>
+          {error && <p id={`${idBase}-error`} role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
         </div>
       )}
     </div>

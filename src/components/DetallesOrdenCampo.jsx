@@ -195,7 +195,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
         type="button"
         onClick={subir}
         disabled={subiendo || preparando || !huboCambios}
-        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-campo bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors"
+        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-boton bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors"
       >
         {subiendo || preparando ? <Spinner /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />}
         {subiendo ? (aSubir > 0 ? `Subiendo ${progreso} de ${aSubir}...` : 'Guardando...') : preparando ? 'Preparando las fotos...' : textoGuardar}

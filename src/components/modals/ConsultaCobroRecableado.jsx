@@ -25,10 +25,10 @@ export default function ConsultaCobroRecableado({ ticket, metros, onConsultar })
 
   if (respuesta && mismosMetros) {
     return (
-      <div role="status" className="rounded-campo border-2 border-sky-400 dark:border-sky-700 bg-sky-50 dark:bg-sky-950/40 p-3 text-center">
-        <p className="text-[11px] max-lg:text-xs font-black tracking-wide text-sky-800 dark:text-sky-300">COBRO DEL RECABLEADO ({respuesta.metros} m)</p>
+      <div role="status" className="rounded-card border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 p-4 text-center">
+        <p className="text-sm font-bold text-sky-800 dark:text-sky-300">Cobro del recableado ({respuesta.metros} m)</p>
         <p className="mt-0.5 text-3xl font-black text-sky-700 dark:text-sky-300 leading-tight break-words">{textoRespuesta(respuesta)}</p>
-        <p className="mt-1 text-[11px] max-lg:text-xs text-sky-900 dark:text-sky-200">Lo respondió la oficina{respuesta.por ? ` (${respuesta.por})` : ''}. Infórmalo al cliente antes de colocar el cable.</p>
+        <p className="mt-1 text-xs text-sky-900 dark:text-sky-200">Lo respondió la oficina{respuesta.por ? ` (${respuesta.por})` : ''}. Infórmalo al cliente antes de colocar el cable.</p>
       </div>
     );
   }
@@ -41,10 +41,10 @@ export default function ConsultaCobroRecableado({ ticket, metros, onConsultar })
       ) : (
         <>
           {respuesta && !mismosMetros && (
-            <p className="text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300 ml-1">La respuesta anterior ({textoRespuesta(respuesta)}) fue para {respuesta.metros} m. Con los metros nuevos hay que consultar otra vez.</p>
+            <p className="text-xs text-amber-800 dark:text-amber-300 ml-1">La respuesta anterior ({textoRespuesta(respuesta)}) fue para {respuesta.metros} m. Con los metros nuevos hay que consultar otra vez.</p>
           )}
           {consulta && !respuesta && !mismosMetros && (
-            <p className="text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300 ml-1">Cambiaste los metros ({consulta.metros} m consultados): vuelve a consultar.</p>
+            <p className="text-xs text-amber-800 dark:text-amber-300 ml-1">Cambiaste los metros ({consulta.metros} m consultados): vuelve a consultar.</p>
           )}
         </>
       )}
@@ -52,12 +52,12 @@ export default function ConsultaCobroRecableado({ ticket, metros, onConsultar })
         type="button"
         onClick={consultar}
         disabled={enviando || Boolean(metrosEscritos.error)}
-        className="w-full min-h-[40px] max-lg:min-h-11 inline-flex items-center justify-center gap-2 rounded-campo border border-amber-400 dark:border-amber-700 bg-amber-100/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full min-h-[40px] max-lg:min-h-11 inline-flex items-center justify-center gap-2 rounded-boton border border-amber-400 dark:border-amber-700 bg-amber-100/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Banknote className="w-3.5 h-3.5" aria-hidden="true" />
         {enviando && <Spinner />}{enviando ? 'Enviando...' : esperando ? 'Volver a avisar a la oficina' : 'Consultar cobro a la oficina'}
       </button>
-      {!esperando && <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{metrosEscritos.error ? 'Escribe los metros de cable para poder consultar el cobro.' : 'La oficina te responde cuánto se cobra por este recableado.'}</p>}
+      {!esperando && <p className="text-xs text-muted-foreground ml-1">{metrosEscritos.error ? 'Escribe los metros de cable para poder consultar el cobro.' : 'La oficina te responde cuánto se cobra por este recableado.'}</p>}
     </div>
   );
 }

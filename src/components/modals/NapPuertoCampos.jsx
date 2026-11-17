@@ -10,7 +10,7 @@ export default function NapPuertoCampos({ nap, onNap, napError, puerto, onPuerto
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-x-2.5 gap-y-1 items-end">
       <label htmlFor="pf-nap" className="col-start-1 row-start-1 block text-xs font-bold text-card-foreground ml-1">
-        NOMENCLATURA DE LA NAP <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+        Nomenclatura de la NAP <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <label htmlFor="pf-puerto" className="col-start-2 row-start-1 block text-xs font-bold text-card-foreground ml-1">
         PUERTO <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>

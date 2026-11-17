@@ -105,7 +105,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           </Campo>
 
           <div className="col-span-2 space-y-1.5" role="group" aria-labelledby="ed-postes-etiqueta">
-            <p id="ed-postes-etiqueta" className={claseEtiqueta}>POSTEADURA <span className="font-normal text-muted-foreground">uno o varios postes</span></p>
+            <p id="ed-postes-etiqueta" className={claseEtiqueta}>Posteadura <span className="font-normal text-muted-foreground">uno o varios postes</span></p>
             {form.postes.map((poste, i) => (
               <div key={i} className="flex items-center gap-2">
                 <input id={`ed-poste-${i + 1}`} type="text" autoComplete="off" maxLength={MAX_LARGO_POSTE} placeholder={i === 0 ? 'Ej. DM SN N01B01' : `Poste ${i + 1}`} aria-label={`Poste ${i + 1}`} aria-invalid={i === 0 && !!errores.posteadura} value={poste} onChange={(e) => cambiarPoste(i, stripEmojis(e.target.value))} className={`flex-1 ${claseInput(i === 0 && errores.posteadura)}`} />

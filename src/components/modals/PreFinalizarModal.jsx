@@ -316,19 +316,12 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   };
 
   const encabezado = (
-        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="bg-amber-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">
-                PRE-FINALIZAR
-              </span>
-              <span className="text-xs font-bold text-amber-400">
-                {ticket.codigo || 'S/C'}
-              </span>
-            </div>
-            <h2 className="text-sm font-black text-white mt-0.5 truncate max-w-[260px] sm:max-w-md">
-              {ticket.nombre}
-            </h2>
+        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 sticky top-0 z-10">
+          <div className="min-w-0">
+            <h2 className="text-sm font-black text-white">PRE-FINALIZAR</h2>
+            <p className="text-xs text-zinc-300 mt-1 truncate">
+              {ticket.codigo || 'S/C'} · {ticket.nombre}
+            </p>
           </div>
           <BotonCerrar onClick={onClose} />
         </div>
@@ -407,7 +400,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     <>
           {observacionParaTecnico(ticket) && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-card-foreground ml-1">NOTA DE LA OFICINA</span>
+              <span className="text-xs font-bold text-card-foreground ml-1">Nota de la oficina</span>
               <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{observacionParaTecnico(ticket)}</p>
             </div>
           )}
@@ -420,7 +413,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
             <div className="space-y-4 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
               <div className="space-y-1">
                 <p className="text-xs font-bold text-card-foreground ml-1">
-                  METRAJE DEL CABLE <span className="font-normal text-muted-foreground">marca del cable al empezar y al terminar</span>
+                  Metraje del cable <span className="font-normal text-muted-foreground">marca del cable al empezar y al terminar</span>
                 </p>
                 <MetrajeInicialFinal
                   idInicial="pf-metros-inicial"
@@ -556,7 +549,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloquePotencia = (
           <div className="space-y-1">
             <label htmlFor="pf-potencia" className="text-xs font-bold text-card-foreground ml-1">
-              POTENCIA ÓPTICA (dBm) <span className="font-normal text-muted-foreground">(opcional)</span>
+              Potencia óptica (dBm) <span className="font-normal text-muted-foreground">(opcional)</span>
             </label>
             <input
               id="pf-potencia"
@@ -580,7 +573,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
     <>
           {devolucionPendiente(ticket) && ticket.observacionTecnico?.trim() && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-card-foreground ml-1">TU REPORTE ANTERIOR</span>
+              <span className="text-xs font-bold text-card-foreground ml-1">Tu reporte anterior</span>
               <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{ticket.observacionTecnico}</p>
             </div>
           )}
@@ -589,7 +582,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloqueObservacion = (
           <div className="space-y-1">
             <label htmlFor="pf-obs"className="text-xs font-bold text-card-foreground ml-1">
-              OBSERVACIÓN / DETALLES DEL TRABAJO <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+              Observación / detalles del trabajo <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
             </label>
             <textarea
               id="pf-obs"

@@ -23,7 +23,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
       {onTipoEquipo && (
         <div className="space-y-1">
           <label htmlFor="pf-tipo-equipo" className="text-xs font-bold text-card-foreground ml-1">
-            TIPO DE EQUIPO NUEVO <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+            Tipo de equipo nuevo <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
           </label>
           <SelectMenu id="pf-tipo-equipo" ariaLabel="Tipo de equipo nuevo" value={tipoEquipo} onChange={onTipoEquipo} items={ITEMS_TIPO} />
           {errorTipo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errorTipo}</p>}
@@ -31,7 +31,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
       )}
       <div className="space-y-1">
       <label htmlFor="pf-serial-equipo" className="text-xs font-bold text-card-foreground ml-1">
-        {nuevo ? 'SERIAL DEL EQUIPO NUEVO' : 'SERIAL DEL EQUIPO'} <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+        {nuevo ? 'Serial del equipo nuevo' : 'Serial del equipo'} <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <div className="flex items-stretch gap-2">
       <input

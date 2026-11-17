@@ -41,7 +41,7 @@ export default function ConectoresRecableado({ colorExterno, colorInterno, onExt
     <div className="space-y-3">
       <div>
         <p className="text-xs font-bold text-card-foreground ml-1">
-          CONECTORES <span className="font-normal text-muted-foreground">(opcional)</span>
+          Conectores <span className="font-normal text-muted-foreground">(opcional)</span>
         </p>
         <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Toca un color para marcarlo; vuelve a tocarlo para quitarlo.</p>
       </div>
@@ -90,7 +90,7 @@ export function CantidadesConectorInstalacion({ externoVerde, internoVerde, inte
     <div className="space-y-3">
       <div>
         <p id="pf-cantidad-conectores-inst-etiqueta" className="text-xs font-bold text-card-foreground ml-1">
-          CONECTORES USADOS <span className="font-normal text-red-700 dark:text-red-400">(obligatorio: al menos 1 en total)</span>
+          Conectores usados <span className="font-normal text-red-700 dark:text-red-400">(obligatorio: al menos 1 en total)</span>
         </p>
         <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Escribe cuántos usaste de cada tipo y color; deja en 0 el que no usaste.</p>
       </div>
@@ -119,7 +119,7 @@ export function CantidadesConectorVisita({ interno, verde, azul, onVerde, onAzul
   return (
     <div className="space-y-1.5">
       <p id="pf-cantidad-conectores-etiqueta" className="text-xs font-bold text-card-foreground ml-1">
-        CONECTORES USADOS{' '}
+        Conectores usados{' '}
         <span className="font-normal text-red-700 dark:text-red-400">{interno ? '(obligatorio: al menos 1 en total)' : '(obligatorio)'}</span>
       </p>
       <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{interno ? 'Escribe cuántos usaste de cada color; deja en 0 el que no usaste.' : 'El conector externo es solo verde: escribe cuántos usaste. Si también cambiaste un conector interno azul, escribe cuántos; si no, déjalo en 0.'}</p>

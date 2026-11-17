@@ -88,7 +88,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
       <>
       <div className="space-y-1">
         <p className={claseEtiqueta}>
-          METRAJE DEL DROP <span className="font-normal text-muted-foreground">marca del cable al empezar y al terminar</span>
+          Metraje del drop <span className="font-normal text-muted-foreground">marca del cable al empezar y al terminar</span>
         </p>
         <MetrajeInicialFinal
           idInicial="pf-metraje-inicial"
@@ -114,7 +114,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
 
       <div className="space-y-1.5" role="group" aria-labelledby="pf-postes-etiqueta" aria-describedby={errores.posteadura ? 'pf-postes-error' : undefined}>
         <p id="pf-postes-etiqueta" className={claseEtiqueta}>
-          POSTEADURA <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span> <span className="font-normal text-muted-foreground">uno o varios postes</span>
+          Posteadura <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span> <span className="font-normal text-muted-foreground">uno o varios postes</span>
         </p>
         {postes.map((poste, i) => (
           <div key={i} className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
 
       <div className="space-y-1">
         <label htmlFor="pf-puertos-disponibles" className={claseEtiqueta}>
-          PUERTOS DISPONIBLES <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+          Puertos disponibles <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
         </label>
         <input
           id="pf-puertos-disponibles"

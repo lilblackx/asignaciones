@@ -111,6 +111,7 @@ export function medirPantalla(opciones) {
       const cs = getComputedStyle(el);
       if (cs.display === 'inline' && el.closest('p, li, span, label')) continue;
       if ((el.type === 'checkbox' || el.type === 'radio') && el.labels?.length) continue;
+      if (el.classList.contains('sr-only')) continue; // los campos de archivo ocultos que abre un botón: no se tocan
       const r = el.getBoundingClientRect();
       let w = r.width;
       let h = r.height;

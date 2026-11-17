@@ -1,6 +1,6 @@
 import { ClipboardCheck } from 'lucide-react';
 import DialogoConfirmacion from './DialogoConfirmacion';
-import { ETIQUETA } from '../estilos';
+import { ETIQUETA_CAMPO } from '../estilos';
 
 // Confirmación antes de pre-finalizar: la orden pasa a revisión de la oficina y el técnico ya no la puede cambiar ni deshacer.
 // "Volver" va primero para que sea el botón con el cursor al abrir: un toque o un Enter de más no pre-finaliza por error.
@@ -22,10 +22,10 @@ export default function ConfirmPreFinalizarModal({ ticket, visita, datos = [], i
       {visita && <p className="text-xs -mt-2">{visita}</p>}
       {datos.length > 0 && (
         <div className="rounded-campo bg-muted border border-border p-3 space-y-2.5">
-          <p className="text-xs font-black tracking-wide text-card-foreground">DATOS QUE SE ENVÍAN</p>
+          <p className="text-sm font-black text-card-foreground">Datos que se envían</p>
           {datos.map((d) => (
             <div key={d.etiqueta} className="min-w-0">
-              <p className={ETIQUETA}>{d.etiqueta}</p>
+              <p className={ETIQUETA_CAMPO}>{d.etiqueta}</p>
               <p className={`text-foreground whitespace-pre-line ${d.destacado ? 'text-xl font-black tracking-wide break-all' : 'text-sm font-bold break-words'}`}>{d.valor}</p>
             </div>
           ))}

@@ -64,9 +64,11 @@ const preFinalizarInstalacion = [
 const inicioTecnico = [
   { id: 'lista', preparar: async () => true },
   // La pantalla del cobro con las formas de pago de la empresa desplegadas (el técnico las abre si el cliente las pide).
-  { id: 'cobro-formas', preparar: async (n) => { await n.dormir(600); return clicTexto(n, 'formas de pago de la empresa'); }, espera: 1200 },
+  { id: 'cobro-formas', preparar: async (n) => { await n.dormir(600); await clicTexto(n, 'formas de pago de la empresa'); return true; }, espera: 1200 },
+  // El paso de las fotos de una instalación finalizada (con el pago ya registrado): se pasan los avisos con "Hacerlo después" hasta que sale.
+  { id: 'cobro-fotos', preparar: async (n) => { for (let i = 0; i < 30; i += 1) { if (await n.ev(() => [...document.querySelectorAll('[role="alertdialog"] h3')].some((h) => /detalles de la orden/i.test(h.innerText)))) return true; if (!(await n.clic('hacerlo después'))) return false; await n.dormir(700); } return false; }, espera: 1200 },
   // Con órdenes finalizadas por avisar, el técnico ve primero los avisos de cobro: "Hacerlo después" los pasa y deja ver las tarjetas.
-  { id: 'tarjetas', preparar: async (n) => { for (let i = 0; i < 5; i += 1) { if (!(await n.clic('hacerlo después'))) break; await n.dormir(900); } return true; } },
+  { id: 'tarjetas', preparar: async (n) => { for (let i = 0; i < 60; i += 1) { if (!(await n.clic('hacerlo después'))) break; await n.dormir(500); } return true; } },
   { id: 'lista-abajo', preparar: desplazarAbajo('body'), limpiar: async (n) => { await n.ev(() => { document.scrollingElement.scrollTop = 0; document.querySelectorAll('*').forEach((e) => { if (e.scrollTop) e.scrollTop = 0; }); }); } },
   { id: 'notificaciones', preparar: (n) => n.clicEtiqueta('^notificaciones$') },
   { id: 'cuenta', preparar: (n) => n.clicEtiqueta('mi cuenta') },
@@ -135,6 +137,8 @@ export default [
       { id: 'notificaciones', preparar: (n) => n.clicEtiqueta('^notificaciones'), limpiar: (n) => n.esc() },
       // El pegado manual de la ubicación (el ícono "Sin ubicación" de una orden): la ventana con su encabezado y esquinas.
       { id: 'ubicacion-pegar', preparar: (n) => n.clicEtiqueta('^sin ubicación: pegar'), limpiar: (n) => n.esc(), espera: 1200 },
+      // La oficina responde la consulta de cobro de un recableado (la siembra: una consulta pendiente en AR701).
+      { id: 'responder-cobro', preparar: (n) => clicTexto(n, 'responder cobro'), limpiar: (n) => n.esc(), espera: 1200 },
       { id: 'nueva-orden', preparar: (n) => n.clic('nueva orden'), limpiar: seguir },
       { id: 'nueva-orden-errores', preparar: (n) => n.clic('guardar', { dentro: true }) },
       { id: 'detalle', preparar: (n) => n.clicEtiqueta('^ver detalle de la orden as2$') },
