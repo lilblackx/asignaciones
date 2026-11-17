@@ -224,7 +224,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   );
   const resumenNode = (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-foreground">
-            <span className="inline-flex items-center gap-1.5"><Wrench className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /><span className="font-black text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-card-foreground">- {ticket.falla}</span>}</span>
+            <span className="inline-flex items-center gap-1.5"><Wrench className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /><span className="font-black text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-card-foreground">- {ticket.falla}</span>}</span>
             {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />Técnico: <span className="font-black">{ticket.tecnico}</span></span>}
             {ticket.creado && <span className="text-card-foreground">Creado por: <span className="font-bold">{ticket.creado}</span></span>}
           </div>
@@ -296,7 +296,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           <div className="space-y-1">
             <span className="text-xs font-bold text-card-foreground ml-1">OBSERVACIÓN / DETALLES DEL TRABAJO</span>
             <div className="bg-sunken border border-border rounded-campo p-3 text-xs text-foreground whitespace-pre-wrap break-words min-h-[3rem]">
-              {ticket.observacionTecnico || ticket.observacion || <span className="text-zinc-400 italic">Sin observación registrada.</span>}
+              {ticket.observacionTecnico || ticket.observacion || <span className="text-muted-foreground italic">Sin observación registrada.</span>}
             </div>
           </div>
           {ticket.observacionTecnico && ticket.observacion && (
@@ -355,7 +355,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           <Colapsable>
             {devolviendo && (
               <div ref={mostrarMotivo} className="space-y-1">
-                <label htmlFor="aprobar-motivo" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
+                <label htmlFor="aprobar-motivo" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1 flex items-center gap-1">
                   <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA DEVOLUCIÓN <span className="font-normal">(obligatorio)</span>
                 </label>
                 <textarea
@@ -368,7 +368,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                   placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
                   className={`${claseArea('compacto')} resize-none`}
                 />
-                {motivoError && <p className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{motivoError}</p>}
+                {motivoError && <p className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{motivoError}</p>}
                 <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">
                   La orden vuelve a PENDIENTE y el técnico recibe una notificación con este motivo.
                 </p>

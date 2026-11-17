@@ -27,14 +27,14 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
                     {ticket._reportTipo === 'CANCELADOS' ? 'CANCELADO' : 'FINALIZADO'}
                   </div>
                 </td>
-                <td className="px-4 py-3 font-black text-red-600 dark:text-red-400 align-middle">{ticket.codigo}</td>
+                <td className="px-4 py-3 font-black text-red-700 dark:text-red-400 align-middle">{ticket.codigo}</td>
                 <td className="px-4 py-3 align-middle">
                   <div className="font-bold text-foreground leading-tight">{ticket.nombre}</div>
                   <div className="text-[11px] max-lg:text-xs text-muted-foreground mt-1">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</div>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground leading-snug align-middle">{ticket.direccion}</td>
                 <td className="px-4 py-3 align-middle">
-                  <span className="block text-[11px] max-lg:text-xs font-black text-red-600 dark:text-red-400 uppercase mb-1">{ticket.tipoTrabajo}</span>
+                  <span className="block text-[11px] max-lg:text-xs font-black text-red-700 dark:text-red-400 uppercase mb-1">{ticket.tipoTrabajo}</span>
                   <div className="text-card-foreground leading-tight">{ticket.falla}</div>
                 </td>
                 <td className="px-4 py-3 text-center align-middle">
@@ -61,13 +61,13 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
               </div>
             </div>
             <div className="pr-20">
-              <span className="font-black text-red-600 dark:text-red-400 text-sm block mb-1">{ticket.codigo}</span>
+              <span className="font-black text-red-700 dark:text-red-400 text-sm block mb-1">{ticket.codigo}</span>
               <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight">{ticket.nombre}</h5>
               <p className="text-xs text-muted-foreground">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</p>
             </div>
             <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-snug"><span className="font-semibold text-zinc-800 dark:text-zinc-100">Dirección:</span> {ticket.direccion}</p>
             <div className="border-t border-border/80 pt-2 flex flex-col gap-1 text-xs">
-              <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
+              <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
               <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'SIN TÉCNICO'}</p>
             </div>
           </div>

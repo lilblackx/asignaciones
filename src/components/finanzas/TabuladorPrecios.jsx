@@ -47,7 +47,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
             </div>
             <p className={`${TEXTO_SUAVE} sm:text-right tabular-nums`}>
-              {errores[id] ? <span role="alert" className="text-red-600 dark:text-red-400 font-bold">{errores[id]}</span> : tasa > 0 && <span className="text-sm font-semibold">{bolivares(aBs(parseTarifa(borrador[id]).valor ?? 0, tasa))}</span>}
+              {errores[id] ? <span role="alert" className="text-red-700 dark:text-red-400 font-bold">{errores[id]}</span> : tasa > 0 && <span className="text-sm font-semibold">{bolivares(aBs(parseTarifa(borrador[id]).valor ?? 0, tasa))}</span>}
             </p>
           </li>
         ))}

@@ -147,7 +147,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
               {f.tipo === 'guardada' ? <MiniaturaGuardada ruta={f.ruta} numero={i + 1} />
                 : f.estado === 'error' ? (
                   <div data-error={f.mensaje} className="w-full h-full flex flex-col items-center justify-center gap-1 text-center p-1.5 pr-9">
-                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0" aria-hidden="true" />
+                    <AlertTriangle className="w-6 h-6 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" />
                     <span className="text-[11px] max-lg:text-xs leading-tight font-bold text-red-700 dark:text-red-300">No se pudo abrir</span>
                   </div>
                 )
@@ -171,7 +171,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
 
       {/* Qué pasó con cada foto que el teléfono no pudo abrir (el recuadro de la foto solo cabe en pocas palabras). */}
       {fotos.some((f) => f.estado === 'error') && (
-        <ul role="alert" className="space-y-1 text-xs font-bold text-red-600 dark:text-red-400">
+        <ul role="alert" className="space-y-1 text-xs font-bold text-red-700 dark:text-red-400">
           {fotos.map((f, i) => (f.estado === 'error' ? <li key={f.id}>Foto {i + 1}: {f.mensaje}</li> : null))}
         </ul>
       )}
@@ -189,7 +189,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
         {fotos.length} de {MAX_FOTOS} fotos{faltan > 0 ? ` · faltan ${faltan}` : ' · completas'}
       </p>
 
-      {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 text-center">{error}</p>}
+      {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 text-center">{error}</p>}
 
       <button
         type="button"

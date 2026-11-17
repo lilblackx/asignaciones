@@ -23,15 +23,15 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
       {onTipoEquipo && (
         <div className="space-y-1">
           <label htmlFor="pf-tipo-equipo" className="text-xs font-bold text-card-foreground ml-1">
-            TIPO DE EQUIPO NUEVO <span className="font-normal text-red-500">(obligatorio)</span>
+            TIPO DE EQUIPO NUEVO <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
           </label>
           <SelectMenu id="pf-tipo-equipo" ariaLabel="Tipo de equipo nuevo" value={tipoEquipo} onChange={onTipoEquipo} items={ITEMS_TIPO} />
-          {errorTipo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errorTipo}</p>}
+          {errorTipo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errorTipo}</p>}
         </div>
       )}
       <div className="space-y-1">
       <label htmlFor="pf-serial-equipo" className="text-xs font-bold text-card-foreground ml-1">
-        {nuevo ? 'SERIAL DEL EQUIPO NUEVO' : 'SERIAL DEL EQUIPO'} <span className="font-normal text-red-500">(obligatorio)</span>
+        {nuevo ? 'SERIAL DEL EQUIPO NUEVO' : 'SERIAL DEL EQUIPO'} <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <div className="flex items-stretch gap-2">
       <input
@@ -52,7 +52,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
       <BotonEscanearSerial onLeido={(leido) => { onSerial(leido.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase()); setTocado(true); }} />
       </div>
       {error || rojo
-        ? <p id="pf-serial-equipo-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>
+        ? <p id="pf-serial-equipo-error" role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>
         : verde && <p id="pf-serial-equipo-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacion.mensaje}</p>}
       {aviso}
       </div>

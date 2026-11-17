@@ -43,7 +43,7 @@ export default function AlmacenApp({ auth }) {
             </AccionesEncabezado>
           )}
           {error && !actualizadoEn ? (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
             <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando materiales...</p>
           ) : (

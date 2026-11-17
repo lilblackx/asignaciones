@@ -95,7 +95,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
 
         <form onSubmit={enviar} className="p-4 grid grid-cols-2 gap-2">
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-plantilla" className={ETIQUETA_ORDEN}>PLANTILLA <span className="font-normal normal-case text-zinc-400">(pégala completa y se llenan los datos)</span></label>
+            <label htmlFor="nv-plantilla" className={ETIQUETA_ORDEN}>PLANTILLA <span className="font-normal normal-case text-muted-foreground">(pégala completa y se llenan los datos)</span></label>
             <textarea id="nv-plantilla" rows="4" value={form.plantillaOriginal} onChange={alPegar} className={`${CAMPO_ORDEN} font-mono`} placeholder="Pega aquí la plantilla tal como la enviaste..." />
           </div>
 
@@ -108,17 +108,17 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           )}
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-nombre" className={ETIQUETA_ORDEN}>NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="nv-nombre" className={ETIQUETA_ORDEN}>NOMBRE<span className="text-red-700 dark:text-red-400"> *</span></label>
             <input id="nv-nombre" required type="text" maxLength="100" name="nombre" value={form.nombre} onChange={cambiar} className={CAMPO_ORDEN} />
           </div>
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-telefono" className={ETIQUETA_ORDEN}>TELÉFONO<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="nv-telefono" className={ETIQUETA_ORDEN}>TELÉFONO<span className="text-red-700 dark:text-red-400"> *</span></label>
             <TelefonosField id="nv-telefono" required value={form.telefono} onChange={(v) => poner('telefono', v)} inputClassName={CAMPO_ORDEN} />
           </div>
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-instalador" className={ETIQUETA_ORDEN}>INSTALADOR <span className="font-normal normal-case text-zinc-400">(de la plantilla; define el técnico)</span></label>
+            <label htmlFor="nv-instalador" className={ETIQUETA_ORDEN}>INSTALADOR <span className="font-normal normal-case text-muted-foreground">(de la plantilla; define el técnico)</span></label>
             <input id="nv-instalador" readOnly type="text" value={instalador} placeholder="Sin instalador" className={claseCampo('compacto', 'lectura')} />
             {tecnico ? (
               <p role="status" className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-300 ml-1">
@@ -134,7 +134,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           </div>
 
           <div className="col-span-2 sm:col-span-1 space-y-0.5">
-            <label htmlFor="nv-falla" className={ETIQUETA_ORDEN}>TIPO<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="nv-falla" className={ETIQUETA_ORDEN}>TIPO<span className="text-red-700 dark:text-red-400"> *</span></label>
             <SelectMenu
               id="nv-falla"
               ariaLabel="Tipo de instalación"
@@ -169,7 +169,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           )}
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-direccion" className={ETIQUETA_ORDEN}>DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="nv-direccion" className={ETIQUETA_ORDEN}>DIRECCIÓN<span className="text-red-700 dark:text-red-400"> *</span></label>
             <input id="nv-direccion" required type="text" maxLength="200" name="direccion" value={form.direccion} onChange={cambiar} className={CAMPO_ORDEN} />
           </div>
 
@@ -181,15 +181,15 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           <NapCoordenadasField idPrefix="nv" wrapperClassName="col-span-2 space-y-0.5" nap={form.nap} value={form.napCoordenadas} onChange={(v) => poner('napCoordenadas', v)} autoBuscar napsConocidas={napsConocidas} />
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-ubicacion" className={ETIQUETA_ORDEN}>UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, obligatoria)</span></label>
+            <label htmlFor="nv-ubicacion" className={ETIQUETA_ORDEN}>UBICACIÓN <span className="font-normal normal-case text-muted-foreground">(enlace de Google Maps o coordenadas, obligatoria)</span></label>
             <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error || faltaUbicacion} aria-required="true" className={`${CAMPO_ORDEN} ${ubicacion.error || faltaUbicacion ? 'border-red-500' : ''}`} />
-            {faltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
-            {ubicacion.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacion.error}</p>}
+            {faltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
+            {ubicacion.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{ubicacion.error}</p>}
             {ubicacion.valor && <a href={ubicacion.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-observacion" className={ETIQUETA_ORDEN}>OBSERVACIÓN <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
+            <label htmlFor="nv-observacion" className={ETIQUETA_ORDEN}>OBSERVACIÓN <span className="font-normal normal-case text-muted-foreground">(opcional)</span></label>
             <textarea id="nv-observacion" rows="2" maxLength={MAX_OBSERVACION} name="observacion" value={form.observacion} onChange={cambiar} aria-describedby="nv-observacion-ayuda" className={CAMPO_ORDEN} placeholder="Ej.: el cliente prefiere que lo visiten en la tarde" />
             <p id="nv-observacion-ayuda" className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Es interna: solo la ve la oficina (ni el técnico ni el cliente). No sale en el mensaje de WhatsApp.</p>
           </div>

@@ -19,8 +19,8 @@ function iconoPara(type) {
   if (type === 'nuevaVenta') return <Star className="w-4 h-4 text-amber-500 fill-current shrink-0" aria-hidden="true" />;
   if (type === 'tecnicoStatus') return <UserCog className="w-4 h-4 text-purple-500 shrink-0" aria-hidden="true" />;
   if (type === 'aprobado') return <CheckCheck className="w-4 h-4 text-blue-500 shrink-0" aria-hidden="true" />;
-  if (type === 'prioridad') return <Flag className="w-4 h-4 text-red-500 fill-current shrink-0" aria-hidden="true" />;
-  if (type === 'devuelto') return <Undo2 className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
+  if (type === 'prioridad') return <Flag className="w-4 h-4 text-red-700 dark:text-red-400 fill-current shrink-0" aria-hidden="true" />;
+  if (type === 'devuelto') return <Undo2 className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" />;
   if (type === 'encamino') return <Car className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'llegada') return <MapPin className="w-4 h-4 text-teal-500 shrink-0" aria-hidden="true" />;
   if (type === 'pagoCliente') return <Landmark className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
@@ -31,11 +31,11 @@ function iconoPara(type) {
   if (type === 'consultaCobro') return <Banknote className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />;
   if (type === 'respuestaCobro') return <Banknote className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'infraestructura') return <HardHat className="w-4 h-4 text-orange-500 shrink-0" aria-hidden="true" />;
-  if (type === 'cancelada') return <Ban className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
-  if (type === 'desasignada') return <UserMinus className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />;
+  if (type === 'cancelada') return <Ban className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" />;
+  if (type === 'desasignada') return <UserMinus className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" />;
   if (type === 'cierreAutomatico') return <CalendarCheck className="w-4 h-4 text-sky-500 shrink-0" aria-hidden="true" />;
   if (type === 'nuevaAsignacion') return <Wrench className="w-4 h-4 text-emerald-500 shrink-0" aria-hidden="true" />;
-  return <Bell className="w-4 h-4 text-zinc-400 shrink-0" aria-hidden="true" />;
+  return <Bell className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />;
 }
 
 export default function NotificationBell({ notifications, unreadCount, isOpen, setIsOpen, dismissNotification, clearAll, preFinalizadoCount = 0, onOpenPreFinalizados, onOpenNotification }) {
@@ -86,7 +86,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
           <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
             <span className="text-xs font-black text-white uppercase tracking-wide">Notificaciones</span>
             {notifications.length > 0 && (
-              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="relative text-zinc-400 hover:text-red-400 transition-colors p-1 rounded-campo max-lg:after:absolute max-lg:after:-inset-2 hover:bg-zinc-800">
+              <button onClick={clearAll} aria-label="Borrar todas las notificaciones" title="Borrar todas" className="relative text-muted-foreground hover:text-red-400 transition-colors p-1 rounded-campo max-lg:after:absolute max-lg:after:-inset-2 hover:bg-zinc-800">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}

@@ -50,7 +50,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
     <div className="min-w-0 flex-1 space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-black text-foreground truncate">{fila.tecnico}</span>
-        <span className={`shrink-0 text-lg font-black ${conDatos ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>{numero(fila.metros)} <span className="text-xs">m</span></span>
+        <span className={`shrink-0 text-lg font-black ${conDatos ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground'}`}>{numero(fila.metros)} <span className="text-xs">m</span></span>
       </div>
       <p className="text-[11px] max-lg:text-xs text-muted-foreground">
         {fila.ordenes} recableado{fila.ordenes === 1 ? '' : 's'} · {fila.instalaciones} instalaci{fila.instalaciones === 1 ? 'ón' : 'ones'} · {fila.visitas} visita{fila.visitas === 1 ? '' : 's'} de conector · {fila.cambiosEquipo} cambio{fila.cambiosEquipo === 1 ? '' : 's'} de equipo · {totalConectores(fila)} conector{totalConectores(fila) === 1 ? '' : 'es'}
@@ -63,7 +63,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
       {conDatos ? (
         <button type="button" onClick={onToggle} aria-expanded={abierto} aria-controls={idDetalle} className="w-full text-left p-3 flex items-start gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
           {resumen}
-          <ChevronDown className={`w-4 h-4 mt-1 shrink-0 text-zinc-400 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
+          <ChevronDown className={`w-4 h-4 mt-1 shrink-0 text-muted-foreground transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
         </button>
       ) : (
         <div className="p-3 flex">{resumen}</div>

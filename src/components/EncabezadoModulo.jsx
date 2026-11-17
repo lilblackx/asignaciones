@@ -13,7 +13,7 @@ export default function EncabezadoModulo({ Icono, titulo, onClose, onVolver, acc
         </button>
       )}
       <h2 className="text-lg font-black text-white flex items-center gap-2 min-w-0">
-        <Icono className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /> <span className="truncate">{titulo}</span>
+        <Icono className="w-5 h-5 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> <span className="truncate">{titulo}</span>
       </h2>
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {acciones}

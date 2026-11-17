@@ -98,9 +98,9 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
     <div className="mb-8 p-5 bg-card border border-border rounded-card shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 text-base font-bold text-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="flex items-center gap-2"><Clock className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /> Cierre automático</span>
+          <span className="flex items-center gap-2"><Clock className="w-5 h-5 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> Cierre automático</span>
           {!loading && (
-            <span className={`shrink-0 whitespace-nowrap text-[11px] max-lg:text-xs font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+            <span className={`shrink-0 whitespace-nowrap text-[11px] max-lg:text-xs font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>
               {guardado.activo ? 'Activo' : 'Desactivado'}
             </span>
           )}
@@ -147,13 +147,13 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
               {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar cambios'}
             </Boton>
             {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-muted-foreground hover:underline">Descartar</button>}
-            {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
-            {mensaje && <p role="status" className={`text-xs font-bold ${mensaje.tipo === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{mensaje.texto}</p>}
+            {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{error}</p>}
+            {mensaje && <p role="status" className={`text-xs font-bold ${mensaje.tipo === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{mensaje.texto}</p>}
           </div>
           <p className="text-[11px] max-lg:text-xs text-muted-foreground">Si lo activas después de la hora de hoy, el primer cierre es el próximo día elegido.</p>
           {import.meta.env.DEV && (
             <div className="pt-2 border-t border-dashed border-border">
-              <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline">
+              <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-red-700 dark:text-red-400 hover:underline">
                 Simular notificaciones (solo desarrollo)
               </button>
               {mensajeSim && <p role="status" className="mt-1 text-[11px] max-lg:text-xs text-muted-foreground">{mensajeSim}</p>}

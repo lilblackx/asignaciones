@@ -63,7 +63,7 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
               placeholder="Ej. Falta un poste frente a la casa, la NAP está sin puertos..."
               className={`${claseArea('normal')} resize-none`}
             />
-            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{error}</p>}
+            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
             <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">
               {esTecnico
                 ? 'La orden sale de tu lista y la oficina recibe un aviso. Cuando infraestructura termine, la oficina decide cómo sigue.'

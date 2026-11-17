@@ -45,13 +45,13 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
             <div className="mt-1">
               <SelectMenu id="adicional-item" ariaLabel="Ítem del pago adicional" className={SELECTOR} value={form.itemId} onChange={(v) => cambiar('itemId', v)} items={[{ value: '', label: 'Elige el ítem' }, ...items.map((i) => ({ value: i.id, label: `${i.nombre} · ${dolares(i.precio)}` }))]} />
             </div>
-            <Colapsable>{texto('item') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('item')}</p>}</Colapsable>
+            <Colapsable>{texto('item') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('item')}</p>}</Colapsable>
           </div>
 
           <div>
             <label htmlFor="adicional-cantidad" className={ETIQUETA}>Cantidad <span className="font-normal">(por ejemplo, cuántos domingos)</span></label>
             <input id="adicional-cantidad" value={form.cantidad} onChange={(e) => cambiar('cantidad', stripEmojis(e.target.value))} inputMode="numeric" autoComplete="off" aria-invalid={error?.campo === 'cantidad'} className={`${CAMPO} mt-1 text-sm font-bold`} />
-            <Colapsable>{texto('cantidad') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('cantidad')}</p>}</Colapsable>
+            <Colapsable>{texto('cantidad') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('cantidad')}</p>}</Colapsable>
           </div>
 
           <Colapsable>{vista && (
@@ -64,7 +64,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
           <div>
             <label htmlFor="adicional-nota" className={ETIQUETA}>Nota <span className="font-normal">(opcional, la ve el técnico)</span></label>
             <input id="adicional-nota" value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={MAX_NOTA_ADICIONAL} autoComplete="off" aria-invalid={error?.campo === 'nota'} className={`${CAMPO} mt-1`} />
-            <Colapsable>{texto('nota') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('nota')}</p>}</Colapsable>
+            <Colapsable>{texto('nota') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('nota')}</p>}</Colapsable>
           </div>
 
           <label htmlFor="adicional-notificar" className="flex items-center gap-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 cursor-pointer">

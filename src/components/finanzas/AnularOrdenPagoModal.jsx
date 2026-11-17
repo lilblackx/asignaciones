@@ -39,7 +39,7 @@ export default function AnularOrdenPagoModal({ orden, tecnico, onConfirmar, onCl
 
         <div className="p-4 space-y-4">
           <div className="space-y-1">
-            <label htmlFor="motivo-anular-pago-orden" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
+            <label htmlFor="motivo-anular-pago-orden" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1 flex items-center gap-1">
               <Ban className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO <span className="font-normal">(obligatorio, lo verá {tecnico})</span>
             </label>
             <textarea
@@ -53,7 +53,7 @@ export default function AnularOrdenPagoModal({ orden, tecnico, onConfirmar, onCl
               placeholder="Ej. La orden se canceló después de pagarse, se pagó por error, cambió el tipo de trabajo..."
               className={`${claseArea('normal')} resize-none`}
             />
-            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{error}</p>}
+            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
             <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">
               La orden vuelve a estar por pagar y el resto del pago sigue como está. {tecnico} recibe un aviso con el motivo. Si el dinero ya salió, ajústalo con un descuento.
             </p>

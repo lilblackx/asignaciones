@@ -12,7 +12,7 @@ export default function CancelacionAviso({ ticket, compact = false, className = 
   const cuando = !compact && ticket.canceladaEn ? ` · ${fechaHora(ticket.canceladaEn)}` : '';
   return (
     <div className={`rounded-campo border flex items-start gap-2 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-200 ${compact ? 'p-1.5 text-[11px] max-lg:text-xs' : 'p-2.5 text-xs'} ${className}`}>
-      <Ban className={`${compact ? 'w-3 h-3' : 'w-4 h-4'} shrink-0 mt-px text-red-600 dark:text-red-400`} aria-hidden="true" />
+      <Ban className={`${compact ? 'w-3 h-3' : 'w-4 h-4'} shrink-0 mt-px text-red-700 dark:text-red-400`} aria-hidden="true" />
       <div className="min-w-0">
         <p className="font-black leading-tight">Cancelada{quien}{cuando}</p>
         <p className="leading-snug break-words whitespace-pre-wrap mt-0.5">{motivo}</p>

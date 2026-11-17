@@ -45,7 +45,7 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
     <Modal onClose={onClose}>
       <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[90dvh] flex flex-col overflow-hidden border border-border">
         <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center gap-3 shrink-0">
-          <h2 className="text-lg font-black text-white flex items-center gap-2 min-w-0"><Route className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /><span className="truncate">Ruta del día</span></h2>
+          <h2 className="text-lg font-black text-white flex items-center gap-2 min-w-0"><Route className="w-5 h-5 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /><span className="truncate">Ruta del día</span></h2>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="ml-auto shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 

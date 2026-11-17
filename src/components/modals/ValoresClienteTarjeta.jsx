@@ -32,7 +32,7 @@ export default function ValoresClienteTarjeta({ valores, onCopy }) {
   return (
     <section aria-label="Valores del cliente" className="bg-sunken border-2 border-border rounded-campo p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-600 dark:text-red-400">
+        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400">
           <Radio className="w-4 h-4 shrink-0" aria-hidden="true" /> Valores del cliente
         </h3>
         <BotonCopiar

@@ -286,7 +286,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
             <div className="p-3 space-y-3 border-b border-border">
             <div className="flex gap-2">
               <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
                 <input
                   type="search"
                   aria-label="Buscar usuario"
@@ -339,7 +339,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       ) : (
                         <p className="text-sm font-black text-foreground flex items-center gap-1.5 break-words">
                           {u.nombre || u.username}
-                          <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="inline-flex items-center justify-center text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200"><Pencil className="w-3.5 h-3.5" /></button>
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">@{u.username}{u.disabled && ' · deshabilitado'}</p>
@@ -407,7 +407,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                         maxLength="200"
                         className={CAMPO}
                       />
-                      {promError && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{promError}</p>}
+                      {promError && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{promError}</p>}
                       <div className="flex gap-2">
                         <Boton variante="principal" tamano="compacto" type="button" onClick={() => savePromRole(u.id)} disabled={togglingId === u.id} aria-label={`Guardar nombres de ${u.username}`}><Check className="w-3.5 h-3.5" /> Guardar</Boton>
                         <Boton variante="secundario" tamano="compacto" type="button" onClick={cancelRoleEdit} aria-label="Cancelar"><X className="w-3.5 h-3.5" /> Cancelar</Boton>
@@ -447,9 +447,9 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                             className={CAMPO}
                           />
                           <button type="button" onClick={() => saveResetPassword(u.id)} disabled={isResetting} aria-label={`Guardar clave de ${u.username}`} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-campo disabled:opacity-50"><Check className="w-4 h-4" /></button>
-                          <button type="button" onClick={() => setResettingId(null)} aria-label="Cancelar" className="p-2 text-zinc-400 hover:bg-secondary rounded-campo"><X className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => setResettingId(null)} aria-label="Cancelar" className="p-2 text-muted-foreground hover:bg-secondary rounded-campo"><X className="w-4 h-4" /></button>
                         </div>
-                        {resetError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{resetError}</p>}
+                        {resetError && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold">{resetError}</p>}
                       </div>
                       )}
                     </div>
@@ -478,7 +478,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                   <label htmlFor="user-clave" className={ETIQUETA}>CLAVE</label>
                   <input id="user-clave" required type="password" autoComplete="new-password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
                   <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{PASSWORD_POLICY_HINT}</p>
-                  {passwordError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
+                  {passwordError && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
                 <div className="space-y-2 min-w-0">
                   <label htmlFor="user-role" className={ETIQUETA}>ROL</label>
@@ -538,7 +538,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     Puede crear ventas
                   </label>
                   <div className="space-y-2">
-                    <label htmlFor="user-promotora" className={ETIQUETA}>NOMBRE EN LAS PLANTILLAS{newUser.verTodasInstalaciones && <span className="font-normal text-zinc-400"> (opcional)</span>}</label>
+                    <label htmlFor="user-promotora" className={ETIQUETA}>NOMBRE EN LAS PLANTILLAS{newUser.verTodasInstalaciones && <span className="font-normal text-muted-foreground"> (opcional)</span>}</label>
                     <input
                       id="user-promotora"
                       type="text"
@@ -560,7 +560,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 </label>
               )}
 
-              {userError && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold ml-1">{userError}</p>}
+              {userError && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold ml-1">{userError}</p>}
 
               {/* En PC, con el formulario largo (rol Ventas o Técnico), el botón se queda a la vista al desplazar. */}
               <div className="lg:sticky lg:bottom-0 lg:-mx-4 lg:-mb-4 lg:px-4 lg:py-3 lg:rounded-b-xl lg:bg-white lg:dark:bg-zinc-900 lg:border-t lg:border-zinc-200 lg:dark:border-zinc-800">

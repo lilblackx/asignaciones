@@ -37,7 +37,7 @@ export default function AvisoNotificaciones({ permiso, registro, detalleError, b
     if (permiso === 'denied') {
       return (
         <div role="alert" className="mb-3 rounded-card shadow-card border border-red-300 max-lg:border-transparent dark:border-red-900/60 dark:max-lg:border-transparent bg-red-50 dark:bg-red-950/30 p-3 flex items-start gap-3 text-xs text-red-900 dark:text-red-200">
-          <BellOff className="w-5 h-5 shrink-0 mt-0.5 text-red-600 dark:text-red-400" aria-hidden="true" />
+          <BellOff className="w-5 h-5 shrink-0 mt-0.5 text-red-700 dark:text-red-400" aria-hidden="true" />
           <p className="font-bold leading-snug">
             Las notificaciones están bloqueadas: no te enteras de órdenes nuevas con la app cerrada. Actívalas en los ajustes del navegador o de la app (Notificaciones, Permitir) y vuelve a abrir la app.
           </p>

@@ -141,7 +141,7 @@ export default function SelectMenu({
         aria-selected={isSelected}
         className={`flex items-center justify-between gap-2 px-3 py-2 mx-1 rounded-xl text-sm normal-case font-medium cursor-pointer transition-colors ${
           i === activeIndex ? 'bg-secondary' : ''
-        } ${isSelected ? '!font-bold text-red-600 dark:text-red-400' : 'text-zinc-700 dark:text-zinc-200'}`}
+        } ${isSelected ? '!font-bold text-red-700 dark:text-red-400' : 'text-zinc-700 dark:text-zinc-200'}`}
         onPointerEnter={() => setActiveIndex(i)}
         onClick={() => choose(opt)}
       >
@@ -183,7 +183,7 @@ export default function SelectMenu({
             <Icon className="w-4 h-4" aria-hidden="true" />
           </button>
         ) : <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" aria-hidden="true" />)}
-        <ChevronDown className={`absolute top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none transition-transform ${open ? 'rotate-180' : ''} ${chevronClassName}`} aria-hidden="true" />
+        <ChevronDown className={`absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform ${open ? 'rotate-180' : ''} ${chevronClassName}`} aria-hidden="true" />
 
         {montado && pos && portalTarget && createPortal(
           <ul

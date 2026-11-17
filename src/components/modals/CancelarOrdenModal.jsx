@@ -47,7 +47,7 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
 
         <div className="p-4 space-y-4">
           <div className="space-y-1">
-            <label htmlFor="motivo-cancelar-orden" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
+            <label htmlFor="motivo-cancelar-orden" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1 flex items-center gap-1">
               <Ban className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA CANCELACIÓN <span className="font-normal">(obligatorio)</span>
             </label>
             <textarea
@@ -61,7 +61,7 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
               placeholder="Ej. El cliente ya no quiere el servicio, no hay cobertura en la zona, la orden se cargó por error..."
               className={`${claseArea('normal')} resize-none`}
             />
-            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{error}</p>}
+            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
             <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">
               La orden queda CANCELADA y se ve en la lista, el historial, ventas y los reportes.{ticket.tecnico ? ` ${ticket.tecnico} recibe un aviso con el motivo.` : ''}
             </p>

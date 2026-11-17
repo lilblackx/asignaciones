@@ -12,7 +12,7 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligat
   return (
     <div className="space-y-1">
       <label htmlFor={id} className="text-xs font-bold text-card-foreground ml-1">
-        {etiqueta} <span className={`font-normal ${obligatorio ? 'text-red-500' : 'text-zinc-400'}`}>{obligatorio ? '(obligatorio)' : '(opcional)'}</span>
+        {etiqueta} <span className={`font-normal ${obligatorio ? 'text-red-500' : 'text-muted-foreground'}`}>{obligatorio ? '(obligatorio)' : '(opcional)'}</span>
       </label>
       <input
         id={id}
@@ -26,7 +26,7 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligat
         aria-describedby={`${id}-nota`}
         className={`${claseCampo('grande', error ? 'error' : 'normal')} font-mono`}
       />
-      <p id={`${id}-nota`} role={error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${error ? 'text-red-600 dark:text-red-400' : calidad ? calidad.clase : 'text-zinc-400 font-normal'}`}>
+      <p id={`${id}-nota`} role={error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${error ? 'text-red-700 dark:text-red-400' : calidad ? calidad.clase : 'text-muted-foreground font-normal'}`}>
         {error || (calidad ? calidad.texto : 'En dBm. Sin signo se toma como negativo.')}
       </p>
     </div>
@@ -48,7 +48,7 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
     <section aria-label="Valores del cliente" className="rounded-campo border border-border p-3 space-y-3 text-xs">
       <div>
         <h3 className="flex items-center gap-2 font-black tracking-wide text-foreground">
-          <Radio className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> VALORES DEL CLIENTE
+          <Radio className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> VALORES DEL CLIENTE
         </h3>
         <p className="ml-6 mt-1 text-[11px] max-lg:text-xs text-muted-foreground">
           {tecnicoLosVe

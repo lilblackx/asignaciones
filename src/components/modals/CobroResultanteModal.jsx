@@ -20,7 +20,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
   if (!valor) return null;
   return (
     <div className="flex items-start gap-2.5">
-      <Icon className="w-4 h-4 mt-0.5 text-zinc-400 shrink-0" aria-hidden="true" />
+      <Icon className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" aria-hidden="true" />
       <div className="min-w-0">
         <p className="text-[11px] max-lg:text-xs font-bold tracking-wide text-muted-foreground">{etiqueta}</p>
         <p className="text-sm font-bold text-foreground break-words">{valor}</p>

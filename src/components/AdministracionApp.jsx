@@ -116,7 +116,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
     return (
       <button key={clave} type="button" onClick={() => setEstado(estado === clave ? 'TODOS' : clave)} aria-pressed={estado === clave}
         className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'border-red-600' : 'border-transparent hover:border-zinc-500'} shadow-card`}>
-        <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{r.cantidad}</p>
+        <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-700 dark:text-red-400' : ''}`}>{r.cantidad}</p>
         <p className="text-xs font-bold">{titulo}</p>
         {(montos.length > 0 || (porCargar && r.cantidad > 0)) && <p className={`${ETIQUETA} tabular-nums`}>{[...montos, porCargar && r.cantidad > 0 && 'de cualquier fecha'].filter(Boolean).join(' · ')}</p>}
         {porCargar && resumen.sinPago > 0 && <p className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400">{resumen.sinPago} esperan el pago del técnico</p>}
@@ -167,7 +167,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
           {!cargado && !error ? (
             <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando cobros...</p>
           ) : error && !cargado ? (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los cobros. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar los cobros. Revisa tu conexión e intenta de nuevo.</p>
           ) : (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
@@ -178,7 +178,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
 
               <div className="flex gap-2">
                 <div className="relative flex-1 min-w-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   <input type="search" aria-label="Buscar por código, cliente, cédula o técnico" placeholder="Código, cliente o cédula" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={BUSCADOR} />
                   <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
                 </div>
@@ -255,7 +255,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                             <td className="px-3 py-2.5 min-w-[8rem] text-card-foreground break-words">{tipoTexto(c)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                             <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1">{estadoChip(c)}{sinPago(c)}</div></td>
-                            <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoClienteDe(c) ? <PagoDelCliente orden={c} tamano="compacto" /> : <span className="text-xs text-zinc-400">-</span>}</td>
+                            <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoClienteDe(c) ? <PagoDelCliente orden={c} tamano="compacto" /> : <span className="text-xs text-muted-foreground">-</span>}</td>
                             <td className="px-3 py-2.5"><Boton variante={accionDestacada(c) ? 'principal' : 'secundario'} tamano="compacto" onClick={() => setAbierto(c.id)}>{accionTexto(c)}</Boton></td>
                           </tr>
                         ))}

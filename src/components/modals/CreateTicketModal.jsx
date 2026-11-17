@@ -234,10 +234,10 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           </div>
           <div className="col-span-1 space-y-0.5">
             <label htmlFor="tk-codigo" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">CÓDIGO</label>
-            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={usaCodigoOriginal && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className={`${CAMPO_ORDEN} uppercase placeholder:normal-case placeholder:text-zinc-400`} />
+            <input id="tk-codigo" type="text" maxLength="7" name="codigo" placeholder={usaCodigoOriginal && codigosOriginales.length ? 'Original' : 'Auto'} value={formData.codigo} onChange={handleCreateChange} className={`${CAMPO_ORDEN} uppercase placeholder:normal-case placeholder:text-muted-foreground`} />
           </div>
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-fecha-prog" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
+            <label htmlFor="tk-fecha-prog" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">FECHA PROGRAMADA <span className="font-normal normal-case text-muted-foreground">(opcional)</span></label>
             <CampoFecha id="tk-fecha-prog" ariaLabel="Fecha programada" vacio="Sin fecha programada" valor={formData.fechaProgramada} onChange={(v) => handleCreateChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase={CAMPO_FECHA_ORDEN} />
           </div>
           <CedulaField
@@ -283,7 +283,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           )}
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-nombre" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="tk-nombre" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">NOMBRE<span className="text-red-700 dark:text-red-400"> *</span></label>
             <input id="tk-nombre" required type="text" maxLength="100" name="nombre" value={formData.nombre} onChange={handleCreateChange} className={CAMPO_ORDEN} />
           </div>
 
@@ -363,7 +363,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
           {tipoUsaPlantillaPromotora(formData.tipoTrabajo) && (
             <div className="col-span-2 sm:col-span-5 space-y-0.5">
-              <label htmlFor="tk-plantilla" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-zinc-400">(pega el texto completo, autocompleta los campos)</span></label>
+              <label htmlFor="tk-plantilla" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">{esInstalacion ? 'PLANTILLA DE LA PROMOTORA' : 'PEGAR PLANTILLA'} <span className="font-normal normal-case text-muted-foreground">(pega el texto completo, autocompleta los campos)</span></label>
               <textarea id="tk-plantilla" rows="4" value={formData.plantillaOriginal} onChange={handlePlantillaChange} className={`${CAMPO_ORDEN} font-mono`} placeholder={esInstalacion ? 'Pega aquí la plantilla tal como la envió la promotora...' : 'Pega aquí la plantilla completa...'} />
               {!formData.plantillaOriginal?.trim() && (esInstalacion
                 ? <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">Sin la plantilla pegada no se podrá copiar la plantilla de esta orden.</p>
@@ -384,7 +384,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           )}
 
           <div className="col-span-1 sm:col-span-2 space-y-0.5">
-            <label htmlFor="tk-falla" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TIPO{opcionesTipo.length > 0 && <span className="text-red-600 dark:text-red-400"> *</span>}</label>
+            <label htmlFor="tk-falla" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TIPO{opcionesTipo.length > 0 && <span className="text-red-700 dark:text-red-400"> *</span>}</label>
             <SelectMenu
               id="tk-falla"
               ariaLabel="Tipo"
@@ -398,12 +398,12 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             {mostrarFaltaTipo && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
           </div>
           <div className="col-span-1 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-direccion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="tk-direccion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">DIRECCIÓN<span className="text-red-700 dark:text-red-400"> *</span></label>
             <input id="tk-direccion" required type="text" maxLength="200" name="direccion" value={formData.direccion} onChange={handleCreateChange} className={CAMPO_ORDEN} />
           </div>
 
           <div className="col-span-2 sm:col-span-3 space-y-0.5">
-            <label htmlFor="tk-telefono" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TELÉFONO<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="tk-telefono" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TELÉFONO<span className="text-red-700 dark:text-red-400"> *</span></label>
             <TelefonosField
               id="tk-telefono"
               required
@@ -428,10 +428,10 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
           />
 
           <div className="col-span-2 sm:col-span-5 space-y-0.5">
-            <label htmlFor="tk-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas{esInstalacion ? ', obligatoria' : ', opcional'})</span></label>
+            <label htmlFor="tk-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">UBICACIÓN <span className="font-normal normal-case text-muted-foreground">(enlace de Google Maps o coordenadas{esInstalacion ? ', obligatoria' : ', opcional'})</span></label>
             <input id="tk-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={formData.ubicacion} onChange={handleCreateChange} aria-invalid={!!ubicacionParseada.error || mostrarFaltaUbicacion} aria-required={esInstalacion} className={claseCampo('compacto', ubicacionParseada.error || mostrarFaltaUbicacion ? 'error' : 'normal')} />
-            {mostrarFaltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
-            {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
+            {mostrarFaltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
+            {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
 

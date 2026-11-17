@@ -43,7 +43,7 @@ export default function OrdenesDelPago({ pago, leer, onAnular, ocupado }) {
       </button>
       {abierto && (
         <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-800 rounded-campo border border-border px-3">
-          {fallo && <li className="py-2 text-xs font-bold text-red-600 dark:text-red-400">No se pudieron leer las órdenes de este pago. Intenta de nuevo.</li>}
+          {fallo && <li className="py-2 text-xs font-bold text-red-700 dark:text-red-400">No se pudieron leer las órdenes de este pago. Intenta de nuevo.</li>}
           {ordenes === null && !fallo && <li className={`py-2 ${TEXTO_SUAVE}`}>Leyendo las órdenes...</li>}
           {(ordenes || []).filter((o) => !ordenAnuladaEnPago(pago, o.id)).map((o) => (
             <li key={o.id} className="py-2 flex flex-wrap items-center justify-between gap-2">

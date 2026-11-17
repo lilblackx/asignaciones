@@ -37,7 +37,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
                 type="button"
                 aria-pressed={tipoProductividad === clave}
                 onClick={() => setTipoProductividad(clave)}
-                className={`px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-white'}`}
               >
                 {texto}
               </button>
@@ -84,7 +84,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
 
       <div className="bg-card border border-border rounded-card p-5 shadow-sm lg:col-span-2">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
-          <Repeat className="w-4 h-4 text-red-500" /> Clientes Reincidentes
+          <Repeat className="w-4 h-4 text-red-700 dark:text-red-400" /> Clientes Reincidentes
         </h3>
         {reincidentes.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">Ningún cliente tiene más de una orden registrada.</p>

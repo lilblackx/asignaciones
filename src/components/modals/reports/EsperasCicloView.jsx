@@ -20,7 +20,7 @@ function ColaDeEspera({ titulo, nota, cola, vacio }) {
         <ul className="mt-3 flex flex-col gap-1.5">
           {cola.lista.map(({ orden, esperaMs }) => (
             <li key={orden.id ?? orden.codigo} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-sunken border border-border rounded-campo px-3 py-2 text-xs">
-              <span className="font-black text-red-600 dark:text-red-400">{orden.codigo}</span>
+              <span className="font-black text-red-700 dark:text-red-400">{orden.codigo}</span>
               <span className="font-bold truncate max-w-[14rem]">{orden.nombre}</span>
               <span className="text-muted-foreground">{orden.tipoTrabajo}</span>
               <span className="text-muted-foreground">{orden.tecnico || 'Sin técnico'}</span>

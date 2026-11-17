@@ -32,7 +32,7 @@ export default function CobroClienteDetalle({ ticketId, paraFinanzas = false }) 
 
   const { cargando, cobro, pago, error } = estado;
   if (cargando) return <p className="text-xs text-muted-foreground">Cargando el cobro...</p>;
-  if (error) return <p className="text-xs text-red-600 dark:text-red-400">No se pudo leer el cobro.</p>;
+  if (error) return <p className="text-xs text-red-700 dark:text-red-400">No se pudo leer el cobro.</p>;
   if (cobro && !cobro.anulado) {
     return (
       <div className="space-y-1.5">

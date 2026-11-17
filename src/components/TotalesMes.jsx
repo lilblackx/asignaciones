@@ -54,7 +54,7 @@ export default function TotalesMes({ mes, meses, onCambiarMes, totales, error })
         </div>
       </div>
 
-      {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">No se pudieron cargar los totales cerrados de este mes. Se muestran solo las órdenes de hoy.</p>}
+      {error && <p role="alert" className="text-xs text-red-700 dark:text-red-400">No se pudieron cargar los totales cerrados de este mes. Se muestran solo las órdenes de hoy.</p>}
 
       <Colapsable>
         {detalle && inst && los && (

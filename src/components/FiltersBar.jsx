@@ -98,7 +98,7 @@ export default function FiltersBar({
             <button
               type="button"
               onClick={limpiarFiltros}
-              className="inline-flex items-center gap-1 font-bold text-xs text-red-600 dark:text-red-400 hover:underline"
+              className="inline-flex items-center gap-1 font-bold text-xs text-red-700 dark:text-red-400 hover:underline"
             >
               <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar filtros
             </button>

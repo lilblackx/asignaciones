@@ -213,7 +213,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           </div>
 
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <input type="search" aria-label="Buscar por código, cliente, cédula o técnico" placeholder="Código, cliente, cédula o técnico" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} autoComplete="off" className={BUSCADOR} />
             <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
           </div>

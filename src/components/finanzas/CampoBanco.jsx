@@ -29,7 +29,7 @@ export default function CampoBanco({ id, forma, value, onChange, opcional = fals
         <SelectMenu id={id} ariaLabel="Banco desde el que se pagó" className={SELECTOR} value={esOtro ? OTRO : value} onChange={elegir} items={items} />
       </div>
       <Colapsable>{esOtro && <input aria-label="Nombre del banco" value={value} onChange={(e) => onChange(stripEmojis(e.target.value))} maxLength={MAX_BANCO} placeholder="Escribe el nombre del banco" autoComplete="off" aria-invalid={Boolean(error)} className={`${CAMPO} mt-2`} />}</Colapsable>
-      <Colapsable>{error && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{error}</p>}</Colapsable>
+      <Colapsable>{error && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{error}</p>}</Colapsable>
     </div>
   );
 }

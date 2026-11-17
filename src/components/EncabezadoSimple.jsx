@@ -32,13 +32,13 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
               {/* `tituloCorto`: en pantallas de menos de 400 px el título largo no cabe junto a los botones. */}
               <span className="truncate">{tituloCorto ? <><span className="min-[400px]:hidden">{tituloCorto}</span><span className="hidden min-[400px]:inline">{titulo}</span></> : titulo}</span>
             </h1>
-            {contexto && <p className="hidden lg:block text-[11px] max-lg:text-xs leading-tight mt-0.5 text-zinc-400 truncate">{contexto}</p>}
+            {contexto && <p className="hidden lg:block text-[11px] max-lg:text-xs leading-tight mt-0.5 text-muted-foreground truncate">{contexto}</p>}
           </div>
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <div id={ID_ACCIONES_ENCABEZADO} className="hidden lg:contents" />
             {!enMarco && <div className="hidden min-[400px]:flex flex-col items-end leading-tight min-w-0 lg:order-3 lg:ml-1 lg:pl-4 lg:border-l lg:border-zinc-700">
-              <span className="text-xs sm:text-sm font-bold leading-none text-red-500 max-w-[8rem] sm:max-w-[16rem] truncate">{nombre}</span>
-              <span className="text-[11px] max-lg:text-xs font-bold text-zinc-400 uppercase tracking-wider">{rol}</span>
+              <span className="text-xs sm:text-sm font-bold leading-none text-red-700 dark:text-red-400 max-w-[8rem] sm:max-w-[16rem] truncate">{nombre}</span>
+              <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">{rol}</span>
             </div>}
             {campana && <div className="flex items-center lg:order-4">{campana}</div>}
             {!enMarco && <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className="inline-flex items-center justify-center p-2 lg:order-5 lg:h-9 lg:w-9 lg:p-0 rounded-campo bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700 lg:bg-transparent lg:border-transparent lg:hover:bg-zinc-800">

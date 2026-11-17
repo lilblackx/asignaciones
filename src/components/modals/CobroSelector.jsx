@@ -93,7 +93,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
             className={`${claseCampo('grande', error ? 'error' : 'normal')} font-bold text-right tabular-nums`}
           />
           <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Escribe solo los números: se llenan de derecha a izquierda y los dos últimos son los decimales (569600 se ve 5.696,00).</p>
-          {error && <p id={`${idBase}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
+          {error && <p id={`${idBase}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
         </div>
       )}
     </div>

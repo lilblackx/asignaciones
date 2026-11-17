@@ -153,12 +153,12 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
           {!cargado ? (
             <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando instalaciones...</p>
           ) : error && !actualizadoEn ? (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : (
             <>
               <div className="flex gap-2">
                 <div className="relative flex-1 min-w-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   <input
                     type="search"
                     aria-label="Buscar por cliente, código, técnico o NAP"

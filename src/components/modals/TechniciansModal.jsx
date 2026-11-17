@@ -121,7 +121,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   Elige con qué nombre conoce el inventario del almacén a cada técnico. El material y los equipos se descuentan a ese nombre; un técnico sin elegir no envía sus órdenes. Solo tú ves esto.
                 </p>
               )}
-              {errorInventario && <p role="alert" className="px-4 py-2 text-xs font-bold text-red-600 dark:text-red-400">{errorInventario}</p>}
+              {errorInventario && <p role="alert" className="px-4 py-2 text-xs font-bold text-red-700 dark:text-red-400">{errorInventario}</p>}
 
               {technicians.length > 0 && (
                 <div className={`hidden md:grid ${columnas} gap-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-950 border-b border-border ${ETIQUETA}`}>
@@ -143,7 +143,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   const cargandoInv = tecnicosInventario === null && !errorInventario;
                   return (
                     <li key={t.id} className={`grid ${columnas} gap-x-3 gap-y-2 px-4 py-3 items-center ${verInventario ? 'md:items-start' : ''}`}>
-                      <span className={`order-1 ${verInventario ? 'md:mt-0.5' : ''} inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                      <span className={`order-1 ${verInventario ? 'md:mt-0.5' : ''} inline-flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ring-2 ring-white dark:ring-zinc-950 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
                         <span className="truncate">{t.name}</span>
                       </span>
@@ -198,7 +198,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       return (
                         <li key={nombre} className="flex items-center gap-2 rounded-campo border border-border bg-sunken p-1.5">
                           <span className="text-[11px] max-lg:text-xs font-black text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
-                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}`}>{nombre}</span>
+                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-muted-foreground'}`}>{nombre}</span>
                           <Boton variante="discreto" tamano="compacto" icono={ArrowUp} onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="w-8 !px-0" />
                           <Boton variante="discreto" tamano="compacto" icono={ArrowDown} onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="w-8 !px-0" />
                         </li>

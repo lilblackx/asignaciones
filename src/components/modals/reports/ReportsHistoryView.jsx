@@ -20,7 +20,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
       <div className="mb-4 p-6 bg-card border border-transparent rounded-card shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between shadow-card">
         <div>
           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <FileText className="w-5 h-5 text-red-500" /> Cierre de Jornada
+            <FileText className="w-5 h-5 text-red-700 dark:text-red-400" /> Cierre de Jornada
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
             Esta acción archiva todas las órdenes con estado <strong>FINALIZADO</strong> y <strong>CANCELADO</strong> en el historial de reportes y limpia la tabla principal.
@@ -57,8 +57,8 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                     {rep.canceladas !== undefined && (
                       <span className="block mt-1 text-[11px] max-lg:text-xs font-bold">
                         <span className="text-emerald-600 dark:text-emerald-400">{rep.finalizadas} finalizadas</span>
-                        <span className="text-zinc-400"> · </span>
-                        <span className="text-red-600 dark:text-red-400">{rep.canceladas} canceladas</span>
+                        <span className="text-muted-foreground"> · </span>
+                        <span className="text-red-700 dark:text-red-400">{rep.canceladas} canceladas</span>
                       </span>
                     )}
                   </div>

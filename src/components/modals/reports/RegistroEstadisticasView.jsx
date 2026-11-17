@@ -58,7 +58,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
             return [
               equipo || cantidad > 0 ? (
                 <button key={id} type="button" onClick={() => setDetalle({ tipo: 'MATERIAL', material: id })} aria-label={`Ver las órdenes donde se usó ${nombre}`} className="inline-flex items-center gap-1.5 text-left font-bold hover:text-red-600 dark:hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 rounded-campo">
-                  {nombre} <ChevronRight className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
+                  {nombre} <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
                 </button>
               ) : nombre,
               String(cantidad),

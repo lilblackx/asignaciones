@@ -139,7 +139,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         <div className={`px-6 py-4 shrink-0 bg-fondo border-b border-border space-y-3 ${CENTRADO_AMPLIO}`}>
           <div className="flex gap-2">
             <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
               <label htmlFor="history-search" className="sr-only">Buscar en el historial</label>
               <input id="history-search" type="search" value={search} onChange={withReset(setSearch)} placeholder="Buscar por código, nombre, cédula, dirección, teléfono o técnico..." className={BUSCADOR} />
               <BotonLimpiarBusqueda valor={search} onLimpiar={() => { setSearch(''); setPage(0); setExpandedKey(null); }} />
@@ -189,13 +189,13 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                 <button type="button" onClick={() => setExpandedKey(isOpen ? null : o._key)} aria-expanded={isOpen} className="w-full text-left p-4 flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-black text-red-600 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
+                      <span className="font-black text-red-700 dark:text-red-400 text-sm">{o.codigo || 'S/C'}</span>
                       <span className={`px-2 py-0.5 text-[11px] max-lg:text-xs font-bold rounded leading-none ${getEstadoColor(o.estado)}`}>{o.estado}</span>
                       <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{o.fecha}</span>
                     </div>
                     <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight mt-1 truncate">{o.nombre}</h5>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      <span className="font-bold text-red-600 dark:text-red-400">{o.tipoTrabajo}</span>
+                      <span className="font-bold text-red-700 dark:text-red-400">{o.tipoTrabajo}</span>
                       {o.falla && o.falla !== o.tipoTrabajo ? ` - ${o.falla}` : ''}
                     </p>
                   </div>
@@ -206,7 +206,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                         : <span className="text-[11px] max-lg:text-xs text-muted-foreground italic">Sin técnico</span>}
                       <div className="text-[11px] max-lg:text-xs text-muted-foreground mt-1">{o._origen}</div>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </div>
                 </button>
 

@@ -44,7 +44,7 @@ export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
     <Colapsable>
       {(cantidad > 0 || pendientes > 0) && (
         <div role="alert" className={`mb-3 rounded-campo border p-3 flex items-center gap-3 text-xs ${urgente ? 'border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-200' : 'border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200'}`}>
-          <PackageX className={`w-5 h-5 shrink-0 ${urgente ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} aria-hidden="true" />
+          <PackageX className={`w-5 h-5 shrink-0 ${urgente ? 'text-red-700 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} aria-hidden="true" />
           <p className="flex-1 font-bold leading-snug">
             {urgente
               ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
@@ -234,7 +234,7 @@ function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorr
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <Chip estado={envio.estado} />
-          <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${abierta ? 'rotate-180' : ''}`} aria-hidden="true" />
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${abierta ? 'rotate-180' : ''}`} aria-hidden="true" />
         </div>
       </button>
       <Colapsable>
@@ -367,7 +367,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
             <div className="flex gap-2">
               <label className="relative block flex-1 min-w-0">
                 <span className="sr-only">Buscar por código, cliente, serial o técnico</span>
-                <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                 <input
                   type="search"
                   value={texto}

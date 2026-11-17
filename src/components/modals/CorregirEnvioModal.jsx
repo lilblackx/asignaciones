@@ -75,8 +75,8 @@ export default function CorregirEnvioModal({ envio, usuario, onReenviar, onClose
 
         <div className="p-4 space-y-4">
           {lectura === null && <p className="text-sm text-muted-foreground flex items-center gap-2"><Spinner /> Buscando la orden...</p>}
-          {lectura === false && <p role="alert" className="text-sm font-bold text-red-600 dark:text-red-400">No se encontró la orden, ni en la lista ni en un reporte de cierre. No se puede corregir desde aquí.</p>}
-          {ticket && !puedeEditar && <p role="alert" className="text-sm font-bold text-red-600 dark:text-red-400">Esta orden no está pre-finalizada ni finalizada: no tiene datos del técnico que corregir.</p>}
+          {lectura === false && <p role="alert" className="text-sm font-bold text-red-700 dark:text-red-400">No se encontró la orden, ni en la lista ni en un reporte de cierre. No se puede corregir desde aquí.</p>}
+          {ticket && !puedeEditar && <p role="alert" className="text-sm font-bold text-red-700 dark:text-red-400">Esta orden no está pre-finalizada ni finalizada: no tiene datos del técnico que corregir.</p>}
           {puedeEditar && (
             <>
               <p className="text-xs text-muted-foreground">
@@ -86,7 +86,7 @@ export default function CorregirEnvioModal({ envio, usuario, onReenviar, onClose
               <div className="grid grid-cols-2 gap-3">
                 <DatosTecnicoEdicion instalacion={esInstalacion(ticket.tipoTrabajo)} form={formulario} onChange={cambiar} errores={errores} finalizada={false} avisoSerial ticketMetros={ticket.metrosCable ?? null} />
               </div>
-              {aviso && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{aviso}</p>}
+              {aviso && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold">{aviso}</p>}
               <div className="space-y-2">
                 <Boton variante="principal" tamano="grande" icono={RefreshCw} className="w-full" onClick={() => guardar(true)} disabled={Boolean(trabajando)}>{trabajando === 'reenviar' ? <Spinner /> : null} Guardar y reenviar al inventario</Boton>
                 <Boton variante="secundario" tamano="grande" className="w-full" onClick={() => guardar(false)} disabled={Boolean(trabajando)}>{trabajando === 'guardar' ? <Spinner /> : null} Solo guardar</Boton>

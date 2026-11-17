@@ -32,7 +32,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
   const porForma = useMemo(() => resumenPorForma(visibles), [visibles]);
   const pagoAbierto = abierto ? delPeriodo.find((p) => p.id === abierto) || null : null;
 
-  if (error && !cargado) return <p role="alert" className="text-base text-red-600 dark:text-red-400 text-center py-10">No se pudieron leer los pagos de los clientes. Recarga la página e intenta de nuevo.</p>;
+  if (error && !cargado) return <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron leer los pagos de los clientes. Recarga la página e intenta de nuevo.</p>;
   if (!cargado) return <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando los pagos...</p>;
 
   const estadoChip = () => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_PAGO_FINANZAS}`}>{ETIQUETA_PAGO_FINANZAS}</span>;
@@ -68,7 +68,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
 
       <div className="space-y-2">
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input type="search" aria-label="Buscar por código, cliente, cédula, técnico o referencia" placeholder="Código, cliente, cédula o referencia" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={BUSCADOR} />
           <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
         </div>

@@ -110,7 +110,7 @@ export default function TicketsTable({
             return [
               nuevoDia && (
                 <tr key={`dia-${ticket._clave || ticket.id}`} className="border-b border-border">
-                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] max-lg:text-xs font-black ${dia.prioridad ? 'bg-red-600' : dia.cerradas ? 'bg-zinc-700 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad || dia.cerradas ? 'text-white' : dia.atrasado ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
+                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-[11px] max-lg:text-xs font-black ${dia.prioridad ? 'bg-red-600' : dia.cerradas ? 'bg-zinc-700 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad || dia.cerradas ? 'text-white' : dia.atrasado ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground'}`}>
                     {dia.prioridad && <Flag className="inline w-3 h-3 mr-1 -mt-0.5 fill-current" aria-hidden="true" />}{dia.texto}
                   </td>
                 </tr>

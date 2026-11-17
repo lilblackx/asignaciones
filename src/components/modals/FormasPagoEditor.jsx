@@ -49,7 +49,7 @@ export default function FormasPagoEditor({ formasPago, onGuardar }) {
         return (
           <div key={i} role="group" aria-label={`${titulo} ${i + 1}`} className="bg-sunken border-2 border-border rounded-campo p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black text-red-600 dark:text-red-400">
+              <span className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-black text-red-700 dark:text-red-400">
                 <Icono className="w-4 h-4" aria-hidden="true" /> {titulo}
               </span>
               <button

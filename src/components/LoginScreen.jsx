@@ -63,7 +63,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
 
         <main className="flex-1 flex flex-col lg:w-1/2 lg:bg-card">
           <div className="flex-1 w-full max-w-md mx-auto px-6 pt-8 pb-10 sm:px-8 lg:max-w-sm lg:px-0 lg:pt-0 lg:flex lg:flex-col lg:justify-center">
-            <form onSubmit={onSubmit} className="space-y-5 max-lg:bg-card max-lg:rounded-card shadow-card max-lg:p-5">
+            <form onSubmit={onSubmit} className="space-y-5 max-lg:bg-card max-lg:rounded-card max-lg:shadow-card max-lg:p-5">
               <div>
                 <label htmlFor="login-usuario" className={labelClass}>Usuario</label>
                 <input

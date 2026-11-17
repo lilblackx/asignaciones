@@ -70,7 +70,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
               ))}
             </div>
             <Colapsable>{!(tasa > 0) && <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">No hay tasa BCV: solo se puede pagar en dólares hasta que se actualice.</p>}</Colapsable>
-            <Colapsable>{error?.campo === 'moneda' && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{error.texto}</p>}</Colapsable>
+            <Colapsable>{error?.campo === 'moneda' && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{error.texto}</p>}</Colapsable>
           </div>
 
           <div className="border border-input rounded-campo px-4 py-3">
@@ -84,7 +84,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
             <div className="mt-1">
               <SelectMenu id="pago-forma" ariaLabel="Forma de pago" className={SELECTOR} value={form.forma} onChange={(v) => setForm((f) => ({ ...f, forma: v, banco: esZelle(f.forma) === esZelle(v) ? f.banco : '' }))} items={[{ value: '', label: 'Elige la forma de pago' }, ...formasDeMoneda(form.moneda).map((f) => ({ value: f, label: f }))]} />
             </div>
-            <Colapsable>{texto('forma') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('forma')}</p>}</Colapsable>
+            <Colapsable>{texto('forma') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('forma')}</p>}</Colapsable>
           </div>
 
           <Colapsable>{form.forma && form.forma !== 'Efectivo' && <CampoBanco key={esZelle(form.forma) ? 'eeuu' : 'venezuela'} id="pago-banco" forma={form.forma} value={form.banco} onChange={(v) => cambiar('banco', v)} opcional={!exigeBanco(form.forma)} error={texto('banco')} />}</Colapsable>
@@ -94,7 +94,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
           <div>
             <label htmlFor="pago-referencia" className={ETIQUETA}>Referencia {form.forma && !exigeReferencia(form.forma) && <span className="font-normal">(no aplica en efectivo)</span>}</label>
             <input id="pago-referencia" value={form.referencia} onChange={(e) => cambiar('referencia', stripEmojis(e.target.value))} maxLength={MAX_REFERENCIA} autoComplete="off" aria-invalid={error?.campo === 'referencia'} className={`${CAMPO} mt-1`} />
-            <Colapsable>{texto('referencia') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('referencia')}</p>}</Colapsable>
+            <Colapsable>{texto('referencia') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('referencia')}</p>}</Colapsable>
           </div>
 
           <div>
@@ -105,7 +105,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
             <label htmlFor="pago-hora" className={ETIQUETA}>Hora</label>
             <div className="mt-1"><CampoHora id="pago-hora" ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7')} claseBoton="px-2.5 min-[400px]:px-4 text-sm" alto="h-9" /></div>
           </div>
-          <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
+          <Colapsable>{texto('fecha') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold -mt-3">{texto('fecha')}</p>}</Colapsable>
 
           <div>
             <label htmlFor="pago-nota" className={ETIQUETA}>Nota <span className="font-normal">(opcional)</span></label>

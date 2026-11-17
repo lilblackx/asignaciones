@@ -195,7 +195,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
         </div>
         <form onSubmit={onSubmit} className="p-4 grid grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-nombre" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="ed-nombre" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">NOMBRE<span className="text-red-700 dark:text-red-400"> *</span></label>
             <input id="ed-nombre" disabled={isTecnico} required type="text" maxLength="100" name="nombre" value={editingTicket.nombre || ''} onChange={handleEditChange} className={CAMPO_ORDEN} />
           </div>
           <CedulaField
@@ -208,7 +208,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             disabled={isTecnico}
           />
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-direccion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="ed-direccion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">DIRECCIÓN<span className="text-red-700 dark:text-red-400"> *</span></label>
             <input id="ed-direccion" disabled={isTecnico} required type="text" maxLength="200" name="direccion" value={editingTicket.direccion || ''} onChange={handleEditChange} className={CAMPO_ORDEN} />
           </div>
           <div className="col-span-1 space-y-1">
@@ -216,7 +216,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             <CampoFecha id="ed-fechaprog" ariaLabel="Fecha programada" vacio="Sin fecha" disabled={isTecnico} valor={editingTicket.fechaProgramada || ''} onChange={(v) => handleEditChange({ target: { name: 'fechaProgramada', value: v, type: 'text' } })} permitirBorrar clase={CAMPO_FECHA_ORDEN} />
           </div>
           <div className="col-span-1 space-y-1">
-            <label htmlFor="ed-codigo" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">CÓDIGO<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="ed-codigo" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">CÓDIGO<span className="text-red-700 dark:text-red-400"> *</span></label>
             <input id="ed-codigo" disabled={isTecnico} required type="text" maxLength="7" name="codigo" value={editingTicket.codigo} onChange={handleEditChange} className={`${CAMPO_ORDEN} uppercase`} />
           </div>
           <TipoTrabajoField
@@ -257,7 +257,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           </div>
           {!isTecnico && editingTicket.estado === 'CANCELADO' && (
             <div className="col-span-2 space-y-1">
-              <label htmlFor="ed-motivo-cancelacion" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">
+              <label htmlFor="ed-motivo-cancelacion" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">
                 MOTIVO DE LA CANCELACIÓN {cancelaAhora(ordenAlAbrir, editingTicket) && <span className="font-normal">(obligatorio)</span>}
               </label>
               <textarea
@@ -271,7 +271,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
                 placeholder="Ej. El cliente ya no quiere el servicio, no hay cobertura en la zona..."
                 className={`${CAMPO_ORDEN} resize-none`}
               />
-              {errorMotivo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{errorMotivo}</p>}
+              {errorMotivo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errorMotivo}</p>}
               <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Se ve en la lista, el historial, ventas y los reportes.</p>
             </div>
           )}
@@ -309,7 +309,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             />
           )}
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-telefono" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TELÉFONO<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="ed-telefono" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TELÉFONO<span className="text-red-700 dark:text-red-400"> *</span></label>
             <TelefonosField
               id="ed-telefono"
               required
@@ -336,17 +336,17 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             napsConocidas={napsConocidas}
           />
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">UBICACIÓN (Google Maps){!isTecnico && ubicacionObligatoria(editingTicket) && <span className="font-normal normal-case text-zinc-400"> obligatoria</span>}</label>
+            <label htmlFor="ed-ubicacion" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">UBICACIÓN (Google Maps){!isTecnico && ubicacionObligatoria(editingTicket) && <span className="font-normal normal-case text-muted-foreground"> obligatoria</span>}</label>
             <input id="ed-ubicacion" disabled={isTecnico} type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={editingTicket.ubicacion || ''} onChange={handleEditChange} aria-invalid={!!ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion)} className={claseCampo('compacto', ubicacionParseada.error || (faltaUbicacion && intentoSinUbicacion) ? 'error' : 'normal')} />
-            {faltaUbicacion && intentoSinUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
-            {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
+            {faltaUbicacion && intentoSinUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
+            {ubicacionParseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{ubicacionParseada.error}</p>}
             {ubicacionParseada.valor && <a href={ubicacionParseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Cómo llegar</a>}
           </div>
           <div className="col-span-2 space-y-1">
             <label htmlFor="ed-potencia" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">POTENCIA ÓPTICA (dBm)</label>
             <input id="ed-potencia" type="text" inputMode="decimal" maxLength="7" name="potenciaDbm" placeholder="Ej. -19.5" value={editingTicket.potenciaDbm ?? ''} onChange={(e) => handleEditChange({ target: { name: 'potenciaDbm', value: e.target.value.replace(/[^0-9.,-]/g, ''), type: 'text' } })} aria-invalid={!!potenciaParseada.error} aria-describedby="ed-potencia-hint" className={claseCampo('compacto', potenciaParseada.error ? 'error' : 'normal')} />
             {(potenciaParseada.error || potenciaEval) && (
-              <p id="ed-potencia-hint" className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
+              <p id="ed-potencia-hint" className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-700 dark:text-red-400' : potenciaEval.clase}`}>{potenciaParseada.error || potenciaEval.texto}</p>
             )}
           </div>
           {conDatosTecnico && (
@@ -373,7 +373,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
           )}
           {faltabaPlantilla && (
             <div className="col-span-2 space-y-1">
-              <label htmlFor="ed-plantilla" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-zinc-400">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
+              <label htmlFor="ed-plantilla" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">PLANTILLA DE LA PROMOTORA <span className="font-normal normal-case text-muted-foreground">{esInstalacion ? '(pégala tal cual: sin ella no se puede copiar la plantilla de esta orden)' : '(opcional: sin ella la plantilla sale en el formato de la app)'}</span></label>
               <textarea id="ed-plantilla" rows="4" name="plantillaOriginal" value={editingTicket.plantillaOriginal || ''} onChange={handleEditChange} className={`${CAMPO_ORDEN} font-mono`} placeholder="Pega aquí la plantilla tal como la envió la promotora..." />
             </div>
           )}

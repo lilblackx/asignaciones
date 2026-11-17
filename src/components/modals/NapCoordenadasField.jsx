@@ -97,19 +97,19 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
   return (
     <div className={wrapperClassName}>
       <div className="flex items-end justify-between gap-2">
-        <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>COORDENADAS NAP <span className="font-normal normal-case text-zinc-400">(Lat / Lng, opcional)</span></label>
+        <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>COORDENADAS NAP <span className="font-normal normal-case text-muted-foreground">(Lat / Lng, opcional)</span></label>
         {consulta && (
-          <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 hover:underline disabled:opacity-60">
+          <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 hover:underline disabled:opacity-60">
             {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat
           </button>
         )}
       </div>
       <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error} className={claseCampo('compacto', parseada.error ? 'error' : 'normal')} />
-      {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
+      {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{parseada.error}</p>}
       {mensaje?.tipo === 'buscando' && <p role="status" className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Buscando {consulta} en Tomodat...</p>}
       {mensaje?.tipo === 'listo' && value && <p role="status" className="text-[11px] max-lg:text-xs font-bold text-emerald-700 dark:text-emerald-400 ml-1">{mensaje.origen === 'historial' ? `Coordenadas tomadas de órdenes anteriores (${mensaje.nombre}). Usa "Buscar en Tomodat" para verificarlas.` : `Coordenadas tomadas de Tomodat (${mensaje.nombre}).`}</p>}
       {mensaje?.tipo === 'vacio' && <p role="status" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
-      {mensaje?.tipo === 'error' && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
+      {mensaje?.tipo === 'error' && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'opciones' && (
         <div role="group" aria-label="Varias cajas coinciden, elige una" className="mt-1 rounded-campo border border-zinc-200 dark:border-zinc-700 bg-sunken p-2">
           <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">

@@ -90,7 +90,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
         </div>
         {/* Después de las columnas, para que no se pinten encima de la etiqueta; el fondo de la tarjeta la deja legible sobre una columna roja. */}
         <div className="absolute inset-x-0 border-t border-dashed border-red-500/70 pointer-events-none" style={{ bottom: `${(umbral / maximo) * 100}%` }} aria-hidden="true">
-          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-card text-[10px] font-bold text-red-600 dark:text-red-400">umbral {numero(umbral)}</span>
+          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-card text-[10px] font-bold text-red-700 dark:text-red-400">umbral {numero(umbral)}</span>
         </div>
       </div>
       <div className={`flex justify-between mt-1 ${TEXTO_SUAVE}`} aria-hidden="true">
@@ -161,7 +161,7 @@ function PanelProyecto({ estado, cargado, error, ahora }) {
 }
 
 const Dato = ({ etiqueta, children, alerta = false }) => (
-  <div className="min-w-0"><dt className={ETIQUETA}>{etiqueta}</dt><dd className={`font-bold truncate ${alerta ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>{children}</dd></div>
+  <div className="min-w-0"><dt className={ETIQUETA}>{etiqueta}</dt><dd className={`font-bold truncate ${alerta ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>{children}</dd></div>
 );
 
 function Estacion({ e, ahora }) {
@@ -242,7 +242,7 @@ export default function EstacionesView({ enPagina = false, onClose }) {
           <section aria-labelledby="estaciones-lista" className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 id="estaciones-lista" className={TITULO_SECCION}>Estaciones</h3>
-              <span className={`text-xs font-bold ${conProblema ? 'text-red-600 dark:text-red-400' : 'text-zinc-500'}`}>{conProblema ? `${conProblema} con algo que revisar` : 'Ninguna con problemas'}</span>
+              <span className={`text-xs font-bold ${conProblema ? 'text-red-700 dark:text-red-400' : 'text-zinc-500'}`}>{conProblema ? `${conProblema} con algo que revisar` : 'Ninguna con problemas'}</span>
             </div>
             <div className="flex gap-2">
               <ChipFiltro activo={soloEnLinea} onClick={() => setSoloEnLinea(true)}>En línea ({activas.length})</ChipFiltro>

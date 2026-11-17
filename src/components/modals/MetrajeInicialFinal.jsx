@@ -13,7 +13,7 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
   const campo = (id, valor, onChange, error, nombre) => (
     <div className="space-y-1 min-w-0 flex-1">
       <label htmlFor={id} className={etiqueta}>
-        {nombre} {!compacto && <span className="font-normal text-red-500">(obligatorio)</span>}
+        {nombre} {!compacto && <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>}
       </label>
       <input
         id={id}
@@ -29,7 +29,7 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
         aria-describedby={error ? `${id}-error` : undefined}
         className={`min-w-0 ${claseCampo(compacto ? 'compacto' : 'grande', error ? 'error' : 'normal')} disabled:opacity-50 disabled:cursor-not-allowed`}
       />
-      {error && <p id={`${id}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
+      {error && <p id={`${id}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
     </div>
   );
 

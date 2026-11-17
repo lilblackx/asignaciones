@@ -33,7 +33,7 @@ function Seccion({ icono: Icono, titulo, acciones, children }) {
   return (
     <section aria-label={titulo} className="bg-sunken border-2 border-border rounded-campo p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-600 dark:text-red-400">
+        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400">
           <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {titulo}
         </h3>
         {acciones}
@@ -80,7 +80,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
       <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-hidden border border-border flex flex-col">
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
-            <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-500" aria-hidden="true" /> DETALLE DE LA ORDEN</h2>
+            <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-700 dark:text-red-400" aria-hidden="true" /> DETALLE DE LA ORDEN</h2>
             <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
           </div>
           <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 shrink-0"><X className="w-4 h-4" /></button>

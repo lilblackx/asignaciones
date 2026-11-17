@@ -18,7 +18,7 @@ function Campo({ id, etiqueta, error, ayuda, className = 'col-span-1', children 
     <div className={`${className} space-y-1`}>
       <label htmlFor={id} className={claseEtiqueta}>{etiqueta}</label>
       {children}
-      {error ? <p id={`${id}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{ayuda}</p>}
+      {error ? <p id={`${id}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{ayuda}</p>}
     </div>
   );
 }
@@ -32,7 +32,7 @@ function AvisoSerialOlt({ serial, soloEnvio = false }) {
   const olt = serialParaOlt(serial);
   const envio = esSerialOlt(olt) ? `Se enviará al almacén como: ${olt}` : '';
   if (soloEnvio) return envio ? <p role="status" className="text-[11px] max-lg:text-xs text-muted-foreground font-bold ml-1">{envio}</p> : null;
-  const color = evaluacion.estado === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
+  const color = evaluacion.estado === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400';
   return <p role="status" className={`text-[11px] max-lg:text-xs ${color} font-bold ml-1`}>{evaluacion.mensaje} {envio}</p>;
 }
 
@@ -78,7 +78,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             <input id="ed-vlan" type="text" inputMode="numeric" autoComplete="off" maxLength="4" placeholder="Ej. 100" value={form.vlan} onChange={(e) => onChange({ vlan: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.vlan} aria-describedby={errores.vlan ? 'ed-vlan-error' : undefined} className={claseInput(errores.vlan)} />
           </Campo>
           <div className="col-span-2 space-y-1">
-            <p className={claseEtiqueta}>METRAJE DEL DROP <span className="font-normal text-zinc-400">marca inicial y final del cable</span></p>
+            <p className={claseEtiqueta}>METRAJE DEL DROP <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
             <MetrajeInicialFinal
               idInicial="ed-metraje-inicial"
               idFinal="ed-metraje-final"
@@ -105,7 +105,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           </Campo>
 
           <div className="col-span-2 space-y-1.5" role="group" aria-labelledby="ed-postes-etiqueta">
-            <p id="ed-postes-etiqueta" className={claseEtiqueta}>POSTEADURA <span className="font-normal text-zinc-400">uno o varios postes</span></p>
+            <p id="ed-postes-etiqueta" className={claseEtiqueta}>POSTEADURA <span className="font-normal text-muted-foreground">uno o varios postes</span></p>
             {form.postes.map((poste, i) => (
               <div key={i} className="flex items-center gap-2">
                 <input id={`ed-poste-${i + 1}`} type="text" autoComplete="off" maxLength={MAX_LARGO_POSTE} placeholder={i === 0 ? 'Ej. DM SN N01B01' : `Poste ${i + 1}`} aria-label={`Poste ${i + 1}`} aria-invalid={i === 0 && !!errores.posteadura} value={poste} onChange={(e) => cambiarPoste(i, stripEmojis(e.target.value))} className={`flex-1 ${claseInput(i === 0 && errores.posteadura)}`} />
@@ -119,7 +119,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-campo border border-dashed border-zinc-400 dark:border-zinc-600 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
               <Plus className="w-3 h-3" aria-hidden="true" /> Agregar otro poste
             </button>
-            {errores.posteadura && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
+            {errores.posteadura && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
           </div>
 
           <Campo id="ed-puertos-disponibles" etiqueta="PUERTOS DISPONIBLES" error={errores.puertosDisponibles} ayuda="Los que quedan libres en la NAP (0 si ninguno)." className="col-span-2">
@@ -127,14 +127,14 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           </Campo>
 
           <div className="col-span-2 space-y-1.5" role="group" aria-labelledby="ed-conectores-etiqueta">
-            <p id="ed-conectores-etiqueta" className={claseEtiqueta}>CONECTORES USADOS <span className="font-normal text-zinc-400">cuántos de cada tipo y color</span></p>
+            <p id="ed-conectores-etiqueta" className={claseEtiqueta}>CONECTORES USADOS <span className="font-normal text-muted-foreground">cuántos de cada tipo y color</span></p>
             <div className="grid grid-cols-3 gap-2">
               <CampoConectores id="ed-cant-ext-verde" etiqueta="Ext. verdes" valor={form.extVerde} onChange={(v) => onChange({ extVerde: v })} error={errores.conectores?.campo === 'externoVerde' ? conectoresError : ''} />
               <CampoConectores id="ed-cant-int-verde" etiqueta="Int. verdes" valor={form.intVerde} onChange={(v) => onChange({ intVerde: v })} error={errores.conectores?.campo === 'internoVerde' ? conectoresError : ''} />
               <CampoConectores id="ed-cant-int-azul" etiqueta="Int. azules" valor={form.intAzul} onChange={(v) => onChange({ intAzul: v })} error={errores.conectores?.campo === 'internoAzul' ? conectoresError : ''} />
             </div>
             <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">El externo es solo verde; el interno, verde o azul.</p>
-            {conectoresError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{conectoresError}</p>}
+            {conectoresError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{conectoresError}</p>}
           </div>
         </>
       ) : (
@@ -155,7 +155,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           {esRecableado(tipoVisita) && (
             <div className="col-span-2 space-y-3">
               <div className="space-y-1">
-                <p className={claseEtiqueta}>METRAJE DEL CABLE <span className="font-normal text-zinc-400">marca inicial y final del cable</span></p>
+                <p className={claseEtiqueta}>METRAJE DEL CABLE <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
                 <MetrajeInicialFinal
                   idInicial="pf-metros-inicial"
                   idFinal="pf-metros-final"

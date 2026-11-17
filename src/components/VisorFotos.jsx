@@ -36,7 +36,7 @@ export default function VisorFotos({ fotos, indice, onCambiar, onClose, titulo =
       >
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
-            <h2 className="text-sm font-black text-white flex items-center gap-2 uppercase"><Camera className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> {titulo}</h2>
+            <h2 className="text-sm font-black text-white flex items-center gap-2 uppercase"><Camera className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> {titulo}</h2>
             {subtitulo && <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{subtitulo}</p>}
           </div>
           <div className="flex items-center gap-2.5 shrink-0">

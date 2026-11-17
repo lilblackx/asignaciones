@@ -227,7 +227,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
           </div>
 
           {error && !actualizadoEn ? (
-            <p role="alert" className="text-base text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
             <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando...</p>
           ) : (

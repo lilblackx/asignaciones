@@ -58,10 +58,10 @@ export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo
 }
 
 const TONOS = {
-  verde: 'bg-emerald-700 hover:bg-emerald-800 text-white',
-  azul: 'bg-blue-600 hover:bg-blue-700 text-white',
-  rojo: 'bg-primary hover:bg-primary-hover text-white',
-  ambar: 'bg-amber-500 hover:bg-amber-400 text-black',
+  verde: 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-[0_8px_20px_rgb(4_120_87/0.3)]',
+  azul: 'bg-blue-600 hover:bg-blue-700 text-white shadow-[0_8px_20px_rgb(37_99_235/0.3)]',
+  rojo: 'bg-primary hover:bg-primary-hover text-white shadow-boton',
+  ambar: 'bg-amber-500 hover:bg-amber-400 text-black shadow-[0_8px_20px_rgb(245_158_11/0.3)]',
 };
 const TONOS_SECUNDARIA = {
   neutro: 'text-foreground hover:bg-secondary',
@@ -79,7 +79,7 @@ export function BotonesPasos({ onAnterior = null, textoAnterior = 'Atrás', sigu
   return (
     <div className="space-y-1.5">
       {siguiente && (
-        <button type="button" onClick={siguiente.onClick} disabled={siguiente.disabled} title={siguiente.titulo} className={`w-full inline-flex items-center justify-center gap-2 h-11 max-lg:h-14 rounded-boton shadow-boton font-black text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TONOS[siguiente.tono || 'verde']}`}>
+        <button type="button" onClick={siguiente.onClick} disabled={siguiente.disabled} title={siguiente.titulo} className={`w-full inline-flex items-center justify-center gap-2 h-11 max-lg:h-14 rounded-boton font-black text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TONOS[siguiente.tono || 'verde']}`}>
           {siguiente.ocupado}{siguiente.texto || 'Siguiente'} {Icono && <Icono className="w-5 h-5" aria-hidden="true" />}
         </button>
       )}

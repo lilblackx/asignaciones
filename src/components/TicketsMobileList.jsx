@@ -204,7 +204,7 @@ export default function TicketsMobileList({
             )}
             {(isTecnico ? observacionParaTecnico(ticket) : ticket.observacion) && (
               <div className="flex items-start gap-2 text-sm">
-                <MessageSquareText className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" aria-label="Observación" role="img" />
+                <MessageSquareText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" aria-label="Observación" role="img" />
                 <span className="text-card-foreground leading-tight">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
               </div>
             )}

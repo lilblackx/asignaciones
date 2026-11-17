@@ -69,7 +69,7 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
       {/* El título de la sección, como los demás del modal (COBRO, RECABLEADO...): más grande, con su ícono rojo y la línea roja de las ventanas de la app. */}
       <div className="flex items-center justify-between gap-2 pb-2 border-b-2 border-red-600">
         <h3 className="min-w-0 flex items-center gap-2 text-sm font-black tracking-wide uppercase text-foreground">
-          {paraAutorizar ? <ShieldCheck className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /> : <User className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />}
+          {paraAutorizar ? <ShieldCheck className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> : <User className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" />}
           <span className="truncate">{paraAutorizar ? 'Para autorizar en SmartOLT' : 'Datos del cliente'}</span>
         </h3>
         <BotonCopiar

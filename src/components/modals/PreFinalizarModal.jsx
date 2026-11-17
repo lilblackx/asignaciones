@@ -342,17 +342,17 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           {/* Resumen compacto de la orden */}
           <div className="bg-sunken p-3 rounded-campo border border-border space-y-1.5 text-xs text-card-foreground">
             <div className="flex items-center gap-2">
-              <Wrench className="w-3.5 h-3.5 text-red-500 shrink-0" />
-              <span className="font-bold text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>
-              {ticket.falla && <span className="text-zinc-400">({ticket.falla})</span>}
+              <Wrench className="w-3.5 h-3.5 text-red-700 dark:text-red-400 shrink-0" />
+              <span className="font-bold text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span>
+              {ticket.falla && <span className="text-muted-foreground">({ticket.falla})</span>}
             </div>
             <div className="flex items-start gap-2">
-              <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
               <span className="line-clamp-2">{ticket.direccion}</span>
             </div>
             {ticket.cedula && (
               <div className="flex items-center gap-2 text-[11px] max-lg:text-xs text-muted-foreground">
-                <Tag className="w-3 h-3 text-zinc-400 shrink-0" />
+                <Tag className="w-3 h-3 text-muted-foreground shrink-0" />
                 <span>C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</span>
                 {ticket.telefono && <span className="ml-2">Telf: {ticket.telefono}</span>}
               </div>
@@ -366,7 +366,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           {!esInstalacion && (
           <div className="space-y-1">
             <label htmlFor="pf-tipo-visita" className="text-xs font-bold text-card-foreground ml-1">
-              TIPO DE VISITA <span className="font-normal text-red-500">(obligatorio)</span>
+              TIPO DE VISITA <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
             </label>
             <SelectMenu
               id="pf-tipo-visita"
@@ -395,7 +395,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               }}
               items={TIPOS_VISITA_OBLIGATORIO}
             />
-            {tipoVisitaError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{tipoVisitaError}</p>}
+            {tipoVisitaError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{tipoVisitaError}</p>}
           </div>
           )}
     </>
@@ -429,7 +429,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
             <div className="space-y-4 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
               <div className="space-y-1">
                 <p className="text-xs font-bold text-card-foreground ml-1">
-                  METRAJE DEL CABLE <span className="font-normal text-zinc-400">marca del cable al empezar y al terminar</span>
+                  METRAJE DEL CABLE <span className="font-normal text-muted-foreground">marca del cable al empezar y al terminar</span>
                 </p>
                 <MetrajeInicialFinal
                   idInicial="pf-metros-inicial"
@@ -565,7 +565,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloquePotencia = (
           <div className="space-y-1">
             <label htmlFor="pf-potencia" className="text-xs font-bold text-card-foreground ml-1">
-              POTENCIA ÓPTICA (dBm) <span className="font-normal text-zinc-400">(opcional)</span>
+              POTENCIA ÓPTICA (dBm) <span className="font-normal text-muted-foreground">(opcional)</span>
             </label>
             <input
               id="pf-potencia"
@@ -579,7 +579,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               aria-describedby="pf-potencia-hint"
               className={claseCampo('grande', potenciaParseada.error ? 'error' : 'normal')}
             />
-            <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-600 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-zinc-400 font-normal'}`}>
+            <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-700 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-muted-foreground font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
             </p>
             {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={capturarSenal} />}
@@ -598,7 +598,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const bloqueObservacion = (
           <div className="space-y-1">
             <label htmlFor="pf-obs"className="text-xs font-bold text-card-foreground ml-1">
-              OBSERVACIÓN / DETALLES DEL TRABAJO <span className="font-normal text-red-500">(obligatorio)</span>
+              OBSERVACIÓN / DETALLES DEL TRABAJO <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
             </label>
             <textarea
               id="pf-obs"
@@ -611,7 +611,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               aria-invalid={!!obsError}
               className={`${claseArea('grande', obsError ? 'error' : 'normal')} resize-none`}
             />
-            {obsError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{obsError}</p>}
+            {obsError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{obsError}</p>}
           </div>
   );
   const bloqueAvisoPre = (

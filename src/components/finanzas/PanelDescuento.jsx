@@ -70,32 +70,32 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
             <input id="descuento-monto" value={form.monto} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold text-right tabular-nums`} />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
           </div>
-          <Colapsable>{texto('monto') ? <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('monto')}</p> : (monto > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} font-bold mt-1 tabular-nums`}>{bolivares(aBs(monto, tasa))}</p>)}</Colapsable>
+          <Colapsable>{texto('monto') ? <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('monto')}</p> : (monto > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} font-bold mt-1 tabular-nums`}>{bolivares(aBs(monto, tasa))}</p>)}</Colapsable>
         </div>
 
         <div>
           <label htmlFor="descuento-motivo" className={ETIQUETA}>Motivo <span className="font-normal">(obligatorio, lo ve el técnico)</span></label>
           <input id="descuento-motivo" value={form.motivo} onChange={(e) => cambiar('motivo', stripEmojis(e.target.value))} maxLength={MAX_MOTIVO} autoComplete="off" aria-invalid={error?.campo === 'motivo'} className={`${CAMPO} mt-1`} />
-          <Colapsable>{texto('motivo') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('motivo')}</p>}</Colapsable>
+          <Colapsable>{texto('motivo') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('motivo')}</p>}</Colapsable>
         </div>
 
         <div>
           <label htmlFor="descuento-desde" className={ETIQUETA}>Aplicar desde</label>
           <div className="mt-1"><CampoFecha id="descuento-desde" ariaLabel="Aplicar el descuento desde" valor={form.desde} min={hoy} onChange={(v) => cambiar('desde', v)} grande clase={CAMPO_FECHA} /></div>
-          <Colapsable>{texto('desde') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('desde')}</p>}</Colapsable>
+          <Colapsable>{texto('desde') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('desde')}</p>}</Colapsable>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor="descuento-cuotas" className={ETIQUETA}>¿En cuántas cuotas?</label>
             <div className="mt-1"><SelectMenu id="descuento-cuotas" ariaLabel="Cuotas del descuento" className={SELECTOR} value={form.cuotas} onChange={(v) => cambiar('cuotas', v)} items={Array.from({ length: MAX_CUOTAS }, (_, i) => ({ value: String(i + 1), label: i === 0 ? 'Un solo descuento' : `${i + 1} cuotas` }))} /></div>
-            <Colapsable>{texto('cuotas') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('cuotas')}</p>}</Colapsable>
+            <Colapsable>{texto('cuotas') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('cuotas')}</p>}</Colapsable>
           </div>
           <Colapsable>{enCuotas && (
             <div>
               <label htmlFor="descuento-frecuencia" className={ETIQUETA}>Cada cuánto</label>
               <div className="mt-1"><SelectMenu id="descuento-frecuencia" ariaLabel="Cada cuánto se descuenta una cuota" className={SELECTOR} value={form.frecuencia} onChange={(v) => cambiar('frecuencia', v)} items={FRECUENCIAS.map((f) => ({ value: f.id, label: f.etiqueta }))} /></div>
-              <Colapsable>{texto('frecuencia') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto('frecuencia')}</p>}</Colapsable>
+              <Colapsable>{texto('frecuencia') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('frecuencia')}</p>}</Colapsable>
             </div>
           )}</Colapsable>
         </div>

@@ -33,7 +33,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
 
       <div className="space-y-1">
         <label htmlFor="pf-serial" className={claseEtiqueta}>
-          SERIAL <span className="font-normal text-red-500">(obligatorio)</span>
+          SERIAL <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
         </label>
         <div className="flex items-stretch gap-2">
         <input
@@ -54,7 +54,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
         <BotonEscanearSerial onLeido={(leido) => { onSerial(leido.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase()); setSerialTocado(true); }} />
         </div>
         {errores.serial || serialRojo
-          ? <p id="pf-serial-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.serial || evaluacionSerial.mensaje}</p>
+          ? <p id="pf-serial-error" role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errores.serial || evaluacionSerial.mensaje}</p>
           : serialVerde
           ? <p id="pf-serial-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacionSerial.mensaje}</p>
           : <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Escríbelo o escanea el código de barras de la caja: el que dice <b>PON S/N</b> o <b>GPON SN</b>.</p>}
@@ -62,7 +62,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
 
       <div className="space-y-1">
         <label htmlFor="pf-vlan" className={claseEtiqueta}>
-          VLAN <span className="font-normal text-red-500">(obligatorio)</span>
+          VLAN <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
         </label>
         <input
           id="pf-vlan"
@@ -77,7 +77,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
           aria-describedby={errores.vlan ? 'pf-vlan-error' : undefined}
           className={claseInput(errores.vlan)}
         />
-        {errores.vlan && <p id="pf-vlan-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
+        {errores.vlan && <p id="pf-vlan-error" role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errores.vlan}</p>}
       </div>
 
       <NapPuertoCampos nap={nap} onNap={onNap} napError={errores.nap} puerto={puerto} onPuerto={onPuerto} puertoError={errores.puerto} />
@@ -88,7 +88,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
       <>
       <div className="space-y-1">
         <p className={claseEtiqueta}>
-          METRAJE DEL DROP <span className="font-normal text-zinc-400">marca del cable al empezar y al terminar</span>
+          METRAJE DEL DROP <span className="font-normal text-muted-foreground">marca del cable al empezar y al terminar</span>
         </p>
         <MetrajeInicialFinal
           idInicial="pf-metraje-inicial"
@@ -114,7 +114,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
 
       <div className="space-y-1.5" role="group" aria-labelledby="pf-postes-etiqueta" aria-describedby={errores.posteadura ? 'pf-postes-error' : undefined}>
         <p id="pf-postes-etiqueta" className={claseEtiqueta}>
-          POSTEADURA <span className="font-normal text-red-500">(obligatorio)</span> <span className="font-normal text-zinc-400">uno o varios postes</span>
+          POSTEADURA <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span> <span className="font-normal text-muted-foreground">uno o varios postes</span>
         </p>
         {postes.map((poste, i) => (
           <div key={i} className="flex items-center gap-2">
@@ -150,12 +150,12 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
         >
           <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Agregar otro poste
         </button>
-        {errores.posteadura && <p id="pf-postes-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
+        {errores.posteadura && <p id="pf-postes-error" role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
       </div>
 
       <div className="space-y-1">
         <label htmlFor="pf-puertos-disponibles" className={claseEtiqueta}>
-          PUERTOS DISPONIBLES <span className="font-normal text-red-500">(obligatorio)</span>
+          PUERTOS DISPONIBLES <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
         </label>
         <input
           id="pf-puertos-disponibles"
@@ -170,7 +170,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
           className={claseInput(errores.puertosDisponibles)}
         />
         {errores.puertosDisponibles
-          ? <p id="pf-puertos-disponibles-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.puertosDisponibles}</p>
+          ? <p id="pf-puertos-disponibles-error" role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errores.puertosDisponibles}</p>
           : <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Los que quedan libres en la NAP (si no queda ninguno, escribe 0).</p>}
       </div>
       </>

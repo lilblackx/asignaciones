@@ -51,7 +51,7 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
               aria-invalid={!!parseada.error}
               className={claseCampo('grande', parseada.error ? 'error' : 'normal')}
             />
-            {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{parseada.error}</p>}
+            {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{parseada.error}</p>}
             {parseada.valor && <a href={parseada.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
           <div className="flex gap-2 justify-end">

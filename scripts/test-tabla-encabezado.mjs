@@ -17,7 +17,7 @@ const titulos = [...thead.matchAll(/<th\b([^>]*)>([\s\S]*?)<\/th>/g)].map((m) =>
 check('los 8 títulos de la tabla', titulos.map((t) => t.contenido), ['CÓDIGO', 'NOMBRE', 'CÉDULA', 'DIRECCIÓN', 'FALLA / TRABAJO', 'TÉCNICO', 'ESTADO', 'ACCIONES']);
 check('ningún título es clicable ni cambia al pasar el mouse (cursor, hover, grupo o clic)', titulos.every((t) => !/cursor-pointer|hover:|group|onClick|title=/.test(t.atributos)), true);
 check('ningún título lleva ícono ni elementos dentro: solo el texto', titulos.every((t) => !/</.test(t.contenido)), true);
-check('todos llevan el mismo borde, relleno y alineación', titulos.slice(0, 7).every((t) => /px-3 py-3 border-r border-zinc-800 w-\[[^\]]+\](?: min-\[1440px\]:w-\[[^\]]+\])? align-middle text-center/.test(t.atributos)), true);
+check('todos llevan el mismo borde, relleno y alineación', titulos.slice(0, 7).every((t) => /px-3 py-3 w-\[[^\]]+\](?: min-\[1440px\]:w-\[[^\]]+\])? align-middle text-center/.test(t.atributos)), true);
 check('ordenar por tipo de trabajo sigue en el menú "Ordenar" de los filtros', readFileSync('src/components/FiltersBar.jsx', 'utf8').includes("{ value: 'TIPO_TRABAJO', label: 'Tipo de Trabajo (A-Z)' }"), true);
 
 if (failures) { console.log(`\n${failures} prueba(s) fallaron`); process.exit(1); }

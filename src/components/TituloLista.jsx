@@ -3,7 +3,7 @@ export default function TituloLista({ titulo, ahora, pendientes = 0 }) {
   const dia = new Date(ahora).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Caracas' });
   return (
     <div className="lg:hidden mb-4 px-1">
-      <h2 className="text-3xl font-black tracking-tight text-foreground">{titulo}</h2>
+      <h1 className="text-3xl font-black tracking-tight text-foreground">{titulo}</h1>
       <p className="mt-1 text-sm font-medium text-muted-foreground first-letter:uppercase">
         {dia} · {pendientes === 1 ? '1 pendiente' : `${pendientes} pendientes`}
       </p>

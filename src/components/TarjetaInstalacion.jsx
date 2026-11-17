@@ -73,7 +73,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
                 etiqueta={`Copiar el nombre de ${orden.nombre}`}
                 titulo="Copiar nombre"
                 className="shrink-0 p-1 -my-0.5 rounded"
-                tono="text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                tono="text-muted-foreground hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 tonoCopiado="text-emerald-600 dark:text-emerald-400"
                 iconoClase="w-3.5 h-3.5"
               />

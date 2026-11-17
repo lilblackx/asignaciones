@@ -119,7 +119,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground font-bold">Cobro resultante</span>
-                <span className="font-black text-red-600 dark:text-red-400">{montoBsActual ? `${montoBsActual} Bs` : '-'}</span>
+                <span className="font-black text-red-700 dark:text-red-400">{montoBsActual ? `${montoBsActual} Bs` : '-'}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground font-bold">Fuente</span>

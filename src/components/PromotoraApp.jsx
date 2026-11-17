@@ -208,7 +208,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
 
           <div className="flex gap-2">
             <div className="relative flex-1 min-w-0">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <input
                 type="search"
                 aria-label={verTodasInstalaciones ? 'Buscar por nombre, cédula, código o promotor' : 'Buscar por nombre, cédula o código'}
@@ -234,7 +234,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   type="button"
                   aria-pressed={categoria === clave}
                   onClick={() => { setCategoria(clave); setFiltro('TODAS'); }}
-                  className={`flex-1 min-w-fit whitespace-nowrap px-2 py-2 rounded-campo text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                  className={`flex-1 min-w-fit whitespace-nowrap px-2 py-2 rounded-campo text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-white'}`}
                 >
                   <span>{texto}</span>
                   <Contador n={n} tono={categoria === clave ? 'bg-zinc-200 dark:bg-zinc-700' : 'bg-zinc-300/70 dark:bg-zinc-800'} />
@@ -306,7 +306,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
               {visibles.length} de {ordenes.length} {vista === 'LOS' ? 'averías LOS' : vista === 'TODO' ? 'órdenes' : 'instalaciones'}
               {verTodasInstalaciones && !busqueda.trim() && ` de ${nombreMes(mes)}`}
               {hayMasCerradas && <span className="text-muted-foreground"> · faltan cerradas por cargar</span>}
-              {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-600 dark:text-red-400 hover:underline">Limpiar filtros</button>}
+              {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-700 dark:text-red-400 hover:underline">Limpiar filtros</button>}
             </p>
             <div role="group" aria-label="Cómo ver las órdenes" className="ml-auto flex gap-0.5 p-0.5 rounded-campo bg-zinc-300 dark:bg-zinc-900">
               {[['TARJETAS', 'Tarjetas', LayoutGrid], ['LISTA', 'Lista', List]].map(([clave, texto, Icono]) => (
@@ -317,7 +317,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   aria-label={texto}
                   title={texto}
                   onClick={() => setFormato(clave)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold transition-colors ${formato === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'}`}
+                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold transition-colors ${formato === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-white'}`}
                 >
                   <Icono className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">{texto}</span>
                 </button>
@@ -328,7 +328,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           {sinNombre ? (
             <p role="alert" className="text-sm text-amber-700 dark:text-amber-400 text-center py-10 max-w-md mx-auto">Tu usuario todavía no tiene un nombre de promotor asignado, por eso no ves instalaciones. Pídele al administrador que lo agregue en Usuarios.</p>
           ) : error ? (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
             <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando instalaciones...</p>
           ) : visibles.length === 0 ? (

@@ -94,7 +94,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
           <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT. Escribe la potencia a mano.</p>
         )}
         {estado?.tipo === 'error' && (
-          <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Escribe la potencia a mano.</p>
+          <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{estado.mensaje} Escribe la potencia a mano.</p>
         )}
         {estado?.tipo === 'opciones' && (
           <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-campo border border-zinc-200 dark:border-zinc-700 bg-sunken p-2">

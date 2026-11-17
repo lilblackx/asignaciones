@@ -27,7 +27,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
   return (
     <div className={wrapperClassName}>
       <p id={`${idPrefix}-cobro-acordado`} className={etiqueta}>
-        COBRO ACORDADO CON EL CLIENTE <span className="font-normal normal-case text-zinc-400">(opcional; lo ve quien finaliza la orden)</span>
+        COBRO ACORDADO CON EL CLIENTE <span className="font-normal normal-case text-muted-foreground">(opcional; lo ve quien finaliza la orden)</span>
       </p>
       <div role="radiogroup" aria-labelledby={`${idPrefix}-cobro-acordado`} className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-1.5">
         {OPCIONES.filter(([modo]) => modo !== COBRO_PAGADA || permitirPagada || value.modo === COBRO_PAGADA).map(([modo, texto]) => {
@@ -101,7 +101,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
               className={`min-w-0 flex-1 ${claseCampo('compacto', error ? 'error' : 'normal')} text-right font-bold tabular-nums`}
             />
           </div>
-          {error && <p id={`${idPrefix}-cobro-monto-error`} role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{error}</p>}
+          {error && <p id={`${idPrefix}-cobro-monto-error`} role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{error}</p>}
         </div>
       )}
 

@@ -144,14 +144,14 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       </div>
       {/* El aviso de la garantía sin resolver ya está arriba, con la orden original, y el del pago y el de las fotos también (junto a la orden): no se repiten. Aquí solo va lo que no se dijo arriba (sin concepto, sin técnico). */}
       {bloqueo && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{bloqueo}</p>}
-      {error && !abierto && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
+      {error && !abierto && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{error}</p>}
 
       <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR' || abierto === 'SIN_DETALLES') && (
         <div className="mt-1 rounded-campo border border-input p-3 space-y-3">
           <div>
             <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : abierto === 'EXCLUIR' ? 'Por qué se excluye (no se paga)' : 'Por qué se aprueba sin los detalles de la orden (obligatorio)'}</label>
             <input id={`motivo-${item.clave}`} value={motivo} onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
-            {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-1">{error}</p>}
+            {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 mt-1">{error}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
             <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar(abierto)} disabled={ocupado}>{abierto === 'RETENER' ? 'Retener' : abierto === 'EXCLUIR' ? 'Excluir' : 'Aprobar sin detalles'}</Boton>
@@ -173,7 +173,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
               <div className="mt-1"><SelectMenu id={`con-${item.clave}`} ariaLabel="Concepto con que se paga" className={SELECTOR} value={correccion.concepto} onChange={(v) => setCorreccion((c) => ({ ...c, concepto: v }))} items={conceptos} /></div>
             </div>
           </div>
-          {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{error}</p>}
           <div className="flex flex-wrap gap-2">
             <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar('CORREGIR')} disabled={ocupado}>Guardar corrección</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>
@@ -225,7 +225,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
               <input id={`sin-${item.clave}`} value={garantia.sinDescuento} onChange={(e) => { setGarantia((g) => ({ ...g, sinDescuento: stripEmojis(e.target.value) })); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
             </div>
           )}
-          {error && <p role="alert" className="text-sm font-bold text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-sm font-bold text-red-700 dark:text-red-400">{error}</p>}
           <div className="flex flex-wrap gap-2">
             <Boton variante="principal" tamano="normal" type="button" onClick={guardarGarantia} disabled={ocupado}>Guardar decisión</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>

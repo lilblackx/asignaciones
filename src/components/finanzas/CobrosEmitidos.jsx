@@ -33,7 +33,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
   const resumen = useMemo(() => resumenCobros(visibles), [visibles]);
   const cobroAbierto = abierto ? delPeriodo.find((c) => c.id === abierto) || null : null;
 
-  if (error && !cargado) return <p role="alert" className="text-base text-red-600 dark:text-red-400 text-center py-10">No se pudieron leer los cobros de los clientes. Recarga la página e intenta de nuevo.</p>;
+  if (error && !cargado) return <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron leer los cobros de los clientes. Recarga la página e intenta de nuevo.</p>;
   if (!cargado) return <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando los cobros...</p>;
 
   const total = resumen.PENDIENTE.cantidad + resumen.CARGADO.cantidad;
@@ -65,7 +65,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
 
       <div className="space-y-2">
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input type="search" aria-label="Buscar por código, cliente, cédula o técnico" placeholder="Código, cliente o cédula" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={BUSCADOR} />
           <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
         </div>
@@ -121,7 +121,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                     <td className="px-3 py-2.5 min-w-[8rem] text-card-foreground break-words">{tipoTexto(c)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{estadoChip(c)}</td>
-                    <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoVisibleEnFinanzas(c) ? <PagoDelCliente orden={c} tamano="compacto" paraFinanzas /> : <span className="text-xs text-zinc-400">-</span>}</td>
+                    <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoVisibleEnFinanzas(c) ? <PagoDelCliente orden={c} tamano="compacto" paraFinanzas /> : <span className="text-xs text-muted-foreground">-</span>}</td>
                     <td className="px-3 py-2.5 text-xs text-card-foreground">{c.estado === ESTADO_COBRO.CARGADO ? <>{c.cargadoPor}<span className="block">{fechaHora(c.cargadoEn)}</span></> : '-'}</td>
                     <td className="px-3 py-2.5"><Boton variante="secundario" tamano="compacto" onClick={() => setAbierto(c.id)}>Ver</Boton></td>
                   </tr>

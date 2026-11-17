@@ -158,7 +158,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
             </div>
           )}
 
-          <Colapsable>{error && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{error.texto}</p>}</Colapsable>
+          <Colapsable>{error && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold">{error.texto}</p>}</Colapsable>
 
           {!soloLectura && !retirado && (
           <div className="space-y-2">

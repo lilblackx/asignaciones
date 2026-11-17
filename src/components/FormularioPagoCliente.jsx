@@ -21,7 +21,7 @@ import {
 // La hora cabe en una sola fila desde 320 px: selectores con menos relleno.
 const SELECTOR_HORA = SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7');
 
-const MensajeError = ({ texto }) => <Colapsable>{texto && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto}</p>}</Colapsable>;
+const MensajeError = ({ texto }) => <Colapsable>{texto && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto}</p>}</Colapsable>;
 
 // 5696 -> "5.696,00"; 5696.5 -> "5.696,50" (el monto se escribe como en una calculadora, ver montoCalculadora).
 const montoComoTexto = montoParaCampo;

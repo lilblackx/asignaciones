@@ -61,7 +61,7 @@ export default function RowMenu({ label, items }) {
                 type="button"
                 role="menuitem"
                 onClick={() => { setAbierto(false); onClick(); }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-bold transition-colors ${danger ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-zinc-700 dark:text-zinc-200 hover:bg-secondary'}`}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-bold transition-colors ${danger ? 'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-zinc-700 dark:text-zinc-200 hover:bg-secondary'}`}
               >
                 <Icon className="w-3.5 h-3.5" /> {texto}
               </button>

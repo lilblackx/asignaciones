@@ -104,7 +104,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             <textarea id="vnta-observacion" value={form.observacion} onChange={(e) => cambiar('observacion', stripEmojis(e.target.value))} rows={2} maxLength={MAX_LARGO_OBSERVACION} placeholder="Ej. Apoyo en reparar NAP en residencia la colina" className={`${CAMPO} resize-none`} />
           </div>
         </div>
-        {errorForm && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-2">{errorForm}</p>}
+        {errorForm && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 mt-2">{errorForm}</p>}
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <Boton variante="principal" tamano="normal" type="submit" disabled={guardando}>
             {guardando ? <Spinner /> : <Plus className="w-4 h-4" aria-hidden="true" />}{editandoId ? 'Guardar cambios' : 'Agregar'}

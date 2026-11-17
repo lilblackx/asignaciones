@@ -44,7 +44,7 @@ export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento
   };
   return (
     <div className={wrapperClassName}>
-      <label htmlFor={`${idPrefix}-cedula`} className={s.label}>CÉDULA / RIF<span className="text-red-600 dark:text-red-400"> *</span></label>
+      <label htmlFor={`${idPrefix}-cedula`} className={s.label}>CÉDULA / RIF<span className="text-red-700 dark:text-red-400"> *</span></label>
       <div className="flex gap-1">
         <div className="shrink-0">
           <SelectMenu

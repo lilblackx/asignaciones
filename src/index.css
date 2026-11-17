@@ -51,7 +51,7 @@
   --secondary-foreground: #fafaf9;
   --muted: #292524;
   --muted-foreground: #a8a29e;
-  --accent: #44403c;
+  --accent: #3d3835;
   --accent-foreground: #fafaf9;
   --destructive: #ef4444;
   --success: #34d399;
@@ -119,6 +119,8 @@
   background-color: var(--primary);
 }
 .encabezado-d .text-white { color: var(--foreground); }
+.encabezado-d .text-amber-400 { color: #b45309; }
+.dark .encabezado-d .text-amber-400 { color: #fbbf24; }
 .encabezado-d .text-zinc-300,
 .encabezado-d .text-zinc-400 { color: var(--muted-foreground); }
 .encabezado-d .bg-zinc-800 { background-color: var(--secondary); }

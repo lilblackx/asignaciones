@@ -56,7 +56,7 @@ export default function Calendario({ valor, min, max, hoy: hoyElegido, onElegir,
       </div>
 
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-        <button type="button" onClick={() => onElegir(hoy)} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-boton font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors`}>Hoy</button>
+        <button type="button" onClick={() => onElegir(hoy)} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-boton font-bold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors`}>Hoy</button>
         {onBorrar && <button type="button" onClick={onBorrar} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-boton font-bold text-zinc-600 dark:text-zinc-300 hover:bg-secondary transition-colors`}>Borrar</button>}
         <button type="button" onClick={onCerrar} className={`${grande ? 'px-4 py-2.5 text-base' : 'px-2.5 py-1.5 text-xs'} rounded-boton font-bold text-zinc-600 dark:text-zinc-300 hover:bg-secondary transition-colors`}>Cerrar</button>
       </div>

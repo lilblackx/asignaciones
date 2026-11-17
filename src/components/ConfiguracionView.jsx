@@ -128,7 +128,7 @@ export default function ConfiguracionView({ funciones, cargado, error, onCambiar
             />
           </section>
 
-          <Colapsable>{fallo && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{fallo}</p>}</Colapsable>
+          <Colapsable>{fallo && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{fallo}</p>}</Colapsable>
 
           <EstadoSistema pausadas={pausarAutomaticas} />
         </div>
