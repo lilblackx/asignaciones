@@ -154,19 +154,26 @@ export default function TicketsMobileList({
             </div>
             <div className="flex items-start gap-2 text-sm">
               <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
-              <span className="text-card-foreground leading-snug">{ticket.direccion}</span>
+              <span className="min-w-0 flex-1 text-card-foreground leading-snug">{ticket.direccion}</span>
+              {/* Instalación sin ubicación: un ícono (como en la tabla de PC) en vez de una etiqueta con texto. El círculo mide 32 px y el área táctil, 44. */}
+              {instalacionSinUbicacion(ticket) && (
+                canEditTickets ? (
+                  <button
+                    type="button"
+                    onClick={() => onPegarUbicacion(ticket)}
+                    title="Sin ubicación: copia el enlace y toca para guardarlo"
+                    aria-label="Sin ubicación: pegar el enlace de ubicación"
+                    className="relative shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors after:absolute after:-inset-1.5"
+                  >
+                    <MapPinOff className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <span role="img" title="Sin ubicación todavía" aria-label="Sin ubicación todavía" className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
+                    <MapPinOff className="w-4 h-4" aria-hidden="true" />
+                  </span>
+                )
+              )}
             </div>
-            {instalacionSinUbicacion(ticket) && (
-              canEditTickets ? (
-                <button type="button" onClick={() => onPegarUbicacion(ticket)} className="self-start inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-3 py-1.5 rounded-boton bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
-                  <MapPinOff className="w-4 h-4" aria-hidden="true" /> Sin ubicación · pegar
-                </button>
-              ) : (
-                <span className="self-start inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-boton bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
-                  <MapPinOff className="w-4 h-4" aria-hidden="true" /> Sin ubicación todavía
-                </span>
-              )
-            )}
             {(hayTelefono || enlaceUbicacion || enlaceNap) && (
               // Una sola fila (los que existan se reparten el ancho); texto corto y
               // aria-label completo para no gastar dos filas de alto por tarjeta.
