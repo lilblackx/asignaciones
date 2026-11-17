@@ -7,9 +7,10 @@ import EstadoSistema from './EstadoSistema';
 import { TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { FUNCIONES } from '../utils/funciones';
 import Aviso from './Aviso';
+import Interruptor from './Interruptor';
 
 // Configuración (solo ADMIN): las funciones que se encienden o se apagan para toda la app, el interruptor remoto de emergencia y el estado del sistema. Cada
-// función es una casilla con su explicación y nace desactivada (ver utils/funciones.js). Aquí irán sumándose más ajustes. Los cambios se guardan al marcar la casilla
+// función es un interruptor con su explicación y nace desactivada (ver utils/funciones.js). Aquí irán sumándose más ajustes. Los cambios se guardan al mover el interruptor
 // y llegan solos a quien tenga la app abierta.
 const OPCIONES = [
   {
@@ -28,38 +29,40 @@ const OPCIONES = [
 
 const fechaCaracas = (ms) => new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Caracas' });
 
-// Una casilla con su título, su estado y su explicación. `etiquetas`: lo que dice la insignia marcada y desmarcada; `marcada` null: aún sin leer.
-function TarjetaCasilla({ id, Icono, titulo, detalle, marcada, cargado, ocupada, etiquetas, avisoCuandoMarcada = false, onCambiar, pie = null }) {
+// Una función con su título, su estado y su explicación, y a la derecha su interruptor. `etiquetas`: lo que dice la insignia encendida y apagada; `marcada` null: aún sin leer.
+function TarjetaFuncion({ id, Icono, titulo, detalle, marcada, cargado, ocupada, etiquetas, avisoCuandoMarcada = false, onCambiar, pie = null }) {
   const sinDato = marcada === null;
   const insignia = !cargado ? 'Cargando' : sinDato ? 'Sin dato' : marcada ? etiquetas.marcada : etiquetas.desmarcada;
   const resaltada = marcada === true && avisoCuandoMarcada;
-  // Neutra mientras no hay dato; ámbar si lo marcado es una alerta; verde si todo está en orden (lo marcado, o lo desmarcado cuando marcar es la alerta).
+  // Neutra mientras no hay dato; ámbar si lo encendido es una alerta; verde si todo está en orden (lo encendido, o lo apagado cuando encender es la alerta).
   const verde = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
-  const neutra = 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
+  const neutra = 'bg-secondary text-muted-foreground';
   const claseInsignia = !cargado || sinDato ? neutra
     : resaltada ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300'
     : marcada !== avisoCuandoMarcada ? verde : neutra;
   return (
-    <div className={`${TARJETA} p-3 ${resaltada ? 'border-amber-400 dark:border-amber-700' : ''}`}>
-      <label htmlFor={id} className="flex items-start gap-3 cursor-pointer max-lg:min-h-11">
-        <input
-          id={id}
-          type="checkbox"
-          checked={marcada === true}
-          disabled={!cargado || sinDato || ocupada}
-          onChange={(e) => onCambiar(e.target.checked)}
-          className="mt-0.5 w-5 h-5 shrink-0 accent-red-600 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-        />
-        <span className="min-w-0 space-y-1">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black text-foreground">
-            <Icono className={`w-4 h-4 shrink-0 ${resaltada ? 'text-amber-600 dark:text-amber-400' : 'text-red-500'}`} aria-hidden="true" />
-            {titulo}
-            <span className={`whitespace-nowrap text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${claseInsignia}`}>{insignia}</span>
-          </span>
-          <span className="block text-xs text-muted-foreground">{detalle}</span>
-          {pie && <span className="block text-[11px] max-lg:text-xs text-muted-foreground">{pie}</span>}
-        </span>
-      </label>
+    <div className={`${TARJETA} p-4 flex items-start gap-3 ${resaltada ? 'border-amber-400 dark:border-amber-700' : ''}`}>
+      <span aria-hidden="true" className={`shrink-0 w-9 h-9 rounded-full inline-flex items-center justify-center ${resaltada ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400'}`}>
+        <Icono className="w-[18px] h-[18px]" />
+      </span>
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h4 id={`${id}-titulo`} className="text-sm font-black text-foreground">{titulo}</h4>
+          <span className={`whitespace-nowrap text-xs font-bold px-2 py-0.5 rounded-full ${claseInsignia}`}>{insignia}</span>
+        </div>
+        <p id={`${id}-detalle`} className="text-xs text-muted-foreground">{detalle}</p>
+        {pie && <p className="text-xs text-muted-foreground">{pie}</p>}
+      </div>
+      <Interruptor
+        id={id}
+        activo={marcada === true}
+        deshabilitado={!cargado || sinDato || ocupada}
+        onCambiar={onCambiar}
+        ariaLabel={titulo}
+        ariaDescribedBy={`${id}-detalle`}
+        tono={avisoCuandoMarcada ? 'atencion' : 'exito'}
+        className="mt-1"
+      />
     </div>
   );
 }
@@ -86,7 +89,7 @@ export default function ConfiguracionView({ funciones, cargado, error, onCambiar
       <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Settings} titulo="Configuración" onClose={onClose} enPagina={enPagina} />
         <div className={`p-4 space-y-4 ${CENTRADO_ESTRECHO}`}>
-          <p className={TEXTO_SUAVE}>Funciones de la app que se encienden o se apagan para todos. Los cambios se guardan al marcar la casilla.</p>
+          <p className={TEXTO_SUAVE}>Funciones de la app que se encienden o se apagan para todos. Los cambios se guardan al mover el interruptor.</p>
 
           {(error || interruptorError) && (
             <Aviso nivel="error" compact>No se pudo leer la configuración. Lo que ves puede no ser lo guardado.</Aviso>
@@ -95,7 +98,7 @@ export default function ConfiguracionView({ funciones, cargado, error, onCambiar
           <section aria-labelledby="config-funciones" className="space-y-3">
             <h3 id="config-funciones" className={TITULO_SECCION}>Funciones</h3>
             {OPCIONES.map(({ clave, Icono, titulo, detalle }) => (
-              <TarjetaCasilla
+              <TarjetaFuncion
                 key={clave}
                 id={`config-${clave}`}
                 Icono={Icono}
@@ -112,11 +115,11 @@ export default function ConfiguracionView({ funciones, cargado, error, onCambiar
 
           <section aria-labelledby="config-interruptor" className="space-y-3">
             <h3 id="config-interruptor" className={TITULO_SECCION}>Interruptor remoto</h3>
-            <TarjetaCasilla
+            <TarjetaFuncion
               id="config-pausarAutomaticas"
               Icono={PauseCircle}
               titulo="Pausar las escrituras automáticas"
-              detalle="Interruptor de emergencia para todas las pantallas abiertas. Marcado, la app deja de hacer lo que hace sola (limpiar avisos vencidos, completar datos que faltan, numerar ventas); lo que cada persona guarda con sus botones sigue funcionando. Úsalo si en Estaciones ves lecturas o rechazos fuera de lo normal, y desmárcalo cuando se resuelva. Se aplica en segundos."
+              detalle="Interruptor de emergencia para todas las pantallas abiertas. Encendido, la app deja de hacer lo que hace sola (limpiar avisos vencidos, completar datos que faltan, numerar ventas); lo que cada persona guarda con sus botones sigue funcionando. Úsalo si en Estaciones ves lecturas o rechazos fuera de lo normal, y apágalo cuando se resuelva. Se aplica en segundos."
               pie={ultimoCambio}
               marcada={pausarAutomaticas}
               cargado={interruptorCargado}

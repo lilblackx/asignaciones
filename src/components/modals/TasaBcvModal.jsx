@@ -6,7 +6,7 @@ import FormasPagoEditor from './FormasPagoEditor';
 import { diasDesactualizada } from '../../utils/tasa';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
-import { claseCampo } from '../estilos';
+import { TARJETA, TITULO_SECCION, claseCampo } from '../estilos';
 import Aviso from '../Aviso';
 
 // Convierte una tasa/monto (número) a los dígitos que representarían sus centavos,
@@ -80,7 +80,8 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
       <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Coins} titulo="Tasa y pagos" onClose={onClose} enPagina={enPagina} />
 
-        <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex border-b border-border">
+        <div className={`border-b border-border ${CENTRADO_ESTRECHO}`}>
+        <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex">
           {PESTANAS.map(p => (
             <button
               key={p.id}
@@ -90,11 +91,12 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               aria-selected={pestana === p.id}
               aria-controls={`panel-${p.id}`}
               onClick={() => setPestana(p.id)}
-              className={`flex-1 px-3 py-3 text-xs font-black border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-muted-foreground hover:text-zinc-900 dark:hover:text-white'}`}
+              className={`flex-1 px-3 py-3 text-sm font-bold border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-muted-foreground hover:text-zinc-900 dark:hover:text-white'}`}
             >
               {p.etiqueta}
             </button>
           ))}
+        </div>
         </div>
 
         {pestana === 'formas' ? (
@@ -106,39 +108,39 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
             {estaDesactualizada && (
               <Aviso nivel="atencion" compact>{dias === null ? 'Nunca se ha configurado la tasa.' : dias === 1 ? 'Tasa desactualizada: es de ayer.' : `Tasa desactualizada: tiene ${dias} días.`}</Aviso>
             )}
-            <div className="bg-sunken rounded-campo p-4 space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground font-bold">Tasa actual</span>
-                <span className="font-black text-foreground">{tasaConfig?.tasa ? tasaConfig.tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Sin configurar'}</span>
+            <dl className={`${TARJETA} p-4 text-sm divide-y divide-border`}>
+              <div className="flex justify-between gap-3 py-2 first:pt-0">
+                <dt className="text-muted-foreground">Tasa actual</dt>
+                <dd className="font-bold text-foreground tabular-nums">{tasaConfig?.tasa ? tasaConfig.tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Sin configurar'}</dd>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground font-bold">Monto base (EUR)</span>
-                <span className="font-black text-foreground">{tasaConfig?.montoBaseEUR ? tasaConfig.montoBaseEUR.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+              <div className="flex justify-between gap-3 py-2">
+                <dt className="text-muted-foreground">Monto base (EUR)</dt>
+                <dd className="font-bold text-foreground tabular-nums">{tasaConfig?.montoBaseEUR ? tasaConfig.montoBaseEUR.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</dd>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground font-bold">Cobro resultante</span>
-                <span className="font-black text-red-700 dark:text-red-400">{montoBsActual ? `${montoBsActual} Bs` : '-'}</span>
+              <div className="flex justify-between items-baseline gap-3 py-2">
+                <dt className="text-muted-foreground">Cobro resultante</dt>
+                <dd className="text-lg font-black text-red-700 dark:text-red-400 tabular-nums">{montoBsActual ? `${montoBsActual} Bs` : '-'}</dd>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground font-bold">Fuente</span>
-                <span className="font-black text-foreground uppercase">{tasaConfig?.fuente || '-'}</span>
+              <div className="flex justify-between gap-3 py-2">
+                <dt className="text-muted-foreground">Fuente</dt>
+                <dd className="font-bold text-foreground capitalize">{String(tasaConfig?.fuente || '-').toLowerCase()}</dd>
               </div>
               {tasaConfig?.actualizadoEn && (
-                <div className="flex justify-between text-[11px] max-lg:text-xs text-muted-foreground pt-1">
-                  <span>Última actualización</span>
-                  <span>{new Date(tasaConfig.actualizadoEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                <div className="flex justify-between gap-3 pt-2 text-xs text-muted-foreground">
+                  <dt>Última actualización</dt>
+                  <dd>{new Date(tasaConfig.actualizadoEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}</dd>
                 </div>
               )}
-            </div>
+            </dl>
 
             <Boton variante="secundario" tamano="grande" className="w-full" type="button" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} /> {isRefreshing ? 'Actualizando...' : 'Actualizar automático'}
             </Boton>
 
             <form onSubmit={handleManualSubmit} className="border-t border-border pt-4 space-y-4">
-              <label className="text-xs font-bold text-muted-foreground block ml-1">AJUSTE MANUAL</label>
+              <h3 className={TITULO_SECCION}>Ajuste manual</h3>
               <div className="space-y-2">
-                <label htmlFor="tasa-manual" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">TASA (Bs por EUR)</label>
+                <label htmlFor="tasa-manual" className="text-xs font-semibold text-muted-foreground ml-1">Tasa (Bs por EUR)</label>
                 <input
                   id="tasa-manual"
                   required
@@ -150,7 +152,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="monto-manual" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1">MONTO BASE (EUR)</label>
+                <label htmlFor="monto-manual" className="text-xs font-semibold text-muted-foreground ml-1">Monto base (EUR)</label>
                 <input
                   id="monto-manual"
                   required
