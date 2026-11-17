@@ -1,4 +1,5 @@
 import { Eye } from 'lucide-react';
+import Aviso from './Aviso';
 
 const unir = (nombres) => (nombres.length <= 1 ? nombres[0] : `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`);
 
@@ -23,9 +24,8 @@ export default function AvisoRevision({ nombres = [], compact = false, encabezad
     );
   }
   return (
-    <div role="status" className={`flex items-start gap-2 rounded-campo border border-violet-300 dark:border-violet-900/60 bg-violet-50 dark:bg-violet-950/30 p-3 text-xs text-violet-900 dark:text-violet-200 ${className}`}>
-      <Eye className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-      <p className="leading-snug"><span className="font-black">{unir(nombres)}</span> {nombres.length === 1 ? 'también tiene' : 'también tienen'} abierta esta orden. Si las dos personas la finalizan, solo se guarda la primera.</p>
-    </div>
+    <Aviso nivel="info" icono={Eye} titulo={`${unir(nombres)} ${nombres.length === 1 ? 'también tiene' : 'también tienen'} abierta esta orden.`} className={className}>
+      Si las dos personas la finalizan, solo se guarda la primera.
+    </Aviso>
   );
 }

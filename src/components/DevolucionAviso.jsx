@@ -1,4 +1,5 @@
 import { Undo2 } from 'lucide-react';
+import Aviso from './Aviso';
 import { devolucionPendiente } from '../utils/devolucion';
 import { calidadValor, textoDbm, valoresGuardados } from '../utils/valoresCliente';
 
@@ -21,21 +22,21 @@ export default function DevolucionAviso({ ticket, compact = false, conValores = 
   if (!devolucion) return null;
 
   return (
-    <div role="alert" className={`bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-campo text-red-800 dark:text-red-200 flex items-start gap-2 ${compact ? 'p-1.5 text-[11px] max-lg:text-xs' : 'p-2.5 text-xs'} ${className}`}>
-      <Undo2 className={`${compact ? 'w-3 h-3' : 'w-4 h-4'} shrink-0 mt-px text-red-700 dark:text-red-400`} aria-hidden="true" />
-      <div className="min-w-0">
-        <p className="font-black leading-tight">
-          Devuelta{devolucion.operador ? ` por ${devolucion.operador}` : ''}{devolucion.fecha && !compact ? ` · ${devolucion.fecha}` : ''}
-        </p>
-        {devolucion.motivo && <p className="leading-snug break-words whitespace-pre-wrap mt-0.5">{devolucion.motivo}</p>}
-        {conValores && valoresGuardados(ticket) && (
-          <div className="mt-1.5 pt-1.5 border-t border-red-200 dark:border-red-900/50">
-            <p className="font-bold">Valores con los que quedó el cliente:</p>
-            <ValorLinea etiqueta="OLT Rx 1310 nm" valor={ticket.valoresCliente.olt1310Dbm} />
-            <ValorLinea etiqueta="ONU Rx 1490 nm" valor={ticket.valoresCliente.onu1490Dbm} />
-          </div>
-        )}
-      </div>
-    </div>
+    <Aviso
+      nivel="error"
+      icono={Undo2}
+      compact={compact}
+      titulo={`Devuelta${devolucion.operador ? ` por ${devolucion.operador}` : ''}${devolucion.fecha && !compact ? ` · ${devolucion.fecha}` : ''}`}
+      className={className}
+    >
+      {devolucion.motivo}
+      {conValores && valoresGuardados(ticket) && (
+        <div className="mt-1.5 pt-1.5 border-t border-red-200 dark:border-red-900/50 whitespace-normal">
+          <p className="font-bold">Valores con los que quedó el cliente:</p>
+          <ValorLinea etiqueta="OLT Rx 1310 nm" valor={ticket.valoresCliente.olt1310Dbm} />
+          <ValorLinea etiqueta="ONU Rx 1490 nm" valor={ticket.valoresCliente.onu1490Dbm} />
+        </div>
+      )}
+    </Aviso>
   );
 }
