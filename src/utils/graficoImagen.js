@@ -3,11 +3,11 @@
 // Solo corre en el navegador (usa canvas).
 
 const ESCALA = 2; // la imagen sale al doble de resolución para que no se vea borrosa al imprimir
-const TINTA = '#0b0b0b';
-const TINTA_SUAVE = '#52514e';
-const TINTA_TENUE = '#898781';
-const REJILLA = '#e1e0d9';
-const LINEA_BASE = '#c3c2b7';
+const TINTA = '#1c1917';
+const TINTA_SUAVE = '#57534e';
+const TINTA_TENUE = '#78716c';
+const REJILLA = '#e7e5e4';
+const LINEA_BASE = '#d6d3d1';
 const FUENTE = 'Helvetica, Arial, sans-serif';
 
 // Un paso "redondo" (1, 2, 5, 10 × potencia de 10) para que el eje tenga 4 tramos con números limpios.

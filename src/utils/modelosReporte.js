@@ -29,8 +29,9 @@ import { mesesDeLaTendencia, tendenciaMensual, textoVariacion } from './tendenci
 const HORA_MS = 3600000;
 // La empresa a la que la cuadrilla le emite su factura fiscal (el texto del recibo de los Pagos detallados, con el nombre en negrita).
 export const EMPRESA_FACTURA = 'NETWORK SPEED, C.A';
-const AZUL = '#2a78d6';
-const NARANJA = '#eb6834';
+// Las series de las gráficas usan los colores de la app: el rojo de marca y un gris cálido oscuro (los nombres AZUL y NARANJA vienen de la paleta anterior).
+const AZUL = '#dc2626';
+const NARANJA = '#57534e';
 const decimal = (n) => n.toFixed(2).replace('.', ',');
 const horas = (ms) => Math.round((ms / HORA_MS) * 100) / 100;
 

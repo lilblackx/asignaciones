@@ -1,5 +1,5 @@
-// Arma el Word (.docx) de un documento de reporte (ver modelosReporte.js): mismo contenido que el PDF pero editable. A4 vertical, encabezado de
-// marca, cifras en tarjetas, gráficos como imagen, tablas con filas alternadas y pie con número de página. Se carga solo al exportar.
+// Arma el Word (.docx) de un documento de reporte (ver modelosReporte.js): mismo contenido y mismo diseño que el PDF (el estilo de la app) pero editable. A4 vertical, ficha de marca,
+// título con la línea roja corta, cifras en tarjetas suaves, gráficos como imagen, tablas claras con rayas finas y pie con número de página. Se carga solo al exportar.
 import {
   AlignmentType, BorderStyle, Document, Footer, Header, HeightRule, ImageRun, LineRuleType, Packer, PageBreak, PageNumber, Paragraph, ShadingType, Table, TableLayoutType, TableRow, TableCell, TextRun, VerticalAlign, WidthType,
 } from 'docx';
@@ -9,11 +9,15 @@ import { cargarLogo } from './logoReportes.js';
 import { ajustarTabla } from './tablaAngosta.js';
 import { partirNegritas } from './textoEnriquecido.js';
 
-const MARCA = 'ASIGNACIONES NS';
+const MARCA = 'Network Speed';
 const ANCHO_PAGINA = 11906; // el ancho de la hoja A4, en veinteavos de punto
 const MARGEN_LATERAL = 1134; // márgenes de 2 cm a los lados
 const ANCHO_UTIL = ANCHO_PAGINA - MARGEN_LATERAL * 2; // 9638
-const ALTO_BANDA = 1361; // 24 mm: la misma altura de la banda de marca del PDF
+const FONDO = 'F4F2EF'; // el fondo suave de las tarjetas de la app
+const RAYA = 'E7E5E4';
+const TINTA = '1C1917';
+const GRIS = '57534E';
+const GRIS_TENUE = '78716C';
 const PX_UTIL = 640; // el mismo ancho en píxeles (para las imágenes)
 const FUENTE = 'Calibri';
 const SIN_BORDE = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
@@ -35,14 +39,14 @@ function tarjetas(items) {
     rows: [new TableRow({
       children: items.map((it) => new TableCell({
         width: { size: ancho, type: WidthType.DXA },
-        shading: { type: ShadingType.CLEAR, fill: 'F4F4F5', color: 'auto' },
-        margins: { top: 100, bottom: 100, left: 140, right: 100 },
+        shading: { type: ShadingType.CLEAR, fill: FONDO, color: 'auto' },
+        margins: { top: 110, bottom: 110, left: 150, right: 100 },
         verticalAlign: VerticalAlign.TOP,
         borders: { top: SIN_BORDE, bottom: SIN_BORDE, left: SEPARADOR, right: SEPARADOR },
         children: [
-          parrafo([corrida(String(it.etiqueta).toUpperCase(), { size: 13, bold: true, color: '898781' })], { spacing: { after: 40 } }),
-          parrafo([corrida(it.valor, { size: 32, bold: true, color: '0B0B0B' })], { spacing: { after: 20 } }),
-          ...(it.detalle ? [parrafo([corrida(it.detalle, { size: 14, color: '52514E' })])] : []),
+          parrafo([corrida(String(it.etiqueta), { size: 15, bold: true, color: GRIS })], { spacing: { after: 40 } }),
+          parrafo([corrida(it.valor, { size: 34, bold: true, color: TINTA })], { spacing: { after: 20 } }),
+          ...(it.detalle ? [parrafo([corrida(it.detalle, { size: 14, color: GRIS })])] : []),
         ],
       })),
     })],
@@ -51,12 +55,11 @@ function tarjetas(items) {
 
 function seccion(titulo, nota) {
   return [
-    parrafo([corrida(titulo, { size: 25, bold: true, color: '0B0B0B' })], {
-      spacing: { before: 280, after: nota ? 40 : 100 },
+    parrafo([corrida(titulo, { size: 25, bold: true, color: TINTA })], {
+      spacing: { before: 300, after: nota ? 40 : 100 },
       keepNext: true,
-      border: { left: { style: BorderStyle.SINGLE, size: 24, color: 'DC2626', space: 6 } },
     }),
-    ...(nota ? [parrafo([corrida(nota, { size: 16, color: '52514E' })], { spacing: { after: 100 }, keepNext: true })] : []),
+    ...(nota ? [parrafo([corrida(nota, { size: 16, color: GRIS })], { spacing: { after: 100 }, keepNext: true })] : []),
   ];
 }
 
@@ -91,24 +94,23 @@ function tabla(original) {
   // Si no cabe sin partir palabras, las columnas que sobran pasan a una línea gris debajo de cada fila (ver utils/tablaAngosta).
   const b = ajustarTabla(original, { ancho: (palabra) => palabra.length * TWIPS_POR_LETRA, util: ANCHO_UTIL, relleno: RELLENO_CELDA });
   const anchos = anchosDeColumnas(b);
-  const borde = { style: BorderStyle.SINGLE, size: 4, color: 'E1E0D9' };
-  const celda = (texto, i, { cabecera = false, par = false, conLinea = false } = {}) => new TableCell({
+  const borde = { style: BorderStyle.SINGLE, size: 4, color: RAYA };
+  const celda = (texto, i, { cabecera = false, conLinea = false } = {}) => new TableCell({
     width: { size: anchos[i], type: WidthType.DXA },
-    shading: cabecera ? { type: ShadingType.CLEAR, fill: '18181B', color: 'auto' } : par ? { type: ShadingType.CLEAR, fill: 'FAFAF9', color: 'auto' } : undefined,
+    shading: cabecera ? { type: ShadingType.CLEAR, fill: FONDO, color: 'auto' } : undefined,
     margins: { top: 70, bottom: conLinea ? 20 : 70, left: 110, right: 110 },
     // Igual que en el PDF: el encabezado centrado en vertical y los datos arriba, para que una celda de varias líneas no desplace a las de al lado.
     verticalAlign: cabecera ? VerticalAlign.CENTER : VerticalAlign.TOP,
     borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: cabecera || conLinea ? SIN_BORDE : borde },
-    children: [parrafo([corrida(texto, { size: cabecera ? 16 : 17, bold: cabecera || b.columnas[i].derecha || i === 0, color: cabecera ? 'FFFFFF' : '0B0B0B' })], { alignment: b.columnas[i].derecha ? AlignmentType.RIGHT : AlignmentType.LEFT, keepNext: conLinea })],
+    children: [parrafo([corrida(cabecera ? String(texto).toUpperCase() : texto, { size: cabecera ? 15 : 17, bold: cabecera || b.columnas[i].derecha || i === 0, color: cabecera ? GRIS : TINTA })], { alignment: b.columnas[i].derecha ? AlignmentType.RIGHT : AlignmentType.LEFT, keepNext: conLinea })],
   });
   // La línea gris de debajo de una fila (`subfilas`: lo que no cabe en las columnas: forma de pago, nota...): una celda que ocupa todo el ancho y lleva la raya del conjunto.
-  const celdaLinea = (texto, par) => new TableCell({
+  const celdaLinea = (texto) => new TableCell({
     columnSpan: b.columnas.length,
     width: { size: ANCHO_UTIL, type: WidthType.DXA },
-    shading: par ? { type: ShadingType.CLEAR, fill: 'FAFAF9', color: 'auto' } : undefined,
     margins: { top: 0, bottom: 70, left: 110, right: 110 },
     borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: borde },
-    children: [parrafo([corrida(texto, { size: 15, color: '52514E' })])],
+    children: [parrafo([corrida(texto, { size: 15, color: GRIS })])],
   });
   return [
     ...seccion(b.titulo || '', b.nota),
@@ -119,10 +121,9 @@ function tabla(original) {
       rows: [
         new TableRow({ tableHeader: true, cantSplit: true, children: b.columnas.map((c, i) => celda(c.titulo, i, { cabecera: true })) }),
         ...b.filas.flatMap((f, r) => {
-          const par = r % 2 === 1;
           const linea = b.subfilas?.[r];
-          const fila = new TableRow({ cantSplit: true, children: f.map((t, i) => celda(t, i, { par, conLinea: Boolean(linea) })) });
-          return linea ? [fila, new TableRow({ cantSplit: true, children: [celdaLinea(linea, par)] })] : [fila];
+          const fila = new TableRow({ cantSplit: true, children: f.map((t, i) => celda(t, i, { conLinea: Boolean(linea) })) });
+          return linea ? [fila, new TableRow({ cantSplit: true, children: [celdaLinea(linea)] })] : [fila];
         }),
       ],
     }),
@@ -134,9 +135,10 @@ function lista(b) {
   return [
     ...seccion(b.titulo),
     ...b.items.map((item) => parrafo([
-      corrida(item.nivel === 'aviso' ? 'Atención  ' : 'Bien  ', { size: 18, bold: true, color: item.nivel === 'aviso' ? 'D97706' : '16A34A' }),
-      corrida(item.texto, { size: 19, color: '0B0B0B' }),
-    ], { spacing: { after: 90 }, indent: { left: 120 } })),
+      // La etiqueta de color suave de los avisos de la app: fondo claro y texto oscuro del mismo tono.
+      corrida(item.nivel === 'aviso' ? ' Atención ' : ' Bien ', { size: 17, bold: true, color: item.nivel === 'aviso' ? '92400E' : '047857', shading: { type: ShadingType.CLEAR, fill: item.nivel === 'aviso' ? 'FEF3C7' : 'D1FAE5', color: 'auto' } }),
+      corrida('   ' + item.texto, { size: 19, color: TINTA }),
+    ], { spacing: { after: 100 } })),
   ];
 }
 
@@ -150,30 +152,56 @@ function grafico(b) {
   ];
 }
 
-// La banda de marca de la portada, igual que la del PDF: negra, de borde a borde y pegada al borde de arriba de la hoja, con el logo a la izquierda (sus letras son blancas: sobre fondo claro
-// no se verían) y la línea roja de la marca debajo. Va en el encabezado de la primera página, que la hoja pone a 0 cm del borde (ver `generarDocx`).
-function bandaDeMarca(logo) {
-  const alto = 64; // 17 mm, como el logo del PDF
+// La ficha de marca de la portada, igual que la del PDF: el logo (letras blancas) sobre un cuadro negro y, al lado, el nombre de la marca. Va en el encabezado de la primera página.
+function fichaDeMarca(logo) {
+  const alto = 40; // el logo, en píxeles
   const marca = logo
     ? new ImageRun({ type: 'png', data: logo.bytes, transformation: { width: Math.round((logo.ancho / logo.alto) * alto), height: alto }, altText: { title: 'Network Speed', description: 'Logo de Network Speed', name: 'Logo' } })
-    : corrida(MARCA, { size: 26, bold: true, color: 'FFFFFF' });
+    : corrida(MARCA, { size: 22, bold: true, color: 'FFFFFF' });
+  const anchoLogo = logo ? Math.round((logo.ancho / logo.alto) * alto) * 15 + 560 : 2400; // el logo en veinteavos de punto más el relleno
   return new Table({
-    width: { size: ANCHO_PAGINA, type: WidthType.DXA },
-    columnWidths: [ANCHO_PAGINA],
+    width: { size: anchoLogo + 2600, type: WidthType.DXA },
+    columnWidths: [anchoLogo, 2600],
     layout: TableLayoutType.FIXED,
-    indent: { size: -MARGEN_LATERAL, type: WidthType.DXA }, // sale del margen izquierdo hasta el borde de la hoja
     borders: { ...SIN_BORDES, insideHorizontal: SIN_BORDE, insideVertical: SIN_BORDE },
     rows: [new TableRow({
       cantSplit: true,
-      height: { value: ALTO_BANDA, rule: HeightRule.EXACT },
-      children: [new TableCell({
-        width: { size: ANCHO_PAGINA, type: WidthType.DXA },
-        shading: { type: ShadingType.CLEAR, fill: '000000', color: 'auto' },
-        margins: { top: 0, bottom: 0, left: MARGEN_LATERAL, right: MARGEN_LATERAL }, // el logo queda alineado con el texto de la hoja
-        verticalAlign: VerticalAlign.CENTER,
-        borders: { top: SIN_BORDE, left: SIN_BORDE, right: SIN_BORDE, bottom: { style: BorderStyle.SINGLE, size: 24, color: 'DC2626' } },
-        children: [parrafo([marca])],
-      })],
+      height: { value: 964, rule: HeightRule.EXACT }, // 17 mm, como la ficha del PDF
+      children: [
+        new TableCell({
+          width: { size: anchoLogo, type: WidthType.DXA },
+          shading: { type: ShadingType.CLEAR, fill: '000000', color: 'auto' },
+          margins: { top: 0, bottom: 0, left: 280, right: 280 },
+          verticalAlign: VerticalAlign.CENTER,
+          borders: SIN_BORDES,
+          children: [parrafo([marca])],
+        }),
+        new TableCell({
+          width: { size: 2600, type: WidthType.DXA },
+          margins: { top: 0, bottom: 0, left: 200, right: 0 },
+          verticalAlign: VerticalAlign.CENTER,
+          borders: SIN_BORDES,
+          children: [
+            parrafo([corrida('Network Speed', { size: 24, bold: true, color: TINTA })], { spacing: { after: 0 } }),
+            parrafo([corrida('Asignaciones', { size: 17, color: GRIS_TENUE })], { spacing: { after: 0 } }),
+          ],
+        }),
+      ],
+    })],
+  });
+}
+
+// La línea roja corta de la marca bajo el título: una tabla de una celda roja, pequeña y sin bordes.
+function lineaRoja() {
+  return new Table({
+    width: { size: 620, type: WidthType.DXA },
+    columnWidths: [620],
+    layout: TableLayoutType.FIXED,
+    borders: { ...SIN_BORDES, insideHorizontal: SIN_BORDE, insideVertical: SIN_BORDE },
+    rows: [new TableRow({
+      cantSplit: true,
+      height: { value: 56, rule: HeightRule.EXACT },
+      children: [new TableCell({ width: { size: 620, type: WidthType.DXA }, shading: { type: ShadingType.CLEAR, fill: 'DC2626', color: 'auto' }, borders: SIN_BORDES, margins: { top: 0, bottom: 0, left: 0, right: 0 }, children: [parrafo([], { spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.EXACT }, run: { size: 2 } })] })],
     })],
   });
 }
@@ -181,38 +209,39 @@ function bandaDeMarca(logo) {
 // Un párrafo vacío y mínimo para cerrar el encabezado de la primera página: Word exige que un encabezado termine en un párrafo, no en una tabla.
 const cierreDeEncabezado = () => parrafo([], { spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.EXACT }, run: { size: 2 } });
 
-// "ASIGNACIONES NS | título del reporte" con la línea roja debajo: el encabezado de las hojas que siguen a la primera (la primera lleva la banda de marca). La hoja tiene el encabezado a
-// 0 cm del borde de arriba para que la banda llegue hasta él, así que este se baja con `spacing.before` hasta donde estaba (500 veinteavos de punto, unos 0,9 cm).
-const encabezadoCorrido = (modelo) => parrafo([corrida(MARCA, { size: 17, bold: true, color: '0B0B0B' }), corrida(`   |   ${modelo.titulo}`, { size: 17, color: '898781' })], {
+// "Network Speed | título del reporte" con una línea fina debajo: el encabezado de las hojas que siguen a la primera (la primera lleva la banda de marca). La hoja tiene el encabezado a
+// 0 cm del borde de arriba (como el de la primera), así que este se baja con `spacing.before` hasta donde estaba (500 veinteavos de punto, unos 0,9 cm).
+const encabezadoCorrido = (modelo) => parrafo([corrida('Network Speed', { size: 17, bold: true, color: TINTA }), corrida(`   |   ${modelo.titulo}`, { size: 17, color: GRIS_TENUE })], {
   spacing: { before: 500 },
-  border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: 'DC2626', space: 4 } },
+  border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: RAYA, space: 4 } },
 });
 
 function pieDePagina(modelo) {
   return new Footer({
     children: [parrafo([
       // `modelo.pie`: el texto del medio (los documentos para compartir con alguien de fuera no son "de uso interno"; con '' no lleva ninguno).
-      corrida([modelo.pie ?? 'Documento de uso interno', `Generado el ${fechaHoraLegible(modelo.generado.en)}`].filter(Boolean).join('   |   '), { size: 15, color: '898781' }),
-      corrida('\tPágina ', { size: 15, color: '898781' }),
-      new TextRun({ children: [PageNumber.CURRENT], font: FUENTE, size: 15, color: '898781' }),
-      corrida(' de ', { size: 15, color: '898781' }),
-      new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FUENTE, size: 15, color: '898781' }),
-    ], { tabStops: [{ type: 'right', position: ANCHO_UTIL }], border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'E1E0D9', space: 4 } } })],
+      corrida([modelo.pie ?? 'Documento de uso interno', `Generado el ${fechaHoraLegible(modelo.generado.en)}`].filter(Boolean).join('   |   '), { size: 15, color: GRIS_TENUE }),
+      corrida('\tPágina ', { size: 15, color: GRIS_TENUE }),
+      new TextRun({ children: [PageNumber.CURRENT], font: FUENTE, size: 15, color: GRIS_TENUE }),
+      corrida(' de ', { size: 15, color: GRIS_TENUE }),
+      new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FUENTE, size: 15, color: GRIS_TENUE }),
+    ], { tabStops: [{ type: 'right', position: ANCHO_UTIL }], border: { top: { style: BorderStyle.SINGLE, size: 4, color: RAYA, space: 4 } } })],
   });
 }
 
 export async function generarDocx(modelo) {
   const logo = await cargarLogo();
   const hijos = [
-    parrafo([corrida(modelo.titulo, { size: 44, bold: true, color: '0B0B0B' })], { spacing: { before: 300, after: 60 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: 'DC2626', space: 6 } } }),
-    parrafo([corrida(modelo.subtitulo, { size: 21, color: '52514E' })], { spacing: { before: 100, after: 40 } }),
-    parrafo([corrida(`Generado el ${fechaHoraLegible(modelo.generado.en)}${modelo.generado.por ? ` por ${modelo.generado.por}` : ''}`, { size: 17, color: '898781' })], { spacing: { after: 240 } }),
+    parrafo([corrida(modelo.titulo, { size: 44, bold: true, color: TINTA })], { spacing: { before: 300, after: 90 }, keepNext: true }),
+    lineaRoja(),
+    parrafo([corrida(modelo.subtitulo, { size: 21, color: GRIS })], { spacing: { before: 160, after: 40 } }),
+    parrafo([corrida(`Generado el ${fechaHoraLegible(modelo.generado.en)}${modelo.generado.por ? ` por ${modelo.generado.por}` : ''}`, { size: 17, color: GRIS_TENUE })], { spacing: { after: 240 } }),
   ];
   for (const b of modelo.bloques) {
     if (b.tipo === 'cifras') { hijos.push(tarjetas(b.items), parrafo([], { spacing: { after: 120 } })); }
     else if (b.tipo === 'seccion') hijos.push(...seccion(b.titulo));
     else if (b.tipo === 'salto') hijos.push(parrafo([new PageBreak()]));
-    else if (b.tipo === 'texto') hijos.push(parrafo(partirNegritas(b.texto, b.negritas).map((p) => corrida(p.texto, { size: 16, color: '52514E', ...(p.negrita ? { bold: true } : {}) })), { spacing: { before: 120, after: 120 } }));
+    else if (b.tipo === 'texto') hijos.push(parrafo(partirNegritas(b.texto, b.negritas).map((p) => corrida(p.texto, { size: 16, color: GRIS, ...(p.negrita ? { bold: true } : {}) })), { spacing: { before: 120, after: 120 } }));
     else if (b.tipo === 'tabla' && !b.soloCsv) hijos.push(...tabla(b), parrafo([], { spacing: { after: 160 } }));
     else if (b.tipo === 'lista') hijos.push(...lista(b));
     else if (b.tipo === 'grafico') hijos.push(...grafico(b));
@@ -224,11 +253,11 @@ export async function generarDocx(modelo) {
     description: modelo.subtitulo,
     styles: { default: { document: { run: { font: FUENTE, size: 21 } } } },
     sections: [{
-      // `titlePage`: la primera página lleva su propio encabezado, la banda de marca con el logo (igual que la portada del PDF), y las demás el de texto con su línea roja.
-      // El encabezado va a 0 cm del borde de arriba (`header: 0`) para que la banda llegue hasta él; el cuerpo baja solo cuando el encabezado es más alto que el margen de arriba.
-      properties: { titlePage: true, page: { size: { width: ANCHO_PAGINA, height: 16838 }, margin: { top: 1300, bottom: 1200, left: MARGEN_LATERAL, right: MARGEN_LATERAL, header: 0, footer: 500 } } },
+      // `titlePage`: la primera página lleva su propio encabezado, la ficha de marca con el logo (igual que la portada del PDF), y las demás el de texto con su línea fina.
+      // El cuerpo baja solo cuando el encabezado es más alto que el margen de arriba.
+      properties: { titlePage: true, page: { size: { width: ANCHO_PAGINA, height: 16838 }, margin: { top: 1300, bottom: 1200, left: MARGEN_LATERAL, right: MARGEN_LATERAL, header: 620, footer: 500 } } },
       headers: {
-        first: new Header({ children: [bandaDeMarca(logo), cierreDeEncabezado()] }),
+        first: new Header({ children: [fichaDeMarca(logo), cierreDeEncabezado()] }),
         default: new Header({ children: [encabezadoCorrido(modelo)] }),
       },
       footers: { first: pieDePagina(modelo), default: pieDePagina(modelo) },
