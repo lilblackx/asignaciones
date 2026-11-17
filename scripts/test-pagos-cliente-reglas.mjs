@@ -350,6 +350,18 @@ await check('el ADMIN corrige el pago con una transacción equivalente: document
   if ((await leerDoc(cobrosC, 'lote1')).pagoCliente.corregidoPor !== 'admin') throw new Error('el cobro no quedó corregido');
 });
 
+// El ADMIN registra el pago a nombre del técnico (Revisión): la copia al cobro de una orden que todavía no la tiene. Solo `{ pagoCliente }` (lo que escribe el técnico) se rechaza; con `actualizadoEn` y una entrada
+// nueva en el historial (lo que escribe registrarPagoPorAdmin) pasa. Sin la copia, Administración seguía viendo "Técnico sin registrar el pago".
+await sembrar('admin1');
+await check('el ADMIN copia al cobro el pago que registró por el técnico, con su entrada en el historial', async () => {
+  const documento = armarPagoRegistrado(ordenDe('admin1'), valor({ referencia: '700201' }), { por: 'admin', ahora: AHORA + 7, aNombreDelTecnico: true });
+  const resumen = resumenDePago(documento);
+  const ctx = como('admin-uid');
+  await assertFails(cobrosC(ctx).doc('admin1').update({ pagoCliente: resumen }));
+  await assertSucceeds(cobrosC(ctx).doc('admin1').update({ pagoCliente: resumen, actualizadoEn: AHORA + 7, historial: [...(await leerDoc(cobrosC, 'admin1')).historial, { en: AHORA + 7, por: 'admin', detalle: 'Pago del cliente registrado por la oficina' }] }));
+  if (!(await leerDoc(cobrosC, 'admin1')).pagoCliente) throw new Error('el cobro no quedó con el pago');
+});
+
 await testEnv.cleanup();
 if (failures > 0) { console.log(`\n${failures} prueba(s) fallaron.`); process.exit(1); }
 console.log('\nTodas las pruebas pasaron.');
