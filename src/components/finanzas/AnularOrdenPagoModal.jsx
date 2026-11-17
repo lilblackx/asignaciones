@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Ban, X } from 'lucide-react';
 import Modal from '../Modal';
+import { AccionesConfirmacion } from '../modals/DialogoConfirmacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { MAX_MOTIVO_ANULACION, dolares, parseMotivoAnulacion } from '../../utils/finanzas';
 import { claseArea } from '../estilos';
@@ -58,10 +59,16 @@ export default function AnularOrdenPagoModal({ orden, tecnico, onConfirmar, onCl
               La orden vuelve a estar por pagar y el resto del pago sigue como está. {tecnico} recibe un aviso con el motivo. Si el dinero ya salió, ajústalo con un descuento.
             </p>
           </div>
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50">Cancelar</button>
-            <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-white bg-primary hover:bg-primary-hover rounded-boton transition-colors disabled:opacity-50 shadow-boton">{enviando ? 'Anulando...' : 'Anular pago de la orden'}</button>
-          </div>
+          <AccionesConfirmacion
+            nivel="error"
+            cancelLabel="Cancelar"
+            confirmLabel="Anular pago de la orden"
+            procesando={enviando}
+            procesandoLabel="Anulando..."
+            onCancel={onClose}
+            onConfirm={confirmar}
+            className="pt-1"
+          />
         </div>
       </div>
     </Modal>

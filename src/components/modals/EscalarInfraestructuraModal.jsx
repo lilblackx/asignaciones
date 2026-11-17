@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { HardHat, X } from 'lucide-react';
 import Modal from '../Modal';
-import Spinner from '../Spinner';
+import { AccionesConfirmacion } from './DialogoConfirmacion';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { MAX_LARGO_MOTIVO, parseMotivo, puedeEscalar } from '../../utils/infraestructura';
 import { cambioMientrasAbierta } from '../../utils/concurrencia';
@@ -70,10 +70,17 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
                 : `La orden sale de la lista del técnico${ticket.tecnico ? ` (${ticket.tecnico})` : ''} y queda esperando en "En infraestructura". Tú decides cómo sigue.`}
             </p>
           </div>
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50">Cancelar</button>
-            <button type="button" onClick={confirmar} disabled={enviando || Boolean(cambio)} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-campo transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Escalando...' : 'Escalar a infraestructura'}</button>
-          </div>
+          <AccionesConfirmacion
+            nivel="atencion"
+            cancelLabel="Cancelar"
+            confirmLabel="Escalar la orden"
+            procesando={enviando}
+            procesandoLabel="Escalando..."
+            confirmDisabled={Boolean(cambio)}
+            onCancel={onClose}
+            onConfirm={confirmar}
+            className="pt-1"
+          />
         </div>
       </div>
     </Modal>

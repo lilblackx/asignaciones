@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Ban, X } from 'lucide-react';
 import Modal from '../Modal';
-import Spinner from '../Spinner';
+import { AccionesConfirmacion } from './DialogoConfirmacion';
 import AvisoCambioDeOrden from '../AvisoCambioDeOrden';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { MAX_LARGO_MOTIVO_CANCELACION, parseMotivoCancelacion } from '../../utils/cancelacion';
@@ -66,10 +66,17 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
               La orden queda CANCELADA y se ve en la lista, el historial, ventas y los reportes.{ticket.tecnico ? ` ${ticket.tecnico} recibe un aviso con el motivo.` : ''}
             </p>
           </div>
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50">Volver</button>
-            <button type="button" onClick={confirmar} disabled={enviando || Boolean(cambio)} className="flex-1 py-3 text-xs font-black text-white bg-primary hover:bg-primary-hover rounded-boton transition-colors disabled:opacity-50 shadow-boton">{enviando && <Spinner />}{enviando ? 'Cancelando...' : 'Cancelar la orden'}</button>
-          </div>
+          <AccionesConfirmacion
+            nivel="error"
+            cancelLabel="Volver"
+            confirmLabel="Cancelar la orden"
+            procesando={enviando}
+            procesandoLabel="Cancelando..."
+            confirmDisabled={Boolean(cambio)}
+            onCancel={onClose}
+            onConfirm={confirmar}
+            className="pt-1"
+          />
         </div>
       </div>
     </Modal>
