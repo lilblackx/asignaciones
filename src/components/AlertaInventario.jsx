@@ -325,7 +325,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-50" completa>
       <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={PackageCheck} titulo="Envíos al inventario" onClose={onClose} enPagina={enPagina} />
-        <div className={`p-4 space-y-5 ${CENTRADO_ESTRECHO}`}>
+        <div className={`p-4 space-y-5 ${enPagina ? 'lg:px-6 max-w-4xl' : CENTRADO_ESTRECHO}`}>
           <p className="text-xs text-muted-foreground leading-snug">
             Cada orden aprobada que instala un equipo o usa material se descuenta del inventario del almacén. Aquí ves lo que no se pudo enviar y lo que se envió.
           </p>

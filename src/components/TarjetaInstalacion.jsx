@@ -1,6 +1,7 @@
 import { AlarmClock, CalendarClock, ClipboardCopy, FileText } from 'lucide-react';
 import { promotoraDeOrden } from '../utils/whatsapp';
-import { ESTILO_ESTADO_PROMOTORA_SOLIDO } from './estilosInstalacion';
+import { ESTILO_ESTADO_PROMOTORA } from './estilosInstalacion';
+import { legible } from '../utils/nombreTecnico';
 import { atrasoOrden, esAveriaLos, fechaCorta, fechaOrden, textoPlantillaFinal } from '../utils/estadoInstalacion';
 import { formatearCedula } from '../utils/cedula';
 import { motivoCancelacion } from '../utils/cancelacion';
@@ -41,7 +42,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
           <span className="text-xl font-black text-foreground tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
           {mostrarTipo && <div className="mt-2"><span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 leading-none rounded ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span></div>}
         </div>
-        <span className={`shrink-0 text-[11px] max-lg:text-xs font-black uppercase tracking-wide rounded max-lg:rounded-full px-2 max-lg:px-3 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA_SOLIDO[vista.clave]}`}>{vista.etiqueta}</span>
+        <span className={`shrink-0 text-[11px] max-lg:text-xs font-black uppercase tracking-wide rounded-full px-3 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA[vista.clave]}`}>{vista.etiqueta}</span>
       </div>
 
       {atraso && (
@@ -98,7 +99,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
           <div className="min-w-0">
             <p className={ETIQUETA}>Técnico</p>
             {orden.tecnico
-              ? <p className={VALOR}>{orden.tecnico}</p>
+              ? <p className={VALOR}>{legible(orden.tecnico)}</p>
               : programada
                 ? <p className="mt-0.5 text-xs font-black uppercase text-muted-foreground">Por asignar</p>
                 : <p className="mt-0.5 text-xs font-black uppercase text-amber-700 dark:text-amber-400">Sin técnico</p>}
