@@ -23,7 +23,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
     <>
       <EncabezadoModulo
         Icono={FileText}
-        titulo={`ÓRDENES DE CIERRE (${report.fechaCierre})`}
+        titulo={`Órdenes de cierre (${report.fechaCierre})`}
         onClose={onClose}
         onVolver={onBack}
         acciones={(
@@ -32,7 +32,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
       />
 
       <div className={`p-6 overflow-y-auto flex-1 bg-fondo ${CENTRADO_AMPLIO}`}>
-        <button onClick={onBack} className="lg:hidden mb-4 text-xs font-bold bg-white border border-zinc-300 dark:border-transparent dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-800 dark:text-white px-3 py-1.5 rounded-campo border border-input transition-colors">← Volver al Historial</button>
+        <button onClick={onBack} className="lg:hidden mb-4 text-xs font-bold bg-card border border-input hover:bg-secondary text-foreground px-3 py-1.5 rounded-boton transition-colors">← Volver al historial</button>
         <div className="bg-card p-5 rounded-card border border-border shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h3 className="font-black text-foreground text-lg">Resumen de Jornada</h3>
@@ -70,7 +70,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
         <div className="hidden md:block bg-card rounded-card border border-transparent overflow-hidden shadow-sm shadow-card">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-zinc-100 dark:bg-zinc-950 text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
+              <tr className="bg-secondary text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
                 <th className="px-4 py-3 w-[10%]">Código</th>
                 <th className="px-4 py-3 w-[25%]">Nombre Cliente</th>
                 <th className="px-4 py-3 w-[25%]">Dirección</th>
@@ -79,9 +79,9 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                 <th className="px-4 py-3 w-[13%]">Observación</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-border">
               {(report.ticketsDetalle || []).map((ticket) => (
-                <tr key={ticket.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                <tr key={ticket.id} className="hover:bg-accent/50 transition-colors">
                   <td className="px-4 py-3 align-middle"><span className="font-black text-red-700 dark:text-red-400">{ticket.codigo}</span>{conCanceladas && <EstadoOrden ticket={ticket} />}</td>
                   <td className="px-4 py-3 align-middle">
                     <div className="font-bold text-foreground leading-tight">{ticket.nombre}</div>
@@ -119,16 +119,16 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                 <span className="text-muted-foreground text-xs font-bold">{ticket.fecha}</span>
               </div>
               <div>
-                <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight">{ticket.nombre}</h5>
+                <h5 className="font-bold text-foreground text-sm leading-tight">{ticket.nombre}</h5>
                 <p className="text-xs text-muted-foreground">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</p>
               </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-snug"><span className="font-semibold text-zinc-800 dark:text-zinc-100">Dirección:</span> {ticket.direccion}</p>
+              <p className="text-xs text-muted-foreground leading-snug"><span className="font-semibold text-foreground">Dirección:</span> {ticket.direccion}</p>
               <div className="border-t border-border/80 pt-2 flex flex-col gap-1 text-xs">
                 <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
-                <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'SIN TÉCNICO'}</p>
+                <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'Sin técnico'}</p>
                 {motivoCancelacion(ticket) && <p className="text-red-700 dark:text-red-300"><span className="font-semibold">Motivo de la cancelación:</span> {motivoCancelacion(ticket)}</p>}
                 {ticket.observacion && (
-                  <p className="flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
+                  <p className="flex items-start gap-1.5 text-muted-foreground">
                     <MessageSquareText className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-px" aria-label="Observación" role="img" />
                     <span>{ticket.observacion}</span>
                   </p>

@@ -11,8 +11,8 @@ import AvisoHistorial from './AvisoHistorial';
 
 const DESTACADAS = ['Órdenes finalizadas', 'Tiempo promedio de atención', 'Pendientes de más de 3 días'];
 const decimal = (n) => n.toFixed(2).replace('.', ',');
-const INSTALACIONES = { nombre: 'Instalaciones', color: 'bg-[#2a78d6] dark:bg-[#3987e5]' };
-const AVERIAS_LOS = { nombre: 'Averías LOS', color: 'bg-[#eb6834] dark:bg-[#d95926]' };
+const INSTALACIONES = { nombre: 'Instalaciones', color: 'bg-[#dc2626] dark:bg-[#ef4444]' };
+const AVERIAS_LOS = { nombre: 'Averías LOS', color: 'bg-[#57534e] dark:bg-[#d6d3d1]' };
 
 // Lo esencial de todos los reportes en una sola vista, con los puntos de atención arriba.
 export default function ResumenEjecutivoView({ ordenes, eventos, contadores, tickets, rango, tecnico, getTecnicoColor, historial }) {

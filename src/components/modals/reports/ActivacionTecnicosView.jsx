@@ -13,8 +13,8 @@ const hora = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Carac
 // Una barra de 24 horas con los tramos en que el técnico estuvo activo ese día.
 function BarraDia({ dia, tramos }) {
   return (
-    <div className="relative h-3.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden" role="img" aria-label={`Activo: ${tramos.map(([i, f]) => `${hora(i)} a ${hora(f)}`).join(', ')}`}>
-      {HORAS_EJE.slice(1, -1).map((h) => <span key={h} className="absolute inset-y-0 w-px bg-zinc-400/60 dark:bg-zinc-700" style={{ left: `${(h / 24) * 100}%` }} aria-hidden="true" />)}
+    <div className="relative h-3.5 rounded-full bg-accent overflow-hidden" role="img" aria-label={`Activo: ${tramos.map(([i, f]) => `${hora(i)} a ${hora(f)}`).join(', ')}`}>
+      {HORAS_EJE.slice(1, -1).map((h) => <span key={h} className="absolute inset-y-0 w-px bg-muted-foreground/40" style={{ left: `${(h / 24) * 100}%` }} aria-hidden="true" />)}
       {tramos.map(([ini, fin]) => (
         <span
           key={ini}
@@ -68,14 +68,14 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
             <section key={nombre} aria-label={nombre} className="bg-card border border-border rounded-card p-4 sm:p-5 shadow-sm">
               <header className="flex items-center justify-between gap-3 mb-3">
                 <NombreTecnico nombre={nombre} getTecnicoColor={getTecnicoColor} />
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{formatoDuracion(totalTecnico)} <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">en total</span></span>
+                <span className="text-sm font-black text-foreground">{formatoDuracion(totalTecnico)} <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">en total</span></span>
               </header>
               <EjeHoras />
               <div className="flex flex-col gap-2.5">
                 {dias.map((dia) => (
                   <div key={dia} className={FILA}>
-                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300 sm:order-1">{diaLegible(dia)}</span>
-                    <span className="text-xs font-black text-zinc-800 dark:text-zinc-100 text-right sm:order-3">{formatoDuracion(duraciones[nombre][dia])}</span>
+                    <span className="text-xs font-bold text-muted-foreground sm:order-1">{diaLegible(dia)}</span>
+                    <span className="text-xs font-black text-foreground text-right sm:order-3">{formatoDuracion(duraciones[nombre][dia])}</span>
                     <div className="col-span-2 sm:col-span-1 sm:order-2"><BarraDia dia={dia} tramos={tramos[nombre][dia]} /></div>
                   </div>
                 ))}

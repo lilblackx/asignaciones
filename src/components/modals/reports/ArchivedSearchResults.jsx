@@ -9,7 +9,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
       <div className="hidden md:block bg-card rounded-card border border-transparent overflow-hidden shadow-sm shadow-card">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-zinc-100 dark:bg-zinc-950 text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
+            <tr className="bg-secondary text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
               <th className="px-4 py-3 w-[15%]">Fecha Archivo</th>
               <th className="px-4 py-3 w-[10%]">Código</th>
               <th className="px-4 py-3 w-[25%]">Nombre Cliente</th>
@@ -18,9 +18,9 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
               <th className="px-4 py-3 w-[10%] text-center">Estado</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <tbody className="divide-y divide-border">
             {archivedSearchResults.map((ticket, i) => (
-              <tr key={`${ticket.id}-${i}`} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+              <tr key={`${ticket.id}-${i}`} className="hover:bg-accent/50 transition-colors">
                 <td className="px-4 py-3 align-middle">
                   <div className="font-black text-foreground">{ticket._reportFecha}</div>
                   <div className={`text-[11px] max-lg:text-xs font-bold mt-1 px-1.5 py-0.5 rounded w-max ${ticket._reportTipo === 'CANCELADOS' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
@@ -56,19 +56,19 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
           <div key={`${ticket.id}-${i}`} className="bg-card p-4 rounded-card border border-transparent shadow-sm flex flex-col gap-2 relative shadow-card">
             <div className="absolute top-4 right-4 text-right">
               <div className="text-[11px] max-lg:text-xs font-black text-muted-foreground">{ticket._reportFecha}</div>
-              <div className={`text-[8px] font-bold mt-0.5 px-1 py-0.5 rounded w-max ml-auto ${ticket._reportTipo === 'CANCELADOS' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+              <div className={`text-[11px] max-lg:text-xs font-bold mt-0.5 px-1 py-0.5 rounded w-max ml-auto ${ticket._reportTipo === 'CANCELADOS' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                 {ticket._reportTipo === 'CANCELADOS' ? 'CANCELADO' : 'FINALIZADO'}
               </div>
             </div>
             <div className="pr-20">
               <span className="font-black text-red-700 dark:text-red-400 text-sm block mb-1">{ticket.codigo}</span>
-              <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight">{ticket.nombre}</h5>
+              <h5 className="font-bold text-foreground text-sm leading-tight">{ticket.nombre}</h5>
               <p className="text-xs text-muted-foreground">C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</p>
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-snug"><span className="font-semibold text-zinc-800 dark:text-zinc-100">Dirección:</span> {ticket.direccion}</p>
+            <p className="text-xs text-muted-foreground leading-snug"><span className="font-semibold text-foreground">Dirección:</span> {ticket.direccion}</p>
             <div className="border-t border-border/80 pt-2 flex flex-col gap-1 text-xs">
               <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
-              <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'SIN TÉCNICO'}</p>
+              <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'Sin técnico'}</p>
             </div>
           </div>
         ))}

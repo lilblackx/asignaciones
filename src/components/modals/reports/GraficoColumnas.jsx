@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Table2, BarChart3 } from 'lucide-react';
 import { etiquetaMes } from '../../../utils/totalesMes';
 
-// Columnas agrupadas por mes. Colores de la paleta de dataviz (azul y naranja, validados para claro y oscuro); el color sigue a la serie,
+// Columnas agrupadas por mes. Colores de la paleta (rojo de marca y gris cálido, validados para claro y oscuro); el color sigue a la serie,
 // no a su posición. Todo lo que muestra el tooltip también está en la tabla (botón "Ver tabla").
 //   series: [{ nombre, color: clases de fondo }]; meses: [{ mes, etiqueta, enCurso?, valores: [uno por serie] }]
 const alto = 'h-44 sm:h-52';
@@ -76,7 +76,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
           <div className="flex-1 min-w-0">
             <div className={`relative ${alto}`}>
               {marcas.map((v) => (
-                <span key={v} className={`absolute inset-x-0 h-px ${v === 0 ? 'bg-zinc-300 dark:bg-zinc-700' : 'bg-zinc-200 dark:bg-zinc-800'}`} style={{ bottom: `${(v / maximo) * 100}%` }} aria-hidden="true" />
+                <span key={v} className={`absolute inset-x-0 h-px ${v === 0 ? 'bg-border' : 'bg-border/60'}`} style={{ bottom: `${(v / maximo) * 100}%` }} aria-hidden="true" />
               ))}
               <div className="absolute inset-0 flex" onPointerLeave={() => setActivo(null)}>
                 {meses.map((m, i) => (
@@ -88,7 +88,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
                     onPointerEnter={() => setActivo(i)}
                     onFocus={() => setActivo(i)}
                     onBlur={() => setActivo(null)}
-                    className="group relative flex-1 min-w-0 flex items-end justify-center gap-0.5 px-0.5 outline-none focus-visible:bg-zinc-100 dark:focus-visible:bg-zinc-800/60 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40 rounded-t"
+                    className="group relative flex-1 min-w-0 flex items-end justify-center gap-0.5 px-0.5 outline-none focus-visible:bg-accent/60 hover:bg-accent/40 rounded-t"
                   >
                     {m.valores.map((v, k) => (
                       <div key={series[k].nombre} className="relative flex-1 max-w-6 h-full flex items-end">
@@ -97,7 +97,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
                           style={{ height: v > 0 ? `max(2px, ${(v / maximo) * 100}%)` : 0 }}
                         />
                         {i === ultimo && v > 0 && (
-                          <span className="absolute inset-x-0 text-center text-[11px] max-lg:text-xs font-bold leading-none text-zinc-700 dark:text-zinc-200" style={{ bottom: `calc(${(v / maximo) * 100}% + 3px)` }}>{v}</span>
+                          <span className="absolute inset-x-0 text-center text-[11px] max-lg:text-xs font-bold leading-none text-foreground" style={{ bottom: `calc(${(v / maximo) * 100}% + 3px)` }}>{v}</span>
                         )}
                       </div>
                     ))}
@@ -106,14 +106,14 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
               </div>
               {activo !== null && (
                 <div
-                  className="pointer-events-none absolute z-10 top-0 -translate-x-1/2 min-w-[8.5rem] rounded-campo border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 shadow-lg"
+                  className="pointer-events-none absolute z-10 top-0 -translate-x-1/2 min-w-[8.5rem] rounded-campo border border-border bg-card px-3 py-2 shadow-lg"
                   style={{ left: `clamp(4.5rem, ${((activo + 0.5) / meses.length) * 100}%, calc(100% - 4.5rem))` }}
                   role="status"
                 >
-                  <div className="text-[11px] max-lg:text-xs font-bold capitalize text-zinc-600 dark:text-zinc-300 mb-1">{etiquetaMes(meses[activo].mes)}{meses[activo].enCurso ? ' (en curso)' : ''}</div>
+                  <div className="text-[11px] max-lg:text-xs font-bold capitalize text-muted-foreground mb-1">{etiquetaMes(meses[activo].mes)}{meses[activo].enCurso ? ' (en curso)' : ''}</div>
                   {series.map((s, k) => (
                     <div key={s.nombre} className="flex items-center justify-between gap-4 text-xs">
-                      <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300"><span className={`inline-block w-2.5 h-[3px] rounded ${s.color}`} aria-hidden="true" />{s.nombre}</span>
+                      <span className="flex items-center gap-1.5 text-muted-foreground"><span className={`inline-block w-2.5 h-[3px] rounded ${s.color}`} aria-hidden="true" />{s.nombre}</span>
                       <span className="font-black text-foreground">{meses[activo].valores[k]}</span>
                     </div>
                   ))}
