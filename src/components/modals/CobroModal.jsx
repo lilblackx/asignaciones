@@ -83,9 +83,9 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="cobro-titulo" className="text-base font-black text-white">{cobro.codigo || 'S/C'}</h2>
-              <span className={`whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[cobro.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[cobro.estado] || cobro.estado}</span>
+              <span className={`whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[cobro.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[cobro.estado] || cobro.estado}</span>
             </div>
-            <p className="text-xs font-bold text-zinc-300 truncate">{cobro.nombre}</p>
+            <p className="text-xs font-bold text-muted-foreground truncate">{cobro.nombre}</p>
           </div>
           <BotonCerrar onClick={onClose} />
         </div>
@@ -129,7 +129,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
           {!soloLectura && <Boton variante="secundario" tamano="normal" icono={copiado === 'todo' ? Check : Copy} onClick={() => copiar('todo', textoParaCopiar(cobro))}>{copiado === 'todo' ? 'Copiado' : 'Copiar todos los datos'}</Boton>}
 
           <details className="rounded-campo border border-border">
-            <summary className="px-3 py-2 text-xs font-black tracking-wide text-card-foreground cursor-pointer">HISTORIAL ({(cobro.historial || []).length})</summary>
+            <summary className="px-3 py-2 text-xs font-bold text-card-foreground cursor-pointer">Historial ({(cobro.historial || []).length})</summary>
             <ul className="px-3 pb-2 space-y-1.5">
               {[...(cobro.historial || [])].reverse().map((h, i) => (
                 <li key={`${h.en}-${i}`} className="text-xs text-card-foreground break-words"><span className="font-bold">{fechaHora(h.en)} · {h.por}:</span> {h.detalle}</li>
@@ -138,7 +138,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
           </details>
 
           {pideMonto && (
-            <div className="space-y-2 rounded-campo border border-zinc-300 dark:border-zinc-700 p-3">
+            <div className="space-y-2 rounded-campo border border-border p-3">
               <p className="text-xs text-muted-foreground">Esta instalación no trae monto: escribe el que subes al portal.</p>
               <label htmlFor="cobro-monto" className={`${ETIQUETA} block`}>Monto</label>
               <div className="grid grid-cols-[1fr_auto] gap-2 items-center">

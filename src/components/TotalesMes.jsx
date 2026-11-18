@@ -32,7 +32,7 @@ export default function TotalesMes({ mes, meses, onCambiarMes, totales, error })
           {meses.length > 1 ? (
             <SelectMenu id="totales-mes" ariaLabel="Mes de los totales" icon={CalendarDays} value={mes} onChange={onCambiarMes} items={meses.map((m) => ({ value: m, label: nombreMes(m) }))} />
           ) : (
-            <p className="flex items-center gap-2 rounded-card border border-transparent bg-card py-2.5 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 shadow-sm shadow-card">
+            <p className="flex items-center gap-2 rounded-card border border-transparent bg-card py-2.5 px-3 text-sm font-medium text-foreground shadow-sm shadow-card">
               <CalendarDays className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> {nombreMes(mes)}
             </p>
           )}
@@ -47,7 +47,7 @@ export default function TotalesMes({ mes, meses, onCambiarMes, totales, error })
             type="button"
             aria-expanded={detalle}
             onClick={() => setDetalle((v) => !v)}
-            className="col-span-2 justify-self-end sm:col-span-1 inline-flex items-center gap-1 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-red-600 dark:hover:text-red-400 pb-0.5"
+            className="col-span-2 justify-self-end sm:col-span-1 inline-flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-red-600 dark:hover:text-red-400 pb-0.5"
           >
             Ver detalle <ChevronDown className={`w-3.5 h-3.5 transition-transform ${detalle ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
@@ -58,9 +58,9 @@ export default function TotalesMes({ mes, meses, onCambiarMes, totales, error })
 
       <Colapsable>
         {detalle && inst && los && (
-          <dl className="text-xs text-zinc-600 dark:text-zinc-300 space-y-1 text-right">
-            <div><dt className="inline font-bold text-zinc-800 dark:text-zinc-100">Instalaciones: </dt><dd className="inline">{plural(inst.finalizadas, 'finalizada', 'finalizadas')}, {plural(inst.canceladas, 'cancelada', 'canceladas')}{inst.enProceso !== null && `, ${inst.enProceso} en proceso`}</dd></div>
-            <div><dt className="inline font-bold text-zinc-800 dark:text-zinc-100">Averías LOS: </dt><dd className="inline">{plural(los.finalizadas, 'resuelta', 'resueltas')}, {plural(los.canceladas, 'cancelada', 'canceladas')}{los.enProceso !== null && `, ${los.enProceso} en proceso`}</dd></div>
+          <dl className="text-xs text-muted-foreground space-y-1 text-right">
+            <div><dt className="inline font-bold text-foreground">Instalaciones: </dt><dd className="inline">{plural(inst.finalizadas, 'finalizada', 'finalizadas')}, {plural(inst.canceladas, 'cancelada', 'canceladas')}{inst.enProceso !== null && `, ${inst.enProceso} en proceso`}</dd></div>
+            <div><dt className="inline font-bold text-foreground">Averías LOS: </dt><dd className="inline">{plural(los.finalizadas, 'resuelta', 'resueltas')}, {plural(los.canceladas, 'cancelada', 'canceladas')}{los.enProceso !== null && `, ${los.enProceso} en proceso`}</dd></div>
             <p className="text-[11px] max-lg:text-xs text-muted-foreground pt-1 text-right">Incluye lo cerrado del mes y lo de hoy. "En proceso" es de este momento, por eso solo está en el mes actual.</p>
           </dl>
         )}

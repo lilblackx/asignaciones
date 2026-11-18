@@ -40,7 +40,7 @@ const nombreMes = (m) => etiquetaMes(m).replace(/^./, (c) => c.toUpperCase());
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 // El número va en un recuadro al lado de la etiqueta, como las insignias del resto de la app ("SIN TÉCNICO 3").
 function Contador({ n, tono }) {
-  return <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[11px] max-lg:text-xs font-bold leading-none tabular-nums ${tono}`}>{n}</span>;
+  return <span className={`ml-1.5 rounded-md px-1.5 py-0.5 text-[11px] max-lg:text-xs font-bold leading-none tabular-nums ${tono}`}>{n}</span>;
 }
 
 const ETIQUETA_FILTRO = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
@@ -184,7 +184,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
   const chip = (clave, texto, n) => (
     <Chip activo={filtro === clave} tamano="compacto" key={clave} type="button" onClick={() => setFiltro(clave)}>
       <span>{texto}</span>
-      <Contador n={n} tono={filtro === clave ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
+      <Contador n={n} tono={filtro === clave ? 'bg-black/15' : 'bg-accent'} />
     </Chip>
   );
 
@@ -199,7 +199,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-foreground flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo={verTodasInstalaciones ? 'Instalaciones y LOS' : 'Instalaciones'} tituloCorto="Instalaciones" icono={Building2} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} accion={puedeCrearVentas ? { texto: 'Nuevo', onClick: () => setCreandoVenta(true), deshabilitado: !verTodasInstalaciones && promotoraClaves.length === 0, ayuda: !verTodasInstalaciones && promotoraClaves.length === 0 ? 'Tu usuario todavía no tiene un nombre de promotor asignado' : 'Nueva venta' } : null} />
 
@@ -223,7 +223,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           </div>
 
           {verTodasInstalaciones && (
-            <div role="group" aria-label="Qué órdenes ver" className="flex gap-1.5 p-1 rounded-campo bg-zinc-300 dark:bg-zinc-900 md:max-w-xl">
+            <div role="group" aria-label="Qué órdenes ver" className="flex gap-1.5 p-1 rounded-campo bg-muted md:max-w-xl">
               {[
                 ['TODO', 'Todo', todas.length],
                 ['INSTALACION', 'Instalaciones', cuantasPorCategoria.INSTALACION || 0],
@@ -234,10 +234,10 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   type="button"
                   aria-pressed={categoria === clave}
                   onClick={() => { setCategoria(clave); setFiltro('TODAS'); }}
-                  className={`flex-1 min-w-fit whitespace-nowrap px-2 py-2 rounded-campo text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-white'}`}
+                  className={`flex-1 min-w-fit whitespace-nowrap px-2 py-2 rounded-campo text-xs sm:text-sm font-bold transition-colors ${categoria === clave ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   <span>{texto}</span>
-                  <Contador n={n} tono={categoria === clave ? 'bg-zinc-200 dark:bg-zinc-700' : 'bg-zinc-300/70 dark:bg-zinc-800'} />
+                  <Contador n={n} tono={categoria === clave ? 'bg-accent' : 'bg-muted'} />
                 </button>
               ))}
             </div>
@@ -248,7 +248,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
               {[['INSTALADA', 'Finalizadas'], ['CANCELADA', 'Canceladas']].map(([clave, texto]) => (
                 <Chip activo={filtro === clave} tamano="compacto" key={clave} type="button" onClick={() => setFiltro(filtro === clave ? 'TODAS' : clave)}>
                   <span>{texto}</span>
-                  <Contador n={conteo[clave] || 0} tono={filtro === clave ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
+                  <Contador n={conteo[clave] || 0} tono={filtro === clave ? 'bg-black/15' : 'bg-accent'} />
                 </Chip>
               ))}
             </div>
@@ -264,7 +264,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   {(atrasadas > 0 || soloAtrasadas) && (
                     <Chip activo={soloAtrasadas} tamano="compacto" type="button" onClick={() => setSoloAtrasadas((v) => !v)}>
                       <span>Atrasadas</span>
-                      <Contador n={atrasadas} tono={soloAtrasadas ? 'bg-black/15' : 'bg-zinc-200 dark:bg-zinc-800'} />
+                      <Contador n={atrasadas} tono={soloAtrasadas ? 'bg-black/15' : 'bg-accent'} />
                     </Chip>
                   )}
                 </div>
@@ -308,7 +308,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
               {hayMasCerradas && <span className="text-muted-foreground"> · faltan cerradas por cargar</span>}
               {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-700 dark:text-red-400 hover:underline">Limpiar filtros</button>}
             </p>
-            <div role="group" aria-label="Cómo ver las órdenes" className="ml-auto flex gap-0.5 p-0.5 rounded-campo bg-zinc-300 dark:bg-zinc-900">
+            <div role="group" aria-label="Cómo ver las órdenes" className="ml-auto flex gap-0.5 p-0.5 rounded-campo bg-muted">
               {[['TARJETAS', 'Tarjetas', LayoutGrid], ['LISTA', 'Lista', List]].map(([clave, texto, Icono]) => (
                 <button
                   key={clave}
@@ -317,7 +317,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
                   aria-label={texto}
                   title={texto}
                   onClick={() => setFormato(clave)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold transition-colors ${formato === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-white'}`}
+                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold transition-colors ${formato === clave ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   <Icono className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">{texto}</span>
                 </button>

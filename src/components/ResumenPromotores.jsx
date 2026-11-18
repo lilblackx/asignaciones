@@ -22,10 +22,10 @@ export default function ResumenPromotores({ filas, vista, elegida, onElegir }) {
             <th scope="col" className={encabezado}>Total</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        <tbody className="divide-y divide-border">
           {filas.map((f) => (
             <tr key={f.clave || '-'} className={elegida === (f.clave || '-') ? 'bg-red-50 dark:bg-red-950/30' : ''}>
-              <th scope="row" className="px-3 py-0 text-left font-bold text-zinc-800 dark:text-zinc-100 max-w-[10rem]">
+              <th scope="row" className="px-3 py-0 text-left font-bold text-foreground max-w-[10rem]">
                 <button type="button" onClick={() => onElegir(f.clave || '-')} aria-pressed={elegida === (f.clave || '-')} className="w-full text-left py-2 truncate hover:text-red-600 dark:hover:text-red-400">{f.nombre}</button>
               </th>
               <td className={`${celda} font-black text-emerald-700 dark:text-emerald-400`}>{f.instaladas}</td>

@@ -117,7 +117,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
     const porCargar = clave === ESTADO_COBRO.PENDIENTE;
     return (
       <button key={clave} type="button" onClick={() => setEstado(estado === clave ? 'TODOS' : clave)} aria-pressed={estado === clave}
-        className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'border-red-600' : 'border-transparent hover:border-zinc-500'} shadow-card`}>
+        className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'border-red-600' : 'border-transparent hover:border-muted-foreground'} shadow-card`}>
         <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-700 dark:text-red-400' : ''}`}>{r.cantidad}</p>
         <p className="text-xs font-bold">{titulo}</p>
         {(montos.length > 0 || (porCargar && r.cantidad > 0)) && <p className={`${ETIQUETA} tabular-nums`}>{[...montos, porCargar && r.cantidad > 0 && 'de cualquier fecha'].filter(Boolean).join(' · ')}</p>}
@@ -127,20 +127,20 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
   };
   const tarjetaAlertas = (
     <button type="button" onClick={() => setEstado(estado === 'ALERTA' ? 'TODOS' : 'ALERTA')} aria-pressed={estado === 'ALERTA'}
-      className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${estado === 'ALERTA' || resumen.alertas > 0 ? 'border-amber-500' : 'border-transparent hover:border-zinc-500'} shadow-card`}>
+      className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${estado === 'ALERTA' || resumen.alertas > 0 ? 'border-amber-500' : 'border-transparent hover:border-muted-foreground'} shadow-card`}>
       <p className={`text-2xl font-black tabular-nums ${resumen.alertas > 0 ? 'text-amber-700 dark:text-amber-400' : ''}`}>{resumen.alertas}</p>
       <p className="text-xs font-bold">Con cambio de monto</p>
       {resumen.alertas > 0 && <p className={ETIQUETA}>corrígelos en el portal</p>}
     </button>
   );
 
-  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
+  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
   const alerta = (c) => tieneCambioDeMonto(c) && (
     <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>
   );
   // El técnico todavía no registró el pago del cliente: el cobro se ve, pero no se puede marcar como cargado hasta que lo registre (ver faltaElPagoDelTecnico).
   const sinPago = (c) => faltaElPagoDelTecnico(c) && (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded bg-red-600 text-white"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2 py-0.5 rounded-md bg-red-600 text-white"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
   );
   const esperaPago = (c) => c.estado === ESTADO_COBRO.PENDIENTE && faltaElPagoDelTecnico(c);
   const accionTexto = (c) => (tieneCambioDeMonto(c) ? 'Corregir' : esperaPago(c) ? 'Ver' : c.estado === ESTADO_COBRO.PENDIENTE ? 'Cargar' : 'Ver');
@@ -161,7 +161,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-foreground flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Administración" icono={Landmark} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} campana={campana || null} />
 
@@ -244,12 +244,12 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                   {/* Escritorio: tabla. */}
                   <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
+                      <thead className="bg-secondary text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
                         <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                      <tbody className="divide-y divide-border">
                         {filas.map((c) => (
-                          <tr key={c.id} className="align-top hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                          <tr key={c.id} className="align-top hover:bg-accent/50">
                             <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(c.creadoEn)}{c.estado === ESTADO_COBRO.PENDIENTE && <span className={`block ${ETIQUETA}`}>{diasEsperando(c, ahora)} d esperando</span>}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{c.codigo || 'S/C'}</td>
                             <td className="px-3 py-2.5 min-w-[8rem]">{c.nombre}</td>
