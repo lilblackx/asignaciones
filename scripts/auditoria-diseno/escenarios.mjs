@@ -52,6 +52,8 @@ const preFinalizarInstalacion = [
   { id: 'pf-orden', preparar: abrirPreFinalizar('as2'), limpiar: seguir },
   { id: 'pf-equipo', preparar: siguiente, limpiar: seguir },
   { id: 'pf-equipo-errores', preparar: siguiente, limpiar: seguir },
+  // El escáner de serial (cámara de prueba del navegador: no lee nada, así que se ve la fase de "escaneando").
+  { id: 'escaner', preparar: async (n) => { if (!(await n.clicEtiqueta('^escanear el serial con la cámara$'))) return false; await n.dormir(1500); return true; }, limpiar: async (n) => { await n.ev(() => document.querySelector('[role="dialog"][aria-label="Escanear serial"] button[aria-label="Cerrar"]')?.click()); await n.dormir(400); } },
   { id: 'pf-equipo-lleno', preparar: async (n) => { await llenar(n, { 'Ej. HWTC1A2B3C4D': 'HWTC1A2B3C4D', 'Ej. 100': '100', 'Ej. NAP 08': 'NAP 08', 'Ej. 3': '3' }); return true; }, limpiar: seguir },
   { id: 'pf-cable', preparar: siguiente, limpiar: seguir },
   { id: 'pf-cable-errores', preparar: siguiente, limpiar: seguir },
@@ -161,6 +163,15 @@ export default [
       { id: 'historial', preparar: (n) => n.irAModulo('Historial') },
       { id: 'historial-filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
       { id: 'historial-fila', preparar: (n) => n.ev(() => { const b = [...document.querySelectorAll('button[aria-expanded="false"]')].find((e) => e.className.includes('text-left')); if (!b) return false; b.click(); return true; }) },
+      // Una instalación con fotos (DK5): el Detalle de la orden con su historial y el visor al tocar una foto.
+      { id: 'historial-dk5', preparar: async (n) => { await n.escribir('input[placeholder^="Código"]', 'DK5'); await n.dormir(900); return n.ev(() => { const b = [...document.querySelectorAll('button[aria-expanded="false"]')].find((e) => /DK5/.test(e.innerText)); if (!b) return false; b.click(); return true; }); }, limpiar: seguir },
+      { id: 'detalle-fotos', preparar: (n) => n.clic('ver detalle completo'), limpiar: seguir, espera: 2000 },
+      { id: 'detalle-abajo', preparar: async (n) => { await n.dormir(3500); return desplazarAbajo('[role="dialog"]')(n); }, limpiar: seguir, espera: 800 },
+      { id: 'visor-fotos', preparar: async (n) => { await n.ev(() => document.querySelector('button[aria-label="Ver la foto 1 en grande"]')?.scrollIntoView({ block: 'center' })); await n.dormir(500); return n.clicEtiqueta('^ver la foto 1 en grande$'); }, espera: 1500 },
+      // Una orden devuelta (PD3), con varios eventos en su historial.
+      { id: 'historial-pd3', preparar: async (n) => { await n.esc(); await n.esc(); await n.escribir('input[placeholder^="Código"]', 'PD3'); await n.dormir(900); return n.ev(() => { const b = [...document.querySelectorAll('button[aria-expanded="false"]')].find((e) => /PD3/.test(e.innerText)); if (!b) return false; b.click(); return true; }); }, limpiar: seguir },
+      { id: 'detalle-pd3', preparar: (n) => n.clic('ver detalle completo'), limpiar: seguir, espera: 1500 },
+      { id: 'detalle-pd3-abajo', preparar: (n) => desplazarAbajo('[role="dialog"]')(n), espera: 800 },
       { id: 'revision', preparar: (n) => n.irAModulo('Revisión de órdenes') },
       { id: 'revision-menu', preparar: (n) => n.ev(() => { const b = document.querySelector('button[aria-haspopup="menu"][aria-label^="Más acciones de la orden"]'); if (!b) return false; b.scrollIntoView({ block: 'center' }); b.click(); return true; }) },
       { id: 'tecnicos', preparar: (n) => n.irAModulo('Técnicos') },

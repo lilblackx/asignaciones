@@ -2,10 +2,10 @@ import { ArrowRightLeft, Ban, BadgeCheck, Banknote, Car, CheckCheck, Clock, Flag
 import { construirLineaDeTiempo } from '../utils/historial';
 
 const TIPOS = {
-  creada: { icono: Plus, titulo: 'Orden creada', color: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200' },
+  creada: { icono: Plus, titulo: 'Orden creada', color: 'bg-card text-muted-foreground ring-1 ring-border' },
   envio: { icono: CheckCheck, titulo: 'Marcada como enviada', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
   reenvio: { icono: Send, titulo: 'Plantilla reenviada', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-  'envio-retirado': { icono: Undo2, titulo: 'Envío retirado', color: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200' },
+  'envio-retirado': { icono: Undo2, titulo: 'Envío retirado', color: 'bg-card text-muted-foreground ring-1 ring-border' },
   tecnico: { icono: UserCog, titulo: 'Cambio de técnico', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
   prefinalizado: { icono: Clock, titulo: 'Pre-finalizada', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
   prioridad: { icono: Flag, titulo: 'Prioridad alta', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
@@ -20,9 +20,9 @@ const TIPOS = {
   pagoCliente: { icono: Banknote, titulo: 'Pago del cliente', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
   infraestructura: { icono: HardHat, titulo: 'Infraestructura', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
   valores: { icono: Gauge, titulo: 'Valores del cliente', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
-  estado: { icono: ArrowRightLeft, titulo: 'Cambio de estado', color: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200' },
+  estado: { icono: ArrowRightLeft, titulo: 'Cambio de estado', color: 'bg-card text-muted-foreground ring-1 ring-border' },
   ubicacion: { icono: MapPin, titulo: 'Ubicación', color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
-  edicion: { icono: Pencil, titulo: 'Edición', color: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200' },
+  edicion: { icono: Pencil, titulo: 'Edición', color: 'bg-card text-muted-foreground ring-1 ring-border' },
 };
 
 // Líneas que solo repiten el título del evento: no se muestran.
@@ -41,24 +41,24 @@ export default function HistorialTimeline({ ticket, compact = false }) {
   const eventos = construirLineaDeTiempo(ticket);
 
   return (
-    <ol className={`relative space-y-3 ${compact ? 'max-h-64 overflow-y-auto pr-1' : ''}`} aria-label="Historial de la orden">
+    <ol className={`relative space-y-4 ${compact ? 'max-h-64 overflow-y-auto pr-1' : ''}`} aria-label="Historial de la orden">
       {eventos.map((ev, i) => {
         const { icono: Icono, titulo: tituloDelTipo, color } = TIPOS[ev.tipo] || TIPOS.edicion;
         const titulo = ev.titulo || tituloDelTipo;
         const esUltimo = i === eventos.length - 1;
         return (
           <li key={ev.clave} className="relative flex gap-3">
-            {!esUltimo && <span className="absolute left-3 top-6 bottom-[-0.75rem] w-px bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />}
-            <span className={`relative z-[1] w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${color}`}>
-              <Icono className="w-3.5 h-3.5" aria-hidden="true" />
+            {!esUltimo && <span className="absolute left-4 top-9 bottom-[-1rem] w-px bg-border" aria-hidden="true" />}
+            <span className={`relative z-[1] w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${color}`}>
+              <Icono className="w-4 h-4" aria-hidden="true" />
             </span>
-            <div className="min-w-0 flex-1 pb-0.5">
-              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">{titulo}</p>
-              <p className="text-[11px] max-lg:text-xs text-muted-foreground leading-tight">
-                {ev.fecha}{ev.operador && <> · <span className="font-semibold text-zinc-600 dark:text-zinc-300">{ev.operador}</span></>}
+            <div className="min-w-0 flex-1 pt-0.5">
+              <p className="text-sm font-bold text-foreground leading-tight">{titulo}</p>
+              <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                {ev.fecha}{ev.operador && <> · <span className="font-semibold text-card-foreground">{ev.operador}</span></>}
               </p>
               {ev.lineas.filter(linea => !REPETIDAS.test(linea)).map((linea, j) => (
-                <p key={j} className="text-xs text-card-foreground leading-snug break-words mt-0.5"><LineaDetalle texto={linea} /></p>
+                <p key={j} className="text-sm text-card-foreground leading-snug break-words mt-1"><LineaDetalle texto={linea} /></p>
               ))}
             </div>
           </li>

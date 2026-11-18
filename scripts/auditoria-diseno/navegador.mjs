@@ -28,7 +28,7 @@ export async function abrirNavegador({ puerto = 9333, oculto = false } = {}) {
   const exe = process.env.NAVEGADOR_AUDITORIA || (CANDIDATOS[process.platform] || []).find((p) => fs.existsSync(p));
   if (!exe) throw new Error('No encuentro Brave, Chrome ni Edge. Indica la ruta con la variable NAVEGADOR_AUDITORIA.');
   const perfil = fs.mkdtempSync(path.join(os.tmpdir(), 'auditoria-diseno-perfil-'));
-  const args = [`--remote-debugging-port=${puerto}`, `--user-data-dir=${perfil}`, '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--window-size=1440,900', ...(oculto ? ['--headless=new'] : []), 'about:blank'];
+  const args = [`--remote-debugging-port=${puerto}`, `--user-data-dir=${perfil}`, '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--window-size=1440,900', ...(oculto ? ['--headless=new'] : []), 'about:blank'];
   const hijo = spawn(exe, args, { stdio: 'ignore', detached: false });
   for (let i = 0; i < 60 && !(await puertoAbierto(puerto)); i += 1) await dormir(500);
   if (!(await puertoAbierto(puerto))) { hijo.kill(); throw new Error(`El navegador no abrió el puerto ${puerto}. Si ya tienes ese navegador abierto, ciérralo o usa otro --puerto.`); }
