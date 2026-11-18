@@ -25,11 +25,11 @@ try {
   const PreFinalizar = await cargar('/src/components/modals/PreFinalizarModal.jsx');
   const noop = () => {};
   const instalacion = textoPlano(dibujar(PreFinalizar, { ticket: { ...base, estado: 'PENDIENTE', tipoTrabajo: 'INSTALACIÓN', falla: 'SM' }, onConfirm: noop, onClose: noop }));
-  check('pre-finalizar de una instalación abre en el paso 1 de 4 con Orden, Equipo, Cable y Cierre y el botón Siguiente', [/Paso 1 de 4/.test(instalacion), ['Orden', 'Equipo', 'Cable', 'Cierre'].every((p) => instalacion.includes(p)), instalacion.includes('Siguiente'), instalacion.includes('PRE-FINALIZAR')], [true, true, true, true]);
+  check('pre-finalizar de una instalación abre en el paso 1 de 4 con Orden, Equipo, Cable y Cierre y el botón Siguiente', [/Paso 1 de 4/.test(instalacion), ['Orden', 'Equipo', 'Cable', 'Cierre'].every((p) => instalacion.includes(p)), instalacion.includes('Siguiente'), instalacion.includes('Pre-finalizar')], [true, true, true, true]);
   check('el primer paso de una instalación no pide tipo de visita ni muestra campos del equipo', [instalacion.includes('TIPO DE VISITA'), instalacion.includes('SERIAL')], [false, false]);
 
   const averia = textoPlano(dibujar(PreFinalizar, { ticket: { ...base, estado: 'PENDIENTE', tipoTrabajo: 'AVERÍA', falla: 'LOS', observacion: 'Revisa el conector.', observacionInterna: false }, onConfirm: noop, onClose: noop }));
-  check('pre-finalizar de una avería sin tipo elegido abre en el paso 1 de 2 y pide elegir el tipo de visita, con la nota de la oficina en el primer paso', [/Paso 1 de 2/.test(averia), averia.includes('TIPO DE VISITA'), averia.includes('elige el tipo de visita'), averia.includes('NOTA DE LA OFICINA'), averia.includes('Revisa el conector.')], [true, true, true, true, true]);
+  check('pre-finalizar de una avería sin tipo elegido abre en el paso 1 de 2 y pide elegir el tipo de visita, con la nota de la oficina en el primer paso', [/Paso 1 de 2/.test(averia), averia.toUpperCase().includes('TIPO DE VISITA'), averia.includes('elige el tipo de visita'), averia.toUpperCase().includes('NOTA DE LA OFICINA'), averia.includes('Revisa el conector.')], [true, true, true, true, true]);
 
   const devuelta = textoPlano(dibujar(PreFinalizar, { ticket: { ...base, estado: 'PENDIENTE', tipoTrabajo: 'AVERÍA', falla: 'LOS', historialEdiciones: [{ fecha: '12/11/26', operador: 'admin', tipo: 'devuelto', detalle: 'Devuelta al técnico | Motivo: Falta la potencia.', motivo: 'Falta la potencia.' }] }, onConfirm: noop, onClose: noop }));
   check('una orden devuelta muestra el motivo de la oficina en el primer paso', [devuelta.includes('Devuelta por admin'), devuelta.includes('Falta la potencia.')], [true, true]);
@@ -59,7 +59,7 @@ try {
   check('el cobro de una instalación abre en el paso 1 de 3 (Cobro, Pago, Fotos) con Siguiente y "Hacerlo después", y la oficina espera el pago y las fotos', [/Paso 1 de 3/.test(cobroInstalacion), ['Cobro', 'Pago', 'Fotos'].every((p) => cobroInstalacion.includes(p)), cobroInstalacion.includes('Siguiente'), cobroInstalacion.includes('Hacerlo después'), htmlInstalacion.includes('hasta que registres el pago y subas las fotos.')], [true, true, true, true, true]);
   const pagoRegistrado = { tipo: 'PAGO', pago: { moneda: 'USD', forma: 'Efectivo', monto: 25, banco: '', titular: '', cuentaEmpresa: '', referencia: '', pagadoEn: finalizadoEn }, nota: '', compartidoCon: null, monedaDistinta: false, diferencia: false, registradoPor: 'jose', registradoEn: finalizadoEn };
   const htmlSoloFotos = pantallaDelCobro({ ...instalacionDelTecnico, pagoCliente: pagoRegistrado });
-  check('una instalación con el pago ya registrado abre directo en las fotos y la oficina espera solo las fotos', [textoPlano(htmlSoloFotos).includes('DETALLES DE LA ORDEN'), htmlSoloFotos.includes('hasta que subas las fotos.'), htmlSoloFotos.includes('registres el pago')], [true, true, false]);
+  check('una instalación con el pago ya registrado abre directo en las fotos y la oficina espera solo las fotos', [textoPlano(htmlSoloFotos).toUpperCase().includes('DETALLES DE LA ORDEN'), htmlSoloFotos.includes('hasta que subas las fotos.'), htmlSoloFotos.includes('registres el pago')], [true, true, false]);
 } finally {
   await servidor.close();
 }

@@ -260,8 +260,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           {llevaCobro(ticket) && (
             <section aria-label="Cobro de la visita" className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-campo p-3 space-y-3 text-xs text-sky-900 dark:text-sky-200">
               <div>
-                <h3 className="flex items-center gap-2 font-black tracking-wide">
-                  <Banknote className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" /> COBRO
+                <h3 className="flex items-center gap-2 font-black">
+                  <Banknote className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" /> Cobro
                 </h3>
                 <p className="ml-6 mt-1"><span className="font-medium">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
                 {consultaCobroDe(ticket) && (
@@ -496,7 +496,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
 
   const resumenFinal = (
     <section aria-label="Resumen" className="rounded-campo border border-border bg-sunken p-3 space-y-3">
-      <h3 className="text-xs font-black tracking-wide text-foreground">RESUMEN ANTES DE {finalizando ? 'FINALIZAR' : 'APROBAR'}</h3>
+      <h3 className="text-sm font-black text-foreground">Resumen antes de {finalizando ? 'finalizar' : 'aprobar'}</h3>
       <dl className="space-y-2.5">
         {cobroResuelto && (
           <FilaResumen

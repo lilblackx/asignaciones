@@ -46,7 +46,7 @@ function Bloque({ titulo, icono: Icono, datos, ticket, copiado, onCopiar, classN
   if (datos.length === 0) return null;
   return (
     <section className={`rounded-campo border p-3 ${tono} ${className}`} aria-label={titulo}>
-      <h3 className="flex items-center gap-2 text-xs font-black tracking-wide text-zinc-700 dark:text-zinc-200 mb-0.5">
+      <h3 className="flex items-center gap-2 text-xs font-black text-zinc-700 dark:text-zinc-200 mb-0.5">
         <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {titulo}
       </h3>
       <div className="divide-y divide-zinc-200/70 dark:divide-zinc-800">
@@ -68,7 +68,7 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
     <div className="space-y-3">
       {/* El título de la sección, como los demás del modal (COBRO, RECABLEADO...): más grande, con su ícono rojo y la línea roja de las ventanas de la app. */}
       <div className="flex items-center justify-between gap-2 pb-2 border-b-2 border-red-600">
-        <h3 className="min-w-0 flex items-center gap-2 text-sm font-black tracking-wide uppercase text-foreground">
+        <h3 className="min-w-0 flex items-center gap-2 text-sm font-black text-foreground">
           {paraAutorizar ? <ShieldCheck className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> : <User className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" />}
           <span className="truncate">{paraAutorizar ? 'Para autorizar en SmartOLT' : 'Datos del cliente'}</span>
         </h3>
@@ -86,7 +86,7 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
       {/* En el celular el equipo va primero (es lo que más se usa); en escritorio, el cliente a la izquierda y el equipo a la derecha. */}
       <div className="grid gap-3 md:grid-cols-2 items-start">
         <Bloque
-          titulo={paraAutorizar ? 'EQUIPO' : 'NAP'}
+          titulo={paraAutorizar ? 'Equipo' : 'NAP'}
           icono={Router}
           datos={equipo}
           ticket={ticket}
@@ -95,7 +95,7 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
           tono="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 order-1 md:order-2"
         />
         <Bloque
-          titulo="CLIENTE"
+          titulo="Cliente"
           icono={User}
           datos={cliente}
           ticket={ticket}

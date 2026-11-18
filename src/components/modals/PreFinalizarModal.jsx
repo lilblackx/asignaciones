@@ -318,7 +318,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
   const encabezado = (
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 sticky top-0 z-10">
           <div className="min-w-0">
-            <h2 className="text-sm font-black text-white">PRE-FINALIZAR</h2>
+            <h2 className="text-sm font-black text-white">Pre-finalizar</h2>
             <p className="text-xs text-zinc-300 mt-1 truncate">
               {ticket.codigo || 'S/C'} · {ticket.nombre}
             </p>

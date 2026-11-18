@@ -27,7 +27,7 @@ export default function UbicacionModal({ ticket, onSave, onClose }) {
       <div className="bg-card rounded-card shadow-2xl w-full max-w-md overflow-hidden border border-border">
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-sky-500 flex justify-between items-center gap-3">
           <div className="min-w-0">
-            <h2 className="text-sm font-black text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-sky-400" aria-hidden="true" /> UBICACIÓN</h2>
+            <h2 className="text-sm font-black text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-sky-400" aria-hidden="true" /> Ubicación</h2>
             <p className="text-xs font-medium text-sky-400">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
           </div>
           <BotonCerrar onClick={onClose} />

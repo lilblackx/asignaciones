@@ -218,7 +218,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
       <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden border border-border">
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 shrink-0">
           <div>
-            <h2 className="text-sm font-black text-white">{isTecnico ? 'DETALLES / PRE-FINALIZAR' : 'EDITAR ORDEN'}</h2>
+            <h2 className="text-sm font-black text-white">{isTecnico ? 'Detalles / pre-finalizar' : 'Editar orden'}</h2>
             <p className="text-xs text-zinc-300 mt-1">Cliente: {editingTicket.nombre}</p>
           </div>
           <BotonCerrar onClick={onClose} />

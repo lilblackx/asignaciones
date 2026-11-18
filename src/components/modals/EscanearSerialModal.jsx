@@ -115,7 +115,7 @@ export default function EscanearSerialModal({ onLeido, onClose }) {
     <Modal onClose={onClose} zIndexClass="z-[130]">
       <div role="dialog" aria-label="Escanear serial" className="w-full max-w-md h-[min(92dvh,720px)] bg-card rounded-card border border-border shadow-2xl flex flex-col overflow-hidden">
         <div className="encabezado-d bg-black shrink-0 flex items-center gap-3 px-4 py-3 border-b-2 border-red-600">
-          <h2 className="text-sm font-black text-white flex items-center gap-2"><ScanLine className="w-4 h-4 text-red-700 dark:text-red-400" aria-hidden="true" /> ESCANEAR SERIAL</h2>
+          <h2 className="text-sm font-black text-white flex items-center gap-2"><ScanLine className="w-4 h-4 text-red-700 dark:text-red-400" aria-hidden="true" /> Escanear serial</h2>
           <BotonCerrar onClick={onClose} className="ml-auto" />
         </div>
 

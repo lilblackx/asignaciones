@@ -263,7 +263,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
       <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden border border-border">
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 shrink-0">
           <div className="min-w-0">
-            <h2 className="text-sm font-black text-white">NUEVA ASIGNACIÓN</h2>
+            <h2 className="text-sm font-black text-white">Nueva asignación</h2>
             <p className="text-xs text-zinc-300 mt-1">Fecha de la orden: {formData.fecha}</p>
           </div>
           <BotonCerrar onClick={onClose} />

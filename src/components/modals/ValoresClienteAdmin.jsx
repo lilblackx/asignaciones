@@ -48,8 +48,8 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
   return (
     <section aria-label="Valores del cliente" className="rounded-campo border border-border p-3 space-y-3 text-xs">
       <div>
-        <h3 className="flex items-center gap-2 font-black tracking-wide text-foreground">
-          <Radio className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> VALORES DEL CLIENTE
+        <h3 className="flex items-center gap-2 font-black text-foreground">
+          <Radio className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> Valores del cliente
         </h3>
         <p className="ml-6 mt-1 text-[11px] max-lg:text-xs text-muted-foreground">
           {tecnicoLosVe

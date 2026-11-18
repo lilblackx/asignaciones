@@ -17,8 +17,8 @@ function ConectoresInstalacion({ ticket }) {
   if (filas.length === 0) return null;
   return (
     <section aria-label="Conectores colocados" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 text-xs text-amber-900 dark:text-amber-200">
-      <h3 className="flex items-center gap-2 font-black tracking-wide">
-        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> CONECTORES COLOCADOS
+      <h3 className="flex items-center gap-2 font-black">
+        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> Conectores colocados
       </h3>
       <ul className="mt-2 ml-6 space-y-2">
         {filas.map((f) => (
@@ -44,8 +44,8 @@ export default function ConectorColocado({ ticket }) {
   if (conector.tipo === 'Externo' && conector.cantidades.azul > 0) return <ConectoresInstalacion ticket={{ instalacion: { conectores: { externo: { verde: conector.cantidades.verde }, interno: { azul: conector.cantidades.azul } } } }} />;
   return (
     <section aria-label="Conectores colocados" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 text-xs text-amber-900 dark:text-amber-200">
-      <h3 className="flex items-center gap-2 font-black tracking-wide">
-        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> CONECTORES COLOCADOS
+      <h3 className="flex items-center gap-2 font-black">
+        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> Conectores colocados
       </h3>
       <div className="mt-2 ml-6 flex flex-wrap items-center gap-x-8 gap-y-2">
         <div>
