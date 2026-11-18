@@ -40,7 +40,7 @@ const claseRol = (rol) => (rol === ROLES.ADMIN
     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
     : [ROLES.ALMACEN, ROLES.PROMOTORA, ROLES.FINANZAS, ROLES.INFRAESTRUCTURA, ROLES.ADMINISTRACION].includes(rol)
       ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
-      : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300');
+      : 'bg-secondary text-secondary-foreground');
 
 const EMPTY_NEW_USER = { usuario: '', nombre: '', clave: '', role: ROLES.USUARIO, puedeCerrar: false, tecnicoAsociado: '', promotoraNombres: '', verTodasInstalaciones: false, puedeCrearVentas: false, puedeVerHistorial: false };
 
@@ -316,16 +316,16 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
             </div>
             {users.length > 0 && (
-              <div className={`hidden md:grid ${COLUMNAS} gap-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-950 border-b border-border ${ETIQUETA_TABLA}`}>
+              <div className={`hidden md:grid ${COLUMNAS} gap-3 px-4 py-2 bg-secondary border-b border-border ${ETIQUETA_TABLA}`}>
                 <span>Usuario</span>
                 <span>Rol</span>
                 <span>Permisos</span>
                 <span className="text-right">Acciones</span>
               </div>
             )}
-            <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <ul className="divide-y divide-border">
               {visibles.map(u => (
-                <li key={u.id} className={`grid ${COLUMNAS} gap-x-3 gap-y-2 px-4 py-4 items-center ${u.disabled ? 'bg-zinc-100 dark:bg-zinc-950/60 opacity-60' : ''}`}>
+                <li key={u.id} className={`grid ${COLUMNAS} gap-x-3 gap-y-2 px-4 py-4 items-center ${u.disabled ? 'bg-muted/60' : ''}`}>
                   <div className="min-w-0 md:col-start-1 md:row-start-1 flex items-center gap-3">
                     {/* La inicial en un círculo del color de su rol: se reconoce quién es quién de un vistazo. */}
                     <span aria-hidden="true" className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-base font-black ${claseRol(u.role)}`}>{(u.nombre || u.username || '?').trim().charAt(0).toUpperCase()}</span>
@@ -345,10 +345,10 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       ) : (
                         <p className="text-sm font-black text-foreground flex items-center gap-1.5 break-words">
                           {u.nombre || u.username}
-                          <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="inline-flex items-center justify-center text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button type="button" onClick={() => startEditNombre(u)} aria-label={`Editar nombre de ${u.username}`} className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></button>
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground">@{u.username}{u.disabled && ' · deshabilitado'}</p>
+                      <p className="text-xs text-muted-foreground">@{u.username}{u.disabled && <span className="font-bold"> · deshabilitado</span>}</p>
                     </div>
                   </div>
 
@@ -402,7 +402,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       {roleEditId === u.id && roleDraft === ROLES.PROMOTORA && (
                     <div className="rounded-campo border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-3 space-y-2.5">
                       <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
-                        <input type="checkbox" checked={verTodasDraft} onChange={(e) => { setVerTodasDraft(e.target.checked); setPromError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
+                        <input type="checkbox" checked={verTodasDraft} onChange={(e) => { setVerTodasDraft(e.target.checked); setPromError(''); }} className="w-4 h-4 text-red-600 rounded border-input focus:ring-primary cursor-pointer" />
                         Ver todas las instalaciones
                       </label>
                       <input
@@ -531,7 +531,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               {newUser.role === ROLES.INFRAESTRUCTURA && (
                 <div className="space-y-3 rounded-campo border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
                   <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
-                    <input type="checkbox" checked={newUser.puedeVerHistorial} onChange={(e) => setNewUser({ ...newUser, puedeVerHistorial: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
+                    <input type="checkbox" checked={newUser.puedeVerHistorial} onChange={(e) => setNewUser({ ...newUser, puedeVerHistorial: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-input focus:ring-primary cursor-pointer" />
                     Ver el historial de órdenes
                   </label>
                   <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Ve todas las órdenes y cierres (con cédula, teléfono y cobros), solo para mirar.</p>
@@ -541,11 +541,11 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               {newUser.role === ROLES.PROMOTORA && (
                 <div className="space-y-3 rounded-campo border border-sky-200 dark:border-sky-900/50 bg-sky-50/60 dark:bg-sky-950/20 p-4">
                   <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
-                    <input type="checkbox" checked={newUser.verTodasInstalaciones} onChange={(e) => { setNewUser({ ...newUser, verTodasInstalaciones: e.target.checked }); setUserError(''); }} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
+                    <input type="checkbox" checked={newUser.verTodasInstalaciones} onChange={(e) => { setNewUser({ ...newUser, verTodasInstalaciones: e.target.checked }); setUserError(''); }} className="w-4 h-4 text-red-600 rounded border-input focus:ring-primary cursor-pointer" />
                     Ver todas las instalaciones
                   </label>
                   <label className="flex items-center gap-2 max-lg:min-h-11 text-sm font-bold text-card-foreground cursor-pointer">
-                    <input type="checkbox" checked={newUser.puedeCrearVentas} onChange={(e) => setNewUser({ ...newUser, puedeCrearVentas: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
+                    <input type="checkbox" checked={newUser.puedeCrearVentas} onChange={(e) => setNewUser({ ...newUser, puedeCrearVentas: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-input focus:ring-primary cursor-pointer" />
                     Puede crear ventas
                   </label>
                   <div className="space-y-2">
@@ -566,7 +566,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
 
               {newUser.role === ROLES.USUARIO && (
                 <label className="flex items-center gap-2 text-sm font-bold text-card-foreground ml-1 cursor-pointer">
-                  <input type="checkbox" checked={newUser.puedeCerrar} onChange={(e) => setNewUser({ ...newUser, puedeCerrar: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-zinc-400 focus:ring-red-500 cursor-pointer" />
+                  <input type="checkbox" checked={newUser.puedeCerrar} onChange={(e) => setNewUser({ ...newUser, puedeCerrar: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-input focus:ring-primary cursor-pointer" />
                   Permitir realizar cierres
                 </label>
               )}
@@ -574,8 +574,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
               {userError && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold ml-1">{userError}</p>}
 
               {/* En PC, con el formulario largo (rol Ventas o Técnico), el botón se queda a la vista al desplazar. */}
-              <div className="lg:sticky lg:bottom-0 lg:-mx-4 lg:-mb-4 lg:px-4 lg:py-3 lg:rounded-b-xl lg:bg-white lg:dark:bg-zinc-900 lg:border-t lg:border-zinc-200 lg:dark:border-zinc-800">
-                <Boton variante="principal" tamano="grande" className="w-full" type="submit" disabled={isSubmitting}>{isSubmitting && <Spinner />}{isSubmitting ? 'Creando...' : 'Crear Usuario'}</Boton>
+              <div className="lg:sticky lg:bottom-0 lg:-mx-4 lg:-mb-4 lg:px-4 lg:py-3 lg:rounded-b-xl lg:bg-card lg:border-t lg:border-border">
+                <Boton variante="principal" tamano="grande" className="w-full" type="submit" disabled={isSubmitting}>{isSubmitting && <Spinner />}{isSubmitting ? 'Creando...' : 'Crear usuario'}</Boton>
               </div>
             </form>
           </section>

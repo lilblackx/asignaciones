@@ -13,7 +13,7 @@ export default function Interruptor({ id, activo, onCambiar, ariaLabel, ariaDesc
       aria-describedby={ariaDescribedBy}
       disabled={deshabilitado}
       onClick={() => onCambiar(!activo)}
-      className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${activo ? PISTA_ENCENDIDA[tono] : 'bg-zinc-300 dark:bg-zinc-600'} ${className}`}
+      className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${activo ? PISTA_ENCENDIDA[tono] : 'bg-muted-foreground/70'} ${className}`}
     >
       <span aria-hidden="true" className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-5' : ''}`} />
     </button>

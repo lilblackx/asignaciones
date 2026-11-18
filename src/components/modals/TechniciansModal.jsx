@@ -6,6 +6,7 @@ import Modal, { CENTRADO_AMPLIO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
+import Interruptor from '../Interruptor';
 import SelectMenu from '../SelectMenu';
 import { CAMPO_FORMULARIO, ETIQUETA_CAMPO, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../estilos';
 
@@ -99,7 +100,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Users} titulo="Técnicos" onClose={onClose} enPagina={enPagina} />
         <div className={`flex-1 overflow-y-auto bg-fondo p-4 sm:p-6 ${CENTRADO_AMPLIO}`}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
@@ -133,7 +134,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   return (
                     <li key={t.id} className={`${TARJETA} p-4 flex flex-col gap-3 ${activo ? '' : 'opacity-80'}`}>
                       <div className="flex items-center gap-3">
-                        <span aria-hidden="true" className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-black ${activo ? estiloTecnico(t.color) : 'bg-zinc-300 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>{(t.name || '?').trim().charAt(0).toUpperCase()}</span>
+                        <span aria-hidden="true" className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-black ${activo ? estiloTecnico(t.color) : 'bg-secondary text-muted-foreground'}`}>{(t.name || '?').trim().charAt(0).toUpperCase()}</span>
                         <div className="min-w-0 flex-1">
                           <p className="font-black text-foreground leading-tight truncate">{t.name}</p>
                           <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
@@ -145,17 +146,13 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       </div>
                       <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
                         <span id={`recibe-${t.id}`} className="text-sm font-semibold text-card-foreground">Recibe órdenes</span>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={activo}
-                          aria-labelledby={`recibe-${t.id}`}
-                          onClick={() => onToggleActivo(t.id, !activo)}
-                          title={activo ? 'Marcar como inactivo' : 'Marcar como activo'}
-                          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activo ? 'bg-emerald-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-                        >
-                          <span aria-hidden="true" className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
+                        <Interruptor
+                          id={`recibe-switch-${t.id}`}
+                          activo={activo}
+                          onCambiar={() => onToggleActivo(t.id, !activo)}
+                          ariaLabel={`Recibe órdenes: ${t.name}`}
+                          ariaDescribedBy={`recibe-${t.id}`}
+                        />
                       </div>
                       {verInventario && (
                         <div className="space-y-1 min-w-0 border-t border-border pt-3">
@@ -189,7 +186,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   <p className={TEXTO_SUAVE}>
                     Orden semanal manual. Al asignar una instalación, el turno pasa al siguiente de la lista (saltando a los inactivos). Al guardar un orden nuevo, el turno vuelve al primero de la lista.
                     {tecnicoSugerido
-                      ? <> Turno actual: <strong className="text-zinc-800 dark:text-zinc-100">{tecnicoSugerido}</strong>.</>
+                      ? <> Turno actual: <strong className="text-foreground">{tecnicoSugerido}</strong>.</>
                       : <> No hay técnicos activos en el orden.</>}
                   </p>
                   <ol className="space-y-1.5">
@@ -199,7 +196,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       return (
                         <li key={nombre} className="flex items-center gap-2 rounded-campo border border-border bg-sunken p-1.5">
                           <span className="text-[11px] max-lg:text-xs font-black text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
-                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-muted-foreground'}`}>{nombre}</span>
+                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-secondary text-muted-foreground'}`}>{nombre}</span>
                           <Boton variante="discreto" tamano="compacto" icono={ArrowUp} onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="w-8 !px-0" />
                           <Boton variante="discreto" tamano="compacto" icono={ArrowDown} onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="w-8 !px-0" />
                         </li>
