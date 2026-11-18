@@ -32,12 +32,12 @@ const refEstado = () => doc(db, 'artifacts', appId, 'public', 'data', 'estadoFir
 // Cuánto va del día contra la cuota gratis: el número, el porcentaje escrito y una barra (el color es de estado y nunca va solo: el texto lo dice).
 function Cuota({ etiqueta, valor, tope }) {
   const p = Math.round(((Number(valor) || 0) / tope) * 100);
-  const estado = p >= 100 ? { barra: 'bg-red-600 dark:bg-red-500', texto: 'se pasó' } : p >= UMBRALES_PROYECTO.cuotaPorcentaje ? { barra: 'bg-amber-500', texto: 'cerca del tope' } : { barra: 'bg-zinc-500 dark:bg-zinc-400', texto: '' };
+  const estado = p >= 100 ? { barra: 'bg-red-600 dark:bg-red-500', texto: 'se pasó' } : p >= UMBRALES_PROYECTO.cuotaPorcentaje ? { barra: 'bg-amber-500', texto: 'cerca del tope' } : { barra: 'bg-muted-foreground', texto: '' };
   return (
     <div className={`${TARJETA} px-3 py-2.5 min-w-0`}>
       <p className={ETIQUETA}>{etiqueta}</p>
-      <p className="text-lg font-black text-foreground">{numero(valor)} <span className="text-xs font-bold text-zinc-500">de {numero(tope)}</span></p>
-      <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden mt-1" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(p, 100)} aria-label={`${etiqueta}: ${p}% de la cuota gratis`}>
+      <p className="text-lg font-black text-foreground">{numero(valor)} <span className="text-xs font-bold text-muted-foreground">de {numero(tope)}</span></p>
+      <div className="h-2 rounded-full bg-accent overflow-hidden mt-1" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(p, 100)} aria-label={`${etiqueta}: ${p}% de la cuota gratis`}>
         <div className={`h-full rounded-full ${estado.barra}`} style={{ width: `${Math.min(p, 100)}%` }} />
       </div>
       <p className={`${TEXTO_SUAVE} mt-1`}>{p}% de lo gratis{estado.texto && ` · ${estado.texto}`}</p>
@@ -57,7 +57,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
   return (
     <figure className={`${TARJETA} p-3 min-w-0`}>
       <figcaption className="flex items-baseline justify-between gap-2">
-        <span className="text-xs font-black text-zinc-800 dark:text-zinc-100">{titulo}</span>
+        <span className="text-xs font-black text-foreground">{titulo}</span>
         <span className={TEXTO_SUAVE}>{actual ? `${horaCaracas(actual.hasta - 3600000)}–${horaCaracas(actual.hasta)}: ${numero(actual[campo])} ${unidad}` : `pico ${numero(pico?.[campo])}`}</span>
       </figcaption>
       <div className="relative h-24 mt-2" role="img" aria-label={resumen}>
@@ -68,7 +68,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
               <button key={h.hasta} type="button" onMouseEnter={() => setMarcada(i)} onFocus={() => setMarcada(i)} onClick={() => setMarcada(i)}
                 aria-label={`${horaCaracas(h.hasta - 3600000)} a ${horaCaracas(h.hasta)}: ${numero(valor)} ${unidad}`}
                 className="flex-1 h-full flex items-end min-w-0 focus:outline-none group">
-                <span className={`w-full rounded-t-[4px] ${valor > umbral ? 'bg-red-600 dark:bg-red-500' : 'bg-sky-600 dark:bg-sky-500'} ${marcada === i ? 'opacity-100 ring-2 ring-zinc-900 dark:ring-white' : marcada !== null ? 'opacity-50' : ''}`}
+                <span className={`w-full rounded-t-[4px] ${valor > umbral ? 'bg-red-600 dark:bg-red-500' : 'bg-sky-600 dark:bg-sky-500'} ${marcada === i ? 'opacity-100 ring-2 ring-ring' : marcada !== null ? 'opacity-50' : ''}`}
                   style={{ height: `${Math.max(valor > 0 ? 2 : 0, (valor / maximo) * 100)}%` }} />
               </button>
             );
@@ -76,7 +76,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
         </div>
         {/* Después de las columnas, para que no se pinten encima de la etiqueta; el fondo de la tarjeta la deja legible sobre una columna roja. */}
         <div className="absolute inset-x-0 border-t border-dashed border-red-500/70 pointer-events-none" style={{ bottom: `${(umbral / maximo) * 100}%` }} aria-hidden="true">
-          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-card text-[10px] font-bold text-red-700 dark:text-red-400">umbral {numero(umbral)}</span>
+          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-card text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400">umbral {numero(umbral)}</span>
         </div>
       </div>
       <div className={`flex justify-between mt-1 ${TEXTO_SUAVE}`} aria-hidden="true">
@@ -126,7 +126,7 @@ function PanelProyecto({ estado, cargado, error, ahora }) {
               <summary className="text-xs font-bold cursor-pointer text-card-foreground">Ver como tabla</summary>
               <div className="overflow-x-auto mt-2">
                 <table className="w-full text-xs tabular-nums">
-                  <thead><tr className="text-left text-zinc-500">{['Hora', 'Lecturas', 'Escrituras', 'Borrados', 'Rechazos'].map((t) => <th key={t} className="py-1 pr-3 font-bold">{t}</th>)}</tr></thead>
+                  <thead><tr className="text-left text-muted-foreground">{['Hora', 'Lecturas', 'Escrituras', 'Borrados', 'Rechazos'].map((t) => <th key={t} className="py-1 pr-3 font-bold">{t}</th>)}</tr></thead>
                   <tbody>
                     {[...horas].reverse().map((h) => (
                       <tr key={h.hasta} className="border-t border-border text-foreground">
@@ -161,13 +161,13 @@ function Estacion({ e, ahora }) {
   return (
     <li className={`${TARJETA} p-3 space-y-2 ${alertas.length && activa ? 'border-red-500 dark:border-red-700' : ''}`}>
       <div className="flex items-start gap-2">
-        <span aria-hidden="true" className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${activa ? 'bg-emerald-500' : 'bg-zinc-400 dark:bg-zinc-600'}`} />
+        <span aria-hidden="true" className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${activa ? 'bg-emerald-500' : 'bg-muted-foreground'}`} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black text-foreground truncate">{e.nombre || e.usuario || 'Sin usuario'} <span className="font-normal text-zinc-500">({e.usuario || 's/u'})</span></p>
+          <p className="text-sm font-black text-foreground truncate">{e.nombre || e.usuario || 'Sin usuario'} <span className="font-normal text-muted-foreground">({e.usuario || 's/u'})</span></p>
           <p className={TEXTO_SUAVE}>{[equipo.sistema, equipo.navegador, equipo.pantalla, equipo.movil && 'móvil', equipo.instalada && 'app instalada'].filter(Boolean).join(' · ')}</p>
         </div>
         <div className="text-right shrink-0">
-          <span className={`${CHIP} bg-zinc-200 dark:bg-zinc-800 text-foreground`}>{e.rol || 's/r'}</span>
+          <span className={`${CHIP} bg-secondary text-foreground`}>{e.rol || 's/r'}</span>
           <p className={`${TEXTO_SUAVE} mt-1`}>{activa ? 'En línea' : 'Desconectada'} · {haceCuanto(Number(e.ultimaSenal), ahora)}</p>
         </div>
       </div>
@@ -176,12 +176,12 @@ function Estacion({ e, ahora }) {
       {avisos.map((a) => <Aviso key={a} nivel="atencion" compact>{a}</Aviso>)}
 
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-        <Dato etiqueta={`Lecturas (${minutos} min)`}>{numero(v.lecturas)} <span className="font-normal text-zinc-500">· sesión {numero(e.total?.lecturas)}</span></Dato>
-        <Dato etiqueta={`Escrituras (${minutos} min)`}>{numero(v.escrituras)} <span className="font-normal text-zinc-500">· sesión {numero(e.total?.escrituras)}</span></Dato>
-        <Dato etiqueta="Rechazadas por el servidor" alerta={v.rechazadas > 0}>{numero(v.rechazadas)} <span className="font-normal text-zinc-500">· sesión {numero(e.total?.rechazadas)}</span></Dato>
-        <Dato etiqueta="Escuchadores abiertos">{numero(e.escuchadoresActivos)} <span className="font-normal text-zinc-500">· {numero(v.suscripciones)} suscripciones</span></Dato>
+        <Dato etiqueta={`Lecturas (${minutos} min)`}>{numero(v.lecturas)} <span className="font-normal text-muted-foreground">· sesión {numero(e.total?.lecturas)}</span></Dato>
+        <Dato etiqueta={`Escrituras (${minutos} min)`}>{numero(v.escrituras)} <span className="font-normal text-muted-foreground">· sesión {numero(e.total?.escrituras)}</span></Dato>
+        <Dato etiqueta="Rechazadas por el servidor" alerta={v.rechazadas > 0}>{numero(v.rechazadas)} <span className="font-normal text-muted-foreground">· sesión {numero(e.total?.rechazadas)}</span></Dato>
+        <Dato etiqueta="Escuchadores abiertos">{numero(e.escuchadoresActivos)} <span className="font-normal text-muted-foreground">· {numero(v.suscripciones)} suscripciones</span></Dato>
         <Dato etiqueta="Lecturas fallidas" alerta={v.erroresEscucha > 0}>{numero(v.erroresEscucha)}</Dato>
-        <Dato etiqueta="Errores de la app" alerta={v.erroresApp > 0}>{numero(v.erroresApp)} <span className="font-normal text-zinc-500">· sesión {numero(e.total?.erroresApp)}</span></Dato>
+        <Dato etiqueta="Errores de la app" alerta={v.erroresApp > 0}>{numero(v.erroresApp)} <span className="font-normal text-muted-foreground">· sesión {numero(e.total?.erroresApp)}</span></Dato>
         <Dato etiqueta="Escrituras automáticas" alerta={v.automaticasFallidas > 0}>{numero(v.automaticasIntentadas)} · {numero(v.automaticasFallidas)} fallidas</Dato>
         <Dato etiqueta="Versión">{e.build && e.build !== __APP_BUILD__ ? 'Anterior' : 'Actual'}</Dato>
       </dl>
@@ -195,7 +195,7 @@ function Estacion({ e, ahora }) {
         <div className="flex flex-wrap gap-1.5">
           {e.cortacircuitos && <span className={`${CHIP} gap-1 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300`}><ShieldAlert className="w-3.5 h-3.5" aria-hidden="true" /> Freno de escrituras activado</span>}
           {e.automaticasPausadas && <span className={`${CHIP} gap-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300`}><PauseCircle className="w-3.5 h-3.5" aria-hidden="true" /> Automáticas en pausa</span>}
-          {e.visible === false && <span className={`${CHIP} gap-1 bg-zinc-200 dark:bg-zinc-800 text-card-foreground`}><EyeOff className="w-3.5 h-3.5" aria-hidden="true" /> Pestaña en segundo plano</span>}
+          {e.visible === false && <span className={`${CHIP} gap-1 bg-secondary text-card-foreground`}><EyeOff className="w-3.5 h-3.5" aria-hidden="true" /> Pestaña en segundo plano</span>}
         </div>
       )}
     </li>
@@ -228,7 +228,7 @@ export default function EstacionesView({ enPagina = false, onClose }) {
           <section aria-labelledby="estaciones-lista" className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 id="estaciones-lista" className={TITULO_SECCION}>Estaciones</h3>
-              <span className={`text-xs font-bold ${conProblema ? 'text-red-700 dark:text-red-400' : 'text-zinc-500'}`}>{conProblema ? `${conProblema} con algo que revisar` : 'Ninguna con problemas'}</span>
+              <span className={`text-xs font-bold ${conProblema ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground'}`}>{conProblema ? `${conProblema} con algo que revisar` : 'Ninguna con problemas'}</span>
             </div>
             <div className="flex gap-2">
               <ChipFiltro activo={soloEnLinea} onClick={() => setSoloEnLinea(true)}>En línea ({activas.length})</ChipFiltro>
