@@ -8,6 +8,7 @@ import TelefonoAccion from './TelefonoAccion';
 import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
 import NotaTecnico from './NotaTecnico';
+import { devolucionPendiente } from '../utils/devolucion';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
 import InfraestructuraAviso from './InfraestructuraAviso';
 import CancelacionAviso from './CancelacionAviso';
@@ -196,7 +197,7 @@ export default function TicketsMobileList({
             )}
             {/* El tipo de trabajo y la falla van en la cabecera de la tarjeta. */}
             <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
-            <DevolucionAviso ticket={ticket} />
+            <DevolucionAviso ticket={ticket} nota={ticket.observacionTecnico} />
             <CancelacionAviso ticket={ticket} />
             <CobroAviso ticket={ticket} />
             <ConsultaCobroAviso ticket={ticket} onResponder={onResponderCobro} />
@@ -208,7 +209,7 @@ export default function TicketsMobileList({
                 <span className="text-card-foreground leading-tight">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
               </div>
             )}
-            <NotaTecnico texto={ticket.observacionTecnico} />
+            {!devolucionPendiente(ticket) && <NotaTecnico texto={ticket.observacionTecnico} />}
             <PagoDelCliente orden={ticket} tamano="grande" avisarFalta={!isTecnico} />
           </div>
           {/* El técnico solo ve sus propias órdenes: repetir su nombre (y el creador,

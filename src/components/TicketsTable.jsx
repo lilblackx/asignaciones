@@ -1,12 +1,13 @@
 import { observacionParaTecnico } from '../utils/observacion';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Ban, Banknote, Camera, CheckCheck, ClipboardCheck, Clock, Edit, ExternalLink, Flag, HardHat, History, MapPinOff, MessageCircle, MessageSquareText, Navigation, Wrench } from 'lucide-react';
 import { getEnlaceNavegacion, instalacionSinUbicacion } from '../utils/ubicacion';
 import { formatCedula, getEstadoPastel, getEtiquetaDia, getTipoTrabajoEstilo, renderCedulaConSaltos, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
 import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
-import DevolucionAviso from './DevolucionAviso';
+import { DetalleDevolucion, MarcaDevolucion } from './DevolucionAviso';
+import { devolucionPendiente } from '../utils/devolucion';
 import NotaTecnico from './NotaTecnico';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
 import InfraestructuraAviso from './InfraestructuraAviso';
@@ -73,6 +74,10 @@ export default function TicketsTable({
   // Una orden que el técnico pre-finaliza sube a su lugar deslizándose (solo en PC).
   const cuerpo = useRef(null);
   useDeslizarPreFinalizadas(cuerpo, filteredTickets);
+  // El detalle de una orden devuelta (motivo y nota del técnico) se despliega bajo su fila. El técnico lo ve siempre abierto: es lo que tiene que corregir.
+  const [devolucionesAbiertas, setDevolucionesAbiertas] = useState(() => new Set());
+  const devolucionAbierta = (t) => devolucionPendiente(t) && (isTecnico || devolucionesAbiertas.has(t.id));
+  const alternarDevolucion = (id) => setDevolucionesAbiertas((previas) => { const n = new Set(previas); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   // Con orden "más recientes" o por fecha las órdenes de un mismo día quedan
   // juntas: se agrupan bajo un encabezado. Con otros órdenes la fecha va en la fila.
   const agrupado = sortBy === 'DEFECTO' || sortBy === 'FECHA';
@@ -117,7 +122,7 @@ export default function TicketsTable({
                   </td>
                 </tr>
               ),
-              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
+              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border ${devolucionAbierta(ticket) ? 'border-b-transparent' : ''} hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
                 <td className={`px-3 py-3 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex items-center gap-1.5">
@@ -139,7 +144,7 @@ export default function TicketsTable({
                     {!agrupado && <span className="text-[11px] max-lg:text-xs text-muted-foreground">{ticket.fecha}</span>}
                     {ticket.estado === 'PENDIENTE' && renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}
                     <AvisoRevision nombres={revisando?.get(ticket.id)} compact />
-                    <DevolucionAviso ticket={ticket} compact />
+                    <MarcaDevolucion ticket={ticket} id={`devolucion-${ticket.id}`} abierto={devolucionAbierta(ticket)} onAlternar={() => alternarDevolucion(ticket.id)} />
                     <CancelacionAviso ticket={ticket} compact />
                     <CobroAviso ticket={ticket} compact />
                     <ConsultaCobroAviso ticket={ticket} compact onResponder={onResponderCobro} />
@@ -153,7 +158,7 @@ export default function TicketsTable({
                         <span className="line-clamp-2">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
                       </span>
                     )}
-                    <NotaTecnico texto={ticket.observacionTecnico} compact />
+                    {!devolucionPendiente(ticket) && <NotaTecnico texto={ticket.observacionTecnico} compact />}
                     <PagoDelCliente orden={ticket} tamano="compacto" avisarFalta={!isTecnico} />
                   </div>
                 </td>
@@ -275,7 +280,14 @@ export default function TicketsTable({
                     )}
                   </div>
                 </td>
-              </tr>
+              </tr>,
+              devolucionAbierta(ticket) && (
+                <tr key={`devolucion-${ticket._clave || ticket.id}`} className="border-b border-border">
+                  <td colSpan={COLUMNAS} className="px-3 pb-3 pt-0 pl-[8%]">
+                    <DetalleDevolucion ticket={ticket} id={`devolucion-${ticket.id}`} />
+                  </td>
+                </tr>
+              )
             ];
           })}
           {filteredTickets.length === 0 && (
