@@ -8,7 +8,7 @@ export default function PaginaMarco({ titulo, Icono, encabezado, contexto = '', 
   return (
     <div className="flex-1 min-w-0 flex flex-col min-h-dvh">
       <EncabezadoSimple titulo={titulo} icono={Icono} contexto={contexto} {...encabezado} />
-      <main className="flex-1 w-full">{children}</main>
+      <main className="flex-1 w-full animate-fade-in">{children}</main>
       <PieVersion />
     </div>
   );

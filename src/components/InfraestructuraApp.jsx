@@ -154,7 +154,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
 
         <main className={`p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3${verHistorial ? ' hidden' : ''}`}>
           {!cargado ? (
-            <Cargando texto="Cargando instalaciones..." />
+            <Cargando variante="lista" texto="Cargando instalaciones..." />
           ) : error && !actualizadoEn ? (
             <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : (

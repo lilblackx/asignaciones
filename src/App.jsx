@@ -792,7 +792,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           </div>
 
           {/* Al llegar los datos (ticketsCargados) la lista entra con un fundido en vez de aparecer de golpe. */}
-          <div key={String(ticketsCargados)} className="lg:animate-fade-in">
+          <div key={String(ticketsCargados)} className="animate-fade-in">
             <TicketsMobileList
               filteredTickets={visibleTickets}
               canEditTickets={canEditTickets}

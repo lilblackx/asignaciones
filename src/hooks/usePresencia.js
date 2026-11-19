@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 
-// Las salidas animadas solo en PC (lg: 1024 px o más) y sin "reducir movimiento": en los demás casos el elemento se quita al instante,
+// Las salidas animadas valen en celular y en PC, salvo con "reducir movimiento": en ese caso el elemento se quita al instante,
 // sin quedarse a la vista unos milisegundos sin animación.
 export const salidaAnimada = () => typeof window !== 'undefined'
-  && window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)').matches;
+  && window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
 
 // Lo que tarda en plegarse un <Colapsable>; quien quita el contenido de verdad espera este tiempo.
 export const DURACION_PLIEGUE_MS = 200;

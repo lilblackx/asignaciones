@@ -317,16 +317,16 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           ) : error ? (
             <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
-            <Cargando texto="Cargando instalaciones..." />
+            <Cargando variante="lista" texto="Cargando instalaciones..." />
           ) : visibles.length === 0 ? (
             ordenes.length === 0
               ? <EstadoVacio titulo={vista === 'LOS' ? 'Todavía no hay averías LOS' : vista === 'TODO' ? 'Todavía no hay órdenes' : 'Todavía no hay instalaciones'} />
               : <EstadoVacio icono={SearchX} titulo="Ninguna orden coincide con los filtros">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
           ) : formato === 'LISTA' ? (
-            <ListaInstalaciones key={`${categoria}-${vista}-lista`} className="lg:animate-fade-in" ordenes={visibles} onVerPlantilla={setPlantillaDe} mostrarTipo={verTodasInstalaciones} ahora={ahora} />
+            <ListaInstalaciones key={`${categoria}-${vista}-lista`} className="animate-fade-in" ordenes={visibles} onVerPlantilla={setPlantillaDe} mostrarTipo={verTodasInstalaciones} ahora={ahora} />
           ) : (
-            <ul key={`${categoria}-${vista}`} className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 lg:animate-fade-in">
-              {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} onCopy={copiar} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}
+            <ul key={`${categoria}-${vista}`} className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 animate-fade-in">
+              {visibles.map((o, i) => <TarjetaInstalacion key={o.id} indice={i} orden={o} onVerPlantilla={setPlantillaDe} onCopy={copiar} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}
             </ul>
           )}
 

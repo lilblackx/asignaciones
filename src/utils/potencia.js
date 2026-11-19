@@ -23,6 +23,6 @@ export function evaluarPotencia(valor) {
   const v = Number(valor);
   if (Number.isNaN(v)) return null;
   if (v < POTENCIA_MIN_DBM) return { nivel: 'baja', texto: `Señal débil (menor a ${POTENCIA_MIN_DBM} dBm)`, clase: 'text-red-600 dark:text-red-400' };
-  if (v > POTENCIA_MAX_DBM) return { nivel: 'alta', texto: `Señal muy alta (mayor a ${POTENCIA_MAX_DBM} dBm, puede saturar la ONU)`, clase: 'text-amber-600 dark:text-amber-400' };
-  return { nivel: 'ok', texto: `Dentro del rango normal (${POTENCIA_MAX_DBM} a ${POTENCIA_MIN_DBM} dBm)`, clase: 'text-emerald-600 dark:text-emerald-400' };
+  if (v > POTENCIA_MAX_DBM) return { nivel: 'alta', texto: `Señal muy alta (mayor a ${POTENCIA_MAX_DBM} dBm, puede saturar la ONU)`, clase: 'text-amber-700 dark:text-amber-400' };
+  return { nivel: 'ok', texto: `Dentro del rango normal (${POTENCIA_MAX_DBM} a ${POTENCIA_MIN_DBM} dBm)`, clase: 'text-emerald-700 dark:text-emerald-400' };
 }

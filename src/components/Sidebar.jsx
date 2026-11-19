@@ -3,6 +3,7 @@ import { BarChart, Cable, ChevronsLeft, ChevronsRight, ClipboardCheck, Clipboard
 import { ADMINISTRACION_ACTIVA } from '../constants';
 import { logosDeTemporada } from '../utils/temporada';
 import { iniciales } from '../utils/nombreTecnico';
+import { usePresencia } from '../hooks/usePresencia';
 
 const CLAVE_COLAPSADO = 'sidebar-colapsado';
 // Los botones del pie (tema y cerrar sesión): cuadrados redondeados con su propio fondo y borde, no iconos sueltos.
@@ -19,6 +20,8 @@ const guardarColapsado = (valor) => { try { localStorage.setItem(CLAVE_COLAPSADO
 //   activo: el módulo que está a la vista ('oficina', 'revision', 'finanzas', 'almacen' o 'ventas'); los demás son ventanas que se abren encima.
 export default function Sidebar({ acciones, veInventario = false, veEstaciones = false, veUbicacion = false, alertasInventario = 0, abierto = false, activo = 'oficina', nombre = '', rol = '', isDarkMode = true, onCambiarTema, onSalir, onCerrar }) {
   const [colapsado, setColapsado] = useState(leerColapsado);
+  // El menú del celular se desliza al abrir y al cerrar: se mantiene montado mientras dura la salida.
+  const { montado, saliendo } = usePresencia(abierto, 200);
   // El logo de Navidad solo en el menú (y en el login), por fechas; el ícono de la app instalada no cambia (ver utils/temporada).
   const logos = logosDeTemporada();
   // Si la lista de módulos no cabe, un degradado sobre el pie avisa de que sigue hacia abajo (se quita al llegar al final).
@@ -78,10 +81,10 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
 
   return (
     <>
-      {abierto && <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={onCerrar} aria-hidden="true" />}
+      {montado && <div className={`fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden ${saliendo ? 'animate-modal-fondo-salida' : 'animate-modal-fondo'}`} onClick={onCerrar} aria-hidden="true" />}
       <aside
         aria-label="Módulos"
-        className={`${abierto ? 'fixed inset-y-0 left-0 z-40 w-64 flex' : 'hidden'} lg:flex lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:m-4 lg:rounded-card lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-card max-lg:rounded-r-card shadow-card max-lg:overflow-hidden text-foreground overflow-hidden`}
+        className={`${montado ? `fixed inset-y-0 left-0 z-40 w-64 flex ${saliendo ? 'animate-drawer-salida' : 'animate-drawer-entrada'} lg:animate-none` : 'hidden'} lg:flex lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:m-4 lg:rounded-card lg:z-20 lg:shrink-0 lg:transition-[width] lg:duration-200 ${colapsado ? 'lg:w-[4.5rem]' : 'lg:w-60'} flex-col bg-card max-lg:rounded-r-card shadow-card max-lg:overflow-hidden text-foreground overflow-hidden`}
       >
         <div className={`flex items-center justify-between gap-2 px-3 h-16 shrink-0 border-b border-border text-foreground ${colapsado ? 'lg:flex-col lg:justify-center lg:h-auto lg:gap-1 lg:px-2 lg:pt-4 lg:pb-3' : ''}`}>
           <button type="button" onClick={abrir(acciones.inicio)} title="Volver al dashboard principal" aria-label="Network Speed: volver al dashboard principal" className="flex items-center min-w-0 rounded-boton hover:opacity-80 transition-opacity">

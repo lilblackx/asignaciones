@@ -93,7 +93,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
   const estado = ESTADO[estadoDeFila(fila)];
 
   return (
-    <div className="space-y-4 lg:animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       <div>
         {onVolver && <button type="button" onClick={onVolver} className={`${BOTON} mb-3 lg:hidden`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Técnicos</button>}
         <div className="flex flex-wrap items-center gap-3">

@@ -20,7 +20,7 @@ const VALOR = 'text-sm text-foreground mt-0.5 break-words';
 const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded-boton border border-input px-2.5 py-1 text-foreground hover:bg-secondary transition-colors';
 
 // `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
-export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, mostrarTipo = false, ahora }) {
+export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, mostrarTipo = false, ahora, indice = 0 }) {
   const { copiado, copiar } = useCopiado(onCopy);
   const { vista } = orden;
   const esLos = esAveriaLos(orden);
@@ -35,7 +35,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, most
   const motivo = vista.clave === 'CANCELADA' ? motivoCancelacion(orden) : '';
 
   return (
-    <li className="h-full flex flex-col min-w-0 rounded-card border border-transparent bg-card overflow-hidden shadow-card">
+    <li style={{ '--i': indice }} className="entrada-lista h-full flex flex-col min-w-0 rounded-card border border-transparent bg-card overflow-hidden shadow-card">
       {/* Igual que la tarjeta de la oficina: el código y debajo su tipo, y el estado a la derecha; todo con los mismos márgenes de 20 px. */}
       <div className="px-5 pt-5 pb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">

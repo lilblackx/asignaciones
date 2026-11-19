@@ -170,7 +170,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
 
         <main className="p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
           {!cargado && !error ? (
-            <Cargando texto="Cargando cobros..." />
+            <Cargando variante="lista" texto="Cargando cobros..." />
           ) : error && !cargado ? (
             <Aviso nivel="error" titulo="No se pudieron cargar los cobros">Revisa tu conexión e intenta de nuevo.</Aviso>
           ) : (
@@ -225,8 +225,8 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                 <>
                   {/* Celular: una tarjeta por cobro. */}
                   <ul className="md:hidden flex flex-col gap-2">
-                    {filas.map((c) => (
-                      <li key={c.id} className="rounded-card border border-transparent bg-card p-3 space-y-2 shadow-card">
+                    {filas.map((c, i) => (
+                      <li key={c.id} style={{ '--i': i }} className="entrada-lista rounded-card border border-transparent bg-card p-3 space-y-2 shadow-card">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-black text-sm">{c.codigo || 'S/C'} <span className="font-bold">· {c.nombre}</span></p>

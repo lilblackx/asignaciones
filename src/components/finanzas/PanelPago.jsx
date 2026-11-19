@@ -39,7 +39,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
   const texto = (campo) => (error?.campo === campo ? error.texto : '');
 
   return (
-    <div className="space-y-4 lg:animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       <div>
         <button type="button" onClick={onVolver} disabled={ocupado} className={`${BOTON} mb-3`}><ArrowLeft className="w-5 h-5" aria-hidden="true" /> Volver al detalle</button>
         <div className="flex flex-wrap items-center gap-3">

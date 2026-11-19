@@ -28,7 +28,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
     <div>
       <Pestanas className="mb-4" ariaLabel="Hoja del registro" opciones={HOJAS.map(({ id, nombre }) => ({ id, etiqueta: nombre }))} valor={hojaId} onCambiar={(id) => { setHojaId(id); setDetalle(null); }} />
 
-      <div key={hojaId} className="lg:animate-fade-in">
+      <div key={hojaId} className="animate-fade-in">
       {manual ? <VnTaView {...vnta} tecnico={tecnico} /> : (
       <>
       <Cifras items={hoja.cifras.map((c) => (c.id ? { ...c, detalle: c.detalle ? `${c.detalle} · ver detalle` : 'ver detalle', onClick: () => setDetalle({ tipo: 'CIFRA', id: c.id }) } : c))} />

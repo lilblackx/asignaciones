@@ -55,7 +55,7 @@ export default function RowMenu({ label, items, grande = false }) {
       {montado && pos && (
         <>
           <div className={`fixed inset-0 z-40${saliendo ? ' pointer-events-none' : ''}`} onClick={() => setAbierto(false)} aria-hidden="true" />
-          <div role="menu" style={pos} className={`fixed z-50 ${grande ? 'min-w-[14rem] p-1.5' : 'min-w-[9rem] py-1'} bg-card border border-input rounded-card shadow-xl text-left ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'} shadow-card`}>
+          <div role="menu" style={pos} className={`fixed z-50 ${grande ? 'min-w-[14rem] p-1.5' : 'min-w-[9rem] py-1'} bg-card border border-input rounded-card shadow-xl text-left ${saliendo ? 'animate-menu-salida pointer-events-none' : 'animate-menu-entrada'} shadow-card`}>
             {items.map(({ label: texto, icon: Icon, onClick, danger, disabled = false, titulo }) => (
               <button
                 key={texto}

@@ -52,7 +52,7 @@ export default function CampoFecha({ id, valor, onChange, min, max, ariaLabel, v
         <CalendarDays className={grande ? 'w-6 h-6 shrink-0' : 'w-4 h-4 shrink-0'} aria-hidden="true" />
       </button>
       {flotante
-        ? abierto && <div className={`absolute ${derecha ? 'right-0' : 'left-0'} top-full mt-1 z-[300] ${grande ? 'w-[min(22rem,calc(100vw-2rem))] lg:w-80' : 'w-72'} lg:animate-menu-entrada`}>{calendario}</div>
+        ? abierto && <div className={`absolute ${derecha ? 'right-0' : 'left-0'} top-full mt-1 z-[300] ${grande ? 'w-[min(22rem,calc(100vw-2rem))] lg:w-80' : 'w-72'} animate-menu-entrada`}>{calendario}</div>
         : <Colapsable>{abierto && <div className="mt-2">{calendario}</div>}</Colapsable>}
     </div>
   );

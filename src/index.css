@@ -181,6 +181,8 @@
   --animate-crecer-y: crecer-y 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-paso-adelante: paso-adelante 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-paso-atras: paso-atras 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-drawer-entrada: drawer-entrada 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-drawer-salida: drawer-salida 0.2s ease-in forwards;
 
   /* Cambio de paso de un asistente (ver components/Pasos.jsx): el contenido nuevo entra deslizándose desde el lado hacia el que se avanza. */
   @keyframes paso-adelante {
@@ -188,6 +190,13 @@
   }
   @keyframes paso-atras {
     from { opacity: 0; transform: translateX(-28px); }
+  }
+  /* El menú lateral del celular: entra deslizándose desde la izquierda y sale hacia ella. */
+  @keyframes drawer-entrada {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes drawer-salida {
+    to { transform: translateX(-100%); }
   }
   @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(8px); }
@@ -393,4 +402,37 @@ input[type="search"]::-webkit-search-decoration {
     [role="switch"], input[type="checkbox"], input[type="radio"] { position: relative; }
     [role="switch"]::after, input[type="checkbox"]::after, input[type="radio"]::after { content: ""; position: absolute; inset: -0.75rem; }
   }
+}
+
+/* Movimiento de la app (ver DESIGN.md, "Movimiento"): corto (150 a 250 ms), con la misma curva, en celular y en PC, y apagado con "reducir movimiento".
+   --curva: sale rápido y frena suave (la misma de los pasos de un asistente y de las barras de los reportes). */
+:root { --curva: cubic-bezier(0.22, 1, 0.36, 1); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Las tarjetas y filas de una lista entran subiendo y apareciendo, una tras otra (solo las primeras ocho: el resto entra junto, para no hacer esperar ni cargar de más a un teléfono modesto).
+     `--i` es la posición de la tarjeta en la lista. Solo al montarse; no se repite cuando llega un dato en vivo a otra tarjeta. */
+  .entrada-lista {
+    animation: entrada-lista 0.26s var(--curva) backwards;
+    animation-delay: calc(min(var(--i, 0), 7) * 40ms);
+  }
+  /* Lo que se toca responde con suavidad: color, fondo, borde, sombra y el encogido al pulsar. Las clases propias de Tailwind (transition-colors, etc.) mandan sobre esto. */
+  @layer base {
+    :where(button, [role="button"], [role="tab"], [role="switch"], a, input, select, textarea, summary) {
+      transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+      transition-duration: 150ms;
+      transition-timing-function: var(--curva);
+    }
+  }
+}
+@keyframes entrada-lista {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+/* Esqueleto de carga: barras grises que laten suave donde va a ir el contenido (ver components/Cargando, variante "lista"). */
+.esqueleto { background-color: var(--secondary); border-radius: 0.5rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .esqueleto { animation: esqueleto 1.4s ease-in-out infinite; }
+}
+@keyframes esqueleto {
+  50% { opacity: 0.55; }
 }

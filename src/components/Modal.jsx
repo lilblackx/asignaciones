@@ -26,12 +26,12 @@ const MINIMO_PARA_ANIMAR_MS = 50;
 function animarSalida(overlay) {
   const contenedor = overlay.parentNode;
   const fantasma = overlay.cloneNode(true);
-  fantasma.classList.remove('lg:animate-modal-fondo');
+  fantasma.classList.remove('animate-modal-fondo');
   fantasma.classList.add('animate-modal-fondo-salida', 'pointer-events-none');
   fantasma.setAttribute('aria-hidden', 'true');
   fantasma.inert = true;
   const panel = fantasma.querySelector('[role="dialog"]');
-  panel?.classList.remove('lg:animate-modal-panel');
+  panel?.classList.remove('animate-modal-panel');
   panel?.removeAttribute('role');
   panel?.classList.add('animate-modal-panel-salida');
   // Los ids repetidos romperían los label y los focus de un modal que se abra a la vez.
@@ -177,8 +177,8 @@ function VentanaModal({ onClose, onVolver, zIndexClass = 'z-50', completa = fals
   }, []);
 
   return (
-    <div ref={overlayRef} className={`fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center ${zIndexClass} p-4${completa ? ' lg:p-0' : ''} lg:animate-modal-fondo`} role="presentation">
-      <div ref={panelRef} role="dialog" aria-modal="true" className="flex w-full min-w-0 justify-center lg:animate-modal-panel">
+    <div ref={overlayRef} className={`fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center ${zIndexClass} p-4${completa ? ' lg:p-0' : ''} animate-modal-fondo`} role="presentation">
+      <div ref={panelRef} role="dialog" aria-modal="true" className="flex w-full min-w-0 justify-center animate-modal-panel">
         {children}
       </div>
     </div>

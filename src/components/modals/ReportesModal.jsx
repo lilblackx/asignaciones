@@ -256,7 +256,7 @@ export default function ReportesModal({
               Los datos de Reportes se actualizan cada 15 minutos{reporte.usaLog || reporte.usaTotales ? '; usa Actualizar para ver lo último' : ''}.
             </p>
             {errorExportar && <Aviso nivel="error" compact className="mb-4">{errorExportar}</Aviso>}
-            <div key={reporteId} className="lg:animate-fade-in">
+            <div key={reporteId} className="animate-fade-in">
               {reporteId === 'RESUMEN' && <ResumenEjecutivoView ordenes={ordenes} eventos={logTecnicos.eventos} contadores={totalesMensuales.contadores} tickets={tickets} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'REGISTRO' && <RegistroEstadisticasView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} onDetalleAbierto={setDetalleAbierto} vnta={{ ...vnta, tecnicos: nombresTecnicos, hoy, puedeBorrar: (r) => esAdmin || r.creadoPor === usuario }} />}
               {reporteId === 'CAUSAS' && <CausasAveriaView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} />}

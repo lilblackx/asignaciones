@@ -268,7 +268,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   Comienza a contar a partir del {textoFechaCorte()}: lo anterior de este periodo no se muestra.
                 </p>
               )}
-              <div key={seccion} className="lg:animate-fade-in space-y-4">
+              <div key={seccion} className="animate-fade-in space-y-4">
               {seccion === 'PAGOS' && (
                 <TecnicosFinanzas
                   filas={filasPagos}

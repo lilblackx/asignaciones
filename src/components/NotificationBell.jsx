@@ -94,7 +94,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
       </button>
 
       {montado && (
-        <div className={`fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-96 sm:max-w-[92vw] bg-card border border-border rounded-card shadow-2xl overflow-hidden z-20 ${saliendo ? 'lg:animate-menu-salida pointer-events-none' : 'lg:animate-menu-entrada'}`}>
+        <div className={`fixed inset-x-2 top-14 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 max-w-none sm:w-96 sm:max-w-[92vw] bg-card border border-border rounded-card shadow-2xl overflow-hidden z-20 ${saliendo ? 'animate-menu-salida pointer-events-none' : 'animate-menu-entrada'}`}>
           <div className="px-4 pt-3.5 pb-2 flex items-center justify-between gap-2">
             <span className="text-sm font-black text-foreground">Notificaciones</span>
             {notifications.length > 0 && (

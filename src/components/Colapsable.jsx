@@ -13,7 +13,7 @@ export default function Colapsable({ children, animarAlMontar = true }) {
 
   if (!montado) return null;
   return (
-    <div className={`grid grid-cols-[minmax(0,1fr)] grid-rows-[1fr] ${saliendo ? 'colapsable-salida lg:animate-aviso-salida' : animarAlMontar ? 'colapsable-entrada lg:animate-aviso-entrada' : ''}`}>
+    <div className={`grid grid-cols-[minmax(0,1fr)] grid-rows-[1fr] ${saliendo ? 'colapsable-salida animate-aviso-salida' : animarAlMontar ? 'colapsable-entrada animate-aviso-entrada' : ''}`}>
       <div className="min-h-0 min-w-0">{children || ultimo}</div>
     </div>
   );
