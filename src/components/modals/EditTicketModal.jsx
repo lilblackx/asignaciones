@@ -448,8 +448,9 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
             <>
               {pideCobroAcordado && (
                 <CobroAcordadoField
+                  suave
                   idPrefix="ed"
-                  wrapperClassName="col-span-2 space-y-0.5"
+                  wrapperClassName="col-span-2 space-y-1"
                   value={cobroSel}
                   onChange={setCobroSel}
                   error={intentoCobro ? cobroResuelto?.error || '' : ''}
