@@ -3,48 +3,54 @@ import { TIPOS_TRABAJO } from '../../constants';
 import SelectMenu from '../SelectMenu';
 import BuscadorOrden from '../BuscadorOrden';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
-import { CAMPO_ORDEN, SELECTOR_ORDEN, SELECTOR_TECNICO_ORDEN, SELECTOR_TIPO_DOC_ORDEN } from '../estilos';
+import { CAMPO_ORDEN, SELECTOR_ORDEN, SELECTOR_TECNICO_ORDEN, SELECTOR_TIPO_DOC_ORDEN, claseCampo } from '../estilos';
+import { legible } from '../../utils/nombreTecnico';
+import { oracion } from '../../utils/oracion';
 
 // Estilos por variante: 'create' (CreateTicketModal) y 'edit' (EditTicketModal).
 // Los campos (CAMPOS) son los mismos en los dos: vienen de estilos.js. Aquí solo quedan las etiquetas y los textos que sí difieren.
 const CAMPOS = { selectTipoDoc: SELECTOR_TIPO_DOC_ORDEN, inputCedula: CAMPO_ORDEN, selectTecnico: SELECTOR_TECNICO_ORDEN, selectTipoTrabajo: SELECTOR_ORDEN, textarea: CAMPO_ORDEN };
+// 'create' va con etiquetas en minúscula normal (solo la primera letra en mayúscula), como pide DESIGN.md; 'edit' conserva las mayúsculas de siempre.
 const STYLES = {
   create: {
     ...CAMPOS,
-    label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
-    labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
-    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
-    hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
-    checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
+    label: 'text-xs font-bold text-muted-foreground ml-1',
+    labelObs: 'text-xs font-bold text-muted-foreground',
+    labelObsInterna: 'flex items-center gap-1.5 max-lg:min-h-11 text-xs font-bold text-muted-foreground cursor-pointer',
+    hint: 'text-xs text-muted-foreground ml-1',
+    checkbox: 'w-4 h-4 accent-red-600',
   },
   edit: {
     ...CAMPOS,
-    label: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1',
-    labelObs: 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400',
-    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer',
-    hint: 'text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1',
+    label: 'text-etiqueta font-bold text-muted-foreground ml-1',
+    labelObs: 'text-etiqueta font-bold text-muted-foreground',
+    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-etiqueta font-bold text-muted-foreground cursor-pointer',
+    hint: 'text-etiqueta text-muted-foreground ml-1',
     checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
 };
 
 const TIPOS_DOCUMENTO = ['V', 'E', 'J', 'G'].map(v => ({ value: v, label: v }));
-const TIPOS_TRABAJO_ITEMS = TIPOS_TRABAJO.map(t => ({ value: t, label: t }));
+const TIPOS_TRABAJO_ITEMS = TIPOS_TRABAJO.map(t => ({ value: t, label: oracion(t) }));
 
 // Formatea cédula/RIF con separador de miles, solo dígitos.
 function formatCedulaValue(rawValue) {
   return rawValue.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-// `extra`: controles opcionales a la derecha del campo (p. ej. el estado de SmartOLT).
-export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento, cedula, onChange, disabled = false, extra = null, dentro = null }) {
+// `extra`: controles opcionales a la derecha del campo (p. ej. el estado de SmartOLT). `error`: el aviso en texto junto al campo (solo la variante 'create').
+export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento, cedula, onChange, disabled = false, extra = null, dentro = null, error = '' }) {
   const s = STYLES[variant];
+  const nuevo = variant === 'create';
   const handleCedulaChange = (e) => {
     e.target.value = formatCedulaValue(e.target.value);
     onChange(e);
   };
   return (
     <div className={wrapperClassName}>
-      <label htmlFor={`${idPrefix}-cedula`} className={s.label}>CÉDULA / RIF<span className="text-red-600 dark:text-red-400"> *</span></label>
+      <label htmlFor={`${idPrefix}-cedula`} className={s.label}>
+        {nuevo ? <>Cédula / RIF<span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span></> : <>Cédula / RIF<span className="text-red-700 dark:text-red-400"> *</span></>}
+      </label>
       <div className="flex gap-1">
         <div className="shrink-0">
           <SelectMenu
@@ -69,13 +75,16 @@ export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento
             name="cedula"
             value={cedula}
             onChange={handleCedulaChange}
-            className={s.inputCedula}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? `${idPrefix}-cedula-error` : undefined}
+            className={error ? claseCampo('compacto', 'error') : s.inputCedula}
             style={dentro ? { paddingRight: '2.25rem' } : undefined}
           />
           {dentro}
         </div>
         {extra}
       </div>
+      {error && <p id={`${idPrefix}-cedula-error`} role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1 mt-0.5">{error}</p>}
     </div>
   );
 }
@@ -84,7 +93,7 @@ export function TecnicoField({ variant, wrapperClassName, idPrefix, label, value
   const s = STYLES[variant];
   const tecnicoItems = [
     { value: '', label: emptyOptionLabel },
-    ...technicians.map(t => ({ value: t.name, label: showSuggestion && t.name === turnoSugerido ? `${t.name} (turno sugerido)` : t.name }))
+    ...technicians.map(t => ({ value: t.name, label: showSuggestion && t.name === turnoSugerido ? `${legible(t.name)} (turno sugerido)` : legible(t.name) }))
   ];
   return (
     <div className={wrapperClassName}>
@@ -107,7 +116,7 @@ export function TipoTrabajoField({ variant, wrapperClassName, idPrefix, value, o
   const s = STYLES[variant];
   return (
     <div className={wrapperClassName}>
-      <label htmlFor={`${idPrefix}-tipo`} className={s.label}>TRABAJO</label>
+      <label htmlFor={`${idPrefix}-tipo`} className={s.label}>{variant === 'create' ? 'Trabajo' : 'Trabajo'}</label>
       <SelectMenu
         id={`${idPrefix}-tipo`}
         ariaLabel="Trabajo"
@@ -144,7 +153,7 @@ export function ObservacionTecnicoField({ wrapperClassName, idPrefix, value, onC
   const s = STYLES.edit;
   return (
     <div className={wrapperClassName}>
-      <label htmlFor={`${idPrefix}-observacion-tecnico`} className={`${s.labelObs} ml-1 block`}>OBSERVACIÓN DEL TÉCNICO</label>
+      <label htmlFor={`${idPrefix}-observacion-tecnico`} className={`${s.labelObs} ml-1 block`}>Observación del técnico</label>
       <textarea id={`${idPrefix}-observacion-tecnico`} name="observacionTecnico" maxLength="300" value={value} onChange={onChange} rows="2" className={s.textarea}></textarea>
       <p className={s.hint}>Detalles del trabajo que escribió el técnico al pre-finalizar. No sale en la plantilla de WhatsApp.</p>
     </div>
@@ -162,17 +171,18 @@ export function TurnoSugeridoBanner({ wrapperClassName, turnoSugerido }) {
 
 // "Garantía de otro técnico": la orden se hace de nuevo porque lo que hizo otro técnico falló. Marcar el check pide elegir la orden original (con el buscador); al revisar la orden, el administrador
 // decide si le descuenta algo al técnico de esa original. `value`: la garantía ({ id, codigo, tecnico, cliente }; sin id = marcada pero sin elegir) o null; `onChange(valor | null)`.
-export function GarantiaField({ wrapperClassName, idPrefix, value, onChange, ordenes, idOrden = '', tecnico = '', cedula = '', disabled = false }) {
+// `suave`: sin la caja con borde que la hacía parecer un campo; solo la casilla, y el buscador dentro de un bloque tenue al marcarla (lo usa la orden nueva).
+export function GarantiaField({ wrapperClassName, idPrefix, value, onChange, ordenes, idOrden = '', tecnico = '', cedula = '', disabled = false, suave = false }) {
   const marcada = Boolean(value);
   return (
-    <div className={`${wrapperClassName} rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-2`}>
-      <label htmlFor={`${idPrefix}-garantia`} className="flex items-center gap-2 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-zinc-800 dark:text-zinc-100 cursor-pointer">
+    <div className={`${wrapperClassName} ${suave ? 'space-y-1' : 'rounded border border-border px-2.5 py-2 space-y-2'}`}>
+      <label htmlFor={`${idPrefix}-garantia`} className={`flex items-center gap-2 max-lg:min-h-11 font-bold text-foreground cursor-pointer ${suave ? 'text-sm' : 'text-etiqueta'}`}>
         <input id={`${idPrefix}-garantia`} type="checkbox" checked={marcada} disabled={disabled} onChange={(e) => onChange(e.target.checked ? { id: '' } : null)} className="w-3.5 h-3.5 max-lg:w-4 max-lg:h-4 accent-red-600" />
         Garantía de otro técnico
       </label>
       {marcada && (
-        <div className="space-y-1">
-          <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">Elige la orden original que falló. Al revisar esta orden se decide si se le descuenta algo a su técnico.</p>
+        <div className={suave ? 'space-y-1 rounded-campo bg-secondary/60 p-3' : 'space-y-1'}>
+          <p className="text-etiqueta text-muted-foreground">Elige la orden original que falló. Al revisar esta orden se decide si se le descuenta algo a su técnico.</p>
           <BuscadorOrden
             id={`${idPrefix}-garantia-orden`}
             etiqueta="Orden original de la garantía"

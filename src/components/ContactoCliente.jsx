@@ -3,7 +3,7 @@ import { parseTelefonos, getEnlaceLlamada, getEnlaceWhatsApp } from '../utils/te
 import TelefonoAccion from './TelefonoAccion';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap } from '../utils/ubicacion';
 
-const base = 'flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-colors';
+const base = 'flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-campo text-xs font-bold transition-colors';
 
 // Accesos rápidos al cliente de una orden, para usar dentro de los modales:
 // cómo llegar (ubicación), llamar y WhatsApp (teléfono). Llamar y WhatsApp solo
@@ -28,7 +28,7 @@ export default function ContactoCliente({ telefono, ubicacion, napCoordenadas, n
           <Network className="w-4 h-4 shrink-0" aria-hidden="true" /> <span className="truncate">NAP</span>
         </a>
       )}
-      <TelefonoAccion telefono={telefono} tipo="llamar" nombre={nombre} className={`${base} lg:hidden bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700`} />
+      <TelefonoAccion telefono={telefono} tipo="llamar" nombre={nombre} className={`${base} lg:hidden bg-secondary text-foreground hover:bg-accent`} />
       <TelefonoAccion telefono={telefono} tipo="chat" nombre={nombre} className={`${base} lg:hidden bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50`} />
     </div>
   );

@@ -15,11 +15,14 @@ import PagoDelCliente from '../PagoDelCliente';
 import CobroClienteDetalle from '../CobroClienteDetalle';
 import FotosDeOrden from '../FotosDeOrden';
 import { fotosDe } from '../../utils/detallesOrden';
+import Aviso from '../Aviso';
+import { legible } from '../../utils/nombreTecnico';
+import { oracion } from '../../utils/oracion';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
-const ETIQUETA = 'text-xs font-semibold text-zinc-600 dark:text-zinc-300';
-const VALOR = 'text-sm text-zinc-900 dark:text-zinc-50 mt-0.5 break-words';
+const ETIQUETA = 'text-xs font-bold text-muted-foreground';
+const VALOR = 'text-sm text-foreground mt-0.5 break-words';
 
 function Dato({ etiqueta, children }) {
   return (
@@ -46,7 +49,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
   // Una orden ya pagada muestra lo que se le pagó; una por pagar, el precio de hoy.
   const precio = item.pagada ? item.monto : tarifas[concepto] || 0;
   const terminada = culminadaEn(orden) || Number(orden.finalizadoEn) || 0;
-  const trabajo = [orden.tipoTrabajo, orden.falla].filter(Boolean).join(' · ');
+  const trabajo = [oracion(orden.tipoTrabajo), orden.falla].filter(Boolean).join(' · ');
 
   // Garantías de otro técnico ligadas a esta orden: lo que se le descuenta (si es la original) o lo que se le paga (si es la garantía).
   const delDescuento = ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave);
@@ -62,11 +65,11 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
 
   return (
     <VentanaFinanzas titulo={orden.codigo || 'S/C'} estado={{ texto: registro ? 'Registro' : item.pagada ? 'Pagada' : 'Por pagar', clase: item.pagada ? 'bg-emerald-700 text-white' : 'bg-amber-400 text-black' }} onClose={onClose} pie={pie} zIndexClass="z-[70]">
-          <p className="text-lg font-bold text-zinc-900 dark:text-white break-words -mb-1">{orden.nombre || 'Sin nombre'} <InsigniaJM orden={orden} className="ml-1" /></p>
+          <p className="text-lg font-bold text-foreground break-words -mb-1">{orden.nombre || 'Sin nombre'} <InsigniaJM orden={orden} className="ml-1" /></p>
           {registro ? (
             <div className="grid grid-cols-2 gap-4">
               <Dato etiqueta="Trabajo realizado">{TRABAJOS_VNTA[registro.trabajo]?.nombre}</Dato>
-              <Dato etiqueta="Técnico que apoyó">{registro.tecnico}</Dato>
+              <Dato etiqueta="Técnico que apoyó">{legible(registro.tecnico)}</Dato>
               <Dato etiqueta="Fecha">{fechaLegible(registro.fecha)}</Dato>
               <Dato etiqueta="Registrado por">{registro.operador}</Dato>
             </div>
@@ -74,7 +77,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           <div className="grid grid-cols-2 gap-4">
             <Dato etiqueta="Cliente">{orden.nombre}</Dato>
             <Dato etiqueta="Cédula">{formatearCedula(orden.cedula, orden.tipoDocumento)}</Dato>
-            <Dato etiqueta="Técnico">{orden.tecnico}</Dato>
+            <Dato etiqueta="Técnico">{legible(orden.tecnico)}</Dato>
             <Dato etiqueta="Terminada">{terminada ? fechaHoraLegible(terminada) : ''}</Dato>
             <Dato etiqueta="Trabajo">{trabajo}</Dato>
             <Dato etiqueta="Tipo de visita">{etiquetaTipoVisita(orden.tipoVisita)}</Dato>
@@ -84,7 +87,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           )}
 
           {!registro && (esInstalacion(orden.tipoTrabajo) || esCambioDeEquipo(orden)) && (
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
+            <div className="rounded-campo border border-border px-3 py-2.5 space-y-1.5">
               <p className={ETIQUETA}>{esInstalacion(orden.tipoTrabajo) ? 'Cobro al cliente por la instalación' : 'Cobro al cliente por el cambio de equipo'}</p>
               <CobroClienteDetalle ticketId={orden.id ?? item.clave} paraFinanzas />
             </div>
@@ -93,34 +96,28 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           {!registro && <PagoDelCliente orden={orden} bloque paraFinanzas={!verTodoPago} />}
 
           {!registro && fotosDe(orden).length > 0 && (
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 space-y-1.5">
+            <div className="rounded-campo border border-border px-3 py-2.5 space-y-1.5">
               <p className={ETIQUETA}>Detalles de la orden (fotos del técnico)</p>
               <FotosDeOrden ticket={orden} />
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3 rounded-campo bg-secondary border border-border px-3 py-2.5">
             <div className="min-w-0">
               <p className={ETIQUETA}>{item.pagada ? 'Se le pagó al técnico como' : 'Se le paga al técnico como'}</p>
-              <p className="text-base font-bold text-zinc-900 dark:text-white">{grupoDePago(concepto)}{TIPO_DE_AVERIA[concepto] ? ` · ${TIPO_DE_AVERIA[concepto]}` : ''}</p>
+              <p className="text-base font-bold text-foreground">{grupoDePago(concepto)}{TIPO_DE_AVERIA[concepto] ? ` · ${TIPO_DE_AVERIA[concepto]}` : ''}</p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-xl font-bold text-zinc-900 dark:text-white tabular-nums whitespace-nowrap leading-tight">{dolares(precio)}</p>
-              {tasa > 0 && <p className="text-base font-bold text-zinc-700 dark:text-zinc-200 tabular-nums whitespace-nowrap">{bolivares(aBs(precio, tasa))}</p>}
+              <p className="text-xl font-bold text-foreground tabular-nums whitespace-nowrap leading-tight">{dolares(precio)}</p>
+              {tasa > 0 && <p className="text-base font-bold text-foreground tabular-nums whitespace-nowrap">{bolivares(aBs(precio, tasa))}</p>}
             </div>
           </div>
 
           {garantiaDe && (
-            <div className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-100">
-              <p className="font-bold">Garantía de otro técnico</p>
-              <p>De la orden {garantiaDe.codigo || 's/c'} ({garantiaDe.tecnico}).{dePago.length > 0 ? ` Se le paga ${dolares(dePago[0].monto)} al técnico de esta garantía, descontados de la orden original; esta orden no se paga como orden.` : ''}</p>
-            </div>
+            <Aviso nivel="atencion" titulo="Garantía de otro técnico">De la orden {garantiaDe.codigo || 's/c'} ({garantiaDe.tecnico}).{dePago.length > 0 ? ` Se le paga ${dolares(dePago[0].monto)} al técnico de esta garantía, descontados de la orden original; esta orden no se paga como orden.` : ''}</Aviso>
           )}
           {delDescuento.map((a) => (
-            <div key={a.id} className="rounded-xl border border-sky-500 bg-sky-50 dark:bg-sky-950/30 px-3 py-2.5 text-sm text-sky-900 dark:text-sky-100">
-              <p className="font-bold">Descuento por garantía: − {dolares(a.monto)}</p>
-              <p>Por la garantía {a.codigo || 's/c'} hecha por {a.a}. A esta orden le quedan {dolares(Math.max(0, precio - a.monto))} de los {dolares(precio)}.{Number(a.aplicado) > 0 ? ` Ya se descontó ${dolares(a.aplicado)} en un pago.` : ''}</p>
-            </div>
+            <Aviso key={a.id} nivel="info" titulo={`Descuento por garantía: − ${dolares(a.monto)}`}>Por la garantía {a.codigo || 's/c'} hecha por {a.a}. A esta orden le quedan {dolares(Math.max(0, precio - a.monto))} de los {dolares(precio)}.{Number(a.aplicado) > 0 ? ` Ya se descontó ${dolares(a.aplicado)} en un pago.` : ''}</Aviso>
           ))}
 
           {orden.observacion && <Dato etiqueta="Observación">{orden.observacion}</Dato>}

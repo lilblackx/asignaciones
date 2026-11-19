@@ -4,6 +4,7 @@ import { ETIQUETA } from './estilos';
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
 import { faltaElPago } from '../utils/pagoCliente';
 import { TIPO_PAGO, avisosDePago, lineaDePago, pagoClienteDe, pagoVisibleEnFinanzas } from '../utils/pagoEnOrden';
+import { EtiquetaFalta } from './FaltaPorCompletar';
 
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
@@ -14,7 +15,7 @@ const TONO = {
   info: { linea: 'text-sky-800 dark:text-sky-300', caja: 'border-sky-600 bg-sky-50 dark:bg-sky-950/30' },
 };
 const tonoDe = (p) => (p.tipo === TIPO_PAGO.JUNTO ? 'info' : p.tipo === TIPO_PAGO.DESPUES || avisosDePago(p).length > 0 ? 'atencion' : 'ok');
-const TAMANO = { normal: 'text-xs', compacto: 'text-[11px] max-lg:text-xs', grande: 'text-sm' };
+const TAMANO = { normal: 'text-xs', compacto: 'text-etiqueta', grande: 'text-sm' };
 
 // Referencia del pago con su botón para copiarla (para buscarla en el banco o pegarla donde haga falta).
 function FilaCopiable({ etiqueta, valor }) {
@@ -27,8 +28,8 @@ function FilaCopiable({ etiqueta, valor }) {
     <div className="min-w-0">
       <p className={ETIQUETA}>{etiqueta}</p>
       <div className="mt-0.5 flex items-center justify-between gap-3">
-        <p className="min-w-0 text-base font-black tracking-wide text-zinc-900 dark:text-white break-all">{valor}</p>
-        <button type="button" onClick={copiar} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="shrink-0 inline-flex items-center justify-center gap-1.5 h-10 min-w-[6.25rem] px-3 rounded-xl border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400">
+        <p className="min-w-0 text-base font-black tracking-wide text-foreground break-all">{valor}</p>
+        <button type="button" onClick={copiar} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="shrink-0 inline-flex items-center justify-center gap-1.5 h-10 min-w-[6.25rem] px-3 rounded-boton border border-border text-foreground text-xs font-bold hover:bg-secondary active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400">
           {copiado ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />} {copiado ? 'Copiado' : 'Copiar'}
         </button>
       </div>
@@ -41,7 +42,7 @@ function Fila({ etiqueta, children }) {
   return (
     <div className="min-w-0">
       <p className={ETIQUETA}>{etiqueta}</p>
-      <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{children}</p>
+      <p className="text-sm font-bold text-foreground break-words">{children}</p>
     </div>
   );
 }
@@ -55,7 +56,7 @@ export function FichaDelPago({ pago: p, copiable = false }) {
     <div className="space-y-2.5">
       {p.tipo === TIPO_PAGO.PAGO ? (
         <>
-          <p className="text-2xl font-black text-zinc-900 dark:text-white leading-tight break-words">{textoMonto(formatoMontoBs(Number(p.pago.monto) || 0), p.pago.moneda)}</p>
+          <p className="text-2xl font-black text-foreground leading-tight break-words">{textoMonto(formatoMontoBs(Number(p.pago.monto) || 0), p.pago.moneda)}</p>
           <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
             <Fila etiqueta="Forma de pago">{p.pago.forma}</Fila>
             <Fila etiqueta="Banco">{p.pago.banco}</Fila>
@@ -66,7 +67,7 @@ export function FichaDelPago({ pago: p, copiable = false }) {
           </div>
         </>
       ) : (
-        <p className="text-base font-black text-zinc-900 dark:text-white break-words">{lineaDePago(p)}</p>
+        <p className="text-base font-black text-foreground break-words">{lineaDePago(p)}</p>
       )}
       {avisos.map((a) => <p key={a} role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">{a}</p>)}
       {p.nota && <div className="min-w-0"><Fila etiqueta={p.aNombreDelTecnico ? 'Por qué lo registró la oficina' : p.tipo === TIPO_PAGO.PAGO ? 'Nota del técnico' : 'Nota'}>{p.nota}</Fila></div>}
@@ -81,16 +82,16 @@ export default function PagoDelCliente({ orden, bloque = false, tamano = 'normal
   const p = pagoClienteDe(orden);
   // `avisarFalta` (las listas de órdenes): una orden finalizada que debe pago y todavía no lo tiene lo dice, para que se vea cuáles están pendientes de registrarlo.
   if (!p && avisarFalta && !paraFinanzas && faltaElPago(orden)) {
-    return <div className={`min-w-0 break-words font-bold ${TAMANO[tamano]} ${TONO.atencion.linea} ${className}`}>Falta registrar el pago del cliente</div>;
+    return <div className={className}><EtiquetaFalta texto="Falta pago" completo="Falta registrar el pago del cliente" /></div>;
   }
   if (!p || (paraFinanzas && !pagoVisibleEnFinanzas(orden))) return null;
   const tono = TONO[tonoDe(p)];
   if (bloque) {
     return (
-      <div className={`rounded-xl border px-3 py-2.5 ${tono.caja} ${className}`}>
-        <p className="text-sm font-black text-zinc-900 dark:text-white">Pago del cliente <span className="font-bold text-zinc-700 dark:text-zinc-300">({p.aNombreDelTecnico ? `registrado por la oficina (${p.registradoPor || 'administrador'}) a nombre de ${orden.tecnico || 'el técnico'}` : `registrado por ${orden.tecnico || p.registradoPor || 'el técnico'}`})</span></p>
+      <div className={`rounded-campo border px-3 py-2.5 ${tono.caja} ${className}`}>
+        <p className="text-sm font-black text-foreground">Pago del cliente <span className="font-bold text-card-foreground">({p.aNombreDelTecnico ? `registrado por la oficina (${p.registradoPor || 'administrador'}) a nombre de ${orden.tecnico || 'el técnico'}` : `registrado por ${orden.tecnico || p.registradoPor || 'el técnico'}`})</span></p>
         <div className="mt-2"><FichaDelPago pago={p} copiable /></div>
-        <p className="mt-2 text-xs text-zinc-700 dark:text-zinc-300">
+        <p className="mt-2 text-xs text-card-foreground">
           {p.registradoEn ? `Registrado el ${fechaHora(p.registradoEn)}` : ''}
           {p.corregidoPor ? ` · Corregido por ${p.corregidoPor}${p.corregidoEn ? ` · ${fechaHora(p.corregidoEn)}` : ''}` : ''}
         </p>
@@ -99,7 +100,7 @@ export default function PagoDelCliente({ orden, bloque = false, tamano = 'normal
   }
   const texto = [p.tipo === TIPO_PAGO.PAGO ? `Pagó: ${lineaDePago(p)}` : lineaDePago(p), p.nota && `Nota: ${p.nota}`, p.aNombreDelTecnico && 'Registrado por la oficina'].filter(Boolean).join(' · ');
   return (
-    <div className={`min-w-0 break-words font-semibold ${TAMANO[tamano]} ${tono.linea} ${tamano === 'compacto' ? 'line-clamp-2' : ''} ${className}`} title={tamano === 'compacto' ? texto : undefined}>
+    <div className={`min-w-0 break-words font-bold ${TAMANO[tamano]} ${tono.linea} ${tamano === 'compacto' ? 'line-clamp-2' : ''} ${className}`} title={tamano === 'compacto' ? texto : undefined}>
       {texto}
     </div>
   );

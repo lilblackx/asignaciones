@@ -23,10 +23,10 @@ export const ofreceValoresCliente = (t) => exigeValoresCliente(t);
 export function calidadValor(valor) {
   const n = Number(valor);
   if (valor === null || valor === undefined || valor === '' || Number.isNaN(n)) return null;
-  if (n > -15) return { nivel: 'alta', texto: 'Sobre -15 dBm', clase: 'text-amber-600 dark:text-amber-400' };
-  if (n >= -28) return { nivel: 'bueno', texto: 'Bueno', clase: 'text-emerald-600 dark:text-emerald-400' };
-  if (n >= -31) return { nivel: 'regular', texto: 'Regular', clase: 'text-amber-600 dark:text-amber-400' };
-  return { nivel: 'critico', texto: 'Crítico', clase: 'text-red-600 dark:text-red-400' };
+  if (n > -15) return { nivel: 'alta', texto: 'Sobre -15 dBm', clase: 'text-amber-700 dark:text-amber-400' };
+  if (n >= -28) return { nivel: 'bueno', texto: 'Bueno', clase: 'text-emerald-700 dark:text-emerald-400' };
+  if (n >= -31) return { nivel: 'regular', texto: 'Regular', clase: 'text-amber-700 dark:text-amber-400' };
+  return { nivel: 'critico', texto: 'Crítico', clase: 'text-red-700 dark:text-red-400' };
 }
 
 // Textos que escribe la oficina -> { valor: { olt1310Dbm, onu1490Dbm } } o { errores: { olt, onu } }.

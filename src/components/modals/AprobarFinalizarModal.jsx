@@ -1,6 +1,6 @@
 import { textoMetrajeConMarcas } from '../../utils/metraje';
 import { useState } from 'react';
-import { Banknote, Cable, CheckCheck, CircleAlert, Eye, Undo2, User, Wrench, X } from 'lucide-react';
+import { Banknote, Cable, CheckCheck, CircleAlert, Eye, Undo2, User, Wrench } from 'lucide-react';
 import Modal from '../Modal';
 import AsistentePasos, { BotonesPasos } from '../AsistentePasos';
 import { usePasosAsistente } from '../../hooks/usePasosAsistente';
@@ -28,6 +28,10 @@ import AvisoRevision from '../AvisoRevision';
 import { cambioMientrasAbierta } from '../../utils/concurrencia';
 import { claseArea } from '../estilos';
 import PagoDelCliente from '../PagoDelCliente';
+import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
+import { legible } from '../../utils/nombreTecnico';
 
 const PASO_ETIQUETA = { revisar: 'Revisar', autorizar: 'Autorizar', cobro: 'Cobro', valores: 'Valores', decision: 'Decisión' };
 const PASO_DE = (clave) => ({ clave, etiqueta: PASO_ETIQUETA[clave] });
@@ -38,9 +42,9 @@ function FilaResumen({ etiqueta, valor, ok, onCambiar }) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <dt className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">{etiqueta}</dt>
+        <dt className="text-etiqueta font-bold text-muted-foreground">{etiqueta}</dt>
         {lineas.map((linea, i) => (
-          <dd key={i} className={`flex items-start gap-1.5 text-sm font-black break-words ${ok ? 'text-zinc-900 dark:text-white' : 'text-amber-700 dark:text-amber-400'}`}>
+          <dd key={i} className={`flex items-start gap-1.5 text-sm font-black break-words ${ok ? 'text-foreground' : 'text-amber-700 dark:text-amber-400'}`}>
             {i === 0
               ? (ok ? <CheckCheck className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" /> : <CircleAlert className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />)
               : <span className="w-4 shrink-0" aria-hidden="true" />}
@@ -189,11 +193,11 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   const nombreCierre = finalizando ? 'Finalizar' : 'Aprobar';
   const ocupado = isSubmitting ? <Spinner /> : null;
   const encabezado = (
-        <div className="bg-black px-4 py-3.5 border-b-2 border-blue-500 flex justify-between items-center sticky top-0 z-10">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-blue-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-blue-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">
-                {finalizando ? 'REVISAR ANTES DE FINALIZAR' : 'REVISAR ANTES DE APROBAR'}
+              <span className="bg-blue-600 text-white text-etiqueta font-black px-2 py-0.5 rounded">
+                {finalizando ? 'Revisar antes de finalizar' : 'Revisar antes de aprobar'}
               </span>
               <span className="text-xs font-bold text-blue-400">{ticket.codigo || 'S/C'}</span>
             </div>
@@ -201,13 +205,11 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
             <AvisoCambioDeOrden texto={cambio} encabezado />
             {!cambio && <AvisoRevision nombres={otrosRevisando} encabezado />}
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
   );
   const aviso = (
-          <p className="flex items-center gap-2 text-[11px] max-lg:text-xs text-blue-800 dark:text-blue-300 font-medium">
+          <p className="flex items-center gap-2 text-etiqueta text-blue-800 dark:text-blue-300 font-medium">
             <Eye className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             {finalizando ? 'Solo lectura. El técnico aún no pre-finalizó esta orden: verifica los datos antes de finalizarla.' : 'Solo lectura. Verifica los datos que cargó el técnico antes de aprobar.'}
           </p>
@@ -215,18 +217,15 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   const faltantesNode = (
     <>
           {faltantes.length > 0 && (
-            <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-800 dark:text-red-300">
-              <CircleAlert className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="leading-snug"><span className="font-black">Faltan datos de la instalación:</span> {faltantes.join(', ')}.{finalizando ? ' Si la finalizas así, no quedarán registrados.' : ''}</p>
-            </div>
+            <Aviso nivel="error" role="alert" compact titulo="Faltan datos de la instalación">{faltantes.join(', ')}.{finalizando ? ' Si la finalizas así, no quedarán registrados.' : ''}</Aviso>
           )}
     </>
   );
   const resumenNode = (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-zinc-800 dark:text-zinc-200">
-            <span className="inline-flex items-center gap-1.5"><Wrench className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" /><span className="font-black text-red-600 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-zinc-700 dark:text-zinc-300">- {ticket.falla}</span>}</span>
-            {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" aria-hidden="true" />Técnico: <span className="font-black">{ticket.tecnico}</span></span>}
-            {ticket.creado && <span className="text-zinc-700 dark:text-zinc-300">Creado por: <span className="font-bold">{ticket.creado}</span></span>}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-foreground">
+            <span className="inline-flex items-center gap-1.5"><Wrench className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /><span className="font-black text-red-700 dark:text-red-400">{oracion(ticket.tipoTrabajo)}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-card-foreground">- {ticket.falla}</span>}</span>
+            {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />Técnico: <span className="font-black">{legible(ticket.tecnico)}</span></span>}
+            {ticket.creado && <span className="text-card-foreground">Creado por: <span className="font-bold">{ticket.creado}</span></span>}
           </div>
   );
   const autorizarNode = (
@@ -235,8 +234,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   const recableadoNode = (
     <>
           {esRecableado(ticket.tipoVisita) && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
-              <p className="flex items-center gap-2 font-black"><Cable className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> RECABLEADO</p>
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
+              <p className="flex items-center gap-2 font-black"><Cable className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> Recableado</p>
               {tieneDatosRecableado(ticket)
                 ? (
                   <div className="ml-6 space-y-1.5">
@@ -247,7 +246,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                   </div>
                 )
                 : <p className="ml-6 italic">Sin datos del recableado.</p>}
-              {ticket.metrosCable != null && !ticket.conectorExterno && !ticket.conectorInterno && <p className="ml-6 text-[11px] max-lg:text-xs opacity-80">Sin conectores registrados.</p>}
+              {ticket.metrosCable != null && !ticket.conectorExterno && !ticket.conectorInterno && <p className="ml-6 text-etiqueta opacity-80">Sin conectores registrados.</p>}
             </div>
           )}
     </>
@@ -261,14 +260,14 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   const cobroNode = (
     <>
           {llevaCobro(ticket) && (
-            <section aria-label="Cobro de la visita" className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-3 space-y-3 text-xs text-sky-900 dark:text-sky-200">
+            <section aria-label="Cobro de la visita" className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-campo p-3 space-y-3 text-xs text-sky-900 dark:text-sky-200">
               <div>
-                <h3 className="flex items-center gap-2 font-black tracking-wide">
-                  <Banknote className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" /> COBRO
+                <h3 className="flex items-center gap-2 font-black">
+                  <Banknote className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" /> Cobro
                 </h3>
-                <p className="ml-6 mt-1"><span className="opacity-70">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
+                <p className="ml-6 mt-1"><span className="font-medium">Concepto:</span> <span className="font-bold">{conceptoCobro(ticket)}</span></p>
                 {consultaCobroDe(ticket) && (
-                  <p className="ml-6 mt-1 text-[11px] max-lg:text-xs font-bold">
+                  <p className="ml-6 mt-1 text-etiqueta font-bold">
                     {respuestaVigente(ticket)
                       ? (cobroPrecargado(ticket)
                         ? `El técnico consultó este cobro (${respuestaVigente(ticket).metros} m) y ya viene elegido: ${textoRespuesta(respuestaVigente(ticket))}. Cámbialo si hace falta.`
@@ -276,7 +275,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                       : `El técnico consultó el cobro (${ticket.consultaCobro.metros} m) y no se ha respondido.`}
                   </p>
                 )}
-                {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <p className="ml-6 mt-1 text-[11px] max-lg:text-xs opacity-80">El técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</p>}
+                {avisaCobroAlPreFinalizar(ticket.tipoVisita) && <p className="ml-6 mt-1 text-etiqueta opacity-80">El técnico ya vio el cobro al pre-finalizar. Si cambias el cobro (otro monto o exonerar), se le muestra de nuevo.</p>}
               </div>
               <CobroAcordadoAviso ticket={ticket} />
               <CobroSelector
@@ -294,15 +293,15 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
     <>
           {/* Lo que describió el técnico va aparte de la nota de la oficina. En las órdenes viejas (sin campo propio) queda un solo bloque. */}
           <div className="space-y-1">
-            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">OBSERVACIÓN / DETALLES DEL TRABAJO</span>
-            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words min-h-[3rem]">
-              {ticket.observacionTecnico || ticket.observacion || <span className="text-zinc-400 italic">Sin observación registrada.</span>}
+            <span className="text-xs font-bold text-card-foreground ml-1">Observación / detalles del trabajo</span>
+            <div className="bg-sunken border border-border rounded-campo p-3 text-xs text-foreground whitespace-pre-wrap break-words min-h-[3rem]">
+              {ticket.observacionTecnico || ticket.observacion || <span className="text-muted-foreground italic">Sin observación registrada.</span>}
             </div>
           </div>
           {ticket.observacionTecnico && ticket.observacion && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">NOTA DE LA OFICINA</span>
-              <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">
+              <span className="text-xs font-bold text-card-foreground ml-1">Nota de la oficina</span>
+              <div className="bg-secondary border border-border rounded-campo p-3 text-xs text-card-foreground whitespace-pre-wrap break-words">
                 {ticket.observacion}
               </div>
             </div>
@@ -334,15 +333,15 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
     <>
           {ticket.potenciaDbm != null && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">POTENCIA ÓPTICA</span>
-              <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-xs flex items-center justify-between gap-2">
-                <span className="font-black text-zinc-900 dark:text-white">{ticket.potenciaDbm} dBm</span>
+              <span className="text-xs font-bold text-card-foreground ml-1">Potencia óptica</span>
+              <div className="bg-sunken border border-border rounded-campo p-3 text-xs flex items-center justify-between gap-2">
+                <span className="font-black text-foreground">{ticket.potenciaDbm} dBm</span>
                 {evaluarPotencia(ticket.potenciaDbm) && (
                   <span className={`font-bold ${evaluarPotencia(ticket.potenciaDbm).clase}`}>{evaluarPotencia(ticket.potenciaDbm).texto}</span>
                 )}
               </div>
               {ticket.potencia1490Dbm != null && (
-                <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
+                <p className="text-etiqueta text-muted-foreground ml-1">ONU Rx · Señal 1490 nm: <span className="font-bold">{ticket.potencia1490Dbm} dBm</span></p>
               )}
             </div>
           )}
@@ -355,8 +354,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           <Colapsable>
             {devolviendo && (
               <div ref={mostrarMotivo} className="space-y-1">
-                <label htmlFor="aprobar-motivo" className="text-xs font-bold text-red-600 dark:text-red-400 ml-1 flex items-center gap-1">
-                  <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA DEVOLUCIÓN <span className="font-normal">(obligatorio)</span>
+                <label htmlFor="aprobar-motivo" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1 flex items-center gap-1">
+                  <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> Motivo de la devolución <span className="font-normal">(obligatorio)</span>
                 </label>
                 <textarea
                   value={motivo}
@@ -368,8 +367,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                   placeholder="Ej. Falta la potencia óptica de la ONU, confirma la NAP..."
                   className={`${claseArea('compacto')} resize-none`}
                 />
-                {motivoError && <p className="text-[11px] max-lg:text-xs text-red-500 font-bold ml-1">{motivoError}</p>}
-                <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">
+                {motivoError && <p className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{motivoError}</p>}
+                <p className="text-etiqueta text-muted-foreground ml-1">
                   La orden vuelve a PENDIENTE y el técnico recibe una notificación con este motivo.
                 </p>
               </div>
@@ -380,7 +379,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   // Una sola pantalla (2 pasos o menos): todo seguido, con la barra de botones fija abajo, como siempre.
   const unaSolaPantalla = (
     <Modal onClose={confirmando ? () => {} : onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-3xl max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-lg md:max-w-3xl max-h-[92dvh] overflow-y-auto border border-border">
         {encabezado}
         <div className="p-4 sm:p-5 space-y-4">
           {aviso}
@@ -395,12 +394,12 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           {potenciaNode}
           {pagoNode}
           {motivoNode}
-          <div className="sticky bottom-0 z-10 flex gap-2.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 px-4 sm:px-5 py-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="sticky bottom-0 z-10 flex gap-2.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 px-4 sm:px-5 py-3 bg-card border-t border-border">
             <button
               type="button"
               onClick={devolviendo ? () => { setDevolviendo(false); setMotivoError(''); } : onClose}
               disabled={isSubmitting}
-              className="flex-1 flex items-center justify-center py-3 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center py-3 text-xs sm:text-sm text-card-foreground font-bold bg-card dark:bg-secondary border border-input hover:bg-secondary rounded-campo transition-colors disabled:opacity-50"
             >
               {devolviendo ? 'Volver' : 'Cancelar'}
             </button>
@@ -423,7 +422,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
                     type="button"
                     onClick={() => setDevolviendo(true)}
                     disabled={isSubmitting || Boolean(cambio)}
-                    className="flex-1 py-3 text-xs sm:text-sm text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    className="flex-1 py-3 text-xs sm:text-sm text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-campo transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <Undo2 className="w-4 h-4 shrink-0" />
                     <span className="whitespace-nowrap">Devolver</span>
@@ -498,8 +497,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
     );
 
   const resumenFinal = (
-    <section aria-label="Resumen" className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-3 space-y-3">
-      <h3 className="text-xs font-black tracking-wide text-zinc-900 dark:text-white">RESUMEN ANTES DE {finalizando ? 'FINALIZAR' : 'APROBAR'}</h3>
+    <section aria-label="Resumen" className="rounded-campo border border-border bg-sunken p-3 space-y-3">
+      <h3 className="text-sm font-black text-foreground">Resumen antes de {finalizando ? 'finalizar' : 'aprobar'}</h3>
       <dl className="space-y-2.5">
         {cobroResuelto && (
           <FilaResumen
@@ -520,14 +519,14 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         {faltantes.length > 0 && <FilaResumen etiqueta="Datos de la instalación" ok={false} valor={`Faltan: ${faltantes.join(', ')}`} onCambiar={() => nav.ir('revisar')} />}
         {!cobroResuelto && !ofreceValores && faltantes.length === 0 && <FilaResumen etiqueta="Lo que cargó el técnico" ok valor="Revisado" onCambiar={() => nav.ir('revisar')} />}
       </dl>
-      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-snug">{finalizando ? 'La orden queda FINALIZADA sin que el técnico la haya pre-finalizado.' : 'Apruebas lo que cargó el técnico y la orden queda FINALIZADA.'}{ticket.tecnico ? ' Después el técnico registra el pago del cliente y sube las fotos del trabajo.' : ''}</p>
+      <p className="text-xs text-muted-foreground leading-snug">{finalizando ? 'La orden queda FINALIZADA sin que el técnico la haya pre-finalizado.' : 'Apruebas lo que cargó el técnico y la orden queda FINALIZADA.'}{ticket.tecnico ? ' Después el técnico registra el pago del cliente y sube las fotos del trabajo.' : ''}</p>
     </section>
   );
 
   const asistente = (
     <Modal onClose={confirmando ? () => {} : onClose} zIndexClass="z-50">
       <AsistentePasos
-        clasePanel="w-full max-w-lg md:max-w-3xl h-[min(92dvh,50rem)] border border-zinc-300 dark:border-zinc-800"
+        clasePanel="w-full max-w-lg md:max-w-3xl h-[min(92dvh,50rem)] border border-border"
         etiquetaPasos="Pasos para revisar la orden"
         pasos={claves.map(PASO_DE)}
         actual={clave}
@@ -582,7 +581,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         onCancel={() => setConfirmando(null)}
         onConfirm={ejecutarCierre}
       >
-        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
+        <p className="text-sm font-bold text-foreground break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
       </ConfirmModal>
     )}
     {confirmando === 'devolver' && (
@@ -597,8 +596,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         onCancel={() => setConfirmando(null)}
         onConfirm={ejecutarDevolucion}
       >
-        <p className="text-sm font-bold text-zinc-900 dark:text-white break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
-        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">Motivo: {motivo.trim()}</p>
+        <p className="text-sm font-bold text-foreground break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
+        <p className="mt-2 text-xs text-muted-foreground break-words whitespace-pre-wrap">Motivo: {motivo.trim()}</p>
       </ConfirmModal>
     )}
     </>

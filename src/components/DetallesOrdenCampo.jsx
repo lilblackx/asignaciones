@@ -23,7 +23,7 @@ function MiniaturaGuardada({ ruta, numero }) {
     return () => { vigente = false; };
   }, [ruta]);
   if (estado.vencida) {
-    return <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-center p-1"><ImageOff className="w-5 h-5 text-zinc-500" aria-hidden="true" /><span className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Foto vencida</span></div>;
+    return <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-center p-1"><ImageOff className="w-5 h-5 text-zinc-500" aria-hidden="true" /><span className="text-etiqueta font-bold text-muted-foreground">Foto vencida</span></div>;
   }
   return estado.url ? <img src={estado.url} alt={`Foto ${numero} guardada`} className="w-full h-full object-cover" /> : <div className="w-full h-full animate-pulse" />;
 }
@@ -132,7 +132,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
   const lleno = fotos.length >= MAX_FOTOS;
   const aSubir = fotos.filter((f) => f.tipo === 'nueva').length;
   const apremia = fotos.length > 0 && faltan > 0;
-  const BOTON_AGREGAR = `inline-flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-dashed text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition-colors ${apremia ? 'border-amber-500' : 'border-zinc-400 dark:border-zinc-600'}`;
+  const BOTON_AGREGAR = `inline-flex items-center justify-center gap-2 h-12 rounded-campo border-2 border-dashed text-sm font-bold text-foreground hover:bg-secondary disabled:opacity-50 transition-colors ${apremia ? 'border-amber-500' : 'border-input'}`;
 
   return (
     <div className="space-y-3">
@@ -143,17 +143,17 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
       {fotos.length > 0 && (
         <ul className="grid grid-cols-3 sm:grid-cols-4 gap-2" aria-label="Fotos de la orden">
           {fotos.map((f, i) => (
-            <li key={f.id} className={`relative aspect-square rounded-xl overflow-hidden border bg-zinc-100 dark:bg-zinc-800 ${f.estado === 'error' ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'}`}>
+            <li key={f.id} className={`relative aspect-square rounded-campo overflow-hidden border bg-secondary ${f.estado === 'error' ? 'border-red-500' : 'border-border'}`}>
               {f.tipo === 'guardada' ? <MiniaturaGuardada ruta={f.ruta} numero={i + 1} />
                 : f.estado === 'error' ? (
                   <div data-error={f.mensaje} className="w-full h-full flex flex-col items-center justify-center gap-1 text-center p-1.5 pr-9">
-                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0" aria-hidden="true" />
-                    <span className="text-[11px] max-lg:text-xs leading-tight font-bold text-red-700 dark:text-red-300">No se pudo abrir</span>
+                    <AlertTriangle className="w-6 h-6 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" />
+                    <span className="text-etiqueta leading-tight font-bold text-red-700 dark:text-red-300">No se pudo abrir</span>
                   </div>
                 )
                   : f.estado === 'preparando' ? <div className="w-full h-full flex items-center justify-center" role="status" aria-label={`Preparando la foto ${i + 1}`}><Spinner className="w-6 h-6" /></div>
                     : <img src={f.url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />}
-              <span className="absolute left-1 bottom-1 text-[11px] max-lg:text-xs font-black text-white bg-black/70 rounded px-1.5 py-0.5">{i + 1}</span>
+              <span className="absolute left-1 bottom-1 text-etiqueta font-black text-white bg-black/70 rounded px-1.5 py-0.5">{i + 1}</span>
               {!subiendo && (
                 <>
                   <button type="button" onClick={() => cambiar(fotos.filter((_, k) => k !== i))} aria-label={`Quitar la foto ${i + 1}`} className="absolute right-1 top-1 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/70 text-white hover:bg-red-700 transition-colors">
@@ -171,7 +171,7 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
 
       {/* Qué pasó con cada foto que el teléfono no pudo abrir (el recuadro de la foto solo cabe en pocas palabras). */}
       {fotos.some((f) => f.estado === 'error') && (
-        <ul role="alert" className="space-y-1 text-xs font-bold text-red-600 dark:text-red-400">
+        <ul role="alert" className="space-y-1 text-xs font-bold text-red-700 dark:text-red-400">
           {fotos.map((f, i) => (f.estado === 'error' ? <li key={f.id}>Foto {i + 1}: {f.mensaje}</li> : null))}
         </ul>
       )}
@@ -185,17 +185,17 @@ export default function DetallesOrdenCampo({ onSubir, iniciales = [], textoGuard
         </button>
       </div>
 
-      <p className={`text-xs font-bold text-center ${apremia ? 'text-amber-700 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-400'}`} aria-live="polite">
+      <p className={`text-xs font-bold text-center ${apremia ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`} aria-live="polite">
         {fotos.length} de {MAX_FOTOS} fotos{faltan > 0 ? ` · faltan ${faltan}` : ' · completas'}
       </p>
 
-      {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 text-center">{error}</p>}
+      {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 text-center">{error}</p>}
 
       <button
         type="button"
         onClick={subir}
         disabled={subiendo || preparando || !huboCambios}
-        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors"
+        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-boton bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors"
       >
         {subiendo || preparando ? <Spinner /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />}
         {subiendo ? (aSubir > 0 ? `Subiendo ${progreso} de ${aSubir}...` : 'Guardando...') : preparando ? 'Preparando las fotos...' : textoGuardar}

@@ -9,11 +9,11 @@ export default function NapPuertoCampos({ nap, onNap, napError, puerto, onPuerto
   // (el puerto es una columna angosta) o aparezca un aviso de error en una sola de las dos.
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-x-2.5 gap-y-1 items-end">
-      <label htmlFor="pf-nap" className="col-start-1 row-start-1 block text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-        NOMENCLATURA DE LA NAP <span className="font-normal text-red-500">(obligatorio)</span>
+      <label htmlFor="pf-nap" className="col-start-1 row-start-1 block text-xs font-bold text-card-foreground ml-1">
+        Nomenclatura de la NAP <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
-      <label htmlFor="pf-puerto" className="col-start-2 row-start-1 block text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-        PUERTO <span className="font-normal text-red-500">(obligatorio)</span>
+      <label htmlFor="pf-puerto" className="col-start-2 row-start-1 block text-xs font-bold text-card-foreground ml-1">
+        Puerto <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <input
         id="pf-nap"
@@ -36,8 +36,8 @@ export default function NapPuertoCampos({ nap, onNap, napError, puerto, onPuerto
         aria-invalid={!!puertoError}
         className={`col-start-2 row-start-2 min-w-0 ${claseCampo('grande', puertoError ? 'error' : 'normal')}`}
       />
-      {napError && <p role="alert" className="col-start-1 row-start-3 text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{napError}</p>}
-      {puertoError && <p role="alert" className="col-start-2 row-start-3 text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{puertoError}</p>}
+      {napError && <p role="alert" className="col-start-1 row-start-3 text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{napError}</p>}
+      {puertoError && <p role="alert" className="col-start-2 row-start-3 text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{puertoError}</p>}
     </div>
   );
 }

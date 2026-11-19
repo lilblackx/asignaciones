@@ -1,6 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { sacudirVentanaDeLaUltimaAccion } from '../utils/sacudidaErrores';
+import { NIVELES } from './nivelesAviso';
 import { AlertCircle, Ban, Banknote, Car, CheckCheck, CheckCircle2, Clock, Flag, HardHat, MapPin, Star, Undo2, UserCog, UserMinus, Wrench } from 'lucide-react';
+
+// Cada tipo de aviso: su ícono y su nivel (el tono): error (rojo), atención (ámbar), info (azul) o éxito (verde), los mismos de los avisos de la app (ver nivelesAviso).
+// Antes cada tipo tenía su propio color sólido (rojo, naranja, morado, turquesa...): ahora el aviso es una tarjeta clara con el ícono en un círculo del tono de su nivel.
+const TIPOS = {
+  error: { Icono: AlertCircle, nivel: 'error' },
+  devuelto: { Icono: Undo2, nivel: 'error' },
+  cancelada: { Icono: Ban, nivel: 'error' },
+  desasignada: { Icono: UserMinus, nivel: 'error' },
+  prioridad: { Icono: Flag, nivel: 'error', relleno: true },
+  aviso: { Icono: AlertCircle, nivel: 'atencion' },
+  prefinalizado: { Icono: Clock, nivel: 'atencion' },
+  consultaCobro: { Icono: Banknote, nivel: 'atencion' },
+  nuevaVenta: { Icono: Star, nivel: 'atencion', relleno: true },
+  infraestructura: { Icono: HardHat, nivel: 'atencion' },
+  ajusteTecnico: { Icono: Banknote, nivel: 'atencion' },
+  descuentoTecnico: { Icono: Banknote, nivel: 'atencion' },
+  encamino: { Icono: Car, nivel: 'info' },
+  respuestaCobro: { Icono: Banknote, nivel: 'info' },
+  adelantoTecnico: { Icono: Banknote, nivel: 'info' },
+  tecnicoStatus: { Icono: UserCog, nivel: 'info' },
+  aprobado: { Icono: CheckCheck, nivel: 'info' },
+  llegada: { Icono: MapPin, nivel: 'exito' },
+  pagoCliente: { Icono: Banknote, nivel: 'exito' },
+  pagoTecnico: { Icono: Banknote, nivel: 'exito' },
+  nuevaAsignacion: { Icono: Wrench, nivel: 'exito' },
+};
+const POR_DEFECTO = { Icono: CheckCircle2, nivel: 'exito' };
 
 const DURACION_SALIDA_MS = 200;
 // Cuánto hay que deslizar el aviso para quitarlo (a un lado o hacia abajo), y cuánto dura la salida animada.
@@ -40,23 +68,9 @@ export default function Toast({ toastMsg: entrante, onClose }) {
   const toastMsg = entrante || mostrado;
   if (!toastMsg) return null;
 
-  const isError = toastMsg.type === 'error';
-  const isPreFinalizado = toastMsg.type === 'prefinalizado';
-  const isTecnicoStatus = toastMsg.type === 'tecnicoStatus';
-  const isAprobado = toastMsg.type === 'aprobado';
-  const isNuevaAsignacion = toastMsg.type === 'nuevaAsignacion';
-  const isNuevaVenta = toastMsg.type === 'nuevaVenta';
-  const isAviso = toastMsg.type === 'aviso';
-  const isDevuelto = toastMsg.type === 'devuelto';
-  const isPrioridad = toastMsg.type === 'prioridad';
-  const isCancelada = toastMsg.type === 'cancelada';
-  const isDesasignada = toastMsg.type === 'desasignada';
-  const isEnCamino = toastMsg.type === 'encamino';
-  const isLlegada = toastMsg.type === 'llegada';
-  const isConsultaCobro = toastMsg.type === 'consultaCobro';
-  const isRespuestaCobro = toastMsg.type === 'respuestaCobro';
-  const isInfraestructura = toastMsg.type === 'infraestructura';
-  const isPago = toastMsg.type === 'pagoCliente' || toastMsg.type === 'pagoTecnico' || toastMsg.type === 'adelantoTecnico' || toastMsg.type === 'descuentoTecnico' || toastMsg.type === 'ajusteTecnico';
+  const { Icono, nivel, relleno } = TIPOS[toastMsg.type] || POR_DEFECTO;
+  const tono = NIVELES[nivel];
+  const esPrioridad = toastMsg.type === 'prioridad';
   const accion = toastMsg.action;
 
   // El botón de acción del aviso (si lo tiene) sigue siendo un botón: no empieza un deslizamiento.
@@ -87,7 +101,7 @@ export default function Toast({ toastMsg: entrante, onClose }) {
   const lejos = Math.min(1, Math.hypot(arrastre.x, arrastre.y) / (window.innerWidth * 0.6));
 
   return (
-    <div className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[120] ${saliendo ? 'animate-fade-out-down' : 'animate-fade-in-up'} w-[92vw] sm:w-auto sm:max-w-sm px-2 pointer-events-none`} role="status" aria-live="polite" aria-atomic="true">
+    <div className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[120] ${saliendo ? 'animate-fade-out-down' : 'animate-fade-in-up'} w-[92vw] sm:w-auto sm:max-w-md px-2 pointer-events-none`} role="status" aria-live="polite" aria-atomic="true">
       <div
         onPointerDown={alBajar}
         onPointerMove={alMover}
@@ -99,41 +113,17 @@ export default function Toast({ toastMsg: entrante, onClose }) {
           transition: arrastre.suelto ? `transform ${DURACION_DESLIZAR_MS}ms ease-out, opacity ${DURACION_DESLIZAR_MS}ms ease-out` : 'none',
           touchAction: 'none',
         }}
-        className={`pointer-events-auto select-none cursor-grab active:cursor-grabbing px-5 py-3 rounded-2xl shadow-xl flex items-start gap-2.5 font-bold text-sm ${
-        isError || isDevuelto || isCancelada || isDesasignada ? 'bg-red-600 text-white'
-          : isPrioridad ? 'bg-red-700 text-white ring-2 ring-white/70'
-          : isEnCamino ? 'bg-sky-700 text-white'
-          : isLlegada ? 'bg-teal-700 text-white'
-          : isRespuestaCobro ? 'bg-sky-700 text-white'
-          : isPago ? 'bg-emerald-700 text-white'
-          : isInfraestructura ? 'bg-orange-600 text-white'
-          : isPreFinalizado || isAviso || isConsultaCobro || isNuevaVenta ? 'bg-amber-500 text-black'
-            : isTecnicoStatus ? 'bg-purple-600 text-white'
-              : isAprobado ? 'bg-blue-600 text-white'
-                : isNuevaAsignacion ? 'bg-emerald-700 text-white'
-                  : 'bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 border border-zinc-700 dark:border-zinc-200 text-white'
-      }`}>
-        {isConsultaCobro || isRespuestaCobro || isPago ? <Banknote className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isPrioridad ? <Flag className="w-4 h-4 shrink-0 mt-0.5 fill-current" aria-hidden="true" />
-          : isInfraestructura ? <HardHat className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isDevuelto ? <Undo2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isEnCamino ? <Car className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isLlegada ? <MapPin className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isCancelada ? <Ban className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isDesasignada ? <UserMinus className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isError || isAviso ? <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-          : isNuevaVenta ? <Star className="w-4 h-4 shrink-0 mt-0.5 fill-current" aria-hidden="true" />
-          : isPreFinalizado ? <Clock className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-            : isTecnicoStatus ? <UserCog className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-              : isAprobado ? <CheckCheck className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-                : isNuevaAsignacion ? <Wrench className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-                  : <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />}
-        <span className="leading-snug">{toastMsg.text}</span>
+        className={`pointer-events-auto select-none cursor-grab active:cursor-grabbing pl-3 pr-4 py-3 rounded-card bg-card text-card-foreground border border-border shadow-2xl flex items-center gap-3 font-bold text-sm ${esPrioridad ? 'ring-2 ring-red-600' : ''}`}
+      >
+        <span aria-hidden="true" className={`shrink-0 w-9 h-9 rounded-full inline-flex items-center justify-center ${tono.tile}`}>
+          <Icono className={`w-[18px] h-[18px] ${relleno ? 'fill-current' : ''}`} />
+        </span>
+        <span className="min-w-0 flex-1 leading-snug">{toastMsg.text}</span>
         {accion && (
           <button
             type="button"
             onClick={() => { onClose?.(); accion.onClick(); }}
-            className="shrink-0 ml-1 px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-black transition-colors pointer-events-auto"
+            className={`shrink-0 ml-1 px-3.5 min-h-9 rounded-boton text-xs font-black transition-colors pointer-events-auto ${tono.boton}`}
           >
             {accion.label}
           </button>

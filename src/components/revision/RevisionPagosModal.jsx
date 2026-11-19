@@ -24,9 +24,10 @@ import { diaDe } from '../../utils/totalesMes';
 import { useRevisionPagos } from '../../hooks/useRevisionPagos';
 import { useCargarHastaCubrir } from '../../hooks/useCargarHastaCubrir';
 import { useTasaDolar } from '../../hooks/useTasaDolar';
-import Chip from '../Chip';
+import BarraFiltros from '../BarraFiltros';
 import Boton from '../Boton';
-import RangoFechas from '../RangoFechas';
+import Aviso, { AvisosAgrupados } from '../Aviso';
+import EstadoVacio from '../EstadoVacio';
 
 // `enPagina`: el mismo contenido como página dentro del marco del administrador (sin ventana ni barra negra propia: el título y el menú los pone la pantalla que la contiene).
 // Revisión de órdenes (solo ADMIN): la barrera entre las órdenes y Finanzas. Aquí un administrador revisa lo que se va a pagar y solo lo que aprueba llega a Finanzas. Lo ya pagado no
@@ -189,37 +190,31 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
 
   return marco(
     <>
-      <div className={enPagina ? 'w-full flex flex-col' : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? 'w-full flex flex-col' : `bg-card rounded-card shadow-2xl w-full max-w-6xl max-h-[92dvh] overflow-hidden border border-border flex flex-col ${PANEL_COMPLETO}`}>
         {!enPagina && <EncabezadoModulo Icono={ClipboardCheck} titulo="Revisión de órdenes" onClose={onClose} />}
 
         <div className={enPagina ? 'flex-1 min-w-0 bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm max-w-[1400px] mx-auto w-full' : `flex-1 min-w-0 overflow-y-auto bg-fondo px-4 sm:px-6 py-4 space-y-4 text-sm ${CENTRADO_AMPLIO}`}>
-          <p className={TEXTO_SUAVE}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{corteTodaviaNoLlega() ? ` Comienza a contar a partir del ${textoFechaCorte()}.` : ''}</p>
+          <p className={`${TEXTO_SUAVE} max-sm:hidden`}>Aquí se revisa lo que va a llegar a Finanzas: solo lo que apruebes se podrá pagar. Lo ya pagado no aparece.{corteTodaviaNoLlega() ? ` Comienza a contar a partir del ${textoFechaCorte()}.` : ''}</p>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-            <div role="group" aria-label="Periodo" className="grid grid-cols-3 gap-2 w-full sm:flex sm:w-auto">
-              {[['POR_REVISAR', 'Pendientes'], ...PERIODOS].map(([id, texto]) => (
-                <Chip activo={periodo === id} tamano="angosto" key={id} type="button" onClick={() => setPeriodo(id)}>{texto}</Chip>
-              ))}
-            </div>
-            {periodo === 'RANGO' && (
-              <RangoFechas desde={personalizado.desde} hasta={personalizado.hasta} onDesde={(v) => setPersonalizado({ ...personalizado, desde: v })} onHasta={(v) => setPersonalizado({ ...personalizado, hasta: v })} maximo={hoy} grande />
+          <BarraFiltros
+            periodos={[['POR_REVISAR', 'Pendientes'], ...PERIODOS]}
+            periodo={periodo}
+            onPeriodo={setPeriodo}
+            rango={{ desde: personalizado.desde, hasta: personalizado.hasta, onDesde: (v) => setPersonalizado({ ...personalizado, desde: v }), onHasta: (v) => setPersonalizado({ ...personalizado, hasta: v }), maximo: hoy, grande: true }}
+            selector={<SelectMenu id="revision-tecnico" ariaLabel="Técnico" className={SELECTOR} value={tecnico} onChange={setTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...nombresTecnicos.map((t) => ({ value: t, label: t }))]} />}
+            acciones={onActualizar && (
+              <button type="button" onClick={onActualizar} disabled={isLoadingReports} aria-label="Actualizar" className={`${BOTON} max-sm:px-0 max-sm:w-11 max-sm:shrink-0`}><RefreshCw className={`w-4 h-4 ${isLoadingReports ? 'animate-spin' : ''}`} aria-hidden="true" /> <span className="max-sm:hidden">Actualizar</span></button>
             )}
-            <div className="w-full sm:w-60 min-w-0">
-              <SelectMenu id="revision-tecnico" ariaLabel="Técnico" className={SELECTOR} value={tecnico} onChange={setTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...nombresTecnicos.map((t) => ({ value: t, label: t }))]} />
-            </div>
-            {onActualizar && (
-              <button type="button" onClick={onActualizar} disabled={isLoadingReports} className={BOTON}><RefreshCw className={`w-4 h-4 ${isLoadingReports ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar</button>
-            )}
-          </div>
+          />
 
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <input type="search" aria-label="Buscar por código, cliente, cédula o técnico" placeholder="Código, cliente, cédula o técnico" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} autoComplete="off" className={BUSCADOR} />
             <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
           </div>
 
           {periodo === 'POR_REVISAR' && (
-            <p role="status" className={`${TEXTO_SUAVE} rounded-xl border border-zinc-400 dark:border-zinc-700 bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
+            <p role="status" className={`${TEXTO_SUAVE} max-sm:hidden rounded-campo border border-input bg-zinc-200/70 dark:bg-zinc-900 px-4 py-3`}>
               Pendientes muestra las órdenes de los últimos {DIAS_POR_PAGAR} días (del {diaLegible(rango.desde)} al {diaLegible(rango.hasta)}). Para algo anterior, elige un Rango.
             </p>
           )}
@@ -227,26 +222,44 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           <ResumenCifras
             items={ESTADOS_REVISION.map((e) => ({ clave: e, etiqueta: e === 'PENDIENTE' ? 'Pendientes' : `${ETIQUETA_REVISION[e]}s`, valor: resumen[e].cantidad, detalle: dolares(resumen[e].total) }))}
             elegida={filtroEstado}
+            variante="tarjetas"
             onElegir={(e) => setFiltroEstado((actual) => (actual === e ? 'TODAS' : e))}
           />
 
-          {porResolver.length > 0 && (
-            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-              {porResolver.length === 1 ? '1 garantía de otro técnico espera' : `${porResolver.length} garantías de otro técnico esperan`} tu decisión ({porResolver.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{porResolver.length > 4 ? '...' : ''}): descuenta de la orden original o déjala sin descuento. No se pueden aprobar hasta decidir.
-            </p>
-          )}
+          <AvisosAgrupados total={[porResolver, esperanPago, escaladasPendientes].filter((a) => a.length > 0).length}>
+            {porResolver.length > 0 && (
+              <Aviso
+                plegable
+                titulo={`${porResolver.length} ${porResolver.length === 1 ? 'garantía de otro técnico espera' : 'garantías de otro técnico esperan'} tu decisión`}
+                codigos={porResolver.map((i) => i.orden.codigo || 'S/C')}
+                onElegirCodigo={setBusqueda}
+              >
+                Descuenta de la orden original o déjala sin descuento. No se pueden aprobar hasta decidir.
+              </Aviso>
+            )}
 
-          {esperanPago.length > 0 && (
-            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-              {esperanPago.length === 1 ? '1 orden espera' : `${esperanPago.length} órdenes esperan`} el pago del cliente y no se {esperanPago.length === 1 ? 'puede' : 'pueden'} aprobar todavía ({esperanPago.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{esperanPago.length > 4 ? '...' : ''}). Lo registra {tecnicosSinPago.length === 1 ? 'el técnico' : 'cada técnico'}{tecnicosSinPago.length > 0 ? ` (${tecnicosSinPago.slice(0, 3).join(', ')}${tecnicosSinPago.length > 3 ? '...' : ''})` : ''}; si no puede, usa "Registrar el pago" en la orden.
-            </p>
-          )}
+            {esperanPago.length > 0 && (
+              <Aviso
+                plegable
+                titulo={`${esperanPago.length} ${esperanPago.length === 1 ? 'orden espera' : 'órdenes esperan'} el pago del cliente`}
+                codigos={esperanPago.map((i) => i.orden.codigo || 'S/C')}
+                onElegirCodigo={setBusqueda}
+              >
+                No se {esperanPago.length === 1 ? 'puede' : 'pueden'} aprobar todavía. Lo registra {tecnicosSinPago.length === 1 ? 'el técnico' : 'cada técnico'}{tecnicosSinPago.length > 0 ? ` (${tecnicosSinPago.slice(0, 3).join(', ')}${tecnicosSinPago.length > 3 ? '...' : ''})` : ''}; si no puede, usa "Registrar el pago" en la orden.
+              </Aviso>
+            )}
 
-          {escaladasPendientes.length > 0 && (
-            <p role="status" className="rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-              {escaladasPendientes.length === 1 ? '1 orden escalada a infraestructura espera' : `${escaladasPendientes.length} órdenes escaladas a infraestructura esperan`} tu revisión ({escaladasPendientes.slice(0, 4).map((i) => i.orden.codigo || 'S/C').join(', ')}{escaladasPendientes.length > 4 ? '...' : ''}): llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
-            </p>
-          )}
+            {escaladasPendientes.length > 0 && (
+              <Aviso
+                plegable
+                titulo={`${escaladasPendientes.length} ${escaladasPendientes.length === 1 ? 'orden escalada a infraestructura espera' : 'órdenes escaladas a infraestructura esperan'} tu revisión`}
+                codigos={escaladasPendientes.map((i) => i.orden.codigo || 'S/C')}
+                onElegirCodigo={setBusqueda}
+              >
+                Llevan la etiqueta Infraestructura y se aprueban una por una, no con el botón de aprobar todas.
+              </Aviso>
+            )}
+          </AvisosAgrupados>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className={TEXTO_SUAVE}>Pulsa una cifra para ver esas órdenes; vuelve a pulsarla para verlas todas.</p>
@@ -259,15 +272,17 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           {datos.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">No se pudieron leer algunos datos de la revisión. Recarga la página.</p>}
 
           {secciones.length === 0 ? (
-            <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{rangoRevision.desde > rangoRevision.hasta ? `Este periodo es anterior al corte: se cuenta a partir del ${textoFechaCorte()}.` : buscando ? (delTecnico.length > 0 ? 'Lo que buscas está en otro estado: pulsa otra de las cifras de arriba para verlo.' : 'Ninguna orden de este periodo coincide con lo que buscas. La búsqueda solo recorre el periodo y el técnico elegidos.') : filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar en este periodo.' : 'No hay órdenes con ese estado en este periodo.'}</p>
+            <EstadoVacio titulo={rangoRevision.desde > rangoRevision.hasta ? 'Este periodo es anterior al corte' : buscando ? (delTecnico.length > 0 ? 'Lo que buscas está en otro estado' : 'Ninguna orden coincide con lo que buscas') : filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar' : 'No hay órdenes con ese estado'}>
+              {rangoRevision.desde > rangoRevision.hasta ? `Se cuenta a partir del ${textoFechaCorte()}.` : buscando ? (delTecnico.length > 0 ? 'Pulsa otra de las cifras de arriba para verlo.' : 'La búsqueda solo recorre el periodo y el técnico elegidos.') : 'En este periodo.'}
+            </EstadoVacio>
           ) : secciones.map(([nombre, lista]) => {
             const pendientes = lista.filter((i) => i.estadoRevision === 'PENDIENTE');
             return (
               <section key={nombre} aria-label={nombre} className={`${TARJETA} p-4 space-y-3`}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{nombre === SIN_TECNICO ? 'Sin técnico en la ficha' : nombre}</h3>
-                    <span className={`${CHIP} bg-white border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100`}>{lista.length} {lista.length === 1 ? 'orden' : 'órdenes'} · {dolares(lista.reduce((s, i) => s + precio(i), 0))}</span>
+                    <h3 className="text-lg font-bold text-foreground">{nombre === SIN_TECNICO ? 'Sin técnico en la ficha' : nombre}</h3>
+                    <span className={`${CHIP} bg-card border border-border dark:bg-secondary text-foreground`}>{lista.length} {lista.length === 1 ? 'orden' : 'órdenes'} · {dolares(lista.reduce((s, i) => s + precio(i), 0))}</span>
                   </div>
                   {pendientes.length > 0 && nombre !== SIN_TECNICO && (
                     <button type="button" onClick={() => prepararAprobacion(lista, `las pendientes de ${nombre}`)} disabled={datos.ocupado} className={BOTON}>Aprobar las {pendientes.length} pendientes</button>
@@ -275,8 +290,8 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
                 </div>
                 {agruparOrdenes(lista.map((i) => (i.concepto ? i : { ...i, concepto: 'AVERIA' })), { masNuevasPrimero: true }).map((g) => (
                   <div key={g.id}>
-                    <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-900 dark:text-white pb-1 border-b border-zinc-400 dark:border-zinc-700"><span>{g.titulo} · {g.items.length}</span></h4>
-                    <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                    <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-foreground pb-1 border-b border-input"><span>{g.titulo} · {g.items.length}</span></h4>
+                    <ul className="divide-y divide-border">
                       {g.items.map((item) => (
                         <FilaRevision key={item.clave} item={lista.find((i) => i.clave === item.clave)} precio={precio(item)} tasa={tasa} tecnicos={nombresTecnicos} ocupado={datos.ocupado} onAccion={accion} onDeshacer={(i) => datos.deshacer(i)} ordenesBusqueda={ordenes} precioOrigen={precioOrigen} tecnicoDe={tecnicoDe} onVerOrden={setDetalle} onRegistrarPago={setRegistrandoPago} />
                       ))}

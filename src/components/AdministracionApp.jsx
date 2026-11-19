@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Ban, Landmark, Search } from 'lucide-react';
+import { AlertTriangle, Ban, Landmark, Search, SearchX } from 'lucide-react';
 import { ROLES, etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import BotonFiltros from './BotonFiltros';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
+import Aviso from './Aviso';
 import Boton from './Boton';
 import Chip from './Chip';
+import { legible } from '../utils/nombreTecnico';
 import Colapsable from './Colapsable';
 import EncabezadoSimple from './EncabezadoSimple';
 import NotificationBell from './NotificationBell';
 import PieVersion from './PieVersion';
 import RangoFechas from './RangoFechas';
+import { FilaDeslizable } from './BarraFiltros';
 import SelectMenu from './SelectMenu';
 import Toast from './Toast';
 import CobroModal from './modals/CobroModal';
@@ -33,9 +36,12 @@ import {
   ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, FILTROS_ESTADO_COBRO, diasEsperando, faltaElPagoDelTecnico, filtrarCobros, ordenarCobros, resumenCobros, textoDeCobro, tieneCambioDeMonto,
 } from '../utils/cobrosClientes';
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
+import EstadoVacio from './EstadoVacio';
+import Cargando from './Cargando';
+import { oracion } from '../utils/oracion';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
+const ETIQUETA = 'text-etiqueta font-bold text-muted-foreground';
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 const monto = (m, moneda) => textoMonto(formatoMontoBs(Number(m) || 0), moneda);
 const TIPOS = [{ value: '', label: 'Todas las órdenes' }, { value: 'INSTALACION', label: 'Instalaciones' }, { value: 'OTRAS', label: 'Visitas y otras' }];
@@ -115,35 +121,35 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
     const porCargar = clave === ESTADO_COBRO.PENDIENTE;
     return (
       <button key={clave} type="button" onClick={() => setEstado(estado === clave ? 'TODOS' : clave)} aria-pressed={estado === clave}
-        className={`text-left rounded-xl border-2 p-3 transition-colors bg-white dark:bg-zinc-900 ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'border-red-600' : 'border-zinc-300 dark:border-zinc-800 hover:border-zinc-500'}`}>
-        <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{r.cantidad}</p>
+        className={`text-left rounded-card border border-transparent p-3 transition-shadow bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'ring-2 ring-red-600' : 'hover:ring-2 hover:ring-muted-foreground'} shadow-card`}>
+        <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-700 dark:text-red-400' : ''}`}>{r.cantidad}</p>
         <p className="text-xs font-bold">{titulo}</p>
         {(montos.length > 0 || (porCargar && r.cantidad > 0)) && <p className={`${ETIQUETA} tabular-nums`}>{[...montos, porCargar && r.cantidad > 0 && 'de cualquier fecha'].filter(Boolean).join(' · ')}</p>}
-        {porCargar && resumen.sinPago > 0 && <p className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400">{resumen.sinPago} esperan el pago del técnico</p>}
+        {porCargar && resumen.sinPago > 0 && <p className="text-etiqueta font-bold text-red-700 dark:text-red-400">{resumen.sinPago} esperan el pago del técnico</p>}
       </button>
     );
   };
   const tarjetaAlertas = (
     <button type="button" onClick={() => setEstado(estado === 'ALERTA' ? 'TODOS' : 'ALERTA')} aria-pressed={estado === 'ALERTA'}
-      className={`text-left rounded-xl border-2 p-3 transition-colors bg-white dark:bg-zinc-900 ${estado === 'ALERTA' || resumen.alertas > 0 ? 'border-amber-500' : 'border-zinc-300 dark:border-zinc-800 hover:border-zinc-500'}`}>
+      className={`text-left rounded-card border border-transparent p-3 transition-shadow bg-card ${estado === 'ALERTA' || resumen.alertas > 0 ? 'ring-2 ring-amber-500' : 'hover:ring-2 hover:ring-muted-foreground'} shadow-card`}>
       <p className={`text-2xl font-black tabular-nums ${resumen.alertas > 0 ? 'text-amber-700 dark:text-amber-400' : ''}`}>{resumen.alertas}</p>
       <p className="text-xs font-bold">Con cambio de monto</p>
       {resumen.alertas > 0 && <p className={ETIQUETA}>corrígelos en el portal</p>}
     </button>
   );
 
-  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
+  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-etiqueta leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
   const alerta = (c) => tieneCambioDeMonto(c) && (
-    <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>
+    <span className="inline-flex items-center gap-1 text-etiqueta font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>
   );
   // El técnico todavía no registró el pago del cliente: el cobro se ve, pero no se puede marcar como cargado hasta que lo registre (ver faltaElPagoDelTecnico).
   const sinPago = (c) => faltaElPagoDelTecnico(c) && (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded bg-red-600 text-white"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap text-etiqueta leading-tight font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
   );
   const esperaPago = (c) => c.estado === ESTADO_COBRO.PENDIENTE && faltaElPagoDelTecnico(c);
   const accionTexto = (c) => (tieneCambioDeMonto(c) ? 'Corregir' : esperaPago(c) ? 'Ver' : c.estado === ESTADO_COBRO.PENDIENTE ? 'Cargar' : 'Ver');
   const accionDestacada = (c) => tieneCambioDeMonto(c) || (c.estado === ESTADO_COBRO.PENDIENTE && !esperaPago(c));
-  const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [c.tipoTrabajo, c.falla].filter(Boolean).join(' · '));
+  const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [oracion(c.tipoTrabajo), c.falla].filter(Boolean).join(' · '));
 
   const campana = esAdministracion && (
     <NotificationBell
@@ -159,15 +165,15 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-foreground flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Administración" icono={Landmark} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} campana={campana || null} />
 
         <main className="p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
           {!cargado && !error ? (
-            <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando cobros...</p>
+            <Cargando variante="lista" texto="Cargando cobros..." />
           ) : error && !cargado ? (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los cobros. Revisa tu conexión e intenta de nuevo.</p>
+            <Aviso nivel="error" titulo="No se pudieron cargar los cobros">Revisa tu conexión e intenta de nuevo.</Aviso>
           ) : (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
@@ -178,7 +184,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
 
               <div className="flex gap-2">
                 <div className="relative flex-1 min-w-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   <input type="search" aria-label="Buscar por código, cliente, cédula o técnico" placeholder="Código, cliente o cédula" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={BUSCADOR} />
                   <BotonLimpiarBusqueda valor={busqueda} onLimpiar={() => setBusqueda('')} />
                 </div>
@@ -195,41 +201,45 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
               </div>
 
               <Colapsable>{filtersOpen && (
-                <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
-                  <div className="flex flex-wrap gap-2" role="group" aria-label="Estado">{FILTROS_ESTADO_COBRO.map(chipEstado)}</div>
-                  <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Período">
+                <div className="rounded-card border border-transparent bg-card p-3 space-y-3 shadow-card">
+                  <FilaDeslizable ariaLabel="Estado">{FILTROS_ESTADO_COBRO.map(chipEstado)}</FilaDeslizable>
+                  <FilaDeslizable ariaLabel="Período">
                     {[...PERIODOS, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(({ valor, etiqueta }) => (
                       <Chip activo={periodo === valor} tamano="compacto" key={valor} type="button" onClick={() => setPeriodo(valor)}>{etiqueta}</Chip>
                     ))}
-                    {periodo === PERIODO_RANGO && <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} maximo={fechaISO(ahora)} />}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  </FilaDeslizable>
+                  {periodo === PERIODO_RANGO && <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} maximo={fechaISO(ahora)} />}
+                  <div className="grid grid-cols-2 gap-2">
                     <SelectMenu ariaLabel="Técnico" className={SELECTOR} value={tecnico} onChange={setTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...tecnicos.map((t) => ({ value: t, label: t }))]} />
                     <SelectMenu ariaLabel="Tipo de orden" className={SELECTOR} value={tipo} onChange={setTipo} items={TIPOS} />
                   </div>
                 </div>
               )}</Colapsable>
 
-              <p className="text-xs text-zinc-600 dark:text-zinc-400" aria-live="polite">{filas.length} {filas.length === 1 ? 'cobro' : 'cobros'} · {etiquetaPeriodo}</p>
+              <p className="text-xs text-muted-foreground" aria-live="polite">{filas.length} {filas.length === 1 ? 'cobro' : 'cobros'} · {etiquetaPeriodo}</p>
 
               {!filas.length ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">{cobros.length ? 'Ningún cobro coincide con lo que buscas. Prueba quitar algún filtro.' : 'Todavía no hay cobros. Aparecen aquí en cuanto se finaliza una orden con cobro o una instalación.'}</p>
+                cobros.length
+                  ? <EstadoVacio icono={SearchX} titulo="Ningún cobro coincide">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
+                  : <EstadoVacio icono={Landmark} titulo="Todavía no hay cobros">Aparecen aquí en cuanto se finaliza una orden con cobro o una instalación.</EstadoVacio>
               ) : (
                 <>
                   {/* Celular: una tarjeta por cobro. */}
                   <ul className="md:hidden flex flex-col gap-2">
-                    {filas.map((c) => (
-                      <li key={c.id} className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-2">
+                    {filas.map((c, i) => (
+                      <li key={c.id} style={{ '--i': i }} className="entrada-lista rounded-card border border-transparent bg-card p-3 space-y-2 shadow-card">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-black text-sm">{c.codigo || 'S/C'} <span className="font-bold">· {c.nombre}</span></p>
-                            <p className="text-xs text-zinc-600 dark:text-zinc-400">{tipoTexto(c)} · {fechaHora(c.creadoEn)}</p>
+                            <p className="text-xs text-muted-foreground">{tipoTexto(c)} · {fechaHora(c.creadoEn)}</p>
                           </div>
                           {estadoChip(c)}
                         </div>
                         <p className="text-sm font-bold break-words">{textoDeCobro(c)}</p>
                         <PagoDelCliente orden={c} tamano="grande" />
-                        {sinPago(c) && <div className="space-y-1">{sinPago(c)}{esperaPago(c) && <p className="text-xs text-zinc-700 dark:text-zinc-300">No marques este cobro como cargado todavía: no sabes si el cliente ya pagó.</p>}</div>}
+                        {faltaElPagoDelTecnico(c) && (esperaPago(c)
+                          ? <Aviso nivel="atencion" compact titulo="Técnico sin registrar el pago">No marques este cobro como cargado todavía: no sabes si el cliente ya pagó.</Aviso>
+                          : sinPago(c))}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           {alerta(c)}
                           {c.estado === ESTADO_COBRO.PENDIENTE && <span className={ETIQUETA}>{diasEsperando(c, ahora)} d esperando</span>}
@@ -240,22 +250,22 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                   </ul>
 
                   {/* Escritorio: tabla. */}
-                  <div className="hidden md:block rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-x-auto">
+                  <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                      <thead className="bg-secondary text-etiqueta text-muted-foreground">
                         <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                      <tbody className="divide-y divide-border">
                         {filas.map((c) => (
-                          <tr key={c.id} className="align-top hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                          <tr key={c.id} className="align-top hover:bg-accent/50">
                             <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(c.creadoEn)}{c.estado === ESTADO_COBRO.PENDIENTE && <span className={`block ${ETIQUETA}`}>{diasEsperando(c, ahora)} d esperando</span>}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{c.codigo || 'S/C'}</td>
                             <td className="px-3 py-2.5 min-w-[8rem]">{c.nombre}</td>
-                            <td className="px-3 py-2.5 min-w-[7rem]">{c.tecnico}</td>
-                            <td className="px-3 py-2.5 min-w-[8rem] text-zinc-700 dark:text-zinc-300 break-words">{tipoTexto(c)}</td>
+                            <td className="px-3 py-2.5 min-w-[7rem]">{legible(c.tecnico)}</td>
+                            <td className="px-3 py-2.5 min-w-[8rem] text-card-foreground break-words">{tipoTexto(c)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{textoDeCobro(c)}{alerta(c) && <span className="block">{alerta(c)}</span>}</td>
                             <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1">{estadoChip(c)}{sinPago(c)}</div></td>
-                            <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoClienteDe(c) ? <PagoDelCliente orden={c} tamano="compacto" /> : <span className="text-xs text-zinc-400">-</span>}</td>
+                            <td className="px-3 py-2.5 min-w-[10rem] max-w-[16rem]">{pagoClienteDe(c) ? <PagoDelCliente orden={c} tamano="compacto" /> : <span className="text-xs text-muted-foreground">-</span>}</td>
                             <td className="px-3 py-2.5"><Boton variante={accionDestacada(c) ? 'principal' : 'secundario'} tamano="compacto" onClick={() => setAbierto(c.id)}>{accionTexto(c)}</Boton></td>
                           </tr>
                         ))}

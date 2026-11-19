@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { HandCoins, MinusCircle, PlusCircle, TriangleAlert } from 'lucide-react';
+import { HandCoins, MinusCircle, PlusCircle } from 'lucide-react';
 import ResumenCifras from './ResumenCifras';
 import AvisoHistorial from '../modals/reports/AvisoHistorial';
 import ConfirmModal from '../modals/ConfirmModal';
@@ -13,7 +13,7 @@ import PanelAdelanto from './PanelAdelanto';
 import PanelDescuento from './PanelDescuento';
 import PanelAdicional from './PanelAdicional';
 import DetalleOrdenFinanzas from './DetalleOrdenFinanzas';
-import { BOTON_FILA, ETIQUETA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
+import { BOTON_FILA, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION, ETIQUETA_CAMPO } from './estilos';
 import { SIN_TECNICO, adelantosDelPeriodo, cifrasPagos, dolares, grupoDePago, pagosDelPeriodo, sumaPagado, textoOrdenes } from '../../utils/finanzas';
 import { textoDelAviso } from '../../utils/avisoOrdenPagada';
 import { fechaHoraLegible } from '../../utils/formatoFecha';
@@ -21,6 +21,8 @@ import { saldoAdelanto } from '../../utils/adelantos';
 import { textoAdicional } from '../../utils/adicionales';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
+import Aviso from '../Aviso';
+import EstadoVacio from '../EstadoVacio';
 
 // La pantalla de pago a técnicos: arriba las cifras y los avisos, y debajo la lista de técnicos a la izquierda y todo lo del técnico elegido a la derecha (en el celular, la lista y,
 // al elegir uno, su pantalla con un botón para volver). "Pagar", "Adelanto" y "Descuento" abren su formulario en esa misma pantalla, no en una ventana.
@@ -69,17 +71,12 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
   // Lo que tiene un técnico por pagar en pagos adicionales (para avisarlo en el formulario).
   const adicionalDe = (tecnico) => filas.find((f) => f.tecnico === tecnico)?.adicionales ?? 0;
 
-  const alerta = 'rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 space-y-3';
-
   return (
     <div className="space-y-5">
       {!enDetalleMovil && <ResumenCifras items={cifrasPagos(tecnicos, sumaPagado(Object.values(pagadasPorTecnico)), tasa)} />}
 
       {!enDetalleMovil && avisosOrdenPagada.length > 0 && (
-        <div className={alerta} role="status">
-          <p className="flex items-start gap-2 font-bold"><TriangleAlert className="w-6 h-6 shrink-0 mt-0.5" aria-hidden="true" />
-            <span>{avisosOrdenPagada.length === 1 ? 'Una orden que ya se pagó cambió' : `${avisosOrdenPagada.length} órdenes que ya se pagaron cambiaron`}. Revisa si hay que ajustar lo que se le pagó al técnico.</span>
-          </p>
+        <Aviso nivel="atencion" role="status" titulo={<>{avisosOrdenPagada.length === 1 ? 'Una orden que ya se pagó cambió' : `${avisosOrdenPagada.length} órdenes que ya se pagaron cambiaron`}. Revisa si hay que ajustar lo que se le pagó al técnico.</>}>
           <ul className="space-y-2">
             {avisosOrdenPagada.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/60 dark:bg-black/20 px-3 py-2">
@@ -88,23 +85,16 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
               </li>
             ))}
           </ul>
-        </div>
+        </Aviso>
       )}
 
       {!enDetalleMovil && esperandoRevision > 0 && (
-        <div className={alerta}>
-          <p className="flex items-start gap-2"><TriangleAlert className="w-6 h-6 shrink-0 mt-0.5" aria-hidden="true" />
-            <span>{esperandoRevision === 1 ? '1 orden espera' : `${esperandoRevision} órdenes esperan`} la revisión de un administrador y todavía no se {esperandoRevision === 1 ? 'puede' : 'pueden'} pagar. Aquí solo aparece lo que ya aprobó.</span>
-          </p>
-        </div>
+        <Aviso nivel="atencion" titulo={<>{esperandoRevision === 1 ? '1 orden espera' : `${esperandoRevision} órdenes esperan`} la revisión de un administrador y todavía no se {esperandoRevision === 1 ? 'puede' : 'pueden'} pagar. Aquí solo aparece lo que ya aprobó.</>} />
       )}
 
       {!enDetalleMovil && ordenesSinTecnico.length > 0 && (
-        <div className={alerta}>
-          <p className="flex items-start gap-2"><TriangleAlert className="w-6 h-6 shrink-0 mt-0.5" aria-hidden="true" />
-            <span>{textoOrdenes(ordenesSinTecnico.length)} finalizada{ordenesSinTecnico.length === 1 ? '' : 's'} sin técnico en su ficha: no hay a quién pagarla{ordenesSinTecnico.length === 1 ? '' : 's'}. La oficina debe asignarle el técnico a la orden.{' '}
-              <button type="button" aria-expanded={verSinTecnico} onClick={() => setVerSinTecnico((v) => !v)} className="font-bold underline">{verSinTecnico ? 'Ocultar' : 'Ver cuál'}</button></span>
-          </p>
+        <Aviso nivel="atencion" titulo={<>{textoOrdenes(ordenesSinTecnico.length)} finalizada{ordenesSinTecnico.length === 1 ? '' : 's'} sin técnico en su ficha: no hay a quién pagarla{ordenesSinTecnico.length === 1 ? '' : 's'}. La oficina debe asignarle el técnico a la orden.{' '}
+              <button type="button" aria-expanded={verSinTecnico} onClick={() => setVerSinTecnico((v) => !v)} className="font-bold underline">{verSinTecnico ? 'Ocultar' : 'Ver cuál'}</button></>}>
           <Colapsable>{verSinTecnico && (
             <ul className="divide-y divide-amber-300 dark:divide-amber-900/60">
               {ordenesSinTecnico.map((item) => (
@@ -115,15 +105,12 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
               ))}
             </ul>
           )}</Colapsable>
-        </div>
+        </Aviso>
       )}
 
       {!enDetalleMovil && sinTipo.length > 0 && (
-        <div className={alerta}>
-          <p className="flex items-start gap-2"><TriangleAlert className="w-6 h-6 shrink-0 mt-0.5" aria-hidden="true" />
-            <span>{sinTipo.length === 1 ? '1 mudanza finalizada no tiene' : `${sinTipo.length} mudanzas finalizadas no tienen`} tipo (interna o externa) y no se paga{sinTipo.length === 1 ? '' : 'n'} hasta que se lo pongas, porque cada tipo tiene su precio. Elígelo aquí mismo: las órdenes de un cierre ya no se pueden editar.{' '}
-              <button type="button" aria-expanded={verSinTipo} onClick={() => setVerSinTipo((v) => !v)} className="font-bold underline">{verSinTipo ? 'Ocultar' : 'Ver cuáles'}</button></span>
-          </p>
+        <Aviso nivel="atencion" titulo={<>{sinTipo.length === 1 ? '1 mudanza finalizada no tiene' : `${sinTipo.length} mudanzas finalizadas no tienen`} tipo (interna o externa) y no se paga{sinTipo.length === 1 ? '' : 'n'} hasta que se lo pongas, porque cada tipo tiene su precio. Elígelo aquí mismo: las órdenes de un cierre ya no se pueden editar.{' '}
+              <button type="button" aria-expanded={verSinTipo} onClick={() => setVerSinTipo((v) => !v)} className="font-bold underline">{verSinTipo ? 'Ocultar' : 'Ver cuáles'}</button></>}>
           <Colapsable>{verSinTipo && (
             <ul className="divide-y divide-amber-300 dark:divide-amber-900/60">
               {sinTipo.map((item) => (
@@ -138,7 +125,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
               ))}
             </ul>
           )}</Colapsable>
-        </div>
+        </Aviso>
       )}
 
       {!enDetalleMovil && (
@@ -161,7 +148,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
             <p className={TEXTO_SUAVE}>{general === 'adicional' ? 'Elige a quién. No hace falta que tenga órdenes por pagar: se suma a su próximo pago.' : 'Elige a quién. No hace falta que tenga órdenes por pagar: queda por descontar de su próximo pago.'}</p>
           </div>
           <div>
-            <label htmlFor="general-tecnico" className={ETIQUETA}>Técnico</label>
+            <label htmlFor="general-tecnico" className={ETIQUETA_CAMPO}>Técnico</label>
             <div className="mt-1">
               <SelectMenu id="general-tecnico" ariaLabel={general === 'descuento' ? 'Técnico del descuento' : general === 'adicional' ? 'Técnico del pago adicional' : 'Técnico del adelanto'} className={SELECTOR} value={tecnicoGeneral} onChange={setTecnicoGeneral} items={[{ value: '', label: 'Elige el técnico' }, ...tecnicosTodos.map((t) => ({ value: t, label: t }))]} />
             </div>
@@ -177,7 +164,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
           )}
         </div>
       ) : tecnicos.length === 0 ? (
-        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ninguna orden pagable en este periodo. Aquí solo aparecen las que Revisión de órdenes ya aprobó: amplía el rango de fechas o aprueba las pendientes en Revisión de órdenes.</p>
+        <EstadoVacio titulo="Ninguna orden pagable en este periodo">Aquí solo aparecen las que Revisión de órdenes ya aprobó: amplía el rango de fechas o aprueba las pendientes en Revisión de órdenes.</EstadoVacio>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(20rem,26rem)_1fr] items-start">
           <div className={actual ? 'hidden lg:block lg:sticky lg:top-20' : ''}>

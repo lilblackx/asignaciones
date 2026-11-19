@@ -2,7 +2,7 @@ import { textoMetrajeConMarcas } from '../../utils/metraje';
 import { observacionEsInterna, observacionParaTecnico } from '../../utils/observacion';
 import PagoDelCliente from '../PagoDelCliente';
 import { pagoClienteDe } from '../../utils/pagoEnOrden';
-import { Cable, Camera, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench, X } from 'lucide-react';
+import { Cable, Camera, ExternalLink, FileText, History, Landmark, MapPin, MessageSquareText, Navigation, Radio, User, Wrench } from 'lucide-react';
 import Modal from '../Modal';
 import HistorialTimeline from '../HistorialTimeline';
 import InsigniaVentaTecnico from '../InsigniaVentaTecnico';
@@ -11,7 +11,7 @@ import TelefonoAccion from '../TelefonoAccion';
 import BotonCopiar from '../BotonCopiar';
 import ValoresClienteTarjeta from './ValoresClienteTarjeta';
 import { useCopiado } from '../../hooks/useCopiado';
-import { formatCedula, getEstadoColor, getTipoTrabajoEstilo } from '../../utils/ticketDisplay';
+import { formatCedula, getEstadoPastel, getTipoTrabajoEstilo } from '../../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../../utils/smartolt';
 import { getEnlaceNavegacion, getEnlaceNavegacionNap } from '../../utils/ubicacion';
 import { esInstalacion, napConPuerto } from '../../utils/instalacion';
@@ -24,17 +24,22 @@ import CancelacionAviso from '../CancelacionAviso';
 import FotosDeOrden from '../FotosDeOrden';
 import AprobacionSinDetalles from '../AprobacionSinDetalles';
 import { fotosDe } from '../../utils/detallesOrden';
+import BotonCerrar from '../BotonCerrar';
+import { legible } from '../../utils/nombreTecnico';
+import { fallaVisible } from '../../utils/fallaVisible';
+import { ICONO_TARJETA, TARJETA_SECCION, TITULO_TARJETA } from '../estilos';
+import { oracion } from '../../utils/oracion';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 const fechaProgramada = (iso) => { const [y, m, d] = String(iso || '').split('-'); return y && m && d ? `${d}/${m}/${y}` : ''; };
 
-// Tarjeta de una sección: el mismo recuadro y título que las tarjetas de valores del cliente y de formas de pago.
+// Tarjeta de una sección: el mismo fondo suave y título (ver estilos) que las tarjetas de valores del cliente y de formas de pago.
 function Seccion({ icono: Icono, titulo, acciones, children }) {
   return (
-    <section aria-label={titulo} className="bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+    <section aria-label={titulo} className={TARJETA_SECCION}>
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className="flex items-center gap-1.5 text-xs font-black text-red-600 dark:text-red-400">
-          <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {titulo}
+        <h3 className={TITULO_TARJETA}>
+          <Icono className={ICONO_TARJETA} aria-hidden="true" /> {titulo}
         </h3>
         {acciones}
       </div>
@@ -47,14 +52,14 @@ function Seccion({ icono: Icono, titulo, acciones, children }) {
 function Dato({ etiqueta, children }) {
   if (children === undefined || children === null || children === '' || children === false) return null;
   return (
-    <div className="py-2 border-b border-zinc-200 dark:border-zinc-800 last:border-b-0 min-w-0">
-      <div className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">{etiqueta}</div>
-      <div className="text-sm font-bold text-zinc-900 dark:text-white break-words">{children}</div>
+    <div className="py-2 border-b border-border last:border-b-0 min-w-0">
+      <div className="text-etiqueta font-bold text-muted-foreground">{etiqueta}</div>
+      <div className="text-sm font-bold text-foreground break-words">{children}</div>
     </div>
   );
 }
 
-const ENLACE = 'inline-flex items-center gap-1 max-lg:min-h-11 text-sky-700 dark:text-sky-400 underline decoration-dotted underline-offset-2 hover:decoration-solid';
+const ENLACE = 'relative inline-flex items-center gap-1 max-lg:after:absolute max-lg:after:-inset-x-1 max-lg:after:-inset-y-3 text-sky-700 dark:text-sky-400 underline decoration-dotted underline-offset-2 hover:decoration-solid';
 
 // Todos los datos de una orden en una sola ventana, solo para mirar (desde el ojito junto al nombre en la lista). Editar,
 // aprobar o finalizar siguen en el menú de la fila. `onCopy(texto, mensaje)` copia y avisa con el toast.
@@ -77,21 +82,21 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
 
   return (
     <Modal onClose={onClose} zIndexClass={zIndexClass}>
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col">
-        <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-hidden border border-border flex flex-col">
+        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
-            <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-500" aria-hidden="true" /> DETALLE DE LA ORDEN</h2>
-            <p className="text-[11px] max-lg:text-xs font-medium text-red-400 truncate">{ticket.codigo || 'S/C'} - {ticket.nombre}</p>
+            <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-700 dark:text-red-400" aria-hidden="true" /> Detalle de la orden</h2>
+            <p className="text-etiqueta font-medium text-muted-foreground truncate"><span className="font-black text-foreground">{ticket.codigo || 'S/C'}</span> · {ticket.nombre}</p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 shrink-0"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 overflow-y-auto space-y-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className={`text-[11px] max-lg:text-xs font-bold px-2 py-0.5 rounded ${getEstadoColor(ticket.estado)}`}>{ticket.estado}</span>
-            <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
+            <span className={`text-etiqueta font-black px-2.5 py-0.5 rounded-full ${getEstadoPastel(ticket.estado)}`}>{oracion(ticket.estado)}</span>
+            <span className={`text-etiqueta font-black px-2 py-0.5 rounded ${tipo.badge}`}>{oracion(ticket.tipoTrabajo || 'AVERÍA')}</span>
             <InsigniaVentaTecnico ticket={ticket} />
-            {ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{ticket.falla}</span>}
+            {fallaVisible(ticket) && <span className="text-xs font-bold text-card-foreground">{fallaVisible(ticket)}</span>}
           </div>
 
           <CancelacionAviso ticket={ticket} />
@@ -116,8 +121,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
               {ticket.telefono && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span>{ticket.telefono}</span>
-                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
-                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="llamar" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton border border-input bg-card text-foreground text-xs font-bold hover:bg-secondary transition-colors" />
+                  <TelefonoAccion telefono={ticket.telefono} tipo="chat" nombre={ticket.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton border border-green-300 dark:border-green-800 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
                 </div>
               )}
             </Dato>
@@ -133,7 +138,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
           </Seccion>
 
           <Seccion icono={Wrench} titulo="Orden">
-            <Dato etiqueta="Técnico">{ticket.tecnico}</Dato>
+            <Dato etiqueta="Técnico">{legible(ticket.tecnico || '')}</Dato>
             <Dato etiqueta="Promotor">{promotora}</Dato>
             <Dato etiqueta="Creada">{[fechaHora(ticket.createdAt) || ticket.fecha, (ticket.creadoNombre || ticket.creado) && `por ${ticket.creadoNombre || ticket.creado}`].filter(Boolean).join(' · ')}</Dato>
             <Dato etiqueta="Programada para">{fechaProgramada(ticket.fechaProgramada)}</Dato>
@@ -185,15 +190,15 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
                   copiado={copiado === 'plantilla'}
                   onClick={() => copiar('plantilla', plantilla, 'Plantilla copiada, lista para WhatsApp.')}
                   etiqueta="Copiar la plantilla"
-                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] max-lg:text-xs font-bold"
-                  tono="bg-zinc-800 text-white hover:bg-zinc-700"
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-etiqueta font-bold"
+                  tono="bg-secondary text-foreground hover:bg-accent"
                   iconoClase="w-3 h-3"
                 >
                   Copiar
                 </BotonCopiar>
               )}
             >
-              <pre className="mt-1 whitespace-pre-wrap break-words text-xs text-zinc-800 dark:text-zinc-200 font-mono max-h-56 overflow-y-auto">{plantilla}</pre>
+              <pre className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground font-mono max-h-56 overflow-y-auto">{plantilla}</pre>
             </Seccion>
           )}
 

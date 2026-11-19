@@ -1,0 +1,262 @@
+// Los escenarios de la auditoría de diseño: un usuario del emulador (ver scripts/seed-emulator.mjs) y las pantallas que recorre, en orden.
+// `preparar(n)` lleva la app a esa pantalla desde donde dejó la anterior; devuelve false si no pudo (faltan datos). Después de medir se pulsa Escape dos veces para cerrar lo que haya abierto, o se llama a `limpiar(n)`.
+// Los pasos de un asistente comparten ventana: usan `seguir` como `limpiar` para no cerrarla entre uno y otro, y el último la cierra.
+// Opcionales por pantalla: `espera` (ms antes de medir), `viewports` (['pc'], ['movil'], ['320']). Las acciones de `n` están en navegador.mjs.
+
+const seguir = async () => {};
+
+// Rellena campos de la ventana de encima por su placeholder.
+const llenar = async (n, campos) => {
+  for (const [ph, valor] of Object.entries(campos)) await n.escribir(`[role="dialog"] input[placeholder="${ph}"], [role="dialog"] textarea[placeholder="${ph}"]`, valor);
+  await n.dormir(400);
+};
+const textarea = (n, valor) => n.escribir('[role="dialog"] textarea', valor);
+
+// Abre el Pre-finalizar de la orden (AS1: avería de tecnico1; AS2: instalación de tecnico2). En celular el botón dice "Pre-finalizar" y en PC es un ícono con aria-label.
+const abrirPreFinalizar = (codigo) => (n) => n.ev((c) => {
+  const e = [...document.querySelectorAll('button')].find((x) => {
+    const r = x.getBoundingClientRect();
+    const a = x.getAttribute('aria-label') || '';
+    const t = (x.innerText || '').trim();
+    return r.width > 0 && r.height > 0 && !/whatsapp/i.test(a) && (new RegExp(`(pre-finalizar|borrador).*${c}`, 'i').test(a) || /^(pre-finalizar|continuar borrador)$/i.test(t));
+  });
+  if (!e) return false;
+  e.click();
+  return true;
+}, codigo);
+const siguiente = (n) => n.clic('siguiente', { dentro: true });
+const elegirOpcion = (nombre) => (n) => n.ev((t) => { const o = [...document.querySelectorAll('[role="option"]')].find((e) => e.innerText.trim() === t); if (!o) return false; o.click(); return true; }, nombre);
+const desplazarAbajo = (selector) => (n) => n.ev((s) => {
+  const dentro = document.querySelector(s) || document.body;
+  const sc = [dentro, ...dentro.querySelectorAll('*')].find((e) => e.scrollHeight > e.clientHeight + 20 && /(auto|scroll)/.test(getComputedStyle(e).overflowY));
+  (sc || document.scrollingElement).scrollTop = 1e6;
+  return true;
+}, selector);
+const cerrarAsistente = async (n) => { await n.clic('volver', { dentro: true }); await n.esc(); await n.esc(); };
+
+// Pre-finalizar de una visita de recableado (tecnico1, orden AS1, avería): elige el tipo de visita y recorre sus cuatro pasos.
+const preFinalizarVisita = [
+  { id: 'pf-orden', preparar: abrirPreFinalizar('as1'), limpiar: seguir },
+  { id: 'pf-tipos-de-visita', preparar: (n) => n.clic('elige el tipo de visita', { dentro: true }), limpiar: seguir },
+  { id: 'pf-orden-recableado', preparar: elegirOpcion('Recableado'), limpiar: seguir },
+  { id: 'pf-datos', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-datos-errores', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-datos-lleno', preparar: async (n) => { await llenar(n, { 'Ej. 500': '500', 'Ej. 620': '620', 'Ej. NAP 08': 'NAP 08', 'Ej. 3': '3' }); return true; }, limpiar: seguir },
+  { id: 'pf-conectores', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-cierre', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-confirmar', preparar: async (n) => { await textarea(n, 'Visita de prueba para revisar el diseño.'); await n.dormir(300); return n.clic('confirmar', { dentro: true }); }, limpiar: cerrarAsistente },
+];
+
+// Pre-finalizar de una instalación (tecnico2, orden AS2): equipo, cable y cierre, con sus errores de validación.
+const preFinalizarInstalacion = [
+  { id: 'pf-orden', preparar: abrirPreFinalizar('as2'), limpiar: seguir },
+  { id: 'pf-equipo', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-equipo-errores', preparar: siguiente, limpiar: seguir },
+  // El escáner de serial (cámara de prueba del navegador: no lee nada, así que se ve la fase de "escaneando").
+  { id: 'escaner', preparar: async (n) => { if (!(await n.clicEtiqueta('^escanear el serial con la cámara$'))) return false; await n.dormir(1500); return true; }, limpiar: async (n) => { await n.ev(() => document.querySelector('[role="dialog"][aria-label="Escanear serial"] button[aria-label="Cerrar"]')?.click()); await n.dormir(400); } },
+  { id: 'pf-equipo-lleno', preparar: async (n) => { await llenar(n, { 'Ej. HWTC1A2B3C4D': 'HWTC1A2B3C4D', 'Ej. 100': '100', 'Ej. NAP 08': 'NAP 08', 'Ej. 3': '3' }); return true; }, limpiar: seguir },
+  { id: 'pf-cable', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-cable-errores', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-cable-lleno', preparar: async (n) => { await llenar(n, { 'Ej. 500': '500', 'Ej. 620': '620', 'Ej. DM SN N01B01': 'DM SN N01B01', 'Ej. 6': '6' }); await n.ev(() => [...document.querySelectorAll('[role="dialog"] button')].find((e) => e.innerText.trim() === '+')?.click()); return desplazarAbajo('[role="dialog"]')(n); }, limpiar: seguir },
+  { id: 'pf-cierre', preparar: siguiente, limpiar: seguir },
+  { id: 'pf-confirmar', preparar: async (n) => { await textarea(n, 'Instalación de prueba para revisar el diseño.'); await n.dormir(300); return n.clic('confirmar', { dentro: true }); }, limpiar: cerrarAsistente },
+];
+
+// Lo que comparten los técnicos antes de abrir una orden.
+const inicioTecnico = [
+  { id: 'lista', preparar: async () => true },
+  // La pantalla del cobro con las formas de pago de la empresa desplegadas (el técnico las abre si el cliente las pide).
+  { id: 'cobro-formas', preparar: async (n) => { await n.dormir(600); await clicTexto(n, 'formas de pago de la empresa'); return true; }, espera: 1200 },
+  // El paso de las fotos de una instalación finalizada (con el pago ya registrado): se pasan los avisos con "Hacerlo después" hasta que sale.
+  { id: 'cobro-fotos', preparar: async (n) => { for (let i = 0; i < 30; i += 1) { if (await n.ev(() => [...document.querySelectorAll('[role="alertdialog"] h3')].some((h) => /detalles de la orden/i.test(h.innerText)))) return true; if (!(await n.clic('hacerlo después'))) return false; await n.dormir(700); } return false; }, espera: 1200 },
+  // Con órdenes finalizadas por avisar, el técnico ve primero los avisos de cobro: "Hacerlo después" los pasa y deja ver las tarjetas.
+  { id: 'tarjetas', preparar: async (n) => { for (let i = 0; i < 60; i += 1) { if (!(await n.clic('hacerlo después'))) break; await n.dormir(500); } return true; } },
+  { id: 'lista-abajo', preparar: desplazarAbajo('body'), limpiar: async (n) => { await n.ev(() => { document.scrollingElement.scrollTop = 0; document.querySelectorAll('*').forEach((e) => { if (e.scrollTop) e.scrollTop = 0; }); }); } },
+  { id: 'notificaciones', preparar: (n) => n.clicEtiqueta('^notificaciones$') },
+  { id: 'cuenta', preparar: (n) => n.clicEtiqueta('mi cuenta') },
+  { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$') },
+];
+
+// ¿Se está viendo la versión de celular? (solo ella tiene el botón "Abrir menú").
+const esMovil = (n) => n.existe('button[aria-label="Abrir menú"]');
+// Una acción de una orden de la lista: en PC está en el menú "Más acciones de la orden"; en celular son botones sueltos en la tarjeta.
+const accionOrden = ({ pc, movil, movilMenu, codigo = 'as2' }) => async (n) => {
+  // En celular, Editar y Finalizar son botones de la tarjeta; el resto (plantilla, escalar, cancelar) está en el menú "Más acciones de la orden".
+  if (await esMovil(n)) {
+    if (!movilMenu) return n.clic(movil);
+    if (!(await n.clicEtiqueta(`^más acciones de la orden ${codigo}$`))) return false;
+    await n.dormir(500);
+    return n.clic(movilMenu, { en: '[role="menu"]' });
+  }
+  if (!(await n.clicEtiqueta(`^más acciones de orden ${codigo}$`))) return false;
+  await n.dormir(500);
+  return n.clic(pc, { en: '[role="menu"]' });
+};
+// Elige un reporte del selector de la pantalla Reportes.
+const vistaReporte = (nombre) => async (n) => {
+  await n.ev(() => document.querySelector('button[aria-haspopup="listbox"]')?.click());
+  await n.dormir(500);
+  return elegirOpcion(nombre)(n);
+};
+
+// Clic en el botón visible cuyo texto es exactamente `texto` (sin distinguir mayúsculas).
+const clicTexto = (n, texto) => n.ev((t) => {
+  const el = [...document.querySelectorAll('button')].find((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && (e.innerText || '').trim().toLowerCase() === t; });
+  if (!el) return false;
+  el.click();
+  return true;
+}, texto);
+
+export default [
+  {
+    id: 'login',
+    usuario: null,
+    pantallas: [
+      { id: 'formulario', preparar: async () => true, espera: 2500 },
+      {
+        id: 'error',
+        preparar: async (n) => {
+          await n.escribir('#login-usuario', 'nadie');
+          await n.escribir('#login-clave', 'incorrecta');
+          await n.clic('entrar');
+          await n.dormir(2500);
+          return n.existe('#login-error');
+        },
+      },
+    ],
+  },
+  // El Panel principal del administrador y los modales de sus órdenes (AS2: instalación; AS1: avería).
+  {
+    id: 'admin-panel',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: [
+      { id: 'panel', preparar: (n) => n.irAModulo('Panel principal') },
+      { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
+      // En celular las píldoras de técnicos van plegadas en un resumen: se abre para ver la lista con sus interruptores.
+      // Una orden esperando a infraestructura (AR709, sembrada a mano en el emulador) y una devuelta por la oficina (PD3): sus avisos en la tarjeta.
+      // Una orden devuelta por la oficina, con el comentario del técnico (PD3 de la siembra).
+      { id: 'devolucion-orden', preparar: (n) => n.ev(() => { const m = [...document.querySelectorAll('button[aria-expanded]')].find((x) => x.getClientRects().length && /^devuelta/i.test(x.innerText.trim())); if (m && m.getAttribute('aria-expanded') === 'false') m.click(); const e = m || [...document.querySelectorAll('[role="alert"], [role="status"]')].find((x) => x.getClientRects().length && /devuelta por/i.test(x.innerText)); if (!e) return false; e.scrollIntoView({ block: 'center' }); return true; }), espera: 1000 },
+      // La consulta de cobro de un recableado (AR701 de la siembra).
+      { id: 'consulta-cobro-orden', preparar: (n) => n.ev(() => { const m = [...document.querySelectorAll('button[aria-expanded]')].find((x) => x.getClientRects().length && /^consulta de cobro/i.test(x.innerText.trim())); if (m && m.getAttribute('aria-expanded') === 'false') m.click(); const e = m || [...document.querySelectorAll('[role="alert"], [role="status"]')].find((x) => x.getClientRects().length && /consulta de cobro/i.test(x.innerText)); if (!e) return false; e.scrollIntoView({ block: 'center' }); return true; }), espera: 1000 },
+      { id: 'avisos-orden', preparar: (n) => n.ev(() => { const m = [...document.querySelectorAll('button[aria-expanded]')].find((x) => x.getClientRects().length && /^en infraestructura/i.test(x.innerText.trim())); if (m && m.getAttribute('aria-expanded') === 'false') m.click(); const e = m || [...document.querySelectorAll('[role="status"], [role="alert"]')].find((x) => /en infraestructura/i.test(x.innerText)); if (!e) return false; e.scrollIntoView({ block: 'center' }); return true; }), espera: 800 },
+      { id: 'tecnicos-lista', preparar: (n) => n.clic('técnicos ·'), limpiar: (n) => n.clic('técnicos ·') },
+      // La campana de la oficina con sus avisos (el pre-finalizado de la siembra y los que genera la app).
+      { id: 'notificaciones', preparar: (n) => n.clicEtiqueta('^notificaciones'), limpiar: (n) => n.esc() },
+      // El pegado manual de la ubicación (el ícono "Sin ubicación" de una orden): la ventana con su encabezado y esquinas.
+      { id: 'ubicacion-pegar', preparar: (n) => n.clicEtiqueta('^sin ubicación: pegar'), limpiar: (n) => n.esc(), espera: 1200 },
+      // La oficina responde la consulta de cobro de un recableado (la siembra: una consulta pendiente en AR701).
+      { id: 'responder-cobro', preparar: (n) => clicTexto(n, 'responder'), limpiar: (n) => n.esc(), espera: 1200 },
+      { id: 'nueva-orden', preparar: (n) => n.clic('nueva orden'), limpiar: seguir },
+      // El calendario del campo de fecha (Fecha programada de Nueva asignación).
+      { id: 'nueva-orden-calendario', preparar: (n) => n.clicEtiqueta('^fecha programada:'), limpiar: (n) => clicTexto(n, 'cerrar'), espera: 1800 },
+      { id: 'nueva-orden-errores', preparar: (n) => n.clic('guardar', { dentro: true }) },
+      { id: 'detalle', preparar: (n) => n.clicEtiqueta('^ver detalle de la orden as2$') },
+      { id: 'editar', preparar: accionOrden({ pc: 'editar', movil: 'editar' }) },
+      { id: 'historial-orden', viewports: ['pc'], preparar: accionOrden({ pc: 'historial', movil: '' }) },
+      { id: 'cancelar-orden', preparar: accionOrden({ pc: 'cancelar orden', movilMenu: 'cancelar orden' }) },
+      { id: 'escalar', preparar: accionOrden({ pc: 'escalar', movilMenu: 'escalar a infraestructura', codigo: 'as1' }) },
+      { id: 'finalizar-datos', preparar: (n) => n.clic('finalizar'), limpiar: seguir },
+      { id: 'finalizar-valores', preparar: (n) => n.clic('siguiente', { dentro: true }) },
+    ],
+  },
+  // Los módulos de la oficina (Cierre, Historial, Revisión de órdenes, Técnicos, Usuarios, Tasa y pagos, Configuración).
+  {
+    id: 'admin-modulos',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: [
+      { id: 'cierre', preparar: (n) => n.irAModulo('Cierre') },
+      { id: 'cierre-ejecutar', preparar: (n) => n.clic('ejecutar cierre') },
+      { id: 'historial', preparar: (n) => n.irAModulo('Historial') },
+      { id: 'historial-filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
+      { id: 'historial-fila', preparar: (n) => n.ev(() => { const b = [...document.querySelectorAll('button[aria-expanded="false"]')].find((e) => e.className.includes('text-left')); if (!b) return false; b.click(); return true; }) },
+      // Una instalación con fotos (DK5): el Detalle de la orden con su historial y el visor al tocar una foto.
+      { id: 'historial-dk5', preparar: async (n) => { await n.escribir('input[placeholder^="Código"]', 'DK5'); await n.dormir(900); return n.ev(() => { const b = [...document.querySelectorAll('button[aria-expanded="false"]')].find((e) => /DK5/.test(e.innerText)); if (!b) return false; b.click(); return true; }); }, limpiar: seguir },
+      { id: 'detalle-fotos', preparar: (n) => n.clic('ver detalle completo'), limpiar: seguir, espera: 2000 },
+      { id: 'detalle-abajo', preparar: async (n) => { await n.dormir(3500); return desplazarAbajo('[role="dialog"]')(n); }, limpiar: seguir, espera: 800 },
+      { id: 'visor-fotos', preparar: async (n) => { await n.ev(() => document.querySelector('button[aria-label="Ver la foto 1 en grande"]')?.scrollIntoView({ block: 'center' })); await n.dormir(500); return n.clicEtiqueta('^ver la foto 1 en grande$'); }, espera: 1500 },
+      // Una orden devuelta (PD3), con varios eventos en su historial.
+      { id: 'historial-pd3', preparar: async (n) => { await n.esc(); await n.esc(); await n.escribir('input[placeholder^="Código"]', 'PD3'); await n.dormir(900); return n.ev(() => { const b = [...document.querySelectorAll('button[aria-expanded="false"]')].find((e) => /PD3/.test(e.innerText)); if (!b) return false; b.click(); return true; }); }, limpiar: seguir },
+      { id: 'detalle-pd3', preparar: (n) => n.clic('ver detalle completo'), limpiar: seguir, espera: 1500 },
+      { id: 'detalle-pd3-abajo', preparar: (n) => desplazarAbajo('[role="dialog"]')(n), espera: 800 },
+      { id: 'revision', preparar: (n) => n.irAModulo('Revisión de órdenes') },
+      { id: 'revision-menu', preparar: (n) => n.ev(() => { const b = document.querySelector('button[aria-haspopup="menu"][aria-label^="Más acciones de la orden"]'); if (!b) return false; b.scrollIntoView({ block: 'center' }); b.click(); return true; }) },
+      { id: 'tecnicos', preparar: (n) => n.irAModulo('Técnicos') },
+      { id: 'usuarios', preparar: (n) => n.irAModulo('Usuarios') },
+      // El formulario de "Nuevo usuario" se abre con el botón rojo de la lista (a la derecha en PC; debajo en celular).
+      { id: 'usuarios-nuevo', preparar: (n) => n.clic('nuevo usuario') },
+      // Con el formulario de "Nuevo usuario" a la vista (en PC es la columna de la derecha; en celular, la ventana recién abierta).
+      { id: 'usuarios-rol', preparar: (n) => n.ev(() => { const r = document.querySelector('#user-role'); if (!r) return false; r.click(); return true; }) },
+      { id: 'tasa-y-pagos', preparar: (n) => n.irAModulo('Tasa y pagos') },
+      { id: 'formas-de-pago', preparar: (n) => n.clic('formas de pago') },
+      { id: 'configuracion', preparar: (n) => n.irAModulo('Configuración') },
+    ],
+  },
+  // Reportes: las once vistas y sus menús.
+  {
+    id: 'admin-reportes',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: [
+      { id: 'resumen-ejecutivo', preparar: (n) => n.irAModulo('Reportes') },
+      { id: 'exportar', preparar: (n) => n.clic('exportar'), limpiar: (n) => n.esc() },
+      ...['Estadísticas', 'Registro de estadísticas', 'Causas de avería', 'Cobros y exoneraciones', 'Tendencia mensual', 'Tiempo de atención', 'Esperas del ciclo', 'Productividad', 'Calidad y reincidencias', 'Activación de técnicos']
+        .map((nombre) => ({ id: nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, '-'), preparar: vistaReporte(nombre), espera: 2200 })),
+      // El detalle de las órdenes que forman una cifra del Registro (la ventana sobre el reporte).
+      { id: 'registro-detalle', preparar: async (n) => { if (!(await vistaReporte('Registro de estadísticas')(n))) return false; await n.dormir(1500); return n.clicEtiqueta('^total visitas: .*ver detalle$'); }, espera: 1500 },
+    ],
+  },
+  // Finanzas con su propio usuario: su pantalla de inicio con la barra de filtros.
+  { id: 'finanzas', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
+  // Administración (concilia los cobros de los clientes): la lista y su panel de filtros.
+  { id: 'administracion', usuario: 'administracion', clave: 'Administracion1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }, { id: 'cobro-ver', preparar: (n) => clicTexto(n, 'ver'), limpiar: (n) => n.esc(), espera: 1500 }, { id: 'sin-resultados', preparar: async (n) => { await n.escribir('input[type="search"]', 'zzzzzz'); await n.dormir(800); return true; }, espera: 800 }] },
+  // Infraestructura (instalaciones realizadas): la lista y su panel de filtros.
+  { id: 'infraestructura', usuario: 'infra', clave: 'Infra1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') }] },
+  // Las secciones de la vista propia de Finanzas (cada rol tiene su vista, distinta de la del administrador). La pestaña Historial de Infraestructura solo existe con el permiso `puedeVerHistorial` (se marca en Usuarios): sin él no hay nada que abrir.
+  // El calendario del campo de fecha (Rango de Finanzas): el desplegable "Desde" abierto.
+  { id: 'finanzas-calendario', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'rango-desde', preparar: async (n) => { await clicTexto(n, 'rango'); await n.dormir(700); return n.clicEtiqueta('^desde:'); }, limpiar: (n) => n.esc(), espera: 1200 },
+  ] },
+  // Anular el pago de una orden: Reporte de pagos > las órdenes de un técnico > Anular.
+  { id: 'finanzas-anular', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'anular-orden', preparar: async (n) => { await n.clic('gerardo molero'); await n.dormir(900); const abre = (re) => n.ev((r) => { const b = [...document.querySelectorAll('button')].find((e) => new RegExp(r, 'i').test((e.innerText || '').trim()) && e.getBoundingClientRect().width > 0); if (!b) return false; b.click(); return true; }, re); if (!(await abre('^órdenes del pago'))) return false; await n.dormir(1200); return abre('^anular pago de esta orden'); }, limpiar: (n) => n.esc(), espera: 1200 },
+  ] },
+  { id: 'finanzas-secciones', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'pagos-de-clientes', preparar: async (n) => (await n.clic('pagos de clientes')) || n.clic('clientes'), espera: 1800 },
+    { id: 'pagos-historial', preparar: async (n) => { await (async () => (await n.clic('pagos de clientes')) || n.clic('clientes'))(); await n.dormir(800); return clicTexto(n, 'historial de pagos'); }, espera: 1800 },
+    { id: 'tabulador', preparar: async (n) => (await n.clic('tabulador de precios')) || n.clic('precios'), espera: 1800 },
+    { id: 'reporte-de-pagos', preparar: async (n) => (await n.clic('reporte de pagos')) || n.clic('reporte'), espera: 1800 },
+  ] },
+  // Finanzas por dentro (con scripts/seed-finanzas-emulator.mjs): el técnico elegido y los paneles de pago, adelanto, descuento y pago adicional.
+  { id: 'finanzas-tecnico', usuario: 'finanzas', clave: 'Finanzas1234', pantallas: [
+    { id: 'tecnico', preparar: (n) => n.clic('gerardo molero'), espera: 1500 },
+    { id: 'pagar', preparar: (n) => clicTexto(n, 'pagar'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
+    { id: 'descuento', preparar: (n) => clicTexto(n, 'descuento'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
+    { id: 'adelanto', preparar: (n) => clicTexto(n, 'adelanto'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
+    { id: 'adicional', preparar: (n) => clicTexto(n, 'pago adicional'), limpiar: (n) => clicTexto(n, 'cancelar'), espera: 1500 },
+  ] },
+  // Los demás roles en su propia vista: la cabecera de cada uno.
+  { id: 'almacen', usuario: 'almacen', clave: 'Almacen1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }] },
+  { id: 'promotora', usuario: 'promotora', clave: 'Promotora1234', pantallas: [{ id: 'inicio', preparar: async () => true, espera: 2200 }, { id: 'sin-resultados', preparar: async (n) => { await n.escribir('input[type="search"]', 'zzzzzz'); await n.dormir(800); return true; }, espera: 800 }] },
+  // Nueva venta: la usuaria "ventas" (promotora con permiso de crear ventas; la siembra es scripts/seed-ventas-emulator.mjs).
+  { id: 'ventas', usuario: 'ventas', clave: 'Ventas1234', pantallas: [
+    { id: 'nueva-venta', preparar: (n) => n.clic('nueva venta'), limpiar: (n) => n.esc(), espera: 1500 },
+    { id: 'nueva-venta-errores', preparar: async (n) => { await n.clic('nueva venta'); await n.dormir(800); return n.clic('guardar', { dentro: true }); }, limpiar: (n) => n.esc() },
+  ] },
+  // Estaciones (solo lfernandez) y Ubicación de técnicos (con la función encendida en el emulador: config/funciones.ubicacionActiva = true).
+  { id: 'estaciones', usuario: 'lfernandez', clave: 'Admin1234', pantallas: [
+    { id: 'estaciones', preparar: (n) => n.irAModulo('Estaciones'), espera: 2500 },
+    { id: 'ubicacion', preparar: (n) => n.irAModulo('Ubicación'), espera: 4500 },
+  ] },
+  { id: 'usuario', usuario: 'usuario', clave: 'Usuario1234', pantallas: [{ id: 'panel', preparar: async () => true, espera: 2200 }] },
+  // Los módulos del administrador que no estaban: cada uno con su cabecera.
+  {
+    id: 'admin-resto',
+    usuario: 'admin',
+    clave: 'Admin1234',
+    pantallas: ['Administración', 'Finanzas', 'Ubicación', 'Almacén', 'Envíos al inventario', 'Infraestructura', 'Ventas'].map((nombre) => ({ id: nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, '-'), preparar: (n) => n.irAModulo(nombre), espera: 2200 })),
+  },
+  { id: 'tecnico1', usuario: 'tecnico1', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarVisita] },
+  { id: 'tecnico2', usuario: 'tecnico2', clave: 'Tecnico1234', pantallas: [...inicioTecnico, ...preFinalizarInstalacion] },
+];

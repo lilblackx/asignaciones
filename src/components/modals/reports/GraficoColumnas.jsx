@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Table2, BarChart3 } from 'lucide-react';
 import { etiquetaMes } from '../../../utils/totalesMes';
 
-// Columnas agrupadas por mes. Colores de la paleta de dataviz (azul y naranja, validados para claro y oscuro); el color sigue a la serie,
+// Columnas agrupadas por mes. Colores de la paleta (rojo de marca y gris cálido, validados para claro y oscuro); el color sigue a la serie,
 // no a su posición. Todo lo que muestra el tooltip también está en la tabla (botón "Ver tabla").
 //   series: [{ nombre, color: clases de fondo }]; meses: [{ mes, etiqueta, enCurso?, valores: [uno por serie] }]
 const alto = 'h-44 sm:h-52';
@@ -26,20 +26,20 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
   const ultimo = meses.length - 1;
 
   return (
-    <section className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm mb-4">
+    <section className="bg-card border border-border rounded-card p-4 sm:p-5 shadow-sm mb-4">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-sm font-bold text-zinc-900 dark:text-white">{titulo}</h3>
-          {subtitulo && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{subtitulo}</p>}
+          <h3 className="text-sm font-bold text-foreground">{titulo}</h3>
+          {subtitulo && <p className="text-etiqueta text-muted-foreground mt-0.5">{subtitulo}</p>}
         </div>
-        <button type="button" onClick={() => setTabla((v) => !v)} className="shrink-0 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold px-2.5 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+        <button type="button" onClick={() => setTabla((v) => !v)} className="shrink-0 flex items-center gap-1.5 text-etiqueta font-bold px-2.5 py-1.5 rounded-boton bg-secondary text-card-foreground hover:bg-accent transition-colors">
           {tabla ? <BarChart3 className="w-3.5 h-3.5" aria-hidden="true" /> : <Table2 className="w-3.5 h-3.5" aria-hidden="true" />} {tabla ? 'Ver gráfico' : 'Ver tabla'}
         </button>
       </header>
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1 mt-3" aria-label="Series">
         {series.map((s) => (
-          <li key={s.nombre} className="flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+          <li key={s.nombre} className="flex items-center gap-1.5 text-xs text-card-foreground">
             <span className={`inline-block w-3 h-3 rounded-[3px] ${s.color}`} aria-hidden="true" /> {s.nombre}
           </li>
         ))}
@@ -49,14 +49,14 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
         <div className="overflow-x-auto mt-3">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[11px] max-lg:text-xs uppercase text-zinc-600 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
+              <tr className="text-etiqueta text-muted-foreground border-b border-border">
                 <th className="py-2 pr-3 text-left font-bold">Mes</th>
                 {series.map((s) => <th key={s.nombre} className="py-2 pr-3 text-right font-bold whitespace-nowrap">{s.nombre}</th>)}
               </tr>
             </thead>
             <tbody>
               {meses.map((m) => (
-                <tr key={m.mes} className="border-b border-zinc-100 dark:border-zinc-800/60">
+                <tr key={m.mes} className="border-b border-border/60">
                   <th scope="row" className="py-2 pr-3 text-left font-bold capitalize">{etiquetaMes(m.mes)}{m.enCurso ? ' (en curso)' : ''}</th>
                   {m.valores.map((v, i) => <td key={i} className="py-2 pr-3 text-right font-black">{v}</td>)}
                 </tr>
@@ -65,18 +65,18 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
           </table>
         </div>
       ) : maxDato === 0 ? (
-        <p className="mt-4 py-10 text-center text-sm text-zinc-700 dark:text-zinc-300">Aún no hay órdenes finalizadas en los meses cargados. La gráfica aparece cuando haya al menos una.</p>
+        <p className="mt-4 py-10 text-center text-sm text-card-foreground">Aún no hay órdenes finalizadas en los meses cargados. La gráfica aparece cuando haya al menos una.</p>
       ) : (
         <div className="mt-4 flex gap-2">
           <div className={`relative w-7 shrink-0 ${alto}`} aria-hidden="true">
             {marcas.map((v) => (
-              <span key={v} className="absolute right-0 translate-y-1/2 text-[11px] max-lg:text-xs leading-none text-zinc-600 dark:text-zinc-400" style={{ bottom: `${(v / maximo) * 100}%` }}>{compacto(v)}</span>
+              <span key={v} className="absolute right-0 translate-y-1/2 text-etiqueta leading-none text-muted-foreground" style={{ bottom: `${(v / maximo) * 100}%` }}>{compacto(v)}</span>
             ))}
           </div>
           <div className="flex-1 min-w-0">
             <div className={`relative ${alto}`}>
               {marcas.map((v) => (
-                <span key={v} className={`absolute inset-x-0 h-px ${v === 0 ? 'bg-zinc-300 dark:bg-zinc-700' : 'bg-zinc-200 dark:bg-zinc-800'}`} style={{ bottom: `${(v / maximo) * 100}%` }} aria-hidden="true" />
+                <span key={v} className={`absolute inset-x-0 h-px ${v === 0 ? 'bg-border' : 'bg-border/60'}`} style={{ bottom: `${(v / maximo) * 100}%` }} aria-hidden="true" />
               ))}
               <div className="absolute inset-0 flex" onPointerLeave={() => setActivo(null)}>
                 {meses.map((m, i) => (
@@ -88,16 +88,16 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
                     onPointerEnter={() => setActivo(i)}
                     onFocus={() => setActivo(i)}
                     onBlur={() => setActivo(null)}
-                    className="group relative flex-1 min-w-0 flex items-end justify-center gap-0.5 px-0.5 outline-none focus-visible:bg-zinc-100 dark:focus-visible:bg-zinc-800/60 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40 rounded-t"
+                    className="group relative flex-1 min-w-0 flex items-end justify-center gap-0.5 px-0.5 outline-none focus-visible:bg-accent/60 hover:bg-accent/40 rounded-t"
                   >
                     {m.valores.map((v, k) => (
                       <div key={series[k].nombre} className="relative flex-1 max-w-6 h-full flex items-end">
                         <div
-                          className={`w-full rounded-t-[4px] ${series[k].color} origin-bottom lg:animate-crecer-y group-hover:brightness-110 transition-[filter]`}
+                          className={`w-full rounded-t-[4px] ${series[k].color} origin-bottom animate-crecer-y group-hover:brightness-110 transition-[filter]`}
                           style={{ height: v > 0 ? `max(2px, ${(v / maximo) * 100}%)` : 0 }}
                         />
                         {i === ultimo && v > 0 && (
-                          <span className="absolute inset-x-0 text-center text-[11px] max-lg:text-xs font-bold leading-none text-zinc-700 dark:text-zinc-200" style={{ bottom: `calc(${(v / maximo) * 100}% + 3px)` }}>{v}</span>
+                          <span className="absolute inset-x-0 text-center text-etiqueta font-bold leading-none text-foreground" style={{ bottom: `calc(${(v / maximo) * 100}% + 3px)` }}>{v}</span>
                         )}
                       </div>
                     ))}
@@ -106,22 +106,22 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
               </div>
               {activo !== null && (
                 <div
-                  className="pointer-events-none absolute z-10 top-0 -translate-x-1/2 min-w-[8.5rem] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 shadow-lg"
+                  className="pointer-events-none absolute z-10 top-0 -translate-x-1/2 min-w-[8.5rem] rounded-campo border border-border bg-card px-3 py-2 shadow-lg"
                   style={{ left: `clamp(4.5rem, ${((activo + 0.5) / meses.length) * 100}%, calc(100% - 4.5rem))` }}
                   role="status"
                 >
-                  <div className="text-[11px] max-lg:text-xs font-bold capitalize text-zinc-600 dark:text-zinc-300 mb-1">{etiquetaMes(meses[activo].mes)}{meses[activo].enCurso ? ' (en curso)' : ''}</div>
+                  <div className="text-etiqueta font-bold capitalize text-muted-foreground mb-1">{etiquetaMes(meses[activo].mes)}{meses[activo].enCurso ? ' (en curso)' : ''}</div>
                   {series.map((s, k) => (
                     <div key={s.nombre} className="flex items-center justify-between gap-4 text-xs">
-                      <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300"><span className={`inline-block w-2.5 h-[3px] rounded ${s.color}`} aria-hidden="true" />{s.nombre}</span>
-                      <span className="font-black text-zinc-900 dark:text-white">{meses[activo].valores[k]}</span>
+                      <span className="flex items-center gap-1.5 text-muted-foreground"><span className={`inline-block w-2.5 h-[3px] rounded ${s.color}`} aria-hidden="true" />{s.nombre}</span>
+                      <span className="font-black text-foreground">{meses[activo].valores[k]}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
             <div className="flex mt-1.5" aria-hidden="true">
-              {meses.map((m) => <span key={m.mes} className="flex-1 min-w-0 text-center text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 truncate">{m.etiqueta}{m.enCurso ? '*' : ''}</span>)}
+              {meses.map((m) => <span key={m.mes} className="flex-1 min-w-0 text-center text-etiqueta text-muted-foreground truncate">{m.etiqueta}{m.enCurso ? '*' : ''}</span>)}
             </div>
           </div>
         </div>

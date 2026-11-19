@@ -32,6 +32,7 @@ import { aplicaYa, estaProgramado, textoCuota } from './descuentos.js';
 import { adicionalesConSaldo, textoAdicional } from './adicionales.js';
 import { fechaCorta } from './calendario.js';
 import { MONEDA_BS } from './datosPago.js';
+import { legible } from './nombreTecnico.js';
 
 export const CONCEPTOS_PAGO = [
   { id: 'INSTALACION', nombre: 'Instalación', singular: 'instalación', plural: 'instalaciones' },
@@ -515,7 +516,7 @@ export const columnasResumenPagado = () => [{ titulo: 'Técnico' }, { titulo: '�
 export const filaResumenPagado = (f) => [f.tecnico, String(f.ordenes), ...celdasGrupos(f.cantidades), dolares(f.total), dolares(f.bonos || 0), dolares(f.descuento || 0), dolares(f.neto ?? f.total), bolivares(f.bs || null)];
 
 // "Se pagó 245,00 $ por 15 órdenes a REINEL BRAVO".
-export const frasePagado = (f) => `Se pagó ${dolares(f.total)} por ${textoOrdenes(f.ordenes)} a ${f.tecnico}`;
+export const frasePagado = (f) => `Se pagó ${dolares(f.total)} por ${textoOrdenes(f.ordenes)} a ${legible(f.tecnico)}`;
 
 // --- Aviso al técnico (push) ---
 
@@ -582,8 +583,8 @@ export const avisoDeAnulacionDeOrden = (a) => ({
 
 // El aviso de un descuento o un bono por una garantía de otro técnico (solo se avisa al aprobar la garantía).
 export const avisoDeAjuste = (a) => (a.tipo === 'BONO'
-  ? { title: 'Pago por garantía', body: `Se te suman ${dolares(a.monto)} por la garantía ${a.codigo || 's/c'} de la orden ${a.codigoOrigen || 's/c'} (de ${a.de}). Entran en tu próximo pago.` }
-  : { title: 'Descuento por garantía', body: `Se te descuentan ${dolares(a.monto)} de la orden ${a.codigoOrigen || 's/c'} por la garantía ${a.codigo || 's/c'} (hecha por ${a.a}). Se restan de tu próximo pago.` });
+  ? { title: 'Pago por garantía', body: `Se te suman ${dolares(a.monto)} por la garantía ${a.codigo || 's/c'} de la orden ${a.codigoOrigen || 's/c'} (de ${legible(a.de)}). Entran en tu próximo pago.` }
+  : { title: 'Descuento por garantía', body: `Se te descuentan ${dolares(a.monto)} de la orden ${a.codigoOrigen || 's/c'} por la garantía ${a.codigo || 's/c'} (hecha por ${legible(a.a)}). Se restan de tu próximo pago.` });
 
 // El aviso de un pago adicional registrado.
 export const avisoDeAdicional = (a) => ({

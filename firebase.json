@@ -14,6 +14,7 @@
     "singleProjectMode": true
   },
   "hosting": {
+    "predeploy": ["node scripts/bloquear-rama.mjs"],
     "site": "seguimientons-f2026",
     "public": "dist",
     "ignore": [

@@ -9,7 +9,17 @@ export const getEstadoColor = (estado) => {
   if (e === 'PENDIENTE') return 'bg-slate-600 text-white';
   if (e === 'PRE-FINALIZADO' || e === 'PRE-FINALIZADA') return 'bg-amber-500 text-black font-bold';
   if (e === 'FINALIZADO') return 'bg-emerald-700 text-white';
-  return 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200';
+  return 'bg-accent text-foreground';
+};
+
+// La misma lectura que getEstadoColor (gris = pendiente, ámbar = atención, verde = listo, rojo = cancelado) en pastel, para la tarjeta del celular (estilo D).
+export const getEstadoPastel = (estado) => {
+  const e = estado?.toUpperCase() || '';
+  if (e === 'CANCELADO') return 'bg-red-100 text-red-900 dark:bg-red-500/20 dark:text-red-200';
+  if (e === 'PENDIENTE') return 'bg-accent text-accent-foreground';
+  if (e === 'PRE-FINALIZADO' || e === 'PRE-FINALIZADA') return 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200';
+  if (e === 'FINALIZADO') return 'bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200';
+  return 'bg-accent text-accent-foreground';
 };
 
 // Un color por tipo de trabajo, para su etiqueta (`badge`). Clases completas (Tailwind no detecta clases armadas).
@@ -21,10 +31,10 @@ const TIPO_TRABAJO_ESTILOS = {
   'MUDANZA': { badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' },
   'GARANTIA': { badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' },
   'LOW SIGNAL': { badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  'RETIRO EQUIPO': { badge: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300' },
+  'RETIRO EQUIPO': { badge: 'bg-accent text-foreground' },
   'CAMBIO DE EQUIPO': { badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
 };
-const TIPO_TRABAJO_DEFAULT = { badge: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300' };
+const TIPO_TRABAJO_DEFAULT = { badge: 'bg-accent text-foreground' };
 
 export const getTipoTrabajoEstilo = (tipo) =>
   TIPO_TRABAJO_ESTILOS[String(tipo || '').toUpperCase()] || TIPO_TRABAJO_DEFAULT;
@@ -55,7 +65,7 @@ export const getEtiquetaDia = (fechaStr, estado) => {
 
 export const getFechaStyles =(fechaStr, estado) => {
   if (estado === 'FINALIZADO' || estado === 'CANCELADO') {
-    return "text-zinc-600 dark:text-zinc-400 font-medium";
+    return "text-muted-foreground font-medium";
   }
   try {
     const [day, month, year] = fechaStr.split('/');
@@ -71,7 +81,7 @@ export const getFechaStyles =(fechaStr, estado) => {
   } catch {
     // fechaStr malformado (ticket viejo/manual): no resaltar como atrasado.
   }
-  return "text-zinc-600 dark:text-zinc-400 font-medium";
+  return "text-muted-foreground font-medium";
 };
 
 export const getCreadoColor = (creado) => {
@@ -79,7 +89,7 @@ export const getCreadoColor = (creado) => {
   // Estilo tenue (fondo con tinte + borde fino), igual que las etiquetas de técnico.
   if (c === 'ALEJANDRO') return 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/40';
   if (c === 'ROMER') return 'bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/40';
-  if (c === 'SKEYVER') return 'bg-zinc-200 text-zinc-700 border border-zinc-300 dark:bg-zinc-500/15 dark:text-zinc-300 dark:border-zinc-500/40';
+  if (c === 'SKEYVER') return 'bg-zinc-200 text-foreground border border-zinc-300 dark:bg-zinc-500/15 dark:border-zinc-500/40';
   if (c === 'RENNY') return 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/40';
   return c ? 'bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/40' : 'bg-transparent';
 };
@@ -117,17 +127,17 @@ export const renderProgramadaBadge = (fechaProgStr, tecnico) => {
 
   if (sinTecnico && categoria !== 'futura') {
     return (
-      <div className="bg-red-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-1 rounded mt-1 flex flex-col items-center justify-center shadow-sm w-max animate-pulse leading-none gap-0.5">
-        <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> ¡ASIGNAR!</span>
+      <div className="bg-red-600 text-white text-etiqueta font-black px-2 py-1 rounded mt-1 flex flex-col items-center justify-center shadow-sm w-max animate-pulse leading-none gap-0.5">
+        <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> ¡Asignar!</span>
         <span>{formatted}</span>
       </div>
     );
   }
   if (categoria === 'hoy') {
-    return <span className="bg-red-600 text-white text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">HOY · {formatted}</span>;
+    return <span className="bg-red-600 text-white text-etiqueta font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">HOY · {formatted}</span>;
   }
   if (categoria === 'vencida') {
-    return <span className="bg-amber-500 text-black text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">Vencida: {formatted}</span>;
+    return <span className="bg-amber-500 text-black text-etiqueta font-black px-1.5 py-0.5 rounded mt-1 w-max inline-block">Vencida: {formatted}</span>;
   }
-  return <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded mt-1 border border-blue-200 dark:border-blue-800 w-max inline-block">Prog: {formatted}</span>;
+  return <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-etiqueta font-bold px-1.5 py-0.5 rounded mt-1 border border-blue-200 dark:border-blue-800 w-max inline-block">Prog: {formatted}</span>;
 };

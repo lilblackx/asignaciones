@@ -1,6 +1,8 @@
 // Baja un documento de reporte (ver modelosReporte.js) como PDF o Word. Las librerías que arman los archivos pesan, así que se cargan
 // recién al exportar y no forman parte de lo que descarga la app al abrir.
 
+import { conNombresLegibles } from './nombresLegibles.js';
+
 const FORMATOS = {
   pdf: { extension: 'pdf', cargar: async () => (await import('./exportarPdf.js')).generarPdf },
   docx: { extension: 'docx', cargar: async () => (await import('./exportarDocx.js')).generarDocx },
@@ -28,7 +30,7 @@ export async function exportarDocumento(modelo, formato, rango, { descargar = tr
   const f = FORMATOS[formato];
   if (!f) throw new Error(`Formato desconocido: ${formato}`);
   const generar = await f.cargar();
-  const blob = await generar(modelo);
+  const blob = await generar(conNombresLegibles(modelo));
   if (descargar) descargarBlob(blob, `${nombreDeArchivo(modelo, rango)}.${f.extension}`);
   return blob;
 }

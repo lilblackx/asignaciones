@@ -2,14 +2,14 @@ import NumeroContado from '../../NumeroContado';
 
 // Las cifras grandes de arriba de cada reporte. items: [{ etiqueta, valor, detalle?, onClick? }]. Con `onClick` la cifra es un botón (por ejemplo,
 // para abrir el detalle de las órdenes que la forman).
-const CAJA = 'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl px-4 py-3 shadow-sm min-w-0';
+const CAJA = 'bg-card border border-border rounded-card px-4 py-3 shadow-sm min-w-0';
 
 function Contenido({ etiqueta, valor, detalle }) {
   return (
     <>
-      <div className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 leading-tight">{etiqueta}</div>
-      <div className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white leading-tight mt-1 break-words"><NumeroContado valor={valor} /></div>
-      {detalle && <div className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 truncate">{detalle}</div>}
+      <div className="text-etiqueta font-bold text-muted-foreground leading-tight">{etiqueta}</div>
+      <div className="text-xl sm:text-2xl font-black text-foreground leading-tight mt-1 break-words"><NumeroContado valor={valor} /></div>
+      {detalle && <div className="text-etiqueta text-muted-foreground mt-0.5 leading-snug">{detalle}</div>}
     </>
   );
 }
@@ -19,12 +19,12 @@ export function CifrasDestacadas({ items }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
       {items.map(({ etiqueta, valor, detalle, onClick }) => {
-        const clases = 'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 border-t-4 border-t-red-600 rounded-xl px-4 py-4 min-w-0 text-left';
+        const clases = 'bg-card border border-transparent rounded-card px-4 py-4 min-w-0 text-left shadow-card';
         const contenido = (
           <>
-            <div className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-tight">{etiqueta}</div>
-            <div className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white leading-none mt-2 break-words"><NumeroContado valor={valor} /></div>
-            {detalle && <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-2">{detalle}</div>}
+            <div className="text-sm font-bold text-card-foreground leading-tight">{etiqueta}</div>
+            <div className="text-3xl sm:text-4xl font-black text-foreground leading-none mt-2 break-words"><NumeroContado valor={valor} /></div>
+            {detalle && <div className="text-xs text-muted-foreground mt-2">{detalle}</div>}
           </>
         );
         return onClick
@@ -38,15 +38,15 @@ export function CifrasDestacadas({ items }) {
 // El resto de las cifras, en una sola tarjeta: nombre a la izquierda, valor a la derecha y el detalle debajo.
 export function CifrasLista({ items }) {
   return (
-    <dl className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl divide-y divide-zinc-200 dark:divide-zinc-800 mb-4">
+    <dl className="bg-card border border-transparent rounded-card divide-y divide-border mb-4 shadow-card">
       {items.map(({ etiqueta, valor, detalle, onClick }) => {
         const fila = (
           <>
             <div className="min-w-0">
-              <dt className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{etiqueta}</dt>
-              {detalle && <dd className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{detalle}</dd>}
+              <dt className="text-sm font-bold text-foreground">{etiqueta}</dt>
+              {detalle && <dd className="text-xs text-muted-foreground mt-0.5">{detalle}</dd>}
             </div>
-            <span className="shrink-0 text-lg font-black text-zinc-900 dark:text-white"><NumeroContado valor={valor} /></span>
+            <span className="shrink-0 text-lg font-black text-foreground"><NumeroContado valor={valor} /></span>
           </>
         );
         const clases = 'w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left';

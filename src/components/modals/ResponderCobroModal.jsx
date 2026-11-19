@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Cable, User, X } from 'lucide-react';
+import { Cable, User } from 'lucide-react';
 import Modal from '../Modal';
 import CobroSelector from './CobroSelector';
 import CobroAcordadoAviso from './CobroAcordadoAviso';
 import { cobroInicialDeOrden } from '../../utils/cobroAcordado';
 import { COBRO_EXONERADO, COBRO_OTRO, COBRO_VISITA, MONEDA_BS, parseMontoBs } from '../../utils/cobro';
 import { consultaCobroDe, respuestaVigente, textoRespuesta } from '../../utils/consultaCobro';
-import Spinner from '../Spinner';
+import { AccionesConfirmacion } from './DialogoConfirmacion';
+import { legible } from '../../utils/nombreTecnico';
+import BotonCerrar from '../BotonCerrar';
 
 // La oficina responde cuánto se cobra el recableado que consultó el técnico (ver utils/consultaCobro). Si ya había una
 // respuesta para esos metros se puede cambiar. `onResponder(ticket, { exonerado, otro, moneda })` guarda y avisa al técnico.
@@ -35,29 +37,24 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-amber-500 flex justify-between items-center sticky top-0 z-10">
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-md max-h-[92dvh] overflow-y-auto border border-border">
+        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 sticky top-0 z-10">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="bg-amber-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">COBRO DEL RECABLEADO</span>
-              <span className="text-xs font-bold text-amber-400">{ticket.codigo || 'S/C'}</span>
-            </div>
-            <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
+            <h2 className="text-sm font-black text-white">Cobro del recableado</h2>
+            <p className="text-xs text-zinc-300 mt-1 truncate">{ticket.codigo || 'S/C'} · {ticket.nombre}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">
           {!consulta ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">Esta orden ya no tiene una consulta de cobro.</p>
+            <p className="text-sm text-muted-foreground">Esta orden ya no tiene una consulta de cobro.</p>
           ) : (
             <>
-              <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1 text-xs text-amber-900 dark:text-amber-200">
-                {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></p>}
+              <div className="rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1 text-xs text-amber-900 dark:text-amber-200">
+                {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{legible(ticket.tecnico)}</span></p>}
                 <p className="flex items-center gap-1.5"><Cable className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Drop que va a usar: <span className="font-black text-sm">{consulta.metros} m</span></p>
-                {respuesta && <p className="pt-1 text-[11px] max-lg:text-xs">Ya respondiste: <span className="font-black">{textoRespuesta(respuesta)}</span>. Puedes cambiarlo.</p>}
+                {respuesta && <p className="pt-1 text-xs">Ya respondiste: <span className="font-black">{textoRespuesta(respuesta)}</span>. Puedes cambiarlo.</p>}
               </div>
               <CobroAcordadoAviso ticket={ticket} />
               <CobroSelector
@@ -68,10 +65,16 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
                 onChange={(siguiente) => { setSeleccion(siguiente); setError(''); }}
                 error={error}
               />
-              <div className="flex gap-2 pt-1">
-                <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
-                <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-black bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Enviando...' : 'Enviar al técnico'}</button>
-              </div>
+              <AccionesConfirmacion
+                nivel="atencion"
+                cancelLabel="Cancelar"
+                confirmLabel="Enviar al técnico"
+                procesando={enviando}
+                procesandoLabel="Enviando..."
+                onCancel={onClose}
+                onConfirm={confirmar}
+                className="pt-1"
+              />
             </>
           )}
         </div>

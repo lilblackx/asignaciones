@@ -309,14 +309,14 @@ export const cifrasVisitas = (e) => [
   { id: 'TOTAL', etiqueta: 'Total visitas', valor: e.totalVisitas, detalle: 'en el periodo' },
   { id: 'PAGADAS', etiqueta: 'Pagadas a técnico', valor: e.pagadas, detalle: 'en el periodo' },
   { id: 'AC', etiqueta: 'Cobradas al cliente (AC)', valor: e.ac, detalle: `${e.ex} ${e.ex === 1 ? 'exonerada' : 'exoneradas'}` },
-  { id: 'NR', etiqueta: 'No realizadas (NR)', valor: e.nr, detalle: 'canceladas · ver detalle' },
+  { id: 'NR', etiqueta: 'No realizadas (NR)', valor: e.nr, detalle: 'canceladas' },
 ];
 
 export const cifrasAverias = (e) => [
   { id: 'TOTAL', etiqueta: 'Total averías', valor: e.totalAverias, detalle: 'en el periodo' },
   { id: 'PAGADAS', etiqueta: 'Pagadas a técnico', valor: e.pagadas, detalle: 'en el periodo' },
   { id: 'AC', etiqueta: 'Cobradas al cliente (AC)', valor: e.ac, detalle: `${e.ex} ${e.ex === 1 ? 'exonerada' : 'exoneradas'}` },
-  { id: 'NR', etiqueta: 'No realizadas (NR)', valor: e.nr, detalle: 'canceladas · ver detalle' },
+  { id: 'NR', etiqueta: 'No realizadas (NR)', valor: e.nr, detalle: 'canceladas' },
 ];
 
 export const NOTA_AVERIAS = 'Una fila por orden: las finalizadas cuentan el día en que se terminó el trabajo y las canceladas (NR) el día en que se cancelaron, con su motivo en Observaciones. Las averías escaladas a infraestructura van a la hoja de visitas como TA.';
@@ -384,7 +384,7 @@ export function filasEstadisticaInstalaciones(e) {
 
 export const cifrasInstalaciones = (e) => [
   { id: 'F', etiqueta: 'Finalizadas', valor: e.f, detalle: 'en el periodo' },
-  { id: 'NR', etiqueta: 'No realizadas (NR)', valor: e.nr, detalle: 'canceladas · ver detalle' },
+  { id: 'NR', etiqueta: 'No realizadas (NR)', valor: e.nr, detalle: 'canceladas' },
   { id: 'TOTAL', etiqueta: 'Total', valor: e.total, detalle: 'en el periodo' },
   { id: 'DROP', etiqueta: 'Drop', valor: `${e.materiales.drop} m`, detalle: 'metraje de las finalizadas' },
 ];

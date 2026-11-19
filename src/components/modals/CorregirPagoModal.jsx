@@ -1,7 +1,7 @@
-import { X } from 'lucide-react';
 import Modal from '../Modal';
 import FormularioPagoCliente from '../FormularioPagoCliente';
 import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
+import BotonCerrar from '../BotonCerrar';
 
 // Solo el ADMIN: corrige los datos del pago que registró el técnico o, si el técnico dejó "el cliente paga después", registra el pago que sí se hizo. Siempre pide escribir qué se corrigió y queda en el historial
 // del pago, de la orden y del cobro con su nombre y la hora (el pago que ve cada pantalla se actualiza solo). A diferencia del técnico, no pide confirmar: la nota explica el cambio.
@@ -12,16 +12,16 @@ export default function CorregirPagoModal({ cobro, cuentasEmpresa = [], onCorreg
   const esperado = Number(cobro.monto) > 0 ? { monto: Number(cobro.monto), moneda: cobro.moneda } : null;
   return (
     <Modal onClose={onClose} zIndexClass="z-[90]">
-      <div role="dialog" aria-labelledby="corregir-pago-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
+      <div role="dialog" aria-labelledby="corregir-pago-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-card rounded-card shadow-2xl border border-border">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
           <div className="min-w-0">
             <h2 id="corregir-pago-titulo" className="text-base font-black text-white">{registrando ? 'Registrar el pago' : 'Corregir el pago'}</h2>
             <p className="text-xs font-bold text-zinc-300 truncate">{cobro.codigo || 'S/C'} · {cobro.nombre}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
         <div className="p-4 space-y-4">
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+          <p className="text-xs text-muted-foreground">
             {registrando
               ? 'El técnico dijo que el cliente pagaba después. Registra los datos del pago que sí se hizo y escribe por qué. Queda en el historial con tu nombre y la hora.'
               : 'Cambia lo que esté mal y escribe qué corregiste. Queda en el historial con tu nombre y la hora; el pago que ven la oficina, Revisión, Finanzas y Administración se actualiza.'}

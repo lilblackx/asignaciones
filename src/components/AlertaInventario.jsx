@@ -11,6 +11,7 @@ import { BUSCADOR } from './estilos';
 import ChipFiltro from './Chip';
 import Boton from './Boton';
 import CorregirEnvioModal from './modals/CorregirEnvioModal';
+import Aviso from './Aviso';
 
 const ETIQUETA_ESTADO = {
   SERIAL_NO_ENCONTRADO: 'Serial no existe',
@@ -43,27 +44,28 @@ export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
   return (
     <Colapsable>
       {(cantidad > 0 || pendientes > 0) && (
-        <div role="alert" className={`mb-3 rounded-xl border p-3 flex items-center gap-3 text-xs ${urgente ? 'border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-200' : 'border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200'}`}>
-          <PackageX className={`w-5 h-5 shrink-0 ${urgente ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} aria-hidden="true" />
-          <p className="flex-1 font-bold leading-snug">
-            {urgente
-              ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
-              : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
-          </p>
-          <button type="button" onClick={onAbrir} className={`shrink-0 px-3 py-2 rounded-xl text-white font-black ${urgente ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}>Ver</button>
-        </div>
+        <Aviso
+          className="mb-3"
+          nivel={urgente ? 'error' : 'atencion'}
+          role="alert"
+          icono={PackageX}
+          titulo={urgente
+            ? `${cantidad === 1 ? '1 orden aprobada no se envió' : `${cantidad} órdenes aprobadas no se enviaron`} al inventario del almacén.`
+            : `${pendientes === 1 ? '1 orden espera' : `${pendientes} órdenes esperan`} para enviarse al inventario (se reintenta sola cada 15 minutos).`}
+          accion={{ etiqueta: 'Ver', onClick: onAbrir }}
+        />
       )}
     </Colapsable>
   );
 }
 
 function Chip({ estado }) {
-  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] max-lg:text-xs font-black ${ESTILO_ESTADO[estado] || ESTILO_ALERTA}`}>{ETIQUETA_ESTADO[estado] || estado}</span>;
+  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-etiqueta font-black ${ESTILO_ESTADO[estado] || ESTILO_ALERTA}`}>{ETIQUETA_ESTADO[estado] || estado}</span>;
 }
 
 function Detalle({ envio }) {
   return (
-    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
+    <p className="text-etiqueta text-muted-foreground">
       {ETIQUETA_ACCION[envio.accion] || 'Orden'}{envio.tecnico || envio.tecnicoOrden ? ` · ${envio.tecnico || envio.tecnicoOrden}` : ''} · {fechaHora(envio.actualizadoEn)}
     </p>
   );
@@ -72,8 +74,8 @@ function Detalle({ envio }) {
 function Serial({ serial }) {
   if (!serial) return null;
   return (
-    <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">
-      Serial: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{serial}</span>
+    <p className="text-etiqueta text-muted-foreground">
+      Serial: <span className="font-mono font-bold text-foreground break-all">{serial}</span>
     </p>
   );
 }
@@ -109,10 +111,10 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCo
   };
 
   return (
-    <li className="bg-white dark:bg-zinc-900 border-2 border-red-200 dark:border-red-900/50 rounded-xl p-3 space-y-2">
+    <li className="bg-card border-2 border-red-200 dark:border-red-900/50 rounded-card p-3 space-y-2 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-black text-zinc-900 dark:text-white break-words">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
+          <p className="text-sm font-black text-foreground break-words">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
           <Detalle envio={envio} />
         </div>
         <Chip estado={envio.estado} />
@@ -134,7 +136,7 @@ function TarjetaAlerta({ envio, onReintentar, onReenviarAviso, onDescartar, onCo
           </Boton>
         )}
         {envio.estado === 'SERIAL_YA_INSTALADO' && onLiberar && (confirmandoLiberar ? (
-          <div className="w-full rounded-xl border border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2.5 space-y-2">
+          <div className="w-full rounded-campo border border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2.5 space-y-2">
             <p className="text-xs text-amber-900 dark:text-amber-100 leading-snug">Se comprueba que ese equipo quedó ocupado por un envío anterior de otra orden del cliente que figura (que después se envió con otro serial). Si es así, el equipo vuelve a «Con Técnico», se devuelve el material duplicado de ese envío viejo y se reintenta esta orden. Si no se puede comprobar, no se cambia nada.</p>
             <div className="flex gap-2">
               <Boton variante="principal" tamano="grande" className="flex-1" type="button" onClick={liberar} disabled={ocupado}>{ocupado ? 'Liberando...' : 'Sí, liberar y reintentar'}</Boton>
@@ -184,8 +186,8 @@ function FilaPendiente({ envio, onReintentar }) {
   };
   return (
     <li className="px-3 py-2 space-y-1.5">
-      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
-      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-300 break-words">{unidad(envio.intentos, 'intento', 'intentos')} · {envio.mensaje || 'No se pudo llegar al inventario.'}</p>
+      <p className="text-xs font-bold text-foreground truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
+      <p className="text-etiqueta text-muted-foreground break-words">{unidad(envio.intentos, 'intento', 'intentos')} · {envio.mensaje || 'No se pudo llegar al inventario.'}</p>
       <Boton variante="principal" tamano="compacto" type="button" onClick={reintentar} disabled={ocupado}>
         <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reintentar ahora'}
       </Boton>
@@ -226,21 +228,21 @@ function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorr
 
   return (
     <li>
-      <button type="button" onClick={() => setAbierta((v) => !v)} aria-expanded={abierta} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+      <button type="button" onClick={() => setAbierta((v) => !v)} aria-expanded={abierta} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left hover:bg-secondary">
         <div className="min-w-0">
-          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
+          <p className="text-xs font-bold text-foreground truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
           <Detalle envio={envio} />
           <Serial serial={envio.serial} />
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <Chip estado={envio.estado} />
-          <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${abierta ? 'rotate-180' : ''}`} aria-hidden="true" />
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${abierta ? 'rotate-180' : ''}`} aria-hidden="true" />
         </div>
       </button>
       <Colapsable>
         {abierta && (
           <div className="px-3 pb-3 space-y-2">
-            <dl className="rounded-xl bg-zinc-100 dark:bg-zinc-800/60 p-2.5 text-[11px] max-lg:text-xs leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
+            <dl className="rounded-campo bg-secondary/60 p-2.5 text-etiqueta leading-relaxed text-foreground space-y-0.5">
               {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
             </dl>
             <div className="flex flex-wrap gap-2">
@@ -321,26 +323,26 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
 
   return (
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-50" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800 ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={PackageCheck} titulo="Envíos al inventario" onClose={onClose} enPagina={enPagina} />
-        <div className={`p-4 space-y-5 ${CENTRADO_ESTRECHO}`}>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-snug">
+        <div className={`p-4 space-y-5 ${enPagina ? 'lg:px-6 max-w-4xl' : CENTRADO_ESTRECHO}`}>
+          <p className="text-xs text-muted-foreground leading-snug">
             Cada orden aprobada que instala un equipo o usa material se descuenta del inventario del almacén. Aquí ves lo que no se pudo enviar y lo que se envió.
           </p>
 
           {pendientes.length > 0 && (
             <section aria-labelledby="envios-pendientes" className="space-y-2">
-              <h3 id="envios-pendientes" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400">Esperando para enviarse ({pendientes.length})</h3>
-              <ul className="border border-amber-300 dark:border-amber-900/60 rounded-xl divide-y divide-amber-200 dark:divide-amber-900/40 bg-amber-50 dark:bg-amber-950/20">
+              <h3 id="envios-pendientes" className="text-etiqueta font-bold text-amber-700 dark:text-amber-400">Esperando para enviarse ({pendientes.length})</h3>
+              <ul className="border border-amber-300 dark:border-amber-900/60 rounded-campo divide-y divide-amber-200 dark:divide-amber-900/40 bg-amber-50 dark:bg-amber-950/20">
                 {pendientes.map((e) => <FilaPendiente key={e.id} envio={e} onReintentar={onReintentar} />)}
               </ul>
-              <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">Se reintentan solas cada 15 minutos.</p>
+              <p className="text-etiqueta text-muted-foreground">Se reintentan solas cada 15 minutos.</p>
             </section>
           )}
 
           <section aria-labelledby="envios-por-revisar" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-por-revisar" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Por revisar ({envios.length})</h3>
+              <h3 id="envios-por-revisar" className="text-etiqueta font-bold text-muted-foreground">Por revisar ({envios.length})</h3>
               {porReintentar.length > 1 && (
                 <Boton variante="principal" tamano="compacto" type="button" onClick={reintentarTodas} disabled={reintentandoTodas}>
                   <RefreshCw className={`w-3 h-3 ${reintentandoTodas ? 'animate-spin' : ''}`} aria-hidden="true" /> {reintentandoTodas ? 'Enviando...' : `Reintentar todas (${porReintentar.length})`}
@@ -348,7 +350,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               )}
             </div>
             {envios.length === 0 ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-4 rounded-xl border border-dashed border-zinc-400 dark:border-zinc-700">No hay órdenes pendientes de revisar.</p>
+              <p className="text-sm text-muted-foreground text-center py-4 rounded-campo border border-dashed border-input">No hay órdenes pendientes de revisar.</p>
             ) : (
               <ul className="space-y-2.5">
                 {envios.map((e) => <TarjetaAlerta key={e.id} envio={e} onReintentar={onReintentar} onReenviarAviso={onReenviarAviso} onDescartar={onDescartar} onCorregir={setCorrigiendo} onLiberar={onLiberar} />)}
@@ -358,7 +360,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
 
           <section aria-labelledby="envios-recientes" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-recientes" className="text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400">Actividad reciente</h3>
+              <h3 id="envios-recientes" className="text-etiqueta font-bold text-muted-foreground">Actividad reciente</h3>
               <Boton variante="secundario" tamano="compacto" type="button" onClick={onActualizar} disabled={cargando}>
                 <RefreshCw className={`w-3 h-3 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar
               </Boton>
@@ -367,7 +369,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
             <div className="flex gap-2">
               <label className="relative block flex-1 min-w-0">
                 <span className="sr-only">Buscar por código, cliente, serial o técnico</span>
-                <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                 <input
                   type="search"
                   value={texto}
@@ -380,7 +382,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
               <BotonFiltros abierto={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} cuenta={(filtro !== 'TODOS' ? 1 : 0)} />
             </div>
             <Colapsable>{filtersOpen && (
-              <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
+              <div className="rounded-card border border-transparent bg-card p-3 shadow-card">
               <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por estado">
                 {FILTROS.map((f) => (
                   <ChipFiltro activo={filtro === f.clave} tamano="compacto" key={f.clave} type="button" onClick={() => setFiltro(f.clave)}>
@@ -392,11 +394,11 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
             )}</Colapsable>
 
             {visibles.length === 0 ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-4">
+              <p className="text-sm text-muted-foreground text-center py-4">
                 {recientes.length === 0 && !consulta && filtro === 'TODOS' ? 'Todavía no hay envíos registrados.' : 'Ningún envío coincide con lo cargado.'}
               </p>
             ) : (
-              <ul className="border border-zinc-200 dark:border-zinc-800 rounded-xl divide-y divide-zinc-200 dark:divide-zinc-800">
+              <ul className="border border-border rounded-campo divide-y divide-border">
                 {visibles.map((e) => <FilaReciente key={e.id} envio={e} onReintentar={onReintentar} onReenviar={onReenviar} onReenviarAviso={onReenviarAviso} onCorregir={setCorrigiendo} />)}
               </ul>
             )}

@@ -4,15 +4,168 @@
 
 /* El fondo de página de toda la app: un gris claro (más oscuro que las tarjetas blancas, para que éstas resalten) en el tema claro y el negro de siempre en el oscuro. */
 @utility bg-fondo {
-  background-color: var(--color-zinc-200);
-  &:is(.dark *) { background-color: var(--color-zinc-950); }
+  background-color: var(--background);
+  &:is(.dark *) { background-color: var(--background); }
 }
+
+/* Base de colores del rediseño (rama rediseno): nombres con sentido ("fondo", "tarjeta", "marca"...) en vez de zinc-900 o red-600 sueltos por todas las pantallas.
+   Son los de shadcn/ui, así sus componentes salen con la paleta de la app. Dirección "Negro y rojo, afinado" (ver DESIGN.md): neutros zinc, rojo de marca
+   #DC2626 solo para marca, botón principal y peligro. Cambiar un color aquí lo cambia en todas las pantallas que ya usen estos nombres (bg-card, text-muted-foreground...).
+   Las pantallas actuales siguen con zinc-/red- directos hasta que se migren una por una. El tema oscuro cuelga de la clase .dark del contenedor (App.jsx). */
+:root {
+  --background: #f4f2ef;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --primary-hover: #b91c1c;
+  --secondary: #f5f5f4;
+  --secondary-foreground: #1c1917;
+  --muted: #f5f5f4;
+  --muted-foreground: #57534e;
+  --accent: #e7e5e4;
+  --accent-foreground: #1c1917;
+  --destructive: #b91c1c;
+  --success: #047857;
+  --warning: #f59e0b;
+  --warning-foreground: #18181b;
+  --border: #e7e5e4;
+  --input: #78716c;
+  --ring: #dc2626;
+  --sunken: #f5f5f4;
+}
+.dark {
+  --background: #0c0a09;
+  --foreground: #fafaf9;
+  --card: #1c1917;
+  --card-foreground: #fafaf9;
+  --popover: #1c1917;
+  --popover-foreground: #fafaf9;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --primary-hover: #b91c1c;
+  --secondary: #292524;
+  --secondary-foreground: #fafaf9;
+  --muted: #292524;
+  --muted-foreground: #a8a29e;
+  --accent: #3d3835;
+  --accent-foreground: #fafaf9;
+  --destructive: #ef4444;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --warning-foreground: #18181b;
+  --border: #44403c;
+  --input: #78716c;
+  --ring: #ef4444;
+  --sunken: #292524;
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sunken: var(--sunken);
+}
+
+/* Estilo D "tarjetas suaves" (decidido el 2026-11-16) en toda la app: fondo cálido, tarjetas blancas redondeadas con sombra suave, botones en cápsula con brillo rojo.
+   Los colores de arriba valen para todas las pantallas; en celular (menos de lg, 1024 px) las formas y las sombras son más grandes que en PC (tarjetas de 28 px contra 20 px). */
+@media (max-width: 1023.98px) {
+  :root {
+    --radius-card: 1.75rem;
+    --radius-campo: 1.125rem;
+    --shadow-card: 0 1px 2px rgb(28 25 23 / 0.04), 0 10px 28px rgb(28 25 23 / 0.09);
+  }
+}
+
+/* Encabezados de módulos y de ventanas (estilo D): tarjeta clara en vez de la barra negra, con la línea roja corta de la marca debajo del título.
+   Los textos y botones oscuros que ya llevan (text-white, bg-zinc-800...) se reemplazan aquí, para no tocar cada ventana. */
+.encabezado-d {
+  background-color: var(--card);
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+  box-shadow: none;
+}
+.encabezado-d:not(.sticky, .absolute, .fixed) { position: relative; }
+.encabezado-d :is(h1, h2) { position: relative; padding-bottom: 0.6rem; }
+.encabezado-d :is(h1, h2)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 2.5rem;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: var(--primary);
+}
+.encabezado-d .text-white { color: var(--foreground); }
+/* Lo que lleva un fondo de color sólido dentro del encabezado (el botón principal, las insignias rojas) conserva su texto blanco: con el texto oscuro del encabezado daba 3.65:1 sobre el rojo. */
+.encabezado-d :is(.bg-primary, .bg-red-500, .bg-red-600, .bg-red-700, .bg-emerald-600, .bg-emerald-700, .bg-blue-600, .bg-blue-700).text-white { color: #fff; }
+.encabezado-d .text-amber-400 { color: #b45309; }
+.dark .encabezado-d .text-amber-400 { color: #fbbf24; }
+/* Los acentos claros (-400) de los encabezados no se leen sobre el encabezado claro: en claro van en su tono -700 (4.5:1 o más sobre blanco); en oscuro se quedan como estaban. */
+.encabezado-d .text-red-400 { color: #b91c1c; }
+.encabezado-d .text-blue-400 { color: #1d4ed8; }
+.encabezado-d .text-emerald-400 { color: #047857; }
+.encabezado-d .text-green-400 { color: #15803d; }
+.encabezado-d .text-orange-400 { color: #c2410c; }
+.encabezado-d .text-sky-400 { color: #0369a1; }
+.dark .encabezado-d .text-red-400 { color: #f87171; }
+.dark .encabezado-d .text-blue-400 { color: #60a5fa; }
+.dark .encabezado-d .text-emerald-400 { color: #34d399; }
+.dark .encabezado-d .text-green-400 { color: #4ade80; }
+.dark .encabezado-d .text-orange-400 { color: #fb923c; }
+.dark .encabezado-d .text-sky-400 { color: #38bdf8; }
+.encabezado-d .text-zinc-300,
+.encabezado-d .text-zinc-400 { color: var(--muted-foreground); }
+.encabezado-d .bg-zinc-800 { background-color: var(--secondary); }
+.encabezado-d .border-zinc-700 { border-color: transparent; }
+/* El encabezado de una pantalla completa en PC (EncabezadoSimple) no es una barra: el título grande va sobre el fondo de la página, como el del Panel principal. */
+@media (min-width: 1024px) {
+  .encabezado-d.encabezado-pagina { background-color: var(--background); border-bottom: 0; }
+}
+.encabezado-d [class*='hover:bg-zinc-']:hover { background-color: var(--accent); }
+.encabezado-d [class*='hover:text-white']:hover { color: var(--foreground); }
 
 @theme {
   /* Esquinas más rectas (como el login): tarjetas, ventanas y botones grandes dejan de ser "burbujas" de 12 y 16 px. */
   --radius-xl: 0.5rem;
   --radius-2xl: 0.625rem;
+  /* Forma por tipo de pieza (rediseño): en PC siguen los radios chicos de siempre; en celular, el estilo D "tarjetas suaves" (ver el bloque @media de abajo). */
+  --radius-card: 1.25rem;
+  --radius-campo: 0.875rem;
+  --radius-boton: 9999px;
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.04), 0 6px 18px rgb(28 25 23 / 0.07);
+  --shadow-boton: 0 6px 16px rgb(220 38 38 / 0.28);
+  /* El brillo de un botón va del color del botón: rojo solo en los rojos. Con un botón verde o azul, el halo rojo se ve rosado y no combina. */
+  --shadow-boton-azul: 0 6px 16px rgb(3 105 161 / 0.28);
+  --shadow-boton-verde: 0 6px 16px rgb(4 120 87 / 0.28);
+  --shadow-boton-ambar: 0 6px 16px rgb(217 119 6 / 0.28);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Escala tipográfica: etiqueta (11 px en PC, 12 en celular) < text-xs 12 < text-sm 14 (cuerpo) < text-base 16 < text-lg 18 (subtítulo) < text-xl/2xl (título) < text-3xl+ (cifras). */
+  --text-etiqueta: 0.6875rem;
+  --text-etiqueta--line-height: 1.35;
 
   /* Transiciones de entrada: cortas (120-200 ms), sin fill-mode para no dejar transform residual sobre el elemento. */
   --animate-fade-in-up: fade-in-up 0.2s ease-out;
@@ -32,6 +185,8 @@
   --animate-crecer-y: crecer-y 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-paso-adelante: paso-adelante 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-paso-atras: paso-atras 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-drawer-entrada: drawer-entrada 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-drawer-salida: drawer-salida 0.2s ease-in forwards;
 
   /* Cambio de paso de un asistente (ver components/Pasos.jsx): el contenido nuevo entra deslizándose desde el lado hacia el que se avanza. */
   @keyframes paso-adelante {
@@ -39,6 +194,13 @@
   }
   @keyframes paso-atras {
     from { opacity: 0; transform: translateX(-28px); }
+  }
+  /* El menú lateral del celular: entra deslizándose desde la izquierda y sale hacia ella. */
+  @keyframes drawer-entrada {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes drawer-salida {
+    to { transform: translateX(-100%); }
   }
   @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(8px); }
@@ -162,42 +324,45 @@ input[type="search"]::-webkit-search-decoration {
   appearance: none;
 }
 
-/* Scrollbar a tono con la app (zinc/red), en vez del gris por defecto del navegador. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #d4d4d8 #f4f4f5;
-}
-
-.dark * {
-  scrollbar-color: #52525b #09090b;
-}
-
+/* Scrollbar discreto: fino, sin flechas, con la pista transparente y la barra semitransparente (se oscurece al pasar el cursor). Va separada de los bordes de arriba y abajo para no chocar con las esquinas redondeadas de las ventanas y tarjetas.
+   En Chrome y Brave se pinta con ::-webkit-scrollbar. No se declaran scrollbar-width ni scrollbar-color ahí: con ellos Chrome ignora las reglas -webkit- y vuelve al scrollbar nativo con flechas.
+   Los navegadores sin ::-webkit-scrollbar (Firefox) usan las propiedades estándar. */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-
-::-webkit-scrollbar-track {
-  background: #f4f4f5;
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
-
-.dark ::-webkit-scrollbar-track {
-  background: #09090b;
+::-webkit-scrollbar-track:vertical { margin-block: 10px; }
+::-webkit-scrollbar-track:horizontal { margin-inline: 10px; }
+::-webkit-scrollbar-button {
+  display: none;
 }
-
 ::-webkit-scrollbar-thumb {
-  background-color: #d4d4d8;
+  background-color: rgb(120 113 108 / 0.45);
+  border: 2px solid transparent;
+  background-clip: content-box;
   border-radius: 9999px;
-  border: 2px solid #f4f4f5;
 }
-
-.dark ::-webkit-scrollbar-thumb {
-  background-color: #52525b;
-  border-color: #09090b;
-}
-
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #dc2626;
+  background-color: rgb(87 83 78 / 0.8);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgb(168 162 158 / 0.35);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(214 211 209 / 0.7);
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #8d8781 transparent;
+  }
+  .dark * {
+    scrollbar-color: #78716c transparent;
+  }
 }
 
 /* La lista de módulos del menú lateral va sin barra de desplazamiento (ni flechas): un degradado sobre el pie avisa de que sigue, y la rueda, el dedo y el teclado la mueven. */
@@ -241,4 +406,42 @@ input[type="search"]::-webkit-search-decoration {
     [role="switch"], input[type="checkbox"], input[type="radio"] { position: relative; }
     [role="switch"]::after, input[type="checkbox"]::after, input[type="radio"]::after { content: ""; position: absolute; inset: -0.75rem; }
   }
+}
+
+/* Movimiento de la app (ver DESIGN.md, "Movimiento"): corto (150 a 250 ms), con la misma curva, en celular y en PC, y apagado con "reducir movimiento".
+   --curva: sale rápido y frena suave (la misma de los pasos de un asistente y de las barras de los reportes). */
+:root { --curva: cubic-bezier(0.22, 1, 0.36, 1); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Las tarjetas y filas de una lista entran subiendo y apareciendo, una tras otra (solo las primeras ocho: el resto entra junto, para no hacer esperar ni cargar de más a un teléfono modesto).
+     `--i` es la posición de la tarjeta en la lista. Solo al montarse; no se repite cuando llega un dato en vivo a otra tarjeta. */
+  .entrada-lista {
+    animation: entrada-lista 0.26s var(--curva) backwards;
+    animation-delay: calc(min(var(--i, 0), 7) * 40ms);
+  }
+  /* Lo que se toca responde con suavidad: color, fondo, borde, sombra y el encogido al pulsar. Las clases propias de Tailwind (transition-colors, etc.) mandan sobre esto. */
+  @layer base {
+    :where(button, [role="button"], [role="tab"], [role="switch"], a, input, select, textarea, summary) {
+      transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+      transition-duration: 150ms;
+      transition-timing-function: var(--curva);
+    }
+  }
+}
+@keyframes entrada-lista {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+/* Esqueleto de carga: barras grises que laten suave donde va a ir el contenido (ver components/Cargando, variante "lista"). */
+.esqueleto { background-color: var(--secondary); border-radius: 0.5rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .esqueleto { animation: esqueleto 1.4s ease-in-out infinite; }
+}
+@keyframes esqueleto {
+  50% { opacity: 0.55; }
+}
+
+/* Etiqueta: el texto más pequeño de la app (rótulos, chips, notas al pie). 11 px en PC, 12 px en celular para que se lea con el dedo cerca. */
+@media (max-width: 1023px) {
+  :root { --text-etiqueta: 0.75rem; }
 }

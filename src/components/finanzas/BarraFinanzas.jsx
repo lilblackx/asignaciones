@@ -4,37 +4,28 @@ import { PERIODOS } from '../../utils/periodoReporte';
 import SelectMenu from '../SelectMenu';
 import MenuExportar from '../modals/reports/MenuExportar';
 import { SELECTOR } from './estilos';
-import Chip from '../Chip';
-import RangoFechas from '../RangoFechas';
+import BarraFiltros from '../BarraFiltros';
 
-// Los filtros de Finanzas, con letra grande y controles de 48 px: chips con borde para el periodo, el desplegable propio de la app para el técnico y botones de borde grueso.
+// Los filtros de Finanzas (diseño común en BarraFiltros): periodo, técnico y, en pantallas angostas, Actualizar y Exportar.
 // Periodo y técnico valen para las tres secciones.
-export default function BarraFinanzas({ periodo, onPeriodo, conPorPagar = false, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar, gruposExportar, onExportar, exportando }) {
+export default function BarraFinanzas({ tasa = null, periodo, onPeriodo, conPorPagar = false, personalizado, onPersonalizado, hoy, tecnico, onTecnico, tecnicos, cargando, onRecargar, formatosExportar, gruposExportar, onExportar, exportando }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-      <div role="group" aria-label="Periodo" className={`grid ${conPorPagar ? 'grid-cols-3' : 'grid-cols-4'} gap-2 w-full sm:flex sm:w-auto`}>
-        {(conPorPagar ? [['POR_PAGAR', 'Por pagar'], ...PERIODOS] : PERIODOS).map(([id, texto]) => (
-          <Chip activo={periodo === id} tamano="angosto" key={id} type="button" onClick={() => onPeriodo(id)}>
-            {texto}
-          </Chip>
-        ))}
-      </div>
-
-      {periodo === 'RANGO' && (
-        <RangoFechas desde={personalizado.desde} hasta={personalizado.hasta} onDesde={(v) => onPersonalizado({ ...personalizado, desde: v })} onHasta={(v) => onPersonalizado({ ...personalizado, hasta: v })} maximo={hoy} grande />
+    <BarraFiltros
+      derecha={tasa}
+      periodos={conPorPagar ? [['POR_PAGAR', 'Por pagar'], ...PERIODOS] : PERIODOS}
+      periodo={periodo}
+      onPeriodo={onPeriodo}
+      rango={{ desde: personalizado.desde, hasta: personalizado.hasta, onDesde: (v) => onPersonalizado({ ...personalizado, desde: v }), onHasta: (v) => onPersonalizado({ ...personalizado, hasta: v }), maximo: hoy, grande: true }}
+      selector={<SelectMenu id="finanzas-tecnico" ariaLabel="Técnico" icon={UserRound} className={SELECTOR} value={tecnico} onChange={onTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...tecnicos.map((t) => ({ value: t, label: t }))]} />}
+      acciones={(
+        // En PC Actualizar y Exportar están en el encabezado (ver FinanzasApp); aquí quedan en pantallas angostas.
+        <div className="flex items-center gap-2 lg:hidden">
+          <Boton icono={RefreshCw} girando={cargando} onClick={onRecargar} disabled={cargando} aria-label="Actualizar" title="Actualizar" className="whitespace-nowrap max-sm:!px-0 max-sm:w-11">
+            <span className="max-sm:hidden">{cargando ? 'Actualizando...' : 'Actualizar'}</span>
+          </Boton>
+          <MenuExportar formatos={formatosExportar} grupos={gruposExportar} onElegir={onExportar} ocupado={exportando} alinear="derecha" soloIconoEnMovil />
+        </div>
       )}
-
-      <div className="w-full sm:w-60 min-w-0">
-        <SelectMenu id="finanzas-tecnico" ariaLabel="Técnico" icon={UserRound} className={SELECTOR} value={tecnico} onChange={onTecnico} items={[{ value: '', label: 'Todos los técnicos' }, ...tecnicos.map((t) => ({ value: t, label: t }))]} />
-      </div>
-
-      {/* En PC Actualizar y Exportar están en el encabezado (ver FinanzasApp); aquí quedan en pantallas angostas. */}
-      <div className="flex flex-wrap items-center gap-2 lg:hidden">
-        <Boton icono={RefreshCw} girando={cargando} onClick={onRecargar} disabled={cargando} className="whitespace-nowrap">
-          {cargando ? 'Actualizando...' : 'Actualizar'}
-        </Boton>
-        <MenuExportar formatos={formatosExportar} grupos={gruposExportar} onElegir={onExportar} ocupado={exportando} alinear="izquierda" />
-      </div>
-    </div>
+    />
   );
 }

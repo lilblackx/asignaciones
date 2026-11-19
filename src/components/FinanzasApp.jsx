@@ -35,6 +35,9 @@ import ResumenPagado from './finanzas/ResumenPagado';
 import PagosClientes from './finanzas/PagosClientes';
 import TabuladorPrecios from './finanzas/TabuladorPrecios';
 import TabuladorAdicionales from './finanzas/TabuladorAdicionales';
+import Aviso from './Aviso';
+import { BOTON_ENCABEZADO } from './estilos';
+import Cargando from './Cargando';
 
 // "3:45 p. m." (hora de Caracas) de cuando se leyeron las órdenes por última vez.
 const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(ms));
@@ -142,6 +145,9 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
   );
 
   const actual = SECCIONES.find((s) => s.id === seccion);
+  const tasaNodo = <TasaBcv tasa={tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={() => { bcv.actualizar(); tasas.actualizar(); }} opciones={tasas.opciones} dia={tasaElegida?.dia ?? null} onElegir={(dia) => setDiaTasa(dia === tasas.opciones[0]?.dia ? null : dia)} conBotonActualizar={seccion === 'PRECIOS'} />;
+  // "Actualizar" vuelve a leer los pagos y también la tasa del dólar (el Tabulador, que no tiene Actualizar, deja el botón junto a la tasa).
+  const actualizarTodo = () => { actualizar(); bcv.actualizar(); tasas.actualizar(); };
 
   // El cliente de cada orden pagada, si se conoce (las órdenes leídas y las filas del periodo): los Pagos detallados lo ponen junto al código.
   const clientePorClave = useMemo(() => {
@@ -178,7 +184,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-foreground flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} contexto={cargado ? (error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`) : ''} titulo="Finanzas" icono={Banknote} nombre={currentUserName || currentUser} rol={role} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
@@ -188,21 +194,21 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
               <>
                 <button
                   type="button"
-                  onClick={actualizar}
+                  onClick={actualizarTodo}
                   disabled={actualizando}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white disabled:opacity-60 transition-colors whitespace-nowrap"
+                  className={BOTON_ENCABEZADO}
                 >
                   <RefreshCw className={`w-4 h-4 ${actualizando ? 'animate-spin' : ''}`} aria-hidden="true" /> {actualizando ? 'Actualizando...' : 'Actualizar'}
                 </button>
-                <MenuExportar formatos={['pdf', 'docx', 'csv']} grupos={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs! bg-zinc-800! border-zinc-700! text-white! hover:bg-zinc-700!" />
+                <MenuExportar formatos={['pdf', 'docx', 'csv']} grupos={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined} onElegir={exportar} ocupado={exportando} extra="h-9! px-3! text-xs! border-transparent! shadow-card!" />
               </>
             )}
           />
         )}
 
         <main className="p-4 sm:p-6 w-full flex-1 space-y-3 text-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div role="tablist" aria-label="Secciones de Finanzas" className="flex gap-2 w-full md:w-auto">
+          <div className="flex items-end justify-between gap-4 border-b border-border">
+            <div role="tablist" aria-label="Secciones de Finanzas" className="flex w-full lg:w-auto">
               {SECCIONES.map(({ id, nombre, corto }) => (
                 <button
                   key={id}
@@ -210,30 +216,33 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   role="tab"
                   aria-selected={seccion === id}
                   onClick={() => elegirSeccion(id)}
-                  className={`flex-1 md:flex-none min-w-0 h-9 px-1 sm:px-4 rounded-xl text-sm max-sm:text-[13px] font-semibold border transition-colors ${seccion === id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={`flex-1 lg:flex-none min-w-0 h-11 px-1 sm:px-5 text-sm font-bold border-b-2 -mb-px transition-colors ${seccion === id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-zinc-300 dark:hover:border-zinc-600'}`}
                 >
                   <span className="sm:hidden">{corto}</span><span className="hidden sm:inline">{nombre}</span>
                 </button>
               ))}
             </div>
+            <div className="hidden lg:block pb-1.5"><TamanoLetra nivel={nivelLetra} onNivel={setNivelLetra} /></div>
+          </div>
+
+          {/* En celular: la última actualización y el tamaño de letra comparten una fila (en PC la hora va en el encabezado y el tamaño junto a las pestañas). */}
+          <div className="flex items-center justify-between gap-3 lg:hidden">
+            <span role="status" className="text-xs text-muted-foreground">{cargado ? (error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`) : ''}</span>
             <TamanoLetra nivel={nivelLetra} onNivel={setNivelLetra} />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-            <TasaBcv tasa={tasa} fecha={bcv.fecha} cargando={bcv.cargando} error={bcv.error} onActualizar={() => { bcv.actualizar(); tasas.actualizar(); }} opciones={tasas.opciones} dia={tasaElegida?.dia ?? null} onElegir={(dia) => setDiaTasa(dia === tasas.opciones[0]?.dia ? null : dia)} />
-            {cargado && (
-              <span role="status" className="sm:ml-auto lg:hidden text-xs text-zinc-600 dark:text-zinc-300">{error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`}</span>
-            )}
-          </div>
+          {/* La tasa va dentro de la barra de filtros; el Tabulador no tiene barra, así que la muestra sola. */}
+          {seccion === 'PRECIOS' && tasaNodo}
 
           {error && !actualizadoEn ? (
-            <p role="alert" className="text-base text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
-            <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando...</p>
+            <Cargando />
           ) : (
             <>
               {seccion !== 'PRECIOS' && (
                 <BarraFinanzas
+                  tasa={tasaNodo}
                   periodo={periodo}
                   onPeriodo={setPeriodo}
                   conPorPagar={seccion === 'PAGOS'}
@@ -244,22 +253,22 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
                   onTecnico={setTecnico}
                   tecnicos={nombresTecnicos}
                   cargando={actualizando}
-                  onRecargar={() => { actualizar(); if (seccion === 'CLIENTES') { pagosClientes.recargar(); cobrosClientes.recargar(); } }}
+                  onRecargar={() => { actualizarTodo(); if (seccion === 'CLIENTES') { pagosClientes.recargar(); cobrosClientes.recargar(); } }}
                   formatosExportar={['pdf', 'docx', 'csv']}
                   gruposExportar={seccion === 'REPORTE' ? GRUPOS_REPORTE : undefined}
                   onExportar={exportar}
                   exportando={exportando}
                 />
               )}
-              {errorExportar && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-xl px-4 py-3">{errorExportar}</p>}
-              {finanzas.error && <p role="alert" className="text-sm text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-xl px-4 py-3">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</p>}
+              {errorExportar && <Aviso nivel="error">{errorExportar}</Aviso>}
+              {finanzas.error && <Aviso nivel="error">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</Aviso>}
 
               {seccion === 'PAGOS' && corteTodaviaNoLlega() && (
-                <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-700 rounded-xl px-4 py-3">
+                <p role="status" className="text-sm text-foreground bg-zinc-200/70 dark:bg-zinc-900 border border-input rounded-campo px-4 py-3">
                   Comienza a contar a partir del {textoFechaCorte()}: lo anterior de este periodo no se muestra.
                 </p>
               )}
-              <div key={seccion} className="lg:animate-fade-in space-y-4">
+              <div key={seccion} className="animate-fade-in space-y-4">
               {seccion === 'PAGOS' && (
                 <TecnicosFinanzas
                   filas={filasPagos}

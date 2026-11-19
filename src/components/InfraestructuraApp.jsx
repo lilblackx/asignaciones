@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, Network, RefreshCw, Search } from 'lucide-react';
+import { FileText, Network, RefreshCw, Search, SearchX } from 'lucide-react';
 import { etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
@@ -21,14 +21,17 @@ import { BUSCADOR } from './estilos';
 import Chip from './Chip';
 import Boton from './Boton';
 import RangoFechas from './RangoFechas';
+import { FilaDeslizable } from './BarraFiltros';
 import HistorialInfra from './HistorialInfra';
+import EstadoVacio from './EstadoVacio';
+import Cargando from './Cargando';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 const dato = (valor) => valor || '-';
 // La salida suave de una fila solo en la tabla (pantalla mediana o grande) y sin "reducir movimiento"; en el celular la fila se va al instante.
 const filasAnimadas = () => window.matchMedia('(min-width: 768px) and (prefers-reduced-motion: no-preference)').matches;
 const SIN = (obj, id) => { const copia = { ...obj }; delete copia[id]; return copia; };
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
+const ETIQUETA = 'text-etiqueta font-bold text-muted-foreground';
 
 // Pantalla de INFRAESTRUCTURA: las instalaciones realizadas, con la NAP y el puerto donde quedó conectado cada cliente nuevo. Solo lee las órdenes; lo único que escribe es el check de "ya la anoté".
 // `onAbrirMenu`: cuando un administrador está aquí dentro del menú lateral, el botón ☰ que lo abre en el celular.
@@ -113,7 +116,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
     return (
       <label className={`inline-flex items-center gap-2.5 cursor-pointer ${conTexto ? 'min-h-[44px] w-full text-sm font-bold' : 'p-1 max-lg:p-2.5'}`}>
         <input type="checkbox" checked={Boolean(marca)} onChange={(e) => alMarcar(f, e.target.checked)} aria-label={`Ya anoté la instalación ${f.codigo}`} className={`w-6 h-6 shrink-0 accent-red-600 cursor-pointer ${recien[f.id] ? 'animate-pulso-numero' : ''}`} />
-        {conTexto && <span>{marca ? <>Anotada{marca.por ? ` por ${marca.por}` : ''}<span className="block text-xs font-normal text-zinc-600 dark:text-zinc-400">{fechaHora(marca.en)}</span></> : 'Ya la anoté'}</span>}
+        {conTexto && <span>{marca ? <>Anotada{marca.por ? ` por ${marca.por}` : ''}<span className="block text-xs font-normal text-muted-foreground">{fechaHora(marca.en)}</span></> : 'Ya la anoté'}</span>}
       </label>
     );
   };
@@ -133,7 +136,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       {/* Con el historial a la vista la pantalla es una columna de alto fijo: la lista del historial es la que se desplaza, con la búsqueda y las pestañas siempre arriba. */}
-      <div className={`${verHistorial ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200`}>
+      <div className={`${verHistorial ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-fondo text-foreground flex flex-col font-sans transition-colors duration-200`}>
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Infraestructura" icono={Network} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
@@ -151,14 +154,14 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
 
         <main className={`p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3${verHistorial ? ' hidden' : ''}`}>
           {!cargado ? (
-            <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">Cargando instalaciones...</p>
+            <Cargando variante="lista" texto="Cargando instalaciones..." />
           ) : error && !actualizadoEn ? (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
+            <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : (
             <>
               <div className="flex gap-2">
                 <div className="relative flex-1 min-w-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   <input
                     type="search"
                     aria-label="Buscar por cliente, código, técnico o NAP"
@@ -182,66 +185,69 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
               </div>
 
               <Colapsable>{filtersOpen && (
-                <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex flex-wrap gap-2" role="group" aria-label="Período">{[...PERIODOS_INFRAESTRUCTURA, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(chip)}</div>
-                  {periodo === PERIODO_RANGO && (
-                    <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} minimo={limites.min} maximo={limites.max} />
-                  )}
+                <div className="rounded-card border border-transparent bg-card p-3 shadow-card">
+                  <div className="space-y-2">
+                    <FilaDeslizable ariaLabel="Período">{[...PERIODOS_INFRAESTRUCTURA, { valor: PERIODO_RANGO, etiqueta: 'Rango' }].map(chip)}</FilaDeslizable>
+                    {periodo === PERIODO_RANGO && (
+                      <RangoFechas desde={rango.desde} hasta={rango.hasta} onDesde={(v) => setRango((r) => ({ ...r, desde: v }))} onHasta={(v) => setRango((r) => ({ ...r, hasta: v }))} minimo={limites.min} maximo={limites.max} />
+                    )}
+                    <FilaDeslizable ariaLabel="Anotadas">{FILTROS_ANOTADA.map(chipAnotada)}</FilaDeslizable>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2" role="group" aria-label="Anotadas">{FILTROS_ANOTADA.map(chipAnotada)}</div>
                 </div>
               )}</Colapsable>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 ml-auto" aria-live="polite">{filas.length} {filas.length === 1 ? 'instalación' : 'instalaciones'}</p>
-                <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando}>
-                  {actualizando ? 'Actualizando...' : 'Actualizar'}
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground min-w-0" aria-live="polite">
+                  <span className="font-bold text-foreground">{filas.length} {filas.length === 1 ? 'instalación' : 'instalaciones'}</span> · {error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}
+                </p>
+                <Boton variante="secundario" tamano="normal" icono={RefreshCw} girando={actualizando} onClick={actualizar} disabled={actualizando} aria-label="Actualizar" title="Actualizar" className="shrink-0 max-sm:!px-0 max-sm:w-11">
+                  <span className="max-sm:hidden">{actualizando ? 'Actualizando...' : 'Actualizar'}</span>
                 </Boton>
               </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 -mt-1">{error ? 'No se pudo actualizar.' : `Actualizado ${tiempoTranscurrido(actualizadoEn, ahora)}.`}</p>
 
               {!filas.length ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center py-10">{instalaciones.length ? 'Ninguna instalación coincide con lo que buscas.' : 'Todavía no hay instalaciones realizadas.'}</p>
+                instalaciones.length
+                  ? <EstadoVacio icono={SearchX} titulo="Ninguna instalación coincide">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
+                  : <EstadoVacio titulo="Todavía no hay instalaciones realizadas">Aparecen aquí cuando el técnico las termina.</EstadoVacio>
               ) : (
                 <>
                   {/* Celular: una tarjeta por instalación. */}
                   <ul className="md:hidden flex flex-col gap-2">
                     {filas.map((f) => (
-                      <li key={f.id} className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-2">
+                      <li key={f.id} className="rounded-card border border-transparent bg-card p-3 space-y-2 shadow-card">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-bold text-sm break-words">{f.cliente || 'Sin nombre'}</p>
-                            <p className="text-xs text-zinc-600 dark:text-zinc-400">{dato(f.codigo)} · {fechaHora(f.fecha)}</p>
+                            <p className="text-xs text-muted-foreground">{dato(f.codigo)} · {fechaHora(f.fecha)}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 rounded-xl bg-zinc-100 dark:bg-zinc-950 p-2">
+                        <div className="grid grid-cols-2 gap-2 rounded-campo bg-secondary p-2">
                           <div className="min-w-0"><p className={ETIQUETA}>NAP</p><p className="text-sm font-black break-words">{dato(f.nap)}</p></div>
                           <div className="min-w-0"><p className={ETIQUETA}>Puerto</p><p className="text-sm font-black">{dato(f.puerto)}</p></div>
                         </div>
-                        {f.direccion && <p className="text-xs text-zinc-700 dark:text-zinc-300 break-words">{f.direccion}</p>}
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">Técnico: {dato(f.tecnico)} · Puertos libres: {dato(f.puertosDisponibles)}</p>
+                        {f.direccion && <p className="text-xs text-card-foreground break-words">{f.direccion}</p>}
+                        <p className="text-xs text-muted-foreground">Técnico: {dato(f.tecnico)} · Puertos libres: {dato(f.puertosDisponibles)}</p>
                         {botonPlantilla(f, 'w-full')}
-                        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-1">{checkAnotada(f, true)}</div>
+                        <div className="border-t border-border pt-1">{checkAnotada(f, true)}</div>
                       </li>
                     ))}
                   </ul>
 
                   {/* Escritorio: tabla. */}
-                  <div className="hidden md:block rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-x-auto">
+                  <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                      <thead className="bg-secondary text-etiqueta text-muted-foreground">
                         <tr>
                           {['Fecha', 'Código', 'Cliente', 'Dirección', 'Técnico', 'NAP', 'Puerto', 'Puertos libres', 'Plantilla', 'Anotada'].map((c) => <th key={c} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                      <tbody className="divide-y divide-border">
                         {filas.map((f) => (
-                          <tr key={f.id} className={`align-top hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-opacity duration-500 ${marcas[f.id] ? 'opacity-60' : ''}${saliendo[f.id] === 'sale' ? ' fila-saliendo' : ''}`}>
+                          <tr key={f.id} className={`align-top hover:bg-secondary transition-opacity duration-500 ${marcas[f.id] ? 'opacity-60' : ''}${saliendo[f.id] === 'sale' ? ' fila-saliendo' : ''}`}>
                             <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(f.fecha)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{dato(f.codigo)}</td>
                             <td className="px-3 py-2.5 min-w-[8rem]">{dato(f.cliente)}</td>
-                            <td className="px-3 py-2.5 min-w-[10rem] text-zinc-700 dark:text-zinc-300">{dato(f.direccion)}</td>
+                            <td className="px-3 py-2.5 min-w-[10rem] text-card-foreground">{dato(f.direccion)}</td>
                             <td className="px-3 py-2.5 min-w-[7rem]">{dato(f.tecnico)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-black">{dato(f.nap)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-black">{dato(f.puerto)}</td>

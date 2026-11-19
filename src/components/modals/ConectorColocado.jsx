@@ -16,9 +16,9 @@ function ConectoresInstalacion({ ticket }) {
   ].filter((f) => f.cantidades.verde + f.cantidades.azul > 0);
   if (filas.length === 0) return null;
   return (
-    <section aria-label="Conectores colocados" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200">
-      <h3 className="flex items-center gap-2 font-black tracking-wide">
-        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> CONECTORES COLOCADOS
+    <section aria-label="Conectores colocados" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 text-xs text-amber-900 dark:text-amber-200">
+      <h3 className="flex items-center gap-2 font-black">
+        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> Conectores colocados
       </h3>
       <ul className="mt-2 ml-6 space-y-2">
         {filas.map((f) => (
@@ -43,17 +43,17 @@ export default function ConectorColocado({ ticket }) {
   // Visita de conector externo con internos azules: el verde es externo y el azul, interno; van en filas separadas.
   if (conector.tipo === 'Externo' && conector.cantidades.azul > 0) return <ConectoresInstalacion ticket={{ instalacion: { conectores: { externo: { verde: conector.cantidades.verde }, interno: { azul: conector.cantidades.azul } } } }} />;
   return (
-    <section aria-label="Conectores colocados" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200">
-      <h3 className="flex items-center gap-2 font-black tracking-wide">
-        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> CONECTORES COLOCADOS
+    <section aria-label="Conectores colocados" className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 text-xs text-amber-900 dark:text-amber-200">
+      <h3 className="flex items-center gap-2 font-black">
+        <Plug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> Conectores colocados
       </h3>
       <div className="mt-2 ml-6 flex flex-wrap items-center gap-x-8 gap-y-2">
         <div>
-          <span className="block text-[11px] max-lg:text-xs font-bold tracking-wide opacity-70">TIPO</span>
+          <span className="block text-etiqueta font-bold opacity-70">Tipo</span>
           <span className="text-sm font-black">{conector.tipo}</span>
         </div>
         <div>
-          <span className="block text-[11px] max-lg:text-xs font-bold tracking-wide opacity-70">CANTIDAD</span>
+          <span className="block text-etiqueta font-bold opacity-70">Cantidad</span>
           {conector.cantidades.verde + conector.cantidades.azul > 0 ? (
             <span className="mt-0.5 flex flex-wrap items-center gap-2">
               {['VERDE', 'AZUL'].filter((c) => conector.cantidades[c.toLowerCase()] > 0).map((c) => (

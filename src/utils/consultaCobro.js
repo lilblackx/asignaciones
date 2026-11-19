@@ -72,3 +72,12 @@ export function consultasNuevas(tickets, previa) {
 
 export const textoAvisoConsulta = (t) => `${t.tecnico || 'Un técnico'} pregunta el cobro del recableado de ${t.codigo || 'una orden'} (${t.consultaCobro.metros} m).`;
 export const textoAvisoRespuesta = (t) => `${t.codigo || 'Orden'} (${t.respuestaCobro.metros} m): ${textoRespuesta(t.respuestaCobro)}.`;
+
+// Lo que hay que mostrar de la consulta de una orden en la lista: null (nada: la orden ya no está abierta o el técnico no consultó) o { tipo: 'respuesta' | 'pendiente', consulta, respuesta, pendiente }.
+export function estadoConsulta(ticket) {
+  if (!['PENDIENTE', 'PRE-FINALIZADO'].includes(ticket?.estado)) return null;
+  const consulta = consultaCobroDe(ticket);
+  if (!consulta) return null;
+  const respuesta = respuestaVigente(ticket);
+  return { tipo: respuesta ? 'respuesta' : 'pendiente', consulta, respuesta, pendiente: consultaPendiente(ticket) };
+}

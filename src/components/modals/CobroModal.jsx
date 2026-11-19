@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { montoCalculadora } from '../../utils/montoCalculadora';
-import { AlertTriangle, Ban, Check, CheckCircle2, Copy, Pencil, Undo2, X } from 'lucide-react';
+import { Ban, Check, CheckCircle2, Copy, Pencil, Undo2 } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import Colapsable from '../Colapsable';
@@ -14,6 +14,9 @@ import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, MENSAJE_SIN_PAGO_DEL_TECNICO, diasEsperando, faltaElPagoDelTecnico, textoDeCobro, textoParaCopiar } from '../../utils/cobrosClientes';
 import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
+import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
@@ -26,9 +29,9 @@ function Dato({ clave, etiqueta, valor, copiable = true, copiado, onCopiar, chil
     <div className="min-w-0">
       <p className={ETIQUETA}>{etiqueta}</p>
       <div className="flex flex-wrap items-center gap-2 mt-0.5">
-        <span className="text-sm font-bold text-zinc-900 dark:text-white break-words">{valor}</span>
+        <span className="text-sm font-bold text-foreground break-words">{valor}</span>
         {copiable && (
-          <button type="button" onClick={() => onCopiar(clave, String(valor))} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+          <button type="button" onClick={() => onCopiar(clave, String(valor))} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-secondary text-foreground text-xs font-bold hover:bg-accent transition-colors">
             {copiado === clave ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />} {copiado === clave ? 'Copiado' : 'Copiar'}
           </button>
         )}
@@ -76,32 +79,28 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
   return (
     <>
     <Modal onClose={onClose} zIndexClass="z-[80]">
-      <div role="dialog" aria-labelledby="cobro-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
+      <div role="dialog" aria-labelledby="cobro-titulo" className="w-full max-w-xl max-h-[92dvh] overflow-y-auto bg-card rounded-card shadow-2xl border border-border">
+        <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-red-600 flex items-center justify-between gap-3 sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="cobro-titulo" className="text-base font-black text-white">{cobro.codigo || 'S/C'}</h2>
-              <span className={`whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[cobro.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[cobro.estado] || cobro.estado}</span>
+              <span className={`whitespace-nowrap text-etiqueta leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[cobro.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[cobro.estado] || cobro.estado}</span>
             </div>
-            <p className="text-xs font-bold text-zinc-300 truncate">{cobro.nombre}</p>
+            <p className="text-xs font-bold text-muted-foreground truncate">{cobro.nombre}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"><X className="w-4 h-4" /></button>
+          <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">
           {retirado && (
-            <div role="alert" className="rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 p-3 space-y-1 text-xs text-red-900 dark:text-red-200">
-              <p className="flex items-center gap-1.5 font-black tracking-wide"><Ban className="w-4 h-4 shrink-0" aria-hidden="true" /> ESTE COBRO SE RETIRÓ</p>
-              <p>La orden se canceló o dejó de tener cobro (por ejemplo, se exoneró). No lo subas al portal.</p>
-            </div>
+            <Aviso nivel="error" role="alert" icono={Ban} titulo="Este cobro se retiró">La orden se canceló o dejó de tener cobro (por ejemplo, se exoneró). No lo subas al portal.</Aviso>
           )}
           {cambio && (
-            <div role="alert" className="rounded-xl border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1">
-              <p className="flex items-start gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" /> {!cambio.anterior && cambio.nuevo ? 'La orden volvió a tener cobro' : cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}</p>
+            <Aviso nivel="atencion" role="alert" titulo={!cambio.anterior && cambio.nuevo ? 'La orden volvió a tener cobro' : cambio.nuevo ? 'El monto de la orden cambió' : 'La orden se canceló o dejó de tener cobro'}>
               {!cambio.anterior && cambio.nuevo
-                ? <p className="text-xs text-amber-900 dark:text-amber-200">Se había retirado del portal y la orden volvió a tener cobro: <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Súbelo al portal otra vez y confírmalo aquí.</p>
-                : <p className="text-xs text-amber-900 dark:text-amber-200">Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</p>}
-            </div>
+                ? <span>Se había retirado del portal y la orden volvió a tener cobro: <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Súbelo al portal otra vez y confírmalo aquí.</span>
+                : <span>Estaba cargado en el portal con <span className="font-bold">{textoDeMonto(cambio.anterior)}</span>{cambio.nuevo ? <> y ahora es <span className="font-bold">{textoDeMonto(cambio.nuevo)}</span>. Corrígelo en el portal y confírmalo aquí.</> : '. Retíralo del portal y confírmalo aquí.'}</span>}
+            </Aviso>
           )}
 
           {/* Lo que el técnico registró del pago del cliente (por ejemplo, que le pagó en efectivo): se ve antes de subir el cobro al portal. No va en lo que se copia. */}
@@ -117,12 +116,12 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
             <Dato copiado={copiado} onCopiar={copiar} clave="cedula" etiqueta="Cédula" valor={cobro.cedula ? formatCedula(cobro.cedula) : ''} />
             <div className="col-span-2">
               <Dato copiado={copiado} onCopiar={copiar} clave="telefono" etiqueta="Teléfono del cliente" valor={cobro.telefono} copiable={false}>
-                <TelefonoAccion telefono={cobro.telefono} tipo="llamar" nombre={cobro.nombre} className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors" />
-                <button type="button" onClick={() => copiar('telefono', cobro.telefono)} className="max-lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">{copiado === 'telefono' ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />} {copiado === 'telefono' ? 'Copiado' : 'Copiar'}</button>
-                <TelefonoAccion telefono={cobro.telefono} tipo="chat" nombre={cobro.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
+                <TelefonoAccion telefono={cobro.telefono} tipo="llamar" nombre={cobro.nombre} className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-secondary text-foreground text-xs font-bold hover:bg-accent transition-colors" />
+                <button type="button" onClick={() => copiar('telefono', cobro.telefono)} className="max-lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-secondary text-foreground text-xs font-bold hover:bg-accent transition-colors">{copiado === 'telefono' ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />} {copiado === 'telefono' ? 'Copiado' : 'Copiar'}</button>
+                <TelefonoAccion telefono={cobro.telefono} tipo="chat" nombre={cobro.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
               </Dato>
             </div>
-            <Dato copiado={copiado} onCopiar={copiar} clave="trabajo" etiqueta="Trabajo" valor={[cobro.tipoTrabajo, cobro.falla].filter(Boolean).join(' · ')} copiable={false} />
+            <Dato copiado={copiado} onCopiar={copiar} clave="trabajo" etiqueta="Trabajo" valor={[oracion(cobro.tipoTrabajo), cobro.falla].filter(Boolean).join(' · ')} copiable={false} />
             <Dato copiado={copiado} onCopiar={copiar} clave="tecnico" etiqueta="Técnico" valor={cobro.tecnico} copiable={false} />
             <Dato copiado={copiado} onCopiar={copiar} clave="emitido" etiqueta="Emitido" valor={`${fechaHora(cobro.creadoEn)}${pendiente ? ` · ${diasEsperando(cobro)} d esperando` : ''}`} copiable={false} />
             {!pendiente && <Dato copiado={copiado} onCopiar={copiar} clave="cargado" etiqueta="Cargado en el portal" valor={`${cobro.cargadoPor} · ${fechaHora(cobro.cargadoEn)}`} copiable={false} />}
@@ -130,35 +129,32 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
 
           {!soloLectura && <Boton variante="secundario" tamano="normal" icono={copiado === 'todo' ? Check : Copy} onClick={() => copiar('todo', textoParaCopiar(cobro))}>{copiado === 'todo' ? 'Copiado' : 'Copiar todos los datos'}</Boton>}
 
-          <details className="rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <summary className="px-3 py-2 text-xs font-black tracking-wide text-zinc-700 dark:text-zinc-300 cursor-pointer">HISTORIAL ({(cobro.historial || []).length})</summary>
+          <details className="rounded-campo border border-border">
+            <summary className="px-3 py-2 text-xs font-bold text-card-foreground cursor-pointer">Historial ({(cobro.historial || []).length})</summary>
             <ul className="px-3 pb-2 space-y-1.5">
               {[...(cobro.historial || [])].reverse().map((h, i) => (
-                <li key={`${h.en}-${i}`} className="text-xs text-zinc-700 dark:text-zinc-300 break-words"><span className="font-bold">{fechaHora(h.en)} · {h.por}:</span> {h.detalle}</li>
+                <li key={`${h.en}-${i}`} className="text-xs text-card-foreground break-words"><span className="font-bold">{fechaHora(h.en)} · {h.por}:</span> {h.detalle}</li>
               ))}
             </ul>
           </details>
 
           {pideMonto && (
-            <div className="space-y-2 rounded-xl border border-zinc-300 dark:border-zinc-700 p-3">
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">Esta instalación no trae monto: escribe el que subes al portal.</p>
+            <div className="space-y-2 rounded-campo border border-border p-3">
+              <p className="text-xs text-muted-foreground">Esta instalación no trae monto: escribe el que subes al portal.</p>
               <label htmlFor="cobro-monto" className={`${ETIQUETA} block`}>Monto</label>
               <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
                 <input id="cobro-monto" value={monto} onChange={(e) => { setMonto(montoCalculadora(e.target.value)); setError(null); }} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO_FORMULARIO} text-right font-black tabular-nums`} />
                 <SelectMenu ariaLabel="Moneda del monto" className={claseSelector('grande')} value={moneda} onChange={(v) => { setMoneda(v); setError(null); }} items={[{ value: 'USD', label: 'Dólares ($)' }, { value: 'BS', label: 'Bolívares (Bs)' }]} />
               </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">Solo los números: los dos últimos son los decimales (4500 se ve 45,00).</p>
+              <p className="text-xs text-muted-foreground">Solo los números: los dos últimos son los decimales (4500 se ve 45,00).</p>
             </div>
           )}
 
           {sinPagoDelTecnico && (
-            <div role="alert" className="rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 p-3 space-y-1 text-xs text-red-900 dark:text-red-200">
-              <p className="flex items-center gap-1.5 font-black tracking-wide"><Ban className="w-4 h-4 shrink-0" aria-hidden="true" /> EL TÉCNICO AÚN NO REGISTRÓ EL PAGO</p>
-              <p>{MENSAJE_SIN_PAGO_DEL_TECNICO}</p>
-            </div>
+            <Aviso nivel="error" role="alert" icono={Ban} titulo="El técnico aún no registró el pago">{MENSAJE_SIN_PAGO_DEL_TECNICO}</Aviso>
           )}
 
-          <Colapsable>{error && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold">{error.texto}</p>}</Colapsable>
+          <Colapsable>{error && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold">{error.texto}</p>}</Colapsable>
 
           {!soloLectura && !retirado && (
           <div className="space-y-2">

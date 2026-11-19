@@ -26,8 +26,8 @@ export function BotonCopiarDato({ copiado, onClick, etiqueta, titulo }) {
       onClick={onClick}
       etiqueta={etiqueta}
       titulo={titulo}
-      className="shrink-0 p-2 rounded-xl"
-      tono="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+      className="shrink-0 p-2 rounded-campo"
+      tono="bg-accent text-foreground hover:bg-accent"
     />
   );
 }

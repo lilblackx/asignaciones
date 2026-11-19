@@ -10,7 +10,7 @@ export default function Pasos({ pasos, actual, hecho = () => false, onElegir = n
   if (!pasos?.length) return null;
   return (
     <nav aria-label={etiqueta} className={className}>
-      <ol className="flex items-center gap-1.5 rounded-full border border-zinc-200 dark:border-zinc-700/70 bg-zinc-100/70 dark:bg-zinc-800/50 px-3 py-1.5">
+      <ol className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5">
         {pasos.map(({ clave, etiqueta: nombre }, i) => {
           const completo = i !== actual && (hecho(clave) || i < actual);
           const esActual = i === actual;
@@ -19,22 +19,22 @@ export default function Pasos({ pasos, actual, hecho = () => false, onElegir = n
           const ocultarNombre = !esActual;
           const contenido = (
             <>
-              <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px] max-lg:text-xs font-black transition-colors duration-300 ${completo ? 'bg-emerald-700 text-white' : esActual ? 'bg-emerald-600 text-white' : 'border border-zinc-400 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400'}`}>
+              <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-etiqueta font-black transition-colors duration-300 ${razon ? 'opacity-60' : ''} ${completo ? 'bg-emerald-700 text-white' : esActual ? 'bg-emerald-700 text-white' : 'border border-input text-muted-foreground'}`}>
                 {razon ? <Lock className="w-3 h-3" aria-hidden="true" /> : completo ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden="true" /> : i + 1}
               </span>
-              <span className={`${ocultarNombre ? 'hidden sm:inline ' : ''}text-xs leading-none whitespace-nowrap transition-colors duration-300 ${esActual ? 'font-black text-zinc-900 dark:text-white' : completo ? 'font-bold text-emerald-800 dark:text-emerald-400' : 'font-semibold text-zinc-500 dark:text-zinc-400'}`}>{nombre}</span>
+              <span className={`${ocultarNombre ? 'hidden sm:inline ' : ''}text-xs leading-none whitespace-nowrap transition-colors duration-300 ${esActual ? 'font-black text-foreground' : completo ? 'font-bold text-emerald-800 dark:text-emerald-400' : 'font-bold text-muted-foreground'}`}>{nombre}</span>
             </>
           );
           return (
             <li key={clave} aria-current={esActual ? 'step' : undefined} className={`flex items-center gap-1.5 ${i < pasos.length - 1 ? 'flex-1' : ''}`}>
               {razon ? (
-                <button type="button" disabled title={razon} aria-label={`Paso ${i + 1}: ${nombre}, bloqueado. ${razon}`} className="flex items-center gap-1.5 rounded-full -mx-1 px-1 py-0.5 opacity-50 cursor-not-allowed">{contenido}</button>
+                <button type="button" disabled title={razon} aria-label={`Paso ${i + 1}: ${nombre}, bloqueado. ${razon}`} className="flex items-center gap-1.5 rounded-full -mx-1 px-1 py-0.5 cursor-not-allowed">{contenido}</button>
               ) : onElegir && !esActual ? (
                 <button type="button" onClick={() => onElegir(clave)} aria-label={`Ir al paso ${i + 1}: ${nombre}`} className="flex items-center gap-1.5 rounded-full -mx-1 px-1 py-0.5 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/60 transition-colors">{contenido}</button>
               ) : (
                 <span className="flex items-center gap-1.5">{contenido}</span>
               )}
-              {i < pasos.length - 1 && <span aria-hidden="true" className={`flex-1 min-w-3 h-px transition-colors duration-300 ${completo ? 'bg-emerald-700' : 'bg-zinc-300 dark:bg-zinc-600'}`} />}
+              {i < pasos.length - 1 && <span aria-hidden="true" className={`flex-1 min-w-3 h-px transition-colors duration-300 ${completo ? 'bg-emerald-700' : 'bg-accent'}`} />}
             </li>
           );
         })}

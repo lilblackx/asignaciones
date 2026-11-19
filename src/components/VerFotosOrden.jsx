@@ -27,7 +27,7 @@ export default function VerFotosOrden({ orden, className = '' }) {
         type="button"
         onClick={() => { setAbierta(0); setPedidas(true); }}
         disabled={cargando}
-        className={`inline-flex items-center gap-1.5 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white underline-offset-2 hover:underline disabled:opacity-60 transition-colors ${className}`}
+        className={`inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-zinc-900 dark:hover:text-white underline-offset-2 hover:underline disabled:opacity-60 transition-colors ${className}`}
       >
         {cargando ? <Spinner className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" aria-hidden="true" />}
         {vencidas ? 'Las fotos ya vencieron' : `Ver detalles (${fotos.length} ${fotos.length === 1 ? 'foto' : 'fotos'})`}

@@ -8,12 +8,14 @@ import CampoFecha from './CampoFecha';
 import CampoHora from './CampoHora';
 import CampoBanco from './finanzas/CampoBanco';
 import ConfirmarPagoModal from './modals/ConfirmarPagoModal';
-import { AREA_TEXTO, BOTON, CAMPO_FECHA, CAMPO_FORMULARIO, ETIQUETA } from './estilos';
+import { AREA_TEXTO, BOTON, CAMPO_FECHA, CAMPO_FORMULARIO, ETIQUETA_CAMPO } from './estilos';
 import { SELECTOR } from './finanzas/estilos';
 import { MAX_REFERENCIA, MAX_TITULAR } from '../utils/datosPago';
 import { stripEmojis } from '../utils/sanitizeInput';
 import { montoCalculadora, montoParaCampo } from '../utils/montoCalculadora';
 import { TIPO_PAGO } from '../utils/pagoEnOrden';
+import Aviso from './Aviso';
+import Segmentado from './Segmentado';
 import {
   MONEDA_BS, MONEDA_USD, MONEDAS_CLIENTE, aplicaBancoCliente, claveReferencia, cuentasParaForma, exigeReferencia, exigeTitularCliente, fechaHoraDeMarca, formasDeCliente, notaPagoCompartido, parsePagoCliente,
 } from '../utils/pagoCliente';
@@ -21,7 +23,7 @@ import {
 // La hora cabe en una sola fila desde 320 px: selectores con menos relleno.
 const SELECTOR_HORA = SELECTOR.replace('pl-3 pr-9', 'pl-2.5 pr-7');
 
-const MensajeError = ({ texto }) => <Colapsable>{texto && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{texto}</p>}</Colapsable>;
+const MensajeError = ({ texto }) => <Colapsable>{texto && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto}</p>}</Colapsable>;
 
 // 5696 -> "5.696,00"; 5696.5 -> "5.696,50" (el monto se escribe como en una calculadora, ver montoCalculadora).
 const montoComoTexto = montoParaCampo;
@@ -181,21 +183,12 @@ export default function FormularioPagoCliente({
 
   const bloqueado = ocupado || guardando;
   const id = (campo) => `${idPrefijo}-${campo}`;
-  const botonMoneda = (m) => (
-    <button
-      key={m.id}
-      type="button"
-      aria-pressed={form.moneda === m.id}
-      onClick={() => cambiarMoneda(m.id)}
-      className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${form.moneda === m.id ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:border-zinc-500'}`}
-    >{m.nombre}</button>
-  );
   const areaPaga = (
-    <div className="space-y-2 rounded-lg border border-zinc-300 dark:border-zinc-700 p-3">
-      <label htmlFor={id('nota-pendiente')} className={ETIQUETA}>¿Cuándo o cómo va a pagar? (obligatorio)</label>
+    <div className="space-y-2 rounded-lg border border-border p-3">
+      <label htmlFor={id('nota-pendiente')} className={ETIQUETA_CAMPO}>¿Cuándo o cómo va a pagar? (obligatorio)</label>
       <textarea id={id('nota-pendiente')} value={notaPendiente} onChange={(e) => { setNotaPendiente(stripEmojis(e.target.value)); setError(null); }} maxLength={300} rows={2} placeholder="Ej. Paga el viernes por pago móvil" className={AREA_TEXTO} />
       <MensajeError texto={texto('notaPendiente')} />
-      <p className="text-xs text-zinc-600 dark:text-zinc-400">Queda anotado en la orden y en el cobro, y ya no tienes que hacer nada más con este pago.</p>
+      <p className="text-xs text-muted-foreground">Queda anotado en la orden y en el cobro, y ya no tienes que hacer nada más con este pago.</p>
     </div>
   );
 
@@ -205,7 +198,7 @@ export default function FormularioPagoCliente({
         <div role="group" aria-label="¿El cliente ya pagó?" className="flex gap-2">
           {[[false, 'El cliente ya pagó'], [true, 'Paga después']].map(([valor, etiqueta]) => (
             <button key={String(valor)} type="button" aria-pressed={pagaDespues === valor} onClick={() => { setPagaDespues(valor); limpiarAvisos(); }}
-              className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${pagaDespues === valor ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:border-zinc-500'}`}
+              className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${pagaDespues === valor ? 'bg-red-600 border-red-600 text-white' : 'bg-card dark:bg-background border-input text-foreground hover:border-zinc-500'}`}
             >{etiqueta}</button>
           ))}
         </div>
@@ -214,14 +207,14 @@ export default function FormularioPagoCliente({
       {incrustado && pagaDespues && permitirPagarDespues ? areaPaga : (
         <>
           <div>
-            <p className={ETIQUETA}>Moneda del pago</p>
-            <div role="group" aria-label="Moneda del pago" className="mt-1 flex gap-2">{MONEDAS_CLIENTE.map(botonMoneda)}</div>
+            <p className={ETIQUETA_CAMPO}>Moneda del pago</p>
+            <Segmentado llena grande className="mt-1" ariaLabel="Moneda del pago" opciones={MONEDAS_CLIENTE.map((m) => ({ id: m.id, etiqueta: m.nombre }))} valor={form.moneda} onCambiar={cambiarMoneda} />
             <MensajeError texto={texto('moneda')} />
             <Colapsable>{monedaDistinta && <p className="text-xs text-amber-800 dark:text-amber-300 font-bold mt-1">El cobro es en {cobro.moneda === MONEDA_USD ? 'dólares' : 'bolívares'} y el cliente pagó en otra moneda: se guarda tal cual y quedará marcado.</p>}</Colapsable>
           </div>
 
           <div>
-            <label htmlFor={id('forma')} className={ETIQUETA}>Forma de pago</label>
+            <label htmlFor={id('forma')} className={ETIQUETA_CAMPO}>Forma de pago</label>
             <div className="mt-1">
               <SelectMenu id={id('forma')} ariaLabel="Forma de pago" className={SELECTOR} value={form.forma} onChange={elegirForma} items={[{ value: '', label: 'Elige la forma de pago' }, ...formasDeCliente(form.moneda).map((f) => ({ value: f, label: f }))]} />
             </div>
@@ -230,7 +223,7 @@ export default function FormularioPagoCliente({
 
           <Colapsable>{form.forma && cuentas.length > 0 && (
             <div>
-              <label htmlFor={id('cuenta')} className={ETIQUETA}>Cuenta de la empresa donde llegó el pago</label>
+              <label htmlFor={id('cuenta')} className={ETIQUETA_CAMPO}>Cuenta de la empresa donde llegó el pago</label>
               <div className="mt-1">
                 <SelectMenu id={id('cuenta')} ariaLabel="Cuenta de la empresa donde llegó el pago" className={SELECTOR} value={form.cuentaEmpresa} onChange={(v) => cambiar('cuentaEmpresa', v)} items={[{ value: '', label: 'Elige la cuenta' }, ...cuentas.map((c) => ({ value: c, label: c }))]} />
               </div>
@@ -244,7 +237,7 @@ export default function FormularioPagoCliente({
 
           <Colapsable>{exigeTitularCliente(form.forma) && (
             <div>
-              <label htmlFor={id('titular')} className={ETIQUETA}>Titular de la cuenta Zelle</label>
+              <label htmlFor={id('titular')} className={ETIQUETA_CAMPO}>Titular de la cuenta Zelle</label>
               <input id={id('titular')} value={form.titular} onChange={(e) => cambiar('titular', stripEmojis(e.target.value))} maxLength={MAX_TITULAR} autoComplete="off" placeholder="Nombre de quien hizo el Zelle" aria-invalid={error?.campo === 'titular'} className={`${CAMPO_FORMULARIO} mt-1`} />
               <MensajeError texto={texto('titular')} />
             </div>
@@ -252,34 +245,34 @@ export default function FormularioPagoCliente({
 
           <Colapsable>{form.forma && exigeReferencia(form.forma) && (
             <div>
-              <label htmlFor={id('referencia')} className={ETIQUETA}>Referencia</label>
+              <label htmlFor={id('referencia')} className={ETIQUETA_CAMPO}>Referencia</label>
               <input id={id('referencia')} value={form.referencia} onChange={(e) => cambiar('referencia', stripEmojis(e.target.value))} maxLength={MAX_REFERENCIA} autoComplete="off" inputMode="text" aria-invalid={error?.campo === 'referencia'} className={`${CAMPO_FORMULARIO} mt-1`} />
               <MensajeError texto={texto('referencia')} />
             </div>
           )}</Colapsable>
 
           <div>
-            <label htmlFor={id('monto')} className={ETIQUETA}>Monto pagado ({form.moneda === MONEDA_USD ? '$' : 'Bs'})</label>
+            <label htmlFor={id('monto')} className={ETIQUETA_CAMPO}>Monto pagado ({form.moneda === MONEDA_USD ? '$' : 'Bs'})</label>
             <input id={id('monto')} value={form.monto} onFocus={(e) => e.target.select()} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} aria-describedby={id('monto-ayuda')} className={`${CAMPO_FORMULARIO} mt-1 text-right text-lg font-black tabular-nums`} />
-            <p id={id('monto-ayuda')} className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">Escribe solo los números, sin puntos ni comas: se llenan de derecha a izquierda y los dos últimos son los decimales. Ejemplo: 569600 se ve 5.696,00.</p>
+            <p id={id('monto-ayuda')} className="text-xs text-muted-foreground mt-1">Escribe solo los números, sin puntos ni comas: se llenan de derecha a izquierda y los dos últimos son los decimales. Ejemplo: 569600 se ve 5.696,00.</p>
             <MensajeError texto={texto('monto')} />
             <Colapsable>{diferencia && <p className="text-xs text-amber-800 dark:text-amber-300 font-bold mt-1">El monto es distinto al cobro: escribe en la nota por qué.</p>}</Colapsable>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
             <div className="min-w-0">
-              <label htmlFor={id('fecha')} className={ETIQUETA}>Fecha</label>
+              <label htmlFor={id('fecha')} className={ETIQUETA_CAMPO}>Fecha</label>
               <div className="mt-1"><CampoFecha id={id('fecha')} ariaLabel="Fecha del pago" valor={form.fecha} max={hoy} onChange={(v) => cambiar('fecha', v)} grande clase={CAMPO_FECHA} /></div>
             </div>
             <div className="min-w-0">
-              <label htmlFor={id('hora')} className={ETIQUETA}>Hora</label>
+              <label htmlFor={id('hora')} className={ETIQUETA_CAMPO}>Hora</label>
               <div className="mt-1"><CampoHora id={id('hora')} ariaLabel="Hora del pago" valor={form.hora} onChange={(v) => cambiar('hora', v)} claseSelector={SELECTOR_HORA} /></div>
             </div>
           </div>
           <MensajeError texto={texto('fecha')} />
 
           <div>
-            <label htmlFor={id('nota')} className={ETIQUETA}>{notaEtiqueta} {!diferencia && !notaObligatoria && <span className="font-normal">(opcional)</span>}</label>
+            <label htmlFor={id('nota')} className={ETIQUETA_CAMPO}>{notaEtiqueta} {!diferencia && !notaObligatoria && <span className="font-normal">(opcional)</span>}</label>
             <textarea id={id('nota')} value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={300} rows={2} placeholder={notaObligatoria ? undefined : 'Ej. El cliente me pagó en efectivo'} className={`${AREA_TEXTO} mt-1`} />
             <MensajeError texto={texto('nota')} />
           </div>
@@ -287,9 +280,8 @@ export default function FormularioPagoCliente({
       )}
 
       {repetida && (
-        <div role="alert" className="rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-950/40 p-3 space-y-2">
-          <p className="text-sm font-bold text-red-800 dark:text-red-300">Esa referencia ya está registrada en la orden {repetida.codigo || 'de otra orden'}. No se puede usar de nuevo.</p>
-          <p className="text-xs text-red-800 dark:text-red-300">Si te equivocaste al escribirla, corrígela. Si el cliente pagó varias órdenes con un solo pago, usa "Pagó junto con otra orden".</p>
+        <Aviso nivel="error" role="alert" titulo={<>Esa referencia ya está registrada en la orden {repetida.codigo || 'de otra orden'}. No se puede usar de nuevo.</>}>
+          <p>Si te equivocaste al escribirla, corrígela. Si el cliente pagó varias órdenes con un solo pago, usa "Pagó junto con otra orden".</p>
           {(onPagaDespues || incrustado) && candidatas.length > 0 && (
             <div className="space-y-2 pt-1">
               <SelectMenu id={id('otra')} ariaLabel="Otra orden" className={SELECTOR} value={otraElegida} onChange={(v) => { setOtraElegida(v); setError(null); }} items={[{ value: '', label: 'Elige la otra orden' }, ...candidatas.map((c) => ({ value: c.id, label: c.etiqueta }))]} />
@@ -299,19 +291,16 @@ export default function FormularioPagoCliente({
               </button>
             </div>
           )}
-        </div>
+        </Aviso>
       )}
 
       {compartidoCon && (
-        <div role="status" className="rounded-lg border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 p-3 space-y-1">
-          <p className="text-sm font-bold text-emerald-900 dark:text-emerald-200">Pagó junto con la orden {compartidoCon.codigo || 'elegida'}.</p>
-          <p className="text-xs text-emerald-900 dark:text-emerald-200">Al confirmar, queda anotado en la orden. Si te equivocaste, cambia cualquier dato del pago para volver a elegir.</p>
-        </div>
+        <Aviso nivel="exito" titulo={<>Pagó junto con la orden {compartidoCon.codigo || 'elegida'}.</>}>Al confirmar, queda anotado en la orden. Si te equivocaste, cambia cualquier dato del pago para volver a elegir.</Aviso>
       )}
 
       {!incrustado && (
         <div className="space-y-2 pt-1">
-          <button type="button" onClick={guardar} disabled={bloqueado} className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors">
+          <button type="button" onClick={guardar} disabled={bloqueado} className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-campo bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-sm transition-colors">
             {guardando ? <Spinner /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />} {guardarTexto}
           </button>
 

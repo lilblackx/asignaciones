@@ -2,7 +2,7 @@ import { Coins } from 'lucide-react';
 import { getEstadoTasa, montoBsDe } from '../utils/tasa';
 
 const CLASES_NIVEL = {
-  ok: 'text-zinc-600 dark:text-zinc-400',
+  ok: 'text-muted-foreground',
   aviso: 'text-amber-700 dark:text-amber-400 font-bold',
   alerta: 'text-red-700 dark:text-red-400 font-bold',
   sin: 'text-red-700 dark:text-red-400 font-bold',

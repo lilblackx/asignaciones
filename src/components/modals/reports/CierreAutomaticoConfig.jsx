@@ -6,6 +6,7 @@ import Spinner from '../../Spinner';
 import CampoHora from '../../CampoHora';
 import Boton from '../../Boton';
 import Chip from '../../Chip';
+import Interruptor from '../../Interruptor';
 
 // Lunes a domingo (0 = domingo, como Date.getDay y el Worker).
 const DIAS = [
@@ -95,31 +96,21 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
   const hoyCerradoAMano = config?.cierreManualFecha === hoy;
 
   return (
-    <div className="mb-8 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+    <div className="mb-8 p-5 bg-card border border-border rounded-card shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="min-w-0 text-base font-bold text-zinc-900 dark:text-white flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="flex items-center gap-2"><Clock className="w-5 h-5 text-red-500 shrink-0" aria-hidden="true" /> Cierre automático</span>
+        <h3 className="min-w-0 text-base font-bold text-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="flex items-center gap-2"><Clock className="w-5 h-5 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> Cierre automático</span>
           {!loading && (
-            <span className={`shrink-0 whitespace-nowrap text-[11px] max-lg:text-xs font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+            <span className={`shrink-0 whitespace-nowrap text-etiqueta font-black px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-secondary text-muted-foreground'}`}>
               {guardado.activo ? 'Activo' : 'Desactivado'}
             </span>
           )}
         </h3>
         {isAdmin && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={valores.activo}
-            aria-label="Cierre automático"
-            disabled={loading}
-            onClick={() => cambio({ activo: !valores.activo })}
-            className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${valores.activo ? 'bg-red-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${valores.activo ? 'translate-x-5' : ''}`} />
-          </button>
+          <Interruptor activo={valores.activo} onCambiar={(activo) => cambio({ activo })} ariaLabel="Cierre automático" deshabilitado={loading} />
         )}
       </div>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+      <p className="text-sm text-muted-foreground mt-1">
         {guardado.activo
           ? <>Se ejecuta <strong>{resumenDias(guardado.dias)}</strong> a las <strong>{formatoHora12(guardado.hora)}</strong> (hora de Venezuela).</>
           : 'Ejecuta el cierre solo, a la hora y los días que elijas.'}
@@ -129,7 +120,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
       {isAdmin && (
         <div className="mt-4 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label htmlFor="cierre-hora" className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Hora</label>
+            <label htmlFor="cierre-hora" className="text-xs font-bold text-muted-foreground">Hora</label>
             <CampoHora id="cierre-hora" ariaLabel="Hora del cierre" valor={valores.hora} onChange={(v) => cambio({ hora: v })} />
           </div>
           <div role="group" aria-label="Días de la semana" className="flex flex-wrap gap-1.5">
@@ -146,30 +137,30 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
             <Boton variante="principal" className="min-w-[10rem]" onClick={onGuardar} disabled={!draft || !!error || guardando}>
               {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar cambios'}
             </Boton>
-            {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:underline">Descartar</button>}
-            {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
-            {mensaje && <p role="status" className={`text-xs font-bold ${mensaje.tipo === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{mensaje.texto}</p>}
+            {draft && <button type="button" onClick={() => { setDraft(null); setMensaje(null); }} className="text-xs font-bold text-muted-foreground hover:underline">Descartar</button>}
+            {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{error}</p>}
+            {mensaje && <p role="status" className={`text-xs font-bold ${mensaje.tipo === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{mensaje.texto}</p>}
           </div>
-          <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">Si lo activas después de la hora de hoy, el primer cierre es el próximo día elegido.</p>
+          <p className="text-etiqueta text-muted-foreground">Si lo activas después de la hora de hoy, el primer cierre es el próximo día elegido.</p>
           {import.meta.env.DEV && (
-            <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
-              <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline">
+            <div className="pt-2 border-t border-dashed border-border">
+              <button type="button" onClick={async () => setMensajeSim(await simularNotificaciones())} className="text-xs font-bold text-red-700 dark:text-red-400 hover:underline">
                 Simular notificaciones (solo desarrollo)
               </button>
-              {mensajeSim && <p role="status" className="mt-1 text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">{mensajeSim}</p>}
+              {mensajeSim && <p role="status" className="mt-1 text-etiqueta text-muted-foreground">{mensajeSim}</p>}
             </div>
           )}
         </div>
       )}
 
       {hoyCerradoAMano && (
-        <p role="status" className="mt-4 text-xs font-bold text-zinc-700 dark:text-zinc-300">
+        <p role="status" className="mt-4 text-xs font-bold text-card-foreground">
           Hoy ya se hizo el cierre manual: el automático no se ejecuta hoy.
         </p>
       )}
 
       {ultima && (
-        <p className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
           <span className="font-bold">Último cierre automático:</span> {ultima}
         </p>
       )}

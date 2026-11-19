@@ -22,15 +22,15 @@ const base = { id: 'a', codigo: 'IO1', nombre: 'Ana', tipoTrabajo: 'INSTALACIÓN
 const vista = (t) => { const v = estadoParaPromotora({ ...base, ...t }, AHORA); return v && [v.clave, v.etiqueta, v.detalle]; };
 
 check('roles nuevos (el valor guardado no cambia)', [ROLES.ALMACEN, ROLES.PROMOTORA], ['ALMACEN', 'PROMOTORA']);
-check('el rol se muestra como VENTAS (el valor guardado sigue siendo PROMOTORA)', [etiquetaRol('PROMOTORA'), etiquetaRol('ALMACEN'), etiquetaRol('ADMIN')], ['VENTAS', 'ALMACEN', 'ADMIN']);
+check('el rol se muestra como VENTAS (el valor guardado sigue siendo PROMOTORA)', [etiquetaRol('PROMOTORA'), etiquetaRol('ALMACEN'), etiquetaRol('ADMIN')], ['VENTAS', 'ALMACÉN', 'ADMIN']);
 
 // --- Estado en palabras claras ---
 check('pendiente sin técnico', vista({}), ['SIN_TECNICO', 'Sin técnico asignado', '']);
 check('pendiente con técnico', vista({ tecnico: 'GERARDO MOLERO' }), ['ASIGNADA', 'Asignada', 'GERARDO MOLERO']);
-check('técnico en camino', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecnico: 'GERARDO MOLERO', desde: AHORA - 5 * 60000 } }), ['EN_CAMINO', 'Técnico en camino', 'GERARDO MOLERO · salió hace 5 min']);
-check('técnico en el sitio', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecnico: 'GERARDO MOLERO', desde: AHORA - 40 * 60000, llegoEn: AHORA - 10 * 60000 } }), ['EN_SITIO', 'Técnico en el sitio', 'GERARDO MOLERO · llegó hace 10 min']);
+check('técnico en camino', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecnico: 'GERARDO MOLERO', desde: AHORA - 5 * 60000 } }), ['EN_CAMINO', 'Técnico en camino', 'Gerardo Molero · salió hace 5 min']);
+check('técnico en el sitio', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecnico: 'GERARDO MOLERO', desde: AHORA - 40 * 60000, llegoEn: AHORA - 10 * 60000 } }), ['EN_SITIO', 'Técnico en el sitio', 'Gerardo Molero · llegó hace 10 min']);
 check('un "en camino" caducado ya no cuenta', vista({ tecnico: 'GERARDO MOLERO', enCamino: { tecnico: 'GERARDO MOLERO', desde: AHORA - 5 * 3600000 } })?.[0], 'ASIGNADA');
-check('programada para otro día', vista({ tecnico: 'GERARDO MOLERO', fechaProgramada: '2026-10-20' }), ['PROGRAMADA', 'Programada', '20/10/2026 · GERARDO MOLERO']);
+check('programada para otro día', vista({ tecnico: 'GERARDO MOLERO', fechaProgramada: '2026-10-20' }), ['PROGRAMADA', 'Programada', '20/10/2026 · Gerardo Molero']);
 check('programada a futuro sin técnico: no es "sin técnico", está agendada', vista({ fechaProgramada: '2026-10-20' }), ['PROGRAMADA', 'Programada', '20/10/2026']);
 check('programada para hoy sin técnico sí falta asignarla', vista({ fechaProgramada: '2026-10-14' })?.[0], 'SIN_TECNICO');
 check('programada para hoy ya es asignada', vista({ tecnico: 'GERARDO MOLERO', fechaProgramada: '2026-10-14' })?.[0], 'ASIGNADA');

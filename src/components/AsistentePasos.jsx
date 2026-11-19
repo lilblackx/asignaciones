@@ -12,7 +12,7 @@ import Pasos from './Pasos';
 // desplazar y la barra sería ruido. Mide al abrir, al cambiar de paso, al cambiar el contenido y al cambiar el tamaño de la ventana.
 const TOLERANCIA_PX = 16;
 
-export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo, encabezado, indicacion, pie, clasePanel = '', rol = 'dialog', ariaLabelledBy, etiquetaPasos = 'Pasos', children }) {
+export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo, encabezado, indicacion, pie, clasePanel = '', rol, ariaLabelledBy, etiquetaPasos = 'Pasos', children }) {
   const indice = Math.max(0, pasos.findIndex((p) => p.clave === actual));
   const esUltimo = indice === pasos.length - 1;
   // La dirección de la transición se saca de cómo cambió el paso visible (se ajusta al dibujar, no en un efecto). El primer paso no se anima: la ventana ya tiene su propia entrada.
@@ -36,13 +36,13 @@ export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo
   const alMontarPaso = useCallback((elemento) => { elemento?.parentElement?.scrollTo({ top: 0 }); }, []);
 
   return (
-    <div role={rol} aria-labelledby={ariaLabelledBy} className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden ${clasePanel}`}>
+    <div role={rol} aria-labelledby={ariaLabelledBy} className={`bg-card rounded-card shadow-2xl flex flex-col overflow-hidden ${clasePanel}`}>
       {encabezado}
 
       <div className="shrink-0 px-5 pt-3 pb-2.5 space-y-2">
         {pasos.length > 1 && <Pasos pasos={pasos} actual={indice} hecho={hecho} onElegir={onElegir} bloqueo={bloqueo} etiqueta={etiquetaPasos} />}
         {(indicacion || pasos.length > 1) && (
-          <p role="status" className="text-xs text-zinc-700 dark:text-zinc-300 leading-snug">
+          <p role="status" className="text-xs text-card-foreground leading-snug">
             {pasos.length > 1 && <span className="font-black">{`Paso ${indice + 1} de ${pasos.length}${esUltimo ? ' (último)' : ''}`}</span>}{pasos.length > 1 && indicacion ? ' · ' : ''}{indicacion}
           </p>
         )}
@@ -52,26 +52,26 @@ export default function AsistentePasos({ pasos, actual, hecho, onElegir, bloqueo
         <div key={actual} ref={alMontarPaso} className={animacion || undefined}>{children}</div>
       </div>
 
-      {pie && <div className="shrink-0 px-5 py-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 space-y-2">{pie}</div>}
+      {pie && <div className="shrink-0 px-5 py-3 bg-card border-t border-border space-y-2">{pie}</div>}
     </div>
   );
 }
 
 const TONOS = {
-  verde: 'bg-emerald-700 hover:bg-emerald-800 text-white',
-  azul: 'bg-blue-600 hover:bg-blue-700 text-white',
-  rojo: 'bg-red-600 hover:bg-red-700 text-white',
-  ambar: 'bg-amber-500 hover:bg-amber-400 text-black',
+  verde: 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-[0_8px_20px_rgb(4_120_87/0.3)]',
+  azul: 'bg-blue-600 hover:bg-blue-700 text-white shadow-[0_8px_20px_rgb(37_99_235/0.3)]',
+  rojo: 'bg-primary hover:bg-primary-hover text-white shadow-boton',
+  ambar: 'bg-amber-500 hover:bg-amber-400 text-black shadow-[0_8px_20px_rgb(245_158_11/0.3)]',
 };
 const TONOS_SECUNDARIA = {
-  neutro: 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800',
+  neutro: 'text-foreground hover:bg-secondary',
   rojo: 'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30',
 };
-const BASE_SECUNDARIA = 'inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+const BASE_SECUNDARIA = 'inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-boton text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
 // El pie de siempre de un asistente: el botón principal a todo el ancho y, debajo, una fila de botones de texto con "Atrás" a la izquierda y la acción alterna a la derecha ("Hacerlo después", "Devolver"); con uno solo, va centrado.
 // Una nota opcional, centrada, cierra el pie. Así nada tiene que alinearse con el botón principal.
-// `siguiente`: { onClick, disabled?, titulo?, texto?, icono?, tono?: 'verde' | 'azul' | 'rojo' | 'ambar', ocupado? } o null si no hay botón principal. `onAnterior`: sin ella no hay "Atrás" (`textoAnterior` lo cambia: "Volver").
+// `siguiente`: { onClick, disabled?, titulo?, texto?, icono?, tono?: 'rojo' (por defecto: avanzar) | 'verde' (confirmar el resultado final) | 'azul' | 'ambar', ocupado? } o null si no hay botón principal. `onAnterior`: sin ella no hay "Atrás" (`textoAnterior` lo cambia: "Volver").
 // `secundaria`: { texto, onClick, icono?, tono?: 'neutro' | 'rojo', disabled?, titulo? } o null. `nota`: texto explicativo de abajo.
 export function BotonesPasos({ onAnterior = null, textoAnterior = 'Atrás', siguiente = null, secundaria = null, nota = '' }) {
   const Icono = siguiente && siguiente.icono !== undefined ? siguiente.icono : ArrowRight;
@@ -79,7 +79,7 @@ export function BotonesPasos({ onAnterior = null, textoAnterior = 'Atrás', sigu
   return (
     <div className="space-y-1.5">
       {siguiente && (
-        <button type="button" onClick={siguiente.onClick} disabled={siguiente.disabled} title={siguiente.titulo} className={`w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl font-black text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TONOS[siguiente.tono || 'verde']}`}>
+        <button type="button" onClick={siguiente.onClick} disabled={siguiente.disabled} title={siguiente.titulo} className={`w-full inline-flex items-center justify-center gap-2 h-11 max-lg:h-14 rounded-boton font-black text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TONOS[siguiente.tono || 'rojo']}`}>
           {siguiente.ocupado}{siguiente.texto || 'Siguiente'} {Icono && <Icono className="w-5 h-5" aria-hidden="true" />}
         </button>
       )}
@@ -97,7 +97,7 @@ export function BotonesPasos({ onAnterior = null, textoAnterior = 'Atrás', sigu
           )}
         </div>
       )}
-      {nota && <p className="text-[11px] max-lg:text-xs text-zinc-500 dark:text-zinc-400 text-center leading-snug">{nota}</p>}
+      {nota && <p className="text-etiqueta text-muted-foreground text-center leading-snug">{nota}</p>}
     </div>
   );
 }

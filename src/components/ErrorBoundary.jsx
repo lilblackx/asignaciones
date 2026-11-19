@@ -72,26 +72,26 @@ export default class ErrorBoundary extends Component {
     return (
       <div role="alert" className="min-h-dvh bg-fondo flex flex-col">
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-sm rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+        <div className="w-full max-w-sm rounded-card border border-transparent bg-card overflow-hidden shadow-card">
           <div className="bg-black px-4 py-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
-            <h1 className="text-sm font-black uppercase tracking-wide text-white">Algo salió mal</h1>
+            <h1 className="text-sm font-black text-white">Algo salió mal</h1>
           </div>
           <div className="p-4 space-y-4">
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">
+            <p className="text-sm text-card-foreground">
               La pantalla no se pudo mostrar. Recarga la app para seguir; lo que ya estaba guardado no se pierde.
             </p>
             <div className="flex flex-col gap-2">
-              <button type="button" onClick={this.recargar} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white transition-colors">
+              <button type="button" onClick={this.recargar} className="inline-flex items-center justify-center gap-2 rounded-boton bg-primary hover:bg-primary-hover px-4 py-2.5 text-sm font-bold text-white transition-colors shadow-boton">
                 <RefreshCw className="w-4 h-4" aria-hidden="true" /> Recargar
               </button>
-              <button type="button" onClick={this.copiar} className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-400 dark:border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+              <button type="button" onClick={this.copiar} className="inline-flex items-center justify-center gap-2 rounded-campo border border-input px-4 py-2.5 text-sm font-bold text-foreground hover:bg-secondary transition-colors">
                 <ClipboardCopy className="w-4 h-4" aria-hidden="true" /> {copiado === true ? 'Detalle copiado' : 'Copiar detalle del error'}
               </button>
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Si se repite, envía el detalle por WhatsApp a quien administra la app.</p>
+            <p className="text-xs text-muted-foreground">Si se repite, envía el detalle por WhatsApp a quien administra la app.</p>
             {copiado === 'manual' && (
-              <pre className="max-h-40 overflow-auto rounded border border-zinc-300 dark:border-zinc-700 p-2 text-[11px] max-lg:text-xs leading-snug whitespace-pre-wrap break-words text-zinc-700 dark:text-zinc-300">{detalleDelError(error)}</pre>
+              <pre className="max-h-40 overflow-auto rounded border border-border p-2 text-etiqueta leading-snug whitespace-pre-wrap break-words text-card-foreground">{detalleDelError(error)}</pre>
             )}
           </div>
         </div>

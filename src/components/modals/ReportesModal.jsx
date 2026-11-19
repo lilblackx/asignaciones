@@ -26,6 +26,7 @@ import { diaDe } from '../../utils/totalesMes';
 import { useRegistroVnTa } from '../../hooks/useRegistroVnTa';
 import { rangoDe } from '../../utils/periodoReporte';
 import { claseCampo } from '../estilos';
+import Aviso from '../Aviso';
 
 // Los reportes, agrupados por tema. Para sumar uno: agrega aquí su entrada y su vista más abajo.
 //   documento(contexto): el contenido del PDF y del Word (ver modelosReporte.js). contexto = { eventos, ordenes, rango, tecnico, metaHoras, contadores, tickets, ventana, ahora, generadoPor }.
@@ -172,12 +173,12 @@ export default function ReportesModal({
 
   return (
     <Modal enPagina={enPagina} onClose={detalleAbierto ? () => {} : onClose} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-border flex flex-col ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={ClipboardList} titulo="Reportes" onClose={onClose} enPagina={enPagina} />
 
         <div className={`flex flex-col ${enPagina ? '' : 'lg:flex-row'} flex-1 min-h-0`}>
           {/* Ventana en pantallas angostas: un selector con los reportes. */}
-          <div className={`${enPagina ? 'hidden' : 'lg:hidden'} shrink-0 px-4 sm:px-6 py-3 bg-fondo border-b border-zinc-200 dark:border-zinc-800`}>
+          <div className={`${enPagina ? 'hidden' : 'lg:hidden'} shrink-0 px-4 sm:px-6 py-3 bg-fondo border-b border-border`}>
             <label htmlFor="reporte-elegido" className="sr-only">Reporte</label>
             <select
               id="reporte-elegido"
@@ -196,7 +197,7 @@ export default function ReportesModal({
           {/* Como página dentro del marco el menú lateral de la app ya ocupa la izquierda: el reporte se elige en un dropdown arriba (no un segundo menú lateral). */}
           {enPagina && (
             <div className="shrink-0 px-4 sm:px-6 lg:px-[max(1.5rem,calc((100%-80rem)/2))] pt-3 pb-1">
-              <label htmlFor="reporte-pagina" className="block text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400 mb-1 ml-1">Reporte</label>
+              <label htmlFor="reporte-pagina" className="block text-etiqueta font-black text-muted-foreground mb-1 ml-1">Reporte</label>
               <div className="w-full sm:w-80">
                 <SelectMenu
                   id="reporte-pagina"
@@ -212,17 +213,17 @@ export default function ReportesModal({
 
           {/* PC: la lista de reportes a la izquierda. */}
           {!enPagina && (
-          <nav aria-label="Reportes" className="hidden lg:flex flex-col gap-5 w-64 shrink-0 overflow-y-auto p-4 bg-zinc-200 dark:bg-zinc-900 border-r border-zinc-300 dark:border-zinc-800">
+          <nav aria-label="Reportes" className="hidden lg:flex flex-col gap-5 w-64 shrink-0 overflow-y-auto p-4 bg-accent border-r border-border">
             {GRUPOS.map((g) => (
               <div key={g.titulo}>
-                <div className="px-2 mb-1.5 text-[11px] max-lg:text-xs font-black text-zinc-600 dark:text-zinc-400">{g.titulo}</div>
+                <div className="px-2 mb-1.5 text-etiqueta font-black text-muted-foreground">{g.titulo}</div>
                 <ul className="flex flex-col gap-1">
                   {g.reportes.map(({ id, nombre, Icono }) => (
                     <li key={id}>
                       <button
                         onClick={() => setReporteId(id)}
                         aria-current={reporteId === id ? 'page' : undefined}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm font-bold transition-colors ${reporteId === id ? 'bg-red-600 text-white shadow' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-boton text-left text-sm font-bold transition-colors ${reporteId === id ? 'bg-red-600 text-white shadow' : 'text-card-foreground hover:bg-accent'}`}
                       >
                         <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {nombre}
                       </button>
@@ -251,11 +252,11 @@ export default function ReportesModal({
               onExportar={exportar}
               exportando={exportando}
             />
-            <p className="-mt-2 mb-3 text-[11px] max-lg:text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="-mt-2 mb-3 text-etiqueta text-muted-foreground">
               Los datos de Reportes se actualizan cada 15 minutos{reporte.usaLog || reporte.usaTotales ? '; usa Actualizar para ver lo último' : ''}.
             </p>
-            {errorExportar && <p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">{errorExportar}</p>}
-            <div key={reporteId} className="lg:animate-fade-in">
+            {errorExportar && <Aviso nivel="error" compact className="mb-4">{errorExportar}</Aviso>}
+            <div key={reporteId} className="animate-fade-in">
               {reporteId === 'RESUMEN' && <ResumenEjecutivoView ordenes={ordenes} eventos={logTecnicos.eventos} contadores={totalesMensuales.contadores} tickets={tickets} rango={rango} tecnico={tecnico} getTecnicoColor={getTecnicoColor} historial={historial} />}
               {reporteId === 'REGISTRO' && <RegistroEstadisticasView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} onDetalleAbierto={setDetalleAbierto} vnta={{ ...vnta, tecnicos: nombresTecnicos, hoy, puedeBorrar: (r) => esAdmin || r.creadoPor === usuario }} />}
               {reporteId === 'CAUSAS' && <CausasAveriaView ordenes={ordenes} rango={rango} tecnico={tecnico} historial={historial} />}

@@ -29,7 +29,7 @@ export default function ReportsModal({
 
   return (
     <Modal enPagina={enPagina} onClose={closeModal} onVolver={selectedReportForDetails ? () => setSelectedReportForDetails(null) : undefined} zIndexClass="z-[60]" completa>
-      <div className={enPagina ? PANEL_PAGINA : `bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-zinc-300 dark:border-zinc-800 flex flex-col ${PANEL_COMPLETO}`}>
+      <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-4xl max-h-[90dvh] overflow-hidden border border-border flex flex-col ${PANEL_COMPLETO}`}>
         {selectedReportForDetails ? (
           <ReportDetailsView
             report={selectedReportForDetails}
@@ -43,11 +43,11 @@ export default function ReportsModal({
 
             <div className={`p-6 overflow-y-auto flex-1 bg-fondo ${CENTRADO_AMPLIO}`}>
                   <div className="relative mb-6">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
                     <label htmlFor="report-search" className="sr-only">Buscar en el archivo</label>
-                    <input id="report-search" type="text" placeholder="Buscar en el archivo por código, nombre o cédula..." className={BUSCADOR} value={reportSearchTerm} onChange={(e) => setReportSearchTerm(e.target.value)} />
+                    <input id="report-search" type="text" placeholder="Código, nombre o cédula..." className={BUSCADOR} value={reportSearchTerm} onChange={(e) => setReportSearchTerm(e.target.value)} />
                     {reportSearchTerm && (
-                      <button onClick={() => setReportSearchTerm('')} aria-label="Limpiar búsqueda" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X className="w-5 h-5" /></button>
+                      <button onClick={() => setReportSearchTerm('')} aria-label="Limpiar búsqueda" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-zinc-600 dark:hover:text-zinc-200"><X className="w-5 h-5" /></button>
                     )}
                   </div>
 

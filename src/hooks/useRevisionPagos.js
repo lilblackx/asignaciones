@@ -9,6 +9,7 @@ import { esperarConLimite } from '../utils/tiempoLimite';
 import { diaDe } from '../utils/totalesMes';
 import { leerRevisiones, pagadasEnServidor, revisionesEnVivo, suscribirseARevisiones, validarPagadas } from '../lib/revisionesEnVivo';
 import { mensajeDePagadas } from '../utils/pagadasRevision';
+import { legible } from '../utils/nombreTecnico';
 
 const datos = (nombre) => collection(db, 'artifacts', appId, 'public', 'data', nombre);
 const documento = (nombre, id) => doc(db, 'artifacts', appId, 'public', 'data', nombre, id);
@@ -84,8 +85,8 @@ export function useRevisionPagos({ firebaseUser, activo, rango, setToastMsg }) {
       type: 'error',
       duration: 9000,
       text: ok
-        ? `${ajuste.tecnico} no tiene notificaciones activas en ningún dispositivo: no se enteró por aviso. Avísale por WhatsApp.`
-        : `No se pudo enviar la notificación a ${ajuste.tecnico}. El ajuste quedó guardado; avísale por WhatsApp.`,
+        ? `${legible(ajuste.tecnico)} no tiene notificaciones activas en ningún dispositivo: no se enteró por aviso. Avísale por WhatsApp.`
+        : `No se pudo enviar la notificación a ${legible(ajuste.tecnico)}. El ajuste quedó guardado; avísale por WhatsApp.`,
     });
   };
 

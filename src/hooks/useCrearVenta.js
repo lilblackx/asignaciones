@@ -4,6 +4,7 @@ import { getDocs, setDoc } from '../lib/medidorFirestore.js';
 import { db, appId } from '../lib/firebase';
 import { sendPush } from '../lib/notify';
 import { armarVentaPromotora, errorVentaPromotora, TEXTO_AVISO_NUEVA_VENTA } from '../utils/ventaPromotora';
+import { legible } from '../utils/nombreTecnico';
 
 // Los técnicos registrados, una sola lectura (son pocos): solo sirven para emparejar el "Instalador:" de la plantilla.
 export async function leerTecnicos() {
@@ -29,7 +30,7 @@ export function useCrearVenta(firebaseUser, { username, nombre, verTodas, promot
       const ref = doc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'));
       const venta = armarVentaPromotora(datos, { username, nombre });
       await setDoc(ref, venta);
-      setToastMsg({ type: 'success', text: `Venta creada: ${venta.nombre}. ${venta.tecnico ? `Queda asignada a ${venta.tecnico}.` : 'La oficina le asignará el técnico.'}` });
+      setToastMsg({ type: 'success', text: `Venta creada: ${venta.nombre}. ${venta.tecnico ? `Queda asignada a ${legible(venta.tecnico)}.` : 'La oficina le asignará el técnico.'}` });
       // Aviso a la oficina aunque tenga la app cerrada. Si no sale, la venta ya está guardada y la oficina la ve en su lista.
       sendPush(firebaseUser, { target: { type: 'oficina' }, title: TEXTO_AVISO_NUEVA_VENTA, body: '', tipo: 'nuevaVenta', ticketId: ref.id });
       return { id: ref.id, ...venta };

@@ -23,6 +23,9 @@ const versionJson = () => ({
 })
 
 export default defineConfig({
+  // `npm run dev` escucha en toda la red local (no solo en localhost) para abrir la app desde otra PC o desde el celular con la IP de esta PC (http://<IP>:5173).
+  // Los emuladores ya escuchan en 0.0.0.0 y la app los busca en el mismo nombre con el que se abrió la página (ver src/lib/firebase.js).
+  server: { host: true, port: 5173, strictPort: true },
   // `@/` apunta a src/ (lo usan los componentes de shadcn/ui, ver components.json).
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   define: {

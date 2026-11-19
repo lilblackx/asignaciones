@@ -10,7 +10,7 @@ import { stripEmojis } from '../../utils/sanitizeInput';
 import { esSerialOlt, evaluarSerialCaja, serialParaOlt } from '../../utils/serialOlt';
 import { SELECTOR_ORDEN, claseCampo } from '../estilos';
 
-const claseEtiqueta = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400 ml-1';
+const claseEtiqueta = 'text-etiqueta font-bold text-muted-foreground ml-1';
 const claseInput = (error, correcto = false) => `min-w-0 ${claseCampo('compacto', error ? 'error' : correcto ? 'ok' : 'normal')}`;
 
 function Campo({ id, etiqueta, error, ayuda, className = 'col-span-1', children }) {
@@ -18,7 +18,7 @@ function Campo({ id, etiqueta, error, ayuda, className = 'col-span-1', children 
     <div className={`${className} space-y-1`}>
       <label htmlFor={id} className={claseEtiqueta}>{etiqueta}</label>
       {children}
-      {error ? <p id={`${id}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">{ayuda}</p>}
+      {error ? <p id={`${id}-error`} role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{error}</p> : ayuda && <p className="text-etiqueta text-muted-foreground ml-1">{ayuda}</p>}
     </div>
   );
 }
@@ -31,9 +31,9 @@ function AvisoSerialOlt({ serial, soloEnvio = false }) {
   if (evaluacion.estado === 'vacio') return null;
   const olt = serialParaOlt(serial);
   const envio = esSerialOlt(olt) ? `Se enviará al almacén como: ${olt}` : '';
-  if (soloEnvio) return envio ? <p role="status" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 font-bold ml-1">{envio}</p> : null;
-  const color = evaluacion.estado === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
-  return <p role="status" className={`text-[11px] max-lg:text-xs ${color} font-bold ml-1`}>{evaluacion.mensaje} {envio}</p>;
+  if (soloEnvio) return envio ? <p role="status" className="text-etiqueta text-muted-foreground font-bold ml-1">{envio}</p> : null;
+  const color = evaluacion.estado === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400';
+  return <p role="status" className={`text-etiqueta ${color} font-bold ml-1`}>{evaluacion.mensaje} {envio}</p>;
 }
 
 const soloDigitos = (v, largo) => v.replace(/\D/g, '').slice(0, largo);
@@ -59,10 +59,10 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
   const evaluacionSerial = evaluarSerialCaja(form.serial);
 
   return (
-    <section aria-label="Datos que cargó el técnico" className="col-span-2 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 p-3 grid grid-cols-2 gap-3">
+    <section aria-label="Datos que cargó el técnico" className="col-span-2 rounded-campo border border-amber-300 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 p-3 grid grid-cols-2 gap-3">
       <div className="col-span-2">
-        <h3 className="text-[11px] max-lg:text-xs font-black tracking-wide text-amber-800 dark:text-amber-300">DATOS QUE CARGÓ EL TÉCNICO</h3>
-        <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+        <h3 className="text-etiqueta font-black text-amber-800 dark:text-amber-300">Datos que cargó el técnico</h3>
+        <p className="text-etiqueta text-muted-foreground mt-0.5">
           Corrige lo que el técnico escribió.{instalacion ? ' La plantilla de la orden se actualiza con estos datos.' : ''}
           {finalizada ? ' Si la orden ya se envió al inventario del almacén, el cambio no se reenvía solo: usa "Reenviar" o "Corregir" en Envíos al inventario.' : ''}
         </p>
@@ -70,7 +70,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
 
       {instalacion ? (
         <>
-          <Campo id="ed-serial" etiqueta="SERIAL" error={errores.serial} className="col-span-2">
+          <Campo id="ed-serial" etiqueta="Serial" error={errores.serial} className="col-span-2">
             <input id="ed-serial" type="text" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={MAX_LARGO_SERIAL} placeholder="Ej. HWTC1A2B3C4D" value={form.serial} onChange={(e) => onChange({ serial: e.target.value.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase() })} aria-invalid={!!errores.serial} aria-describedby={errores.serial ? 'ed-serial-error' : undefined} className={claseInput(errores.serial || (avisoSerial && evaluacionSerial.estado === 'error'), avisoSerial && evaluacionSerial.estado === 'ok')} />
             {avisoSerial && !errores.serial && <AvisoSerialOlt serial={form.serial} />}
           </Campo>
@@ -78,7 +78,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             <input id="ed-vlan" type="text" inputMode="numeric" autoComplete="off" maxLength="4" placeholder="Ej. 100" value={form.vlan} onChange={(e) => onChange({ vlan: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.vlan} aria-describedby={errores.vlan ? 'ed-vlan-error' : undefined} className={claseInput(errores.vlan)} />
           </Campo>
           <div className="col-span-2 space-y-1">
-            <p className={claseEtiqueta}>METRAJE DEL DROP <span className="font-normal text-zinc-400">marca inicial y final del cable</span></p>
+            <p className={claseEtiqueta}>Metraje del drop <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
             <MetrajeInicialFinal
               idInicial="ed-metraje-inicial"
               idFinal="ed-metraje-final"
@@ -94,53 +94,53 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             />
             <label htmlFor="ed-metraje-existente" className="flex items-center gap-2.5 min-h-11 cursor-pointer">
               <input id="ed-metraje-existente" type="checkbox" checked={form.metrajeExistente === true} onChange={(e) => onChange({ metrajeExistente: e.target.checked, ...(e.target.checked ? { metrajeInicial: '', metrajeFinal: '' } : {}) })} className="w-5 h-5 shrink-0 accent-red-600" />
-              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Metraje existente</span>
+              <span className="text-xs font-bold text-card-foreground">Metraje existente</span>
             </label>
           </div>
           <Campo id="ed-nap" etiqueta="NAP" error={errores.nap}>
             <input id="ed-nap" type="text" maxLength="40" placeholder="Ej. NAP 08" value={form.nap} onChange={(e) => onChange({ nap: stripEmojis(e.target.value) })} aria-invalid={!!errores.nap} aria-describedby={errores.nap ? 'ed-nap-error' : undefined} className={claseInput(errores.nap)} />
           </Campo>
-          <Campo id="ed-puerto" etiqueta="PUERTO" error={errores.puerto}>
+          <Campo id="ed-puerto" etiqueta="Puerto" error={errores.puerto}>
             <input id="ed-puerto" type="text" inputMode="numeric" autoComplete="off" maxLength="3" placeholder="Ej. 3" value={form.puerto} onChange={(e) => onChange({ puerto: soloDigitos(e.target.value, 3) })} aria-invalid={!!errores.puerto} aria-describedby={errores.puerto ? 'ed-puerto-error' : undefined} className={claseInput(errores.puerto)} />
           </Campo>
 
           <div className="col-span-2 space-y-1.5" role="group" aria-labelledby="ed-postes-etiqueta">
-            <p id="ed-postes-etiqueta" className={claseEtiqueta}>POSTEADURA <span className="font-normal text-zinc-400">uno o varios postes</span></p>
+            <p id="ed-postes-etiqueta" className={claseEtiqueta}>Posteadura <span className="font-normal text-muted-foreground">uno o varios postes</span></p>
             {form.postes.map((poste, i) => (
               <div key={i} className="flex items-center gap-2">
                 <input id={`ed-poste-${i + 1}`} type="text" autoComplete="off" maxLength={MAX_LARGO_POSTE} placeholder={i === 0 ? 'Ej. DM SN N01B01' : `Poste ${i + 1}`} aria-label={`Poste ${i + 1}`} aria-invalid={i === 0 && !!errores.posteadura} value={poste} onChange={(e) => cambiarPoste(i, stripEmojis(e.target.value))} className={`flex-1 ${claseInput(i === 0 && errores.posteadura)}`} />
                 {form.postes.length > 1 && (
-                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-400 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-campo bg-card dark:bg-secondary border border-input text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors">
                     <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 )}
               </div>
             ))}
-            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-zinc-400 dark:border-zinc-600 text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
+            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-campo border border-dashed border-input text-etiqueta font-bold text-muted-foreground hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
               <Plus className="w-3 h-3" aria-hidden="true" /> Agregar otro poste
             </button>
-            {errores.posteadura && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
+            {errores.posteadura && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
           </div>
 
-          <Campo id="ed-puertos-disponibles" etiqueta="PUERTOS DISPONIBLES" error={errores.puertosDisponibles} ayuda="Los que quedan libres en la NAP (0 si ninguno)." className="col-span-2">
+          <Campo id="ed-puertos-disponibles" etiqueta="Puertos disponibles" error={errores.puertosDisponibles} ayuda="Los que quedan libres en la NAP (0 si ninguno)." className="col-span-2">
             <input id="ed-puertos-disponibles" type="text" autoComplete="off" maxLength={MAX_LARGO_PUERTOS_DISPONIBLES} placeholder="Ej. 6" value={form.puertosDisponibles} onChange={(e) => onChange({ puertosDisponibles: stripEmojis(e.target.value) })} aria-invalid={!!errores.puertosDisponibles} aria-describedby={errores.puertosDisponibles ? 'ed-puertos-disponibles-error' : undefined} className={claseInput(errores.puertosDisponibles)} />
           </Campo>
 
           <div className="col-span-2 space-y-1.5" role="group" aria-labelledby="ed-conectores-etiqueta">
-            <p id="ed-conectores-etiqueta" className={claseEtiqueta}>CONECTORES USADOS <span className="font-normal text-zinc-400">cuántos de cada tipo y color</span></p>
+            <p id="ed-conectores-etiqueta" className={claseEtiqueta}>Conectores usados <span className="font-normal text-muted-foreground">cuántos de cada tipo y color</span></p>
             <div className="grid grid-cols-3 gap-2">
               <CampoConectores id="ed-cant-ext-verde" etiqueta="Ext. verdes" valor={form.extVerde} onChange={(v) => onChange({ extVerde: v })} error={errores.conectores?.campo === 'externoVerde' ? conectoresError : ''} />
               <CampoConectores id="ed-cant-int-verde" etiqueta="Int. verdes" valor={form.intVerde} onChange={(v) => onChange({ intVerde: v })} error={errores.conectores?.campo === 'internoVerde' ? conectoresError : ''} />
               <CampoConectores id="ed-cant-int-azul" etiqueta="Int. azules" valor={form.intAzul} onChange={(v) => onChange({ intAzul: v })} error={errores.conectores?.campo === 'internoAzul' ? conectoresError : ''} />
             </div>
-            <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">El externo es solo verde; el interno, verde o azul.</p>
-            {conectoresError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{conectoresError}</p>}
+            <p className="text-etiqueta text-muted-foreground ml-1">El externo es solo verde; el interno, verde o azul.</p>
+            {conectoresError && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{conectoresError}</p>}
           </div>
         </>
       ) : (
         <>
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-tipo-visita" className={claseEtiqueta}>TIPO DE VISITA</label>
+            <label htmlFor="ed-tipo-visita" className={claseEtiqueta}>Tipo de visita</label>
             <SelectMenu
               id="ed-tipo-visita"
               ariaLabel="Tipo de visita"
@@ -155,7 +155,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           {esRecableado(tipoVisita) && (
             <div className="col-span-2 space-y-3">
               <div className="space-y-1">
-                <p className={claseEtiqueta}>METRAJE DEL CABLE <span className="font-normal text-zinc-400">marca inicial y final del cable</span></p>
+                <p className={claseEtiqueta}>Metraje del cable <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
                 <MetrajeInicialFinal
                   idInicial="pf-metros-inicial"
                   idFinal="pf-metros-final"

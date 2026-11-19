@@ -58,19 +58,19 @@ export default function InstallGate({ children }) {
   return (
     <div className="min-h-dvh bg-fondo flex flex-col font-sans">
       <div className="flex-1 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full border border-zinc-300 dark:border-zinc-800 text-center">
+      <div className="bg-card p-6 sm:p-8 rounded-card shadow-xl max-w-md w-full border border-border text-center">
         <div className="flex justify-center mb-5">
           <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full">
             <Download className="w-10 h-10 text-red-600 dark:text-red-500" />
           </div>
         </div>
-        <h2 className="text-xl font-black text-zinc-900 dark:text-white mb-2">Instala la app para continuar</h2>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">
+        <h2 className="text-xl font-black text-foreground mb-2">Instala la app para continuar</h2>
+        <p className="text-muted-foreground text-sm mb-6">
           En el teléfono, las notificaciones de nuevas órdenes y cambios de estado solo llegan con la app instalada en la pantalla de inicio - así funcionan con la pantalla bloqueada.
         </p>
 
         {isIos() ? (
-          <div className="text-left bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3 text-sm text-zinc-700 dark:text-zinc-300">
+          <div className="text-left bg-sunken border border-border rounded-campo p-4 space-y-3 text-sm text-card-foreground">
             <p className="flex items-center gap-2"><Share className="w-4 h-4 text-red-600 shrink-0" /> 1. Toca el botón <strong>Compartir</strong> de Safari.</p>
             <p className="flex items-center gap-2"><SquarePlus className="w-4 h-4 text-red-600 shrink-0" /> 2. Elige <strong>"Agregar a inicio"</strong>.</p>
             <p>3. Abre la app desde el ícono nuevo, no desde Safari.</p>
@@ -79,12 +79,12 @@ export default function InstallGate({ children }) {
           <button
             onClick={handleInstallClick}
             disabled={installing}
-            className={`w-full text-white font-bold py-3 rounded-xl shadow-md transition-colors ${installing ? 'bg-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+            className={`w-full text-white font-bold py-3 rounded-boton shadow-md transition-colors ${installing ? 'bg-zinc-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover'} shadow-boton`}
           >
             {installing ? 'Instalando...' : 'Instalar app'}
           </button>
         ) : (
-          <div className="text-left bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm text-zinc-700 dark:text-zinc-300">
+          <div className="text-left bg-sunken border border-border rounded-campo p-4 text-sm text-card-foreground">
             Abre el menú del navegador y elige <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong>.
           </div>
         )}
@@ -96,7 +96,7 @@ export default function InstallGate({ children }) {
             // Instalada o no, solo cuenta si esta ventana se abrió desde el ícono de la pantalla de inicio; si no, se explica qué hacer.
             setAviso(instalada ? '' : 'Todavía estás en el navegador, no en la app instalada. Cierra esta pestaña y abre la app desde su ícono en la pantalla de inicio. Si no hay ícono, instálala desde el menú del navegador.');
           }}
-          className="mt-4 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 underline"
+          className="mt-4 text-xs font-bold text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-300 underline"
         >
           Ya la instalé, continuar
         </button>

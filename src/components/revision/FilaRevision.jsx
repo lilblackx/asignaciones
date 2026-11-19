@@ -3,7 +3,8 @@ import { CheckCircle2, PauseCircle, Pencil, RotateCcw, ShieldAlert, XCircle } fr
 import BuscadorOrden from '../BuscadorOrden';
 import SelectMenu from '../SelectMenu';
 import Colapsable from '../Colapsable';
-import { BOTON, BOTON_FILA, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE } from '../finanzas/estilos';
+import { BOTON, CAMPO, CHIP, ETIQUETA, SELECTOR, TEXTO_SUAVE, ETIQUETA_CAMPO } from '../finanzas/estilos';
+import RowMenu from '../RowMenu';
 import { CONCEPTOS_PAGO, aBs, bolivares, dolares } from '../../utils/finanzas';
 import VerFotosOrden from '../VerFotosOrden';
 import { tieneDetalles } from '../../utils/detallesOrden';
@@ -17,6 +18,8 @@ import Boton from '../Boton';
 import Chip from '../Chip';
 import InsigniaJM from '../InsigniaJM';
 import PagoDelCliente from '../PagoDelCliente';
+import Aviso from '../Aviso';
+import { legible } from '../../utils/nombreTecnico';
 
 // Una orden en la revisión de pagos: lo que se paga por ella, su estado y las acciones del administrador (aprobar, retener, excluir, corregir o volver a pendiente). Retener y excluir
 // piden un motivo y corregir deja elegir otro técnico y otro concepto: esos formularios se despliegan debajo de la fila. Una garantía de otro técnico (o cualquier orden, si la oficina olvidó marcarla) se
@@ -30,6 +33,9 @@ const CHIP_ESTADO = {
 };
 
 // `ordenesBusqueda`: las órdenes entre las que se busca la original; `precioOrigen(id)`: lo que cobra esa original (null si no se sabe); `tecnicoDe(orden)`: su técnico efectivo en la revisión.
+// El botón de la acción principal de una fila: 36 px en PC y 44 en celular.
+const BOTON_PRINCIPAL_FILA = 'inline-flex items-center justify-center gap-1.5 min-h-9 max-lg:min-h-11 px-4 rounded-boton text-sm font-bold disabled:cursor-not-allowed disabled:opacity-70 transition-colors';
+
 export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, onAccion, onDeshacer, onVerOrden, onRegistrarPago = null, ordenesBusqueda = [], precioOrigen = () => null, tecnicoDe = (o) => o.tecnico }) {
   const [abierto, setAbierto] = useState(null);
   const [motivo, setMotivo] = useState('');
@@ -93,65 +99,73 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
   const conceptos = [{ value: '', label: item.conceptoOriginal ? `Sin cambio (${nombreConcepto(item.conceptoOriginal)})` : 'Elige el concepto' }, ...CONCEPTOS_PAGO.map((c) => ({ value: c.id, label: c.nombre }))];
   const nombresTecnicos = [{ value: '', label: `Sin cambio (${item.tecnicoOriginal})` }, ...tecnicos.map((t) => ({ value: t, label: t }))];
 
+  // La garantía de otro técnico sin resolver es una decisión que bloquea la orden: va a la vista. El resto de las acciones, en el menú.
+  const garantiaPendiente = esGarantiaDeOtro && !item.garantiaResuelta && (estado === 'PENDIENTE' || estado === 'APROBADA');
+  const itemsMenu = [
+    ...((estado === 'PENDIENTE' || estado === 'APROBADA') ? [{ label: 'Retener', icon: PauseCircle, onClick: () => abrir('RETENER'), disabled: ocupado }] : []),
+    ...(estado !== 'EXCLUIDA' ? [{ label: 'Excluir', icon: XCircle, onClick: () => abrir('EXCLUIR'), disabled: ocupado }] : []),
+    ...((estado === 'PENDIENTE' || estado === 'APROBADA') && !garantiaPendiente ? [{ label: esGarantiaDeOtro ? 'Garantía' : 'Descuento por garantía', icon: ShieldAlert, onClick: () => abrir('GARANTIA'), disabled: ocupado }] : []),
+    ...(estado !== 'EXCLUIDA' && estado !== 'RETENIDA' ? [{ label: 'Corregir', icon: Pencil, onClick: () => abrir('CORREGIR'), disabled: ocupado }] : []),
+    ...((estado !== 'PENDIENTE' || item.revision) ? [{ label: 'Volver a pendiente', icon: RotateCcw, onClick: () => onDeshacer(item), disabled: ocupado }] : []),
+  ];
+
   return (
-    <li className="py-3 space-y-2">
+    <li className="py-4 space-y-2">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-64">
-          <p className="text-sm text-zinc-900 dark:text-zinc-100 break-words">
+          <p className="text-sm text-foreground break-words">
             <button type="button" onClick={() => onVerOrden(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button>
             {item.orden.nombre ? ` · ${item.orden.nombre}` : ''}
             <InsigniaJM orden={item.orden} className="ml-2" />
-            {item.escalada && <span title={textoEscaladaRevision(item)} className={`${CHIP} ml-2 align-middle bg-orange-600 text-white`}>Infraestructura</span>}
+            {item.escalada && <span title={textoEscaladaRevision(item)} className={`${CHIP} ml-2 align-middle bg-orange-700 text-white`}>Infraestructura</span>}
           </p>
           <p className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {item.concepto ? nombreConcepto(item.concepto) : <span className="font-bold text-amber-700 dark:text-amber-300">Sin concepto: corrígela</span>}</p>
           {esGarantiaDeOtro && item.descuento <= 0 && !item.garantiaSinDescuento && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Garantía de otro técnico: de la orden {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}). Decide si se le descuenta algo antes de aprobarla.</p>}
-          {esGarantiaDeOtro && item.garantiaSinDescuento && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Garantía de {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}) sin descuento: {item.garantiaSinDescuento}</p>}
-          {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {item.tecnico}.</p>}
-          {item.corregida && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
-          {item.cambioDespues && <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
-          {sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">Falta el pago del cliente: lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}; si no puede, regístralo tú. No se puede aprobar hasta que esté registrado.</p>}
-          {sinDetalles && !sinPago && <p role="status" className="text-xs font-bold text-amber-800 dark:text-amber-300">{sinDetalles}</p>}
+          {esGarantiaDeOtro && item.garantiaSinDescuento && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Garantía de {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}) sin descuento: {item.garantiaSinDescuento}</p>}
+          {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {legible(item.tecnico)}.</p>}
+          {item.corregida && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
+          {item.cambioDespues && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
+          {sinPago && <Aviso nivel="atencion" compact titulo="Falta el pago del cliente">Lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}; si no puede, regístralo tú. No se puede aprobar hasta que esté registrado.</Aviso>}
+          {sinDetalles && !sinPago && <Aviso nivel="atencion" compact>{sinDetalles}</Aviso>}
           <PagoDelCliente orden={item.orden} className="mt-0.5" />
           <VerFotosOrden orden={item.orden} className="mt-0.5" />
           {item.revision?.motivo && <p className={TEXTO_SUAVE}>Motivo: {item.revision.motivo} · {item.revision.por}</p>}
           {estado === 'APROBADA' && item.revision && <p className={TEXTO_SUAVE}>Aprobada por {item.revision.por}</p>}
-          {estado === 'APROBADA' && item.revision?.sinDetalles && !tieneDetalles(item.orden) && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Aprobada sin los detalles de la orden (fotos): {item.revision.sinDetalles}</p>}
+          {estado === 'APROBADA' && item.revision?.sinDetalles && !tieneDetalles(item.orden) && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Aprobada sin los detalles de la orden (fotos): {item.revision.sinDetalles}</p>}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className={`${CHIP} ${CHIP_ESTADO[estado]}`}>{ETIQUETA_REVISION[estado]}</span>
           <span className="text-right">
-            <span className="block text-sm font-bold tabular-nums text-zinc-900 dark:text-white">{dolares(precio)}</span>
-            {tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(precio, tasa))}</span>}
+            <span className="block text-sm font-bold tabular-nums text-foreground">{dolares(precio)}</span>
+            {tasa > 0 && <span className="block text-xs font-bold tabular-nums text-muted-foreground">{bolivares(aBs(precio, tasa))}</span>}
           </span>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {sinPago && onRegistrarPago && <button type="button" onClick={() => onRegistrarPago(item)} disabled={ocupado} className={`${BOTON_FILA} !border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200`}>Registrar el pago</button>}
+      {/* Una acción principal a la vista (la que sigue en esa orden) y el resto en el menú "⋯": antes eran hasta siete botones iguales por fila. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {sinPago && onRegistrarPago && <button type="button" onClick={() => onRegistrarPago(item)} disabled={ocupado} className={`${BOTON_PRINCIPAL_FILA} bg-amber-500 hover:bg-amber-400 text-black`}>Registrar el pago</button>}
         {(estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
-          <button type="button" onClick={aprobar} disabled={ocupado || Boolean(problema)} title={problema || undefined} className={`${BOTON_FILA} !border-emerald-600 !text-emerald-700 dark:!text-emerald-300`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar</button>
+          <button type="button" onClick={aprobar} disabled={ocupado || Boolean(problema)} title={problema || undefined} className={`${BOTON_PRINCIPAL_FILA} bg-emerald-700 hover:bg-emerald-800 text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar</button>
         )}
         {sinDetalles && !sinPago && !motivoNoAprobable(item) && (estado === 'PENDIENTE' || estado === 'RETENIDA' || estado === 'EXCLUIDA') && (
-          <button type="button" onClick={() => abrir('SIN_DETALLES')} disabled={ocupado} className={`${BOTON_FILA} !border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar sin detalles</button>
+          <button type="button" onClick={() => abrir('SIN_DETALLES')} disabled={ocupado} className={`${BOTON_PRINCIPAL_FILA} bg-amber-500 hover:bg-amber-400 text-black`}><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Aprobar sin detalles</button>
         )}
-        {(estado === 'PENDIENTE' || estado === 'APROBADA') && <button type="button" onClick={() => abrir('RETENER')} disabled={ocupado} className={BOTON_FILA}><PauseCircle className="w-4 h-4" aria-hidden="true" /> Retener</button>}
-        {estado !== 'EXCLUIDA' && <button type="button" onClick={() => abrir('EXCLUIR')} disabled={ocupado} className={BOTON_FILA}><XCircle className="w-4 h-4" aria-hidden="true" /> Excluir</button>}
-        {(estado === 'PENDIENTE' || estado === 'APROBADA') && (
-          <button type="button" onClick={() => abrir('GARANTIA')} disabled={ocupado} className={`${BOTON_FILA} ${esGarantiaDeOtro && !item.garantiaResuelta ? '!border-amber-500 !bg-amber-100 !text-amber-900 dark:!bg-amber-900/30 dark:!text-amber-200' : ''}`}><ShieldAlert className="w-4 h-4" aria-hidden="true" /> {esGarantiaDeOtro && !item.garantiaResuelta ? 'Resolver garantía' : esGarantiaDeOtro ? 'Garantía' : 'Descuento por garantía'}</button>
+        {garantiaPendiente && (
+          <button type="button" onClick={() => abrir('GARANTIA')} disabled={ocupado} className={`${BOTON_PRINCIPAL_FILA} bg-amber-500 hover:bg-amber-400 text-black`}><ShieldAlert className="w-4 h-4" aria-hidden="true" /> Resolver garantía</button>
         )}
-        {estado !== 'EXCLUIDA' && estado !== 'RETENIDA' && <button type="button" onClick={() => abrir('CORREGIR')} disabled={ocupado} className={BOTON_FILA}><Pencil className="w-4 h-4" aria-hidden="true" /> Corregir</button>}
-        {(estado !== 'PENDIENTE' || item.revision) && <button type="button" onClick={() => onDeshacer(item)} disabled={ocupado} className={BOTON_FILA}><RotateCcw className="w-4 h-4" aria-hidden="true" /> Volver a pendiente</button>}
+        {itemsMenu.length > 0 && <RowMenu grande label={`Más acciones de la orden ${item.orden.codigo || 'sin código'}`} items={itemsMenu} />}
       </div>
       {/* El aviso de la garantía sin resolver ya está arriba, con la orden original, y el del pago y el de las fotos también (junto a la orden): no se repiten. Aquí solo va lo que no se dijo arriba (sin concepto, sin técnico). */}
       {bloqueo && !(esGarantiaDeOtro && !item.garantiaResuelta) && <p className="text-xs text-amber-800 dark:text-amber-300">{bloqueo}</p>}
-      {error && !abierto && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
+      {error && !abierto && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{error}</p>}
 
       <Colapsable>{(abierto === 'RETENER' || abierto === 'EXCLUIR' || abierto === 'SIN_DETALLES') && (
-        <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
+        <div className="mt-1 rounded-campo border border-input p-3 space-y-3">
           <div>
-            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : abierto === 'EXCLUIR' ? 'Por qué se excluye (no se paga)' : 'Por qué se aprueba sin los detalles de la orden (obligatorio)'}</label>
+            <label htmlFor={`motivo-${item.clave}`} className={ETIQUETA_CAMPO}>{abierto === 'RETENER' ? 'Por qué se retiene (no pasa a Finanzas por ahora)' : abierto === 'EXCLUIR' ? 'Por qué se excluye (no se paga)' : 'Por qué se aprueba sin los detalles de la orden (obligatorio)'}</label>
             <input id={`motivo-${item.clave}`} value={motivo} onChange={(e) => { setMotivo(stripEmojis(e.target.value)); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
-            {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-1">{error}</p>}
+            {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 mt-1">{error}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
             <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar(abierto)} disabled={ocupado}>{abierto === 'RETENER' ? 'Retener' : abierto === 'EXCLUIR' ? 'Excluir' : 'Aprobar sin detalles'}</Boton>
@@ -161,7 +175,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       )}</Colapsable>
 
       <Colapsable>{abierto === 'CORREGIR' && (
-        <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
+        <div className="mt-1 rounded-campo border border-input p-3 space-y-3">
           <p className={TEXTO_SUAVE}>La corrección vale para Finanzas aunque la orden esté en un cierre. Si la orden estaba aprobada, vuelve a pendiente para aprobarla ya corregida.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -173,7 +187,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
               <div className="mt-1"><SelectMenu id={`con-${item.clave}`} ariaLabel="Concepto con que se paga" className={SELECTOR} value={correccion.concepto} onChange={(v) => setCorreccion((c) => ({ ...c, concepto: v }))} items={conceptos} /></div>
             </div>
           </div>
-          {error && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400">{error}</p>}
           <div className="flex flex-wrap gap-2">
             <Boton variante="principal" tamano="normal" type="button" onClick={() => confirmar('CORREGIR')} disabled={ocupado}>Guardar corrección</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>
@@ -182,7 +196,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
       )}</Colapsable>
 
       <Colapsable>{abierto === 'GARANTIA' && (
-        <div className="mt-1 rounded-xl border border-zinc-400 dark:border-zinc-700 p-3 space-y-3">
+        <div className="mt-1 rounded-campo border border-input p-3 space-y-3">
           <p className={TEXTO_SUAVE}>
             {esGarantiaDeOtro
               ? `La oficina marcó esta orden como garantía de la ${item.garantiaDe.codigo || 'orden'} (técnico ${item.garantiaDe.tecnico}). Decide si se le descuenta algo a ese técnico: el monto que escribas se le paga a ${item.tecnico} y la garantía no se paga como orden.`
@@ -211,21 +225,21 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
                 {garantia.origen?.id && <p className={`${TEXTO_SUAVE} mt-1`}>{topeOrigen > 0 ? `Esa orden cobra ${dolares(topeOrigen)}: el descuento no puede pasar de ahí.` : 'No se pudo calcular lo que cobra esa orden: revisa bien el monto.'} Si ya se le pagó, el monto se descuenta de su próximo pago.</p>}
               </div>
               <div className="max-w-xs">
-                <label htmlFor={`monto-${item.clave}`} className={ETIQUETA}>Monto a descontar (en dólares)</label>
+                <label htmlFor={`monto-${item.clave}`} className={ETIQUETA_CAMPO}>Monto a descontar (en dólares)</label>
                 <div className="relative mt-1">
                   <input id={`monto-${item.clave}`} value={garantia.monto} onChange={(e) => { setGarantia((g) => ({ ...g, monto: montoCalculadora(e.target.value) })); setError(''); }} inputMode="numeric" autoComplete="off" placeholder="0,00" className={`${CAMPO} pr-9 text-right tabular-nums`} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none" aria-hidden="true">$</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-muted-foreground pointer-events-none" aria-hidden="true">$</span>
                 </div>
               </div>
             </div>
           )}
           {garantia.modo === 'SIN' && (
             <div>
-              <label htmlFor={`sin-${item.clave}`} className={ETIQUETA}>Por qué no se descuenta nada</label>
+              <label htmlFor={`sin-${item.clave}`} className={ETIQUETA_CAMPO}>Por qué no se descuenta nada</label>
               <input id={`sin-${item.clave}`} value={garantia.sinDescuento} onChange={(e) => { setGarantia((g) => ({ ...g, sinDescuento: stripEmojis(e.target.value) })); setError(''); }} maxLength={MAX_MOTIVO_REVISION} autoComplete="off" className={`${CAMPO} mt-1`} />
             </div>
           )}
-          {error && <p role="alert" className="text-sm font-bold text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-sm font-bold text-red-700 dark:text-red-400">{error}</p>}
           <div className="flex flex-wrap gap-2">
             <Boton variante="principal" tamano="normal" type="button" onClick={guardarGarantia} disabled={ocupado}>Guardar decisión</Boton>
             <button type="button" onClick={cerrar} className={BOTON}>Cancelar</button>

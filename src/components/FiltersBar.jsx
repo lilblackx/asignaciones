@@ -6,6 +6,7 @@ import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import Colapsable from './Colapsable';
 import BotonFiltros from './BotonFiltros';
 import { BUSCADOR } from './estilos';
+import { oracion } from '../utils/oracion';
 
 export default function FiltersBar({
   searchTerm, setSearchTerm,
@@ -42,8 +43,8 @@ export default function FiltersBar({
     { value: 'CANCELADO', label: 'Cancelados' }
   ];
   const tipoItems = [
-    { value: 'TODOS', label: 'Todos los trabajos' },
-    ...TIPOS_TRABAJO.map(tipo => ({ value: tipo.toUpperCase(), label: tipo }))
+    { value: 'TODOS', label: 'Todos' },
+    ...TIPOS_TRABAJO.map(tipo => ({ value: tipo.toUpperCase(), label: oracion(tipo) }))
   ];
   const sortItems = [
     { value: 'DEFECTO', label: 'Más recientes' },
@@ -53,18 +54,18 @@ export default function FiltersBar({
     { group: 'Filtrar por Técnico', options: technicians.map(t => ({ value: 'TEC:' + t.name, label: 'Solo: ' + t.name })) }
   ];
 
-  const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
+  const ETIQUETA = 'text-etiqueta font-bold text-muted-foreground';
 
   return (
     <div className="mb-3 space-y-3">
       <div className="flex gap-2">
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" aria-hidden="true" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
           <label htmlFor="ticket-search" className="sr-only">Buscar órdenes</label>
           <input
             id="ticket-search"
             type="search"
-            placeholder="Buscar por nombre, código o cédula..."
+            placeholder="Nombre, código o cédula..."
             className={BUSCADOR}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -75,9 +76,23 @@ export default function FiltersBar({
       </div>
 
       <Colapsable>{filtersOpen && (
-        <div className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 space-y-3">
-          <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isTecnico ? 'md:max-w-xl' : 'md:grid-cols-3 md:max-w-3xl'}`}>
-            <div className="flex flex-col gap-1 min-w-0">
+        <div className="rounded-card shadow-card border border-transparent bg-card p-3 space-y-2.5">
+          {/* El título del panel y, a la derecha, "Limpiar filtros" (solo con algún filtro puesto): siempre en el mismo sitio, sin gastar una fila debajo. */}
+          <div className="flex items-center justify-between gap-2 min-h-8">
+            <h3 className="text-sm font-black text-foreground">Filtros</h3>
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="relative inline-flex items-center gap-1 px-1 font-bold text-xs text-red-700 dark:text-red-400 hover:underline max-lg:after:absolute max-lg:after:-inset-x-1 max-lg:after:-inset-y-3"
+              >
+                <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar filtros ({activeFiltersCount})
+              </button>
+            )}
+          </div>
+          {/* PC: los tres desplegables se reparten el ancho. Celular: el estado (las opciones más largas) arriba y, debajo, el trabajo y el orden lado a lado. */}
+          <div className={`grid gap-2.5 ${isTecnico ? 'grid-cols-2' : 'grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:grid-cols-3'}`}>
+            <div className={`flex flex-col gap-1 min-w-0 ${isTecnico ? '' : 'max-md:col-span-2'}`}>
               <span className={ETIQUETA}>Estado</span>
               <SelectMenu id="status-filter" ariaLabel="Filtrar por estado" icon={Filter} value={statusFilter} onChange={setStatusFilter} items={statusItems} />
             </div>
@@ -94,15 +109,6 @@ export default function FiltersBar({
               </div>
             )}
           </div>
-          {activeFiltersCount > 0 && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="inline-flex items-center gap-1 font-bold text-xs text-red-600 dark:text-red-400 hover:underline"
-            >
-              <X className="w-3.5 h-3.5" aria-hidden="true" /> Limpiar filtros
-            </button>
-          )}
         </div>
       )}</Colapsable>
     </div>

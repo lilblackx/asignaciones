@@ -1,5 +1,6 @@
-// Arma el PDF de un documento de reporte (ver modelosReporte.js): A4 vertical, encabezado de marca, cifras en tarjetas, gráficos, tablas
-// con filas alternadas y pie con la fecha de generación y el número de página. Se carga solo al exportar (jspdf pesa).
+// Arma el PDF de un documento de reporte (ver modelosReporte.js): A4 vertical con el diseño de la app (estilo D): ficha de marca con el logo sobre un cuadro negro redondeado,
+// título con la línea roja corta, cifras en tarjetas suaves, tablas claras con rayas finas y avisos en etiquetas de color suave. Pie con la fecha de generación y el número de
+// página. Se carga solo al exportar (jspdf pesa).
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import { graficoAImagen } from './graficoImagen.js';
@@ -8,15 +9,19 @@ import { cargarLogo } from './logoReportes.js';
 import { ajustarTabla } from './tablaAngosta.js';
 import { partirNegritas } from './textoEnriquecido.js';
 
-const MARCA = 'ASIGNACIONES NS';
+const MARCA = 'Network Speed';
 const MARGEN = 15;
 const PIE = 14;
+// Los colores son los de la app (src/index.css): tinta cálida, rojo de marca y el fondo suave de las tarjetas.
 const ROJO = [220, 38, 38];
-const NEGRO = [11, 11, 11];
-const GRIS = [82, 81, 78];
-const GRIS_TENUE = [137, 135, 129];
-const FONDO = [244, 244, 245];
-const BORDE = [225, 224, 217];
+const NEGRO = [28, 25, 23];
+const GRIS = [87, 83, 78];
+const GRIS_TENUE = [120, 113, 108];
+const FONDO = [244, 242, 239];
+const BORDE = [231, 229, 228];
+// Etiquetas de aviso (los niveles de Aviso en la app): fondo suave y texto oscuro del mismo tono.
+const AVISO = { fondo: [254, 243, 199], texto: [146, 64, 14], punto: [217, 119, 6] };
+const BIEN = { fondo: [209, 250, 229], texto: [4, 120, 87], punto: [22, 163, 74] };
 
 // Los textos estándar del PDF (Helvetica) solo traen el alfabeto latino básico: lo demás se reemplaza por algo equivalente.
 // El espacio sin salto (el de "21,33 $") se cambia por uno común: jsPDF lo mide como dos espacios y lo alineado a la derecha (los montos) quedaba unos 2,4 pt corrido a la izquierda de su encabezado.
@@ -42,27 +47,40 @@ export async function generarPdf(modelo) {
   const asegurar = (necesario) => { if (y + necesario > limite) nuevaPagina(); };
   const texto = (t, x, yy, opciones) => doc.text(limpio(t), x, yy, opciones);
 
-  // --- Portada: banda de marca, título y datos de generación ---
+  // --- Portada: ficha de marca, título con la línea roja corta y datos de generación ---
+  // El logo (letras blancas, sin fondo) va sobre un cuadro negro de esquinas redondeadas, como en el menú de la app, con el nombre de la marca al lado.
+  const altoFicha = 17;
+  const altoLogo = 10.5;
+  const relleno = (altoFicha - altoLogo) / 2;
+  const anchoLogo = logo ? (logo.ancho / logo.alto) * altoLogo : 34;
+  const anchoFicha = anchoLogo + relleno * 2;
   doc.setFillColor(0, 0, 0);
-  doc.rect(0, 0, ancho, 24, 'F');
-  doc.setFillColor(...ROJO);
-  doc.rect(0, 24, ancho, 1.2, 'F');
+  doc.roundedRect(MARGEN, 11, anchoFicha, altoFicha, 3.4, 3.4, 'F');
   if (logo) {
-    // El logo (sin fondo, con letras blancas) sobre la banda negra, a la altura de la banda menos un respiro.
-    const altoLogo = 17;
-    doc.addImage(logo.bytes, 'PNG', MARGEN, (24 - altoLogo) / 2, (logo.ancho / logo.alto) * altoLogo, altoLogo, 'logo', 'FAST');
+    doc.addImage(logo.bytes, 'PNG', MARGEN + relleno, 11 + relleno, anchoLogo, altoLogo, 'logo', 'FAST');
   } else {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
-    texto(MARCA, MARGEN, 14.5);
+    texto(MARCA, MARGEN + relleno, 11 + altoFicha / 2 + 1.2);
   }
-  y = 38;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(21);
+  doc.setFontSize(11.5);
+  color(NEGRO);
+  texto('Network Speed', MARGEN + anchoFicha + 4, 18.6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  color(GRIS_TENUE);
+  texto('Asignaciones', MARGEN + anchoFicha + 4, 23.6);
+  y = 46;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
   color(NEGRO);
   texto(modelo.titulo, MARGEN, y);
-  y += 7;
+  // La línea roja corta de la marca, bajo el título (como en los encabezados de la app).
+  doc.setFillColor(...ROJO);
+  doc.roundedRect(MARGEN, y + 2.6, 11, 1.1, 0.55, 0.55, 'F');
+  y += 10;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   color(GRIS);
@@ -72,7 +90,7 @@ export async function generarPdf(modelo) {
   doc.setFontSize(8.5);
   color(GRIS_TENUE);
   texto(`Generado el ${fechaHoraLegible(modelo.generado.en)}${modelo.generado.por ? ` por ${modelo.generado.por}` : ''}`, MARGEN, y);
-  y += 9;
+  y += 10;
 
   // --- Bloques ---
   const cifras = (items) => {
@@ -84,37 +102,34 @@ export async function generarPdf(modelo) {
     items.forEach((it, i) => {
       const x = MARGEN + i * (w + gap);
       doc.setFillColor(...FONDO);
-      doc.setDrawColor(...BORDE);
-      doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+      doc.roundedRect(x, y, w, h, 3.4, 3.4, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      color(GRIS_TENUE);
-      doc.text(doc.splitTextToSize(limpio(it.etiqueta).toUpperCase(), w - 6).slice(0, 2), x + 3, y + 4.5);
+      doc.setFontSize(7);
+      color(GRIS);
+      doc.text(doc.splitTextToSize(limpio(it.etiqueta), w - 6).slice(0, 2), x + 3.2, y + 5);
       // El valor se achica si no cabe en la tarjeta (nombres largos).
       let tam = 16;
       const valor = limpio(it.valor);
       doc.setFontSize(tam);
       while (doc.getTextWidth(valor) > w - 6 && tam > 8) { tam -= 1; doc.setFontSize(tam); }
       color(NEGRO);
-      doc.text(valor, x + 3, y + 14.5);
+      doc.text(valor, x + 3.2, y + 14.8);
       if (it.detalle) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(6.8);
         color(GRIS);
-        doc.text(doc.splitTextToSize(limpio(it.detalle), w - 6).slice(0, 2), x + 3, y + 19.2);
+        doc.text(doc.splitTextToSize(limpio(it.detalle), w - 6).slice(0, 2), x + 3.2, y + 19.4);
       }
     });
-    y += h + 7;
+    y += h + 10;
   };
 
   const encabezadoDeSeccion = (titulo, nota) => {
     asegurar(14);
-    doc.setFillColor(...ROJO);
-    doc.rect(MARGEN, y - 3.4, 1.2, 4.6, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
+    doc.setFontSize(12);
     color(NEGRO);
-    texto(titulo, MARGEN + 3.5, y);
+    texto(titulo, MARGEN, y);
     y += 3;
     if (nota) {
       doc.setFont('helvetica', 'normal');
@@ -224,7 +239,7 @@ export async function generarPdf(modelo) {
     const conLinea = new Set();
     const cuerpo = [];
     b.filas.forEach((f, r) => {
-      const fondo = r % 2 === 1 ? [250, 250, 249] : [255, 255, 255];
+      const fondo = [255, 255, 255];
       cuerpo.push(f.map((t) => ({ content: limpio(t), styles: { fillColor: fondo } })));
       const linea = b.subfilas?.[r];
       if (linea) {
@@ -235,11 +250,11 @@ export async function generarPdf(modelo) {
     autoTable(doc, {
       startY: y,
       margin: { left: MARGEN, right: MARGEN, top: MARGEN + 6, bottom: PIE + 4 },
-      head: [b.columnas.map((c) => limpio(c.titulo))],
+      head: [b.columnas.map((c) => limpio(c.titulo).toUpperCase())],
       body: cuerpo,
       theme: 'plain',
       styles: { font: 'helvetica', fontSize: fuente, cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 }, textColor: NEGRO, overflow: 'linebreak' },
-      headStyles: { fillColor: [24, 24, 27], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: fuente - 0.5, valign: 'middle' },
+      headStyles: { fillColor: FONDO, textColor: GRIS, fontStyle: 'bold', fontSize: fuente - 0.7, valign: 'middle' },
       columnStyles: Object.fromEntries(b.columnas.map((c, i) => [i, { halign: c.derecha ? 'right' : 'left', fontStyle: c.derecha ? 'bold' : i === 0 ? 'bold' : 'normal', minCellWidth: minimos[i] }])),
       didParseCell: (data) => {
         // Cada encabezado se alinea igual que los datos de su columna: a la derecha las numéricas (sobre sus cifras) y a la izquierda las de texto. Ninguno queda centrado.
@@ -256,19 +271,30 @@ export async function generarPdf(modelo) {
     y = doc.lastAutoTable.finalY + 9;
   };
 
-  // Puntos de atención: una viñeta de color por línea (ámbar = alerta, verde = bien), con el texto ajustado al ancho.
+  // Puntos de atención: cada línea empieza con una etiqueta de color suave ("Atención" en ámbar, "Bien" en verde), como los avisos de la app, y el texto ajustado al ancho.
   const lista = (b) => {
     encabezadoDeSeccion(b.titulo);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
     for (const item of b.items) {
-      const lineas = doc.splitTextToSize(`${item.nivel === 'aviso' ? 'Atención: ' : 'Bien: '}${limpio(item.texto)}`, util - 8);
-      asegurar(lineas.length * 4.2 + 2.5);
-      doc.setFillColor(...(item.nivel === 'aviso' ? [217, 119, 6] : [22, 163, 74]));
-      doc.roundedRect(MARGEN, y - 2.6, 2.6, 2.6, 0.5, 0.5, 'F');
+      const tono = item.nivel === 'aviso' ? AVISO : BIEN;
+      const etiqueta = item.nivel === 'aviso' ? 'Atención' : 'Bien';
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      const anchoEtiqueta = doc.getTextWidth(etiqueta) + 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const lineas = doc.splitTextToSize(limpio(item.texto), util - anchoEtiqueta - 3);
+      asegurar(lineas.length * 4.2 + 3);
+      doc.setFillColor(...tono.fondo);
+      doc.roundedRect(MARGEN, y - 3.7, anchoEtiqueta, 5.2, 2.6, 2.6, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...tono.texto);
+      doc.text(etiqueta, MARGEN + 2.5, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
       color(NEGRO);
-      doc.text(lineas, MARGEN + 6, y);
-      y += lineas.length * 4.2 + 2.5;
+      doc.text(lineas, MARGEN + anchoEtiqueta + 3, y);
+      y += lineas.length * 4.2 + 3;
     }
     y += 4;
   };
@@ -301,9 +327,9 @@ export async function generarPdf(modelo) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
       color(GRIS_TENUE);
-      texto(`${MARCA}  |  ${modelo.titulo}`, MARGEN, 9);
-      doc.setDrawColor(...ROJO);
-      doc.setLineWidth(0.4);
+      texto(`Network Speed  |  ${modelo.titulo}`, MARGEN, 9);
+      doc.setDrawColor(...BORDE);
+      doc.setLineWidth(0.3);
       doc.line(MARGEN, 11, ancho - MARGEN, 11);
     }
     doc.setDrawColor(...BORDE);

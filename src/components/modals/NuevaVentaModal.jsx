@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, MapPin, Star, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { MapPin, Star } from 'lucide-react';
 import { TIPOS_POR_TRABAJO } from '../../constants';
+import { claveNombre, MENSAJE_PROMOTOR_CAMPO } from '../../utils/promotora';
 import { MAX_OBSERVACION, TIPO_VENTA, camposDePlantillaVenta, instaladorDePlantilla, tecnicoRegistradoDePlantilla } from '../../utils/ventaPromotora';
 import { leerTecnicos } from '../../hooks/useCrearVenta';
 import { MENSAJE_UBICACION_OBLIGATORIA, normalizarCoordenadasNap, normalizarUbicacion } from '../../utils/ubicacion';
@@ -14,7 +15,19 @@ import PromotorField from './PromotorField';
 import { CedulaField } from './TicketFormFields';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
-import { CAMPO_ORDEN, ETIQUETA_ORDEN, SELECTOR_ORDEN, claseCampo } from '../estilos';
+import { CAMPO_ORDEN, SELECTOR_ORDEN, claseCampo } from '../estilos';
+import Aviso from '../Aviso';
+import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
+
+const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
+const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
+const ETIQUETA = 'text-xs font-bold text-muted-foreground ml-1';
+const AVISO = 'text-xs font-bold text-red-700 dark:text-red-400 ml-1';
+// El título de cada grupo de campos. Los grupos van separados por una línea fina; el primero no la lleva.
+function Seccion({ primera = false, children }) {
+  return <h3 className={`col-span-2 text-sm font-black text-foreground ${primera ? '' : 'pt-3 mt-1 border-t border-border'}`}>{children}</h3>;
+}
 
 const TIPOS_ITEMS = [{ value: '', label: 'Seleccione...' }, ...(TIPOS_POR_TRABAJO[TIPO_VENTA] || []).map((t) => ({ value: t, label: t }))];
 // "GERARDO MOLERO" -> "Gerardo Molero" (los técnicos se guardan en mayúsculas).
@@ -31,6 +44,18 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
   const [guardando, setGuardando] = useState(false);
   const [intento, setIntento] = useState(false);
   const [sinCoordenadas, setSinCoordenadas] = useState(false);
+  // Lo obligatorio lo exige el navegador (`required`), pero su burbuja no se parece al resto de la app: se cancela, el cursor va al primer campo con falta,
+  // cada campo dice su falta en texto y abajo queda un aviso general (igual que en Nueva asignación).
+  const primerInvalido = useRef(null);
+  const [mensajeInvalido, setMensajeInvalido] = useState('');
+  const alInvalidar = (e) => {
+    e.preventDefault();
+    setIntento(true);
+    if (primerInvalido.current) return;
+    primerInvalido.current = e.target;
+    setMensajeInvalido('Revisa los campos marcados en rojo.');
+    setTimeout(() => { primerInvalido.current?.focus(); primerInvalido.current = null; }, 0);
+  };
   // Coordenadas de NAP de las órdenes que ya ve esta usuaria: con ellas no hace falta esperar a Tomodat.
   const napsConocidas = useMemo(() => construirNapsConocidas(tickets), [tickets]);
   // null = leyendo, 'error' = no se pudieron leer
@@ -62,6 +87,11 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
   const duplicada = form.cedula && tickets.find((t) => t.cedula === form.cedula && ACTIVAS.has(t.estado));
   const faltaTipo = intento && !form.falla;
   const faltaUbicacion = intento && ubicacion.vacio;
+  const faltaNombre = intento && !form.nombre.trim();
+  const faltaDireccion = intento && !form.direccion.trim();
+  const faltaTelefono = intento && !String(form.telefono || '').trim();
+  const faltaPromotor = intento && verTodas && !claveNombre(form.promotora);
+  const faltaCedula = intento && !String(form.cedula || '').trim();
 
   const napCoordenadas = normalizarCoordenadasNap(form.napCoordenadas);
   // Con NAP escrita pero sin coordenadas, avisa y deja que decida (igual que al crear la orden en la oficina).
@@ -70,6 +100,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
   const enviar = (e) => {
     e.preventDefault();
     setIntento(true);
+    setMensajeInvalido('');
     if (!form.falla) { document.getElementById('nv-falla')?.focus(); return; }
     if (napCoordenadas.error) { document.getElementById('nv-nap-coords')?.focus(); return; }
     if (ubicacion.error || ubicacion.vacio) { document.getElementById('nv-ubicacion')?.focus(); return; }
@@ -87,45 +118,48 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
 
   return (
     <Modal onClose={onClose} zIndexClass="z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-y-auto border border-zinc-300 dark:border-zinc-800">
-        <div className="bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center">
-          <h2 className="text-sm font-black text-white">NUEVA VENTA</h2>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex items-center justify-center relative bg-zinc-800 p-1.5 rounded-full max-lg:after:absolute max-lg:after:-inset-2 text-zinc-300 hover:text-white hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+      <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden border border-border">
+        <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 shrink-0">
+          <h2 className="text-sm font-black text-white">Nueva venta</h2>
+          <BotonCerrar onClick={onClose} />
         </div>
 
-        <form onSubmit={enviar} className="p-4 grid grid-cols-2 gap-2">
+        <form onSubmit={enviar} onInvalidCapture={alInvalidar} onInput={() => { if (mensajeInvalido) setMensajeInvalido(''); }} className="flex flex-col min-h-0 flex-1">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 grid grid-cols-2 gap-x-2 gap-y-3 content-start">
+          <Seccion primera>Plantilla</Seccion>
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-plantilla" className={ETIQUETA_ORDEN}>PLANTILLA <span className="font-normal normal-case text-zinc-400">(pégala completa y se llenan los datos)</span></label>
+            <label htmlFor="nv-plantilla" className={ETIQUETA}>Pégala completa y se llenan los datos</label>
             <textarea id="nv-plantilla" rows="4" value={form.plantillaOriginal} onChange={alPegar} className={`${CAMPO_ORDEN} font-mono`} placeholder="Pega aquí la plantilla tal como la enviaste..." />
           </div>
 
-          <CedulaField variant="edit" wrapperClassName="col-span-2 space-y-0.5" idPrefix="nv" tipoDocumento={form.tipoDocumento} cedula={form.cedula} onChange={cambiar} />
+          <Seccion>Cliente</Seccion>
+          <CedulaField variant="create" wrapperClassName="col-span-2 space-y-0.5" idPrefix="nv" tipoDocumento={form.tipoDocumento} cedula={form.cedula} onChange={cambiar} error={faltaCedula ? 'Escribe la cédula o el RIF del cliente.' : ''} />
           {duplicada && (
-            <div role="status" className="col-span-2 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 rounded-xl px-2.5 py-2 text-[11px] max-lg:text-xs text-amber-800 dark:text-amber-300">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
-              <span>Ya hay una orden <strong>{duplicada.estado}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</span>
-            </div>
+            <Aviso nivel="atencion" compact className="col-span-2">Ya hay una orden <strong>{oracion(duplicada.estado)}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</Aviso>
           )}
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-nombre" className={ETIQUETA_ORDEN}>NOMBRE<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="nv-nombre" required type="text" maxLength="100" name="nombre" value={form.nombre} onChange={cambiar} className={CAMPO_ORDEN} />
+            <label htmlFor="nv-nombre" className={ETIQUETA}>Nombre{OBLIGATORIO}</label>
+            <input id="nv-nombre" required type="text" maxLength="100" name="nombre" value={form.nombre} onChange={cambiar} aria-invalid={faltaNombre ? 'true' : undefined} className={claseCampo('compacto', faltaNombre ? 'error' : 'normal')} />
+            {faltaNombre && <p role="alert" className={AVISO}>Escribe el nombre del cliente.</p>}
           </div>
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-telefono" className={ETIQUETA_ORDEN}>TELÉFONO<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <TelefonosField id="nv-telefono" required value={form.telefono} onChange={(v) => poner('telefono', v)} inputClassName={CAMPO_ORDEN} />
+            <label htmlFor="nv-telefono" className={ETIQUETA}>Teléfono{OBLIGATORIO}</label>
+            <TelefonosField id="nv-telefono" required value={form.telefono} onChange={(v) => poner('telefono', v)} inputClassName={claseCampo('compacto', faltaTelefono ? 'error' : 'normal')} />
+            {faltaTelefono && <p role="alert" className={AVISO}>Escribe el teléfono del cliente.</p>}
           </div>
 
+          <Seccion>Venta</Seccion>
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-instalador" className={ETIQUETA_ORDEN}>INSTALADOR <span className="font-normal normal-case text-zinc-400">(de la plantilla; define el técnico)</span></label>
+            <label htmlFor="nv-instalador" className={ETIQUETA}>Instalador <span className="font-normal text-muted-foreground">(de la plantilla; define el técnico)</span></label>
             <input id="nv-instalador" readOnly type="text" value={instalador} placeholder="Sin instalador" className={claseCampo('compacto', 'lectura')} />
             {tecnico ? (
-              <p role="status" className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-300 ml-1">
+              <p role="status" className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 ml-1">
                 <Star className="w-3 h-3 shrink-0 fill-current" aria-hidden="true" /> Venta de: {nombreBonito(tecnico)}
               </p>
             ) : instalador && (
-              <p role="status" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">
+              <p role="status" className="text-xs text-muted-foreground ml-1">
                 {tecnicos === 'error' ? 'No se pudieron leer los técnicos. Cierra y vuelve a abrir esta ventana.'
                   : esperandoTecnicos ? 'Buscando al instalador entre los técnicos...'
                     : 'No coincide con un técnico registrado: la oficina asignará el técnico.'}
@@ -134,7 +168,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           </div>
 
           <div className="col-span-2 sm:col-span-1 space-y-0.5">
-            <label htmlFor="nv-falla" className={ETIQUETA_ORDEN}>TIPO<span className="text-red-600 dark:text-red-400"> *</span></label>
+            <label htmlFor="nv-falla" className={ETIQUETA}>Tipo{OBLIGATORIO}</label>
             <SelectMenu
               id="nv-falla"
               ariaLabel="Tipo de instalación"
@@ -142,16 +176,17 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
               onChange={(v) => poner('falla', v)}
               items={TIPOS_ITEMS}
               className={`${SELECTOR_ORDEN} ${faltaTipo ? '!border-red-600' : ''}`}
+              aria-invalid={faltaTipo ? 'true' : undefined}
               chevronClassName="w-3.5 h-3.5 right-2"
             />
-            {faltaTipo && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 ml-1">Seleccione un tipo.</p>}
+            {faltaTipo && <p role="alert" className={AVISO}>Elige el tipo de instalación.</p>}
           </div>
 
           {verTodas ? (
-            <PromotorField id="nv-promotora" value={form.promotora} onChange={cambiar} wrapperClassName="col-span-2 sm:col-span-1 space-y-0.5" labelClassName={ETIQUETA_ORDEN} inputClassName={CAMPO_ORDEN} ayuda="(quién la vendió)" />
+            <PromotorField suave id="nv-promotora" value={form.promotora} onChange={cambiar} wrapperClassName="col-span-2 sm:col-span-1 space-y-0.5" labelClassName={ETIQUETA} inputClassName={claseCampo('compacto', faltaPromotor ? 'error' : 'normal')} ayuda="(quién la vendió)" error={faltaPromotor ? MENSAJE_PROMOTOR_CAMPO : ''} />
           ) : (
             <div className="col-span-2 sm:col-span-1 space-y-0.5">
-              <label htmlFor="nv-promotora" className={ETIQUETA_ORDEN}>PROMOTOR</label>
+              <label htmlFor="nv-promotora" className={ETIQUETA}>Promotor</label>
               {promotoraNombres.length > 1 ? (
                 <SelectMenu
                   id="nv-promotora"
@@ -168,37 +203,45 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
             </div>
           )}
 
+          <Seccion>Ubicación y red</Seccion>
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-direccion" className={ETIQUETA_ORDEN}>DIRECCIÓN<span className="text-red-600 dark:text-red-400"> *</span></label>
-            <input id="nv-direccion" required type="text" maxLength="200" name="direccion" value={form.direccion} onChange={cambiar} className={CAMPO_ORDEN} />
+            <label htmlFor="nv-direccion" className={ETIQUETA}>Dirección{OBLIGATORIO}</label>
+            <input id="nv-direccion" required type="text" maxLength="200" name="direccion" value={form.direccion} onChange={cambiar} aria-invalid={faltaDireccion ? 'true' : undefined} className={claseCampo('compacto', faltaDireccion ? 'error' : 'normal')} />
+            {faltaDireccion && <p role="alert" className={AVISO}>Escribe la dirección del cliente.</p>}
           </div>
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-nap" className={ETIQUETA_ORDEN}>NAP</label>
+            <label htmlFor="nv-nap" className={ETIQUETA}>NAP</label>
             <input id="nv-nap" type="text" maxLength="50" name="nap" value={form.nap} onChange={cambiar} className={CAMPO_ORDEN} />
           </div>
 
           <NapCoordenadasField idPrefix="nv" wrapperClassName="col-span-2 space-y-0.5" nap={form.nap} value={form.napCoordenadas} onChange={(v) => poner('napCoordenadas', v)} autoBuscar napsConocidas={napsConocidas} />
 
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-ubicacion" className={ETIQUETA_ORDEN}>UBICACIÓN <span className="font-normal normal-case text-zinc-400">(enlace de Google Maps o coordenadas, obligatoria)</span></label>
-            <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error || faltaUbicacion} aria-required="true" className={`${CAMPO_ORDEN} ${ubicacion.error || faltaUbicacion ? 'border-red-500' : ''}`} />
-            {faltaUbicacion && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{MENSAJE_UBICACION_OBLIGATORIA}</p>}
-            {ubicacion.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{ubicacion.error}</p>}
-            {ubicacion.valor && <a href={ubicacion.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
+            <label htmlFor="nv-ubicacion" className={ETIQUETA}>Ubicación{OBLIGATORIO} <span className="font-normal text-muted-foreground">(enlace de Google Maps o coordenadas)</span></label>
+            <input id="nv-ubicacion" type="text" inputMode="url" maxLength="300" name="ubicacion" placeholder="https://maps.app.goo.gl/..." value={form.ubicacion} onChange={cambiar} aria-invalid={!!ubicacion.error || faltaUbicacion} aria-required="true" className={claseCampo('compacto', ubicacion.error || faltaUbicacion ? 'error' : 'normal')} />
+            {faltaUbicacion && <p role="alert" className={AVISO}>{MENSAJE_UBICACION_OBLIGATORIA}</p>}
+            {ubicacion.error && <p role="alert" className={AVISO}>{ubicacion.error}</p>}
+            {ubicacion.valor && <a href={ubicacion.valor} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Probar enlace</a>}
           </div>
 
+          <Seccion>Observación</Seccion>
           <div className="col-span-2 space-y-0.5">
-            <label htmlFor="nv-observacion" className={ETIQUETA_ORDEN}>OBSERVACIÓN <span className="font-normal normal-case text-zinc-400">(opcional)</span></label>
+            <label htmlFor="nv-observacion" className={ETIQUETA}>Observación{OPCIONAL}</label>
             <textarea id="nv-observacion" rows="2" maxLength={MAX_OBSERVACION} name="observacion" value={form.observacion} onChange={cambiar} aria-describedby="nv-observacion-ayuda" className={CAMPO_ORDEN} placeholder="Ej.: el cliente prefiere que lo visiten en la tarde" />
-            <p id="nv-observacion-ayuda" className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 ml-1">Es interna: solo la ve la oficina (ni el técnico ni el cliente). No sale en el mensaje de WhatsApp.</p>
+            <p id="nv-observacion-ayuda" className="text-xs text-muted-foreground ml-1">Es interna: solo la ve la oficina (ni el técnico ni el cliente). No sale en el mensaje de WhatsApp.</p>
           </div>
 
-          <div className="col-span-2 sticky bottom-0 -mx-4 -mb-4 mt-1 px-4 py-3 flex gap-2 justify-end rounded-b-2xl bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
-            <Boton variante="secundario" onClick={onClose} disabled={guardando}>Cancelar</Boton>
-            <Boton variante="principal" className="min-w-[8.5rem]" type="submit" disabled={guardando || esperandoTecnicos || (Boolean(instalador) && tecnicos === 'error')}>
-              {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar'}
-            </Boton>
+          </div>
+
+          <div className="shrink-0 border-t border-border bg-card px-4 py-3 flex items-center justify-between gap-3">
+            <p role="alert" className="min-w-0 text-xs font-bold text-red-700 dark:text-red-400">{mensajeInvalido}</p>
+            <div className="flex gap-2 shrink-0 ml-auto">
+              <Boton variante="secundario" onClick={onClose} disabled={guardando}>Cancelar</Boton>
+              <Boton variante="principal" className="min-w-[8.5rem]" type="submit" disabled={guardando || esperandoTecnicos || (Boolean(instalador) && tecnicos === 'error')}>
+                {guardando && <Spinner />}{guardando ? 'Guardando...' : 'Guardar'}
+              </Boton>
+            </div>
           </div>
         </form>
       </div>

@@ -1,4 +1,5 @@
 import SelectMenu from './SelectMenu';
+import Segmentado from './Segmentado';
 import { claseSelector } from './estilos';
 
 // El campo de hora de la app (el reloj del navegador se ve distinto en cada equipo): tres controles con el estilo de la app, la hora (1 a 12), los minutos (00 a 59) y a. m. o p. m.
@@ -10,7 +11,7 @@ const MINUTOS = Array.from({ length: 60 }, (_, i) => ({ value: String(i), label:
 
 const CLASE_SELECTOR = claseSelector('grande');
 
-export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', claseSelector = CLASE_SELECTOR, claseBoton = 'px-2.5 min-[380px]:px-3 text-sm', alto = 'h-11', disabled = false }) {
+export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', claseSelector = CLASE_SELECTOR, alto = 'h-11', disabled = false }) {
   const m = /^(\d{2}):(\d{2})$/.exec(valor || '');
   const hora24 = m ? Number(m[1]) : 0;
   const minuto = m ? Number(m[2]) : 0;
@@ -25,20 +26,9 @@ export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', cla
   return (
     <div role="group" aria-label={ariaLabel} className="flex flex-wrap items-center gap-1.5 min-[380px]:gap-2">
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu id={id} ariaLabel={`${ariaLabel}: hora`} disabled={disabled} className={claseSelector} value={String(hora12)} onChange={(v) => cambiar(Number(v), minuto, pm)} items={HORAS} /></div>
-      <span className="font-black text-zinc-700 dark:text-zinc-200" aria-hidden="true">:</span>
+      <span className="font-black text-foreground" aria-hidden="true">:</span>
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu ariaLabel={`${ariaLabel}: minutos`} disabled={disabled} className={claseSelector} value={String(minuto)} onChange={(v) => cambiar(hora12, Number(v), pm)} items={MINUTOS} /></div>
-      <div className={`inline-flex ${alto} rounded-xl border border-zinc-400 dark:border-zinc-700 overflow-hidden shrink-0`}>
-        {[['a. m.', false], ['p. m.', true]].map(([texto, esPm]) => (
-          <button
-            key={texto}
-            type="button"
-            disabled={disabled}
-            aria-pressed={pm === esPm}
-            onClick={() => cambiar(hora12, minuto, esPm)}
-            className={`${claseBoton} h-full font-bold whitespace-nowrap transition-colors disabled:opacity-60 ${pm === esPm ? 'bg-red-600 text-white' : 'bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-          >{texto}</button>
-        ))}
-      </div>
+      <Segmentado ariaLabel={`${ariaLabel}: a. m. o p. m.`} className="shrink-0" compacto={alto !== 'h-11'} deshabilitado={disabled} opciones={[{ id: 'am', etiqueta: 'a. m.' }, { id: 'pm', etiqueta: 'p. m.' }]} valor={pm ? 'pm' : 'am'} onCambiar={(v) => cambiar(hora12, minuto, v === 'pm')} />
     </div>
   );
 }

@@ -94,7 +94,8 @@ export const TIPOS_POR_TRABAJO = {
 // INFRAESTRUCTURA: ve las instalaciones realizadas con la NAP y el puerto de cada cliente nuevo (solo lectura).
 // ADMINISTRACION: concilia los pagos que los clientes hacen por las órdenes (ve las órdenes en solo lectura y escribe solo esos pagos).
 // Cómo se muestra cada rol. El valor guardado en el perfil (y que usan las reglas) no cambia: PROMOTORA se ve "VENTAS".
-export const etiquetaRol = (rol) => (rol === 'PROMOTORA' ? 'VENTAS' : rol);
+const ETIQUETAS_ROL = { PROMOTORA: 'VENTAS', TECNICO: 'TÉCNICO', ALMACEN: 'ALMACÉN', ADMINISTRACION: 'ADMINISTRACIÓN' };
+export const etiquetaRol = (rol) => ETIQUETAS_ROL[rol] || rol;
 
 // El módulo y el rol ADMINISTRACION (conciliar los pagos de los clientes). En false no hay menú, ni cuenta que crear, ni avisos; el técnico igual registra el pago de cada orden y
 // FINANZAS lo ve en su sección "Pagos de clientes" (siempre como "Registrado"). En true hay que crear la cuenta en Usuarios.

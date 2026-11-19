@@ -18,12 +18,12 @@ check('sin avisos no hay resumen', [construirResumen([]), construirResumen(null)
 const nueva = { type: 'nuevaAsignacion', text: 'Te asignaron 3 órdenes nuevas.', duration: 6000 };
 const devuelta = { type: 'devuelto', text: 'AN5 fue devuelta: falta el serial.', duration: 9000 };
 const aprobada = { type: 'aprobado', text: 'AN6 fue aprobada y finalizada.', duration: 6000 };
-const prioridad = { type: 'prioridad', text: 'AN7 tiene PRIORIDAD ALTA. Atiéndela primero.', duration: 9000 };
+const prioridad = { type: 'prioridad', text: 'AN7 tiene prioridad alta. Atiéndela primero.', duration: 9000 };
 check('un solo aviso se muestra tal cual, con su sonido', construirResumen([nueva]), { toast: nueva, sonido: 'nuevaAsignacion' });
 const dos = construirResumen([aprobada, devuelta]);
 check('con varios sale uno solo, con el más urgente y cuántos son', [dos.toast.type, dos.toast.text, dos.sonido], ['devuelto', 'Mientras no estabas llegaron 2 avisos. AN5 fue devuelta: falta el serial. Hay otro más en la campana.', 'devuelta']);
 const cuatro = construirResumen([aprobada, nueva, devuelta, prioridad]);
-check('la prioridad alta va primero, y se cuentan los demás', [cuatro.toast.type, cuatro.toast.text.startsWith('Mientras no estabas llegaron 4 avisos. AN7 tiene PRIORIDAD ALTA.'), cuatro.toast.text.endsWith('Hay 3 más en la campana.'), cuatro.sonido], ['prioridad', true, true, 'prioridad']);
+check('la prioridad alta va primero, y se cuentan los demás', [cuatro.toast.type, cuatro.toast.text.startsWith('Mientras no estabas llegaron 4 avisos. AN7 tiene prioridad alta.'), cuatro.toast.text.endsWith('Hay 3 más en la campana.'), cuatro.sonido], ['prioridad', true, true, 'prioridad']);
 check('el orden de llegada no cambia cuál es el más urgente', construirResumen([prioridad, devuelta, aprobada]).toast.type, construirResumen([aprobada, devuelta, prioridad]).toast.type);
 check('un tipo desconocido va al final', construirResumen([{ type: 'raro', text: 'Algo.' }, aprobada]).toast.type, 'aprobado');
 check('el aviso resumido dura más para dar tiempo a leerlo', construirResumen([nueva, aprobada]).toast.duration, 10000);

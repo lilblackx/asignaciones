@@ -43,7 +43,7 @@ try {
   const sinPago = fila(item({}, { pagoCliente: undefined }));
   const textoSinPago = textoPlano(sinPago);
   check('instalación sin pago: el aviso del pago sale una sola vez, con quién lo registra, qué hacer si no puede y que no se aprueba hasta registrarlo', [
-    veces(textoSinPago, /Falta el pago del cliente/g), textoSinPago.includes('lo registra el técnico (JOSE)'), textoSinPago.includes('si no puede, regístralo tú'), textoSinPago.includes('No se puede aprobar hasta que esté registrado'),
+    veces(textoSinPago, /Falta el pago del cliente/g), textoSinPago.includes('Lo registra el técnico (JOSE)'), textoSinPago.includes('si no puede, regístralo tú'), textoSinPago.includes('No se puede aprobar hasta que esté registrado'),
   ], [1, true, true, true]);
   check('instalación sin pago: tiene "Registrar el pago", "Aprobar" apagado, y el aviso de las fotos todavía no (no se aprueba sin el pago y las fotos se piden después)', [Boolean(boton(sinPago, 'Registrar el pago')), boton(sinPago, 'Aprobar')?.apagado, veces(textoSinPago, /Faltan los detalles de la orden/g), Boolean(boton(sinPago, 'Aprobar sin detalles'))], [true, true, 0, false]);
 

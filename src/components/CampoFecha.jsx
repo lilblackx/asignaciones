@@ -25,12 +25,20 @@ export default function CampoFecha({ id, valor, onChange, min, max, ariaLabel, v
     return () => { document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', tecla); };
   }, [abierto, flotante]);
 
+  // Un calendario dentro del formulario se abre debajo del campo: se lleva a la vista cuando termina de desplegarse.
+  useEffect(() => {
+    if (!abierto || flotante) return undefined;
+    const t = setTimeout(() => caja.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 260);
+    return () => clearTimeout(t);
+  }, [abierto, flotante]);
+
   const calendario = (
     <Calendario
       valor={valor}
       min={min}
       max={max}
       grande={grande}
+      llena={!flotante}
       onElegir={(iso) => { onChange(iso); setAbierto(false); }}
       onBorrar={permitirBorrar && valor ? () => { onChange(''); setAbierto(false); } : undefined}
       onCerrar={() => setAbierto(false)}
@@ -40,11 +48,11 @@ export default function CampoFecha({ id, valor, onChange, min, max, ariaLabel, v
   return (
     <div ref={caja} className={`relative ${ancho}`}>
       <button id={id} type="button" disabled={disabled} aria-haspopup="dialog" aria-expanded={abierto} aria-label={`${ariaLabel || 'Fecha'}: ${valor ? fechaCorta(valor) : 'sin fecha'}`} onClick={() => setAbierto((a) => !a)} className={clase}>
-        <span className={valor ? '' : 'text-zinc-600 dark:text-zinc-400'}>{valor ? fechaCorta(valor) : vacio}</span>
+        <span className={valor ? '' : 'text-muted-foreground'}>{valor ? fechaCorta(valor) : vacio}</span>
         <CalendarDays className={grande ? 'w-6 h-6 shrink-0' : 'w-4 h-4 shrink-0'} aria-hidden="true" />
       </button>
       {flotante
-        ? abierto && <div className={`absolute ${derecha ? 'right-0' : 'left-0'} top-full mt-1 z-[300] ${grande ? 'w-80' : 'w-72'} lg:animate-menu-entrada`}>{calendario}</div>
+        ? abierto && <div className={`absolute ${derecha ? 'right-0' : 'left-0'} top-full mt-1 z-[300] ${grande ? 'w-[min(22rem,calc(100vw-2rem))] lg:w-80' : 'w-72'} animate-menu-entrada`}>{calendario}</div>
         : <Colapsable>{abierto && <div className="mt-2">{calendario}</div>}</Colapsable>}
     </div>
   );

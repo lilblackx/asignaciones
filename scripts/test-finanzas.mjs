@@ -140,7 +140,7 @@ const pagado = resumenPagado(pagosPrueba, rango);
 check('el resumen suma lo pagado: no cuenta lo anulado ni lo de otro periodo', [pagado.total, pagado.ordenes, pagado.pagos, pagado.porTecnico.length], [385, 29, 3, 2]);
 check('REINEL: 245 + 40 por 19 órdenes en 2 pagos, con el detalle por concepto', pagado.porTecnico[0], { tecnico: 'REINEL BRAVO', pagos: 2, ordenes: 19, total: 285, bonos: 0, descuento: 0, neto: 285, cantidades: { INSTALACION: 5, AVERIA: 12, MUDANZA_INTERNA: 1, MUDANZA_EXTERNA: 0, VALIDACION_NAP: 0, TRABAJO_ADICIONAL: 0, RECABLEADO: 1, LOW_SIGNAL: 0, CAMBIO_EQUIPO: 0 }, ultimo: dia(18), bs: 0 });
 check('GERARDO: un pago de 100 por 10 órdenes (un cantidades incompleto no rompe)', [pagado.porTecnico[1].total, pagado.porTecnico[1].ordenes, pagado.porTecnico[1].cantidades.INSTALACION], [100, 10, 0]);
-check('la frase del reporte', frasePagado({ tecnico: 'REINEL BRAVO', ordenes: 15, total: 245 }), `Se pagó ${dolares(245)} por 15 órdenes a REINEL BRAVO`);
+check('la frase del reporte', frasePagado({ tecnico: 'REINEL BRAVO', ordenes: 15, total: 245 }), `Se pagó ${dolares(245)} por 15 órdenes a Reinel Bravo`);
 check('filtrar por técnico', resumenPagado(pagosPrueba, rango, { tecnico: 'gerardo molero' }).total, 100);
 check('las cifras del reporte', cifrasResumenPagado(pagado).map((c) => [c.etiqueta, c.valor]), [['Total pagado', dolares(385)], ['Órdenes pagadas', 29], ['Técnicos pagados', 2]]);
 check('sin pagos el resumen está vacío', resumenPagado([], rango), { total: 0, bs: 0, ordenes: 0, pagos: 0, porTecnico: [] });

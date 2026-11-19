@@ -4,9 +4,9 @@ import { claseCampo } from '../estilos';
 // y Editar orden de la oficina.
 export default function VlanVisitaCampo({ vlan, onVlan, error = '' }) {
   return (
-    <div className="space-y-1 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
-      <label htmlFor="pf-vlan-visita" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">
-        VLAN CONFIGURADA <span className="font-normal text-red-500">(obligatorio)</span>
+    <div className="space-y-1 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+      <label htmlFor="pf-vlan-visita" className="text-xs font-bold text-card-foreground ml-1">
+        VLAN configurada <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <input
         id="pf-vlan-visita"
@@ -21,7 +21,7 @@ export default function VlanVisitaCampo({ vlan, onVlan, error = '' }) {
         aria-describedby={error ? 'pf-vlan-visita-error' : undefined}
         className={`${claseCampo('grande', error ? 'error' : 'normal')} min-w-0 font-bold`}
       />
-      {error && <p id="pf-vlan-visita-error" role="alert" className="text-[11px] max-lg:text-xs text-red-600 dark:text-red-400 font-bold ml-1">{error}</p>}
+      {error && <p id="pf-vlan-visita-error" role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
     </div>
   );
 }

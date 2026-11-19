@@ -7,6 +7,7 @@ import { monedaDe, tieneCobroFinal } from './utils/cobro';
 import { enInfraestructura } from './utils/infraestructura';
 import TasaIndicador from './components/TasaIndicador';
 import AvisoNotificaciones from './components/AvisoNotificaciones';
+import TituloLista from './components/TituloLista';
 import AvisoSinConexion from './components/AvisoSinConexion';
 import EnviosInventarioModal, { AvisoInventario } from './components/AlertaInventario';
 import { crearConAviso } from './utils/errores';
@@ -67,6 +68,7 @@ import FiltersBar from './components/FiltersBar';
 import TechnicianWorkload from './components/TechnicianWorkload';
 import TicketsMobileList from './components/TicketsMobileList';
 import TicketsTable from './components/TicketsTable';
+import Cargando from './components/Cargando';
 // Modales: ninguno se ve en la primera pintura (todos cuelgan de un estado que
 // arranca en false/null), así que van en chunks separados en vez del bundle inicial.
 const CreateTicketModal = lazy(() => import('./components/modals/CreateTicketModal'));
@@ -667,7 +669,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-foreground flex font-sans transition-colors duration-200">
 
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
 
@@ -760,6 +762,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         <AvisoSinConexion />
 
         <div className="p-4 max-w-[1400px] mx-auto w-full flex-1">
+          <TituloLista titulo={isTecnico ? 'Mis órdenes' : 'Órdenes'} ahora={ahora} pendientes={ticketsParaVer.filter((t) => t.estado === 'PENDIENTE').length} />
           {verInventario && <AvisoInventario cantidad={enviosInventario.length} pendientes={enviosPendientes.length} onAbrir={abrirVentana('INVENTARIO', setIsInventarioOpen)} />}
           {(isTecnico || canEditTickets) && <AvisoNotificaciones permiso={push.permiso} registro={push.registro} detalleError={push.detalleError} brave={push.brave} onActivar={push.activar} avisarFallo={isTecnico} />}
           <FiltersBar
@@ -781,7 +784,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
               última columna de la tabla (ACC), no en el borde exterior. */}
           {/* En móvil el contador y la tasa se apilan (juntos no caben en una línea);
               desde sm: van en fila, contador a la izquierda y tasa a la derecha. */}
-          <div className="text-xs text-zinc-600 dark:text-zinc-400 mb-3 font-medium flex flex-col items-start gap-1 sm:flex-row sm:justify-between sm:items-center lg:pr-2">
+          <div className="text-xs text-muted-foreground mb-3 font-medium flex flex-col items-start gap-1 sm:flex-row sm:justify-between sm:items-center lg:pr-2">
             <span className="whitespace-nowrap">{visibleTickets.length} de {filteredTickets.length} registros</span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               {canEditTickets && !tasaLoading && <TasaIndicador tasaConfig={tasaConfig} onClick={isAdmin ? abrirVentana('TASA', setIsTasaModalOpen) : undefined} />}
@@ -789,7 +792,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           </div>
 
           {/* Al llegar los datos (ticketsCargados) la lista entra con un fundido en vez de aparecer de golpe. */}
-          <div key={String(ticketsCargados)} className="lg:animate-fade-in">
+          <div key={String(ticketsCargados)} className="animate-fade-in">
             <TicketsMobileList
               filteredTickets={visibleTickets}
               canEditTickets={canEditTickets}
@@ -856,8 +859,8 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
           {/* Al buscar, las archivadas solo llegan hasta los cierres cargados (los más recientes): este botón trae los anteriores. */}
           {canEditTickets && canCerrar && hasMoreReports && statusFilter === 'TODOS' && buscaEnCerradas(searchTerm) && (
             <div className="flex flex-col items-center gap-1 mt-4 text-center">
-              <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">¿No aparece la orden que buscas? Puede estar en un cierre más antiguo.</span>
-              <button type="button" onClick={loadMoreReports} disabled={isLoadingReports} className="min-h-11 px-5 py-2 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-sm disabled:opacity-60">
+              <span className="text-xs text-muted-foreground font-medium">¿No aparece la orden que buscas? Puede estar en un cierre más antiguo.</span>
+              <button type="button" onClick={loadMoreReports} disabled={isLoadingReports} className="min-h-11 px-5 py-2 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm disabled:opacity-60 shadow-card">
                 {isLoadingReports ? 'Buscando...' : 'Buscar en cierres anteriores'}
               </button>
             </div>
@@ -865,7 +868,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
           {hasMore && (
             <div className="flex justify-center mt-4">
-              <button onClick={loadMore} className="px-6 py-2.5 bg-white dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-sm">
+              <button onClick={loadMore} className="px-6 py-2.5 bg-card border-2 border-input text-card-foreground font-bold rounded-card hover:bg-secondary transition-colors shadow-sm text-sm shadow-card">
                 Cargar más ({filteredTickets.length - visibleTickets.length} restantes)
               </button>
             </div>
@@ -875,9 +878,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         </div>
 
         <Suspense fallback={
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" role="presentation">
-            <div className="w-8 h-8 border-4 border-zinc-600 border-t-red-600 rounded-full animate-spin" aria-label="Cargando" />
-          </div>
+          <Cargando variante="pantalla" velo texto="" />
         }>
         {isCreateModalOpen && (
           <CreateTicketModal

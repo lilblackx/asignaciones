@@ -3,6 +3,7 @@
 // Solo vale con la orden PENDIENTE y para el técnico que la tiene: si la pre-finalizan, la cancelan o la pasan
 // a otro técnico, el campo queda sin efecto. Un "en camino" que nadie cierra caduca solo, para que un olvido no
 // deje a la oficina creyendo que el técnico sigue viajando.
+import { legible } from './nombreTecnico.js';
 
 export const ESTADO_EN_CAMINO = 'EN_CAMINO';
 export const ESTADO_EN_SITIO = 'EN_SITIO';
@@ -44,9 +45,9 @@ export function tiempoTranscurrido(desde, ahora = Date.now()) {
   return `hace ${h} h${resto ? ` ${resto} min` : ''}`;
 }
 
-const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''}`;
-export const textoAvisoEnCamino = (t) => `${t.tecnico} va en camino a la orden ${etiquetaOrden(t)}.`;
-export const textoAvisoLlegada = (t) => `${t.tecnico} llegó al sitio de la orden ${etiquetaOrden(t)}.`;
+const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` · ${t.nombre}` : ''}`;
+export const textoAvisoEnCamino = (t) => `${legible(t.tecnico)} va en camino a la orden ${etiquetaOrden(t)}.`;
+export const textoAvisoLlegada = (t) => `${legible(t.tecnico)} llegó al sitio de la orden ${etiquetaOrden(t)}.`;
 
 // --- Detectar los viajes que empezaron mientras se miraba la lista (para avisar a la oficina) ---
 // id -> "desde|llegoEn" del viaje (cadena vacía si no hay): el punto de partida para notar el cambio.

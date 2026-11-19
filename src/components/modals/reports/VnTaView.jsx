@@ -6,10 +6,10 @@ import Cifras from './Cifras';
 import TablaReporte from './TablaReporte';
 import Spinner from '../../Spinner';
 import CampoFecha from '../../CampoFecha';
-import { CAMPO, claseFecha } from '../../estilos';
+import { CAMPO, claseFecha, ETIQUETA_CAMPO } from '../../estilos';
 import Boton from '../../Boton';
+import Aviso from '../../Aviso';
 
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-zinc-600 dark:text-zinc-400';
 
 // La hoja de VN y TA: la única del Registro de estadísticas que se llena a mano (ver utils/registroVnTa). Arriba el formulario para agregar una fila
 // (o corregir una), debajo las cifras y la lista del periodo con sus botones de editar y borrar.
@@ -62,7 +62,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
     ...filaVnTa(r),
     <span key={r.id} className="inline-flex items-center gap-1 whitespace-nowrap">
       {r.pagoId ? (
-        <span title="Finanzas ya la pagó: no se puede editar ni borrar" className="px-2 py-1 rounded bg-emerald-700 text-white text-[11px] max-lg:text-xs font-bold">Pagada</span>
+        <span title="Finanzas ya la pagó: no se puede editar ni borrar" className="px-2 py-1 rounded bg-emerald-700 text-white text-etiqueta font-bold">Pagada</span>
       ) : borrandoId === r.id ? (
         <>
           <Boton variante="principal" tamano="compacto" type="button" onClick={() => borrar(r.id)}>Sí, borrar</Boton>
@@ -79,44 +79,44 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
 
   return (
     <div>
-      {!soloLectura && <form onSubmit={guardar} className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm mb-4">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">{editandoId ? 'Corregir registro' : 'Agregar registro'}</h3>
+      {!soloLectura && <form onSubmit={guardar} className="bg-card border border-border rounded-card p-4 sm:p-5 shadow-sm mb-4">
+        <h3 className="text-sm font-bold text-foreground mb-3">{editandoId ? 'Corregir registro' : 'Agregar registro'}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
-            <label htmlFor="vnta-trabajo" className={ETIQUETA}>Trabajo realizado</label>
+            <label htmlFor="vnta-trabajo" className={ETIQUETA_CAMPO}>Trabajo realizado</label>
             <select id="vnta-trabajo" value={form.trabajo} onChange={(e) => cambiar('trabajo', e.target.value)} disabled={Boolean(editandoId)} className={`${CAMPO} disabled:opacity-60`}>
               {Object.entries(TRABAJOS_VNTA).map(([clave, { nombre }]) => <option key={clave} value={clave}>{nombre}</option>)}
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="vnta-tecnico" className={ETIQUETA}>Técnico que apoyó <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-tecnico" className={ETIQUETA_CAMPO}>Técnico que apoyó <span className="font-normal">(opcional)</span></label>
             <select id="vnta-tecnico" value={form.tecnico} onChange={(e) => cambiar('tecnico', e.target.value)} className={CAMPO}>
               <option value="">Sin técnico</option>
               {tecnicos.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="vnta-fecha" className={ETIQUETA}>Fecha</label>
+            <label htmlFor="vnta-fecha" className={ETIQUETA_CAMPO}>Fecha</label>
             <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase={claseFecha('normal')} />
           </div>
           <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-            <label htmlFor="vnta-observacion" className={ETIQUETA}>Observación <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-observacion" className={ETIQUETA_CAMPO}>Observación <span className="font-normal">(opcional)</span></label>
             <textarea id="vnta-observacion" value={form.observacion} onChange={(e) => cambiar('observacion', stripEmojis(e.target.value))} rows={2} maxLength={MAX_LARGO_OBSERVACION} placeholder="Ej. Apoyo en reparar NAP en residencia la colina" className={`${CAMPO} resize-none`} />
           </div>
         </div>
-        {errorForm && <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400 mt-2">{errorForm}</p>}
+        {errorForm && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 mt-2">{errorForm}</p>}
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <Boton variante="principal" tamano="normal" type="submit" disabled={guardando}>
             {guardando ? <Spinner /> : <Plus className="w-4 h-4" aria-hidden="true" />}{editandoId ? 'Guardar cambios' : 'Agregar'}
           </Boton>
           {editandoId && <Boton variante="secundario" tamano="normal" type="button" onClick={limpiar}><X className="w-4 h-4" aria-hidden="true" /> Cancelar</Boton>}
-          {!editandoId && <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
+          {!editandoId && <p className="text-etiqueta text-muted-foreground">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
         </div>
       </form>}
 
-      {error &&<p role="alert" className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2 mb-4">{error}</p>}
+      {error &&<Aviso nivel="error" compact className="mb-4">{error}</Aviso>}
       <Cifras items={cifrasVnTa(estadistica)} />
-      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 -mt-1 mb-4">{NOTA_VNTA}</p>
+      <p className="text-etiqueta text-muted-foreground -mt-1 mb-4">{NOTA_VNTA}</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">
         <TablaReporte titulo="Estadística de VN y TA" columnas={columnasEstadisticaVnTa()} filas={filasEstadisticaVnTa(estadistica)} />
@@ -129,7 +129,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         filas={filas}
         vacio="Ningún registro de VN o TA en este periodo."
       />
-      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-400 -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
+      <p className="text-etiqueta text-muted-foreground -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
     </div>
   );
 }

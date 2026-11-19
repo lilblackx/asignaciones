@@ -84,7 +84,7 @@ check('una foto repetida no sirve', validarDetalles({ ...bueno, fotos: conUltima
 // --- Revisión: sin los detalles no se aprueba (la prueba usa la fecha de inicio por defecto con una orden de hoy) ---
 // Una instalación con el pago ya registrado: lo único que le falta son las fotos.
 const item = (extra = {}) => ({ clave: 'k1', orden: { ...orden, pagoCliente: pago, finalizadoEn: Date.now() + 2 * 24 * 3600 * 1000, ...extra }, estadoRevision: 'PENDIENTE' });
-check('Revisión: una orden sin fotos tiene motivo, con nombre del técnico, y una con fotos no', [motivoSinDetalles(item()).startsWith('Faltan los detalles de la orden'), motivoSinDetalles(item()).includes('(JOSE)'), motivoSinDetalles(item({ detallesOrden: detalles(2) }))], [true, true, '']);
+check('Revisión: una orden sin fotos tiene motivo, con nombre del técnico, y una con fotos no', [motivoSinDetalles(item()).startsWith('Faltan los detalles de la orden'), motivoSinDetalles(item()).includes('(Jose)'), motivoSinDetalles(item({ detallesOrden: detalles(2) }))], [true, true, '']);
 check('Revisión: la aprobación en bloque deja fuera las que esperan fotos y lo dice', (() => {
   const { omitidas, documentos } = aprobarPendientes([{ ...item(), concepto: 'INSTALACION', conceptoOriginal: 'INSTALACION', tecnico: 'JOSE', tecnicoOriginal: 'JOSE', firma: 'f', dia: '2026-11-14' }], { por: 'admin', ahora: AHORA });
   return [documentos.length, omitidas.map((o) => [Boolean(o.sinDetalles), o.motivo.startsWith('Faltan los detalles de la orden')])];

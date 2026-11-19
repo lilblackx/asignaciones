@@ -47,6 +47,7 @@ import { buscarClienteSmartOlt } from '../lib/smartolt';
 import { MIN_DIGITOS_CEDULA, soloDigitos } from '../utils/clienteSmartolt';
 import { oltUnica } from '../utils/olt';
 import { ejecutarAutomatica } from '../lib/escrituraAutomatica';
+import { legible } from '../utils/nombreTecnico';
 
 // Texto del cobro que se le muestra al técnico cuando finalizan una orden (cualquiera). El cobro lo elige quien
 // finaliza (el monto de la visita con la tasa de ese momento, otro monto o exonerar) y queda guardado en la
@@ -62,7 +63,7 @@ const avisoPago = (t) => `${faltaElPago(t) ? ' Registra el pago del cliente.' : 
 
 // Órdenes que el técnico todavía tiene por atender: solo de esas le avisa que se las quitaron o cancelaron.
 const esActiva = (t) => t?.estado === 'PENDIENTE' || t?.estado === 'PRE-FINALIZADO';
-const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''}`;
+const etiquetaOrden = (t) => `${t.codigo || 'S/C'}${t.nombre ? ` · ${t.nombre}` : ''}`;
 
 // Al finalizar una instalación se guarda su plantilla ya llena por el técnico (vacía si nunca tuvo plantilla).
 const plantillaFinalDe = (t) => {
@@ -365,8 +366,8 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       const conPrioridad = esPrioritaria(updated);
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
-        title: conPrioridad ? 'Nueva asignación - PRIORIDAD ALTA' : 'Nueva asignación',
-        body: `Te asignaron la orden ${updated.codigo || 'S/C'}${updated.nombre ? ` - ${updated.nombre}` : ''}.${conPrioridad ? ' Es PRIORIDAD ALTA: atiéndela primero.' : ''}`,
+        title: conPrioridad ? 'Nueva asignación · Prioridad alta' : 'Nueva asignación',
+        body: `Te asignaron la orden ${updated.codigo || 'S/C'}${updated.nombre ? ` · ${updated.nombre}` : ''}.${conPrioridad ? ' Es de prioridad alta: atiéndela primero.' : ''}`,
         tipo: conPrioridad ? 'prioridad' : 'nuevaAsignacion',
         ticketId,
       });
@@ -387,7 +388,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       avisarPush({
         target: { type: 'tecnico', name: updated.tecnico },
         title: 'Ubicación disponible',
-        body: `La orden ${updated.codigo || 'S/C'}${updated.nombre ? ` - ${updated.nombre}` : ''} ya tiene ubicación.`,
+        body: `La orden ${updated.codigo || 'S/C'}${updated.nombre ? ` · ${updated.nombre}` : ''} ya tiene ubicación.`,
         tipo: 'nuevaAsignacion',
         ticketId,
       });
@@ -396,7 +397,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       avisarPush({
         target: { type: 'aprobadores' },
         title: 'Orden pre-finalizada',
-        body: `${updated.codigo || 'Orden'} (${updated.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA - revisar.`,
+        body: `${updated.codigo || 'Orden'} (${legible(updated.tecnico || 'técnico')}) quedó pre-finalizada: revísala y apruébala.`,
         tipo: 'prefinalizado',
         ticketId,
       });
@@ -516,7 +517,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           );
           if (nuevas.length === 1) {
             const t = nuevas[0];
-            const texto = `${t.codigo || 'Orden'} (${t.tecnico || 'técnico'}) fue marcada PRE-FINALIZADA - revisar.`;
+            const texto = `${t.codigo || 'Orden'} (${legible(t.tecnico || 'técnico')}) quedó pre-finalizada: revísala y apruébala.`;
             setToastMsg({ type: 'prefinalizado', text: texto, duration: 7000 });
             onNotify?.({ type: 'prefinalizado', text: texto, ticketId: t.id });
             playPreFinalizadoSound();
@@ -550,13 +551,13 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           if (nuevasAsignaciones.length === 1) {
             const t = nuevasAsignaciones[0];
             const prio = conPrioridadN > 0;
-            const texto = `Te asignaron una nueva orden${prio ? ' con PRIORIDAD ALTA' : ''}: ${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''}.${prio ? ' Atiéndela primero.' : ''}`;
+            const texto = `Te asignaron una nueva orden${prio ? ' con prioridad alta' : ''}: ${t.codigo || 'S/C'}${t.nombre ? ` · ${t.nombre}` : ''}.${prio ? ' Atiéndela primero.' : ''}`;
             setToastMsg({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, duration: prio ? 9000 : 6000 });
             onNotify?.({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, ticketId: t.id });
             (prio ? playPrioridadSound : playNuevaAsignacionSound)();
           } else if (nuevasAsignaciones.length > 1) {
             const prio = conPrioridadN > 0;
-            const texto = `Te asignaron ${nuevasAsignaciones.length} órdenes nuevas${prio ? `, ${conPrioridadN} con PRIORIDAD ALTA` : ''}.`;
+            const texto = `Te asignaron ${nuevasAsignaciones.length} órdenes nuevas${prio ? `, ${conPrioridadN} con prioridad alta` : ''}.`;
             setToastMsg({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, duration: prio ? 9000 : 6000 });
             onNotify?.({ type: prio ? 'prioridad' : 'nuevaAsignacion', text: texto, ticketIds: nuevasAsignaciones.map(t => t.id) });
             (prio ? playPrioridadSound : playNuevaAsignacionSound)();
@@ -571,7 +572,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
             onNotify?.({ type: 'prioridad', text: texto, ticketId: t.id });
             playPrioridadSound();
           } else if (conPrioridadNueva.length > 1) {
-            const texto = `${conPrioridadNueva.length} órdenes tienen PRIORIDAD ALTA. Atiéndelas primero.`;
+            const texto = `${conPrioridadNueva.length} órdenes tienen prioridad alta. Atiéndelas primero.`;
             setToastMsg({ type: 'prioridad', text: texto, duration: 9000 });
             onNotify?.({ type: 'prioridad', text: texto, ticketIds: conPrioridadNueva.map(t => t.id) });
             playPrioridadSound();
@@ -1288,7 +1289,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     avisarPush({
       target: { type: 'oficina' },
       title: 'Consulta de cobro',
-      body: `${ticket.tecnico || 'Un técnico'} pregunta el cobro del recableado de ${ticket.codigo || 'una orden'} (${metros} m).`,
+      body: `${legible(ticket.tecnico || 'Un técnico')} pregunta el cobro del recableado de ${ticket.codigo || 'una orden'} (${metros} m).`,
       tipo: 'consultaCobro',
       ticketId: ticket.id,
     });
@@ -1500,7 +1501,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
     setToastMsg({
       type: 'success',
       text: !activar ? 'Prioridad alta retirada.'
-        : ticket.tecnico ? `Prioridad alta marcada. Se le avisó a ${ticket.tecnico}.`
+        : ticket.tecnico ? `Prioridad alta marcada. Se le avisó a ${legible(ticket.tecnico)}.`
           : 'Prioridad alta marcada. Aún no tiene técnico: le llegará marcada cuando la asignes.'
     });
     notifyTicketChange(ticket, updatedTicket);
@@ -1546,7 +1547,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
       avisarPush({
         target: { type: 'oficina' },
         title: 'Escalada a infraestructura',
-        body: `${actual.tecnico || 'Un técnico'} escaló la orden ${etiquetaOrden(actual)} a infraestructura: ${motivo.valor}`,
+        body: `${legible(actual.tecnico || 'Un técnico')} escaló la orden ${etiquetaOrden(actual)} a infraestructura: ${motivo.valor}`,
         tipo: 'infraestructura',
         ticketId: actual.id,
       });
@@ -1561,7 +1562,7 @@ export function useTickets(firebaseUser, currentUser, setToastMsg, role, tecnico
           ticketId: actual.id,
         });
       }
-      setToastMsg({ type: 'success', text: actual.tecnico ? `Orden escalada a infraestructura. Se le avisó a ${actual.tecnico}.` : 'Orden escalada a infraestructura.' });
+      setToastMsg({ type: 'success', text: actual.tecnico ? `Orden escalada a infraestructura. Se le avisó a ${legible(actual.tecnico)}.` : 'Orden escalada a infraestructura.' });
     }
     return true;
   };

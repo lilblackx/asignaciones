@@ -56,6 +56,7 @@ for (const t of TECHS) {
 console.log(`OK  ${TECHS.length} técnicos creados`);
 
 await upsertUser({ username: 'admin', password: 'Admin1234', nombre: 'Admin Demo', role: 'ADMIN' });
+await upsertUser({ username: 'lfernandez', password: 'Admin1234', nombre: 'Luis Fernández', role: 'ADMIN' });
 await upsertUser({ username: 'usuario', password: 'Usuario1234', nombre: 'Usuario Demo', role: 'USUARIO', puedeCerrar: true });
 await upsertUser({ username: 'tecnico1', password: 'Tecnico1234', nombre: 'Gerardo Molero', role: 'TECNICO', tecnicoAsociado: 'GERARDO MOLERO' });
 await upsertUser({ username: 'tecnico2', password: 'Tecnico1234', nombre: 'Reinel Bravo', role: 'TECNICO', tecnicoAsociado: 'REINEL BRAVO' });
@@ -79,7 +80,7 @@ await base.collection('tickets').doc('seed-ticket-reinel').set({
   fecha: new Date().toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
   fechaProgramada: '', codigo: 'AS2', nombre: 'Cliente de Reinel', cedula: 'V-22222222',
   direccion: 'Dirección de prueba 2', telefono: '04120000002', nap: '',
-  tipoTrabajo: 'INSTALACIÓN', falla: 'Instalación nueva', tecnico: 'REINEL BRAVO',
+  tipoTrabajo: 'INSTALACIÓN', falla: 'MTV', tecnico: 'REINEL BRAVO',
   observacion: '', observacionInterna: false, estado: 'PENDIENTE',
   creado: 'usuario', createdAt: Date.now(), historialEdiciones: [], isAsignado: true
 });

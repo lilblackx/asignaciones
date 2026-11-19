@@ -9,12 +9,12 @@ import { nombrePersona } from '../../utils/datosCliente';
 // El estado de la búsqueda va DENTRO del campo de cédula, a la derecha y sin ocupar sitio, y el botón de volver a buscar está siempre (apagado mientras no haya cédula):
 // así el campo mide lo mismo antes, durante y después de buscar y no se mueve al aparecer el spinner.
 function iconoDe(estado) {
-  if (estado?.tipo === 'buscando') return { Icono: Loader2, clase: 'text-zinc-400 animate-spin', titulo: 'Buscando en SmartOLT...' };
+  if (estado?.tipo === 'buscando') return { Icono: Loader2, clase: 'text-muted-foreground animate-spin', titulo: 'Buscando en SmartOLT...' };
   if (estado?.tipo === 'listo') return estado.llenados > 0
     ? { Icono: Check, clase: 'text-emerald-600 dark:text-emerald-400', titulo: 'Datos tomados de SmartOLT' }
-    : { Icono: Check, clase: 'text-zinc-400', titulo: 'Cliente encontrado en SmartOLT (no había campos vacíos que llenar)' };
+    : { Icono: Check, clase: 'text-muted-foreground', titulo: 'Cliente encontrado en SmartOLT (no había campos vacíos que llenar)' };
   if (estado?.tipo === 'vacio') return { Icono: SearchX, clase: 'text-amber-600 dark:text-amber-400', titulo: 'No se encontró un cliente con esta cédula en SmartOLT' };
-  if (estado?.tipo === 'error') return { Icono: AlertTriangle, clase: 'text-red-600 dark:text-red-400', titulo: 'SmartOLT no respondió' };
+  if (estado?.tipo === 'error') return { Icono: AlertTriangle, clase: 'text-red-700 dark:text-red-400', titulo: 'SmartOLT no respondió' };
   if (estado?.tipo === 'opciones') return { Icono: AlertTriangle, clase: 'text-amber-600 dark:text-amber-400', titulo: 'Varias ONU con esta cédula: elige una' };
   return null;
 }
@@ -41,7 +41,7 @@ export function ClienteSmartOltBoton({ cliente }) {
       disabled={!cliente.visible || buscando}
       title="Buscar cliente en SmartOLT"
       aria-label="Buscar cliente en SmartOLT"
-      className="shrink-0 w-9 h-9 max-lg:w-11 max-lg:h-11 inline-flex items-center justify-center rounded-xl border border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 transition-colors disabled:opacity-40 disabled:hover:text-zinc-600 disabled:hover:border-zinc-400"
+      className="shrink-0 w-9 h-9 max-lg:w-11 max-lg:h-11 inline-flex items-center justify-center rounded-campo border border-input bg-card dark:bg-background text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 transition-colors disabled:opacity-40 disabled:hover:text-zinc-600 disabled:hover:border-zinc-400"
     >
       <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
     </button>
@@ -54,11 +54,11 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
   if (!cliente.visible || !estado || !['vacio', 'error', 'opciones'].includes(estado.tipo)) return null;
   return (
     <div className={wrapperClassName}>
-      {estado.tipo === 'vacio' && <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT.</p>}
-      {estado.tipo === 'error' && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-600 dark:text-red-400 ml-1">{estado.mensaje} Llena los datos a mano.</p>}
+      {estado.tipo === 'vacio' && <p className="text-etiqueta font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT.</p>}
+      {estado.tipo === 'error' && <p role="alert" className="text-etiqueta font-bold text-red-700 dark:text-red-400 ml-1">{estado.mensaje} Llena los datos a mano.</p>}
       {estado.tipo === 'opciones' && (
-        <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="mt-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-2">
-          <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+        <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="mt-1 rounded-campo border border-border bg-sunken p-2">
+          <p className="flex items-center gap-1.5 text-etiqueta font-bold text-foreground mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
             Esta cédula tiene {estado.opciones.length} servicios. Elige cuál es:
           </p>
@@ -68,20 +68,20 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
                 key={onu.idExterno || onu.nombre}
                 type="button"
                 onClick={() => cliente.elegir(onu)}
-                className="group w-full text-left rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                className="group w-full text-left rounded-card border border-border bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-card"
               >
                 <span className="flex items-center gap-2">
                   {onu.zona && (
-                    <span className="shrink-0 text-[11px] max-lg:text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 group-hover:bg-white dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                    <span className="shrink-0 text-etiqueta font-bold px-1.5 py-0.5 rounded bg-secondary group-hover:bg-white dark:group-hover:bg-zinc-700 text-muted-foreground">
                       {onu.zona}
                     </span>
                   )}
-                  <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">
+                  <span className="text-xs font-bold text-foreground truncate">
                     {nombrePersona(limpiarNombre(onu.nombre, estado.digitos)) || 'Sin nombre'}
                   </span>
                 </span>
                 {onu.direccion && (
-                  <span className="block mt-0.5 text-[11px] max-lg:text-xs leading-snug font-medium text-zinc-600 dark:text-zinc-400">{onu.direccion}</span>
+                  <span className="block mt-0.5 text-etiqueta leading-snug font-medium text-muted-foreground">{onu.direccion}</span>
                 )}
               </button>
             ))}

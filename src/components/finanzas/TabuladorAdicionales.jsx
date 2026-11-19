@@ -36,9 +36,9 @@ function Formulario({ items, tasa, ocupado, onGuardar }) {
       </div>
 
       {filas.length === 0 ? (
-        <p className={`${TARJETA} px-4 py-4 text-sm text-zinc-700 dark:text-zinc-200`}>Todavía no hay ítems. Agrega el primero.</p>
+        <p className={`${TARJETA} px-4 py-4 text-sm text-foreground`}>Todavía no hay ítems. Agrega el primero.</p>
       ) : (
-        <ul className={`${TARJETA} px-4 divide-y divide-zinc-200 dark:divide-zinc-800`}>
+        <ul className={`${TARJETA} px-4 divide-y divide-border`}>
           {filas.map((f, i) => {
             const precio = parsePrecioAdicional(f.precio).valor;
             return (
@@ -46,15 +46,15 @@ function Formulario({ items, tasa, ocupado, onGuardar }) {
                 <div>
                   <label htmlFor={`adicional-nombre-${f.id}`} className={`${ETIQUETA} sm:sr-only`}>Nombre del ítem</label>
                   <input id={`adicional-nombre-${f.id}`} value={f.nombre} onChange={(e) => cambiar(f.id, 'nombre', e.target.value)} maxLength={MAX_NOMBRE_ADICIONAL} autoComplete="off" placeholder={`Nombre, por ejemplo: Domingo trabajado`} aria-invalid={aqui(f.id, 'nombre')} className={`${CAMPO} mt-1 sm:mt-0 text-sm font-bold`} />
-                  {aqui(f.id, 'nombre') && <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{error.texto}</p>}
+                  {aqui(f.id, 'nombre') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{error.texto}</p>}
                 </div>
                 <div>
                   <label htmlFor={`adicional-precio-${f.id}`} className={`${ETIQUETA} sm:sr-only`}>Precio en dólares</label>
                   <div className="relative mt-1 sm:mt-0">
                     <input id={`adicional-precio-${f.id}`} value={f.precio} onChange={(e) => cambiar(f.id, 'precio', e.target.value)} inputMode="decimal" autoComplete="off" placeholder="0,00" aria-invalid={aqui(f.id, 'precio')} className={`${CAMPO} pr-9 text-sm font-bold text-right tabular-nums`} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-muted-foreground pointer-events-none">$</span>
                   </div>
-                  {aqui(f.id, 'precio') ? <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">{error.texto}</p> : (precio > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} text-right font-semibold tabular-nums mt-1`}>{bolivares(aBs(precio, tasa))}</p>)}
+                  {aqui(f.id, 'precio') ? <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{error.texto}</p> : (precio > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} text-right font-bold tabular-nums mt-1`}>{bolivares(aBs(precio, tasa))}</p>)}
                 </div>
                 <button type="button" onClick={() => quitar(f.id)} disabled={ocupado} aria-label={`Quitar el ítem ${f.nombre || i + 1}`} className={`${BOTON_FILA} sm:mt-0.5`}>Quitar</button>
               </li>
@@ -63,11 +63,11 @@ function Formulario({ items, tasa, ocupado, onGuardar }) {
         </ul>
       )}
 
-      {error && !error.id && <p role="alert" className="text-sm text-red-600 dark:text-red-400 font-bold">{error.texto}</p>}
+      {error && !error.id && <p role="alert" className="text-sm text-red-700 dark:text-red-400 font-bold">{error.texto}</p>}
 
       <div className="flex flex-wrap items-center gap-4">
         <Boton variante="secundario" tamano="normal" icono={Plus} onClick={agregar} disabled={ocupado || filas.length >= MAX_ITEMS_ADICIONALES}>Agregar ítem</Boton>
-        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} bg-red-600 hover:bg-red-700 text-white`}>
+        <button type="button" onClick={guardar} disabled={ocupado || !cambiado} className={`${BOTON_GRANDE} bg-primary hover:bg-primary-hover text-white`}>
           {ocupado && <Spinner />}Guardar ítems
         </button>
         <span className={`${ETIQUETA} text-sm`}>{cambiado ? 'Hay cambios sin guardar' : 'Ítems al día'}</span>

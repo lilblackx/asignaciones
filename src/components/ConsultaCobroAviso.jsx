@@ -1,46 +1,79 @@
-import { Banknote, Hourglass } from 'lucide-react';
-import { consultaCobroDe, consultaPendiente, respuestaVigente, textoRespuesta } from '../utils/consultaCobro';
+import { Banknote, ChevronDown, Hourglass } from 'lucide-react';
+import Aviso from './Aviso';
+import { legible } from '../utils/nombreTecnico';
+import { estadoConsulta, textoRespuesta } from '../utils/consultaCobro';
 
 // Estado de la consulta del cobro de un recableado, para la lista de órdenes: pendiente (la oficina aún no responde) o con la
 // respuesta. Con `onResponder` (oficina) la consulta pendiente trae el botón para responderla. No renderiza nada si el técnico
 // no consultó, ni cuando la orden ya se cerró (el cobro final lo muestra CobroAviso).
-export default function ConsultaCobroAviso({ ticket, compact = false, onResponder, className = '' }) {
-  if (!['PENDIENTE', 'PRE-FINALIZADO'].includes(ticket?.estado)) return null;
-  const consulta = consultaCobroDe(ticket);
-  if (!consulta) return null;
-  const respuesta = respuestaVigente(ticket);
-  const pendiente = consultaPendiente(ticket);
-  const icono = compact ? 'w-3 h-3' : 'w-4 h-4';
-  const base = `rounded-xl border flex items-start gap-2 ${compact ? 'p-1.5 text-[11px] max-lg:text-xs' : 'p-2.5 text-xs'} ${className}`;
 
-  if (respuesta) {
-    return (
-      <div className={`${base} bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50 text-sky-900 dark:text-sky-200`}>
-        <Banknote className={`${icono} shrink-0 mt-px text-sky-600 dark:text-sky-400`} aria-hidden="true" />
-        <p className="font-bold leading-snug min-w-0 break-words">
-          Cobro del recableado ({respuesta.metros} m): <span className="font-black">{textoRespuesta(respuesta)}</span>
-        </p>
-      </div>
-    );
+const textoPendiente = (ticket, consulta, onResponder) => (onResponder
+  ? `${legible(ticket.tecnico) || 'El técnico'} pregunta cuánto se cobra por ${consulta.metros} m.`
+  : `${consulta.metros} m: esperando a la oficina.`);
+
+// En la tabla de PC la consulta es una marca pequeña en la columna Nombre que despliega su detalle (ver DetalleConsultaCobro) en una franja bajo la fila.
+export function MarcaConsultaCobro({ ticket, abierto, onAlternar, id }) {
+  const estado = estadoConsulta(ticket);
+  if (!estado) return null;
+  const respuesta = estado.tipo === 'respuesta';
+  const Icono = respuesta ? Banknote : Hourglass;
+  const tono = respuesta
+    ? 'border-sky-200 dark:border-sky-900/50 bg-sky-50 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200 hover:bg-sky-100 dark:hover:bg-sky-950/50'
+    : 'border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950/50';
+  return (
+    <button
+      type="button"
+      onClick={onAlternar}
+      aria-expanded={abierto}
+      aria-controls={id}
+      title={abierto ? 'Ocultar la consulta de cobro' : 'Ver la consulta de cobro'}
+      className={`mt-1 inline-flex items-center gap-1 self-start rounded-md border px-2 py-0.5 text-xs font-bold transition-colors ${tono}`}
+    >
+      <Icono className="w-3 h-3" aria-hidden="true" /> {respuesta ? 'Cobro respondido' : 'Consulta de cobro'}
+      <ChevronDown className={`w-3 h-3 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
+    </button>
+  );
+}
+
+// La franja de detalle de la tabla: el texto de la consulta (o de la respuesta) y, para la oficina, el botón Responder, a todo el ancho.
+export function DetalleConsultaCobro({ ticket, id, onResponder }) {
+  const estado = estadoConsulta(ticket);
+  if (!estado) return null;
+  if (estado.tipo === 'respuesta') {
+    return <div id={id}><Aviso nivel="info" icono={Banknote} titulo={`Cobro del recableado (${estado.respuesta.metros} m): ${textoRespuesta(estado.respuesta)}`} /></div>;
+  }
+  return (
+    <div id={id}>
+      <Aviso
+        nivel="atencion"
+        icono={Hourglass}
+        titulo={onResponder ? 'Consulta de cobro del recableado' : 'Consulta de cobro enviada'}
+        accion={estado.pendiente && onResponder ? { etiqueta: 'Responder', icono: Banknote, onClick: () => onResponder(ticket) } : null}
+      >
+        {textoPendiente(ticket, estado.consulta, onResponder)}
+      </Aviso>
+    </div>
+  );
+}
+
+export default function ConsultaCobroAviso({ ticket, compact = false, onResponder, className = '' }) {
+  const estado = estadoConsulta(ticket);
+  if (!estado) return null;
+
+  if (estado.tipo === 'respuesta') {
+    return <Aviso nivel="info" icono={Banknote} compact={compact} titulo={`Cobro del recableado (${estado.respuesta.metros} m): ${textoRespuesta(estado.respuesta)}`} className={className} />;
   }
 
   return (
-    <div className={`${base} bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900/60 text-amber-900 dark:text-amber-200`}>
-      <Hourglass className={`${icono} shrink-0 mt-px text-amber-600 dark:text-amber-400`} aria-hidden="true" />
-      <div className="min-w-0 flex-1">
-        <p className="font-black leading-snug break-words">
-          {onResponder ? `${ticket.tecnico || 'El técnico'} pregunta el cobro del recableado (${consulta.metros} m)` : `Consulta de cobro enviada (${consulta.metros} m): esperando a la oficina`}
-        </p>
-        {pendiente && onResponder && (
-          <button
-            type="button"
-            onClick={() => onResponder(ticket)}
-            className={`mt-1.5 inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black transition-colors ${compact ? 'px-2 py-1 text-[11px] max-lg:text-xs' : 'px-3 py-2 text-xs min-h-[40px]'}`}
-          >
-            <Banknote className={icono} aria-hidden="true" /> Responder cobro
-          </button>
-        )}
-      </div>
-    </div>
+    <Aviso
+      nivel="atencion"
+      icono={Hourglass}
+      compact={compact}
+      titulo={onResponder ? 'Consulta de cobro del recableado' : 'Consulta de cobro enviada'}
+      accion={estado.pendiente && onResponder ? { etiqueta: 'Responder', icono: Banknote, onClick: () => onResponder(ticket) } : null}
+      className={className}
+    >
+      {textoPendiente(ticket, estado.consulta, onResponder)}
+    </Aviso>
   );
 }
