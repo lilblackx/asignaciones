@@ -28,6 +28,7 @@ import { fechaCorta, fechaISO } from '../utils/calendario';
 import PlantillaFinalModal from './modals/PlantillaFinalModal';
 import { promotoraDeOrden } from '../utils/whatsapp';
 import Spinner from './Spinner';
+import Segmentado from './Segmentado';
 import Colapsable from './Colapsable';
 import BotonFiltros from './BotonFiltros';
 import { BUSCADOR } from './estilos';
@@ -307,21 +308,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
               {hayMasCerradas && <span className="text-muted-foreground"> · faltan cerradas por cargar</span>}
               {hayFiltros && <button type="button" onClick={limpiarFiltros} className="ml-2 font-bold text-red-700 dark:text-red-400 hover:underline">Limpiar filtros</button>}
             </p>
-            <div role="group" aria-label="Cómo ver las órdenes" className="ml-auto flex gap-0.5 p-0.5 rounded-campo bg-muted">
-              {[['TARJETAS', 'Tarjetas', LayoutGrid], ['LISTA', 'Lista', List]].map(([clave, texto, Icono]) => (
-                <button
-                  key={clave}
-                  type="button"
-                  aria-pressed={formato === clave}
-                  aria-label={texto}
-                  title={texto}
-                  onClick={() => setFormato(clave)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-campo text-xs font-bold transition-colors ${formato === clave ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  <Icono className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">{texto}</span>
-                </button>
-              ))}
-            </div>
+            <Segmentado compacto tactil className="ml-auto" ariaLabel="Cómo ver las órdenes" opciones={[{ id: 'TARJETAS', etiqueta: 'Tarjetas', icono: LayoutGrid }, { id: 'LISTA', etiqueta: 'Lista', icono: List }]} valor={formato} onCambiar={setFormato} />
           </div>
 
           {sinNombre ? (
