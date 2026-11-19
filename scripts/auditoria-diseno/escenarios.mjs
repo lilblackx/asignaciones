@@ -134,6 +134,8 @@ export default [
       { id: 'panel', preparar: (n) => n.irAModulo('Panel principal') },
       { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
       // En celular las píldoras de técnicos van plegadas en un resumen: se abre para ver la lista con sus interruptores.
+      // Una orden esperando a infraestructura (AR709, sembrada a mano en el emulador) y una devuelta por la oficina (PD3): sus avisos en la tarjeta.
+      { id: 'avisos-orden', preparar: (n) => n.ev(() => { const e = [...document.querySelectorAll('[role="status"], [role="alert"]')].find((x) => /en infraestructura/i.test(x.innerText)); if (!e) return false; e.scrollIntoView({ block: 'center' }); return true; }), espera: 800 },
       { id: 'tecnicos-lista', preparar: (n) => n.clic('técnicos ·'), limpiar: (n) => n.clic('técnicos ·') },
       // La campana de la oficina con sus avisos (el pre-finalizado de la siembra y los que genera la app).
       { id: 'notificaciones', preparar: (n) => n.clicEtiqueta('^notificaciones'), limpiar: (n) => n.esc() },
