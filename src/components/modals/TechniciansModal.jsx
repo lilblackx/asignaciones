@@ -7,6 +7,7 @@ import EncabezadoModulo from '../EncabezadoModulo';
 import Spinner from '../Spinner';
 import Boton from '../Boton';
 import Interruptor from '../Interruptor';
+import { legible } from '../../utils/nombreTecnico';
 import SelectMenu from '../SelectMenu';
 import { CAMPO_FORMULARIO, ETIQUETA_CAMPO, SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from '../estilos';
 
@@ -136,7 +137,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       <div className="flex items-center gap-3">
                         <span aria-hidden="true" className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-black ${activo ? estiloTecnico(t.color) : 'bg-secondary text-muted-foreground'}`}>{(t.name || '?').trim().charAt(0).toUpperCase()}</span>
                         <div className="min-w-0 flex-1">
-                          <p className="font-black text-foreground leading-tight truncate">{t.name}</p>
+                          <p className="font-black text-foreground leading-tight truncate">{legible(t.name)}</p>
                           <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                             <span className={`w-2 h-2 rounded-full shrink-0 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
                             {activo ? 'Activo' : 'Inactivo'}
@@ -196,7 +197,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       return (
                         <li key={nombre} className="flex items-center gap-2 rounded-campo border border-border bg-sunken p-1.5">
                           <span className="text-[11px] max-lg:text-xs font-black text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
-                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-secondary text-muted-foreground'}`}>{nombre}</span>
+                          <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-secondary text-muted-foreground'}`}>{legible(nombre)}</span>
                           <Boton variante="discreto" tamano="compacto" icono={ArrowUp} onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="w-8 !px-0" />
                           <Boton variante="discreto" tamano="compacto" icono={ArrowDown} onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="w-8 !px-0" />
                         </li>
