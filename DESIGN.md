@@ -168,6 +168,8 @@ Cambiar los `zinc-*`, `bg-zinc-800/900`, `border-2`, `rounded` chico y sombras v
 
 **C. Por revisar a ojo (ya hechos, falta mirarlos)**
 
+- **Revisado el 2026-11-19:** login oscuro (PC y celular), menú lateral colapsado (claro y oscuro), toast de error en PC, PDF de Pago a técnicos (ficha de marca, línea roja, tarjetas y tablas bien) y la estructura del Word (tablas, logo, texto y colores; no se pudo ver renderizado porque Word no se abrió desde la sesión). Auditoría completa de todos los roles en PC y celular, claro y oscuro: sin fallos abiertos.
+
 - Word: abrir un `.docx` de los reportes y confirmar la ficha de marca, la línea roja y las tarjetas (Word no respondió desde la sesión). Pagos detallados y Resumen de pagos de Finanzas en PDF y Word (necesitan pagos en el emulador).
 - Toasts de atención e info y su posición en PC; tarjeta de usuario del menú lateral con el menú colapsado y en celular; campana de la oficina con avisos reales; panel de filtros del rol técnico; Detalle de la orden en la vista del técnico y de la promotora.
 - Login oscuro y pantallas con datos reales (las capturas usan órdenes de prueba) y `npm run build`.
