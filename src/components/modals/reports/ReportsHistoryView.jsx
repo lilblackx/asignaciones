@@ -81,7 +81,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
               <div className="flex gap-2">
                 <button
                   onClick={() => onViewReport(rep)}
-                  className="flex-1 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-foreground font-bold rounded-campo text-xs flex items-center justify-center gap-1.5 transition-colors border border-zinc-200 dark:border-zinc-700"
+                  className="flex-1 py-2 bg-secondary hover:bg-accent text-foreground font-bold rounded-campo text-xs flex items-center justify-center gap-1.5 transition-colors border border-border"
                 >
                   <Eye className="w-4 h-4 text-muted-foreground" /> Ver Órdenes
                 </button>

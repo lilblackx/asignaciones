@@ -75,7 +75,7 @@ function Serial({ serial }) {
   if (!serial) return null;
   return (
     <p className="text-etiqueta text-muted-foreground">
-      Serial: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{serial}</span>
+      Serial: <span className="font-mono font-bold text-foreground break-all">{serial}</span>
     </p>
   );
 }
@@ -186,8 +186,8 @@ function FilaPendiente({ envio, onReintentar }) {
   };
   return (
     <li className="px-3 py-2 space-y-1.5">
-      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
-      <p className="text-etiqueta text-zinc-600 dark:text-zinc-300 break-words">{unidad(envio.intentos, 'intento', 'intentos')} · {envio.mensaje || 'No se pudo llegar al inventario.'}</p>
+      <p className="text-xs font-bold text-foreground truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
+      <p className="text-etiqueta text-muted-foreground break-words">{unidad(envio.intentos, 'intento', 'intentos')} · {envio.mensaje || 'No se pudo llegar al inventario.'}</p>
       <Boton variante="principal" tamano="compacto" type="button" onClick={reintentar} disabled={ocupado}>
         <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reintentar ahora'}
       </Boton>
@@ -228,9 +228,9 @@ function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorr
 
   return (
     <li>
-      <button type="button" onClick={() => setAbierta((v) => !v)} aria-expanded={abierta} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+      <button type="button" onClick={() => setAbierta((v) => !v)} aria-expanded={abierta} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left hover:bg-secondary">
         <div className="min-w-0">
-          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
+          <p className="text-xs font-bold text-foreground truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
           <Detalle envio={envio} />
           <Serial serial={envio.serial} />
         </div>
@@ -242,7 +242,7 @@ function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorr
       <Colapsable>
         {abierta && (
           <div className="px-3 pb-3 space-y-2">
-            <dl className="rounded-campo bg-secondary/60 p-2.5 text-etiqueta leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
+            <dl className="rounded-campo bg-secondary/60 p-2.5 text-etiqueta leading-relaxed text-foreground space-y-0.5">
               {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
             </dl>
             <div className="flex flex-wrap gap-2">
@@ -398,7 +398,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
                 {recientes.length === 0 && !consulta && filtro === 'TODOS' ? 'Todavía no hay envíos registrados.' : 'Ningún envío coincide con lo cargado.'}
               </p>
             ) : (
-              <ul className="border border-border rounded-campo divide-y divide-zinc-200 dark:divide-zinc-800">
+              <ul className="border border-border rounded-campo divide-y divide-border">
                 {visibles.map((e) => <FilaReciente key={e.id} envio={e} onReintentar={onReintentar} onReenviar={onReenviar} onReenviarAviso={onReenviarAviso} onCorregir={setCorrigiendo} />)}
               </ul>
             )}

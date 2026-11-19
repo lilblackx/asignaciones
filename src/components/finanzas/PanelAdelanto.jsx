@@ -48,7 +48,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
             <label htmlFor="adelanto-monto" className={ETIQUETA_CAMPO}>Monto en dólares</label>
             <div className="relative mt-1">
               <input id="adelanto-monto" value={form.monto} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold text-right tabular-nums`} />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-muted-foreground pointer-events-none">$</span>
             </div>
             <Colapsable>{texto('monto') ? <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('monto')}</p> : (monto > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} font-bold mt-1 tabular-nums`}>{bolivares(aBs(monto, tasa))}</p>)}</Colapsable>
           </div>
@@ -87,7 +87,7 @@ export default function PanelAdelanto({ tecnico, porDescontar = 0, tasa, ocupado
             <Colapsable>{texto('nota') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('nota')}</p>}</Colapsable>
           </div>
 
-          <label htmlFor="adelanto-notificar" className="flex items-center gap-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 cursor-pointer">
+          <label htmlFor="adelanto-notificar" className="flex items-center gap-3 text-sm font-bold text-foreground cursor-pointer">
             <input id="adelanto-notificar" type="checkbox" checked={notificar} onChange={(e) => setNotificar(e.target.checked)} className="w-5 h-5 accent-red-600" />
             Notificar al técnico
           </label>

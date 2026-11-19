@@ -1,6 +1,7 @@
 import { diaDe } from './totalesMes.js';
 import { faltaElPago } from './pagoCliente.js';
 import { esInstalacion } from './instalacion.js';
+import { legible } from './nombreTecnico.js';
 
 // "Detalles de la orden": las fotos que el técnico sube de su trabajo cuando la oficina finaliza una instalación. Se guardan en Cloud Storage (ruta `ordenes/{id de la orden}/...`) y la orden solo lleva sus rutas:
 //   detallesOrden: { fotos: [{ ruta, bytes }], subidoPor, subidoEn }
@@ -142,7 +143,7 @@ export function textoErrorDeGuardado(codigo) {
   }
 }
 
-export const textoFaltanDetalles = (tecnico) => `Faltan los detalles de la orden (fotos): los sube el técnico${tecnico ? ` (${tecnico})` : ''}.`;
+export const textoFaltanDetalles = (tecnico) => `Faltan los detalles de la orden (fotos): los sube el técnico${tecnico ? ` (${legible(tecnico)})` : ''}.`;
 
 // Lo que le falta al técnico en una orden finalizada: 'PAGO' (el pago del cliente), 'DETALLES' (las fotos) o '' (nada). Primero el pago.
 export const PENDIENTE_PAGO = 'PAGO';

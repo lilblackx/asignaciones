@@ -258,7 +258,7 @@ export default function TicketsMobileList({
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : onCorregirFotos && puedeCorregirDetalles(ticket) ? (
-                  <button onClick={() => onCorregirFotos(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1.5 text-foreground font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700/40 transition-colors">
+                  <button onClick={() => onCorregirFotos(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1.5 text-foreground font-bold text-sm hover:bg-secondary transition-colors">
                     <Camera className="w-4 h-4" aria-hidden="true" /> Corregir fotos
                   </button>
                 ) : null}

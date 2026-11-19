@@ -6,6 +6,7 @@ import Spinner from '../../Spinner';
 import CampoHora from '../../CampoHora';
 import Boton from '../../Boton';
 import Chip from '../../Chip';
+import Interruptor from '../../Interruptor';
 
 // Lunes a domingo (0 = domingo, como Date.getDay y el Worker).
 const DIAS = [
@@ -100,23 +101,13 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
         <h3 className="min-w-0 text-base font-bold text-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="flex items-center gap-2"><Clock className="w-5 h-5 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> Cierre automático</span>
           {!loading && (
-            <span className={`shrink-0 whitespace-nowrap text-etiqueta font-black px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>
+            <span className={`shrink-0 whitespace-nowrap text-etiqueta font-black px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-secondary text-muted-foreground'}`}>
               {guardado.activo ? 'Activo' : 'Desactivado'}
             </span>
           )}
         </h3>
         {isAdmin && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={valores.activo}
-            aria-label="Cierre automático"
-            disabled={loading}
-            onClick={() => cambio({ activo: !valores.activo })}
-            className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${valores.activo ? 'bg-red-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${valores.activo ? 'translate-x-5' : ''}`} />
-          </button>
+          <Interruptor activo={valores.activo} onCambiar={(activo) => cambio({ activo })} ariaLabel="Cierre automático" deshabilitado={loading} />
         )}
       </div>
       <p className="text-sm text-muted-foreground mt-1">

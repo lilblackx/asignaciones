@@ -14,7 +14,7 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
   const masReciente = opciones[0] || null;
   const viejo = elegida && masReciente && elegida.dia !== masReciente.dia;
   const botonActualizar = (
-    <button type="button" onClick={onActualizar} disabled={cargando} aria-label="Actualizar la tasa BCV" title="Actualizar la tasa BCV" className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-campo border border-input text-zinc-700 dark:text-zinc-200 hover:bg-secondary disabled:opacity-60 transition-colors">
+    <button type="button" onClick={onActualizar} disabled={cargando} aria-label="Actualizar la tasa BCV" title="Actualizar la tasa BCV" className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-campo border border-input text-foreground hover:bg-secondary disabled:opacity-60 transition-colors">
       <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" />
     </button>
   );
@@ -23,7 +23,7 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
       <div className={`flex items-center gap-x-3 gap-y-1.5 text-sm ${elegida ? '' : 'flex-wrap'}`}>
         {elegida ? (
           <>
-            <span className="inline-flex items-center gap-2 font-bold text-zinc-800 dark:text-zinc-100">
+            <span className="inline-flex items-center gap-2 font-bold text-foreground">
               <CircleDollarSign className="w-5 h-5 text-red-600 shrink-0" aria-hidden="true" />
               <label htmlFor="finanzas-tasa-dia" className="max-sm:sr-only" title="Tasa BCV para los pagos">Tasa BCV</label>
             </span>
@@ -36,13 +36,13 @@ export default function TasaBcv({ tasa, fecha, cargando, error, onActualizar, op
           </>
         ) : (
           <>
-            <span className="inline-flex items-center gap-2 font-bold text-zinc-800 dark:text-zinc-100">
+            <span className="inline-flex items-center gap-2 font-bold text-foreground">
               <CircleDollarSign className="w-5 h-5 text-red-600" aria-hidden="true" />
               {tasa ? (
                 <>Tasa BCV: <span className="tabular-nums text-sm font-bold text-foreground">{tasa.toLocaleString('es-VE', NUMERO)}</span> Bs por dólar</>
               ) : cargando ? 'Consultando la tasa BCV...' : 'Sin tasa BCV'}
             </span>
-            {tasa && fecha && <span className="text-zinc-600 dark:text-zinc-300">actualizada {fechaHoraLegible(fecha)}</span>}
+            {tasa && fecha && <span className="text-muted-foreground">actualizada {fechaHoraLegible(fecha)}</span>}
           </>
         )}
         {error && <span role="alert" className="font-bold text-amber-800 dark:text-amber-300">{tasa ? 'No se pudo actualizar la tasa.' : 'No se pudo consultar la tasa: los bolívares no se muestran.'}</span>}

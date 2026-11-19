@@ -62,7 +62,7 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
         type="button"
         onClick={verValores}
         disabled={buscando}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-campo border border-input bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-60"
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-campo border border-input bg-card dark:bg-background text-xs font-bold text-foreground hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-60"
       >
         {buscando ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Radio className="w-3.5 h-3.5" aria-hidden="true" />}
         {buscando ? 'Consultando SmartOLT...' : 'Ver valores'}
@@ -95,8 +95,8 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
           <p role="alert" className="text-etiqueta font-bold text-red-700 dark:text-red-400 ml-1">{estado.mensaje} Escribe la potencia a mano.</p>
         )}
         {estado?.tipo === 'opciones' && (
-          <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-campo border border-zinc-200 dark:border-zinc-700 bg-sunken p-2">
-            <p className="flex items-center gap-1.5 text-etiqueta font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+          <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="rounded-campo border border-border bg-sunken p-2">
+            <p className="flex items-center gap-1.5 text-etiqueta font-bold text-foreground mb-1.5">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
               Esta cédula tiene {estado.opciones.length} servicios. Elige cuál es:
             </p>
@@ -106,11 +106,11 @@ export default function SenalSmartOlt({ ticketId, onCapturar, nota }) {
                   key={onu.idExterno || onu.nombre}
                   type="button"
                   onClick={() => mostrar(onu)}
-                  className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 shadow-card"
+                  className="w-full text-left rounded-card border border-border bg-card px-2.5 py-1.5 hover:border-amber-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 shadow-card"
                 >
                   <span className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{onu.zona || onu.nombre || 'Servicio'}</span>
-                    <span className="shrink-0 text-xs font-black text-zinc-600 dark:text-zinc-300">{valorSenal(onu.senal1310) !== null ? `${valorSenal(onu.senal1310)} dBm` : 'sin señal'}</span>
+                    <span className="text-xs font-bold text-foreground truncate">{onu.zona || onu.nombre || 'Servicio'}</span>
+                    <span className="shrink-0 text-xs font-black text-muted-foreground">{valorSenal(onu.senal1310) !== null ? `${valorSenal(onu.senal1310)} dBm` : 'sin señal'}</span>
                   </span>
                   {onu.direccion && <span className="block mt-0.5 text-etiqueta leading-snug font-medium text-muted-foreground">{onu.direccion}</span>}
                 </button>

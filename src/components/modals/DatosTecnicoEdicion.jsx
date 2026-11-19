@@ -110,13 +110,13 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
               <div key={i} className="flex items-center gap-2">
                 <input id={`ed-poste-${i + 1}`} type="text" autoComplete="off" maxLength={MAX_LARGO_POSTE} placeholder={i === 0 ? 'Ej. DM SN N01B01' : `Poste ${i + 1}`} aria-label={`Poste ${i + 1}`} aria-invalid={i === 0 && !!errores.posteadura} value={poste} onChange={(e) => cambiarPoste(i, stripEmojis(e.target.value))} className={`flex-1 ${claseInput(i === 0 && errores.posteadura)}`} />
                 {form.postes.length > 1 && (
-                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-campo bg-white dark:bg-zinc-800 border border-input text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => onChange({ postes: form.postes.filter((_, j) => j !== i) })} aria-label={`Quitar poste ${i + 1}`} className="shrink-0 p-2 rounded-campo bg-card dark:bg-secondary border border-input text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors">
                     <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 )}
               </div>
             ))}
-            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-campo border border-dashed border-zinc-400 dark:border-zinc-600 text-etiqueta font-bold text-zinc-600 dark:text-zinc-300 hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
+            <button type="button" onClick={() => onChange({ postes: [...form.postes, ''] })} disabled={form.postes.length >= MAX_POSTES} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-campo border border-dashed border-input text-etiqueta font-bold text-muted-foreground hover:border-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors disabled:opacity-50">
               <Plus className="w-3 h-3" aria-hidden="true" /> Agregar otro poste
             </button>
             {errores.posteadura && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}

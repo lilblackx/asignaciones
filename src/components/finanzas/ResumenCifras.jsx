@@ -33,8 +33,8 @@ export default function ResumenCifras({ items, onElegir, elegida, variante = 'un
         const contenido = (
           <>
             <p className={`text-base sm:text-lg lg:text-xl font-black tabular-nums leading-none break-words ${elegido ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>{valor}</p>
-            <p className={`mt-1 text-xs sm:text-xs font-bold text-zinc-800 dark:text-zinc-100 ${elegido ? 'underline decoration-2 underline-offset-4 decoration-red-600' : ''}`}>{etiqueta}</p>
-            {detalle && <p className="text-xs sm:text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
+            <p className={`mt-1 text-xs sm:text-xs font-bold text-foreground ${elegido ? 'underline decoration-2 underline-offset-4 decoration-red-600' : ''}`}>{etiqueta}</p>
+            {detalle && <p className="text-xs sm:text-xs text-muted-foreground break-words">{detalle}</p>}
           </>
         );
         const borde = i > 0 ? 'border-l border-input pl-3 sm:pl-8' : '';

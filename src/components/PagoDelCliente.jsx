@@ -29,7 +29,7 @@ function FilaCopiable({ etiqueta, valor }) {
       <p className={ETIQUETA}>{etiqueta}</p>
       <div className="mt-0.5 flex items-center justify-between gap-3">
         <p className="min-w-0 text-base font-black tracking-wide text-foreground break-all">{valor}</p>
-        <button type="button" onClick={copiar} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="shrink-0 inline-flex items-center justify-center gap-1.5 h-10 min-w-[6.25rem] px-3 rounded-boton border border-zinc-300 dark:border-zinc-600 text-foreground text-xs font-bold hover:bg-secondary active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400">
+        <button type="button" onClick={copiar} aria-label={`Copiar ${etiqueta.toLowerCase()}`} className="shrink-0 inline-flex items-center justify-center gap-1.5 h-10 min-w-[6.25rem] px-3 rounded-boton border border-border text-foreground text-xs font-bold hover:bg-secondary active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400">
           {copiado ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />} {copiado ? 'Copiado' : 'Copiar'}
         </button>
       </div>

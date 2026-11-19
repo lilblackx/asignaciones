@@ -184,7 +184,7 @@ export default function FormularioPagoCliente({
   const bloqueado = ocupado || guardando;
   const id = (campo) => `${idPrefijo}-${campo}`;
   const areaPaga = (
-    <div className="space-y-2 rounded-lg border border-zinc-300 dark:border-zinc-700 p-3">
+    <div className="space-y-2 rounded-lg border border-border p-3">
       <label htmlFor={id('nota-pendiente')} className={ETIQUETA_CAMPO}>¿Cuándo o cómo va a pagar? (obligatorio)</label>
       <textarea id={id('nota-pendiente')} value={notaPendiente} onChange={(e) => { setNotaPendiente(stripEmojis(e.target.value)); setError(null); }} maxLength={300} rows={2} placeholder="Ej. Paga el viernes por pago móvil" className={AREA_TEXTO} />
       <MensajeError texto={texto('notaPendiente')} />
@@ -198,7 +198,7 @@ export default function FormularioPagoCliente({
         <div role="group" aria-label="¿El cliente ya pagó?" className="flex gap-2">
           {[[false, 'El cliente ya pagó'], [true, 'Paga después']].map(([valor, etiqueta]) => (
             <button key={String(valor)} type="button" aria-pressed={pagaDespues === valor} onClick={() => { setPagaDespues(valor); limpiarAvisos(); }}
-              className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${pagaDespues === valor ? 'bg-red-600 border-red-600 text-white' : 'bg-white dark:bg-zinc-950 border-input text-foreground hover:border-zinc-500'}`}
+              className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${pagaDespues === valor ? 'bg-red-600 border-red-600 text-white' : 'bg-card dark:bg-background border-input text-foreground hover:border-zinc-500'}`}
             >{etiqueta}</button>
           ))}
         </div>

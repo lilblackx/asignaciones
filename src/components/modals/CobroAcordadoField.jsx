@@ -29,7 +29,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
   const resumen = (OPCIONES.find(([modo]) => modo === value.modo) || OPCIONES[0])[1];
   const claseOpcion = (activa) => (suave
     ? `min-h-11 lg:min-h-9 px-4 py-1.5 rounded-boton border-2 text-sm font-bold whitespace-nowrap flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activa ? 'border-foreground bg-foreground text-background' : 'border-input bg-card text-card-foreground hover:border-foreground/50'}`
-    : `min-h-11 lg:min-h-9 px-2 py-1.5 rounded-xl border-2 text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-input bg-white dark:bg-zinc-950 text-card-foreground hover:border-sky-400'}`);
+    : `min-h-11 lg:min-h-9 px-2 py-1.5 rounded-xl border-2 text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${activa ? 'border-sky-500 bg-sky-700 text-white' : 'border-input bg-card dark:bg-background text-card-foreground hover:border-sky-400'}`);
 
   return (
     <div className={wrapperClassName}>

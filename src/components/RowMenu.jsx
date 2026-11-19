@@ -48,7 +48,7 @@ export default function RowMenu({ label, items, grande = false }) {
         aria-haspopup="menu"
         aria-expanded={abierto}
         title="Más acciones"
-        className={grande ? 'inline-flex items-center justify-center min-h-11 min-w-11 rounded-boton bg-secondary text-card-foreground hover:bg-accent transition-colors' : 'p-1 text-zinc-600 dark:text-zinc-300 bg-secondary hover:bg-accent rounded transition-colors'}
+        className={grande ? 'inline-flex items-center justify-center min-h-11 min-w-11 rounded-boton bg-secondary text-card-foreground hover:bg-accent transition-colors' : 'p-1 text-muted-foreground bg-secondary hover:bg-accent rounded transition-colors'}
       >
         {grande ? <MoreHorizontal className="w-5 h-5" /> : <EllipsisVertical className="w-3.5 h-3.5" />}
       </button>
@@ -64,7 +64,7 @@ export default function RowMenu({ label, items, grande = false }) {
                 disabled={disabled}
                 title={titulo}
                 onClick={() => { setAbierto(false); onClick(); }}
-                className={`w-full flex items-center gap-2 font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${grande ? 'min-h-11 px-3 text-sm rounded-campo' : 'px-3 py-2 text-xs'} ${danger ? 'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-zinc-700 dark:text-zinc-200 hover:bg-secondary'}`}
+                className={`w-full flex items-center gap-2 font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${grande ? 'min-h-11 px-3 text-sm rounded-campo' : 'px-3 py-2 text-xs'} ${danger ? 'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-foreground hover:bg-secondary'}`}
               >
                 <Icon className={grande ? 'w-4 h-4' : 'w-3.5 h-3.5'} /> {texto}
               </button>

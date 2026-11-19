@@ -250,7 +250,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                         <button
                           type="button"
                           onClick={() => setDetalleAbierto(o)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border-2 border-input bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border-2 border-input bg-card dark:bg-background text-xs font-bold text-foreground hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         >
                           <ClipboardList className="w-3.5 h-3.5" aria-hidden="true" /> Ver detalle completo
                         </button>
@@ -259,7 +259,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                           <button
                             type="button"
                             onClick={() => setPlantillaAbierta(o)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border-2 border-input bg-white dark:bg-zinc-950 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border-2 border-input bg-card dark:bg-background text-xs font-bold text-foreground hover:border-red-600 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                           >
                             <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Ver plantilla
                           </button>

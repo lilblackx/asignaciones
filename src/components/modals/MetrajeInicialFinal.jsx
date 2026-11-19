@@ -42,7 +42,7 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
         {campo(idFinal, final, onFinal, errorFinal, 'METRAJE FINAL')}
       </div>
       {!deshabilitado && (
-        <p role="status" className={`${compacto ? 'text-etiqueta' : 'text-xs'} ml-1 ${total != null ? 'font-black text-zinc-800 dark:text-zinc-100' : 'text-muted-foreground'}`}>
+        <p role="status" className={`${compacto ? 'text-etiqueta' : 'text-xs'} ml-1 ${total != null ? 'font-black text-foreground' : 'text-muted-foreground'}`}>
           {total != null
             ? `Total de cable usado: ${total} m`
             : totalGuardado

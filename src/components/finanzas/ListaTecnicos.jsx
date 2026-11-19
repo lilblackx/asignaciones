@@ -6,7 +6,7 @@ import { aBs, bolivares, dolares, estadoDeFila, textoOrdenes } from '../../utils
 // el fondo más claro. `onElegir(tecnico)`.
 export default function ListaTecnicos({ filas, elegido, tasa, onElegir }) {
   return (
-    <ul aria-label="Técnicos" className={`${TARJETA} divide-y divide-zinc-200 dark:divide-zinc-800 overflow-hidden`}>
+    <ul aria-label="Técnicos" className={`${TARJETA} divide-y divide-border overflow-hidden`}>
       {filas.map((fila) => {
         const estado = estadoDeFila(fila);
         const seleccionado = fila.tecnico === elegido;
@@ -17,7 +17,7 @@ export default function ListaTecnicos({ filas, elegido, tasa, onElegir }) {
               type="button"
               onClick={() => onElegir(fila.tecnico)}
               aria-current={seleccionado ? 'true' : undefined}
-              className={`w-full text-left px-3 py-2.5 flex items-center justify-between gap-3 border-l-8 transition-colors ${seleccionado ? 'border-red-600 bg-secondary' : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}
+              className={`w-full text-left px-3 py-2.5 flex items-center justify-between gap-3 border-l-8 transition-colors ${seleccionado ? 'border-red-600 bg-secondary' : 'border-transparent hover:bg-secondary'}`}
             >
               <span className="min-w-0">
                 <span className="block text-sm font-bold text-foreground break-words">{legible(fila.tecnico)}</span>
@@ -28,7 +28,7 @@ export default function ListaTecnicos({ filas, elegido, tasa, onElegir }) {
               </span>
               <span className="text-right shrink-0">
                 <span className="block text-base font-bold tabular-nums text-foreground whitespace-nowrap">{dolares(neto)}</span>
-                {tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">{bolivares(aBs(neto, tasa))}</span>}
+                {tasa > 0 && <span className="block text-xs font-bold tabular-nums text-muted-foreground whitespace-nowrap">{bolivares(aBs(neto, tasa))}</span>}
               </span>
             </button>
           </li>

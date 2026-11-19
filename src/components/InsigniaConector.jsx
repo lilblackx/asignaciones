@@ -8,7 +8,7 @@ const ESTILO_COLOR = { VERDE: 'bg-emerald-700 text-white', AZUL: 'bg-blue-600 te
 const ESTILO_COLOR_APAGADA = { VERDE: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200', AZUL: 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200' };
 
 export default function InsigniaConector({ color, cantidad = null, children = null, apagada = false, className = '' }) {
-  const estilo = apagada ? (ESTILO_COLOR_APAGADA[color] || 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200') : (ESTILO_COLOR[color] || 'bg-zinc-600 text-white');
+  const estilo = apagada ? (ESTILO_COLOR_APAGADA[color] || 'bg-accent text-foreground') : (ESTILO_COLOR[color] || 'bg-zinc-600 text-white');
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${estilo} ${className}`}>
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${apagada ? 'bg-current opacity-60' : 'bg-white/90'}`} aria-hidden="true" />

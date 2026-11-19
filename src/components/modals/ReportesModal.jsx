@@ -213,7 +213,7 @@ export default function ReportesModal({
 
           {/* PC: la lista de reportes a la izquierda. */}
           {!enPagina && (
-          <nav aria-label="Reportes" className="hidden lg:flex flex-col gap-5 w-64 shrink-0 overflow-y-auto p-4 bg-zinc-200 dark:bg-zinc-900 border-r border-border">
+          <nav aria-label="Reportes" className="hidden lg:flex flex-col gap-5 w-64 shrink-0 overflow-y-auto p-4 bg-accent border-r border-border">
             {GRUPOS.map((g) => (
               <div key={g.titulo}>
                 <div className="px-2 mb-1.5 text-etiqueta font-black text-muted-foreground">{g.titulo}</div>
@@ -223,7 +223,7 @@ export default function ReportesModal({
                       <button
                         onClick={() => setReporteId(id)}
                         aria-current={reporteId === id ? 'page' : undefined}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-boton text-left text-sm font-bold transition-colors ${reporteId === id ? 'bg-red-600 text-white shadow' : 'text-card-foreground hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-boton text-left text-sm font-bold transition-colors ${reporteId === id ? 'bg-red-600 text-white shadow' : 'text-card-foreground hover:bg-accent'}`}
                       >
                         <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {nombre}
                       </button>

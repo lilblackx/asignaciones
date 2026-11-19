@@ -26,7 +26,7 @@ export default function CampoHora({ id, valor, onChange, ariaLabel = 'Hora', cla
   return (
     <div role="group" aria-label={ariaLabel} className="flex flex-wrap items-center gap-1.5 min-[380px]:gap-2">
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu id={id} ariaLabel={`${ariaLabel}: hora`} disabled={disabled} className={claseSelector} value={String(hora12)} onChange={(v) => cambiar(Number(v), minuto, pm)} items={HORAS} /></div>
-      <span className="font-black text-zinc-700 dark:text-zinc-200" aria-hidden="true">:</span>
+      <span className="font-black text-foreground" aria-hidden="true">:</span>
       <div className="flex-1 min-w-[3.5rem] sm:flex-none sm:w-24"><SelectMenu ariaLabel={`${ariaLabel}: minutos`} disabled={disabled} className={claseSelector} value={String(minuto)} onChange={(v) => cambiar(hora12, Number(v), pm)} items={MINUTOS} /></div>
       <Segmentado ariaLabel={`${ariaLabel}: a. m. o p. m.`} className="shrink-0" compacto={alto !== 'h-11'} deshabilitado={disabled} opciones={[{ id: 'am', etiqueta: 'a. m.' }, { id: 'pm', etiqueta: 'p. m.' }]} valor={pm ? 'pm' : 'am'} onCambiar={(v) => cambiar(hora12, minuto, v === 'pm')} />
     </div>

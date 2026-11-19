@@ -9,7 +9,7 @@ export const getEstadoColor = (estado) => {
   if (e === 'PENDIENTE') return 'bg-slate-600 text-white';
   if (e === 'PRE-FINALIZADO' || e === 'PRE-FINALIZADA') return 'bg-amber-500 text-black font-bold';
   if (e === 'FINALIZADO') return 'bg-emerald-700 text-white';
-  return 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200';
+  return 'bg-accent text-foreground';
 };
 
 // La misma lectura que getEstadoColor (gris = pendiente, ámbar = atención, verde = listo, rojo = cancelado) en pastel, para la tarjeta del celular (estilo D).
@@ -31,10 +31,10 @@ const TIPO_TRABAJO_ESTILOS = {
   'MUDANZA': { badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' },
   'GARANTIA': { badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' },
   'LOW SIGNAL': { badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  'RETIRO EQUIPO': { badge: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300' },
+  'RETIRO EQUIPO': { badge: 'bg-accent text-foreground' },
   'CAMBIO DE EQUIPO': { badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
 };
-const TIPO_TRABAJO_DEFAULT = { badge: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300' };
+const TIPO_TRABAJO_DEFAULT = { badge: 'bg-accent text-foreground' };
 
 export const getTipoTrabajoEstilo = (tipo) =>
   TIPO_TRABAJO_ESTILOS[String(tipo || '').toUpperCase()] || TIPO_TRABAJO_DEFAULT;
@@ -89,7 +89,7 @@ export const getCreadoColor = (creado) => {
   // Estilo tenue (fondo con tinte + borde fino), igual que las etiquetas de técnico.
   if (c === 'ALEJANDRO') return 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/40';
   if (c === 'ROMER') return 'bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/40';
-  if (c === 'SKEYVER') return 'bg-zinc-200 text-zinc-700 border border-zinc-300 dark:bg-zinc-500/15 dark:text-zinc-300 dark:border-zinc-500/40';
+  if (c === 'SKEYVER') return 'bg-zinc-200 text-foreground border border-zinc-300 dark:bg-zinc-500/15 dark:border-zinc-500/40';
   if (c === 'RENNY') return 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/40';
   return c ? 'bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/40' : 'bg-transparent';
 };

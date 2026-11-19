@@ -67,7 +67,7 @@ export default function PagoRegistradoModal({ pago, onClose }) {
           </div>
 
           {pago.pago ? (
-            <div className="rounded-campo bg-zinc-100 dark:bg-zinc-950 border border-border p-3 space-y-2">
+            <div className="rounded-campo bg-secondary border border-border p-3 space-y-2">
               <p className={ETIQUETA}>Pago que registró el técnico</p>
               <p className="text-base font-black text-foreground break-words">{textoPago(pago.pago)}</p>
               <div className="grid grid-cols-2 gap-3">

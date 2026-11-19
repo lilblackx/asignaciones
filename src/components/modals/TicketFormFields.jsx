@@ -175,8 +175,8 @@ export function TurnoSugeridoBanner({ wrapperClassName, turnoSugerido }) {
 export function GarantiaField({ wrapperClassName, idPrefix, value, onChange, ordenes, idOrden = '', tecnico = '', cedula = '', disabled = false, suave = false }) {
   const marcada = Boolean(value);
   return (
-    <div className={`${wrapperClassName} ${suave ? 'space-y-1' : 'rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-2'}`}>
-      <label htmlFor={`${idPrefix}-garantia`} className={`flex items-center gap-2 max-lg:min-h-11 font-bold text-zinc-800 dark:text-zinc-100 cursor-pointer ${suave ? 'text-sm' : 'text-etiqueta'}`}>
+    <div className={`${wrapperClassName} ${suave ? 'space-y-1' : 'rounded border border-border px-2.5 py-2 space-y-2'}`}>
+      <label htmlFor={`${idPrefix}-garantia`} className={`flex items-center gap-2 max-lg:min-h-11 font-bold text-foreground cursor-pointer ${suave ? 'text-sm' : 'text-etiqueta'}`}>
         <input id={`${idPrefix}-garantia`} type="checkbox" checked={marcada} disabled={disabled} onChange={(e) => onChange(e.target.checked ? { id: '' } : null)} className="w-3.5 h-3.5 max-lg:w-4 max-lg:h-4 accent-red-600" />
         Garantía de otro técnico
       </label>

@@ -11,6 +11,7 @@ import { diaDe } from '../utils/totalesMes';
 import { sendPush } from '../lib/notify';
 import { esperarConLimite } from '../utils/tiempoLimite';
 import { useVentanaLectura } from './useVentanaLectura';
+import { legible } from '../utils/nombreTecnico';
 
 const datos = (nombre) => collection(db, 'artifacts', appId, 'public', 'data', nombre);
 const documento = (nombre, id) => doc(db, 'artifacts', appId, 'public', 'data', nombre, id);
@@ -172,8 +173,8 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
       type: 'error',
       duration: 9000,
       text: ok
-        ? `${tecnico} no tiene notificaciones activas en ningún dispositivo: no se enteró por aviso. Avísale por WhatsApp.`
-        : `No se pudo enviar la notificación a ${tecnico}. El registro quedó guardado; avísale por WhatsApp.`,
+        ? `${legible(tecnico)} no tiene notificaciones activas en ningún dispositivo: no se enteró por aviso. Avísale por WhatsApp.`
+        : `No se pudo enviar la notificación a ${legible(tecnico)}. El registro quedó guardado; avísale por WhatsApp.`,
     });
   };
 
@@ -206,7 +207,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
         lote.update(documento('descuentosTecnicos', id), { aplicado: redondear((Number(actual?.aplicado) || 0) + monto), pagoId: armado.pagoId });
       }
       await lote.commit();
-    }, `Pago registrado: ${fila.tecnico}.`, 'No se pudo registrar el pago. Alguna orden pudo haberse pagado ya: revisa e intenta de nuevo.');
+    }, `Pago registrado: ${legible(fila.tecnico)}.`, 'No se pudo registrar el pago. Alguna orden pudo haberse pagado ya: revisa e intenta de nuevo.');
     if (guardado && notificar) await avisarAlTecnico(fila.tecnico, avisoDePago(armado.pago), 'pagoTecnico');
     return guardado;
   };
@@ -216,7 +217,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
     const adelanto = armarAdelanto(tecnico, entrada, { por: usuario, ahora: Date.now(), notificar });
     const guardado = await ejecutar(
       () => setDoc(doc(datos('adelantosTecnicos')), adelanto),
-      `Adelanto registrado: ${tecnico}.`, 'No se pudo registrar el adelanto.',
+      `Adelanto registrado: ${legible(tecnico)}.`, 'No se pudo registrar el adelanto.',
     );
     if (guardado && notificar) await avisarAlTecnico(tecnico, avisoDeAdelanto(adelanto), 'adelantoTecnico');
     return guardado;
@@ -241,7 +242,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
         for (const d of lista) lote.set(doc(datos('descuentosTecnicos')), d);
         await lote.commit();
       },
-      programado ? `Descuento programado: ${tecnico}.` : `Descuento registrado: ${tecnico}.`, 'No se pudo registrar el descuento.',
+      programado ? `Descuento programado: ${legible(tecnico)}.` : `Descuento registrado: ${legible(tecnico)}.`, 'No se pudo registrar el descuento.',
     );
     if (guardado && notificar) await avisarAlTecnico(tecnico, avisoDeDescuento(lista[0]), 'descuentoTecnico');
     return guardado;
@@ -258,7 +259,7 @@ export function useFinanzas({ firebaseUser, rango, usuario, setToastMsg, soloPen
     const adicional = armarAdicional(tecnico, entrada, { por: usuario, ahora: Date.now(), notificar });
     const guardado = await ejecutar(
       () => setDoc(doc(datos('pagosAdicionales')), adicional),
-      `Pago adicional registrado: ${tecnico}.`, 'No se pudo registrar el pago adicional.',
+      `Pago adicional registrado: ${legible(tecnico)}.`, 'No se pudo registrar el pago adicional.',
     );
     if (guardado && notificar) await avisarAlTecnico(tecnico, avisoDeAdicional(adicional), 'pagoTecnico');
     return guardado;

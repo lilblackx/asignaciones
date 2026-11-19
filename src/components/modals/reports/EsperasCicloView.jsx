@@ -26,7 +26,7 @@ function ColaDeEspera({ titulo, nota, cola, vacio }) {
               <span className="font-bold truncate max-w-[14rem]">{orden.nombre}</span>
               <span className="text-muted-foreground">{oracion(orden.tipoTrabajo)}</span>
               <span className="text-muted-foreground">{legible(orden.tecnico || 'Sin técnico')}</span>
-              <span className="ml-auto font-black text-zinc-800 dark:text-zinc-100">{formatoTiempo(esperaMs)}</span>
+              <span className="ml-auto font-black text-foreground">{formatoTiempo(esperaMs)}</span>
             </li>
           ))}
         </ul>
@@ -37,7 +37,7 @@ function ColaDeEspera({ titulo, nota, cola, vacio }) {
 
 const Encabezado = ({ titulo, detalle }) => (
   <div className="mt-6 mb-3 first:mt-0">
-    <h2 className="text-xs font-black text-zinc-700 dark:text-zinc-200">{titulo}</h2>
+    <h2 className="text-xs font-black text-foreground">{titulo}</h2>
     <p className="text-etiqueta text-muted-foreground">{detalle}</p>
   </div>
 );

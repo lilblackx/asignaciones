@@ -669,7 +669,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-foreground flex font-sans transition-colors duration-200">
 
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
 

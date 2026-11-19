@@ -26,7 +26,7 @@ export default function TiempoAtencionView({ ordenes, rango, tecnico, metaHoras,
         <span className="text-etiqueta font-bold text-muted-foreground">Meta de atención</span>
         <div role="group" aria-label="Meta de atención" className="flex rounded-card border border-input overflow-hidden bg-card shadow-card">
           {META_HORAS.map((h) => (
-            <button key={h} type="button" aria-pressed={metaHoras === h} onClick={() => onMeta(h)} className={`px-3 py-1.5 text-xs font-bold transition-colors ${metaHoras === h ? 'bg-red-600 text-white' : 'text-zinc-600 dark:text-zinc-300 hover:bg-secondary'}`}>
+            <button key={h} type="button" aria-pressed={metaHoras === h} onClick={() => onMeta(h)} className={`px-3 py-1.5 text-xs font-bold transition-colors ${metaHoras === h ? 'bg-red-600 text-white' : 'text-muted-foreground hover:bg-secondary'}`}>
               {h < 72 ? `${h} h` : `${h / 24} días`}
             </button>
           ))}
@@ -62,7 +62,7 @@ export default function TiempoAtencionView({ ordenes, rango, tecnico, metaHoras,
                 <span className="font-bold truncate max-w-[14rem]">{orden.nombre}</span>
                 <span className="text-muted-foreground">{oracion(orden.tipoTrabajo)}{orden.estado === 'PRE-FINALIZADO' ? ' · por aprobar' : ''}</span>
                 <span className="text-muted-foreground">{legible(orden.tecnico || 'Sin técnico')}</span>
-                <span className="ml-auto font-black text-zinc-800 dark:text-zinc-100">{formatoTiempo(esperaMs)}</span>
+                <span className="ml-auto font-black text-foreground">{formatoTiempo(esperaMs)}</span>
               </li>
             ))}
           </ul>

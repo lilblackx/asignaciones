@@ -146,7 +146,7 @@ export default function DatosInstalacion({ parte = 'todo', serial, onSerial, vla
           type="button"
           onClick={() => onPostes([...postes, ''])}
           disabled={postes.length >= MAX_POSTES}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border border-dashed border-zinc-400 dark:border-zinc-600 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-campo border border-dashed border-input text-xs font-bold text-muted-foreground hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 transition-colors disabled:opacity-50"
         >
           <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Agregar otro poste
         </button>

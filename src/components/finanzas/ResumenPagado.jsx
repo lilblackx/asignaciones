@@ -25,7 +25,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
       {resumen.porTecnico.length === 0 ? (
         <EstadoVacio titulo="Ningún pago registrado en este periodo">Amplía el rango de fechas para ver pagos anteriores.</EstadoVacio>
       ) : (
-        <ul className={`${TARJETA} px-4 divide-y divide-zinc-200 dark:divide-zinc-800`}>
+        <ul className={`${TARJETA} px-4 divide-y divide-border`}>
           {resumen.porTecnico.map((f) => {
             const ordenes = ordenesPagadas.filter((o) => o.tecnico === f.tecnico);
             const expandido = abierto === f.tecnico;
@@ -37,14 +37,14 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                       <h3 className="text-base font-bold text-foreground break-words">{legible(f.tecnico)}</h3>
                       <span className={`${CHIP} ${ESTADO.PAGADO.clase}`}>Pagado</span>
                     </div>
-                    <p className="text-sm text-zinc-800 dark:text-zinc-100 mt-1">{frasePagado({ ...f, tecnico: legible(f.tecnico) })}</p>
+                    <p className="text-sm text-foreground mt-1">{frasePagado({ ...f, tecnico: legible(f.tecnico) })}</p>
                     <p className={TEXTO_SUAVE}>{textoGrupos(f.cantidades) || '-'} · {f.pagos === 1 ? '1 pago' : `${f.pagos} pagos`} · último {diaLegible(diaDe(f.ultimo))}</p>
                     {f.descuento > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-1">Adelantos descontados {dolares(f.descuento)} · neto entregado {dolares(f.neto)}</p>}
                   </div>
                   <div className="text-left sm:text-right shrink-0">
-                    <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total pagado</p>
+                    <p className="text-xs font-bold text-muted-foreground">Total pagado</p>
                     <p className="text-xl font-black tabular-nums text-foreground whitespace-nowrap">{dolares(f.total)}</p>
-                    {f.bs > 0 && <p className="text-sm font-bold tabular-nums text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{bolivares(f.bs)}</p>}
+                    {f.bs > 0 && <p className="text-sm font-bold tabular-nums text-foreground whitespace-nowrap">{bolivares(f.bs)}</p>}
                   </div>
                 </div>
 
@@ -61,11 +61,11 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                               <span>{g.titulo} · {g.items.length}</span>
                               <span className="tabular-nums">{dolares(g.items.reduce((suma, i) => suma + i.monto, 0))}</span>
                             </h4>
-                            <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                            <ul className="divide-y divide-border">
                               {g.items.map((item) => (
                                 <li key={item.clave} className="py-2.5 flex flex-wrap items-center justify-between gap-3">
                                   <span className="min-w-0">
-                                    <span className="block text-sm text-zinc-900 dark:text-zinc-100 break-words">
+                                    <span className="block text-sm text-foreground break-words">
                                       {item.conDetalle ? (
                                         <button type="button" onClick={() => setDetalle(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button>
                                       ) : <span className="font-bold">{item.orden.codigo || 'S/C'}</span>}

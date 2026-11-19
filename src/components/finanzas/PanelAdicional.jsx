@@ -57,9 +57,9 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
           </div>
 
           <Colapsable>{vista && (
-            <p className="rounded-campo border border-zinc-300 dark:border-zinc-700 px-3 py-2 flex items-baseline justify-between gap-3 text-sm">
+            <p className="rounded-campo border border-border px-3 py-2 flex items-baseline justify-between gap-3 text-sm">
               <span className="font-bold text-foreground">{vista.cantidad} × {dolares(vista.item.precio)}</span>
-              <span className="text-right"><span className="block font-bold tabular-nums text-foreground">{dolares(vista.monto)}</span>{tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(vista.monto, tasa))}</span>}</span>
+              <span className="text-right"><span className="block font-bold tabular-nums text-foreground">{dolares(vista.monto)}</span>{tasa > 0 && <span className="block text-xs font-bold tabular-nums text-muted-foreground">{bolivares(aBs(vista.monto, tasa))}</span>}</span>
             </p>
           )}</Colapsable>
 
@@ -69,7 +69,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
             <Colapsable>{texto('nota') && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('nota')}</p>}</Colapsable>
           </div>
 
-          <label htmlFor="adicional-notificar" className="flex items-center gap-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 cursor-pointer">
+          <label htmlFor="adicional-notificar" className="flex items-center gap-3 text-sm font-bold text-foreground cursor-pointer">
             <input id="adicional-notificar" type="checkbox" checked={notificar} onChange={(e) => setNotificar(e.target.checked)} className="w-5 h-5 accent-red-600" />
             Avisar al técnico
           </label>

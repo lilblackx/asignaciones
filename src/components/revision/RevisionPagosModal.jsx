@@ -282,7 +282,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <h3 className="text-lg font-bold text-foreground">{nombre === SIN_TECNICO ? 'Sin técnico en la ficha' : nombre}</h3>
-                    <span className={`${CHIP} bg-white border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100`}>{lista.length} {lista.length === 1 ? 'orden' : 'órdenes'} · {dolares(lista.reduce((s, i) => s + precio(i), 0))}</span>
+                    <span className={`${CHIP} bg-card border border-border dark:bg-secondary text-foreground`}>{lista.length} {lista.length === 1 ? 'orden' : 'órdenes'} · {dolares(lista.reduce((s, i) => s + precio(i), 0))}</span>
                   </div>
                   {pendientes.length > 0 && nombre !== SIN_TECNICO && (
                     <button type="button" onClick={() => prepararAprobacion(lista, `las pendientes de ${nombre}`)} disabled={datos.ocupado} className={BOTON}>Aprobar las {pendientes.length} pendientes</button>
@@ -291,7 +291,7 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
                 {agruparOrdenes(lista.map((i) => (i.concepto ? i : { ...i, concepto: 'AVERIA' })), { masNuevasPrimero: true }).map((g) => (
                   <div key={g.id}>
                     <h4 className="flex items-center justify-between gap-3 text-sm font-bold text-foreground pb-1 border-b border-input"><span>{g.titulo} · {g.items.length}</span></h4>
-                    <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                    <ul className="divide-y divide-border">
                       {g.items.map((item) => (
                         <FilaRevision key={item.clave} item={lista.find((i) => i.clave === item.clave)} precio={precio(item)} tasa={tasa} tecnicos={nombresTecnicos} ocupado={datos.ocupado} onAccion={accion} onDeshacer={(i) => datos.deshacer(i)} ordenesBusqueda={ordenes} precioOrigen={precioOrigen} tecnicoDe={tecnicoDe} onVerOrden={setDetalle} onRegistrarPago={setRegistrandoPago} />
                       ))}

@@ -78,7 +78,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
   return (
     <li className={`${TARJETA} overflow-hidden`}>
       {conDatos ? (
-        <button type="button" onClick={onToggle} aria-expanded={abierto} aria-controls={idDetalle} className="w-full text-left p-3 flex items-start gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
+        <button type="button" onClick={onToggle} aria-expanded={abierto} aria-controls={idDetalle} className="w-full text-left p-3 flex items-start gap-3 hover:bg-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
           {resumen}
           <ChevronDown className={`w-4 h-4 mt-1 shrink-0 text-muted-foreground transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
         </button>
@@ -87,11 +87,11 @@ function FilaTecnico({ fila, abierto, onToggle }) {
       )}
       <Colapsable>
         {abierto && conDatos && (
-          <ul id={idDetalle} className="border-t border-border divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul id={idDetalle} className="border-t border-border divide-y divide-border">
             {fila.detalle.map((o) => (
               <li key={o.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-bold text-zinc-800 dark:text-zinc-100 truncate">{o.codigo || 'S/C'}{o.nombre ? ` - ${o.nombre}` : ''}</p>
+                  <p className="font-bold text-foreground truncate">{o.codigo || 'S/C'}{o.nombre ? ` - ${o.nombre}` : ''}</p>
                   <p className="text-etiqueta text-muted-foreground">
                     {fechaCorta(o.fecha)}
                     {o.clase === 'INSTALACION' && ' · Instalación'}
@@ -103,7 +103,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
                   </p>
                   {o.serial && (
                     <p className="text-etiqueta text-muted-foreground">
-                      {o.clase === 'CAMBIO_EQUIPO' ? 'Serial del equipo nuevo' : 'Serial'}: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{o.serial}</span>
+                      {o.clase === 'CAMBIO_EQUIPO' ? 'Serial del equipo nuevo' : 'Serial'}: <span className="font-mono font-bold text-foreground break-all">{o.serial}</span>
                     </p>
                   )}
                 </div>

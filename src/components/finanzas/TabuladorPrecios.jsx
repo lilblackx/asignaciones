@@ -31,7 +31,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
         <p className={`${TEXTO_SUAVE} mt-1`}>Lo que se le paga al técnico por cada orden de ese tipo, en dólares, con su equivalente en bolívares a la tasa BCV de hoy. Un pago ya registrado conserva los precios y la tasa de ese momento.</p>
       </div>
 
-      <ul className={`${TARJETA} px-4 divide-y divide-zinc-200 dark:divide-zinc-800`}>
+      <ul className={`${TARJETA} px-4 divide-y divide-border`}>
         {CONCEPTOS_PAGO.map(({ id, nombre }) => (
           <li key={id} className="py-2.5 grid grid-cols-1 sm:grid-cols-[1fr_11rem_14rem] items-center gap-x-4 gap-y-1">
             <label htmlFor={`tarifa-${id}`} className="text-sm font-bold text-foreground">{nombre}</label>
@@ -45,7 +45,7 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
                 aria-invalid={!!errores[id]}
                 className={`${CAMPO} pr-9 text-sm font-bold text-right tabular-nums`}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-muted-foreground pointer-events-none">$</span>
             </div>
             <p className={`${TEXTO_SUAVE} sm:text-right tabular-nums`}>
               {errores[id] ? <span role="alert" className="text-red-700 dark:text-red-400 font-bold">{errores[id]}</span> : tasa > 0 && <span className="text-sm font-bold">{bolivares(aBs(parseTarifa(borrador[id]).valor ?? 0, tasa))}</span>}

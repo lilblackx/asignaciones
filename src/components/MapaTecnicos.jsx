@@ -124,5 +124,5 @@ export default function MapaTecnicos({ puntos, rutas = [], enfocarId = null, enf
     mapa.flyTo([p.lat, p.lng], Math.max(mapa.getZoom(), 16), { duration: 0.8 });
   }, [enfocarVez]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <div ref={contenedor} role="region" aria-label={nombre} className="w-full h-full rounded-campo overflow-hidden bg-zinc-200 dark:bg-zinc-800" />;
+  return <div ref={contenedor} role="region" aria-label={nombre} className="w-full h-full rounded-campo overflow-hidden bg-accent" />;
 }

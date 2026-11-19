@@ -402,7 +402,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           {observacionParaTecnico(ticket) && (
             <div className="space-y-1">
               <span className="text-xs font-bold text-card-foreground ml-1">Nota de la oficina</span>
-              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{observacionParaTecnico(ticket)}</p>
+              <p className="w-full bg-secondary border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{observacionParaTecnico(ticket)}</p>
             </div>
           )}
     </>
@@ -575,7 +575,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           {devolucionPendiente(ticket) && ticket.observacionTecnico?.trim() && (
             <div className="space-y-1">
               <span className="text-xs font-bold text-card-foreground ml-1">Tu reporte anterior</span>
-              <p className="w-full bg-zinc-100 dark:bg-zinc-900 border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{ticket.observacionTecnico}</p>
+              <p className="w-full bg-secondary border border-border px-3 py-2.5 rounded-campo text-xs text-card-foreground whitespace-pre-wrap break-words">{ticket.observacionTecnico}</p>
             </div>
           )}
     </>

@@ -73,23 +73,23 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
         <div
           role="dialog"
           aria-label="Exportar un reporte"
-          className={`max-sm:fixed max-sm:inset-x-2 max-sm:bottom-3 sm:absolute ${alinear === 'izquierda' ? 'sm:left-0' : 'sm:right-0'} sm:mt-2 sm:w-80 z-40 rounded-card border border-zinc-300 dark:border-zinc-700 bg-card shadow-2xl p-4 space-y-4`}
+          className={`max-sm:fixed max-sm:inset-x-2 max-sm:bottom-3 sm:absolute ${alinear === 'izquierda' ? 'sm:left-0' : 'sm:right-0'} sm:mt-2 sm:w-80 z-40 rounded-card border border-border bg-card shadow-2xl p-4 space-y-4`}
         >
           <div className="flex items-center justify-between gap-3">
             <p className="text-base font-bold text-foreground">Exportar</p>
-            <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar" className="-mr-1 p-2 rounded-campo text-zinc-600 dark:text-zinc-300 hover:bg-secondary transition-colors">
+            <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar" className="-mr-1 p-2 rounded-campo text-muted-foreground hover:bg-secondary transition-colors">
               <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor={idReporte} className="block text-xs font-bold text-zinc-600 dark:text-zinc-300">1. Reporte</label>
+            <label htmlFor={idReporte} className="block text-xs font-bold text-muted-foreground">1. Reporte</label>
             <SelectMenu id={idReporte} ariaLabel="Reporte a exportar" value={grupo.clave} onChange={setClave} items={grupos.map((g) => ({ value: g.clave, label: g.titulo }))} className={`${claseSelector('normal')} w-full aria-expanded:border-red-600`} />
-            {grupo.detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300">{grupo.detalle}</p>}
+            {grupo.detalle && <p className="text-xs text-muted-foreground">{grupo.detalle}</p>}
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">2. Formato</p>
+            <p className="text-xs font-bold text-muted-foreground">2. Formato</p>
             <div className="grid grid-cols-3 gap-2">
               {grupo.formatos.map((f) => {
                 const { etiqueta, corta, detalle, Icono } = OPCIONES[f];
@@ -99,7 +99,7 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
                     type="button"
                     onClick={() => elegir(f, grupo.clave)}
                     aria-label={`${etiqueta}: ${detalle}`}
-                    className="flex flex-col items-center justify-center gap-1.5 min-h-16 px-2 py-3 rounded-boton border-2 border-zinc-300 dark:border-zinc-700 text-sm font-bold text-foreground hover:border-red-600 hover:bg-secondary transition-colors"
+                    className="flex flex-col items-center justify-center gap-1.5 min-h-16 px-2 py-3 rounded-boton border-2 border-border text-sm font-bold text-foreground hover:border-red-600 hover:bg-secondary transition-colors"
                   >
                     <Icono className="w-6 h-6 text-red-600" aria-hidden="true" />
                     {corta}
@@ -112,7 +112,7 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
       )}
 
       {abierto && !conPanel && (
-        <div role="menu" ref={mantenerEnPantalla} className={`absolute ${alinear === 'izquierda' ? 'left-0' : 'right-0'} mt-2 w-64 max-w-[calc(100vw-1rem)] z-20 rounded-card border border-zinc-200 dark:border-zinc-700 bg-card shadow-xl overflow-hidden shadow-card`}>
+        <div role="menu" ref={mantenerEnPantalla} className={`absolute ${alinear === 'izquierda' ? 'left-0' : 'right-0'} mt-2 w-64 max-w-[calc(100vw-1rem)] z-20 rounded-card border border-border bg-card shadow-xl overflow-hidden shadow-card`}>
           {formatos.map((f) => {
             const { etiqueta, detalle, Icono } = OPCIONES[f];
             return (

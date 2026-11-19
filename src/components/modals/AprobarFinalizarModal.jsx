@@ -301,7 +301,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
           {ticket.observacionTecnico && ticket.observacion && (
             <div className="space-y-1">
               <span className="text-xs font-bold text-card-foreground ml-1">Nota de la oficina</span>
-              <div className="bg-zinc-100 dark:bg-zinc-900 border border-border rounded-campo p-3 text-xs text-card-foreground whitespace-pre-wrap break-words">
+              <div className="bg-secondary border border-border rounded-campo p-3 text-xs text-card-foreground whitespace-pre-wrap break-words">
                 {ticket.observacion}
               </div>
             </div>
@@ -399,7 +399,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
               type="button"
               onClick={devolviendo ? () => { setDevolviendo(false); setMotivoError(''); } : onClose}
               disabled={isSubmitting}
-              className="flex-1 flex items-center justify-center py-3 text-xs sm:text-sm text-card-foreground font-bold bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center py-3 text-xs sm:text-sm text-card-foreground font-bold bg-card dark:bg-secondary border border-input hover:bg-secondary rounded-campo transition-colors disabled:opacity-50"
             >
               {devolviendo ? 'Volver' : 'Cancelar'}
             </button>
@@ -597,7 +597,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         onConfirm={ejecutarDevolucion}
       >
         <p className="text-sm font-bold text-foreground break-words">{ticket.codigo || 'S/C'}{ticket.nombre ? ` - ${ticket.nombre}` : ''}</p>
-        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">Motivo: {motivo.trim()}</p>
+        <p className="mt-2 text-xs text-muted-foreground break-words whitespace-pre-wrap">Motivo: {motivo.trim()}</p>
       </ConfirmModal>
     )}
     </>

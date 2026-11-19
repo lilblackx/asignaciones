@@ -142,7 +142,7 @@ export default function SelectMenu({
         aria-selected={isSelected}
         className={`flex items-center justify-between gap-2 px-3 py-2 mx-1 rounded-xl text-sm font-medium cursor-pointer transition-colors ${
           i === activeIndex ? 'bg-secondary' : ''
-        } ${isSelected ? '!font-bold text-red-700 dark:text-red-400' : 'text-zinc-700 dark:text-zinc-200'}`}
+        } ${isSelected ? '!font-bold text-red-700 dark:text-red-400' : 'text-foreground'}`}
         onPointerEnter={() => setActiveIndex(i)}
         onClick={() => choose(opt)}
       >
@@ -199,7 +199,7 @@ export default function SelectMenu({
             aria-label={ariaLabel}
             onMouseDown={(e) => e.preventDefault()}
             style={pos}
-            className={`fixed z-[300] w-max overflow-auto py-1.5 bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl ${saliendo ? 'animate-menu-salida pointer-events-none' : 'animate-menu-entrada'} shadow-card`}
+            className={`fixed z-[300] w-max overflow-auto py-1.5 bg-card border border-border rounded-card shadow-xl ${saliendo ? 'animate-menu-salida pointer-events-none' : 'animate-menu-entrada'} shadow-card`}
           >
             {items.map(it =>
               it.group ? (

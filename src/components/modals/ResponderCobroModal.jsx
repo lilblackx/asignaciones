@@ -48,7 +48,7 @@ export default function ResponderCobroModal({ ticket, onResponder, onClose }) {
 
         <div className="p-4 space-y-4">
           {!consulta ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">Esta orden ya no tiene una consulta de cobro.</p>
+            <p className="text-sm text-muted-foreground">Esta orden ya no tiene una consulta de cobro.</p>
           ) : (
             <>
               <div className="rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1 text-xs text-amber-900 dark:text-amber-200">

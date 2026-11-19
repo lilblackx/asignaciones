@@ -4,6 +4,7 @@ import { estaEnCamino, estaEnSitio } from '../utils/enCamino';
 import { enInfraestructura } from '../utils/infraestructura';
 import NumeroPulso from './NumeroPulso';
 import { iniciales, legible } from '../utils/nombreTecnico';
+import Interruptor from './Interruptor';
 
 // Las píldoras de estado (sin técnico, en camino, en sitio, infraestructura): la misma forma y tamaño que las de los técnicos; solo cambia el tono suave. El número va en una cápsula, como en las de los técnicos.
 const PILDORA_ESTADO = 'inline-flex items-center gap-2 rounded-boton border px-3 py-1 max-lg:min-h-11 text-xs font-bold leading-none transition-colors cursor-pointer';
@@ -103,26 +104,19 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
             <ul id={idLista} className="mt-1.5 rounded-card bg-card shadow-card divide-y divide-border overflow-hidden">
               {counts.map(({ id, name, activo, count }) => (
                 <li key={name} className="flex items-center gap-3 px-3 min-h-14">
-                  <span aria-hidden="true" className={`relative shrink-0 w-8 h-8 rounded-full border inline-flex items-center justify-center text-xs font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
+                  <span aria-hidden="true" className={`relative shrink-0 w-8 h-8 rounded-full border inline-flex items-center justify-center text-xs font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-input text-muted-foreground'}`}>
                     {iniciales(name)}
                     <span className={`absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${activo ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-zinc-500'}`} />
                   </span>
                   <span className={`min-w-0 flex-1 text-sm font-bold ${activo ? 'text-foreground' : 'text-muted-foreground'}`}>{legible(name)}{!activo && <span className="ml-1.5 text-xs font-bold">inactivo</span>}</span>
                   {count > 0 && <span className="rounded-full bg-secondary text-foreground px-2 py-0.5 text-xs font-black leading-none"><NumeroPulso valor={count} /></span>}
                   {canToggle ? (
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={activo}
-                      aria-label={`${legible(name)}: ${activo ? 'activo' : 'inactivo'}`}
-                      title={activo ? 'Activo - toca para marcar inactivo' : 'Inactivo - toca para marcar activo'}
-                      onClick={() => onToggleActivo(id, !activo)}
-                      className="relative shrink-0 w-11 h-11 inline-flex items-center justify-center"
-                    >
-                      <span className={`relative block w-10 h-6 rounded-full transition-colors ${activo ? 'bg-emerald-600' : 'bg-zinc-400 dark:bg-zinc-600'}`}>
-                        <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${activo ? 'right-0.5' : 'left-0.5'}`} />
-                      </span>
-                    </button>
+                    <Interruptor
+                      activo={activo}
+                      onCambiar={(v) => onToggleActivo(id, v)}
+                      ariaLabel={`${legible(name)}: ${activo ? 'activo' : 'inactivo'}`}
+                      titulo={activo ? 'Activo: toca para marcar inactivo' : 'Inactivo: toca para marcar activo'}
+                    />
                   ) : null}
                 </li>
               ))}
@@ -137,7 +131,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
         const pillClass = `inline-flex items-center gap-2 rounded-boton border bg-card pl-1 pr-3 py-1 text-xs font-bold ${activo ? 'border-input text-foreground' : 'border-dashed border-input text-muted-foreground'}`;
         const label = (
           <>
-            <span aria-hidden="true" className={`relative shrink-0 w-7 h-7 max-lg:w-8 max-lg:h-8 rounded-full border inline-flex items-center justify-center text-etiqueta font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
+            <span aria-hidden="true" className={`relative shrink-0 w-7 h-7 max-lg:w-8 max-lg:h-8 rounded-full border inline-flex items-center justify-center text-etiqueta font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-input text-muted-foreground'}`}>
               {iniciales(name)}
               <span className={`absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${activo ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-zinc-500'}`} />
             </span>

@@ -58,8 +58,8 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
         {tarjetas.map(({ etiqueta, valor, detalle }) => (
           <div key={etiqueta} className={`${TARJETA} p-3 min-w-0`}>
             <p className="text-xl sm:text-2xl font-black tabular-nums leading-none break-words text-foreground">{valor}</p>
-            <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
-            {detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
+            <p className="mt-1 text-xs font-bold text-foreground">{etiqueta}</p>
+            {detalle && <p className="text-xs text-muted-foreground break-words">{detalle}</p>}
           </div>
         ))}
       </section>
@@ -92,7 +92,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-black text-sm">{c.codigo || 'S/C'} <span className="font-bold">· {c.nombre}</span></p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300">{tipoTexto(c)} · {legible(c.tecnico)} · {fechaHora(c.creadoEn)}</p>
+                    <p className="text-xs text-muted-foreground">{tipoTexto(c)} · {legible(c.tecnico)} · {fechaHora(c.creadoEn)}</p>
                   </div>
                   {estadoChip(c)}
                 </div>
@@ -108,12 +108,12 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
           {/* Escritorio: tabla. */}
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-100 dark:bg-zinc-950 text-etiqueta text-muted-foreground">
+              <thead className="bg-secondary text-etiqueta text-muted-foreground">
                 <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', 'Cargado por', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-border">
                 {visibles.map((c) => (
-                  <tr key={c.id} className="align-top hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                  <tr key={c.id} className="align-top hover:bg-secondary">
                     <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(c.creadoEn)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{c.codigo || 'S/C'}</td>
                     <td className="px-3 py-2.5 min-w-[8rem]">{c.nombre}</td>

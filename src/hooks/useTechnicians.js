@@ -54,7 +54,7 @@ export function useTechnicians(firebaseUser, setToastMsg, role, tecnicoAsociado,
 
   const getTecnicoColor = (tecnicoNombre) => {
     const tech = technicians.find(t => t.name.toUpperCase() === (tecnicoNombre || '').toUpperCase());
-    return tech ? estiloTecnico(tech.color) : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200';
+    return tech ? estiloTecnico(tech.color) : 'bg-accent text-foreground';
   };
 
   const handleAddTech = async (newTech) => {

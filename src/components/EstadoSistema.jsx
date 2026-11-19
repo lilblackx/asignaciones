@@ -43,7 +43,7 @@ export default function EstadoSistema({ pausadas = null }) {
         <h3 id="config-estado" className={TITULO_SECCION}>Estado del sistema</h3>
         <Boton tamano="compacto" icono={RefreshCw} girando={!cargado} onClick={actualizar} disabled={!cargado}>Actualizar</Boton>
       </div>
-      <ul className={`${TARJETA} divide-y divide-zinc-200 dark:divide-zinc-800`}>
+      <ul className={`${TARJETA} divide-y divide-border`}>
         <Fila titulo="Versión de la app" nivel={cargado ? version.nivel : NIVEL.INFO} texto={cargado ? version.texto : 'Comprobando…'} detalle={compilacion} />
         <Fila titulo="Escrituras automáticas" nivel={automaticas.nivel} texto={automaticas.texto} detalle={automaticas.detalle} />
       </ul>

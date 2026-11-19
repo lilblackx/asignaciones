@@ -69,7 +69,7 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
           <label htmlFor="descuento-monto" className={ETIQUETA_CAMPO}>{enCuotas ? 'Monto total en dólares' : 'Monto en dólares'}</label>
           <div className="relative mt-1">
             <input id="descuento-monto" value={form.monto} onChange={(e) => cambiar('monto', montoCalculadora(e.target.value))} inputMode="numeric" autoComplete="off" placeholder="0,00" aria-invalid={error?.campo === 'monto'} className={`${CAMPO} pr-10 text-sm font-bold text-right tabular-nums`} />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none">$</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-muted-foreground pointer-events-none">$</span>
           </div>
           <Colapsable>{texto('monto') ? <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold mt-1">{texto('monto')}</p> : (monto > 0 && tasa > 0 && <p className={`${TEXTO_SUAVE} font-bold mt-1 tabular-nums`}>{bolivares(aBs(monto, tasa))}</p>)}</Colapsable>
         </div>
@@ -102,17 +102,17 @@ export default function PanelDescuento({ tecnico, neto = 0, porDescontar = 0, ta
         </div>
 
         <Colapsable>{plan.length > 0 && (
-          <ul aria-label="Cuándo se descuenta" className="rounded-campo border border-zinc-300 dark:border-zinc-700 px-3 divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul aria-label="Cuándo se descuenta" className="rounded-campo border border-border px-3 divide-y divide-border">
             {plan.map((c) => (
               <li key={c.cuota} className="py-2 flex items-baseline justify-between gap-3 text-sm">
-                <span className="font-bold">{plan.length > 1 ? `Cuota ${c.cuota} de ${c.cuotas}` : 'Descuento'} <span className="font-normal text-zinc-600 dark:text-zinc-300">· desde el {fechaCorta(c.desde)}</span></span>
+                <span className="font-bold">{plan.length > 1 ? `Cuota ${c.cuota} de ${c.cuotas}` : 'Descuento'} <span className="font-normal text-muted-foreground">· desde el {fechaCorta(c.desde)}</span></span>
                 <span className="font-bold tabular-nums">{dolares(c.monto)}</span>
               </li>
             ))}
           </ul>
         )}</Colapsable>
 
-        <label htmlFor="descuento-notificar" className="flex items-center gap-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 cursor-pointer">
+        <label htmlFor="descuento-notificar" className="flex items-center gap-3 text-sm font-bold text-foreground cursor-pointer">
           <input id="descuento-notificar" type="checkbox" checked={notificar} onChange={(e) => setNotificar(e.target.checked)} className="w-5 h-5 accent-red-600" />
           Avisar al técnico{!entraYa ? ' (solo al programarlo)' : ''}
         </label>

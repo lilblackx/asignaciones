@@ -84,8 +84,8 @@ check('deshacer la llegada vuelve a en camino con la salida original', deshacerL
 // --- Textos ---
 check('tiempo transcurrido', [tiempoTranscurrido(T0, T0 + 20_000), tiempoTranscurrido(T0, T0 + 12 * MIN), tiempoTranscurrido(T0, T0 + 60 * MIN), tiempoTranscurrido(T0, T0 + 130 * MIN)],
   ['justo ahora', 'hace 12 min', 'hace 1 h', 'hace 2 h 10 min']);
-check('aviso de salida', textoAvisoEnCamino(orden), 'GERARDO va en camino a la orden AS184 - Ana Pérez.');
-check('aviso de llegada sin código ni nombre', textoAvisoLlegada({ tecnico: 'GERARDO' }), 'GERARDO llegó al sitio de la orden S/C.');
+check('aviso de salida', textoAvisoEnCamino(orden), 'Gerardo va en camino a la orden AS184 · Ana Pérez.');
+check('aviso de llegada sin código ni nombre', textoAvisoLlegada({ tecnico: 'GERARDO' }), 'Gerardo llegó al sitio de la orden S/C.');
 
 // --- Detectar los viajes nuevos (aviso a la oficina) ---
 const antes = mapaViaje([{ id: 'a', estado: 'PENDIENTE', tecnico: 'G' }, { id: 'b', estado: 'PENDIENTE', tecnico: 'G', enCamino: { tecnico: 'G', desde: T0 } }, { id: 'c', estado: 'PENDIENTE', tecnico: 'G' }]);

@@ -21,8 +21,8 @@ import { oracion } from '../../utils/oracion';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
-const ETIQUETA = 'text-xs font-bold text-zinc-600 dark:text-zinc-300';
-const VALOR = 'text-sm text-zinc-900 dark:text-zinc-50 mt-0.5 break-words';
+const ETIQUETA = 'text-xs font-bold text-muted-foreground';
+const VALOR = 'text-sm text-foreground mt-0.5 break-words';
 
 function Dato({ etiqueta, children }) {
   return (
@@ -102,14 +102,14 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 rounded-campo bg-zinc-100 dark:bg-zinc-950 border border-border px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3 rounded-campo bg-secondary border border-border px-3 py-2.5">
             <div className="min-w-0">
               <p className={ETIQUETA}>{item.pagada ? 'Se le pagó al técnico como' : 'Se le paga al técnico como'}</p>
               <p className="text-base font-bold text-foreground">{grupoDePago(concepto)}{TIPO_DE_AVERIA[concepto] ? ` · ${TIPO_DE_AVERIA[concepto]}` : ''}</p>
             </div>
             <div className="text-right shrink-0">
               <p className="text-xl font-bold text-foreground tabular-nums whitespace-nowrap leading-tight">{dolares(precio)}</p>
-              {tasa > 0 && <p className="text-base font-bold text-zinc-700 dark:text-zinc-200 tabular-nums whitespace-nowrap">{bolivares(aBs(precio, tasa))}</p>}
+              {tasa > 0 && <p className="text-base font-bold text-foreground tabular-nums whitespace-nowrap">{bolivares(aBs(precio, tasa))}</p>}
             </div>
           </div>
 

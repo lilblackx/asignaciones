@@ -14,7 +14,7 @@ function check(name, actual, esperado) {
 const tabla = readFileSync('src/components/TicketsTable.jsx', 'utf8');
 const thead = tabla.slice(tabla.indexOf('<thead'), tabla.indexOf('</thead>'));
 const titulos = [...thead.matchAll(/<th\b([^>]*)>([\s\S]*?)<\/th>/g)].map((m) => ({ atributos: m[1], contenido: m[2].trim() }));
-check('los 8 títulos de la tabla', titulos.map((t) => t.contenido), ['CÓDIGO', 'NOMBRE', 'CÉDULA', 'DIRECCIÓN', 'FALLA / TRABAJO', 'TÉCNICO', 'ESTADO', 'ACCIONES']);
+check('los 8 títulos de la tabla', titulos.map((t) => t.contenido), ['Código', 'Nombre', 'Cédula', 'Dirección', 'Falla / trabajo', 'Técnico', 'Estado', 'Acciones']);
 check('ningún título es clicable ni cambia al pasar el mouse (cursor, hover, grupo o clic)', titulos.every((t) => !/cursor-pointer|hover:|group|onClick|title=/.test(t.atributos)), true);
 check('ningún título lleva ícono ni elementos dentro: solo el texto', titulos.every((t) => !/</.test(t.contenido)), true);
 check('todos llevan el mismo borde, relleno y alineación', titulos.slice(0, 7).every((t) => /px-3 py-3 w-\[[^\]]+\](?: min-\[1440px\]:w-\[[^\]]+\])? align-middle text-center/.test(t.atributos)), true);

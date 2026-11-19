@@ -52,7 +52,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
       <div className="border-y border-input py-4">
         <p className={ETIQUETA}>Total pendiente por pagar</p>
         <p className="text-xl font-black tabular-nums text-foreground leading-tight">{dolares(neto)}</p>
-        {tasa > 0 && <p className="text-sm font-bold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
+        {tasa > 0 && <p className="text-sm font-bold tabular-nums text-foreground">{bolivares(aBs(neto, tasa))}</p>}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2 max-w-4xl">
@@ -103,7 +103,7 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
             <input id="pago-nota" value={form.nota} onChange={(e) => cambiar('nota', stripEmojis(e.target.value))} maxLength={300} autoComplete="off" className={`${CAMPO} mt-1`} />
           </div>
 
-          <label htmlFor="pago-notificar" className="flex items-center gap-3 text-sm font-bold text-zinc-900 dark:text-zinc-100 cursor-pointer">
+          <label htmlFor="pago-notificar" className="flex items-center gap-3 text-sm font-bold text-foreground cursor-pointer">
             <input id="pago-notificar" type="checkbox" checked={notificar} onChange={(e) => setNotificar(e.target.checked)} className="w-5 h-5 accent-red-600" />
             Notificar al técnico
           </label>

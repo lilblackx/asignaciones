@@ -384,13 +384,13 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             </div>
 
             {usaCodigoOriginal && (
-              <div className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-1.5 text-etiqueta text-zinc-700 dark:text-zinc-200">
+              <div className="col-span-2 sm:col-span-5 rounded border border-border px-2.5 py-2 space-y-1.5 text-etiqueta text-foreground">
                 {codigosOriginales.length > 0 ? (
                   <>
                     <p>La garantía lleva el código de la orden original, no un número nuevo. Elige la del cliente o escribe el código; la garantía se asigna al técnico de esa orden:</p>
                     <div role="group" aria-label="Código de la orden original" className="flex flex-wrap gap-1.5">
                       {codigosOriginales.map((o) => (
-                        <button key={o.codigo} type="button" onClick={() => handleCreateChange({ target: { name: 'codigo', value: o.codigo, type: 'text' } })} aria-pressed={formData.codigo.trim().toUpperCase() === o.codigo} className="max-lg:min-h-11 px-2.5 py-1 rounded-campo border border-zinc-300 dark:border-zinc-600 font-bold aria-pressed:bg-black aria-pressed:text-white aria-pressed:border-black">
+                        <button key={o.codigo} type="button" onClick={() => handleCreateChange({ target: { name: 'codigo', value: o.codigo, type: 'text' } })} aria-pressed={formData.codigo.trim().toUpperCase() === o.codigo} className="max-lg:min-h-11 px-2.5 py-1 rounded-campo border border-border font-bold aria-pressed:bg-black aria-pressed:text-white aria-pressed:border-black">
                           {o.codigo}<span className="font-normal"> · {oracion(o.tipoTrabajo)}{o.tecnico ? ` · ${o.tecnico}` : ''}</span>
                         </button>
                       ))}
@@ -409,13 +409,13 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
             {esInstalacion && turnoSugerido && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
               <TurnoSugeridoBanner
-                wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-sunken border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-etiqueta text-zinc-700 dark:text-zinc-200"
+                wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-sunken border border-border rounded px-2.5 py-2 text-etiqueta text-foreground"
                 turnoSugerido={turnoSugerido}
               />
             )}
 
             {esGarantiaTipo && formData.garantiaDe && (
-              <p className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 text-etiqueta text-zinc-700 dark:text-zinc-200">
+              <p className="col-span-2 sm:col-span-5 rounded border border-border px-2.5 py-2 text-etiqueta text-foreground">
                 Es una garantía de otro técnico: es una orden nueva para él, así que toma un número nuevo y no el código de la original.
               </p>
             )}

@@ -184,7 +184,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-dvh bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+      <div className="min-h-dvh bg-fondo text-foreground flex flex-col font-sans transition-colors duration-200">
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} contexto={cargado ? (error ? 'No se pudo actualizar.' : `Última actualización: ${horaLegible(actualizadoEn)}`) : ''} titulo="Finanzas" icono={Banknote} nombre={currentUserName || currentUser} rol={role} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
@@ -264,7 +264,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
               {finanzas.error && <Aviso nivel="error">No se pudieron leer los datos de Finanzas (tarifas o pagos). Recarga la página.</Aviso>}
 
               {seccion === 'PAGOS' && corteTodaviaNoLlega() && (
-                <p role="status" className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-200/70 dark:bg-zinc-900 border border-input rounded-campo px-4 py-3">
+                <p role="status" className="text-sm text-foreground bg-zinc-200/70 dark:bg-zinc-900 border border-input rounded-campo px-4 py-3">
                   Comienza a contar a partir del {textoFechaCorte()}: lo anterior de este periodo no se muestra.
                 </p>
               )}

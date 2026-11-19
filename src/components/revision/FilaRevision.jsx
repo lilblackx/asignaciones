@@ -113,11 +113,11 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
     <li className="py-4 space-y-2">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-64">
-          <p className="text-sm text-zinc-900 dark:text-zinc-100 break-words">
+          <p className="text-sm text-foreground break-words">
             <button type="button" onClick={() => onVerOrden(item)} aria-label={`Ver el detalle de la orden ${item.orden.codigo || 'sin código'}`} className="font-bold underline decoration-2 underline-offset-2 hover:text-red-600 dark:hover:text-red-400">{item.orden.codigo || 'S/C'}</button>
             {item.orden.nombre ? ` · ${item.orden.nombre}` : ''}
             <InsigniaJM orden={item.orden} className="ml-2" />
-            {item.escalada && <span title={textoEscaladaRevision(item)} className={`${CHIP} ml-2 align-middle bg-orange-600 text-white`}>Infraestructura</span>}
+            {item.escalada && <span title={textoEscaladaRevision(item)} className={`${CHIP} ml-2 align-middle bg-orange-700 text-white`}>Infraestructura</span>}
           </p>
           <p className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {item.concepto ? nombreConcepto(item.concepto) : <span className="font-bold text-amber-700 dark:text-amber-300">Sin concepto: corrígela</span>}</p>
           {esGarantiaDeOtro && item.descuento <= 0 && !item.garantiaSinDescuento && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Garantía de otro técnico: de la orden {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}). Decide si se le descuenta algo antes de aprobarla.</p>}
@@ -137,7 +137,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           <span className={`${CHIP} ${CHIP_ESTADO[estado]}`}>{ETIQUETA_REVISION[estado]}</span>
           <span className="text-right">
             <span className="block text-sm font-bold tabular-nums text-foreground">{dolares(precio)}</span>
-            {tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(precio, tasa))}</span>}
+            {tasa > 0 && <span className="block text-xs font-bold tabular-nums text-muted-foreground">{bolivares(aBs(precio, tasa))}</span>}
           </span>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
                 <label htmlFor={`monto-${item.clave}`} className={ETIQUETA_CAMPO}>Monto a descontar (en dólares)</label>
                 <div className="relative mt-1">
                   <input id={`monto-${item.clave}`} value={garantia.monto} onChange={(e) => { setGarantia((g) => ({ ...g, monto: montoCalculadora(e.target.value) })); setError(''); }} inputMode="numeric" autoComplete="off" placeholder="0,00" className={`${CAMPO} pr-9 text-right tabular-nums`} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-zinc-600 dark:text-zinc-300 pointer-events-none" aria-hidden="true">$</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base font-bold text-muted-foreground pointer-events-none" aria-hidden="true">$</span>
                 </div>
               </div>
             </div>

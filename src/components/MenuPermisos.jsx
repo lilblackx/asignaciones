@@ -75,7 +75,7 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
           role="group"
           aria-label={ariaLabel}
           style={pos}
-          className={`fixed z-[300] rounded-card border border-zinc-300 dark:border-zinc-700 bg-card shadow-xl p-1.5 ${saliendo ? 'animate-menu-salida' : 'animate-menu-entrada'} shadow-card`}
+          className={`fixed z-[300] rounded-card border border-border bg-card shadow-xl p-1.5 ${saliendo ? 'animate-menu-salida' : 'animate-menu-entrada'} shadow-card`}
         >
           {sinNada && <p className="px-2.5 py-2 text-xs text-muted-foreground">{vacio}</p>}
           {opciones.map((o) => (
@@ -87,11 +87,11 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
                 onChange={(e) => o.onCambiar(e.target.checked)}
                 className="sr-only peer"
               />
-              <span aria-hidden="true" className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-zinc-400 dark:border-zinc-600 bg-white dark:bg-zinc-950 peer-checked:bg-red-600 peer-checked:border-red-600 peer-focus-visible:ring-2 peer-focus-visible:ring-red-600/40 text-white [&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100">
+              <span aria-hidden="true" className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-input bg-card dark:bg-background peer-checked:bg-red-600 peer-checked:border-red-600 peer-focus-visible:ring-2 peer-focus-visible:ring-red-600/40 text-white [&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100">
                 <Check className="w-3 h-3" strokeWidth={3} />
               </span>
               <span className="min-w-0">
-                <span className="block font-bold text-zinc-800 dark:text-zinc-100">{o.etiqueta}</span>
+                <span className="block font-bold text-foreground">{o.etiqueta}</span>
                 {o.ayuda && <span className="block text-etiqueta leading-snug text-muted-foreground">{o.ayuda}</span>}
               </span>
             </label>
@@ -104,7 +104,7 @@ export default function MenuPermisos({ resumen, opciones = [], acciones = [], ar
               onClick={() => { setAbierto(false); a.onClick(); }}
               className="w-full text-left rounded-campo px-2.5 py-2 text-sm hover:bg-secondary"
             >
-              <span className="block font-bold text-zinc-800 dark:text-zinc-100">{a.etiqueta}</span>
+              <span className="block font-bold text-foreground">{a.etiqueta}</span>
               {a.detalle && <span className="block text-etiqueta leading-snug text-muted-foreground break-words">{a.detalle}</span>}
             </button>
           ))}

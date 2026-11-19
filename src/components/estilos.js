@@ -13,12 +13,12 @@ export const TITULO_SECCION = 'text-base font-black text-foreground';
 // Un solo radio (rounded-xl), borde, fondo y foco rojo. Dos alturas fijas: 'compacto' y 'normal' de 36 px (la letra del compacto es más chica) y 'grande' de 44 px, cómoda para el dedo (formularios y
 // pantallas del técnico). `estado`: 'normal', 'error' (borde rojo), 'ok' (borde verde) o 'lectura' (gris, no editable). Las medidas de un campo concreto (ancho, alineación, tipo de letra) se le suman en su sitio; el aspecto, no.
 const CAMPO_BASE = 'w-full border rounded-campo placeholder:text-zinc-500 focus:ring-0 outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
-const FONDO_CAMPO = 'bg-white dark:bg-zinc-950 text-foreground';
+const FONDO_CAMPO = 'bg-card dark:bg-background text-foreground';
 const BORDE_CAMPO = {
   normal: `${FONDO_CAMPO} border-input hover:border-zinc-500 focus:border-red-600`,
   error: `${FONDO_CAMPO} border-red-500 focus:border-red-500`,
   ok: `${FONDO_CAMPO} border-emerald-500 focus:border-emerald-500`,
-  lectura: 'bg-zinc-100 dark:bg-zinc-900/60 text-muted-foreground border-zinc-200 dark:border-zinc-700 cursor-default', // dato que se ve pero no se edita (la fecha de la orden)
+  lectura: 'bg-zinc-100 dark:bg-zinc-900/60 text-muted-foreground border-border cursor-default', // dato que se ve pero no se edita (la fecha de la orden)
 };
 const MEDIDA_CAMPO = { compacto: 'h-9 px-3 text-xs', normal: 'h-9 px-3 text-sm', grande: 'h-11 px-3 text-sm' };
 export const claseCampo = (tamano = 'normal', estado = 'normal') => `${CAMPO_BASE} ${MEDIDA_CAMPO[tamano]} ${BORDE_CAMPO[estado]}`;

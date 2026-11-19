@@ -57,7 +57,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
 
         <div className="p-4 space-y-4">
           {!espera ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">Esta orden ya no está esperando a infraestructura.</p>
+            <p className="text-sm text-muted-foreground">Esta orden ya no está esperando a infraestructura.</p>
           ) : (
             <>
               <div className="rounded-campo border border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30 p-3 space-y-1 text-xs text-orange-900 dark:text-orange-200">
@@ -68,7 +68,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               <fieldset className="space-y-2">
                 <legend className="text-xs font-bold text-card-foreground ml-1 mb-1">¿Cómo sigue?</legend>
                 {OPCIONES.map(({ resultado: valor, titulo, detalle, Icono }) => (
-                  <label key={valor} className={`flex items-start gap-2.5 rounded-campo border p-3 cursor-pointer transition-colors ${resultado === valor ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/30' : 'border-input hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
+                  <label key={valor} className={`flex items-start gap-2.5 rounded-campo border p-3 cursor-pointer transition-colors ${resultado === valor ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/30' : 'border-input hover:bg-secondary'}`}>
                     <input type="radio" name="resultado-infraestructura" value={valor} checked={resultado === valor} onChange={() => setResultado(valor)} className="mt-0.5 accent-orange-600" />
                     <span className="min-w-0">
                       <span className="flex items-center gap-1.5 text-sm font-black text-foreground"><Icono className="w-4 h-4 shrink-0" aria-hidden="true" />{titulo}</span>
@@ -92,7 +92,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               </div>
 
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-white dark:bg-zinc-800 border border-input hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-campo transition-colors disabled:opacity-50">Cancelar</button>
+                <button type="button" onClick={onClose} disabled={enviando} className="flex-1 py-3 text-xs font-bold text-card-foreground bg-card dark:bg-secondary border border-input hover:bg-secondary rounded-campo transition-colors disabled:opacity-50">Cancelar</button>
                 <button type="button" onClick={confirmar} disabled={enviando} className="flex-1 py-3 text-xs font-black text-black bg-orange-500 hover:bg-orange-400 rounded-campo transition-colors disabled:opacity-50">{enviando && <Spinner />}{enviando ? 'Guardando...' : resultado === RESULTADO_CERRADA ? 'Cerrar como TA' : 'Devolver al técnico'}</button>
               </div>
             </>

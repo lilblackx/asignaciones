@@ -2,7 +2,7 @@
 // `tono`: el color de la pista encendida: 'exito' (verde, lo normal) o 'atencion' (ámbar: encendido significa una alerta, como pausar lo automático).
 const PISTA_ENCENDIDA = { exito: 'bg-emerald-600', atencion: 'bg-amber-600' };
 
-export default function Interruptor({ id, activo, onCambiar, ariaLabel, ariaDescribedBy, deshabilitado = false, tono = 'exito', className = '' }) {
+export default function Interruptor({ id, activo, onCambiar, ariaLabel, ariaDescribedBy, titulo, deshabilitado = false, tono = 'exito', className = '' }) {
   return (
     <button
       type="button"
@@ -11,6 +11,7 @@ export default function Interruptor({ id, activo, onCambiar, ariaLabel, ariaDesc
       aria-checked={activo}
       aria-label={ariaLabel}
       aria-describedby={ariaDescribedBy}
+      title={titulo}
       disabled={deshabilitado}
       onClick={() => onCambiar(!activo)}
       className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${activo ? PISTA_ENCENDIDA[tono] : 'bg-muted-foreground/70'} ${className}`}

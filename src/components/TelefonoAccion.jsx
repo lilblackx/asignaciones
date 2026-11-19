@@ -93,7 +93,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
             aria-modal="true"
             aria-label={`${texto}: elegir número`}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xs bg-card border border-zinc-200 dark:border-zinc-700 rounded-card shadow-xl p-3 space-y-2 shadow-card"
+            className="w-full max-w-xs bg-card border border-border rounded-card shadow-xl p-3 space-y-2 shadow-card"
           >
             <p className="text-xs font-bold text-muted-foreground px-1">{texto} a:</p>
             {opciones.map((o, i) => (
@@ -103,7 +103,7 @@ export default function TelefonoAccion({ telefono, tipo, nombre, className }) {
                 href={o.href}
                 {...(externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 onClick={() => setAbierto(false)}
-                className="flex items-center gap-2 py-3 px-3 rounded-boton bg-secondary text-zinc-900 dark:text-zinc-100 text-sm font-bold hover:bg-accent transition-colors"
+                className="flex items-center gap-2 py-3 px-3 rounded-boton bg-secondary text-foreground text-sm font-bold hover:bg-accent transition-colors"
               >
                 <Icon className="w-4 h-4 shrink-0" aria-hidden="true" /> {o.numero}
               </a>

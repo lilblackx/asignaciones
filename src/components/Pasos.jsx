@@ -19,7 +19,7 @@ export default function Pasos({ pasos, actual, hecho = () => false, onElegir = n
           const ocultarNombre = !esActual;
           const contenido = (
             <>
-              <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-etiqueta font-black transition-colors duration-300 ${razon ? 'opacity-60' : ''} ${completo ? 'bg-emerald-700 text-white' : esActual ? 'bg-emerald-700 text-white' : 'border border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
+              <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-etiqueta font-black transition-colors duration-300 ${razon ? 'opacity-60' : ''} ${completo ? 'bg-emerald-700 text-white' : esActual ? 'bg-emerald-700 text-white' : 'border border-input text-muted-foreground'}`}>
                 {razon ? <Lock className="w-3 h-3" aria-hidden="true" /> : completo ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden="true" /> : i + 1}
               </span>
               <span className={`${ocultarNombre ? 'hidden sm:inline ' : ''}text-xs leading-none whitespace-nowrap transition-colors duration-300 ${esActual ? 'font-black text-foreground' : completo ? 'font-bold text-emerald-800 dark:text-emerald-400' : 'font-bold text-muted-foreground'}`}>{nombre}</span>
@@ -34,7 +34,7 @@ export default function Pasos({ pasos, actual, hecho = () => false, onElegir = n
               ) : (
                 <span className="flex items-center gap-1.5">{contenido}</span>
               )}
-              {i < pasos.length - 1 && <span aria-hidden="true" className={`flex-1 min-w-3 h-px transition-colors duration-300 ${completo ? 'bg-emerald-700' : 'bg-zinc-300 dark:bg-zinc-600'}`} />}
+              {i < pasos.length - 1 && <span aria-hidden="true" className={`flex-1 min-w-3 h-px transition-colors duration-300 ${completo ? 'bg-emerald-700' : 'bg-accent'}`} />}
             </li>
           );
         })}

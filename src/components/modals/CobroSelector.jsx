@@ -38,7 +38,7 @@ export default function CobroSelector({ idBase = 'cobro', montoVisita, seleccion
           activa ? 'border-red-600 bg-red-50 dark:bg-red-950/30' : 'border-input bg-card hover:border-zinc-500'
         }`}
       >
-        <span className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center ${activa ? 'bg-red-600 border-red-600 text-white' : 'border-zinc-400 dark:border-zinc-500'}`} aria-hidden="true">
+        <span className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center ${activa ? 'bg-red-600 border-red-600 text-white' : 'border-input'}`} aria-hidden="true">
           {activa && <Check className="w-3 h-3" />}
         </span>
         <span className="min-w-0">

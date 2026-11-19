@@ -21,7 +21,7 @@ function GrupoConector({ id, etiqueta, ayuda, colores, valor, onChange }) {
               aria-pressed={activo}
               onClick={() => onChange(activo ? '' : color)}
               className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
-                activo ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200' : 'bg-white dark:bg-zinc-950 border-input text-zinc-700 dark:text-zinc-200 hover:border-amber-500'
+                activo ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200' : 'bg-card dark:bg-background border-input text-foreground hover:border-amber-500'
               }`}
             >
               <InsigniaConector color={color} apagada={!activo} />
@@ -57,7 +57,7 @@ export default function ConectoresRecableado({ colorExterno, colorInterno, onExt
 function CampoCantidad({ id, etiqueta, color, valor, onChange, error }) {
   const n = /^\d{1,2}$/.test(String(valor).trim()) ? parseInt(valor, 10) : 0;
   const poner = (x) => onChange(String(Math.min(MAX_CONECTORES_POR_COLOR, Math.max(0, x))));
-  const boton = 'w-11 h-11 shrink-0 rounded-campo border-2 border-input bg-white dark:bg-zinc-950 text-zinc-700 dark:text-zinc-200 text-lg font-black hover:border-amber-500 disabled:opacity-40 disabled:hover:border-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500';
+  const boton = 'w-11 h-11 shrink-0 rounded-campo border-2 border-input bg-card dark:bg-background text-foreground text-lg font-black hover:border-amber-500 disabled:opacity-40 disabled:hover:border-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500';
   return (
     <div className="flex-1 min-w-[9.5rem] flex flex-col justify-between gap-1.5">
       <label htmlFor={id} className="flex items-center gap-2 text-xs font-bold text-card-foreground ml-1">

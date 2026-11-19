@@ -78,7 +78,7 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
         type="button"
         onClick={onGuardar}
         disabled={guardando}
-        className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-campo text-xs font-black shadow-sm transition-colors disabled:opacity-60 ${guardados && !sucio ? 'bg-white dark:bg-zinc-950 border border-input text-zinc-700 dark:text-zinc-200' : 'bg-emerald-700 hover:bg-emerald-800 text-white'}`}
+        className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-campo text-xs font-black shadow-sm transition-colors disabled:opacity-60 ${guardados && !sucio ? 'bg-card dark:bg-background border border-input text-foreground' : 'bg-emerald-700 hover:bg-emerald-800 text-white'}`}
       >
         {guardando ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Save className="w-3.5 h-3.5" aria-hidden="true" />}
         {guardando ? 'Guardando...' : guardados && !sucio ? 'Guardar valores de nuevo' : 'Guardar valores'}

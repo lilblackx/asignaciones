@@ -46,7 +46,7 @@ function Bloque({ titulo, icono: Icono, datos, ticket, copiado, onCopiar, classN
   if (datos.length === 0) return null;
   return (
     <section className={`rounded-campo border p-3 ${tono} ${className}`} aria-label={titulo}>
-      <h3 className="flex items-center gap-2 text-xs font-black text-zinc-700 dark:text-zinc-200 mb-0.5">
+      <h3 className="flex items-center gap-2 text-xs font-black text-foreground mb-0.5">
         <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> {titulo}
       </h3>
       <div className="divide-y divide-zinc-200/70 dark:divide-zinc-800">
@@ -107,7 +107,7 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
 
       {ticket.plantillaOriginal && (
         <details className="group rounded-campo border border-border bg-sunken">
-          <summary className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-300 cursor-pointer select-none">
+          <summary className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground cursor-pointer select-none">
             <FileText className="w-4 h-4 shrink-0" aria-hidden="true" /> Ver plantilla completa de la promotora
           </summary>
           <div className="px-3 pb-3 space-y-2">
@@ -116,7 +116,7 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
               copiado={copiado === 'plantilla'}
               onClick={() => copiar('plantilla', ticket.plantillaOriginal, 'Plantilla copiada.')}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-campo text-xs font-bold"
-              tono="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+              tono="bg-accent text-foreground hover:bg-accent"
               iconoClase="w-3.5 h-3.5"
             >
               {copiado === 'plantilla' ? 'Copiada' : 'Copiar plantilla'}

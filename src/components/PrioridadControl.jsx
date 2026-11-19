@@ -17,7 +17,7 @@ export function BotonPrioridad({ activa, codigo, onClick, compacto = false }) {
       <span className={`inline-flex ${compacto ? 'p-0.5' : 'p-1'} rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-red-500 ${
         activa
           ? 'bg-red-600 text-white group-hover:bg-red-500'
-          : 'bg-zinc-200 dark:bg-zinc-800 text-muted-foreground group-hover:bg-red-100 dark:group-hover:bg-red-900/40 group-hover:text-red-600 dark:group-hover:text-red-400'
+          : 'bg-accent text-muted-foreground group-hover:bg-red-100 dark:group-hover:bg-red-900/40 group-hover:text-red-600 dark:group-hover:text-red-400'
       }`}>
         <Flag className={`${compacto ? 'w-3 h-3' : 'w-3.5 h-3.5'} ${activa ? 'fill-current' : ''}`} aria-hidden="true" />
       </span>

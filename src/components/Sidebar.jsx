@@ -107,7 +107,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
           {grupos.map((g) => (
             <section key={g.titulo} aria-label={g.titulo}>
               <h2 className={`px-3 pt-3 pb-1 text-etiqueta font-bold text-muted-foreground ${colapsado ? 'lg:hidden' : ''}`}>{g.titulo}</h2>
-              {colapsado && <div className="hidden lg:block h-px bg-zinc-300 dark:bg-zinc-800 mx-2 my-3" aria-hidden="true" />}
+              {colapsado && <div className="hidden lg:block h-px bg-accent mx-2 my-3" aria-hidden="true" />}
               <ul className="flex flex-col gap-0.5">
                 {g.items.map(({ id, Icono, nombre, alertas, accion }) => {
                   const actual = id === activo;

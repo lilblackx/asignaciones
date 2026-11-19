@@ -114,8 +114,8 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
       {mensaje?.tipo === 'vacio' && <p role="status" className="text-etiqueta font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'error' && <p role="alert" className="text-etiqueta font-bold text-red-700 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'opciones' && (
-        <div role="group" aria-label="Varias cajas coinciden, elige una" className="mt-1 rounded-campo border border-zinc-200 dark:border-zinc-700 bg-sunken p-2">
-          <p className="flex items-center gap-1.5 text-etiqueta font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+        <div role="group" aria-label="Varias cajas coinciden, elige una" className="mt-1 rounded-campo border border-border bg-sunken p-2">
+          <p className="flex items-center gap-1.5 text-etiqueta font-bold text-foreground mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
             {mensaje.opciones.length} cajas coinciden. Elige cuál es:
           </p>
@@ -125,9 +125,9 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
                 key={`${p.nombre}-${p.lat}-${p.lng}`}
                 type="button"
                 onClick={() => { aplicar(p); setEstado({ tipo: 'listo', codigo: consulta, nombre: p.nombre }); }}
-                className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-card"
+                className="w-full text-left rounded-card border border-border bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-card"
               >
-                <span className="block text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{p.nombre}</span>
+                <span className="block text-xs font-bold text-foreground truncate">{p.nombre}</span>
                 <span className="block mt-0.5 text-etiqueta font-medium text-muted-foreground">{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</span>
               </button>
             ))}

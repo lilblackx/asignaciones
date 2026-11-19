@@ -42,14 +42,14 @@ export default function FotosDeOrden({ ticket }) {
           const url = urls[f.ruta];
           if (url === false) {
             return (
-              <div key={f.ruta} className="aspect-square rounded-campo border border-zinc-300 dark:border-zinc-700 bg-secondary flex flex-col items-center justify-center gap-1 text-center p-2">
+              <div key={f.ruta} className="aspect-square rounded-campo border border-border bg-secondary flex flex-col items-center justify-center gap-1 text-center p-2">
                 <ImageOff className="w-5 h-5 text-zinc-500" aria-hidden="true" />
                 <span className="text-etiqueta font-bold text-muted-foreground">Foto vencida</span>
               </div>
             );
           }
           return (
-            <button key={f.ruta} type="button" disabled={!url} onClick={() => setAbierta(disponibles.findIndex((d) => d.ruta === f.ruta))} aria-label={`Ver la foto ${i + 1} en grande`} className="block aspect-square rounded-campo overflow-hidden border border-zinc-300 dark:border-zinc-700 bg-secondary cursor-zoom-in">
+            <button key={f.ruta} type="button" disabled={!url} onClick={() => setAbierta(disponibles.findIndex((d) => d.ruta === f.ruta))} aria-label={`Ver la foto ${i + 1} en grande`} className="block aspect-square rounded-campo overflow-hidden border border-border bg-secondary cursor-zoom-in">
               {url ? <img src={url} alt={`Foto ${i + 1} del trabajo`} loading="lazy" draggable={false} className="w-full h-full object-cover" /> : <div className="w-full h-full animate-pulse" />}
             </button>
           );

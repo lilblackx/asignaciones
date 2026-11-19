@@ -49,8 +49,8 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
         {cifrasPagosClientes(visibles).map(({ etiqueta, valor, detalle }) => (
           <div key={etiqueta} className={`${TARJETA} p-3 min-w-0`}>
             <p className="text-xl sm:text-2xl font-black tabular-nums leading-none break-words text-foreground">{valor}</p>
-            <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
-            {detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
+            <p className="mt-1 text-xs font-bold text-foreground">{etiqueta}</p>
+            {detalle && <p className="text-xs text-muted-foreground break-words">{detalle}</p>}
           </div>
         ))}
       </section>
@@ -59,10 +59,10 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
       <p className={TEXTO_SUAVE}>Lo que el cliente pagó por cada instalación y cada cambio de equipo, tal como lo registró el técnico.</p>
 
       {porForma.length > 0 && (
-        <ul aria-label="Por forma de pago" className={`${TARJETA} px-4 divide-y divide-zinc-200 dark:divide-zinc-800`}>
+        <ul aria-label="Por forma de pago" className={`${TARJETA} px-4 divide-y divide-border`}>
           {porForma.map((f) => (
             <li key={f.forma} className="py-2.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <span className="font-bold text-sm">{f.forma} <span className="font-normal text-zinc-600 dark:text-zinc-300">· {f.cantidad} {f.cantidad === 1 ? 'pago' : 'pagos'}</span></span>
+              <span className="font-bold text-sm">{f.forma} <span className="font-normal text-muted-foreground">· {f.cantidad} {f.cantidad === 1 ? 'pago' : 'pagos'}</span></span>
               <span className="text-sm font-bold tabular-nums">{[f.USD > 0 && monto(f.USD, 'USD'), f.BS > 0 && monto(f.BS, 'BS')].filter(Boolean).join(' · ')}</span>
             </li>
           ))}
@@ -97,7 +97,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-black text-sm">{p.codigo || 'S/C'} <span className="font-bold">· {p.nombre}</span></p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300">{tipoPagoFinanzas(p)} · {legible(p.tecnico)} · {fechaHora(p.pago?.pagadoEn || p.creadoEn)}</p>
+                    <p className="text-xs text-muted-foreground">{tipoPagoFinanzas(p)} · {legible(p.tecnico)} · {fechaHora(p.pago?.pagadoEn || p.creadoEn)}</p>
                   </div>
                   {estadoChip()}
                 </div>
@@ -112,12 +112,12 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
           {/* Escritorio: tabla. */}
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-100 dark:bg-zinc-950 text-etiqueta text-muted-foreground">
+              <thead className="bg-secondary text-etiqueta text-muted-foreground">
                 <tr>{['Pagado el', 'Código', 'Cliente', 'Técnico', 'Tipo', 'Pago', 'Titular y cuenta', 'Estado', ''].map((c, i) => <th key={`${c}${i}`} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}</tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-border">
                 {visibles.map((p) => (
-                  <tr key={p.id} className="align-top hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                  <tr key={p.id} className="align-top hover:bg-secondary">
                     <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(p.pago?.pagadoEn || p.creadoEn)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-bold">{p.codigo || 'S/C'}</td>
                     <td className="px-3 py-2.5 min-w-[8rem]">{p.nombre}</td>

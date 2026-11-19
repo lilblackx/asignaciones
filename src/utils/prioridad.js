@@ -11,9 +11,9 @@ export const puedeCambiarPrioridad = (t) => t?.estado === 'PENDIENTE';
 // Las prioritarias primero; entre ellas y entre las demás se conserva el orden que traían.
 export const prioritariasPrimero = (lista) => [...lista.filter(esPrioritaria), ...lista.filter((t) => !esPrioritaria(t))];
 
-// Texto del aviso al técnico ("La orden AS184 — Ana Pérez es PRIORIDAD ALTA...").
+// Texto del aviso al técnico ("La orden AS184 · Ana Pérez es de prioridad alta...").
 export const textoAvisoPrioridad = (t) =>
-  `La orden ${t.codigo || 'S/C'}${t.nombre ? ` - ${t.nombre}` : ''} es PRIORIDAD ALTA. Atiéndela primero.`;
+  `La orden ${t.codigo || 'S/C'}${t.nombre ? ` · ${t.nombre}` : ''} es de prioridad alta. Atiéndela primero.`;
 
 // --- Detectar la prioridad que llegó mientras se miraba (o con la app cerrada) ---
 // id -> 1 si la orden tenía prioridad marcada, '' si no: el punto de partida para notar el cambio.

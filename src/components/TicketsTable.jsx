@@ -121,13 +121,13 @@ export default function TicketsTable({
             return [
               nuevoDia && (
                 <tr key={`dia-${ticket._clave || ticket.id}`} className="border-b border-border">
-                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-etiqueta font-black ${dia.prioridad ? 'bg-red-600' : dia.cerradas ? 'bg-zinc-700 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-950'} ${dia.prioridad || dia.cerradas ? 'text-white' : dia.atrasado ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground'}`}>
+                  <td colSpan={COLUMNAS} style={{ top: ALTO_ENCABEZADO_PAGINA + ALTO_TITULOS }} className={`sticky z-[4] px-3 py-1.5 text-etiqueta font-black ${dia.prioridad ? 'bg-red-600' : dia.cerradas ? 'bg-zinc-700 dark:bg-zinc-800' : 'bg-accent dark:bg-secondary'} ${dia.prioridad || dia.cerradas ? 'text-white' : dia.atrasado ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground'}`}>
                     {dia.prioridad && <Flag className="inline w-3 h-3 mr-1 -mt-0.5 fill-current" aria-hidden="true" />}{dia.texto}
                   </td>
                 </tr>
               ),
-              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border ${devolucionAbierta(ticket) || consultaAbierta(ticket) || infraAbierta(ticket) ? 'border-b-transparent' : ''} hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
-                <td className={`px-3 py-3 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
+              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border ${devolucionAbierta(ticket) || consultaAbierta(ticket) || infraAbierta(ticket) ? 'border-b-transparent' : ''} hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-secondary' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
+                <td className={`px-3 py-3 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-foreground whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex items-center gap-1.5">
                       {canEditTickets && puedeCambiarPrioridad(ticket) && (

@@ -136,7 +136,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       {/* Con el historial a la vista la pantalla es una columna de alto fijo: la lista del historial es la que se desplaza, con la búsqueda y las pestañas siempre arriba. */}
-      <div className={`${verHistorial ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-fondo text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200`}>
+      <div className={`${verHistorial ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-fondo text-foreground flex flex-col font-sans transition-colors duration-200`}>
         <Toast toastMsg={toastMsg} onClose={() => setToastMsg(null)} />
         <EncabezadoSimple onAbrirMenu={onAbrirMenu} titulo="Infraestructura" icono={Network} nombre={currentUserName || currentUser} rol={etiquetaRol(role)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} handleLogout={handleLogout} />
 
@@ -221,7 +221,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                             <p className="text-xs text-muted-foreground">{dato(f.codigo)} · {fechaHora(f.fecha)}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 rounded-campo bg-zinc-100 dark:bg-zinc-950 p-2">
+                        <div className="grid grid-cols-2 gap-2 rounded-campo bg-secondary p-2">
                           <div className="min-w-0"><p className={ETIQUETA}>NAP</p><p className="text-sm font-black break-words">{dato(f.nap)}</p></div>
                           <div className="min-w-0"><p className={ETIQUETA}>Puerto</p><p className="text-sm font-black">{dato(f.puerto)}</p></div>
                         </div>
@@ -236,14 +236,14 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   {/* Escritorio: tabla. */}
                   <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-etiqueta text-muted-foreground">
+                      <thead className="bg-secondary text-etiqueta text-muted-foreground">
                         <tr>
                           {['Fecha', 'Código', 'Cliente', 'Dirección', 'Técnico', 'NAP', 'Puerto', 'Puertos libres', 'Plantilla', 'Anotada'].map((c) => <th key={c} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                      <tbody className="divide-y divide-border">
                         {filas.map((f) => (
-                          <tr key={f.id} className={`align-top hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-opacity duration-500 ${marcas[f.id] ? 'opacity-60' : ''}${saliendo[f.id] === 'sale' ? ' fila-saliendo' : ''}`}>
+                          <tr key={f.id} className={`align-top hover:bg-secondary transition-opacity duration-500 ${marcas[f.id] ? 'opacity-60' : ''}${saliendo[f.id] === 'sale' ? ' fila-saliendo' : ''}`}>
                             <td className="px-3 py-2.5 min-w-[6.5rem]">{fechaHora(f.fecha)}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap font-bold">{dato(f.codigo)}</td>
                             <td className="px-3 py-2.5 min-w-[8rem]">{dato(f.cliente)}</td>

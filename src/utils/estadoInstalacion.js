@@ -7,6 +7,7 @@ import { claveNombre } from './promotora.js';
 import { motivoCancelacion } from './cancelacion.js';
 import { fechaDeOrden } from './fechaOrden.js';
 import { generarMensajeWhatsAppInstalacion, promotoraDeOrden } from './whatsapp.js';
+import { legible } from './nombreTecnico.js';
 
 export const TIPO_INSTALACION = 'INSTALACIÓN';
 export const TIPO_AVERIA = 'AVERÍA';
@@ -73,9 +74,9 @@ export function estadoParaPromotora(t, ahora = Date.now()) {
       // Sin técnico pero con fecha futura: no es que falte asignarla, está agendada para ese día.
       if (!t.tecnico) return categoriaProgramada(t.fechaProgramada, new Date(ahora)) === 'futura' ? hecho('PROGRAMADA', fechaCorta(t.fechaProgramada)) : hecho('SIN_TECNICO');
       const viaje = estadoViaje(t, ahora);
-      if (viaje === ESTADO_EN_SITIO) return hecho('EN_SITIO', `${t.tecnico} · llegó ${tiempoTranscurrido(t.enCamino.llegoEn, ahora)}`);
-      if (viaje) return hecho('EN_CAMINO', `${t.tecnico} · salió ${tiempoTranscurrido(t.enCamino.desde, ahora)}`);
-      if (categoriaProgramada(t.fechaProgramada, new Date(ahora)) === 'futura') return hecho('PROGRAMADA', `${fechaCorta(t.fechaProgramada)} · ${t.tecnico}`);
+      if (viaje === ESTADO_EN_SITIO) return hecho('EN_SITIO', `${legible(t.tecnico)} · llegó ${tiempoTranscurrido(t.enCamino.llegoEn, ahora)}`);
+      if (viaje) return hecho('EN_CAMINO', `${legible(t.tecnico)} · salió ${tiempoTranscurrido(t.enCamino.desde, ahora)}`);
+      if (categoriaProgramada(t.fechaProgramada, new Date(ahora)) === 'futura') return hecho('PROGRAMADA', `${fechaCorta(t.fechaProgramada)} · ${legible(t.tecnico)}`);
       return hecho('ASIGNADA', t.tecnico);
     }
     default: return null;
