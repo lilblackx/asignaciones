@@ -11,7 +11,7 @@ export const esNavidad = (ahora = Date.now()) => {
   return dia >= NAVIDAD_DESDE && dia <= NAVIDAD_HASTA;
 };
 
-const NORMAL = { menu: '/logo-menu.png', menuAncho: 93, menuAlto: 44, menuClase: 'h-11 w-auto', login192: '/icon-192x192.png', login512: '/icon-512x512.png', login512Ancho: 512, login512Alto: 512, login512Difuminado: true, loginLuces: false };
+const NORMAL = { menu: '/logo-menu.png', menuAncho: 93, menuAlto: 44, menuClase: 'h-11 w-auto', login192: '/icon-192x192.png', login512: '/login-normal.webp', login512Ancho: 794, login512Alto: 460, login512Difuminado: false, login512Transparente: true, loginLuces: false };
 const NAVIDAD = { menu: '/navidad/logo-menu.png', menuAncho: 70, menuAlto: 48, menuClase: 'h-12 w-auto', login192: '/navidad/login-192.png', login512: '/navidad/login-transparente.webp', login512Ancho: 1979, login512Alto: 1362, login512Difuminado: false, login512Transparente: true, loginLuces: true };
 
 // `loginLuces`: los puntos de luz del panel del login (solo Navidad: desaparecen solos con la fecha, igual que el logo). `login512Transparente`: el logo de Navidad del login es un PNG sin fondo (se apoya directo en el panel negro, con un brillo rojo suave detrás). `login512Difuminado`: el ícono de siempre lleva una textura de ondas y se funde con el negro del panel con un degradado en los bordes; el de Navidad ya viene sobre negro puro, a 1024 px (nítido en pantallas de alta densidad), y sin degradado para no apagar el árbol.

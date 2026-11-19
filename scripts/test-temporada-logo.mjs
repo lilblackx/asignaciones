@@ -24,8 +24,8 @@ check('la hora de Caracas manda, no la del dispositivo: la noche del 1 de enero 
 const navidad = logosDeTemporada(caracas('2026-12-20T10:00:00'));
 const normal = logosDeTemporada(caracas('2027-02-01T10:00:00'));
 check('en Navidad el login y el menú usan los archivos de /navidad', [navidad.menu, navidad.login192, navidad.login512], ['/navidad/logo-menu.png', '/navidad/login-192.png', '/navidad/login-transparente.webp']);
-check('el de Navidad va a 1024 px y sin degradado en los bordes; el de siempre conserva su degradado', [navidad.login512Difuminado, logosDeTemporada(caracas('2027-02-01T10:00:00')).login512Difuminado], [false, true]);
-check('fuera de Navidad usan los de siempre', [normal.menu, normal.login192, normal.login512], ['/logo-menu.png', '/icon-192x192.png', '/icon-512x512.png']);
+check('los dos logos del login van sin fondo y sin degradado en los bordes', [navidad.login512Difuminado, logosDeTemporada(caracas('2027-02-01T10:00:00')).login512Difuminado], [false, false]);
+check('fuera de Navidad usan los de siempre', [normal.menu, normal.login192, normal.login512], ['/logo-menu.png', '/icon-192x192.png', '/login-normal.webp']);
 check('el logo del login se pide con prioridad alta (WebP de 548 KB)', leer('src/components/LoginScreen.jsx').includes('fetchPriority="high"'), true);
 check('la elección sigue a la fecha aunque se pida varias veces seguidas (el cálculo se guarda por hora)', [logosDeTemporada(caracas('2027-01-01T23:00:00')).menu, logosDeTemporada(caracas('2027-01-01T23:30:00')).menu, logosDeTemporada(caracas('2027-01-02T00:30:00')).menu], ['/navidad/logo-menu.png', '/navidad/logo-menu.png', '/logo-menu.png']);
 check('existen los archivos de Navidad', ['public/navidad/logo-menu.png', 'public/navidad/login-192.png', 'public/navidad/login-1024.png'].map(existsSync), [true, true, true]);
