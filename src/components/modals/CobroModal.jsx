@@ -84,7 +84,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="cobro-titulo" className="text-base font-black text-white">{cobro.codigo || 'S/C'}</h2>
-              <span className={`whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[cobro.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[cobro.estado] || cobro.estado}</span>
+              <span className={`whitespace-nowrap text-etiqueta leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[cobro.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[cobro.estado] || cobro.estado}</span>
             </div>
             <p className="text-xs font-bold text-muted-foreground truncate">{cobro.nombre}</p>
           </div>

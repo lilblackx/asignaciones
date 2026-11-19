@@ -12,7 +12,7 @@ const COMPILADA = fechaCorta(__APP_COMPILACION__);
 
 export default function PieVersion({ className = '', texto = '' }) {
   return (
-    <p title={DETALLE} className={`h-8 flex items-center justify-center gap-1.5 text-[11px] max-lg:text-xs font-medium text-muted-foreground select-none ${className}`}>
+    <p title={DETALLE} className={`h-8 flex items-center justify-center gap-1.5 text-etiqueta font-medium text-muted-foreground select-none ${className}`}>
       <span>{texto || 'Asignaciones'}</span>
       <span aria-hidden="true">·</span>
       <span>v{__APP_VERSION__}</span>

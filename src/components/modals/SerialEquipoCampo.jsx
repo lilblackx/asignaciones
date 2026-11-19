@@ -26,7 +26,7 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
             Tipo de equipo nuevo <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
           </label>
           <SelectMenu id="pf-tipo-equipo" ariaLabel="Tipo de equipo nuevo" value={tipoEquipo} onChange={onTipoEquipo} items={ITEMS_TIPO} />
-          {errorTipo && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errorTipo}</p>}
+          {errorTipo && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{errorTipo}</p>}
         </div>
       )}
       <div className="space-y-1">
@@ -52,8 +52,8 @@ export default function SerialEquipoCampo({ serial, onSerial, error, aviso = nul
       <BotonEscanearSerial onLeido={(leido) => { onSerial(leido.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase()); setTocado(true); }} />
       </div>
       {error || rojo
-        ? <p id="pf-serial-equipo-error" role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>
-        : verde && <p id="pf-serial-equipo-error" role="status" className="text-[11px] max-lg:text-xs text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacion.mensaje}</p>}
+        ? <p id="pf-serial-equipo-error" role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{error || evaluacion.mensaje}</p>
+        : verde && <p id="pf-serial-equipo-error" role="status" className="text-etiqueta text-emerald-700 dark:text-emerald-400 font-bold ml-1">{evaluacion.mensaje}</p>}
       {aviso}
       </div>
     </div>

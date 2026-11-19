@@ -341,7 +341,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               <span className="line-clamp-2">{ticket.direccion}</span>
             </div>
             {ticket.cedula && (
-              <div className="flex items-center gap-2 text-[11px] max-lg:text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-etiqueta text-muted-foreground">
                 <Tag className="w-3 h-3 text-muted-foreground shrink-0" />
                 <span>C.I: {formatCedula(ticket.cedula, ticket.tipoDocumento)}</span>
                 {ticket.telefono && <span className="ml-2">Telf: {ticket.telefono}</span>}
@@ -385,7 +385,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               }}
               items={TIPOS_VISITA_OBLIGATORIO}
             />
-            {tipoVisitaError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{tipoVisitaError}</p>}
+            {tipoVisitaError && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{tipoVisitaError}</p>}
           </div>
           )}
     </>
@@ -564,7 +564,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               aria-describedby="pf-potencia-hint"
               className={claseCampo('grande', potenciaParseada.error ? 'error' : 'normal')}
             />
-            <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${potenciaParseada.error ? 'text-red-700 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-muted-foreground font-normal'}`}>
+            <p id="pf-potencia-hint" role={potenciaParseada.error ? 'alert' : undefined} className={`text-etiqueta font-bold ml-1 ${potenciaParseada.error ? 'text-red-700 dark:text-red-400' : potenciaEval ? potenciaEval.clase : 'text-muted-foreground font-normal'}`}>
               {potenciaParseada.error || (potenciaEval ? potenciaEval.texto : 'Potencia recibida en la ONU. Si omites el signo se toma como negativa.')}
             </p>
             {ticket.cedula && <SenalSmartOlt ticketId={ticket.id} onCapturar={capturarSenal} />}
@@ -596,7 +596,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
               aria-invalid={!!obsError}
               className={`${claseArea('grande', obsError ? 'error' : 'normal')} resize-none`}
             />
-            {obsError && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{obsError}</p>}
+            {obsError && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{obsError}</p>}
           </div>
   );
   const bloqueAvisoPre = (

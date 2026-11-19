@@ -12,9 +12,9 @@ export default function ResumenCifras({ items, onElegir, elegida, variante = 'un
           const clases = `min-w-0 text-left p-4 bg-card rounded-card shadow-card border-2 ${elegido ? 'border-red-600' : 'border-transparent'}`;
           const contenido = (
             <>
-              <p className="text-xs font-semibold text-muted-foreground">{etiqueta}</p>
+              <p className="text-xs font-bold text-muted-foreground">{etiqueta}</p>
               <p className={`mt-1 text-3xl font-black tabular-nums leading-none break-words ${elegido ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>{valor}</p>
-              {detalle && <p className="mt-1.5 text-xs font-semibold text-muted-foreground break-words">{detalle}</p>}
+              {detalle && <p className="mt-1.5 text-xs font-bold text-muted-foreground break-words">{detalle}</p>}
             </>
           );
           return onElegir ? (
@@ -32,8 +32,8 @@ export default function ResumenCifras({ items, onElegir, elegida, variante = 'un
         const elegido = Boolean(onElegir) && elegida === clave;
         const contenido = (
           <>
-            <p className={`text-base sm:text-lg lg:text-xl font-extrabold tabular-nums leading-none break-words ${elegido ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>{valor}</p>
-            <p className={`mt-1 text-xs sm:text-xs font-semibold text-zinc-800 dark:text-zinc-100 ${elegido ? 'underline decoration-2 underline-offset-4 decoration-red-600' : ''}`}>{etiqueta}</p>
+            <p className={`text-base sm:text-lg lg:text-xl font-black tabular-nums leading-none break-words ${elegido ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>{valor}</p>
+            <p className={`mt-1 text-xs sm:text-xs font-bold text-zinc-800 dark:text-zinc-100 ${elegido ? 'underline decoration-2 underline-offset-4 decoration-red-600' : ''}`}>{etiqueta}</p>
             {detalle && <p className="text-xs sm:text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
           </>
         );

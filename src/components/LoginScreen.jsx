@@ -60,7 +60,7 @@ export default function LoginScreen({ isDarkMode, setIsDarkMode, loginData, setL
               className={`h-auto ${logos.login512Transparente ? 'w-[min(34vw,62vh,560px)]' : 'w-[min(36vw,52vh,520px)]'}`}
               style={logos.login512Difuminado ? { WebkitMaskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 62%, transparent 100%)' } : undefined}
             />
-            <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-tight text-white">Control de Asignaciones</h1>
+            <h1 className="mt-2 text-3xl font-black leading-tight tracking-tight text-white">Control de Asignaciones</h1>
             {/* La línea roja corta de la marca, bajo el título. */}
             <div className="mt-4 h-1.5 w-12 rounded-full bg-primary" aria-hidden="true" />
             <p className="mt-4 max-w-[30ch] text-sm text-zinc-400">Órdenes, técnicos y cobros en un solo lugar</p>

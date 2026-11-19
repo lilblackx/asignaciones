@@ -111,7 +111,7 @@ export default function TicketsMobileList({
               {/* El tipo de trabajo y la falla van bajo el código (antes, en una fila aparte con un ícono): la tarjeta pierde una fila entera. */}
               <div className="col-start-1 row-start-2 min-w-0 flex flex-col items-start gap-1 text-xs">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{oracion(ticket.tipoTrabajo || 'AVERÍA')}</span>
+                  <span className={`text-etiqueta font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{oracion(ticket.tipoTrabajo || 'AVERÍA')}</span>
                   <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
                   {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                 </div>
@@ -242,15 +242,15 @@ export default function TicketsMobileList({
               <div className="py-3 text-center text-xs text-muted-foreground font-medium bg-muted border-t border-border">Archivada por el cierre del día · solo consulta</div>
             ) : isTecnico ? (
               <div className="flex gap-2 px-5 py-4 border-t border-border">
-                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                <button onClick={() => onCopyWhatsApp(ticket)} disabled={sinPlantilla} aria-label={sinPlantilla ? 'Copiar plantilla de WhatsApp: no disponible, falta la plantilla de la promotora' : 'Copiar plantilla de WhatsApp'} title={sinPlantilla ? TEXTO_SIN_PLANTILLA : 'Copiar plantilla de WhatsApp'} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-green-800 dark:text-green-500 font-bold hover:bg-green-50 dark:hover:bg-green-900/20 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                   <ClipboardCopy className="w-4 h-4" /> {sinPlantilla ? 'Sin plantilla' : 'Plantilla'}
                 </button>
                 {ticket.estado === 'PENDIENTE' ? (
-                  <button onClick={() => onPreFinalizar(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-[13px] transition-colors">
+                  <button onClick={() => onPreFinalizar(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton flex items-center justify-center gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 hover:bg-amber-200 dark:hover:bg-amber-500/25 font-bold text-sm transition-colors">
                     <CheckCircle2 className="w-4 h-4" /> {conBorrador?.has(String(ticket.id)) ? 'Continuar borrador' : 'Pre-finalizar'}
                   </button>
                 ) : onRegistrarPago && pendienteDelTecnico(ticket) ? (
-                  <button onClick={() => onRegistrarPago(ticket.id)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton flex items-center justify-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 hover:bg-emerald-200 dark:hover:bg-emerald-500/25 font-bold text-[13px] transition-colors">
+                  <button onClick={() => onRegistrarPago(ticket.id)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton flex items-center justify-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 hover:bg-emerald-200 dark:hover:bg-emerald-500/25 font-bold text-sm transition-colors">
                     {pendienteDelTecnico(ticket) === PENDIENTE_PAGO ? <><Banknote className="w-4 h-4" aria-hidden="true" /> Registrar el pago</> : <><Camera className="w-4 h-4" aria-hidden="true" /> Subir detalles</>}
                   </button>
                 ) : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? (
@@ -258,14 +258,14 @@ export default function TicketsMobileList({
                     <Clock className="w-4 h-4" /> En espera
                   </div>
                 ) : onCorregirFotos && puedeCorregirDetalles(ticket) ? (
-                  <button onClick={() => onCorregirFotos(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1.5 text-foreground font-bold text-[13px] hover:bg-zinc-50 dark:hover:bg-zinc-700/40 transition-colors">
+                  <button onClick={() => onCorregirFotos(ticket)} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1.5 text-foreground font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700/40 transition-colors">
                     <Camera className="w-4 h-4" aria-hidden="true" /> Corregir fotos
                   </button>
                 ) : null}
                 {/* Escalar a infraestructura desde el técnico: desactivado por ahora (solo la oficina escala). Para reactivarlo, quitar este
                     comentario, pasar onEscalar también al técnico en App.jsx y volver a permitir la clave 'infraestructura' en las reglas.
                 {onEscalar && puedeEscalar(ticket) && (
-                  <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-orange-700 dark:text-orange-400 font-bold hover:bg-orange-50 dark:hover:bg-orange-900/20 text-[13px] transition-colors">
+                  <button onClick={() => onEscalar(ticket)} aria-label={`Escalar la orden ${ticket.codigo || ticket.id} a infraestructura`} className="flex-1 max-[374px]:flex-auto min-w-0 py-3 px-1 min-h-11 rounded-boton bg-secondary flex items-center justify-center gap-1 text-orange-700 dark:text-orange-400 font-bold hover:bg-orange-50 dark:hover:bg-orange-900/20 text-sm transition-colors">
                     <HardHat className="w-4 h-4" /> Escalar
                   </button>
                 )}

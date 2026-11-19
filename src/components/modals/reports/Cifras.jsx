@@ -7,9 +7,9 @@ const CAJA = 'bg-card border border-border rounded-card px-4 py-3 shadow-sm min-
 function Contenido({ etiqueta, valor, detalle }) {
   return (
     <>
-      <div className="text-[11px] max-lg:text-xs font-bold text-muted-foreground leading-tight">{etiqueta}</div>
+      <div className="text-etiqueta font-bold text-muted-foreground leading-tight">{etiqueta}</div>
       <div className="text-xl sm:text-2xl font-black text-foreground leading-tight mt-1 break-words"><NumeroContado valor={valor} /></div>
-      {detalle && <div className="text-[11px] max-lg:text-xs text-muted-foreground mt-0.5 leading-snug">{detalle}</div>}
+      {detalle && <div className="text-etiqueta text-muted-foreground mt-0.5 leading-snug">{detalle}</div>}
     </>
   );
 }

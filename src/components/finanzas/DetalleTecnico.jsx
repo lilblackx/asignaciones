@@ -24,7 +24,7 @@ function Monto({ usd, tasa, grande = false, className = '' }) {
   return (
     <span className={`text-right shrink-0 ${className}`}>
       <span className={`block font-bold tabular-nums whitespace-nowrap text-foreground ${grande ? 'text-base' : 'text-sm'}`}>{dolares(usd)}</span>
-      {tasa > 0 && <span className="block text-xs font-semibold tabular-nums whitespace-nowrap text-zinc-600 dark:text-zinc-300">{montoBs(usd, tasa)}</span>}
+      {tasa > 0 && <span className="block text-xs font-bold tabular-nums whitespace-nowrap text-zinc-600 dark:text-zinc-300">{montoBs(usd, tasa)}</span>}
     </span>
   );
 }
@@ -105,8 +105,8 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
 
       <div className="pb-1">
         <p className={ETIQUETA}>Total pendiente por pagar</p>
-        <p className="text-2xl font-extrabold tabular-nums text-foreground leading-tight">{dolares(neto)}</p>
-        {tasa > 0 && <p className="text-base font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
+        <p className="text-2xl font-black tabular-nums text-foreground leading-tight">{dolares(neto)}</p>
+        {tasa > 0 && <p className="text-base font-bold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
         {[['Adelanto', fila.adelantos], ['Pago por garantías', bonos], ['Pagos adicionales', extras], ['Descuento por garantías', fila.descuentosOrden], ['Descuentos', libres]].some(([, v]) => v > 0) && (
           <dl className="mt-3 max-w-sm rounded-campo bg-sunken px-3 py-2 text-sm divide-y divide-border">
             {[['Adelanto', fila.adelantos], ['Pago por garantías', bonos], ['Pagos adicionales', extras], ['Descuento por garantías', fila.descuentosOrden], ['Descuentos', libres]].filter(([, v]) => v > 0).map(([titulo, valor]) => (
@@ -162,7 +162,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
 
       {tienePorPagar(fila) ? (
         <Seccion titulo="Lo que se paga" nota={pendientes > 0 ? `${textoOrdenes(pendientes)}: ${textoGrupos(fila.cantidades)}` : 'Solo tiene pagos sumados: garantías de otro técnico o pagos adicionales.'}>
-          {pendientes > 0 && <div className="hidden lg:grid grid-cols-[1fr_4rem_6rem_7rem_9rem] gap-x-4 pb-2 border-b border-input text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+          {pendientes > 0 && <div className="hidden lg:grid grid-cols-[1fr_4rem_6rem_7rem_9rem] gap-x-4 pb-2 border-b border-input text-xs font-bold text-zinc-600 dark:text-zinc-300">
             <span>Concepto</span><span className="text-right">Cantidad</span><span className="text-right">Precio</span><span className="text-right">Subtotal $</span><span className="text-right">Subtotal Bs</span>
           </div>}
           <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -175,7 +175,7 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
                 <span className="hidden lg:block text-right text-sm font-bold tabular-nums text-foreground">{d.cantidad}</span>
                 <span className="hidden lg:block text-right text-sm tabular-nums text-foreground">{dolares(d.precio)}</span>
                 <span className="hidden lg:block text-right text-sm font-bold tabular-nums text-foreground">{dolares(d.subtotal)}</span>
-                <span className="hidden lg:block text-right text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{montoBs(d.subtotal, tasa) || '-'}</span>
+                <span className="hidden lg:block text-right text-sm font-bold tabular-nums text-zinc-700 dark:text-zinc-200">{montoBs(d.subtotal, tasa) || '-'}</span>
                 <Monto usd={d.subtotal} tasa={tasa} className="lg:hidden" />
               </li>
             ))}
@@ -185,19 +185,19 @@ export default function DetalleTecnico({ fila, tarifas, tasa, rango, etiqueta, p
             {bonos > 0 && (
               <div className="py-3 flex items-center justify-between gap-4">
                 <dt className="text-sm font-bold text-foreground">Pago por garantías de otro técnico</dt>
-                <dd className="text-right"><span className="block text-sm font-bold tabular-nums text-foreground whitespace-nowrap">+ {dolares(bonos)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">+ {montoBs(bonos, tasa)}</span>}</dd>
+                <dd className="text-right"><span className="block text-sm font-bold tabular-nums text-foreground whitespace-nowrap">+ {dolares(bonos)}</span>{tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">+ {montoBs(bonos, tasa)}</span>}</dd>
               </div>
             )}
             {extras > 0 && (
               <div className="py-3 flex items-center justify-between gap-4">
                 <dt className="min-w-0"><span className="block text-sm font-bold text-foreground">Pagos adicionales</span><span className={`block ${TEXTO_SUAVE} break-words`}>{(fila.partesAdicionales ?? []).map(textoAdicional).join(', ')}</span></dt>
-                <dd className="text-right shrink-0"><span className="block text-sm font-bold tabular-nums text-foreground whitespace-nowrap">+ {dolares(extras)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">+ {montoBs(extras, tasa)}</span>}</dd>
+                <dd className="text-right shrink-0"><span className="block text-sm font-bold tabular-nums text-foreground whitespace-nowrap">+ {dolares(extras)}</span>{tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">+ {montoBs(extras, tasa)}</span>}</dd>
               </div>
             )}
             {descuento > 0 && (
               <div className="py-3 flex items-center justify-between gap-4">
                 <dt className="text-sm font-bold text-foreground">{etiquetaDescuento}</dt>
-                <dd className="text-right"><span className="block text-sm font-bold tabular-nums text-emerald-800 dark:text-emerald-300 whitespace-nowrap">− {dolares(descuento)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">− {montoBs(descuento, tasa)}</span>}</dd>
+                <dd className="text-right"><span className="block text-sm font-bold tabular-nums text-emerald-800 dark:text-emerald-300 whitespace-nowrap">− {dolares(descuento)}</span>{tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">− {montoBs(descuento, tasa)}</span>}</dd>
               </div>
             )}
             <div className="py-3 flex items-center justify-between gap-4 bg-zinc-100 dark:bg-zinc-900 px-3 -mx-3 rounded-campo"><dt className="text-sm font-bold text-foreground">Total pendiente por pagar</dt><dd><Monto usd={neto} tasa={tasa} grande /></dd></div>

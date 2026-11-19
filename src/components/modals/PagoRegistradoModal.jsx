@@ -38,7 +38,7 @@ export default function PagoRegistradoModal({ pago, onClose }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="pago-titulo" className="text-base font-black text-white">{pago.codigo || 'S/C'}</h2>
-              <span className={`whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_PAGO_FINANZAS}`}>{ETIQUETA_PAGO_FINANZAS}</span>
+              <span className={`whitespace-nowrap text-etiqueta leading-tight font-black px-2 py-0.5 rounded ${CLASE_PAGO_FINANZAS}`}>{ETIQUETA_PAGO_FINANZAS}</span>
             </div>
             <p className="text-xs font-bold text-zinc-300 truncate">{pago.nombre}</p>
           </div>

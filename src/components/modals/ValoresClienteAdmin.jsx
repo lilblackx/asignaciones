@@ -27,7 +27,7 @@ function CampoValor({ id, etiqueta, valor, onChange, error, placeholder, obligat
         aria-describedby={`${id}-nota`}
         className={`${claseCampo('grande', error ? 'error' : 'normal')} font-mono`}
       />
-      <p id={`${id}-nota`} role={error ? 'alert' : undefined} className={`text-[11px] max-lg:text-xs font-bold ml-1 ${error ? 'text-red-700 dark:text-red-400' : calidad ? calidad.clase : 'text-muted-foreground font-normal'}`}>
+      <p id={`${id}-nota`} role={error ? 'alert' : undefined} className={`text-etiqueta font-bold ml-1 ${error ? 'text-red-700 dark:text-red-400' : calidad ? calidad.clase : 'text-muted-foreground font-normal'}`}>
         {error || (calidad ? calidad.texto : 'En dBm. Sin signo se toma como negativo.')}
       </p>
     </div>
@@ -51,7 +51,7 @@ export default function ValoresClienteAdmin({ ticket, obligatorio = true, tecnic
         <h3 className="flex items-center gap-2 font-black text-foreground">
           <Radio className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> Valores del cliente
         </h3>
-        <p className="ml-6 mt-1 text-[11px] max-lg:text-xs text-muted-foreground">
+        <p className="ml-6 mt-1 text-etiqueta text-muted-foreground">
           {tecnicoLosVe
             ? 'Los guardas tú y el técnico los ve junto con el cobro. Los que él capturó al pre-finalizar son solo informativos.'
             : 'Los guardas tú y quedan registrados en la orden; el técnico no los ve. Los que él capturó al pre-finalizar son solo informativos.'}

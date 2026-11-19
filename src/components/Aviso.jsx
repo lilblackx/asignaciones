@@ -16,7 +16,7 @@ export function CodigosAviso({ codigos, onElegir, maximo = 6, compact = false })
   if (!codigos || codigos.length === 0) return null;
   const visibles = codigos.slice(0, maximo);
   const resto = codigos.length - visibles.length;
-  const base = `inline-flex items-center justify-center rounded-boton px-2.5 font-black tabular-nums border ${compact ? 'min-h-6 text-[11px] max-lg:text-xs' : 'min-h-7 text-xs'} border-current/30 bg-white/60 dark:bg-black/20`;
+  const base = `inline-flex items-center justify-center rounded-boton px-2.5 font-black tabular-nums border ${compact ? 'min-h-6 text-etiqueta' : 'min-h-7 text-xs'} border-current/30 bg-white/60 dark:bg-black/20`;
   return (
     <ul className="flex flex-wrap gap-1.5 mt-2" aria-label="Órdenes de este aviso">
       {visibles.map((codigo) => (

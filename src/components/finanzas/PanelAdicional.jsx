@@ -59,7 +59,7 @@ export default function PanelAdicional({ tecnico, items = [], porPagar = 0, tasa
           <Colapsable>{vista && (
             <p className="rounded-campo border border-zinc-300 dark:border-zinc-700 px-3 py-2 flex items-baseline justify-between gap-3 text-sm">
               <span className="font-bold text-foreground">{vista.cantidad} × {dolares(vista.item.precio)}</span>
-              <span className="text-right"><span className="block font-bold tabular-nums text-foreground">{dolares(vista.monto)}</span>{tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(vista.monto, tasa))}</span>}</span>
+              <span className="text-right"><span className="block font-bold tabular-nums text-foreground">{dolares(vista.monto)}</span>{tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(vista.monto, tasa))}</span>}</span>
             </p>
           )}</Colapsable>
 

@@ -204,7 +204,7 @@ export default function SelectMenu({
             {items.map(it =>
               it.group ? (
                 <li key={it.group} role="presentation">
-                  <div className="px-3 pt-2 pb-1 mt-1 border-t border-border text-[11px] max-lg:text-xs font-bold text-muted-foreground">
+                  <div className="px-3 pt-2 pb-1 mt-1 border-t border-border text-etiqueta font-bold text-muted-foreground">
                     {it.group}
                   </div>
                   <ul role="group" aria-label={it.group}>

@@ -22,7 +22,7 @@ import { oracion } from '../../utils/oracion';
 
 const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
 const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
-const ETIQUETA = 'text-xs font-semibold text-muted-foreground ml-1';
+const ETIQUETA = 'text-xs font-bold text-muted-foreground ml-1';
 const AVISO = 'text-xs font-bold text-red-700 dark:text-red-400 ml-1';
 // El título de cada grupo de campos. Los grupos van separados por una línea fina; el primero no la lleva.
 function Seccion({ primera = false, children }) {

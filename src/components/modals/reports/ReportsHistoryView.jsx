@@ -52,12 +52,12 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                   <div>
                     <h4 className="font-black text-foreground flex items-center gap-1.5">
                       <Calendar className="w-4 h-4 text-muted-foreground" /> {rep.fechaCierre}
-                      {rep.tipoReporte === 'CANCELADOS' && <span className="ml-1 text-[11px] max-lg:text-xs bg-red-600 text-white px-2 py-0.5 rounded">Cancelados</span>}
-                      {(!rep.tipoReporte || rep.tipoReporte === 'CIERRE') && <span className="ml-1 text-[11px] max-lg:text-xs bg-blue-600 text-white px-2 py-0.5 rounded">Cierre</span>}
+                      {rep.tipoReporte === 'CANCELADOS' && <span className="ml-1 text-etiqueta bg-red-600 text-white px-2 py-0.5 rounded">Cancelados</span>}
+                      {(!rep.tipoReporte || rep.tipoReporte === 'CIERRE') && <span className="ml-1 text-etiqueta bg-blue-600 text-white px-2 py-0.5 rounded">Cierre</span>}
                     </h4>
-                    <span className="text-[11px] max-lg:text-xs text-muted-foreground font-bold">{rep.horaCierre} - OP: {rep.operador}</span>
+                    <span className="text-etiqueta text-muted-foreground font-bold">{rep.horaCierre} - OP: {rep.operador}</span>
                     {rep.canceladas !== undefined && (
-                      <span className="block mt-1 text-[11px] max-lg:text-xs font-bold">
+                      <span className="block mt-1 text-etiqueta font-bold">
                         <span className="text-emerald-600 dark:text-emerald-400">{rep.finalizadas} finalizadas</span>
                         <span className="text-muted-foreground"> · </span>
                         <span className="text-red-700 dark:text-red-400">{rep.canceladas} canceladas</span>

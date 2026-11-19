@@ -8,7 +8,7 @@ export function EtiquetaFalta({ texto, completo, className = '' }) {
   return (
     <span
       title={completo}
-      className={`inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs font-bold leading-tight pl-1.5 pr-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-300 ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap text-etiqueta font-bold leading-tight pl-1.5 pr-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-300 ${className}`}
     >
       <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
       <span aria-hidden="true">{texto}</span>

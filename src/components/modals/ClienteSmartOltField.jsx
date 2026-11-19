@@ -54,11 +54,11 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
   if (!cliente.visible || !estado || !['vacio', 'error', 'opciones'].includes(estado.tipo)) return null;
   return (
     <div className={wrapperClassName}>
-      {estado.tipo === 'vacio' && <p className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT.</p>}
-      {estado.tipo === 'error' && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{estado.mensaje} Llena los datos a mano.</p>}
+      {estado.tipo === 'vacio' && <p className="text-etiqueta font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró un cliente con esta cédula en SmartOLT.</p>}
+      {estado.tipo === 'error' && <p role="alert" className="text-etiqueta font-bold text-red-700 dark:text-red-400 ml-1">{estado.mensaje} Llena los datos a mano.</p>}
       {estado.tipo === 'opciones' && (
         <div role="group" aria-label="Varias ONU con esta cédula, elige una" className="mt-1 rounded-campo border border-zinc-200 dark:border-zinc-700 bg-sunken p-2">
-          <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+          <p className="flex items-center gap-1.5 text-etiqueta font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
             Esta cédula tiene {estado.opciones.length} servicios. Elige cuál es:
           </p>
@@ -72,7 +72,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
               >
                 <span className="flex items-center gap-2">
                   {onu.zona && (
-                    <span className="shrink-0 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded bg-secondary group-hover:bg-white dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                    <span className="shrink-0 text-etiqueta font-bold px-1.5 py-0.5 rounded bg-secondary group-hover:bg-white dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                       {onu.zona}
                     </span>
                   )}
@@ -81,7 +81,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
                   </span>
                 </span>
                 {onu.direccion && (
-                  <span className="block mt-0.5 text-[11px] max-lg:text-xs leading-snug font-medium text-muted-foreground">{onu.direccion}</span>
+                  <span className="block mt-0.5 text-etiqueta leading-snug font-medium text-muted-foreground">{onu.direccion}</span>
                 )}
               </button>
             ))}

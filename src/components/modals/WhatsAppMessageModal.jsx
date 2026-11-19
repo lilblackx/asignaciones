@@ -12,7 +12,7 @@ export default function WhatsAppMessageModal({ mensaje, onCopy, onClose }) {
             <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" aria-hidden="true" />
             <div>
               <h2 className="text-sm font-black text-white leading-tight">Orden creada</h2>
-              <p className="text-[11px] max-lg:text-xs font-medium text-green-400 leading-tight">Mensaje listo para el cliente</p>
+              <p className="text-etiqueta font-medium text-green-400 leading-tight">Mensaje listo para el cliente</p>
             </div>
           </div>
           <BotonCerrar onClick={onClose} />

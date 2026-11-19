@@ -36,8 +36,8 @@ export default function NapPuertoCampos({ nap, onNap, napError, puerto, onPuerto
         aria-invalid={!!puertoError}
         className={`col-start-2 row-start-2 min-w-0 ${claseCampo('grande', puertoError ? 'error' : 'normal')}`}
       />
-      {napError && <p role="alert" className="col-start-1 row-start-3 text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{napError}</p>}
-      {puertoError && <p role="alert" className="col-start-2 row-start-3 text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{puertoError}</p>}
+      {napError && <p role="alert" className="col-start-1 row-start-3 text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{napError}</p>}
+      {puertoError && <p role="alert" className="col-start-2 row-start-3 text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{puertoError}</p>}
     </div>
   );
 }

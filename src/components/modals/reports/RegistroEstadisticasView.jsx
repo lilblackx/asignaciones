@@ -32,7 +32,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
       {manual ? <VnTaView {...vnta} tecnico={tecnico} /> : (
       <>
       <Cifras items={hoja.cifras.map((c) => (c.id ? { ...c, detalle: c.detalle ? `${c.detalle} · ver detalle` : 'ver detalle', onClick: () => setDetalle({ tipo: 'CIFRA', id: c.id }) } : c))} />
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-1 mb-4">{hoja.nota}</p>
+      <p className="text-etiqueta text-muted-foreground -mt-1 mb-4">{hoja.nota}</p>
       {hoja.aviso && <Aviso nivel="atencion" compact className="mb-4">{hoja.aviso}</Aviso>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">

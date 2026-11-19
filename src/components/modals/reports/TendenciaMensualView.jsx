@@ -24,9 +24,9 @@ export default function TendenciaMensualView({ contadores, cargando, error, tick
       {error && <Aviso nivel="error" compact className="mb-4">No se pudieron cargar los totales. Intenta actualizar.</Aviso>}
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Meses a mostrar</span>
+        <span className="text-etiqueta font-bold text-muted-foreground">Meses a mostrar</span>
         <Segmentado grande ariaLabel="Meses a mostrar" opciones={VENTANAS_MESES.map((n) => ({ id: n, etiqueta: String(n) }))} valor={ventana} onCambiar={onVentana} />
-        <span className="text-[11px] max-lg:text-xs text-muted-foreground">{cargando ? 'Cargando...' : `Mes en curso: ${etiquetaMes(actual.mes)}`}</span>
+        <span className="text-etiqueta text-muted-foreground">{cargando ? 'Cargando...' : `Mes en curso: ${etiquetaMes(actual.mes)}`}</span>
       </div>
 
       <Cifras items={cifrasTendencia(filas)} />
@@ -49,7 +49,7 @@ export default function TendenciaMensualView({ contadores, cargando, error, tick
         series={[INSTALACIONES, AVERIAS_LOS]}
         meses={filas.map((f) => ({ mes: f.mes, etiqueta: f.etiqueta, enCurso: f.enCurso, valores: [f.instalaciones.canceladas, f.los.canceladas] }))}
       />
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground">Cuenta instalaciones y averías de tipo LOS (las demás averías no entran en estos totales). * Mes en curso: incluye lo de hoy que todavía no se cierra, pero está incompleto y no es comparable con un mes terminado.</p>
+      <p className="text-etiqueta text-muted-foreground">Cuenta instalaciones y averías de tipo LOS (las demás averías no entran en estos totales). * Mes en curso: incluye lo de hoy que todavía no se cierra, pero está incompleto y no es comparable con un mes terminado.</p>
     </div>
   );
 }

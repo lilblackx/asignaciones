@@ -138,7 +138,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                         <span aria-hidden="true" className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-black ${activo ? estiloTecnico(t.color) : 'bg-secondary text-muted-foreground'}`}>{(t.name || '?').trim().charAt(0).toUpperCase()}</span>
                         <div className="min-w-0 flex-1">
                           <p className="font-black text-foreground leading-tight truncate">{legible(t.name)}</p>
-                          <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                          <p className="mt-0.5 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
                             <span className={`w-2 h-2 rounded-full shrink-0 ${activo ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true" />
                             {activo ? 'Activo' : 'Inactivo'}
                           </p>
@@ -146,7 +146,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                         <Boton variante="peligro" tamano="compacto" icono={Trash2} onClick={() => onDelete(t.id)} disabled={deletingId === t.id} aria-label={`Eliminar técnico ${t.name}`} title="Eliminar técnico" className="w-9 !px-0 shrink-0" />
                       </div>
                       <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-                        <span id={`recibe-${t.id}`} className="text-sm font-semibold text-card-foreground">Recibe órdenes</span>
+                        <span id={`recibe-${t.id}`} className="text-sm font-bold text-card-foreground">Recibe órdenes</span>
                         <Interruptor
                           id={`recibe-switch-${t.id}`}
                           activo={activo}
@@ -157,7 +157,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       </div>
                       {verInventario && (
                         <div className="space-y-1 min-w-0 border-t border-border pt-3">
-                          <p className="text-xs font-semibold text-muted-foreground">Nombre en el inventario</p>
+                          <p className="text-xs font-bold text-muted-foreground">Nombre en el inventario</p>
                           <SelectMenu
                             id={`inv-${t.id}`}
                             ariaLabel={`Nombre en el inventario de ${t.name}`}
@@ -167,7 +167,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                             onChange={(v) => vincular(t, v)}
                             items={itemsInventario(opciones, elegido, noEstaEnLista, cargandoInv)}
                           />
-                          <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${elegido && !noEstaEnLista && !inactivoAlla ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+                          <span className={`inline-block text-etiqueta font-black px-1.5 py-0.5 rounded ${elegido && !noEstaEnLista && !inactivoAlla ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}`}>
                             {!elegido ? 'Sin elegir' : noEstaEnLista ? 'No está en el inventario' : inactivoAlla ? 'Inactivo en el inventario' : 'Elegido'}
                           </span>
                         </div>
@@ -196,7 +196,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                       const activo = tech ? tech.activo !== false : false;
                       return (
                         <li key={nombre} className="flex items-center gap-2 rounded-campo border border-border bg-sunken p-1.5">
-                          <span className="text-[11px] max-lg:text-xs font-black text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
+                          <span className="text-etiqueta font-black text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
                           <span className={`flex-1 min-w-0 truncate px-2 py-1 rounded-campo text-xs font-bold ${activo ? (estiloTecnico(tech?.color) || '') : 'bg-secondary text-muted-foreground'}`}>{legible(nombre)}</span>
                           <Boton variante="discreto" tamano="compacto" icono={ArrowUp} onClick={() => moverOrden(i, -1)} disabled={i === 0} aria-label={`Subir ${nombre}`} className="w-8 !px-0" />
                           <Boton variante="discreto" tamano="compacto" icono={ArrowDown} onClick={() => moverOrden(i, 1)} disabled={i === ordenLocal.length - 1} aria-label={`Bajar ${nombre}`} className="w-8 !px-0" />

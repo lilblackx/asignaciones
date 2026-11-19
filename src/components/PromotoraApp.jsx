@@ -43,10 +43,10 @@ const nombreMes = (m) => etiquetaMes(m).replace(/^./, (c) => c.toUpperCase());
 const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 // El número va en un recuadro al lado de la etiqueta, como las insignias del resto de la app ("SIN TÉCNICO 3").
 function Contador({ n, tono }) {
-  return <span className={`ml-1.5 rounded-md px-1.5 py-0.5 text-[11px] max-lg:text-xs font-bold leading-none tabular-nums ${tono}`}>{n}</span>;
+  return <span className={`ml-1.5 rounded-md px-1.5 py-0.5 text-etiqueta font-bold leading-none tabular-nums ${tono}`}>{n}</span>;
 }
 
-const ETIQUETA_FILTRO = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
+const ETIQUETA_FILTRO = 'text-etiqueta font-bold text-muted-foreground';
 const claveDePromotor = (o) => claveNombre(promotoraDeOrden(o)) || '-';
 
 // Pantalla de la PROMOTORA: todas las instalaciones y en qué van. Solo lectura; no ve averías, cobros ni datos técnicos.
@@ -283,7 +283,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
               {fecha === 'DIA' && calendarioAbierto && (
                 <Calendario valor={dia} max={fechaISO(ahora)} onElegir={(iso) => { setDia(iso); setCalendarioAbierto(false); }} onCerrar={() => setCalendarioAbierto(false)} />
               )}
-              {fecha === 'DIA' && <p className="text-[11px] max-lg:text-xs text-muted-foreground">Las órdenes cerradas se conservan {verTodasInstalaciones ? RETENCION_DIAS_HISTORIAL_VENTAS : RETENCION_DIAS_HISTORIAL} días; de un día anterior solo salen las que siguen abiertas.</p>}
+              {fecha === 'DIA' && <p className="text-etiqueta text-muted-foreground">Las órdenes cerradas se conservan {verTodasInstalaciones ? RETENCION_DIAS_HISTORIAL_VENTAS : RETENCION_DIAS_HISTORIAL} días; de un día anterior solo salen las que siguen abiertas.</p>}
 
               {verTodasInstalaciones && (
                 <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
@@ -335,11 +335,11 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
               <Boton variante="secundario" tamano="normal" type="button" onClick={cargarMasCerradas} disabled={cargandoMas}>
                 {cargandoMas && <Spinner />}{cargandoMas ? 'Cargando...' : 'Cargar más cerradas'}
               </Boton>
-              <p className="text-[11px] max-lg:text-xs text-muted-foreground text-center">Se muestran las cerradas más recientes; los números y filtros son de lo cargado.</p>
+              <p className="text-etiqueta text-muted-foreground text-center">Se muestran las cerradas más recientes; los números y filtros son de lo cargado.</p>
             </div>
           )}
 
-          <p className="text-[11px] max-lg:text-xs text-muted-foreground text-center pt-2">
+          <p className="text-etiqueta text-muted-foreground text-center pt-2">
             {verTodasInstalaciones ? <>Ves las instalaciones de todas las promotoras y las averías LOS. </> : promotoraNombres.length > 0 && <>Ves las instalaciones de: {promotoraNombres.join(', ')}. </>}
             Las terminadas o canceladas se muestran durante {verTodasInstalaciones ? RETENCION_DIAS_HISTORIAL_VENTAS : RETENCION_DIAS_HISTORIAL} días.
           </p>

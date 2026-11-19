@@ -153,7 +153,7 @@ export default function UbicacionView({ firebaseUser, technicians, tickets, usua
                 <li key={fila.id} className={`${TARJETA} p-3 ${enfoque.id === fila.id && conPunto ? 'border-red-500 dark:border-red-500' : ''}`}>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                     <p className="min-w-0 flex-1 text-sm font-black text-foreground truncate">{legible(fila.nombre)}</p>
-                    <span className={`whitespace-nowrap text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${clase}`}>{texto}</span>
+                    <span className={`whitespace-nowrap text-etiqueta font-black px-2 py-0.5 rounded ${clase}`}>{texto}</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {enLinea ? `Última lectura ${haceCuanto(fila.punto.en, ahora)}${fila.punto.precision ? ` · precisión de ${fila.punto.precision} m` : ''}` : EXPLICACION[fila.estado]}

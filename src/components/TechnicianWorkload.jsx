@@ -7,7 +7,7 @@ import { iniciales, legible } from '../utils/nombreTecnico';
 
 // Las píldoras de estado (sin técnico, en camino, en sitio, infraestructura): la misma forma y tamaño que las de los técnicos; solo cambia el tono suave. El número va en una cápsula, como en las de los técnicos.
 const PILDORA_ESTADO = 'inline-flex items-center gap-2 rounded-boton border px-3 py-1 max-lg:min-h-11 text-xs font-bold leading-none transition-colors cursor-pointer';
-const CONTADOR_ESTADO = 'rounded-full bg-white/60 dark:bg-black/20 px-2 py-0.5 text-[11px] max-lg:text-xs font-black leading-none';
+const CONTADOR_ESTADO = 'rounded-full bg-white/60 dark:bg-black/20 px-2 py-0.5 text-etiqueta font-black leading-none';
 
 // `rutaBoton`: el atajo a la Ruta del día (solo el técnico, y solo con la función encendida en Configuración); va al final de la misma fila, a la derecha.
 export default function TechnicianWorkload({ tickets, technicians, getTecnicoColor, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje, rutaBoton = null }) {
@@ -107,7 +107,7 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
                     {iniciales(name)}
                     <span className={`absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${activo ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-zinc-500'}`} />
                   </span>
-                  <span className={`min-w-0 flex-1 text-sm font-bold ${activo ? 'text-foreground' : 'text-muted-foreground'}`}>{legible(name)}{!activo && <span className="ml-1.5 text-xs font-semibold">inactivo</span>}</span>
+                  <span className={`min-w-0 flex-1 text-sm font-bold ${activo ? 'text-foreground' : 'text-muted-foreground'}`}>{legible(name)}{!activo && <span className="ml-1.5 text-xs font-bold">inactivo</span>}</span>
                   {count > 0 && <span className="rounded-full bg-secondary text-foreground px-2 py-0.5 text-xs font-black leading-none"><NumeroPulso valor={count} /></span>}
                   {canToggle ? (
                     <button
@@ -137,13 +137,13 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
         const pillClass = `inline-flex items-center gap-2 rounded-boton border bg-card pl-1 pr-3 py-1 text-xs font-bold ${activo ? 'border-input text-foreground' : 'border-dashed border-input text-muted-foreground'}`;
         const label = (
           <>
-            <span aria-hidden="true" className={`relative shrink-0 w-7 h-7 max-lg:w-8 max-lg:h-8 rounded-full border inline-flex items-center justify-center text-[11px] max-lg:text-xs font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
+            <span aria-hidden="true" className={`relative shrink-0 w-7 h-7 max-lg:w-8 max-lg:h-8 rounded-full border inline-flex items-center justify-center text-etiqueta font-black leading-none ${activo ? getTecnicoColor(name) : 'border-dashed border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
               {iniciales(name)}
               <span className={`absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${activo ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-zinc-500'}`} />
             </span>
             <span className="whitespace-nowrap">{legible(name)}</span>
-            {!activo && <span className="text-[11px] max-lg:text-xs font-semibold">inactivo</span>}
-            {count > 0 && <span className="rounded-full bg-secondary text-foreground px-2 py-0.5 text-[11px] max-lg:text-xs font-black leading-none"><NumeroPulso valor={count} /></span>}
+            {!activo && <span className="text-etiqueta font-bold">inactivo</span>}
+            {count > 0 && <span className="rounded-full bg-secondary text-foreground px-2 py-0.5 text-etiqueta font-black leading-none"><NumeroPulso valor={count} /></span>}
           </>
         );
         return canToggle ? (

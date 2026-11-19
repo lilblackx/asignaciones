@@ -28,7 +28,7 @@ export default function ListaTecnicos({ filas, elegido, tasa, onElegir }) {
               </span>
               <span className="text-right shrink-0">
                 <span className="block text-base font-bold tabular-nums text-foreground whitespace-nowrap">{dolares(neto)}</span>
-                {tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">{bolivares(aBs(neto, tasa))}</span>}
+                {tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300 whitespace-nowrap">{bolivares(aBs(neto, tasa))}</span>}
               </span>
             </button>
           </li>

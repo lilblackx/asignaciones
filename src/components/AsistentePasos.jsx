@@ -97,7 +97,7 @@ export function BotonesPasos({ onAnterior = null, textoAnterior = 'Atrás', sigu
           )}
         </div>
       )}
-      {nota && <p className="text-[11px] max-lg:text-xs text-muted-foreground text-center leading-snug">{nota}</p>}
+      {nota && <p className="text-etiqueta text-muted-foreground text-center leading-snug">{nota}</p>}
     </div>
   );
 }

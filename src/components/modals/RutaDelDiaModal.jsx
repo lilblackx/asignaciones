@@ -73,7 +73,7 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
                   <li key={p.id} className="flex items-center gap-2 rounded-campo border border-zinc-300 dark:border-zinc-700 p-2">
                     <span className="shrink-0 w-7 h-7 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-black flex items-center justify-center tabular-nums">{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm font-black text-foreground"><span>{p.codigo}</span>{p.tipoTrabajo && <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${TIPO[p.tipoTrabajo] || 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200'}`}>{oracion(p.tipoTrabajo)}</span>}</p>
+                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm font-black text-foreground"><span>{p.codigo}</span>{p.tipoTrabajo && <span className={`text-etiqueta font-black px-1.5 py-0.5 rounded ${TIPO[p.tipoTrabajo] || 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200'}`}>{oracion(p.tipoTrabajo)}</span>}</p>
                       {p.nombre && <p className="text-xs font-bold text-card-foreground truncate">{p.nombre}</p>}
                       <p className="text-xs text-muted-foreground">
                         {p.prioridad && <><span className="inline-flex items-center gap-1 font-black text-red-700 dark:text-red-400"><Flag className="w-3 h-3" aria-hidden="true" />Prioridad alta</span><span aria-hidden="true"> · </span></>}

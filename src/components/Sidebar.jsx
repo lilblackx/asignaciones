@@ -106,7 +106,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
         <nav ref={listaRef} onScroll={medirLista} className="flex-1 min-h-0 px-2 py-2 overflow-y-auto overflow-x-hidden lista-menu">
           {grupos.map((g) => (
             <section key={g.titulo} aria-label={g.titulo}>
-              <h2 className={`px-3 pt-3 pb-1 text-[11px] max-lg:text-xs font-bold text-muted-foreground ${colapsado ? 'lg:hidden' : ''}`}>{g.titulo}</h2>
+              <h2 className={`px-3 pt-3 pb-1 text-etiqueta font-bold text-muted-foreground ${colapsado ? 'lg:hidden' : ''}`}>{g.titulo}</h2>
               {colapsado && <div className="hidden lg:block h-px bg-zinc-300 dark:bg-zinc-800 mx-2 my-3" aria-hidden="true" />}
               <ul className="flex flex-col gap-0.5">
                 {g.items.map(({ id, Icono, nombre, alertas, accion }) => {
@@ -118,12 +118,12 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
                       onClick={abrir(accion)}
                       title={nombre}
                       aria-current={actual ? 'page' : undefined}
-                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-1.5 max-lg:py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-200 font-black' : 'text-foreground hover:bg-secondary'}`}
+                      className={`relative w-full flex items-center gap-3 rounded-boton px-3 py-1.5 max-lg:py-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${colapsado ? 'lg:justify-center lg:px-0' : ''} ${actual ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-200 font-black' : 'text-foreground hover:bg-secondary'}`}
                     >
                       <Icono className="w-5 h-5 shrink-0" aria-hidden="true" />
                       <span className={`truncate ${colapsado ? 'lg:hidden' : ''}`}>{nombre}</span>
                       {alertas > 0 && (
-                        <span className={`min-w-[1.25rem] text-center rounded-full px-1.5 py-0.5 text-[11px] max-lg:text-xs font-black ${actual ? 'bg-white text-red-600' : 'bg-red-600 text-white'} ${colapsado ? 'lg:absolute lg:top-0.5 lg:right-2 lg:px-1' : 'ml-auto'}`}>{alertas}</span>
+                        <span className={`min-w-[1.25rem] text-center rounded-full px-1.5 py-0.5 text-etiqueta font-black ${actual ? 'bg-white text-red-600' : 'bg-red-600 text-white'} ${colapsado ? 'lg:absolute lg:top-0.5 lg:right-2 lg:px-1' : 'ml-auto'}`}>{alertas}</span>
                       )}
                     </button>
                   </li>
@@ -140,13 +140,13 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
         <div className="shrink-0 p-2">
           <div className={`rounded-campo bg-secondary p-1.5 flex items-center gap-2 ${colapsado ? 'lg:flex-col lg:p-1.5' : ''}`}>
             {/* Las iniciales en un círculo (como los técnicos de la lista) con el punto verde de "conectado" en la esquina; el nombre y el rol al lado. */}
-            <span aria-hidden="true" className="relative shrink-0 w-8 h-8 rounded-full bg-foreground text-background inline-flex items-center justify-center text-[11px] font-black leading-none">
+            <span aria-hidden="true" className="relative shrink-0 w-8 h-8 rounded-full bg-foreground text-background inline-flex items-center justify-center text-etiqueta font-black leading-none">
               {iniciales(nombre)}
               <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400 border-2 border-secondary" />
             </span>
             <div className={`min-w-0 flex-1 leading-tight ${colapsado ? 'lg:hidden' : ''}`} title={`${nombre} · conectado`}>
               <p className="truncate text-sm font-black text-foreground">{nombre}</p>
-              <p className="truncate text-[11px] max-lg:text-xs font-bold text-muted-foreground">{rol}</p>
+              <p className="truncate text-etiqueta font-bold text-muted-foreground">{rol}</p>
             </div>
             <button type="button" onClick={onCambiarTema} aria-label="Cambiar tema" title="Cambiar tema" className={BOTON_PIE}>
               {isDarkMode ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}

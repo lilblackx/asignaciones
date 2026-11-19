@@ -15,7 +15,7 @@ function ColaDeEspera({ titulo, nota, cola, vacio }) {
   return (
     <section className="bg-card border border-border rounded-card p-4 sm:p-5 shadow-sm mb-4">
       <h3 className="text-sm font-bold text-foreground">{titulo} <span className="text-muted-foreground font-black">({cola.total})</span></h3>
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground mt-1">{nota}</p>
+      <p className="text-etiqueta text-muted-foreground mt-1">{nota}</p>
       {cola.lista.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-6">{vacio}</p>
       ) : (
@@ -38,7 +38,7 @@ function ColaDeEspera({ titulo, nota, cola, vacio }) {
 const Encabezado = ({ titulo, detalle }) => (
   <div className="mt-6 mb-3 first:mt-0">
     <h2 className="text-xs font-black text-zinc-700 dark:text-zinc-200">{titulo}</h2>
-    <p className="text-[11px] max-lg:text-xs text-muted-foreground">{detalle}</p>
+    <p className="text-etiqueta text-muted-foreground">{detalle}</p>
   </div>
 );
 
@@ -55,7 +55,7 @@ export default function EsperasCicloView({ ordenes, rango, tecnico, getTecnicoCo
         { etiqueta: 'Órdenes finalizadas', valor: esperas.finalizadas, detalle: 'en el periodo' },
         { etiqueta: 'Con horas registradas', valor: esperas.conHoras, detalle: 'miden al menos un tramo' },
       ]} />
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-1 mb-2">{NOTA_HORAS}</p>
+      <p className="text-etiqueta text-muted-foreground -mt-1 mb-2">{NOTA_HORAS}</p>
 
       <Encabezado titulo="Oficina" detalle="Cuánto tarda la oficina en asignar el técnico y en aprobar lo que el técnico pre-finaliza." />
       <Cifras items={cifrasDeTramos(esperas, 'OFICINA')} />

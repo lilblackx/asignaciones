@@ -87,7 +87,7 @@ export default function NotificationBell({ notifications, unreadCount, isOpen, s
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
         {contador > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[11px] max-lg:text-xs font-black rounded-full min-w-[16px] h-4 px-0.5 flex items-center justify-center leading-none">
+          <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-etiqueta font-black rounded-full min-w-[16px] h-4 px-0.5 flex items-center justify-center leading-none">
             <NumeroPulso valor={contador > 9 ? '9+' : contador} />
           </span>
         )}

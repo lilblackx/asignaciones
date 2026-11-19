@@ -15,7 +15,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
       <div className="bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] flex flex-col overflow-hidden border border-border">
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center gap-3 shrink-0">
           <div className="min-w-0">
-            <p className="text-[11px] max-lg:text-xs font-black text-red-700 dark:text-red-400">{titulo}</p>
+            <p className="text-etiqueta font-black text-red-700 dark:text-red-400">{titulo}</p>
             <h2 className="mt-1 flex items-baseline gap-2 min-w-0">
               <span className="text-lg font-black text-white tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
               {orden.nombre && <span className="text-sm font-bold text-zinc-300 truncate">{orden.nombre}</span>}
@@ -25,7 +25,7 @@ export default function PlantillaFinalModal({ orden, texto, onCopy, onClose, zIn
         </div>
 
         <div className="p-4 overflow-y-auto space-y-1.5">
-          <p className="text-[11px] max-lg:text-xs font-semibold text-muted-foreground">Texto para copiar</p>
+          <p className="text-etiqueta font-bold text-muted-foreground">Texto para copiar</p>
           <pre className="whitespace-pre-wrap break-words text-xs leading-relaxed font-mono text-foreground bg-sunken border border-border rounded-campo p-3">{texto}</pre>
         </div>
 

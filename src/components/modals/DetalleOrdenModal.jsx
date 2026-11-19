@@ -53,7 +53,7 @@ function Dato({ etiqueta, children }) {
   if (children === undefined || children === null || children === '' || children === false) return null;
   return (
     <div className="py-2 border-b border-border last:border-b-0 min-w-0">
-      <div className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{etiqueta}</div>
+      <div className="text-etiqueta font-bold text-muted-foreground">{etiqueta}</div>
       <div className="text-sm font-bold text-foreground break-words">{children}</div>
     </div>
   );
@@ -86,15 +86,15 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
         <div className="encabezado-d bg-black px-4 py-3 border-b-2 border-red-600 flex justify-between items-center shrink-0">
           <div className="min-w-0">
             <h2 className="text-sm font-black text-white flex items-center gap-2"><FileText className="w-4 h-4 text-red-700 dark:text-red-400" aria-hidden="true" /> Detalle de la orden</h2>
-            <p className="text-[11px] max-lg:text-xs font-medium text-muted-foreground truncate"><span className="font-black text-foreground">{ticket.codigo || 'S/C'}</span> · {ticket.nombre}</p>
+            <p className="text-etiqueta font-medium text-muted-foreground truncate"><span className="font-black text-foreground">{ticket.codigo || 'S/C'}</span> · {ticket.nombre}</p>
           </div>
           <BotonCerrar onClick={onClose} />
         </div>
 
         <div className="p-4 overflow-y-auto space-y-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className={`text-[11px] max-lg:text-xs font-black px-2.5 py-0.5 rounded-full ${getEstadoPastel(ticket.estado)}`}>{oracion(ticket.estado)}</span>
-            <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{oracion(ticket.tipoTrabajo || 'AVERÍA')}</span>
+            <span className={`text-etiqueta font-black px-2.5 py-0.5 rounded-full ${getEstadoPastel(ticket.estado)}`}>{oracion(ticket.estado)}</span>
+            <span className={`text-etiqueta font-black px-2 py-0.5 rounded ${tipo.badge}`}>{oracion(ticket.tipoTrabajo || 'AVERÍA')}</span>
             <InsigniaVentaTecnico ticket={ticket} />
             {fallaVisible(ticket) && <span className="text-xs font-bold text-card-foreground">{fallaVisible(ticket)}</span>}
           </div>
@@ -190,7 +190,7 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
                   copiado={copiado === 'plantilla'}
                   onClick={() => copiar('plantilla', plantilla, 'Plantilla copiada, lista para WhatsApp.')}
                   etiqueta="Copiar la plantilla"
-                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold"
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-etiqueta font-bold"
                   tono="bg-secondary text-foreground hover:bg-accent"
                   iconoClase="w-3 h-3"
                 >

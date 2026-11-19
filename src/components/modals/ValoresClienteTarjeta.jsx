@@ -9,7 +9,7 @@ function Fila({ id, etiqueta, valor, copiado, onCopiar }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-b-0">
       <div className="min-w-0">
-        <div className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{etiqueta}</div>
+        <div className="text-etiqueta font-bold text-muted-foreground">{etiqueta}</div>
         <div className="text-sm font-black text-foreground font-mono break-words">
           {textoDbm(valor)}
           {calidad && <span className={`ml-2 font-sans text-xs ${calidad.clase}`}>{calidad.texto}</span>}
@@ -40,7 +40,7 @@ export default function ValoresClienteTarjeta({ valores, onCopy }) {
           copiado={copiado === 'todo'}
           onClick={() => copiar('todo', textoValoresCliente(valores), 'Valores del cliente copiados.')}
           etiqueta="Copiar todos los valores del cliente"
-          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold"
+          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-etiqueta font-bold"
           tono="bg-zinc-800 text-white hover:bg-zinc-700"
           iconoClase="w-3 h-3"
         >
@@ -49,7 +49,7 @@ export default function ValoresClienteTarjeta({ valores, onCopy }) {
       </div>
       <Fila id="olt" etiqueta="OLT Rx · Potencia (1310 nm)" valor={valores.olt1310Dbm} copiado={copiado} onCopiar={copiar} />
       <Fila id="onu" etiqueta="ONU Rx · Señal (1490 nm)" valor={valores.onu1490Dbm} copiado={copiado} onCopiar={copiar} />
-      <p className="mt-2 text-[11px] max-lg:text-xs text-muted-foreground">Medidos por la oficina al revisar la orden.</p>
+      <p className="mt-2 text-etiqueta text-muted-foreground">Medidos por la oficina al revisar la orden.</p>
     </section>
   );
 }

@@ -6,7 +6,7 @@ import { buscarNapTomodat } from '../../lib/tomodat';
 import { buscarNapConocida } from '../../utils/napsConocidas';
 import { claseCampo } from '../estilos';
 
-const ETIQUETA_NAP = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
+const ETIQUETA_NAP = 'text-etiqueta font-bold text-muted-foreground ml-1';
 
 // Coordenadas que ya se usaron en órdenes anteriores con el mismo código de NAP
 // (`conocidas`, la más reciente primero). Si todas coinciden se usan de una vez,
@@ -99,23 +99,23 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
     <div className={wrapperClassName}>
       <div className="flex items-end justify-between gap-2">
         {suave
-          ? <label htmlFor={`${idPrefix}-nap-coords`} className="text-xs font-semibold text-muted-foreground ml-1">Coordenadas de la NAP <span className="font-normal text-muted-foreground">(opcional)</span></label>
+          ? <label htmlFor={`${idPrefix}-nap-coords`} className="text-xs font-bold text-muted-foreground ml-1">Coordenadas de la NAP <span className="font-normal text-muted-foreground">(opcional)</span></label>
           : <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>Coordenadas NAP <span className="font-normal text-muted-foreground">(Lat / Lng, opcional)</span></label>}
         {consulta && (
-          <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 hover:underline disabled:opacity-60">
+          <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-etiqueta font-bold text-red-700 dark:text-red-400 hover:underline disabled:opacity-60">
             {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat
           </button>
         )}
       </div>
       <input id={`${idPrefix}-nap-coords`} type="text" maxLength="100" name="napCoordenadas" placeholder="Lat: 10.6616 / Lng: -71.7061" value={value || ''} onChange={handleChange} aria-invalid={!!parseada.error} className={claseCampo('compacto', parseada.error ? 'error' : 'normal')} />
-      {parseada.error && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{parseada.error}</p>}
-      {mensaje?.tipo === 'buscando' && <p role="status" className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Buscando {consulta} en Tomodat...</p>}
-      {mensaje?.tipo === 'listo' && value && <p role="status" className="text-[11px] max-lg:text-xs font-bold text-emerald-700 dark:text-emerald-400 ml-1">{mensaje.origen === 'historial' ? `Coordenadas tomadas de órdenes anteriores (${mensaje.nombre}). Usa "Buscar en Tomodat" para verificarlas.` : `Coordenadas tomadas de Tomodat (${mensaje.nombre}).`}</p>}
-      {mensaje?.tipo === 'vacio' && <p role="status" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
-      {mensaje?.tipo === 'error' && <p role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
+      {parseada.error && <p role="alert" className="text-etiqueta font-bold text-red-700 dark:text-red-400 ml-1">{parseada.error}</p>}
+      {mensaje?.tipo === 'buscando' && <p role="status" className="text-etiqueta text-muted-foreground ml-1">Buscando {consulta} en Tomodat...</p>}
+      {mensaje?.tipo === 'listo' && value && <p role="status" className="text-etiqueta font-bold text-emerald-700 dark:text-emerald-400 ml-1">{mensaje.origen === 'historial' ? `Coordenadas tomadas de órdenes anteriores (${mensaje.nombre}). Usa "Buscar en Tomodat" para verificarlas.` : `Coordenadas tomadas de Tomodat (${mensaje.nombre}).`}</p>}
+      {mensaje?.tipo === 'vacio' && <p role="status" className="text-etiqueta font-bold text-amber-700 dark:text-amber-400 ml-1">No se encontró {consulta} en Tomodat. Pega las coordenadas a mano.</p>}
+      {mensaje?.tipo === 'error' && <p role="alert" className="text-etiqueta font-bold text-red-700 dark:text-red-400 ml-1">{mensaje.mensaje} Pega las coordenadas a mano.</p>}
       {mensaje?.tipo === 'opciones' && (
         <div role="group" aria-label="Varias cajas coinciden, elige una" className="mt-1 rounded-campo border border-zinc-200 dark:border-zinc-700 bg-sunken p-2">
-          <p className="flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
+          <p className="flex items-center gap-1.5 text-etiqueta font-bold text-zinc-700 dark:text-zinc-200 mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-500" aria-hidden="true" />
             {mensaje.opciones.length} cajas coinciden. Elige cuál es:
           </p>
@@ -128,13 +128,13 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
                 className="w-full text-left rounded-card border border-zinc-200 dark:border-zinc-700 bg-card px-2.5 py-1.5 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-card"
               >
                 <span className="block text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{p.nombre}</span>
-                <span className="block mt-0.5 text-[11px] max-lg:text-xs font-medium text-muted-foreground">{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</span>
+                <span className="block mt-0.5 text-etiqueta font-medium text-muted-foreground">{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</span>
               </button>
             ))}
           </div>
         </div>
       )}
-      {parseada.enlace && <a href={parseada.enlace} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Ver NAP en el mapa</a>}
+      {parseada.enlace && <a href={parseada.enlace} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 max-lg:min-h-11 text-etiqueta font-bold text-sky-700 dark:text-sky-400 hover:underline ml-1"><MapPin className="w-3 h-3" aria-hidden="true" /> Ver NAP en el mapa</a>}
     </div>
   );
 }

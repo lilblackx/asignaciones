@@ -13,7 +13,7 @@ function FilaCopiable({ id, etiqueta, contexto, valor, copiado, onCopiar }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-b-0">
       <div className="min-w-0">
-        <div className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{etiqueta}</div>
+        <div className="text-etiqueta font-bold text-muted-foreground">{etiqueta}</div>
         <div className="text-sm font-black text-foreground font-mono break-words">{valor}</div>
       </div>
       <BotonCopiarDato
@@ -42,7 +42,7 @@ function TarjetaForma({ forma, indice, copiado, onCopiar }) {
           copiado={tarjetaCopiada}
           onClick={() => onCopiar(idTarjeta, textoForma(forma), `Datos de ${nombre} copiados.`)}
           etiqueta={`Copiar todos los datos de ${nombre}`}
-          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold"
+          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-campo text-etiqueta font-bold"
           tono="bg-zinc-800 text-white hover:bg-zinc-700"
           iconoClase="w-3 h-3"
         >

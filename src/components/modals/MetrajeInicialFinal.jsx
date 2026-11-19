@@ -2,7 +2,7 @@ import { MAX_LARGO_MARCA, totalMetraje } from '../../utils/metraje';
 import { claseCampo } from '../estilos';
 
 const claseEtiqueta = 'text-xs font-bold text-card-foreground ml-1';
-const claseEtiquetaCompacta = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
+const claseEtiquetaCompacta = 'text-etiqueta font-bold text-muted-foreground ml-1';
 
 // Metraje inicial y final del cable (las marcas de la bobina al empezar y al terminar): el técnico escribe las dos y la app calcula el
 // total de metros (ver utils/metraje). Se usa en la instalación, el recableado y la edición de la oficina.
@@ -29,7 +29,7 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
         aria-describedby={error ? `${id}-error` : undefined}
         className={`min-w-0 ${claseCampo(compacto ? 'compacto' : 'grande', error ? 'error' : 'normal')} disabled:opacity-50 disabled:cursor-not-allowed`}
       />
-      {error && <p id={`${id}-error`} role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
+      {error && <p id={`${id}-error`} role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
     </div>
   );
 
@@ -42,7 +42,7 @@ export default function MetrajeInicialFinal({ idInicial, idFinal, inicial, final
         {campo(idFinal, final, onFinal, errorFinal, 'METRAJE FINAL')}
       </div>
       {!deshabilitado && (
-        <p role="status" className={`${compacto ? 'text-[11px] max-lg:text-xs' : 'text-xs'} ml-1 ${total != null ? 'font-black text-zinc-800 dark:text-zinc-100' : 'text-muted-foreground'}`}>
+        <p role="status" className={`${compacto ? 'text-etiqueta' : 'text-xs'} ml-1 ${total != null ? 'font-black text-zinc-800 dark:text-zinc-100' : 'text-muted-foreground'}`}>
           {total != null
             ? `Total de cable usado: ${total} m`
             : totalGuardado

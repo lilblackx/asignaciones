@@ -163,6 +163,10 @@
   --shadow-boton-ambar: 0 6px 16px rgb(217 119 6 / 0.28);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 
+  /* Escala tipográfica: etiqueta (11 px en PC, 12 en celular) < text-xs 12 < text-sm 14 (cuerpo) < text-base 16 < text-lg 18 (subtítulo) < text-xl/2xl (título) < text-3xl+ (cifras). */
+  --text-etiqueta: 0.6875rem;
+  --text-etiqueta--line-height: 1.35;
+
   /* Transiciones de entrada: cortas (120-200 ms), sin fill-mode para no dejar transform residual sobre el elemento. */
   --animate-fade-in-up: fade-in-up 0.2s ease-out;
   --animate-fade-out-down: fade-out-down 0.2s ease-in forwards;
@@ -435,4 +439,9 @@ input[type="search"]::-webkit-search-decoration {
 }
 @keyframes esqueleto {
   50% { opacity: 0.55; }
+}
+
+/* Etiqueta: el texto más pequeño de la app (rótulos, chips, notas al pie). 11 px en PC, 12 px en celular para que se lea con el dedo cerca. */
+@media (max-width: 1023px) {
+  :root { --text-etiqueta: 0.75rem; }
 }

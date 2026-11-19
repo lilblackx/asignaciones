@@ -46,7 +46,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
         <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded">En infraestructura</span>
+              <span className="bg-orange-500 text-black text-etiqueta font-black px-2 py-0.5 rounded">En infraestructura</span>
               <span className="text-xs font-bold text-orange-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
@@ -72,7 +72,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
                     <input type="radio" name="resultado-infraestructura" value={valor} checked={resultado === valor} onChange={() => setResultado(valor)} className="mt-0.5 accent-orange-600" />
                     <span className="min-w-0">
                       <span className="flex items-center gap-1.5 text-sm font-black text-foreground"><Icono className="w-4 h-4 shrink-0" aria-hidden="true" />{titulo}</span>
-                      <span className="block text-[11px] max-lg:text-xs text-muted-foreground leading-snug mt-0.5">{detalle}</span>
+                      <span className="block text-etiqueta text-muted-foreground leading-snug mt-0.5">{detalle}</span>
                     </span>
                   </label>
                 ))}

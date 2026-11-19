@@ -34,7 +34,7 @@ function EjeHoras() {
   return (
     <div className={`${FILA} mb-1`} aria-hidden="true">
       <span className="hidden sm:block" />
-      <div className="relative h-3 col-span-2 sm:col-span-1 text-[11px] max-lg:text-xs text-muted-foreground">
+      <div className="relative h-3 col-span-2 sm:col-span-1 text-etiqueta text-muted-foreground">
         {HORAS_EJE.map((h) => (
           <span key={h} className="absolute -translate-x-1/2 first:translate-x-0 last:-translate-x-full" style={{ left: `${(h / 24) * 100}%` }}>{h}h</span>
         ))}
@@ -69,7 +69,7 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
             <section key={nombre} aria-label={nombre} className="bg-card border border-border rounded-card p-4 sm:p-5 shadow-sm">
               <header className="flex items-center justify-between gap-3 mb-3">
                 <NombreTecnico nombre={nombre} getTecnicoColor={getTecnicoColor} />
-                <span className="text-sm font-black text-foreground">{formatoDuracion(totalTecnico)} <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">en total</span></span>
+                <span className="text-sm font-black text-foreground">{formatoDuracion(totalTecnico)} <span className="text-etiqueta font-bold text-muted-foreground">en total</span></span>
               </header>
               <EjeHoras />
               <div className="flex flex-col gap-2.5">
@@ -97,7 +97,7 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
             <ul className="flex flex-col gap-1.5">
               {movimientos.map((m, i) => (
                 <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-sunken border border-border rounded-campo px-3 py-2 text-xs">
-                  <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${m.accion === 'ACTIVADO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{m.accion}</span>
+                  <span className={`text-etiqueta font-black px-1.5 py-0.5 rounded ${m.accion === 'ACTIVADO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{m.accion}</span>
                   <span className="font-bold">{legible(m.tecnico)}</span>
                   <span className="text-muted-foreground">{m.fechaHora}</span>
                   {m.por && <span className="text-muted-foreground ml-auto">por {m.por}</span>}

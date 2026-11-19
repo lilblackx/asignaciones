@@ -7,7 +7,7 @@ import Boton from '../Boton';
 import { TARJETA, claseCampo } from '../estilos';
 
 const INPUT_CLASS = claseCampo('grande');
-const LABEL_CLASS = 'text-xs font-semibold text-muted-foreground ml-1';
+const LABEL_CLASS = 'text-xs font-bold text-muted-foreground ml-1';
 
 // Sin nada guardado todavía (el documento no existe) se precarga con los datos de
 // la empresa para que el ADMIN solo revise y guarde. Si ya hay un documento, manda

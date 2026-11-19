@@ -11,7 +11,7 @@ import { legible } from '../utils/nombreTecnico';
 // En pantallas anchas es una tabla; en el celular, filas apiladas con lo esencial. Solo lectura; "Ver plantilla" como en la tarjeta (el copiado está dentro de esa ventana).
 
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
-const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded-boton border border-input px-2.5 py-1 text-foreground hover:bg-secondary transition-colors whitespace-nowrap';
+const BOTON = 'inline-flex items-center justify-center gap-1 text-etiqueta font-bold rounded-boton border border-input px-2.5 py-1 text-foreground hover:bg-secondary transition-colors whitespace-nowrap';
 const ENCABEZADOS = ['Código', 'Cliente', 'Dirección', 'Promotor', 'Técnico', 'Estado', 'Fecha', ''];
 
 // Lo que cada fila necesita de una orden, calculado una vez.
@@ -45,13 +45,13 @@ function Avisos({ d }) {
   return (
     <>
       {d.atraso && (
-        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] max-lg:text-xs font-bold ${d.atraso.nivel === 'urgente' ? 'bg-red-100 text-red-900 dark:bg-red-950/60 dark:text-red-200' : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'}`}>
+        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-etiqueta font-bold ${d.atraso.nivel === 'urgente' ? 'bg-red-100 text-red-900 dark:bg-red-950/60 dark:text-red-200' : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'}`}>
           <AlarmClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           {d.atraso.que} · {d.atraso.dias === 1 ? '1 día' : `${d.atraso.dias} días`}
         </span>
       )}
       {d.programada && (
-        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] max-lg:text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-etiqueta font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
           <CalendarClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           Programada {d.programada}
         </span>
@@ -82,8 +82,8 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, mostrarTip
           <li key={orden.id} className="px-3 py-2.5 space-y-1.5 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-sm font-black text-foreground tabular-nums">{orden.codigo || 'S/C'}</span>
-              {mostrarTipo && <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 leading-none rounded-md ${d.tipo.badge}`}>{d.esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
-              <span className={`ml-auto shrink-0 text-[11px] max-lg:text-xs font-bold rounded-full px-2.5 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA[d.vista.clave]}`}>{d.vista.etiqueta}</span>
+              {mostrarTipo && <span className={`text-etiqueta font-black px-1.5 py-0.5 leading-none rounded-md ${d.tipo.badge}`}>{d.esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
+              <span className={`ml-auto shrink-0 text-etiqueta font-bold rounded-full px-2.5 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA[d.vista.clave]}`}>{d.vista.etiqueta}</span>
             </div>
             <p className="text-sm font-bold text-foreground leading-tight break-words">{orden.nombre || 'Sin nombre'}{d.cedula && <span className="font-normal text-xs tabular-nums text-muted-foreground"> · {d.cedula}</span>}</p>
             <p className="text-xs text-muted-foreground line-clamp-1">{orden.direccion || '-'}</p>
@@ -92,7 +92,7 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, mostrarTip
               {d.cuando && <span className="text-muted-foreground"> · {d.cuando}</span>}
             </p>
             {(d.atraso || d.programada) && <div className="flex flex-wrap gap-1.5"><Avisos d={d} /></div>}
-            {d.motivo && <p className="text-[11px] max-lg:text-xs leading-snug text-red-800 dark:text-red-300 break-words"><span className="font-black">Motivo:</span> {d.motivo}</p>}
+            {d.motivo && <p className="text-etiqueta leading-snug text-red-800 dark:text-red-300 break-words"><span className="font-black">Motivo:</span> {d.motivo}</p>}
             {d.conPlantilla && <Plantilla orden={orden} d={d} onVerPlantilla={onVerPlantilla} />}
           </li>
         ))}
@@ -101,7 +101,7 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, mostrarTip
       {/* Pantallas anchas: tabla. */}
       <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
         <table className="w-full text-sm text-left">
-          <thead className="bg-secondary text-[11px] max-lg:text-xs text-muted-foreground">
+          <thead className="bg-secondary text-etiqueta text-muted-foreground">
             <tr>
               {ENCABEZADOS.map((c, i) => <th key={c || i} scope="col" className="px-3 py-2.5 font-bold">{c || <span className="sr-only">Plantilla</span>}</th>)}
             </tr>
@@ -111,18 +111,18 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, mostrarTip
               <tr key={orden.id} className="align-top hover:bg-accent/50">
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   <span className="font-black tabular-nums">{orden.codigo || 'S/C'}</span>
-                  {mostrarTipo && <span className={`block mt-1 w-fit text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 leading-none rounded-md ${d.tipo.badge}`}>{d.esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
+                  {mostrarTipo && <span className={`block mt-1 w-fit text-etiqueta font-black px-1.5 py-0.5 leading-none rounded-md ${d.tipo.badge}`}>{d.esLos ? 'LOS' : 'INSTALACIÓN'}</span>}
                 </td>
                 <td className="px-3 py-2.5 min-w-[11rem]">
                   <p className="font-bold leading-tight break-words">{orden.nombre || 'Sin nombre'}</p>
                   {d.cedula && <p className="text-xs tabular-nums text-muted-foreground mt-0.5">{d.cedula}</p>}
-                  {d.motivo && <p className="mt-1 text-[11px] max-lg:text-xs leading-snug text-red-800 dark:text-red-300 break-words"><span className="font-black">Motivo:</span> {d.motivo}</p>}
+                  {d.motivo && <p className="mt-1 text-etiqueta leading-snug text-red-800 dark:text-red-300 break-words"><span className="font-black">Motivo:</span> {d.motivo}</p>}
                 </td>
                 <td className="px-3 py-2.5 min-w-[12rem] text-card-foreground"><span className="line-clamp-2">{orden.direccion || '-'}</span></td>
                 <td className="px-3 py-2.5 min-w-[7rem]">{d.promotor || '-'}</td>
                 <td className="px-3 py-2.5 min-w-[7rem]"><Tecnico orden={orden} programada={d.programada} /></td>
                 <td className="px-3 py-2.5">
-                  <span className={`inline-block text-[11px] max-lg:text-xs font-bold rounded-full px-2.5 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA[d.vista.clave]}`}>{d.vista.etiqueta}</span>
+                  <span className={`inline-block text-etiqueta font-bold rounded-full px-2.5 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA[d.vista.clave]}`}>{d.vista.etiqueta}</span>
                   {(d.atraso || d.programada) && <div className="mt-1.5 flex flex-col items-start gap-1"><Avisos d={d} /></div>}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs tabular-nums text-muted-foreground">{d.cuando}</td>

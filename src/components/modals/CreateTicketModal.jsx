@@ -31,7 +31,7 @@ import { legible } from '../../utils/nombreTecnico';
 
 const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
 const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
-const ETIQUETA = 'text-xs font-semibold text-muted-foreground ml-1';
+const ETIQUETA = 'text-xs font-bold text-muted-foreground ml-1';
 const AVISO = 'text-xs font-bold text-red-700 dark:text-red-400 ml-1';
 // El título de cada grupo de campos. Los grupos van separados por una línea fina; el primero no la lleva.
 function Seccion({ primera = false, children }) {
@@ -295,7 +295,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             )}
 
             {reincidencias.length > 0 && !isSubmitting && (
-              <div role="status" className={`col-span-2 sm:col-span-5 flex items-start gap-2 rounded px-2.5 py-2 text-[11px] max-lg:text-xs border ${reincidenciaMuyReciente ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-800 dark:text-red-300' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-800 text-orange-800 dark:text-orange-300'}`}>
+              <div role="status" className={`col-span-2 sm:col-span-5 flex items-start gap-2 rounded px-2.5 py-2 text-etiqueta border ${reincidenciaMuyReciente ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-800 dark:text-red-300' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-800 text-orange-800 dark:text-orange-300'}`}>
                 <Repeat className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
                   <p>
@@ -384,7 +384,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             </div>
 
             {usaCodigoOriginal && (
-              <div className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-1.5 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200">
+              <div className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-1.5 text-etiqueta text-zinc-700 dark:text-zinc-200">
                 {codigosOriginales.length > 0 ? (
                   <>
                     <p>La garantía lleva el código de la orden original, no un número nuevo. Elige la del cliente o escribe el código; la garantía se asigna al técnico de esa orden:</p>
@@ -409,13 +409,13 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
 
             {esInstalacion && turnoSugerido && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
               <TurnoSugeridoBanner
-                wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-sunken border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200"
+                wrapperClassName="col-span-2 sm:col-span-5 flex items-center gap-2 bg-sunken border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-2 text-etiqueta text-zinc-700 dark:text-zinc-200"
                 turnoSugerido={turnoSugerido}
               />
             )}
 
             {esGarantiaTipo && formData.garantiaDe && (
-              <p className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 text-[11px] max-lg:text-xs text-zinc-700 dark:text-zinc-200">
+              <p className="col-span-2 sm:col-span-5 rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 text-etiqueta text-zinc-700 dark:text-zinc-200">
                 Es una garantía de otro técnico: es una orden nueva para él, así que toma un número nuevo y no el código de la original.
               </p>
             )}

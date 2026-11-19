@@ -39,9 +39,9 @@ function Conectores({ fila }) {
 function Dato({ etiqueta, valor, detalle }) {
   return (
     <div className={`min-w-0 ${TARJETA} p-3`}>
-      <p className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{etiqueta}</p>
+      <p className="text-etiqueta font-bold text-muted-foreground">{etiqueta}</p>
       <p className="text-2xl font-black text-foreground leading-tight">{valor}</p>
-      {detalle && <p className="text-[11px] max-lg:text-xs text-muted-foreground leading-snug mt-0.5">{detalle}</p>}
+      {detalle && <p className="text-etiqueta text-muted-foreground leading-snug mt-0.5">{detalle}</p>}
     </div>
   );
 }
@@ -66,11 +66,11 @@ function FilaTecnico({ fila, abierto, onToggle }) {
       {conDatos ? (
         <ul className="flex flex-wrap gap-1.5" aria-label={`Lo que hizo ${legible(fila.tecnico)}`}>
           {partes.map((t) => (
-            <li key={t} className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] max-lg:text-xs font-bold text-foreground">{t}</li>
+            <li key={t} className="rounded-full bg-secondary px-2.5 py-0.5 text-etiqueta font-bold text-foreground">{t}</li>
           ))}
         </ul>
       ) : (
-        <p className="text-[11px] max-lg:text-xs text-muted-foreground">Sin movimientos en este período.</p>
+        <p className="text-etiqueta text-muted-foreground">Sin movimientos en este período.</p>
       )}
       {conDatos && <Conectores fila={fila} />}
     </div>
@@ -92,7 +92,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
               <li key={o.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-bold text-zinc-800 dark:text-zinc-100 truncate">{o.codigo || 'S/C'}{o.nombre ? ` - ${o.nombre}` : ''}</p>
-                  <p className="text-[11px] max-lg:text-xs text-muted-foreground">
+                  <p className="text-etiqueta text-muted-foreground">
                     {fechaCorta(o.fecha)}
                     {o.clase === 'INSTALACION' && ' · Instalación'}
                     {o.clase === 'CAMBIO_EQUIPO' && ' · Cambio de equipo'}
@@ -102,7 +102,7 @@ function FilaTecnico({ fila, abierto, onToggle }) {
                     {totalConectores(o) === 0 && o.clase !== 'INSTALACION' && o.clase !== 'CAMBIO_EQUIPO' && ' · sin conectores'}
                   </p>
                   {o.serial && (
-                    <p className="text-[11px] max-lg:text-xs text-muted-foreground">
+                    <p className="text-etiqueta text-muted-foreground">
                       {o.clase === 'CAMBIO_EQUIPO' ? 'Serial del equipo nuevo' : 'Serial'}: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{o.serial}</span>
                     </p>
                   )}
@@ -180,7 +180,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
             </section>
           )}
 
-          <div className="text-[11px] max-lg:text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-2">
+          <div className="text-etiqueta text-muted-foreground flex flex-wrap items-center justify-between gap-2">
             <span>Incluye las órdenes activas y {reports.length} reporte{reports.length === 1 ? '' : 's'} de cierre cargado{reports.length === 1 ? '' : 's'}.</span>
           </div>
           <AvisoCargarAnteriores variante="reporte" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMore} />

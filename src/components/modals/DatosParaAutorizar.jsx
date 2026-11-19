@@ -12,7 +12,7 @@ function Fila({ dato, ticket, copiado, onCopiar }) {
   return (
     <div className="flex items-start justify-between gap-2 py-1.5">
       <div className="min-w-0">
-        <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground block">{dato.etiqueta}</span>
+        <span className="text-etiqueta font-bold text-muted-foreground block">{dato.etiqueta}</span>
         {dato.tipo === 'cedula' ? (
           <a
             href={buildSmartOltUrl(ticket.cedula, ticket.tipoDocumento)}
@@ -111,7 +111,7 @@ export default function DatosParaAutorizar({ ticket, onCopy, paraAutorizar = tru
             <FileText className="w-4 h-4 shrink-0" aria-hidden="true" /> Ver plantilla completa de la promotora
           </summary>
           <div className="px-3 pb-3 space-y-2">
-            <pre className="whitespace-pre-wrap break-words text-[11px] max-lg:text-xs leading-snug font-mono text-card-foreground max-h-56 overflow-y-auto">{ticket.plantillaOriginal}</pre>
+            <pre className="whitespace-pre-wrap break-words text-etiqueta leading-snug font-mono text-card-foreground max-h-56 overflow-y-auto">{ticket.plantillaOriginal}</pre>
             <BotonCopiar
               copiado={copiado === 'plantilla'}
               onClick={() => copiar('plantilla', ticket.plantillaOriginal, 'Plantilla copiada.')}

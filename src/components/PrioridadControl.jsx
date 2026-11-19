@@ -29,7 +29,7 @@ export function BotonPrioridad({ activa, codigo, onClick, compacto = false }) {
 // `corta`: en la tabla, donde la columna del código es angosta, dice solo "ALTA" (el nombre completo queda en el título y para los lectores de pantalla): la versión larga se salía de la columna y tapaba lo de al lado.
 export function InsigniaPrioridad({ className = '', corta = false }) {
   return (
-    <span title={corta ? 'Prioridad alta' : undefined} className={`inline-flex items-center gap-1 self-start shrink-0 whitespace-nowrap text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded bg-red-600 text-white ${className}`}>
+    <span title={corta ? 'Prioridad alta' : undefined} className={`inline-flex items-center gap-1 self-start shrink-0 whitespace-nowrap text-etiqueta font-black px-1.5 py-0.5 rounded bg-red-600 text-white ${className}`}>
       <Flag className="w-2.5 h-2.5 fill-current" aria-hidden="true" />
       {corta ? <><span aria-hidden="true">Alta</span><span className="sr-only">Prioridad alta</span></> : 'Prioridad alta'}
     </span>

@@ -19,10 +19,10 @@ export default function Pasos({ pasos, actual, hecho = () => false, onElegir = n
           const ocultarNombre = !esActual;
           const contenido = (
             <>
-              <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px] max-lg:text-xs font-black transition-colors duration-300 ${razon ? 'opacity-60' : ''} ${completo ? 'bg-emerald-700 text-white' : esActual ? 'bg-emerald-700 text-white' : 'border border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
+              <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-etiqueta font-black transition-colors duration-300 ${razon ? 'opacity-60' : ''} ${completo ? 'bg-emerald-700 text-white' : esActual ? 'bg-emerald-700 text-white' : 'border border-zinc-400 dark:border-zinc-600 text-muted-foreground'}`}>
                 {razon ? <Lock className="w-3 h-3" aria-hidden="true" /> : completo ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden="true" /> : i + 1}
               </span>
-              <span className={`${ocultarNombre ? 'hidden sm:inline ' : ''}text-xs leading-none whitespace-nowrap transition-colors duration-300 ${esActual ? 'font-black text-foreground' : completo ? 'font-bold text-emerald-800 dark:text-emerald-400' : 'font-semibold text-muted-foreground'}`}>{nombre}</span>
+              <span className={`${ocultarNombre ? 'hidden sm:inline ' : ''}text-xs leading-none whitespace-nowrap transition-colors duration-300 ${esActual ? 'font-black text-foreground' : completo ? 'font-bold text-emerald-800 dark:text-emerald-400' : 'font-bold text-muted-foreground'}`}>{nombre}</span>
             </>
           );
           return (

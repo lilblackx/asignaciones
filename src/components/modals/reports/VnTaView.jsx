@@ -62,7 +62,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
     ...filaVnTa(r),
     <span key={r.id} className="inline-flex items-center gap-1 whitespace-nowrap">
       {r.pagoId ? (
-        <span title="Finanzas ya la pagó: no se puede editar ni borrar" className="px-2 py-1 rounded bg-emerald-700 text-white text-[11px] max-lg:text-xs font-bold">Pagada</span>
+        <span title="Finanzas ya la pagó: no se puede editar ni borrar" className="px-2 py-1 rounded bg-emerald-700 text-white text-etiqueta font-bold">Pagada</span>
       ) : borrandoId === r.id ? (
         <>
           <Boton variante="principal" tamano="compacto" type="button" onClick={() => borrar(r.id)}>Sí, borrar</Boton>
@@ -110,13 +110,13 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             {guardando ? <Spinner /> : <Plus className="w-4 h-4" aria-hidden="true" />}{editandoId ? 'Guardar cambios' : 'Agregar'}
           </Boton>
           {editandoId && <Boton variante="secundario" tamano="normal" type="button" onClick={limpiar}><X className="w-4 h-4" aria-hidden="true" /> Cancelar</Boton>}
-          {!editandoId && <p className="text-[11px] max-lg:text-xs text-muted-foreground">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
+          {!editandoId && <p className="text-etiqueta text-muted-foreground">El código (VAN01, TA01...) lo pone la app y queda tu nombre como operador. Con técnico, Finanzas se lo paga; sin técnico (lo hizo infraestructura sola) no se paga.</p>}
         </div>
       </form>}
 
       {error &&<Aviso nivel="error" compact className="mb-4">{error}</Aviso>}
       <Cifras items={cifrasVnTa(estadistica)} />
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-1 mb-4">{NOTA_VNTA}</p>
+      <p className="text-etiqueta text-muted-foreground -mt-1 mb-4">{NOTA_VNTA}</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4">
         <TablaReporte titulo="Estadística de VN y TA" columnas={columnasEstadisticaVnTa()} filas={filasEstadisticaVnTa(estadistica)} />
@@ -129,7 +129,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
         filas={filas}
         vacio="Ningún registro de VN o TA en este periodo."
       />
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
+      <p className="text-etiqueta text-muted-foreground -mt-2 mb-4">Fecha de hoy: {fechaLegible(hoy)}.</p>
     </div>
   );
 }

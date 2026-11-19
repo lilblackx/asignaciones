@@ -48,8 +48,8 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
     { etiqueta: 'Pendientes por cargar', valor: String(resumen.PENDIENTE.cantidad) },
     { etiqueta: 'Con cambio de monto', valor: String(resumen.alertas), detalle: resumen.alertas > 0 ? 'Administración debe corregirlos' : '' },
   ];
-  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
-  const alerta = (c) => tieneCambioDeMonto(c) && <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>;
+  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-etiqueta leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
+  const alerta = (c) => tieneCambioDeMonto(c) && <span className="inline-flex items-center gap-1 text-etiqueta font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>;
   const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [oracion(c.tipoTrabajo), c.falla].filter(Boolean).join(' · '));
 
   return (
@@ -57,8 +57,8 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
       <section aria-label="Resumen" className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {tarjetas.map(({ etiqueta, valor, detalle }) => (
           <div key={etiqueta} className={`${TARJETA} p-3 min-w-0`}>
-            <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none break-words text-foreground">{valor}</p>
-            <p className="mt-1 text-xs font-semibold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
+            <p className="text-xl sm:text-2xl font-black tabular-nums leading-none break-words text-foreground">{valor}</p>
+            <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
             {detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
           </div>
         ))}
@@ -108,7 +108,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
           {/* Escritorio: tabla. */}
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs text-muted-foreground">
+              <thead className="bg-zinc-100 dark:bg-zinc-950 text-etiqueta text-muted-foreground">
                 <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', 'Cargado por', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">

@@ -15,9 +15,9 @@ import { useCopiado } from '../hooks/useCopiado';
 // (ver estilosInstalacion) y la etiqueta de tipo de la tabla (ticketDisplay); tarjeta con rounded-card y shadow-card, sin íconos delante de los datos.
 
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-semibold text-muted-foreground';
+const ETIQUETA = 'text-etiqueta font-bold text-muted-foreground';
 const VALOR = 'text-sm text-foreground mt-0.5 break-words';
-const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded-boton border border-input px-2.5 py-1 text-foreground hover:bg-secondary transition-colors';
+const BOTON = 'inline-flex items-center justify-center gap-1 text-etiqueta font-bold rounded-boton border border-input px-2.5 py-1 text-foreground hover:bg-secondary transition-colors';
 
 // `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
 export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, mostrarTipo = false, ahora, indice = 0 }) {
@@ -40,27 +40,27 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, most
       <div className="px-5 pt-5 pb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <span className="text-xl font-black text-foreground tabular-nums leading-none">{orden.codigo || 'S/C'}</span>
-          {mostrarTipo && <div className="mt-2"><span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 leading-none rounded-md ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span></div>}
+          {mostrarTipo && <div className="mt-2"><span className={`text-etiqueta font-black px-1.5 py-0.5 leading-none rounded-md ${tipo.badge}`}>{esLos ? 'LOS' : 'INSTALACIÓN'}</span></div>}
         </div>
-        <span className={`shrink-0 text-[11px] max-lg:text-xs font-bold rounded-full px-3 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA[vista.clave]}`}>{vista.etiqueta}</span>
+        <span className={`shrink-0 text-etiqueta font-bold rounded-full px-3 py-1 leading-none ${ESTILO_ESTADO_PROMOTORA[vista.clave]}`}>{vista.etiqueta}</span>
       </div>
 
       {atraso && (
-        <div className={`w-full px-5 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold ${atraso.nivel === 'urgente' ? 'bg-red-100 text-red-900 dark:bg-red-950/60 dark:text-red-200' : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'}`}>
+        <div className={`w-full px-5 py-1.5 flex items-center gap-1.5 text-etiqueta font-bold ${atraso.nivel === 'urgente' ? 'bg-red-100 text-red-900 dark:bg-red-950/60 dark:text-red-200' : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'}`}>
           <AlarmClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>{atraso.que} · {atraso.dias === 1 ? '1 día' : `${atraso.dias} días`}</span>
         </div>
       )}
 
       {programada && (
-        <div className="w-full px-5 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+        <div className="w-full px-5 py-1.5 flex items-center gap-1.5 text-etiqueta font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
           <CalendarClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>Programada para el {programada}</span>
         </div>
       )}
 
       {motivo && (
-        <div className="w-full px-5 py-1.5 bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200 text-[11px] max-lg:text-xs leading-snug">
+        <div className="w-full px-5 py-1.5 bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200 text-etiqueta leading-snug">
           <p className="font-black">Motivo de la cancelación</p>
           <p className="break-words whitespace-pre-wrap">{motivo}</p>
         </div>
@@ -69,7 +69,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, most
       <div className="px-5 pb-4 pt-1 flex-1 flex flex-col gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <h3 className="text-[15px] font-bold text-foreground leading-tight break-words min-w-0">{orden.nombre || 'Sin nombre'}</h3>
+            <h3 className="text-base font-bold text-foreground leading-tight break-words min-w-0">{orden.nombre || 'Sin nombre'}</h3>
             {onCopy && orden.nombre && (
               <BotonCopiar
                 copiado={copiado === 'nombre'}

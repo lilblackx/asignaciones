@@ -121,23 +121,23 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           </p>
           <p className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {item.concepto ? nombreConcepto(item.concepto) : <span className="font-bold text-amber-700 dark:text-amber-300">Sin concepto: corrígela</span>}</p>
           {esGarantiaDeOtro && item.descuento <= 0 && !item.garantiaSinDescuento && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Garantía de otro técnico: de la orden {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}). Decide si se le descuenta algo antes de aprobarla.</p>}
-          {esGarantiaDeOtro && item.garantiaSinDescuento && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Garantía de {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}) sin descuento: {item.garantiaSinDescuento}</p>}
+          {esGarantiaDeOtro && item.garantiaSinDescuento && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Garantía de {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}) sin descuento: {item.garantiaSinDescuento}</p>}
           {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {legible(item.tecnico)}.</p>}
-          {item.corregida && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
-          {item.cambioDespues && <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
+          {item.corregida && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
+          {item.cambioDespues && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
           {sinPago && <Aviso nivel="atencion" compact titulo="Falta el pago del cliente">Lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}; si no puede, regístralo tú. No se puede aprobar hasta que esté registrado.</Aviso>}
           {sinDetalles && !sinPago && <Aviso nivel="atencion" compact>{sinDetalles}</Aviso>}
           <PagoDelCliente orden={item.orden} className="mt-0.5" />
           <VerFotosOrden orden={item.orden} className="mt-0.5" />
           {item.revision?.motivo && <p className={TEXTO_SUAVE}>Motivo: {item.revision.motivo} · {item.revision.por}</p>}
           {estado === 'APROBADA' && item.revision && <p className={TEXTO_SUAVE}>Aprobada por {item.revision.por}</p>}
-          {estado === 'APROBADA' && item.revision?.sinDetalles && !tieneDetalles(item.orden) && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Aprobada sin los detalles de la orden (fotos): {item.revision.sinDetalles}</p>}
+          {estado === 'APROBADA' && item.revision?.sinDetalles && !tieneDetalles(item.orden) && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Aprobada sin los detalles de la orden (fotos): {item.revision.sinDetalles}</p>}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className={`${CHIP} ${CHIP_ESTADO[estado]}`}>{ETIQUETA_REVISION[estado]}</span>
           <span className="text-right">
             <span className="block text-sm font-bold tabular-nums text-foreground">{dolares(precio)}</span>
-            {tasa > 0 && <span className="block text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(precio, tasa))}</span>}
+            {tasa > 0 && <span className="block text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{bolivares(aBs(precio, tasa))}</span>}
           </span>
         </div>
       </div>

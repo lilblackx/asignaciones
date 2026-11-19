@@ -21,7 +21,7 @@ import { oracion } from '../../utils/oracion';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
-const ETIQUETA = 'text-xs font-semibold text-zinc-600 dark:text-zinc-300';
+const ETIQUETA = 'text-xs font-bold text-zinc-600 dark:text-zinc-300';
 const VALOR = 'text-sm text-zinc-900 dark:text-zinc-50 mt-0.5 break-words';
 
 function Dato({ etiqueta, children }) {

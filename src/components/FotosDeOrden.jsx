@@ -34,7 +34,7 @@ export default function FotosDeOrden({ ticket }) {
   const disponibles = fotos.map((f, i) => ({ ruta: f.ruta, url: urls[f.ruta], titulo: `Foto ${i + 1}` })).filter((f) => f.url);
   return (
     <div ref={zona}>
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground mb-2">
+      <p className="text-etiqueta text-muted-foreground mb-2">
         {fotos.length} {fotos.length === 1 ? 'foto' : 'fotos'}{subidoPor ? ` · las subió ${subidoPor}` : ''}{subidoEn ? ` · ${new Date(subidoEn).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}` : ''}
       </p>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -44,7 +44,7 @@ export default function FotosDeOrden({ ticket }) {
             return (
               <div key={f.ruta} className="aspect-square rounded-campo border border-zinc-300 dark:border-zinc-700 bg-secondary flex flex-col items-center justify-center gap-1 text-center p-2">
                 <ImageOff className="w-5 h-5 text-zinc-500" aria-hidden="true" />
-                <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Foto vencida</span>
+                <span className="text-etiqueta font-bold text-muted-foreground">Foto vencida</span>
               </div>
             );
           }

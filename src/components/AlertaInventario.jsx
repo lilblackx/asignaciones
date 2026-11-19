@@ -60,12 +60,12 @@ export function AvisoInventario({ cantidad, pendientes = 0, onAbrir }) {
 }
 
 function Chip({ estado }) {
-  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] max-lg:text-xs font-black ${ESTILO_ESTADO[estado] || ESTILO_ALERTA}`}>{ETIQUETA_ESTADO[estado] || estado}</span>;
+  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-etiqueta font-black ${ESTILO_ESTADO[estado] || ESTILO_ALERTA}`}>{ETIQUETA_ESTADO[estado] || estado}</span>;
 }
 
 function Detalle({ envio }) {
   return (
-    <p className="text-[11px] max-lg:text-xs text-muted-foreground">
+    <p className="text-etiqueta text-muted-foreground">
       {ETIQUETA_ACCION[envio.accion] || 'Orden'}{envio.tecnico || envio.tecnicoOrden ? ` · ${envio.tecnico || envio.tecnicoOrden}` : ''} · {fechaHora(envio.actualizadoEn)}
     </p>
   );
@@ -74,7 +74,7 @@ function Detalle({ envio }) {
 function Serial({ serial }) {
   if (!serial) return null;
   return (
-    <p className="text-[11px] max-lg:text-xs text-muted-foreground">
+    <p className="text-etiqueta text-muted-foreground">
       Serial: <span className="font-mono font-bold text-zinc-800 dark:text-zinc-100 break-all">{serial}</span>
     </p>
   );
@@ -187,7 +187,7 @@ function FilaPendiente({ envio, onReintentar }) {
   return (
     <li className="px-3 py-2 space-y-1.5">
       <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100 truncate">{envio.codigo || 'S/C'}{envio.cliente ? ` - ${envio.cliente}` : ''}</p>
-      <p className="text-[11px] max-lg:text-xs text-zinc-600 dark:text-zinc-300 break-words">{unidad(envio.intentos, 'intento', 'intentos')} · {envio.mensaje || 'No se pudo llegar al inventario.'}</p>
+      <p className="text-etiqueta text-zinc-600 dark:text-zinc-300 break-words">{unidad(envio.intentos, 'intento', 'intentos')} · {envio.mensaje || 'No se pudo llegar al inventario.'}</p>
       <Boton variante="principal" tamano="compacto" type="button" onClick={reintentar} disabled={ocupado}>
         <RefreshCw className={`w-3 h-3 ${ocupado ? 'animate-spin' : ''}`} aria-hidden="true" /> {ocupado ? 'Enviando...' : 'Reintentar ahora'}
       </Boton>
@@ -242,7 +242,7 @@ function FilaReciente({ envio, onReintentar, onReenviar, onReenviarAviso, onCorr
       <Colapsable>
         {abierta && (
           <div className="px-3 pb-3 space-y-2">
-            <dl className="rounded-campo bg-secondary/60 p-2.5 text-[11px] max-lg:text-xs leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
+            <dl className="rounded-campo bg-secondary/60 p-2.5 text-etiqueta leading-relaxed text-zinc-700 dark:text-zinc-200 space-y-0.5">
               {lineas.slice(2).map((l) => <dd key={l} className="break-words">{l}</dd>)}
             </dl>
             <div className="flex flex-wrap gap-2">
@@ -332,17 +332,17 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
 
           {pendientes.length > 0 && (
             <section aria-labelledby="envios-pendientes" className="space-y-2">
-              <h3 id="envios-pendientes" className="text-[11px] max-lg:text-xs font-bold text-amber-700 dark:text-amber-400">Esperando para enviarse ({pendientes.length})</h3>
+              <h3 id="envios-pendientes" className="text-etiqueta font-bold text-amber-700 dark:text-amber-400">Esperando para enviarse ({pendientes.length})</h3>
               <ul className="border border-amber-300 dark:border-amber-900/60 rounded-campo divide-y divide-amber-200 dark:divide-amber-900/40 bg-amber-50 dark:bg-amber-950/20">
                 {pendientes.map((e) => <FilaPendiente key={e.id} envio={e} onReintentar={onReintentar} />)}
               </ul>
-              <p className="text-[11px] max-lg:text-xs text-muted-foreground">Se reintentan solas cada 15 minutos.</p>
+              <p className="text-etiqueta text-muted-foreground">Se reintentan solas cada 15 minutos.</p>
             </section>
           )}
 
           <section aria-labelledby="envios-por-revisar" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-por-revisar" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Por revisar ({envios.length})</h3>
+              <h3 id="envios-por-revisar" className="text-etiqueta font-bold text-muted-foreground">Por revisar ({envios.length})</h3>
               {porReintentar.length > 1 && (
                 <Boton variante="principal" tamano="compacto" type="button" onClick={reintentarTodas} disabled={reintentandoTodas}>
                   <RefreshCw className={`w-3 h-3 ${reintentandoTodas ? 'animate-spin' : ''}`} aria-hidden="true" /> {reintentandoTodas ? 'Enviando...' : `Reintentar todas (${porReintentar.length})`}
@@ -360,7 +360,7 @@ export default function EnviosInventarioModal({ envios, pendientes = [], recient
 
           <section aria-labelledby="envios-recientes" className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 id="envios-recientes" className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Actividad reciente</h3>
+              <h3 id="envios-recientes" className="text-etiqueta font-bold text-muted-foreground">Actividad reciente</h3>
               <Boton variante="secundario" tamano="compacto" type="button" onClick={onActualizar} disabled={cargando}>
                 <RefreshCw className={`w-3 h-3 ${cargando ? 'animate-spin' : ''}`} aria-hidden="true" /> Actualizar
               </Boton>

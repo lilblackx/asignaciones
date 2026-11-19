@@ -51,8 +51,8 @@ export default function PanelPago({ fila, rango, etiqueta, tasa, etiquetaTasa = 
 
       <div className="border-y border-input py-4">
         <p className={ETIQUETA}>Total pendiente por pagar</p>
-        <p className="text-xl font-extrabold tabular-nums text-foreground leading-tight">{dolares(neto)}</p>
-        {tasa > 0 && <p className="text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
+        <p className="text-xl font-black tabular-nums text-foreground leading-tight">{dolares(neto)}</p>
+        {tasa > 0 && <p className="text-sm font-bold tabular-nums text-zinc-700 dark:text-zinc-200">{bolivares(aBs(neto, tasa))}</p>}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2 max-w-4xl">

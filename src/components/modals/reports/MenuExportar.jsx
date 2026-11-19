@@ -126,7 +126,7 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
                 <Icono className="w-5 h-5 shrink-0 text-red-600" aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block text-sm font-bold text-foreground">{etiqueta}</span>
-                  <span className="block text-[11px] max-lg:text-xs text-muted-foreground">{detalle}</span>
+                  <span className="block text-etiqueta text-muted-foreground">{detalle}</span>
                 </span>
               </button>
             );

@@ -1,9 +1,9 @@
 // Los estilos comunes de toda la app: los de Finanzas y de Revisión de órdenes, que son los mismos del resto (tarjetas blancas con borde y sombra sobre el fondo gris, letra de 14 px, controles de 36 px con
 // borde fino, títulos en mayúsculas pequeñas). Quien necesite la letra más grande usa el selector "Tamaño de letra" de Finanzas, que agranda todo junto (todo está en rem).
 export const TARJETA = 'bg-card rounded-card border border-transparent shadow-sm shadow-card';
-export const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
+export const ETIQUETA = 'text-etiqueta font-bold text-muted-foreground';
 // La etiqueta de un campo de formulario va en minúscula normal; las mayúsculas con espaciado son solo para encabezados de tabla (ETIQUETA).
-export const ETIQUETA_CAMPO = 'text-xs font-semibold text-muted-foreground';
+export const ETIQUETA_CAMPO = 'text-xs font-bold text-muted-foreground';
 export const TEXTO_SUAVE = 'text-xs text-muted-foreground';
 // El título de una tarjeta o sección: minúscula normal, como pide DESIGN.md (las mayúsculas son para encabezados de tabla, estados y la marca).
 export const TITULO_SECCION = 'text-base font-black text-foreground';
@@ -52,7 +52,7 @@ export const BOTON_CON_BORDE_GRANDE = BOTON.replace('h-9 px-3', 'h-10 px-4');
 // Un botón pequeño dentro de una fila (Anular, Aprobar, Retener...).
 export const BOTON_FILA = 'inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-boton border border-input bg-card text-xs font-bold text-foreground hover:bg-secondary transition-colors disabled:opacity-50';
 
-export const CHIP = 'inline-flex items-center rounded-md px-2 py-0.5 text-[11px] max-lg:text-xs font-bold';
+export const CHIP = 'inline-flex items-center rounded-md px-2 py-0.5 text-etiqueta font-bold';
 export const ESTADO = {
   POR_PAGAR: { texto: 'Por pagar', clase: 'bg-amber-400 text-black' },
   PAGADO: { texto: 'Al día', clase: 'bg-emerald-700 text-white' },
@@ -90,7 +90,7 @@ const TAMANOS_CHIP = { normal: 'px-3 text-sm', compacto: 'px-3 text-xs', angosto
 export const claseChip = (activo, tamano = 'normal') => `${BASE_CHIP} ${TAMANOS_CHIP[tamano]} ${activo ? 'bg-primary border-primary text-primary-foreground' : 'bg-card border-input text-foreground hover:border-muted-foreground'}`;
 
 // --- Etiqueta de los formularios de órdenes (Crear orden, Editar orden, Nueva venta).
-export const ETIQUETA_ORDEN = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
+export const ETIQUETA_ORDEN = 'text-etiqueta font-bold text-muted-foreground ml-1';
 
 // --- Botones del encabezado de cada módulo (Actualizar, Exportar, tema, cerrar sesión, menú, Volver): el mismo estilo que la campana del panel principal
 // (tarjeta clara con sombra suave, sin borde, en cápsula). `BOTON_ENCABEZADO_ICONO` es el redondo con solo un ícono.

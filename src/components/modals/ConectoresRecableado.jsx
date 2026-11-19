@@ -8,7 +8,7 @@ import { claseCampo } from '../estilos';
 function GrupoConector({ id, etiqueta, ayuda, colores, valor, onChange }) {
   return (
     <div role="group" aria-labelledby={`${id}-etiqueta`} className="space-y-1.5">
-      <p id={`${id}-etiqueta`} className="text-[11px] max-lg:text-xs font-bold text-card-foreground ml-1">
+      <p id={`${id}-etiqueta`} className="text-etiqueta font-bold text-card-foreground ml-1">
         {etiqueta} <span className="font-normal text-muted-foreground">{ayuda}</span>
       </p>
       <div className="flex flex-wrap gap-2">
@@ -43,7 +43,7 @@ export default function ConectoresRecableado({ colorExterno, colorInterno, onExt
         <p className="text-xs font-bold text-card-foreground ml-1">
           Conectores <span className="font-normal text-muted-foreground">(opcional)</span>
         </p>
-        <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Toca un color para marcarlo; vuelve a tocarlo para quitarlo.</p>
+        <p className="text-etiqueta text-muted-foreground ml-1">Toca un color para marcarlo; vuelve a tocarlo para quitarlo.</p>
       </div>
       <GrupoConector id="pf-conector-externo" etiqueta="Conector externo" ayuda="(solo verde)" colores={COLORES_CONECTOR_EXTERNO} valor={colorExterno} onChange={onExterno} />
       <GrupoConector id="pf-conector-interno" etiqueta="Conector interno" ayuda="(verde o azul)" colores={COLORES_CONECTOR_INTERNO} valor={colorInterno} onChange={onInterno} />
@@ -92,24 +92,24 @@ export function CantidadesConectorInstalacion({ externoVerde, internoVerde, inte
         <p id="pf-cantidad-conectores-inst-etiqueta" className="text-xs font-bold text-card-foreground ml-1">
           Conectores usados <span className="font-normal text-red-700 dark:text-red-400">(obligatorio: al menos 1 en total)</span>
         </p>
-        <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Escribe cuántos usaste de cada tipo y color; deja en 0 el que no usaste.</p>
+        <p className="text-etiqueta text-muted-foreground ml-1">Escribe cuántos usaste de cada tipo y color; deja en 0 el que no usaste.</p>
       </div>
       <div role="group" aria-labelledby="pf-cantidad-conectores-inst-etiqueta" className="space-y-3">
         <div className="space-y-1.5">
-          <p className="text-[11px] max-lg:text-xs font-bold text-card-foreground ml-1">Conector externo <span className="font-normal text-muted-foreground">(solo verde)</span></p>
+          <p className="text-etiqueta font-bold text-card-foreground ml-1">Conector externo <span className="font-normal text-muted-foreground">(solo verde)</span></p>
           <div className="flex flex-wrap gap-3">
             <CampoCantidad id="pf-cant-ext-verde" etiqueta="Verdes" color="VERDE" valor={externoVerde} onChange={onExternoVerde} error={error?.campo === 'externoVerde' ? mensaje : ''} />
           </div>
         </div>
         <div className="space-y-1.5">
-          <p className="text-[11px] max-lg:text-xs font-bold text-card-foreground ml-1">Conector interno <span className="font-normal text-muted-foreground">(verde o azul)</span></p>
+          <p className="text-etiqueta font-bold text-card-foreground ml-1">Conector interno <span className="font-normal text-muted-foreground">(verde o azul)</span></p>
           <div className="flex flex-wrap gap-3">
             <CampoCantidad id="pf-cant-int-verde" etiqueta="Verdes" color="VERDE" valor={internoVerde} onChange={onInternoVerde} error={error?.campo === 'internoVerde' ? mensaje : ''} />
             <CampoCantidad id="pf-cant-int-azul" etiqueta="Azules" color="AZUL" valor={internoAzul} onChange={onInternoAzul} error={error?.campo === 'internoAzul' ? mensaje : ''} />
           </div>
         </div>
       </div>
-      {mensaje && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{mensaje}</p>}
+      {mensaje && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{mensaje}</p>}
     </div>
   );
 }
@@ -122,12 +122,12 @@ export function CantidadesConectorVisita({ interno, verde, azul, onVerde, onAzul
         Conectores usados{' '}
         <span className="font-normal text-red-700 dark:text-red-400">{interno ? '(obligatorio: al menos 1 en total)' : '(obligatorio)'}</span>
       </p>
-      <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{interno ? 'Escribe cuántos usaste de cada color; deja en 0 el que no usaste.' : 'El conector externo es solo verde: escribe cuántos usaste. Si también cambiaste un conector interno azul, escribe cuántos; si no, déjalo en 0.'}</p>
+      <p className="text-etiqueta text-muted-foreground ml-1">{interno ? 'Escribe cuántos usaste de cada color; deja en 0 el que no usaste.' : 'El conector externo es solo verde: escribe cuántos usaste. Si también cambiaste un conector interno azul, escribe cuántos; si no, déjalo en 0.'}</p>
       <div role="group" aria-labelledby="pf-cantidad-conectores-etiqueta" className="flex flex-wrap gap-3">
         <CampoCantidad id="pf-cant-verde" etiqueta={interno ? 'Verdes' : 'Externos verdes'} color="VERDE" valor={verde} onChange={onVerde} error={error?.campo === 'verde' ? mensaje : ''} />
         <CampoCantidad id="pf-cant-azul" etiqueta={interno ? 'Azules' : 'Internos azules (opcional)'} color="AZUL" valor={azul} onChange={onAzul} error={error?.campo === 'azul' ? mensaje : ''} />
       </div>
-      {mensaje && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{mensaje}</p>}
+      {mensaje && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{mensaje}</p>}
     </div>
   );
 }

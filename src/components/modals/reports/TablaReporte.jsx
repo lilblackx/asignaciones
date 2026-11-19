@@ -3,14 +3,14 @@ export default function TablaReporte({ titulo, nota, columnas, filas, vacio = 'S
   return (
     <section className="bg-card border border-border rounded-card p-4 sm:p-5 shadow-sm mb-4">
       <h3 className="text-sm font-bold text-foreground">{titulo}</h3>
-      {nota && <p className="text-[11px] max-lg:text-xs text-muted-foreground mt-1">{nota}</p>}
+      {nota && <p className="text-etiqueta text-muted-foreground mt-1">{nota}</p>}
       {filas.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-6">{vacio}</p>
       ) : (
         <div className="overflow-x-auto mt-3">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[11px] max-lg:text-xs text-muted-foreground border-b border-border">
+              <tr className="text-etiqueta text-muted-foreground border-b border-border">
                 {columnas.map(({ titulo: t, derecha }) => <th key={t} className={`py-2 pr-3 font-bold whitespace-nowrap ${derecha ? 'text-right' : 'text-left'}`}>{t}</th>)}
               </tr>
             </thead>

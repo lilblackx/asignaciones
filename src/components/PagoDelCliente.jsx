@@ -15,7 +15,7 @@ const TONO = {
   info: { linea: 'text-sky-800 dark:text-sky-300', caja: 'border-sky-600 bg-sky-50 dark:bg-sky-950/30' },
 };
 const tonoDe = (p) => (p.tipo === TIPO_PAGO.JUNTO ? 'info' : p.tipo === TIPO_PAGO.DESPUES || avisosDePago(p).length > 0 ? 'atencion' : 'ok');
-const TAMANO = { normal: 'text-xs', compacto: 'text-[11px] max-lg:text-xs', grande: 'text-sm' };
+const TAMANO = { normal: 'text-xs', compacto: 'text-etiqueta', grande: 'text-sm' };
 
 // Referencia del pago con su botón para copiarla (para buscarla en el banco o pegarla donde haga falta).
 function FilaCopiable({ etiqueta, valor }) {
@@ -100,7 +100,7 @@ export default function PagoDelCliente({ orden, bloque = false, tamano = 'normal
   }
   const texto = [p.tipo === TIPO_PAGO.PAGO ? `Pagó: ${lineaDePago(p)}` : lineaDePago(p), p.nota && `Nota: ${p.nota}`, p.aNombreDelTecnico && 'Registrado por la oficina'].filter(Boolean).join(' · ');
   return (
-    <div className={`min-w-0 break-words font-semibold ${TAMANO[tamano]} ${tono.linea} ${tamano === 'compacto' ? 'line-clamp-2' : ''} ${className}`} title={tamano === 'compacto' ? texto : undefined}>
+    <div className={`min-w-0 break-words font-bold ${TAMANO[tamano]} ${tono.linea} ${tamano === 'compacto' ? 'line-clamp-2' : ''} ${className}`} title={tamano === 'compacto' ? texto : undefined}>
       {texto}
     </div>
   );

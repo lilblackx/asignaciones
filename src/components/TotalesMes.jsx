@@ -12,8 +12,8 @@ function Cifra({ valor, etiqueta, nota, resaltar = false }) {
   return (
     <div className="min-w-0">
       <p className={`text-3xl font-black tabular-nums leading-none ${resaltar ? 'text-emerald-700 dark:text-emerald-400' : 'text-foreground'}`}><NumeroPulso valor={valor ?? '…'} /></p>
-      <p className="mt-1.5 text-[11px] max-lg:text-xs font-bold text-muted-foreground">{etiqueta}</p>
-      {nota && <p className="text-[11px] max-lg:text-xs text-muted-foreground">{nota}</p>}
+      <p className="mt-1.5 text-etiqueta font-bold text-muted-foreground">{etiqueta}</p>
+      {nota && <p className="text-etiqueta text-muted-foreground">{nota}</p>}
     </div>
   );
 }
@@ -61,7 +61,7 @@ export default function TotalesMes({ mes, meses, onCambiarMes, totales, error })
           <dl className="text-xs text-muted-foreground space-y-1 text-right">
             <div><dt className="inline font-bold text-foreground">Instalaciones: </dt><dd className="inline">{plural(inst.finalizadas, 'finalizada', 'finalizadas')}, {plural(inst.canceladas, 'cancelada', 'canceladas')}{inst.enProceso !== null && `, ${inst.enProceso} en proceso`}</dd></div>
             <div><dt className="inline font-bold text-foreground">Averías LOS: </dt><dd className="inline">{plural(los.finalizadas, 'resuelta', 'resueltas')}, {plural(los.canceladas, 'cancelada', 'canceladas')}{los.enProceso !== null && `, ${los.enProceso} en proceso`}</dd></div>
-            <p className="text-[11px] max-lg:text-xs text-muted-foreground pt-1 text-right">Incluye lo cerrado del mes y lo de hoy. "En proceso" es de este momento, por eso solo está en el mes actual.</p>
+            <p className="text-etiqueta text-muted-foreground pt-1 text-right">Incluye lo cerrado del mes y lo de hoy. "En proceso" es de este momento, por eso solo está en el mes actual.</p>
           </dl>
         )}
       </Colapsable>

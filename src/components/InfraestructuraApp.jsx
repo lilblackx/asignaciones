@@ -31,7 +31,7 @@ const dato = (valor) => valor || '-';
 // La salida suave de una fila solo en la tabla (pantalla mediana o grande) y sin "reducir movimiento"; en el celular la fila se va al instante.
 const filasAnimadas = () => window.matchMedia('(min-width: 768px) and (prefers-reduced-motion: no-preference)').matches;
 const SIN = (obj, id) => { const copia = { ...obj }; delete copia[id]; return copia; };
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
+const ETIQUETA = 'text-etiqueta font-bold text-muted-foreground';
 
 // Pantalla de INFRAESTRUCTURA: las instalaciones realizadas, con la NAP y el puerto donde quedó conectado cada cliente nuevo. Solo lee las órdenes; lo único que escribe es el check de "ya la anoté".
 // `onAbrirMenu`: cuando un administrador está aquí dentro del menú lateral, el botón ☰ que lo abre en el celular.
@@ -236,7 +236,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   {/* Escritorio: tabla. */}
                   <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs text-muted-foreground">
+                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-etiqueta text-muted-foreground">
                         <tr>
                           {['Fecha', 'Código', 'Cliente', 'Dirección', 'Técnico', 'NAP', 'Puerto', 'Puertos libres', 'Plantilla', 'Anotada'].map((c) => <th key={c} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}
                         </tr>

@@ -38,7 +38,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
   if (error && !cargado) return <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron leer los pagos de los clientes. Recarga la página e intenta de nuevo.</p>;
   if (!cargado) return <Cargando texto="Cargando los pagos..." />;
 
-  const estadoChip = () => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_PAGO_FINANZAS}`}>{ETIQUETA_PAGO_FINANZAS}</span>;
+  const estadoChip = () => <span className={`inline-block whitespace-nowrap text-etiqueta leading-tight font-black px-2 py-0.5 rounded ${CLASE_PAGO_FINANZAS}`}>{ETIQUETA_PAGO_FINANZAS}</span>;
   const detalle = (p) => (p.pago ? textoPago(p.pago) : p.compartidoCon ? `Pagó junto con ${p.compartidoCon.codigo}` : p.cobro ? `Debe ${monto(p.cobro.monto, p.cobro.moneda)}` : 'Sin pago');
   const datosExtra = (p) => [p.pago?.titular && `Titular: ${p.pago.titular}`, p.pago?.cuentaEmpresa && `Llegó a: ${p.pago.cuentaEmpresa}`].filter(Boolean);
 
@@ -48,8 +48,8 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
       <section aria-label="Resumen" className="grid grid-cols-2 lg:grid-cols-3 gap-2">
         {cifrasPagosClientes(visibles).map(({ etiqueta, valor, detalle }) => (
           <div key={etiqueta} className={`${TARJETA} p-3 min-w-0`}>
-            <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none break-words text-foreground">{valor}</p>
-            <p className="mt-1 text-xs font-semibold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
+            <p className="text-xl sm:text-2xl font-black tabular-nums leading-none break-words text-foreground">{valor}</p>
+            <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-100">{etiqueta}</p>
             {detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300 break-words">{detalle}</p>}
           </div>
         ))}
@@ -112,7 +112,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
           {/* Escritorio: tabla. */}
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs text-muted-foreground">
+              <thead className="bg-zinc-100 dark:bg-zinc-950 text-etiqueta text-muted-foreground">
                 <tr>{['Pagado el', 'Código', 'Cliente', 'Técnico', 'Tipo', 'Pago', 'Titular y cuenta', 'Estado', ''].map((c, i) => <th key={`${c}${i}`} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">

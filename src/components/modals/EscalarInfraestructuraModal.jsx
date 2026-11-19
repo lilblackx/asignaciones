@@ -36,7 +36,7 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
         <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded">Infraestructura</span>
+              <span className="bg-orange-500 text-black text-etiqueta font-black px-2 py-0.5 rounded">Infraestructura</span>
               <span className="text-xs font-bold text-orange-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
@@ -62,8 +62,8 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
               placeholder="Ej. Falta un poste frente a la casa, la NAP está sin puertos..."
               className={`${claseArea('normal')} resize-none`}
             />
-            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
-            <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">
+            {error && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
+            <p className="text-etiqueta text-muted-foreground ml-1">
               {esTecnico
                 ? 'La orden sale de tu lista y la oficina recibe un aviso. Cuando infraestructura termine, la oficina decide cómo sigue.'
                 : `La orden sale de la lista del técnico${ticket.tecnico ? ` (${ticket.tecnico})` : ''} y queda esperando en "En infraestructura". Tú decides cómo sigue.`}

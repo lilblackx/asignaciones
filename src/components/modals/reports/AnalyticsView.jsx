@@ -37,7 +37,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
                 type="button"
                 aria-pressed={tipoProductividad === clave}
                 onClick={() => setTipoProductividad(clave)}
-                className={`px-2.5 py-1 rounded-campo text-[11px] max-lg:text-xs font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-campo text-etiqueta font-bold transition-colors ${tipoProductividad === clave ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-white'}`}
               >
                 {texto}
               </button>
@@ -71,7 +71,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
           <div className="flex flex-col gap-2">
             {porNap.map(({ nap, count }) => (
               <div key={nap} className="flex items-center gap-2">
-                <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground w-28 shrink-0 truncate" title={nap}>{nap}</span>
+                <span className="text-etiqueta font-bold text-muted-foreground w-28 shrink-0 truncate" title={nap}>{nap}</span>
                 <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500" style={{ width: `${(count / maxNap) * 100}%` }} />
                 </div>
@@ -94,7 +94,7 @@ export default function AnalyticsView({ ordenes, rango, tecnico, getTecnicoColor
               <div key={cedula} className="flex items-center justify-between bg-sunken border border-border rounded-campo px-3 py-2">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-foreground truncate">{nombre}</div>
-                  <div className="text-[11px] max-lg:text-xs text-muted-foreground">C.I: {cedula}</div>
+                  <div className="text-etiqueta text-muted-foreground">C.I: {cedula}</div>
                 </div>
                 <span className="text-xs font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-1 rounded shrink-0 ml-2">{count} órdenes</span>
               </div>

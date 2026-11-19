@@ -35,7 +35,7 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
         <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-red-600 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-red-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded">Cancelar orden</span>
+              <span className="bg-red-600 text-white text-etiqueta font-black px-2 py-0.5 rounded">Cancelar orden</span>
               <span className="text-xs font-bold text-red-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
@@ -60,8 +60,8 @@ export default function CancelarOrdenModal({ ticket, onConfirmar, onClose }) {
               placeholder="Ej. El cliente ya no quiere el servicio, no hay cobertura en la zona, la orden se cargó por error..."
               className={`${claseArea('normal')} resize-none`}
             />
-            {error && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
-            <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">
+            {error && <p role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
+            <p className="text-etiqueta text-muted-foreground ml-1">
               La orden queda CANCELADA y se ve en la lista, el historial, ventas y los reportes.{ticket.tecnico ? ` ${ticket.tecnico} recibe un aviso con el motivo.` : ''}
             </p>
           </div>

@@ -5,7 +5,7 @@ import { etiquetaFiltroEstado } from '../utils/estadoInstalacion';
 export default function ResumenPromotores({ filas, vista, elegida, onElegir }) {
   const instaladas = etiquetaFiltroEstado('INSTALADA', vista);
   const total = filas.reduce((acc, f) => ({ instaladas: acc.instaladas + f.instaladas, enRevision: acc.enRevision + f.enRevision, enCurso: acc.enCurso + f.enCurso, canceladas: acc.canceladas + f.canceladas, total: acc.total + f.total }), { instaladas: 0, enRevision: 0, enCurso: 0, canceladas: 0, total: 0 });
-  const encabezado = 'px-2 py-2 text-right text-[11px] max-lg:text-xs font-bold text-muted-foreground';
+  const encabezado = 'px-2 py-2 text-right text-etiqueta font-bold text-muted-foreground';
   const celda = 'px-2 py-2 text-right tabular-nums';
 
   if (filas.length === 0) return <p className="text-sm text-muted-foreground text-center py-3">No hay órdenes para resumir.</p>;
@@ -14,7 +14,7 @@ export default function ResumenPromotores({ filas, vista, elegida, onElegir }) {
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border">
-            <th scope="col" className="px-3 py-2 text-left text-[11px] max-lg:text-xs font-bold text-muted-foreground">Promotor</th>
+            <th scope="col" className="px-3 py-2 text-left text-etiqueta font-bold text-muted-foreground">Promotor</th>
             <th scope="col" className={encabezado}>{instaladas}</th>
             <th scope="col" className={encabezado}>En revisión</th>
             <th scope="col" className={encabezado}>En curso</th>

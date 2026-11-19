@@ -9,7 +9,7 @@ import Cargando from './Cargando';
 
 const CLASE_COBRO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const CLASE_PAGO = { PENDIENTE_COBRO: 'bg-amber-400 text-black', POR_CONCILIAR: 'bg-sky-700 text-white', CONCILIADO: 'bg-emerald-700 text-white', SIN_COBRAR: 'bg-red-600 text-white' };
-const CHIP = 'inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded';
+const CHIP = 'inline-block whitespace-nowrap text-etiqueta leading-tight font-black px-2 py-0.5 rounded';
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
 // El cobro de una orden al cliente, en solo lectura (la oficina y Finanzas; se trabaja en el módulo de Administración): si ya se emitió, su estado (pendiente o cargado en el portal) y su monto; si no, el pago que

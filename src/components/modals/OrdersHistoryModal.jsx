@@ -170,7 +170,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                 <CampoFecha ariaLabel="Desde" vacio="Desde" valor={desde} max={hasta || undefined} onChange={(v) => withReset(setDesde)({ target: { value: v } })} permitirBorrar flotante clase={CAMPO_FECHA} />
                 <CampoFecha ariaLabel="Hasta" vacio="Hasta" valor={hasta} min={desde || undefined} onChange={(v) => withReset(setHasta)({ target: { value: v } })} permitirBorrar flotante derecha clase={CAMPO_FECHA} />
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] max-lg:text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 text-etiqueta text-muted-foreground">
                 <BotonExportar
                   onClick={() => exportOrdersToCsv(filtered, describirFiltros())}
                   disabled={filtered.length === 0}
@@ -187,7 +187,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
             </div>
           )}</Colapsable>
 
-          <div className="flex items-center justify-between gap-2 text-[11px] max-lg:text-xs text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 text-etiqueta text-muted-foreground">
             <span>
               {filtered.length} {filtered.length === 1 ? 'orden' : 'órdenes'}
             </span>
@@ -198,7 +198,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-fondo space-y-3 ${CENTRADO_AMPLIO}`}>
           {/* El encabezado de las columnas (solo PC), alineado con las filas. */}
           {shown.length > 0 && (
-            <div className="hidden lg:flex gap-3 px-4 text-[11px] font-bold text-muted-foreground">
+            <div className="hidden lg:flex gap-3 px-4 text-etiqueta font-bold text-muted-foreground">
               <div className="flex-1 grid grid-cols-[17rem_minmax(0,1fr)] gap-6"><span>Orden</span><span>Cliente y trabajo</span></div>
               <span className="w-56 text-right pr-6">Técnico</span>
             </div>
@@ -212,13 +212,13 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                   <div className="min-w-0 flex-1 lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-center lg:gap-6">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-foreground text-sm">{o.codigo || 'S/C'}</span>
-                      <span className={`px-2.5 py-0.5 text-[11px] max-lg:text-xs font-black rounded-full leading-tight ${getEstadoPastel(o.estado)}`}>{oracion(o.estado)}</span>
-                      <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{o.fecha}</span>
+                      <span className={`px-2.5 py-0.5 text-etiqueta font-black rounded-full leading-tight ${getEstadoPastel(o.estado)}`}>{oracion(o.estado)}</span>
+                      <span className="text-etiqueta font-bold text-muted-foreground">{o.fecha}</span>
                     </div>
                     <div className="min-w-0 mt-1 lg:mt-0">
                       <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight truncate">{o.nombre}</h5>
                       <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                        <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(o.tipoTrabajo || 'AVERÍA').badge}`}>{oracion(o.tipoTrabajo || 'AVERÍA')}</span>
+                        <span className={`text-etiqueta font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(o.tipoTrabajo || 'AVERÍA').badge}`}>{oracion(o.tipoTrabajo || 'AVERÍA')}</span>
                         {fallaVisible(o) && <span className="font-medium text-card-foreground">{fallaVisible(o)}</span>}
                       </p>
                     </div>
@@ -227,8 +227,8 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                     <div className="flex flex-col items-end gap-1 min-w-0">
                       {o.tecnico
                         ? <NombreTecnico nombre={o.tecnico} getTecnicoColor={getTecnicoColor} />
-                        : <span className="text-[11px] max-lg:text-xs text-muted-foreground italic">Sin técnico</span>}
-                      {o._origen !== 'Activa' && <span className="text-[11px] max-lg:text-xs font-semibold text-muted-foreground">{o._origen}</span>}
+                        : <span className="text-etiqueta text-muted-foreground italic">Sin técnico</span>}
+                      {o._origen !== 'Activa' && <span className="text-etiqueta font-bold text-muted-foreground">{o._origen}</span>}
                     </div>
                     <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                   </div>
@@ -237,15 +237,15 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                 <Colapsable>
                   {isOpen && (
                     <div className="border-t border-border px-4 py-3 text-xs space-y-1.5 text-card-foreground">
-                      <p><span className="font-semibold">Cédula:</span> {formatCedula(o.cedula, o.tipoDocumento) || '-'}</p>
-                      {o.telefono && <p><span className="font-semibold">Teléfono:</span> {o.telefono}</p>}
-                      <p><span className="font-semibold">Dirección:</span> {o.direccion || '-'}</p>
-                      {o.nap && <p><span className="font-semibold">NAP:</span> {o.nap}</p>}
-                      {o.fechaProgramada && <p><span className="font-semibold">Programada:</span> {o.fechaProgramada}</p>}
-                      <p><span className="font-semibold">Observación:</span> {o.observacion || '-'}</p>
-                      {o.observacionTecnico && <p><span className="font-semibold">Obs. del técnico:</span> {o.observacionTecnico}</p>}
-                      {pagoClienteDe(o) && <p><span className="font-semibold">Pago del cliente:</span> {textoDelPago(o)}</p>}
-                      {o.creado && <p><span className="font-semibold">Creada por:</span> {o.creado}</p>}
+                      <p><span className="font-bold">Cédula:</span> {formatCedula(o.cedula, o.tipoDocumento) || '-'}</p>
+                      {o.telefono && <p><span className="font-bold">Teléfono:</span> {o.telefono}</p>}
+                      <p><span className="font-bold">Dirección:</span> {o.direccion || '-'}</p>
+                      {o.nap && <p><span className="font-bold">NAP:</span> {o.nap}</p>}
+                      {o.fechaProgramada && <p><span className="font-bold">Programada:</span> {o.fechaProgramada}</p>}
+                      <p><span className="font-bold">Observación:</span> {o.observacion || '-'}</p>
+                      {o.observacionTecnico && <p><span className="font-bold">Obs. del técnico:</span> {o.observacionTecnico}</p>}
+                      {pagoClienteDe(o) && <p><span className="font-bold">Pago del cliente:</span> {textoDelPago(o)}</p>}
+                      {o.creado && <p><span className="font-bold">Creada por:</span> {o.creado}</p>}
                       <div className="pt-1.5 flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -266,7 +266,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                         </>
                       )}
                       </div>
-                      {motivoCancelacion(o) && <p><span className="font-semibold">Motivo de la cancelación:</span> {motivoCancelacion(o)}{o.canceladaPor ? ` (${o.canceladaPor})` : ''}</p>}
+                      {motivoCancelacion(o) && <p><span className="font-bold">Motivo de la cancelación:</span> {motivoCancelacion(o)}{o.canceladaPor ? ` (${o.canceladaPor})` : ''}</p>}
                     </div>
                   )}
                 </Colapsable>

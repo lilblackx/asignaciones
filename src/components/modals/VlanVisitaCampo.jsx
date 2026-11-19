@@ -21,7 +21,7 @@ export default function VlanVisitaCampo({ vlan, onVlan, error = '' }) {
         aria-describedby={error ? 'pf-vlan-visita-error' : undefined}
         className={`${claseCampo('grande', error ? 'error' : 'normal')} min-w-0 font-bold`}
       />
-      {error && <p id="pf-vlan-visita-error" role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
+      {error && <p id="pf-vlan-visita-error" role="alert" className="text-etiqueta text-red-700 dark:text-red-400 font-bold ml-1">{error}</p>}
     </div>
   );
 }

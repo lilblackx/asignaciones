@@ -24,7 +24,7 @@ const OPCIONES = [
 export default function CobroAcordadoField({ idPrefix, value, onChange, error = '', wrapperClassName = 'space-y-1', cuentasEmpresa = [], pagoRef = null, permitirPagada = false, suave = false }) {
   const moneda = value.moneda === MONEDA_USD ? MONEDA_USD : MONEDA_BS;
   const esMonto = value.modo === COBRO_OTRO;
-  const etiqueta = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1';
+  const etiqueta = 'text-etiqueta font-bold text-muted-foreground ml-1';
   const [abierto, setAbierto] = useState(() => !suave || value.modo !== SIN_DEFINIR || Boolean(error));
   const resumen = (OPCIONES.find(([modo]) => modo === value.modo) || OPCIONES[0])[1];
   const claseOpcion = (activa) => (suave
@@ -37,7 +37,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
         <>
           <button type="button" onClick={() => setAbierto((a) => !a)} aria-expanded={abierto} aria-controls={`${idPrefix}-cobro-panel`} className="w-full flex items-center justify-between gap-2 min-h-11 lg:min-h-9 text-left rounded-campo focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <span id={`${idPrefix}-cobro-acordado`} className="text-sm font-black text-foreground">Cobro acordado con el cliente <span className="font-normal text-xs text-muted-foreground">(opcional)</span></span>
-            <span className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">{resumen}<ChevronDown className={`w-4 h-4 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" /></span>
+            <span className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">{resumen}<ChevronDown className={`w-4 h-4 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" /></span>
           </button>
           {abierto && <p className="text-xs text-muted-foreground ml-1">Lo ve quien finaliza la orden.</p>}
         </>
@@ -116,7 +116,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
               className={`min-w-0 flex-1 ${claseCampo('compacto', error ? 'error' : 'normal')} text-right font-bold tabular-nums`}
             />
           </div>
-          {error && <p id={`${idPrefix}-cobro-monto-error`} role="alert" className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 ml-1">{error}</p>}
+          {error && <p id={`${idPrefix}-cobro-monto-error`} role="alert" className="text-etiqueta font-bold text-red-700 dark:text-red-400 ml-1">{error}</p>}
         </div>
       )}
 

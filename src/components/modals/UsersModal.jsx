@@ -489,7 +489,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 <div className="space-y-2 min-w-0">
                   <label htmlFor="user-clave" className={ETIQUETA_CAMPO}>Clave</label>
                   <input id="user-clave" required type="password" autoComplete="new-password" minLength={8} value={newUser.clave} onChange={(e) => { setNewUser({ ...newUser, clave: stripEmojis(e.target.value) }); setPasswordError(''); }} className={CAMPO_FORMULARIO} placeholder="mínimo 8 caracteres" />
-                  <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">{PASSWORD_POLICY_HINT}</p>
+                  <p className="text-etiqueta text-muted-foreground ml-1">{PASSWORD_POLICY_HINT}</p>
                   {passwordError && <p role="alert" className="text-xs text-red-700 dark:text-red-400 font-bold ml-1">{passwordError}</p>}
                 </div>
                 <div className="space-y-2 min-w-0">
@@ -525,7 +525,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     className={SELECT_FORM_CLASS}
                     chevronClassName="w-4 h-4 right-3"
                   />
-                  <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
+                  <p className="text-etiqueta text-muted-foreground ml-1">Este usuario solo verá las órdenes asignadas a este técnico.</p>
                 </div>
               )}
 
@@ -535,7 +535,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                     <input type="checkbox" checked={newUser.puedeVerHistorial} onChange={(e) => setNewUser({ ...newUser, puedeVerHistorial: e.target.checked })} className="w-4 h-4 text-red-600 rounded border-input focus:ring-primary cursor-pointer" />
                     Ver el historial de órdenes
                   </label>
-                  <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Ve todas las órdenes y cierres (con cédula, teléfono y cobros), solo para mirar.</p>
+                  <p className="text-etiqueta text-muted-foreground ml-1">Ve todas las órdenes y cierres (con cédula, teléfono y cobros), solo para mirar.</p>
                 </div>
               )}
 
@@ -560,7 +560,7 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                       placeholder="Ej. Sariana"
                       className={SELECT_FORM_CLASS}
                     />
-                    <p className="text-[11px] max-lg:text-xs text-muted-foreground ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
+                    <p className="text-etiqueta text-muted-foreground ml-1">Como aparece en la línea "Promotor:" (o "Promotora:") de las plantillas. Si lo escriben de varias formas, sepáralas con coma (Ej. Sariana, Sariana Pérez). Sin "Ver todas las instalaciones", este usuario solo verá las instalaciones cuyo promotor coincida.</p>
                   </div>
                 </div>
               )}

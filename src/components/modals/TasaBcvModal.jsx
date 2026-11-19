@@ -140,7 +140,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
             <form onSubmit={handleManualSubmit} className="border-t border-border pt-4 space-y-4">
               <h3 className={TITULO_SECCION}>Ajuste manual</h3>
               <div className="space-y-2">
-                <label htmlFor="tasa-manual" className="text-xs font-semibold text-muted-foreground ml-1">Tasa (Bs por EUR)</label>
+                <label htmlFor="tasa-manual" className="text-xs font-bold text-muted-foreground ml-1">Tasa (Bs por EUR)</label>
                 <input
                   id="tasa-manual"
                   required
@@ -152,7 +152,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="monto-manual" className="text-xs font-semibold text-muted-foreground ml-1">Monto base (EUR)</label>
+                <label htmlFor="monto-manual" className="text-xs font-bold text-muted-foreground ml-1">Monto base (EUR)</label>
                 <input
                   id="monto-manual"
                   required

@@ -14,18 +14,18 @@ const CAMPOS = { selectTipoDoc: SELECTOR_TIPO_DOC_ORDEN, inputCedula: CAMPO_ORDE
 const STYLES = {
   create: {
     ...CAMPOS,
-    label: 'text-xs font-semibold text-muted-foreground ml-1',
-    labelObs: 'text-xs font-semibold text-muted-foreground',
-    labelObsInterna: 'flex items-center gap-1.5 max-lg:min-h-11 text-xs font-semibold text-muted-foreground cursor-pointer',
+    label: 'text-xs font-bold text-muted-foreground ml-1',
+    labelObs: 'text-xs font-bold text-muted-foreground',
+    labelObsInterna: 'flex items-center gap-1.5 max-lg:min-h-11 text-xs font-bold text-muted-foreground cursor-pointer',
     hint: 'text-xs text-muted-foreground ml-1',
     checkbox: 'w-4 h-4 accent-red-600',
   },
   edit: {
     ...CAMPOS,
-    label: 'text-[11px] max-lg:text-xs font-bold text-muted-foreground ml-1',
-    labelObs: 'text-[11px] max-lg:text-xs font-bold text-muted-foreground',
-    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-[11px] max-lg:text-xs font-bold text-muted-foreground cursor-pointer',
-    hint: 'text-[11px] max-lg:text-xs text-muted-foreground ml-1',
+    label: 'text-etiqueta font-bold text-muted-foreground ml-1',
+    labelObs: 'text-etiqueta font-bold text-muted-foreground',
+    labelObsInterna: 'flex items-center gap-1 max-lg:min-h-11 text-etiqueta font-bold text-muted-foreground cursor-pointer',
+    hint: 'text-etiqueta text-muted-foreground ml-1',
     checkbox: 'w-3 h-3 max-lg:w-4 max-lg:h-4 accent-red-600',
   },
 };
@@ -176,13 +176,13 @@ export function GarantiaField({ wrapperClassName, idPrefix, value, onChange, ord
   const marcada = Boolean(value);
   return (
     <div className={`${wrapperClassName} ${suave ? 'space-y-1' : 'rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-2 space-y-2'}`}>
-      <label htmlFor={`${idPrefix}-garantia`} className={`flex items-center gap-2 max-lg:min-h-11 font-bold text-zinc-800 dark:text-zinc-100 cursor-pointer ${suave ? 'text-sm' : 'text-[11px] max-lg:text-xs'}`}>
+      <label htmlFor={`${idPrefix}-garantia`} className={`flex items-center gap-2 max-lg:min-h-11 font-bold text-zinc-800 dark:text-zinc-100 cursor-pointer ${suave ? 'text-sm' : 'text-etiqueta'}`}>
         <input id={`${idPrefix}-garantia`} type="checkbox" checked={marcada} disabled={disabled} onChange={(e) => onChange(e.target.checked ? { id: '' } : null)} className="w-3.5 h-3.5 max-lg:w-4 max-lg:h-4 accent-red-600" />
         Garantía de otro técnico
       </label>
       {marcada && (
         <div className={suave ? 'space-y-1 rounded-campo bg-secondary/60 p-3' : 'space-y-1'}>
-          <p className="text-[11px] max-lg:text-xs text-muted-foreground">Elige la orden original que falló. Al revisar esta orden se decide si se le descuenta algo a su técnico.</p>
+          <p className="text-etiqueta text-muted-foreground">Elige la orden original que falló. Al revisar esta orden se decide si se le descuenta algo a su técnico.</p>
           <BuscadorOrden
             id={`${idPrefix}-garantia-orden`}
             etiqueta="Orden original de la garantía"

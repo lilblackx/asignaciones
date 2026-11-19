@@ -42,9 +42,9 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
                     {f.descuento > 0 && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mt-1">Adelantos descontados {dolares(f.descuento)} · neto entregado {dolares(f.neto)}</p>}
                   </div>
                   <div className="text-left sm:text-right shrink-0">
-                    <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Total pagado</p>
-                    <p className="text-xl font-extrabold tabular-nums text-foreground whitespace-nowrap">{dolares(f.total)}</p>
-                    {f.bs > 0 && <p className="text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{bolivares(f.bs)}</p>}
+                    <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Total pagado</p>
+                    <p className="text-xl font-black tabular-nums text-foreground whitespace-nowrap">{dolares(f.total)}</p>
+                    {f.bs > 0 && <p className="text-sm font-bold tabular-nums text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{bolivares(f.bs)}</p>}
                   </div>
                 </div>
 

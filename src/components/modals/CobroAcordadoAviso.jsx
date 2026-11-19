@@ -20,9 +20,9 @@ export default function CobroAcordadoAviso({ ticket }) {
           <p className="flex items-center gap-1.5 font-black"><Handshake className="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400" aria-hidden="true" /> Acordado con el cliente</p>
           <p className="mt-1 font-bold text-sm">{textoCobroAcordado(acordado)}</p>
           {(acordado.por || acordado.en > 0) && (
-            <p className="mt-0.5 text-[11px] max-lg:text-xs opacity-80">Anotado{acordado.por ? ` por ${acordado.por}` : ''}{acordado.en > 0 ? ` el ${fechaCorta(acordado.en)}` : ''}.</p>
+            <p className="mt-0.5 text-etiqueta opacity-80">Anotado{acordado.por ? ` por ${acordado.por}` : ''}{acordado.en > 0 ? ` el ${fechaCorta(acordado.en)}` : ''}.</p>
           )}
-          {cambio && <p className="mt-1.5 flex items-start gap-1.5 text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300"><TriangleAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />{cambio}</p>}
+          {cambio && <p className="mt-1.5 flex items-start gap-1.5 text-etiqueta font-bold text-amber-800 dark:text-amber-300"><TriangleAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />{cambio}</p>}
         </div>
       )}
       {garantia && (

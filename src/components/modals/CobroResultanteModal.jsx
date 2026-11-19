@@ -25,7 +25,7 @@ function Dato({ icon: Icon, etiqueta, valor }) {
     <div className="flex items-start gap-2.5">
       <Icon className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" aria-hidden="true" />
       <div className="min-w-0">
-        <p className="text-[11px] max-lg:text-xs font-semibold text-muted-foreground">{etiqueta}</p>
+        <p className="text-etiqueta font-bold text-muted-foreground">{etiqueta}</p>
         <p className="text-sm font-bold text-foreground break-words">{valor}</p>
       </div>
     </div>
@@ -123,7 +123,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
         </p>
       )}
       {!solo && preFinalizada && !instalacion && <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Informa este monto al cliente ahora. La orden queda pendiente de aprobación.</p>}
-      {!solo && visita && !instalacion && <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900 dark:text-emerald-200"><Plug className="w-4 h-4" aria-hidden="true" /> {visita}</p>}
+      {!solo && visita && !instalacion && <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-900 dark:text-emerald-200"><Plug className="w-4 h-4" aria-hidden="true" /> {visita}</p>}
       {!solo && !exonerado && !instalacion && onCopy && ticket.cobroBs && (
         <BotonCopiar
           copiado={copiado === 'monto'}

@@ -77,7 +77,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
         </div>
         {/* Después de las columnas, para que no se pinten encima de la etiqueta; el fondo de la tarjeta la deja legible sobre una columna roja. */}
         <div className="absolute inset-x-0 border-t border-dashed border-red-500/70 pointer-events-none" style={{ bottom: `${(umbral / maximo) * 100}%` }} aria-hidden="true">
-          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-card text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400">umbral {numero(umbral)}</span>
+          <span className="absolute right-0 bottom-0.5 px-1 rounded bg-card text-etiqueta font-bold text-red-700 dark:text-red-400">umbral {numero(umbral)}</span>
         </div>
       </div>
       <div className={`flex justify-between mt-1 ${TEXTO_SUAVE}`} aria-hidden="true">

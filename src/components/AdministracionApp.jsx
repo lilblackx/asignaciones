@@ -41,7 +41,7 @@ import Cargando from './Cargando';
 import { oracion } from '../utils/oracion';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
-const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
+const ETIQUETA = 'text-etiqueta font-bold text-muted-foreground';
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 const monto = (m, moneda) => textoMonto(formatoMontoBs(Number(m) || 0), moneda);
 const TIPOS = [{ value: '', label: 'Todas las órdenes' }, { value: 'INSTALACION', label: 'Instalaciones' }, { value: 'OTRAS', label: 'Visitas y otras' }];
@@ -125,7 +125,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
         <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-700 dark:text-red-400' : ''}`}>{r.cantidad}</p>
         <p className="text-xs font-bold">{titulo}</p>
         {(montos.length > 0 || (porCargar && r.cantidad > 0)) && <p className={`${ETIQUETA} tabular-nums`}>{[...montos, porCargar && r.cantidad > 0 && 'de cualquier fecha'].filter(Boolean).join(' · ')}</p>}
-        {porCargar && resumen.sinPago > 0 && <p className="text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400">{resumen.sinPago} esperan el pago del técnico</p>}
+        {porCargar && resumen.sinPago > 0 && <p className="text-etiqueta font-bold text-red-700 dark:text-red-400">{resumen.sinPago} esperan el pago del técnico</p>}
       </button>
     );
   };
@@ -138,13 +138,13 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
     </button>
   );
 
-  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
+  const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-etiqueta leading-tight font-bold px-2.5 py-0.5 rounded-full ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
   const alerta = (c) => tieneCambioDeMonto(c) && (
-    <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>
+    <span className="inline-flex items-center gap-1 text-etiqueta font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>
   );
   // El técnico todavía no registró el pago del cliente: el cobro se ve, pero no se puede marcar como cargado hasta que lo registre (ver faltaElPagoDelTecnico).
   const sinPago = (c) => faltaElPagoDelTecnico(c) && (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap text-etiqueta leading-tight font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
   );
   const esperaPago = (c) => c.estado === ESTADO_COBRO.PENDIENTE && faltaElPagoDelTecnico(c);
   const accionTexto = (c) => (tieneCambioDeMonto(c) ? 'Corregir' : esperaPago(c) ? 'Ver' : c.estado === ESTADO_COBRO.PENDIENTE ? 'Cargar' : 'Ver');
@@ -252,7 +252,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                   {/* Escritorio: tabla. */}
                   <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-secondary text-[11px] max-lg:text-xs text-muted-foreground">
+                      <thead className="bg-secondary text-etiqueta text-muted-foreground">
                         <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
                       </thead>
                       <tbody className="divide-y divide-border">

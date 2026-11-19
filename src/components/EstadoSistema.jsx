@@ -20,7 +20,7 @@ function Fila({ titulo, nivel, texto, detalle }) {
     <li className="flex items-start gap-2.5 px-3 py-2.5">
       <Icono className={`w-5 h-5 shrink-0 mt-0.5 ${clase}`} role="img" aria-label={nombre} />
       <div className="min-w-0 space-y-0.5">
-        <p className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{titulo}</p>
+        <p className="text-etiqueta font-bold text-muted-foreground">{titulo}</p>
         <p className="text-sm font-bold text-foreground break-words">{texto}</p>
         {detalle && <p className={TEXTO_SUAVE}>{detalle}</p>}
       </div>
