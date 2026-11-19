@@ -13,6 +13,8 @@ export const PANEL_COMPLETO = 'lg:max-w-none lg:h-dvh lg:max-h-dvh lg:rounded-no
 export const PANEL_PAGINA = 'w-full h-[calc(100dvh-96px-2rem)] overflow-y-auto bg-fondo flex flex-col';
 export const CENTRADO_AMPLIO = 'lg:px-[max(1.5rem,calc((100%-80rem)/2))]';
 export const CENTRADO_ESTRECHO = 'lg:px-[max(1.5rem,calc((100%-48rem)/2))]';
+// Lo mismo, pero pegado a la izquierda, bajo el título de la página (Configuración, Tasa y pagos): el contenido angosto no se centra.
+export const IZQUIERDA_ESTRECHO = 'lg:px-6 lg:max-w-3xl';
 
 const DURACION_SALIDA_MS = 150;
 // Menos que esto desde que se montó no puede ser un cierre del usuario: es el montaje y desmontaje de prueba de StrictMode (solo en desarrollo).

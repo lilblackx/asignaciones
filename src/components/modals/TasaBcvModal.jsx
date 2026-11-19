@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Coins, RefreshCw } from 'lucide-react';
-import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
+import Modal, { IZQUIERDA_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from '../Modal';
 import EncabezadoModulo from '../EncabezadoModulo';
 import FormasPagoEditor from './FormasPagoEditor';
 import { diasDesactualizada } from '../../utils/tasa';
@@ -80,7 +80,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
       <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Coins} titulo="Tasa y pagos" onClose={onClose} enPagina={enPagina} />
 
-        <div className={`border-b border-border ${CENTRADO_ESTRECHO}`}>
+        <div className="border-b border-border lg:pl-6">
         <div role="tablist" aria-label="Secciones de Tasa y pagos" className="flex">
           {PESTANAS.map(p => (
             <button
@@ -91,7 +91,7 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
               aria-selected={pestana === p.id}
               aria-controls={`panel-${p.id}`}
               onClick={() => setPestana(p.id)}
-              className={`flex-1 px-3 py-3 text-sm font-bold border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-muted-foreground hover:text-zinc-900 dark:hover:text-white'}`}
+              className={`flex-1 lg:flex-none px-3 lg:px-5 py-3 text-sm font-bold border-b-2 -mb-px transition-colors ${pestana === p.id ? 'border-red-600 text-red-700 dark:text-red-400' : 'border-transparent text-muted-foreground hover:text-zinc-900 dark:hover:text-white'}`}
             >
               {p.etiqueta}
             </button>
@@ -100,11 +100,11 @@ export default function TasaBcvModal({ tasaConfig, onActualizarAutomatica, onAct
         </div>
 
         {pestana === 'formas' ? (
-          <div role="tabpanel" id="panel-formas" aria-labelledby="tab-formas" className={`p-6 ${CENTRADO_ESTRECHO}`}>
+          <div role="tabpanel" id="panel-formas" aria-labelledby="tab-formas" className={`p-6 ${IZQUIERDA_ESTRECHO}`}>
             <FormasPagoEditor formasPago={formasPago} onGuardar={onGuardarFormasPago} />
           </div>
         ) : (
-          <div role="tabpanel" id="panel-tasa" aria-labelledby="tab-tasa" className={`p-6 space-y-5 ${CENTRADO_ESTRECHO}`}>
+          <div role="tabpanel" id="panel-tasa" aria-labelledby="tab-tasa" className={`p-6 space-y-5 ${IZQUIERDA_ESTRECHO}`}>
             {estaDesactualizada && (
               <Aviso nivel="atencion" compact>{dias === null ? 'Nunca se ha configurado la tasa.' : dias === 1 ? 'Tasa desactualizada: es de ayer.' : `Tasa desactualizada: tiene ${dias} días.`}</Aviso>
             )}

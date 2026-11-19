@@ -178,7 +178,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-emerald-700 hover:bg-emerald-800 rounded-boton shadow-md transition-colors"
+              className="w-full py-3.5 text-sm sm:text-base font-black text-white bg-primary hover:bg-primary-hover rounded-boton shadow-boton transition-colors"
             >
               {restantes > 0 ? `Entendido (${restantes} más por ver)` : 'Entendido'}
             </button>

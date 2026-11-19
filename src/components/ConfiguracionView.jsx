@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LocateFixed, PauseCircle, Route, Settings } from 'lucide-react';
-import Modal, { CENTRADO_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
+import Modal, { IZQUIERDA_ESTRECHO, PANEL_COMPLETO, PANEL_PAGINA } from './Modal';
 import EncabezadoModulo from './EncabezadoModulo';
 import Colapsable from './Colapsable';
 import EstadoSistema from './EstadoSistema';
@@ -88,7 +88,7 @@ export default function ConfiguracionView({ funciones, cargado, error, onCambiar
     <Modal enPagina={enPagina} onClose={onClose} zIndexClass="z-50" completa>
       <div className={enPagina ? PANEL_PAGINA : `bg-card rounded-card shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-border ${PANEL_COMPLETO}`}>
         <EncabezadoModulo Icono={Settings} titulo="Configuración" onClose={onClose} enPagina={enPagina} />
-        <div className={`p-4 space-y-4 ${CENTRADO_ESTRECHO}`}>
+        <div className={`p-4 space-y-4 ${IZQUIERDA_ESTRECHO}`}>
           <p className={TEXTO_SUAVE}>Funciones de la app que se encienden o se apagan para todos. Los cambios se guardan al mover el interruptor.</p>
 
           {(error || interruptorError) && (

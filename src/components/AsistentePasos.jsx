@@ -71,7 +71,7 @@ const BASE_SECUNDARIA = 'inline-flex items-center justify-center gap-1.5 h-10 px
 
 // El pie de siempre de un asistente: el botón principal a todo el ancho y, debajo, una fila de botones de texto con "Atrás" a la izquierda y la acción alterna a la derecha ("Hacerlo después", "Devolver"); con uno solo, va centrado.
 // Una nota opcional, centrada, cierra el pie. Así nada tiene que alinearse con el botón principal.
-// `siguiente`: { onClick, disabled?, titulo?, texto?, icono?, tono?: 'verde' | 'azul' | 'rojo' | 'ambar', ocupado? } o null si no hay botón principal. `onAnterior`: sin ella no hay "Atrás" (`textoAnterior` lo cambia: "Volver").
+// `siguiente`: { onClick, disabled?, titulo?, texto?, icono?, tono?: 'rojo' (por defecto: avanzar) | 'verde' (confirmar el resultado final) | 'azul' | 'ambar', ocupado? } o null si no hay botón principal. `onAnterior`: sin ella no hay "Atrás" (`textoAnterior` lo cambia: "Volver").
 // `secundaria`: { texto, onClick, icono?, tono?: 'neutro' | 'rojo', disabled?, titulo? } o null. `nota`: texto explicativo de abajo.
 export function BotonesPasos({ onAnterior = null, textoAnterior = 'Atrás', siguiente = null, secundaria = null, nota = '' }) {
   const Icono = siguiente && siguiente.icono !== undefined ? siguiente.icono : ArrowRight;
@@ -79,7 +79,7 @@ export function BotonesPasos({ onAnterior = null, textoAnterior = 'Atrás', sigu
   return (
     <div className="space-y-1.5">
       {siguiente && (
-        <button type="button" onClick={siguiente.onClick} disabled={siguiente.disabled} title={siguiente.titulo} className={`w-full inline-flex items-center justify-center gap-2 h-11 max-lg:h-14 rounded-boton font-black text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TONOS[siguiente.tono || 'verde']}`}>
+        <button type="button" onClick={siguiente.onClick} disabled={siguiente.disabled} title={siguiente.titulo} className={`w-full inline-flex items-center justify-center gap-2 h-11 max-lg:h-14 rounded-boton font-black text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TONOS[siguiente.tono || 'rojo']}`}>
           {siguiente.ocupado}{siguiente.texto || 'Siguiente'} {Icono && <Icono className="w-5 h-5" aria-hidden="true" />}
         </button>
       )}
