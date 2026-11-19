@@ -7,6 +7,8 @@ import { TARJETA, TEXTO_SUAVE } from './estilos';
 import { useUbicacionTecnicos } from '../hooks/useUbicacionTecnicos';
 import { kmDeRuta, ordenSugerido, paradasDeRuta } from '../utils/rutaDelDia';
 import { ESTADOS, MOTIVOS_PUNTO, enlaceGoogleMaps, estadoUbicacion, haceCuanto, idDeTecnico, posicionesHuerfanas, solicitudVigente, tiempoRestante, ultimaVigente, ultimasViejas } from '../utils/ubicacionTecnico';
+import Interruptor from './Interruptor';
+import { legible } from '../utils/nombreTecnico';
 import Aviso from './Aviso';
 
 // El módulo Ubicación del administrador (menú lateral): pide la ubicación de un técnico en la calle y la ve en un mapa completo (ver utils/ubicacionTecnico.js). El técnico no recibe ningún aviso: su app la envía
@@ -117,8 +119,8 @@ export default function UbicacionView({ firebaseUser, technicians, tickets, usua
     setToastMsg?.(ok ? { type: 'success', text: exito } : { type: 'error', text: fallo });
     return ok;
   };
-  const pedirA = (fila) => accion(fila, pedir, `Ubicación pedida a ${fila.nombre}. Aparecerá cuando abra la app.`, 'No se pudo pedir la ubicación. Revisa tu conexión e inténtalo de nuevo.');
-  const detenerA = (fila) => accion(fila, detener, `Se detuvo la ubicación de ${fila.nombre}.`, 'No se pudo detener. Inténtalo de nuevo.');
+  const pedirA = (fila) => accion(fila, pedir, `Ubicación pedida a ${legible(fila.nombre)}. Aparecerá cuando abra la app.`, 'No se pudo pedir la ubicación. Revisa tu conexión e inténtalo de nuevo.');
+  const detenerA = (fila) => accion(fila, detener, `Se detuvo la ubicación de ${legible(fila.nombre)}.`, 'No se pudo detener. Inténtalo de nuevo.');
   const irA = (fila) => setEnfoque((e) => ({ id: fila.id, vez: e.vez + 1 }));
 
   if (!encendida) {
@@ -149,7 +151,7 @@ export default function UbicacionView({ firebaseUser, technicians, tickets, usua
               return (
                 <li key={fila.id} className={`${TARJETA} p-3 ${enfoque.id === fila.id && conPunto ? 'border-red-500 dark:border-red-500' : ''}`}>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                    <p className="min-w-0 flex-1 text-sm font-black text-foreground truncate">{fila.nombre}</p>
+                    <p className="min-w-0 flex-1 text-sm font-black text-foreground truncate">{legible(fila.nombre)}</p>
                     <span className={`whitespace-nowrap text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${clase}`}>{texto}</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -180,12 +182,12 @@ export default function UbicacionView({ firebaseUser, technicians, tickets, usua
 
         <section aria-label="Mapa" className={pantallaCompleta ? 'fixed inset-0 z-[60] bg-fondo p-3 flex flex-col gap-2' : 'order-1 lg:order-2 min-w-0 lg:sticky lg:top-4 space-y-2'}>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-black text-foreground mr-auto">{puntos.length === 0 ? 'Sin ubicaciones por ahora' : [`${enVivo} en vivo`, sinSenal > 0 && `${sinSenal} sin señal`, ultimasConocidas > 0 && `${ultimasConocidas} última${ultimasConocidas === 1 ? '' : 's'} conocida${ultimasConocidas === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
+            <p className="text-sm font-black text-foreground mr-auto max-sm:w-full">{puntos.length === 0 ? 'Sin ubicaciones por ahora' : [`${enVivo} en vivo`, sinSenal > 0 && `${sinSenal} sin señal`, ultimasConocidas > 0 && `${ultimasConocidas} última${ultimasConocidas === 1 ? '' : 's'} conocida${ultimasConocidas === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
             {rutasActivas && (
-              <label htmlFor="ubicacion-rutas" className="inline-flex items-center gap-2 text-xs font-black text-foreground cursor-pointer max-lg:min-h-11">
-                <input id="ubicacion-rutas" type="checkbox" checked={verRutas} onChange={(e) => cambiarRutas(e.target.checked)} className="w-4 h-4 accent-primary cursor-pointer" />
-                Ver las rutas del día
-              </label>
+              <div className="inline-flex items-center gap-2 max-lg:min-h-11">
+                <Interruptor id="ubicacion-rutas" activo={verRutas} onCambiar={cambiarRutas} ariaLabel="Ver las rutas del día" />
+                <span className="text-xs font-bold text-foreground">Ver las rutas del día</span>
+              </div>
             )}
             <Boton variante="secundario" tamano="compacto" className="max-lg:min-h-11" icono={Crosshair} disabled={puntos.length === 0 && rutas.length === 0} onClick={() => setCentrarVez((n) => n + 1)}>Centrar en todos</Boton>
             <Boton variante="secundario" tamano="compacto" className="max-lg:min-h-11" icono={pantallaCompleta ? Minimize2 : Maximize2} aria-pressed={pantallaCompleta} onClick={() => setPantallaCompleta((v) => !v)}>{pantallaCompleta ? 'Salir de pantalla completa' : 'Pantalla completa'}</Boton>

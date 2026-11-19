@@ -236,6 +236,11 @@ export default [
     { id: 'nueva-venta', preparar: (n) => n.clic('nueva venta'), limpiar: (n) => n.esc(), espera: 1500 },
     { id: 'nueva-venta-errores', preparar: async (n) => { await n.clic('nueva venta'); await n.dormir(800); return n.clic('guardar', { dentro: true }); }, limpiar: (n) => n.esc() },
   ] },
+  // Estaciones (solo lfernandez) y Ubicación de técnicos (con la función encendida en el emulador: config/funciones.ubicacionActiva = true).
+  { id: 'estaciones', usuario: 'lfernandez', clave: 'Admin1234', pantallas: [
+    { id: 'estaciones', preparar: (n) => n.irAModulo('Estaciones'), espera: 2500 },
+    { id: 'ubicacion', preparar: (n) => n.irAModulo('Ubicación'), espera: 4500 },
+  ] },
   { id: 'usuario', usuario: 'usuario', clave: 'Usuario1234', pantallas: [{ id: 'panel', preparar: async () => true, espera: 2200 }] },
   // Los módulos del administrador que no estaban: cada uno con su cabecera.
   {
