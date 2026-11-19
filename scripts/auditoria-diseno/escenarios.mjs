@@ -112,7 +112,7 @@ export default [
     id: 'login',
     usuario: null,
     pantallas: [
-      { id: 'formulario', preparar: async () => true },
+      { id: 'formulario', preparar: async () => true, espera: 2500 },
       {
         id: 'error',
         preparar: async (n) => {

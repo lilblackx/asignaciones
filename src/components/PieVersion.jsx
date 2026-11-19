@@ -1,10 +1,10 @@
 // El pie discreto de la app: el nombre y la versión (package.json). Al pasar el cursor o mantener pulsado se ve de qué compilación es (fecha y commit).
 const DETALLE = `Versión ${__APP_VERSION__} · compilada el ${__APP_COMPILACION__}${__APP_COMMIT__ ? ` · ${__APP_COMMIT__}` : ''}`;
 
-export default function PieVersion({ className = '' }) {
+export default function PieVersion({ className = '', texto = '' }) {
   return (
     <p title={DETALLE} className={`h-8 flex items-center justify-center text-[11px] max-lg:text-xs font-medium text-muted-foreground select-none ${className}`}>
-      Asignaciones · v{__APP_VERSION__}
+      {texto || 'Asignaciones'} · v{__APP_VERSION__}
     </p>
   );
 }
