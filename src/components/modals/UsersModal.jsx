@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Ban, Check, CheckCircle2, KeyRound, Pencil, Search, ShieldCheck, UserPlus, X } from 'lucide-react';
+import { Ban, Check, CheckCircle2, KeyRound, Pencil, Search, ShieldCheck, UserPlus, X, SearchX } from 'lucide-react';
 import { ADMINISTRACION_ACTIVA, ROLES, etiquetaRol } from '../../constants';
 import { errorNombresPromotora } from '../../utils/promotora';
 import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from '../../utils/passwordPolicy';
@@ -15,6 +15,7 @@ import MenuPermisos from '../MenuPermisos';
 import { BUSCADOR, CAMPO, CAMPO_FORMULARIO, ETIQUETA as ETIQUETA_TABLA, TARJETA, TITULO_SECCION, claseSelector, ETIQUETA_CAMPO } from '../estilos';
 import Boton from '../Boton';
 import Chip from '../Chip';
+import EstadoVacio from '../EstadoVacio';
 
 // En el celular la fila es: nombre y botones arriba, y debajo el rol y los permisos lado a lado; en PC son cuatro columnas.
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.1fr)_9.5rem_minmax(0,1.3fr)_5.5rem]';
@@ -464,8 +465,8 @@ export default function UsersModal({ users, createUser, setUserDisabled, updateU
                 </li>
               ))}
             </ul>
-            {users.length === 0 && <p className="text-sm text-center text-muted-foreground py-6">Aún no hay usuarios. Crea el primero con Nuevo usuario.</p>}
-            {users.length > 0 && visibles.length === 0 && <p className="text-sm text-center text-muted-foreground py-6">Ningún usuario coincide con la búsqueda. Prueba con otro nombre o quita los filtros.</p>}
+            {users.length === 0 && <EstadoVacio compacto titulo="Aún no hay usuarios">Crea el primero con Nuevo usuario.</EstadoVacio>}
+            {users.length > 0 && visibles.length === 0 && <EstadoVacio icono={SearchX} compacto titulo="Ningún usuario coincide">Prueba con otro nombre o quita los filtros.</EstadoVacio>}
           </section>
 
           {/* Nuevo usuario */}

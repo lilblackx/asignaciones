@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, SearchX } from 'lucide-react';
 import Segmentado from '../Segmentado';
 import { legible } from '../../utils/nombreTecnico';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
@@ -10,6 +10,7 @@ import { BUSCADOR } from '../estilos';
 import { SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { etiquetaRango } from '../../utils/periodoReporte';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
+import EstadoVacio from '../EstadoVacio';
 import {
   CLASE_PAGO_FINANZAS, ETIQUETA_PAGO_FINANZAS, FILTROS_TIPO_PAGO, cifrasPagosClientes, filtrarPagosClientes, pagosClientesDelPeriodo, resumenPorForma, textoPago, tipoPagoFinanzas,
 } from '../../utils/pagoCliente';
@@ -83,7 +84,9 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
       <p className={TEXTO_SUAVE} aria-live="polite">{visibles.length} {visibles.length === 1 ? 'pago' : 'pagos'}</p>
 
       {visibles.length === 0 ? (
-        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{delPeriodo.length ? 'Ningún pago coincide con lo que buscas. Prueba quitar algún filtro.' : 'Ningún pago registrado de instalaciones ni de cambios de equipo en este periodo. Amplía el rango de fechas para ver anteriores.'}</p>
+        delPeriodo.length
+          ? <EstadoVacio icono={SearchX} titulo="Ningún pago coincide">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
+          : <EstadoVacio titulo="Ningún pago registrado en este periodo">Aquí van los de instalaciones y cambios de equipo. Amplía el rango de fechas para ver anteriores.</EstadoVacio>
       ) : (
         <>
           {/* Celular y tablet: una tarjeta por pago. */}

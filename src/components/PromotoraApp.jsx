@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, LayoutGrid, List, Megaphone, Search } from 'lucide-react';
+import { ArrowDownAZ, Building2, CalendarDays, ChevronDown, LayoutGrid, List, Megaphone, Search, SearchX } from 'lucide-react';
 import { etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import ListaInstalaciones from './ListaInstalaciones';
@@ -33,6 +33,7 @@ import BotonFiltros from './BotonFiltros';
 import { BUSCADOR } from './estilos';
 import Chip from './Chip';
 import Boton from './Boton';
+import EstadoVacio from './EstadoVacio';
 
 const NuevaVentaModal = lazy(() => import('./modals/NuevaVentaModal'));
 
@@ -330,7 +331,9 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           ) : !cargado ? (
             <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando instalaciones...</p>
           ) : visibles.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con los filtros.'}</p>
+            ordenes.length === 0
+              ? <EstadoVacio titulo={vista === 'LOS' ? 'Todavía no hay averías LOS' : vista === 'TODO' ? 'Todavía no hay órdenes' : 'Todavía no hay instalaciones'} />
+              : <EstadoVacio icono={SearchX} titulo="Ninguna orden coincide con los filtros">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
           ) : formato === 'LISTA' ? (
             <ListaInstalaciones key={`${categoria}-${vista}-lista`} className="lg:animate-fade-in" ordenes={visibles} onVerPlantilla={setPlantillaDe} mostrarTipo={verTodasInstalaciones} ahora={ahora} />
           ) : (

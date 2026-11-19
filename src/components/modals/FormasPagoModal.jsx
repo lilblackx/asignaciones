@@ -3,6 +3,7 @@ import Modal from '../Modal';
 import FormasPagoLista from './FormasPagoLista';
 import { normalizarFormasPago } from '../../utils/formasPago';
 import BotonCerrar from '../BotonCerrar';
+import EstadoVacio from '../EstadoVacio';
 
 // Vista de solo lectura para el técnico: cada forma de pago en su tarjeta y cada
 // dato se copia con un toque para pegarlo en WhatsApp. `onCopy(texto, mensaje)`
@@ -19,7 +20,7 @@ export default function FormasPagoModal({ formasPago, onCopy, onClose }) {
         </div>
         <div className="p-6 space-y-4">
           {formas.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Aún no se han cargado las formas de pago. Avisa al administrador.</p>
+            <EstadoVacio compacto titulo="Aún no hay formas de pago">Avisa al administrador para que las cargue.</EstadoVacio>
           ) : (
             <FormasPagoLista formas={formas} onCopy={onCopy} />
           )}

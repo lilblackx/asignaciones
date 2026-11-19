@@ -12,6 +12,7 @@ import Chip from '../Chip';
 import { TARJETA } from '../estilos';
 import Aviso from '../Aviso';
 import { legible } from '../../utils/nombreTecnico';
+import EstadoVacio from '../EstadoVacio';
 
 const numero = (n) => Number(n).toLocaleString('es-VE');
 const fechaCorta = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-');
@@ -167,7 +168,7 @@ export default function MaterialesModal({ tickets, reports, technicians, hasMore
           )}
 
           {filas.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No hay recableados, instalaciones, visitas de conector ni cambios de equipo aprobados en este período. Se suman cuando la oficina aprueba la orden; prueba con un rango más amplio.</p>
+            <EstadoVacio compacto titulo="Sin materiales en este período">No hay recableados, instalaciones, visitas de conector ni cambios de equipo aprobados. Se suman cuando la oficina aprueba la orden; prueba con un rango más amplio.</EstadoVacio>
           ) : (
             <section aria-labelledby="materiales-por-tecnico" className="space-y-2">
               <h3 id="materiales-por-tecnico" className="text-sm font-black text-foreground">Por técnico</h3>

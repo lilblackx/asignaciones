@@ -5,6 +5,7 @@ import { exportReportToCsv } from '../../../utils/exportReport';
 import CierreAutomaticoConfig from './CierreAutomaticoConfig';
 import AvisoCargarAnteriores from '../../AvisoCargarAnteriores';
 import Boton from '../../Boton';
+import EstadoVacio from '../../EstadoVacio';
 
 function todayIsoDate() {
   const d = new Date();
@@ -40,7 +41,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
       <h3 className="text-sm font-bold text-muted-foreground mb-4">Historial de Reportes</h3>
 
       {reports.length === 0 ? (
-        <p className="text-center text-muted-foreground py-10 font-medium">Aún no se han generado reportes de cierre de día.</p>
+        <EstadoVacio titulo="Aún no hay reportes de cierre">Se generan cuando se hace el cierre del día.</EstadoVacio>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {reports.map((rep) => (

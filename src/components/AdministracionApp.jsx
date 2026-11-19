@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Ban, Landmark, Search } from 'lucide-react';
+import { AlertTriangle, Ban, Landmark, Search, SearchX } from 'lucide-react';
 import { ROLES, etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import BotonFiltros from './BotonFiltros';
@@ -36,6 +36,7 @@ import {
   ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, FILTROS_ESTADO_COBRO, diasEsperando, faltaElPagoDelTecnico, filtrarCobros, ordenarCobros, resumenCobros, textoDeCobro, tieneCambioDeMonto,
 } from '../utils/cobrosClientes';
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
+import EstadoVacio from './EstadoVacio';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
@@ -216,7 +217,9 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
               <p className="text-xs text-muted-foreground" aria-live="polite">{filas.length} {filas.length === 1 ? 'cobro' : 'cobros'} · {etiquetaPeriodo}</p>
 
               {!filas.length ? (
-                <p className="text-sm text-muted-foreground text-center py-10">{cobros.length ? 'Ningún cobro coincide con lo que buscas. Prueba quitar algún filtro.' : 'Todavía no hay cobros. Aparecen aquí en cuanto se finaliza una orden con cobro o una instalación.'}</p>
+                cobros.length
+                  ? <EstadoVacio icono={SearchX} titulo="Ningún cobro coincide">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
+                  : <EstadoVacio icono={Landmark} titulo="Todavía no hay cobros">Aparecen aquí en cuanto se finaliza una orden con cobro o una instalación.</EstadoVacio>
               ) : (
                 <>
                   {/* Celular: una tarjeta por cobro. */}

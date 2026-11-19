@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Search } from 'lucide-react';
+import { AlertTriangle, Search, SearchX } from 'lucide-react';
 import Segmentado from '../Segmentado';
 import { legible } from '../../utils/nombreTecnico';
 import BotonLimpiarBusqueda from '../BotonLimpiarBusqueda';
@@ -11,6 +11,7 @@ import { BUSCADOR } from '../estilos';
 import { TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { etiquetaRango } from '../../utils/periodoReporte';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
+import EstadoVacio from '../EstadoVacio';
 import {
   ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, cobrosDelPeriodo, filtrarCobros, resumenCobros, textoDeCobro, tieneCambioDeMonto,
 } from '../../utils/cobrosClientes';
@@ -77,7 +78,9 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
       <p className={TEXTO_SUAVE} aria-live="polite">{visibles.length} {visibles.length === 1 ? 'cobro' : 'cobros'}</p>
 
       {visibles.length === 0 ? (
-        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{delPeriodo.length ? 'Ningún cobro coincide con lo que buscas. Prueba quitar algún filtro.' : 'Ningún cobro emitido en este periodo. Amplía el rango de fechas para ver anteriores.'}</p>
+        delPeriodo.length
+          ? <EstadoVacio icono={SearchX} titulo="Ningún cobro coincide">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
+          : <EstadoVacio titulo="Ningún cobro emitido en este periodo">Amplía el rango de fechas para ver anteriores.</EstadoVacio>
       ) : (
         <>
           {/* Celular y tablet: una tarjeta por cobro. */}

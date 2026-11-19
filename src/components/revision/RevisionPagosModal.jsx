@@ -27,6 +27,7 @@ import { useTasaDolar } from '../../hooks/useTasaDolar';
 import BarraFiltros from '../BarraFiltros';
 import Boton from '../Boton';
 import Aviso, { AvisosAgrupados } from '../Aviso';
+import EstadoVacio from '../EstadoVacio';
 
 // `enPagina`: el mismo contenido como página dentro del marco del administrador (sin ventana ni barra negra propia: el título y el menú los pone la pantalla que la contiene).
 // Revisión de órdenes (solo ADMIN): la barrera entre las órdenes y Finanzas. Aquí un administrador revisa lo que se va a pagar y solo lo que aprueba llega a Finanzas. Lo ya pagado no
@@ -271,7 +272,9 @@ export default function RevisionPagosModal({ technicians, tickets, reports, hasM
           {datos.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">No se pudieron leer algunos datos de la revisión. Recarga la página.</p>}
 
           {secciones.length === 0 ? (
-            <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">{rangoRevision.desde > rangoRevision.hasta ? `Este periodo es anterior al corte: se cuenta a partir del ${textoFechaCorte()}.` : buscando ? (delTecnico.length > 0 ? 'Lo que buscas está en otro estado: pulsa otra de las cifras de arriba para verlo.' : 'Ninguna orden de este periodo coincide con lo que buscas. La búsqueda solo recorre el periodo y el técnico elegidos.') : filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar en este periodo.' : 'No hay órdenes con ese estado en este periodo.'}</p>
+            <EstadoVacio titulo={rangoRevision.desde > rangoRevision.hasta ? 'Este periodo es anterior al corte' : buscando ? (delTecnico.length > 0 ? 'Lo que buscas está en otro estado' : 'Ninguna orden coincide con lo que buscas') : filtroEstado === 'PENDIENTE' ? 'No hay nada pendiente de revisar' : 'No hay órdenes con ese estado'}>
+              {rangoRevision.desde > rangoRevision.hasta ? `Se cuenta a partir del ${textoFechaCorte()}.` : buscando ? (delTecnico.length > 0 ? 'Pulsa otra de las cifras de arriba para verlo.' : 'La búsqueda solo recorre el periodo y el técnico elegidos.') : 'En este periodo.'}
+            </EstadoVacio>
           ) : secciones.map(([nombre, lista]) => {
             const pendientes = lista.filter((i) => i.estadoRevision === 'PENDIENTE');
             return (

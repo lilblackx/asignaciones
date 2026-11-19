@@ -10,6 +10,7 @@ import { diaDe } from '../../utils/totalesMes';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 import InsigniaJM from '../InsigniaJM';
 import PagoDelCliente from '../PagoDelCliente';
+import EstadoVacio from '../EstadoVacio';
 
 // El reporte de Finanzas: lo que se pagó en el periodo, por técnico (cuánto y por cuántas órdenes), en filas grandes y sin cajas. "Ver órdenes" muestra las órdenes ya pagadas del
 // técnico agrupadas como en los reportes, con la marca Pagada. `ordenesPagadas`: las órdenes ya pagadas del periodo (ordenesYaPagadas).
@@ -22,7 +23,7 @@ export default function ResumenPagado({ resumen, rango, ordenesPagadas = [], tar
 
       <h2 className={TITULO_SECCION}>Pagado a cada técnico · {etiquetaRango(rango)}</h2>
       {resumen.porTecnico.length === 0 ? (
-        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ningún pago registrado en este periodo. Amplía el rango de fechas para ver pagos anteriores.</p>
+        <EstadoVacio titulo="Ningún pago registrado en este periodo">Amplía el rango de fechas para ver pagos anteriores.</EstadoVacio>
       ) : (
         <ul className={`${TARJETA} px-4 divide-y divide-zinc-200 dark:divide-zinc-800`}>
           {resumen.porTecnico.map((f) => {

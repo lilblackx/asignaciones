@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, Network, RefreshCw, Search } from 'lucide-react';
+import { FileText, Network, RefreshCw, Search, SearchX } from 'lucide-react';
 import { etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
@@ -23,6 +23,7 @@ import Boton from './Boton';
 import RangoFechas from './RangoFechas';
 import { FilaDeslizable } from './BarraFiltros';
 import HistorialInfra from './HistorialInfra';
+import EstadoVacio from './EstadoVacio';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 const dato = (valor) => valor || '-';
@@ -204,7 +205,9 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
               </div>
 
               {!filas.length ? (
-                <p className="text-sm text-muted-foreground text-center py-10">{instalaciones.length ? 'Ninguna instalación coincide con lo que buscas.' : 'Todavía no hay instalaciones realizadas.'}</p>
+                instalaciones.length
+                  ? <EstadoVacio icono={SearchX} titulo="Ninguna instalación coincide">Prueba quitar algún filtro o cambiar lo que buscas.</EstadoVacio>
+                  : <EstadoVacio titulo="Todavía no hay instalaciones realizadas">Aparecen aquí cuando el técnico las termina.</EstadoVacio>
               ) : (
                 <>
                   {/* Celular: una tarjeta por instalación. */}

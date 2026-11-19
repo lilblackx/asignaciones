@@ -22,6 +22,7 @@ import { textoAdicional } from '../../utils/adicionales';
 import { diaLegible, etiquetaRango } from '../../utils/periodoReporte';
 import { useEsPantallaGrande } from '../../hooks/useEsPantallaGrande';
 import Aviso from '../Aviso';
+import EstadoVacio from '../EstadoVacio';
 
 // La pantalla de pago a técnicos: arriba las cifras y los avisos, y debajo la lista de técnicos a la izquierda y todo lo del técnico elegido a la derecha (en el celular, la lista y,
 // al elegir uno, su pantalla con un botón para volver). "Pagar", "Adelanto" y "Descuento" abren su formulario en esa misma pantalla, no en una ventana.
@@ -163,7 +164,7 @@ export default function TecnicosFinanzas({ filas, items, esperandoRevision = 0, 
           )}
         </div>
       ) : tecnicos.length === 0 ? (
-        <p className="text-base text-zinc-700 dark:text-zinc-200 text-center py-10">Ninguna orden pagable en este periodo. Aquí solo aparecen las que Revisión de órdenes ya aprobó: amplía el rango de fechas o aprueba las pendientes en Revisión de órdenes.</p>
+        <EstadoVacio titulo="Ninguna orden pagable en este periodo">Aquí solo aparecen las que Revisión de órdenes ya aprobó: amplía el rango de fechas o aprueba las pendientes en Revisión de órdenes.</EstadoVacio>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(20rem,26rem)_1fr] items-start">
           <div className={actual ? 'hidden lg:block lg:sticky lg:top-20' : ''}>

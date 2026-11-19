@@ -2,7 +2,7 @@ import { observacionParaTecnico } from '../utils/observacion';
 import { Fragment } from 'react';
 import { esProgramadaFutura } from '../utils/programada';
 import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
-import { Ban, Banknote, Calendar, Camera, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench } from 'lucide-react';
+import { Ban, Banknote, Calendar, Camera, CheckCheck, CheckCircle2, ClipboardCopy, Clock, Edit, ExternalLink, HardHat, MapPin, MapPinOff, MessageSquareText, Navigation, Network, Wrench, SearchX } from 'lucide-react';
 import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/telefono';
 import TelefonoAccion from './TelefonoAccion';
 import RowMenu from './RowMenu';
@@ -30,6 +30,7 @@ import { getEnlaceNavegacion, getEnlaceNavegacionNap, instalacionSinUbicacion } 
 import { formatCedula, getEstadoPastel, getFechaStyles, getTipoTrabajoEstilo, renderProgramadaBadge } from '../utils/ticketDisplay';
 import { buildSmartOltUrl } from '../utils/smartolt';
 import { fallaVisible } from '../utils/fallaVisible';
+import EstadoVacio from './EstadoVacio';
 
 export default function TicketsMobileList({
   filteredTickets,
@@ -62,17 +63,13 @@ export default function TicketsMobileList({
 }) {
   if (filteredTickets.length === 0) {
     return (
-      <div className="lg:hidden bg-card rounded-card shadow-card px-4 py-12 text-center text-muted-foreground font-medium transition-colors">
+      <div className="lg:hidden bg-card rounded-card shadow-card">
         {isTecnico && !hasAnyTickets ? (
-          <div className="flex flex-col items-center gap-2">
-            <Wrench className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
-            <span>No tienes asignaciones en este momento.</span>
-            <span className="text-xs text-muted-foreground">Cuando te asignen una orden, aparecerá aquí.</span>
-          </div>
+          <EstadoVacio icono={Wrench} titulo="No tienes asignaciones en este momento">Cuando te asignen una orden, aparecerá aquí.</EstadoVacio>
         ) : isTecnico ? (
-          'Ninguna de tus asignaciones coincide con los filtros. Quítalos para ver todas.'
+          <EstadoVacio icono={SearchX} titulo="Ninguna asignación coincide">Quita los filtros para ver todas.</EstadoVacio>
         ) : (
-          'Ninguna orden activa coincide con los filtros. Quítalos para ver todas, o crea una con Nuevo.'
+          <EstadoVacio icono={SearchX} titulo="Ninguna orden activa coincide">Quita los filtros para ver todas, o crea una con Nuevo.</EstadoVacio>
         )}
       </div>
     );

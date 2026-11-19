@@ -1,5 +1,7 @@
+import { SearchX } from 'lucide-react';
 import { formatCedula, getEstadoColor } from '../../../utils/ticketDisplay';
 import AvisoCargarAnteriores from '../../AvisoCargarAnteriores';
+import EstadoVacio from '../../EstadoVacio';
 
 export default function ArchivedSearchResults({ archivedSearchResults, hasMoreReports, isLoadingReports, onLoadMoreReports }) {
   return (
@@ -73,7 +75,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
           </div>
         ))}
         {archivedSearchResults.length === 0 && (
-          <div className="text-center text-muted-foreground py-8 text-sm">No se encontraron resultados.</div>
+          <EstadoVacio icono={SearchX} compacto titulo="No se encontraron resultados">Prueba con otro código, nombre o cédula.</EstadoVacio>
         )}
       </div>
       <AvisoCargarAnteriores variante="busqueda" hayMas={hasMoreReports} cargando={isLoadingReports} onCargar={onLoadMoreReports} className="mt-4" />
