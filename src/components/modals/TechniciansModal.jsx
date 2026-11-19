@@ -187,7 +187,7 @@ export default function TechniciansModal({ technicians, newTech, setNewTech, han
                   <p className={TEXTO_SUAVE}>
                     Orden semanal manual. Al asignar una instalación, el turno pasa al siguiente de la lista (saltando a los inactivos). Al guardar un orden nuevo, el turno vuelve al primero de la lista.
                     {tecnicoSugerido
-                      ? <> Turno actual: <strong className="text-foreground">{tecnicoSugerido}</strong>.</>
+                      ? <> Turno actual: <strong className="text-foreground">{legible(tecnicoSugerido)}</strong>.</>
                       : <> No hay técnicos activos en el orden.</>}
                   </p>
                   <ol className="space-y-1.5">

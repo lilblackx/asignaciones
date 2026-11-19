@@ -100,7 +100,7 @@ export default function NapCoordenadasField({ idPrefix, wrapperClassName, nap, v
       <div className="flex items-end justify-between gap-2">
         {suave
           ? <label htmlFor={`${idPrefix}-nap-coords`} className="text-xs font-semibold text-muted-foreground ml-1">Coordenadas de la NAP <span className="font-normal text-muted-foreground">(opcional)</span></label>
-          : <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>COORDENADAS NAP <span className="font-normal normal-case text-muted-foreground">(Lat / Lng, opcional)</span></label>}
+          : <label htmlFor={`${idPrefix}-nap-coords`} className={ETIQUETA_NAP}>Coordenadas NAP <span className="font-normal text-muted-foreground">(Lat / Lng, opcional)</span></label>}
         {consulta && (
           <button type="button" onClick={buscarAhora} disabled={mensaje?.tipo === 'buscando'} className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-red-700 dark:text-red-400 hover:underline disabled:opacity-60">
             {mensaje?.tipo === 'buscando' ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Search className="w-3 h-3" aria-hidden="true" />} Buscar {consulta} en Tomodat

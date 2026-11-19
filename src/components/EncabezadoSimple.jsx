@@ -39,7 +39,7 @@ export default function EncabezadoSimple({ titulo, tituloCorto = null, nombre, r
             <div id={ID_ACCIONES_ENCABEZADO} className="hidden lg:contents" />
             {!enMarco && <div className="hidden min-[400px]:flex flex-col items-end leading-tight min-w-0 lg:order-3 lg:ml-1 lg:pl-4 lg:border-l lg:border-zinc-700">
               <span className="text-xs sm:text-sm font-bold leading-none text-red-700 dark:text-red-400 max-w-[8rem] sm:max-w-[16rem] truncate">{nombre}</span>
-              <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase tracking-wider">{rol}</span>
+              <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{rol}</span>
             </div>}
             {campana && <div className="flex items-center lg:order-4">{campana}</div>}
             {!enMarco && <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Cambiar tema" title="Cambiar Tema" className={`${BOTON_ENCABEZADO_ICONO} lg:order-5`}>

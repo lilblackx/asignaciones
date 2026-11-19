@@ -43,7 +43,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
         </>
       ) : (
         <p id={`${idPrefix}-cobro-acordado`} className={etiqueta}>
-          COBRO ACORDADO CON EL CLIENTE <span className="font-normal normal-case text-muted-foreground">(opcional; lo ve quien finaliza la orden)</span>
+          Cobro acordado con el cliente <span className="font-normal text-muted-foreground">(opcional; lo ve quien finaliza la orden)</span>
         </p>
       )}
       {(!suave || abierto) && (
@@ -76,7 +76,7 @@ export default function CobroAcordadoField({ idPrefix, value, onChange, error = 
 
       {value.modo === COBRO_PAGADA && permitirPagada && !value.pagada?.pago && (
         <div className="rounded-campo border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 space-y-3">
-          <p className="text-xs font-bold text-emerald-900 dark:text-emerald-300">DATOS DEL PAGO</p>
+          <p className="text-xs font-bold text-emerald-900 dark:text-emerald-300">Datos del pago</p>
           <FormularioPagoCliente incrustado permitirPagarDespues={false} confirmar={false} cuentasEmpresa={cuentasEmpresa} ref={pagoRef} idPrefijo={`${idPrefix}-pago`} notaEtiqueta="Nota del pago" />
         </div>
       )}

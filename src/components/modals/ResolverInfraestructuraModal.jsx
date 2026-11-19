@@ -7,6 +7,7 @@ import AvisoRevision from '../AvisoRevision';
 import { MAX_LARGO_MOTIVO, RESULTADO_CERRADA, RESULTADO_DEVUELTA, enInfraestructura, infraestructuraDe, textoOrigen } from '../../utils/infraestructura';
 import { claseArea } from '../estilos';
 import BotonCerrar from '../BotonCerrar';
+import { legible } from '../../utils/nombreTecnico';
 
 const OPCIONES = [
   {
@@ -45,7 +46,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
         <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">EN INFRAESTRUCTURA</span>
+              <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded">En infraestructura</span>
               <span className="text-xs font-bold text-orange-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
@@ -60,12 +61,12 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
           ) : (
             <>
               <div className="rounded-campo border border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30 p-3 space-y-1 text-xs text-orange-900 dark:text-orange-200">
-                {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{ticket.tecnico}</span></p>}
+                {ticket.tecnico && <p className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Técnico: <span className="font-bold">{legible(ticket.tecnico)}</span></p>}
                 <p className="flex items-start gap-1.5"><HardHat className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" /><span className="min-w-0 break-words">Escalada por {textoOrigen(infra)}{infra.por ? ` (${infra.por})` : ''}: <span className="font-black">{infra.motivo}</span></span></p>
               </div>
 
               <fieldset className="space-y-2">
-                <legend className="text-xs font-bold text-card-foreground ml-1 mb-1">¿CÓMO SIGUE?</legend>
+                <legend className="text-xs font-bold text-card-foreground ml-1 mb-1">¿Cómo sigue?</legend>
                 {OPCIONES.map(({ resultado: valor, titulo, detalle, Icono }) => (
                   <label key={valor} className={`flex items-start gap-2.5 rounded-campo border p-3 cursor-pointer transition-colors ${resultado === valor ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/30' : 'border-input hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
                     <input type="radio" name="resultado-infraestructura" value={valor} checked={resultado === valor} onChange={() => setResultado(valor)} className="mt-0.5 accent-orange-600" />
@@ -78,7 +79,7 @@ export default function ResolverInfraestructuraModal({ ticket, otrosRevisando = 
               </fieldset>
 
               <div className="space-y-1">
-                <label htmlFor="nota-infraestructura" className="text-xs font-bold text-card-foreground ml-1">NOTA PARA EL TÉCNICO <span className="font-normal text-muted-foreground">(opcional)</span></label>
+                <label htmlFor="nota-infraestructura" className="text-xs font-bold text-card-foreground ml-1">Nota para el técnico <span className="font-normal text-muted-foreground">(opcional)</span></label>
                 <textarea
                   id="nota-infraestructura"
                   value={nota}

@@ -21,6 +21,7 @@ import BotonFiltros from '../BotonFiltros';
 import Chip from '../Chip';
 import { BUSCADOR, CAMPO_FECHA, SELECTOR } from '../estilos';
 import { fallaVisible } from '../../utils/fallaVisible';
+import { oracion } from '../../utils/oracion';
 
 const PAGE_SIZE = 25;
 const ESTADOS = ['PENDIENTE', 'PRE-FINALIZADO', 'FINALIZADO', 'CANCELADO'];
@@ -120,9 +121,9 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
   // Cada cambio de filtro vuelve a la primera página.
   const withReset = (setter) => (e) => { setter(e.target.value); setPage(0); setExpandedKey(null); };
   const withResetValue = (setter) => (v) => { setter(v); setPage(0); setExpandedKey(null); };
-  const estadoItems = [{ value: '', label: 'Estado: todos' }, ...ESTADOS.map(s => ({ value: s, label: s }))];
-  const tipoItems = [{ value: '', label: 'Trabajo: todos' }, ...TIPOS_TRABAJO.map(s => ({ value: s, label: s }))];
-  const tecnicoItems = [{ value: '', label: 'Técnico: todos' }, ...tecnicos.map(s => ({ value: s, label: s }))];
+  const estadoItems = [{ value: '', label: 'Estado: todos' }, ...ESTADOS.map(s => ({ value: s, label: oracion(s) }))];
+  const tipoItems = [{ value: '', label: 'Trabajo: todos' }, ...TIPOS_TRABAJO.map(s => ({ value: s, label: oracion(s) }))];
+  const tecnicoItems = [{ value: '', label: 'Técnico: todos' }, ...tecnicos.map(s => ({ value: s, label: oracion(s) }))];
 
   // Se renderiza solo una página a la vez: el DOM nunca pasa de PAGE_SIZE filas,
   // sin importar cuánto historial haya cargado.
@@ -197,7 +198,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
         <div className={`p-4 sm:p-6 overflow-y-auto flex-1 bg-fondo space-y-3 ${CENTRADO_AMPLIO}`}>
           {/* El encabezado de las columnas (solo PC), alineado con las filas. */}
           {shown.length > 0 && (
-            <div className="hidden lg:flex gap-3 px-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            <div className="hidden lg:flex gap-3 px-4 text-[11px] font-bold text-muted-foreground">
               <div className="flex-1 grid grid-cols-[17rem_minmax(0,1fr)] gap-6"><span>Orden</span><span>Cliente y trabajo</span></div>
               <span className="w-56 text-right pr-6">Técnico</span>
             </div>
@@ -211,13 +212,13 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
                   <div className="min-w-0 flex-1 lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-center lg:gap-6">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-foreground text-sm">{o.codigo || 'S/C'}</span>
-                      <span className={`px-2.5 py-0.5 text-[11px] max-lg:text-xs font-black rounded-full leading-tight ${getEstadoPastel(o.estado)}`}>{o.estado}</span>
+                      <span className={`px-2.5 py-0.5 text-[11px] max-lg:text-xs font-black rounded-full leading-tight ${getEstadoPastel(o.estado)}`}>{oracion(o.estado)}</span>
                       <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">{o.fecha}</span>
                     </div>
                     <div className="min-w-0 mt-1 lg:mt-0">
                       <h5 className="font-bold text-zinc-950 dark:text-white text-sm leading-tight truncate">{o.nombre}</h5>
                       <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                        <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(o.tipoTrabajo || 'AVERÍA').badge}`}>{o.tipoTrabajo || 'AVERÍA'}</span>
+                        <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(o.tipoTrabajo || 'AVERÍA').badge}`}>{oracion(o.tipoTrabajo || 'AVERÍA')}</span>
                         {fallaVisible(o) && <span className="font-medium text-card-foreground">{fallaVisible(o)}</span>}
                       </p>
                     </div>
@@ -299,7 +300,7 @@ export default function OrdersHistoryModal({ tickets, reports, hasMoreReports, i
       </div>
     </Modal>
     {detalleAbierto && <DetalleOrdenModal ticket={detalleAbierto} verCobro={verCobro} verRevision={verRevision} onCopy={onCopy} onClose={() => setDetalleAbierto(null)} zIndexClass="z-[70]" />}
-    {plantillaAbierta && <PlantillaFinalModal orden={plantillaAbierta} texto={armarPlantilla(plantillaAbierta)} titulo="PLANTILLA" onCopy={onCopy} onClose={() => setPlantillaAbierta(null)} zIndexClass="z-[70]" />}
+    {plantillaAbierta && <PlantillaFinalModal orden={plantillaAbierta} texto={armarPlantilla(plantillaAbierta)} titulo="Plantilla" onCopy={onCopy} onClose={() => setPlantillaAbierta(null)} zIndexClass="z-[70]" />}
     </>
   );
 }

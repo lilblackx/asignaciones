@@ -10,13 +10,13 @@ export function EtiquetaViaje({ ticket, ahora, className = '' }) {
   const desde = enSitio ? ticket.enCamino.llegoEn : ticket.enCamino.desde;
   return (
     <span
-      className={`inline-flex flex-wrap items-center justify-center gap-x-1 text-[11px] max-lg:text-xs font-black tracking-wide px-1.5 py-0.5 rounded text-white leading-tight text-center ${enSitio ? 'bg-teal-700' : 'bg-sky-700'} ${className}`}
+      className={`inline-flex flex-wrap items-center justify-center gap-x-1 text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded text-white leading-tight text-center ${enSitio ? 'bg-teal-700' : 'bg-sky-700'} ${className}`}
       title={`${ticket.tecnico} ${enSitio ? 'llegó al sitio' : 'va en camino'} (${tiempoTranscurrido(desde, ahora)})`}
     >
       {/* Si no cabe en una línea, se parte entre la etiqueta y la hora, nunca en medio de una de las dos. */}
       <span className="inline-flex items-center gap-1 whitespace-nowrap">
         {enSitio ? <MapPin className="w-2.5 h-2.5" aria-hidden="true" /> : <Car className="w-2.5 h-2.5" aria-hidden="true" />}
-        {enSitio ? 'EN SITIO' : 'EN CAMINO'}
+        {enSitio ? 'En sitio' : 'En camino'}
       </span>
       <span className="whitespace-nowrap font-bold opacity-90">{tiempoTranscurrido(desde, ahora)}</span>
     </span>
@@ -68,7 +68,7 @@ export default function ViajeControl({ ticket, ahora, onIniciar, onLlegue, onCan
       <div className="flex items-center gap-2 font-black leading-tight">
         <Icono className={compact ? 'w-3.5 h-3.5 shrink-0' : 'w-5 h-5 shrink-0'} aria-hidden="true" />
         <span className={compact ? 'text-[11px] max-lg:text-xs' : 'text-sm'}>
-          {enSitio ? 'EN SITIO' : 'EN CAMINO'}
+          {enSitio ? 'En sitio' : 'En camino'}
           <span className="font-bold opacity-80"> · {enSitio ? 'llegaste' : 'saliste'} {tiempoTranscurrido(desde, ahora)}</span>
         </span>
       </div>

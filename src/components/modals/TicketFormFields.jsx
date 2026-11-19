@@ -4,6 +4,8 @@ import SelectMenu from '../SelectMenu';
 import BuscadorOrden from '../BuscadorOrden';
 import { buscarOrdenesGarantia, datosGarantia } from '../../utils/garantia';
 import { CAMPO_ORDEN, SELECTOR_ORDEN, SELECTOR_TECNICO_ORDEN, SELECTOR_TIPO_DOC_ORDEN, claseCampo } from '../estilos';
+import { legible } from '../../utils/nombreTecnico';
+import { oracion } from '../../utils/oracion';
 
 // Estilos por variante: 'create' (CreateTicketModal) y 'edit' (EditTicketModal).
 // Los campos (CAMPOS) son los mismos en los dos: vienen de estilos.js. Aquí solo quedan las etiquetas y los textos que sí difieren.
@@ -29,7 +31,7 @@ const STYLES = {
 };
 
 const TIPOS_DOCUMENTO = ['V', 'E', 'J', 'G'].map(v => ({ value: v, label: v }));
-const TIPOS_TRABAJO_ITEMS = TIPOS_TRABAJO.map(t => ({ value: t, label: t }));
+const TIPOS_TRABAJO_ITEMS = TIPOS_TRABAJO.map(t => ({ value: t, label: oracion(t) }));
 
 // Formatea cédula/RIF con separador de miles, solo dígitos.
 function formatCedulaValue(rawValue) {
@@ -47,7 +49,7 @@ export function CedulaField({ variant, wrapperClassName, idPrefix, tipoDocumento
   return (
     <div className={wrapperClassName}>
       <label htmlFor={`${idPrefix}-cedula`} className={s.label}>
-        {nuevo ? <>Cédula / RIF<span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span></> : <>CÉDULA / RIF<span className="text-red-700 dark:text-red-400"> *</span></>}
+        {nuevo ? <>Cédula / RIF<span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span></> : <>Cédula / RIF<span className="text-red-700 dark:text-red-400"> *</span></>}
       </label>
       <div className="flex gap-1">
         <div className="shrink-0">
@@ -91,7 +93,7 @@ export function TecnicoField({ variant, wrapperClassName, idPrefix, label, value
   const s = STYLES[variant];
   const tecnicoItems = [
     { value: '', label: emptyOptionLabel },
-    ...technicians.map(t => ({ value: t.name, label: showSuggestion && t.name === turnoSugerido ? `${t.name} (turno sugerido)` : t.name }))
+    ...technicians.map(t => ({ value: t.name, label: showSuggestion && t.name === turnoSugerido ? `${legible(t.name)} (turno sugerido)` : legible(t.name) }))
   ];
   return (
     <div className={wrapperClassName}>
@@ -114,7 +116,7 @@ export function TipoTrabajoField({ variant, wrapperClassName, idPrefix, value, o
   const s = STYLES[variant];
   return (
     <div className={wrapperClassName}>
-      <label htmlFor={`${idPrefix}-tipo`} className={s.label}>{variant === 'create' ? 'Trabajo' : 'TRABAJO'}</label>
+      <label htmlFor={`${idPrefix}-tipo`} className={s.label}>{variant === 'create' ? 'Trabajo' : 'Trabajo'}</label>
       <SelectMenu
         id={`${idPrefix}-tipo`}
         ariaLabel="Trabajo"
@@ -151,7 +153,7 @@ export function ObservacionTecnicoField({ wrapperClassName, idPrefix, value, onC
   const s = STYLES.edit;
   return (
     <div className={wrapperClassName}>
-      <label htmlFor={`${idPrefix}-observacion-tecnico`} className={`${s.labelObs} ml-1 block`}>OBSERVACIÓN DEL TÉCNICO</label>
+      <label htmlFor={`${idPrefix}-observacion-tecnico`} className={`${s.labelObs} ml-1 block`}>Observación del técnico</label>
       <textarea id={`${idPrefix}-observacion-tecnico`} name="observacionTecnico" maxLength="300" value={value} onChange={onChange} rows="2" className={s.textarea}></textarea>
       <p className={s.hint}>Detalles del trabajo que escribió el técnico al pre-finalizar. No sale en la plantilla de WhatsApp.</p>
     </div>

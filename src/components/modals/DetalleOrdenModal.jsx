@@ -28,6 +28,7 @@ import BotonCerrar from '../BotonCerrar';
 import { legible } from '../../utils/nombreTecnico';
 import { fallaVisible } from '../../utils/fallaVisible';
 import { ICONO_TARJETA, TARJETA_SECCION, TITULO_TARJETA } from '../estilos';
+import { oracion } from '../../utils/oracion';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '');
 const fechaProgramada = (iso) => { const [y, m, d] = String(iso || '').split('-'); return y && m && d ? `${d}/${m}/${y}` : ''; };
@@ -92,8 +93,8 @@ export default function DetalleOrdenModal({ ticket, onCopy, onClose, verCobro = 
 
         <div className="p-4 overflow-y-auto space-y-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className={`text-[11px] max-lg:text-xs font-black px-2.5 py-0.5 rounded-full ${getEstadoPastel(ticket.estado)}`}>{ticket.estado}</span>
-            <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
+            <span className={`text-[11px] max-lg:text-xs font-black px-2.5 py-0.5 rounded-full ${getEstadoPastel(ticket.estado)}`}>{oracion(ticket.estado)}</span>
+            <span className={`text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${tipo.badge}`}>{oracion(ticket.tipoTrabajo || 'AVERÍA')}</span>
             <InsigniaVentaTecnico ticket={ticket} />
             {fallaVisible(ticket) && <span className="text-xs font-bold text-card-foreground">{fallaVisible(ticket)}</span>}
           </div>

@@ -146,7 +146,7 @@ export default function Sidebar({ acciones, veInventario = false, veEstaciones =
             </span>
             <div className={`min-w-0 flex-1 leading-tight ${colapsado ? 'lg:hidden' : ''}`} title={`${nombre} · conectado`}>
               <p className="truncate text-sm font-black text-foreground">{nombre}</p>
-              <p className="truncate text-[11px] max-lg:text-xs font-bold text-muted-foreground uppercase">{rol}</p>
+              <p className="truncate text-[11px] max-lg:text-xs font-bold text-muted-foreground">{rol}</p>
             </div>
             <button type="button" onClick={onCambiarTema} aria-label="Cambiar tema" title="Cambiar tema" className={BOTON_PIE}>
               {isDarkMode ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}

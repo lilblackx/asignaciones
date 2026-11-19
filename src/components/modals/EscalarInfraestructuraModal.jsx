@@ -36,7 +36,7 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
         <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-orange-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">INFRAESTRUCTURA</span>
+              <span className="bg-orange-500 text-black text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded">Infraestructura</span>
               <span className="text-xs font-bold text-orange-400">{ticket.codigo || 'S/C'}</span>
             </div>
             <h2 className="text-sm font-black text-white mt-0.5 truncate">{ticket.nombre}</h2>
@@ -49,7 +49,7 @@ export default function EscalarInfraestructuraModal({ ticket, otrosRevisando = [
         <div className="p-4 space-y-4">
           <div className="space-y-1">
             <label htmlFor="motivo-infraestructura" className="text-xs font-bold text-orange-700 dark:text-orange-400 ml-1 flex items-center gap-1">
-              <HardHat className="w-3.5 h-3.5" aria-hidden="true" /> ¿QUÉ HACE FALTA DE INFRAESTRUCTURA? <span className="font-normal">(obligatorio)</span>
+              <HardHat className="w-3.5 h-3.5" aria-hidden="true" /> ¿Qué hace falta de infraestructura? <span className="font-normal">(obligatorio)</span>
             </label>
             <textarea
               id="motivo-infraestructura"

@@ -2,6 +2,8 @@ import { SearchX } from 'lucide-react';
 import { formatCedula, getEstadoColor } from '../../../utils/ticketDisplay';
 import AvisoCargarAnteriores from '../../AvisoCargarAnteriores';
 import EstadoVacio from '../../EstadoVacio';
+import { oracion } from '../../../utils/oracion';
+import { legible } from '../../../utils/nombreTecnico';
 
 export default function ArchivedSearchResults({ archivedSearchResults, hasMoreReports, isLoadingReports, onLoadMoreReports }) {
   return (
@@ -11,7 +13,7 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
       <div className="hidden md:block bg-card rounded-card border border-transparent overflow-hidden shadow-sm shadow-card">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-secondary text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
+            <tr className="bg-secondary text-card-foreground font-bold border-b border-border text-[11px] max-lg:text-xs">
               <th className="px-4 py-3 w-[15%]">Fecha Archivo</th>
               <th className="px-4 py-3 w-[10%]">Código</th>
               <th className="px-4 py-3 w-[25%]">Nombre Cliente</th>
@@ -36,12 +38,12 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
                 </td>
                 <td className="px-4 py-3 text-muted-foreground leading-snug align-middle">{ticket.direccion}</td>
                 <td className="px-4 py-3 align-middle">
-                  <span className="block text-[11px] max-lg:text-xs font-black text-red-700 dark:text-red-400 uppercase mb-1">{ticket.tipoTrabajo}</span>
+                  <span className="block text-[11px] max-lg:text-xs font-black text-red-700 dark:text-red-400 mb-1">{oracion(ticket.tipoTrabajo)}</span>
                   <div className="text-card-foreground leading-tight">{ticket.falla}</div>
                 </td>
                 <td className="px-4 py-3 text-center align-middle">
                   <span className={`inline-flex items-center justify-center px-2 py-1 text-[11px] max-lg:text-xs font-bold rounded leading-none ${getEstadoColor(ticket.estado)}`}>
-                    {ticket.estado}
+                    {oracion(ticket.estado)}
                   </span>
                 </td>
               </tr>
@@ -69,8 +71,8 @@ export default function ArchivedSearchResults({ archivedSearchResults, hasMoreRe
             </div>
             <p className="text-xs text-muted-foreground leading-snug"><span className="font-semibold text-foreground">Dirección:</span> {ticket.direccion}</p>
             <div className="border-t border-border/80 pt-2 flex flex-col gap-1 text-xs">
-              <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
-              <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'Sin técnico'}</p>
+              <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-700 dark:text-red-400">{oracion(ticket.tipoTrabajo)}</span> - {ticket.falla}</p>
+              <p><span className="font-semibold">Técnico:</span> {legible(ticket.tecnico || 'Sin técnico')}</p>
             </div>
           </div>
         ))}

@@ -49,7 +49,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
         <div className="overflow-x-auto mt-3">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[11px] max-lg:text-xs uppercase text-muted-foreground border-b border-border">
+              <tr className="text-[11px] max-lg:text-xs text-muted-foreground border-b border-border">
                 <th className="py-2 pr-3 text-left font-bold">Mes</th>
                 {series.map((s) => <th key={s.nombre} className="py-2 pr-3 text-right font-bold whitespace-nowrap">{s.nombre}</th>)}
               </tr>

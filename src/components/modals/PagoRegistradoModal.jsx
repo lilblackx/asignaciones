@@ -7,6 +7,8 @@ import { formatCedula } from '../../utils/ticketDisplay';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import { CLASE_PAGO_FINANZAS, ETIQUETA_PAGO_FINANZAS, textoPago } from '../../utils/pagoCliente';
 import BotonCerrar from '../BotonCerrar';
+import { legible } from '../../utils/nombreTecnico';
+import { oracion } from '../../utils/oracion';
 
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 
@@ -58,8 +60,8 @@ export default function PagoRegistradoModal({ pago, onClose }) {
                 </div>
               )}
             </div>
-            <Dato etiqueta="Técnico">{pago.tecnico}</Dato>
-            <Dato etiqueta="Trabajo">{[pago.tipoTrabajo, pago.falla].filter(Boolean).join(' · ')}</Dato>
+            <Dato etiqueta="Técnico">{legible(pago.tecnico)}</Dato>
+            <Dato etiqueta="Trabajo">{[oracion(pago.tipoTrabajo), pago.falla].filter(Boolean).join(' · ')}</Dato>
             <Dato etiqueta="Cobro de la orden">{cobro ? textoMonto(formatoMontoBs(cobro.monto), cobro.moneda) : 'Sin cobro (instalación)'}</Dato>
             <Dato etiqueta="Registrado">{fechaHora(pago.creadoEn)}</Dato>
           </div>
@@ -84,7 +86,7 @@ export default function PagoRegistradoModal({ pago, onClose }) {
           {pago.nota && <Dato etiqueta="Nota del técnico">{pago.nota}</Dato>}
 
           <details className="rounded-campo border border-border">
-            <summary className="px-3 py-2 text-xs font-black tracking-wide text-card-foreground cursor-pointer">HISTORIAL ({(pago.historial || []).length})</summary>
+            <summary className="px-3 py-2 text-xs font-black text-card-foreground cursor-pointer">Historial ({(pago.historial || []).length})</summary>
             <ul className="px-3 pb-2 space-y-1.5">
               {[...(pago.historial || [])].reverse().map((h, i) => (
                 <li key={`${h.en}-${i}`} className="text-xs text-card-foreground break-words"><span className="font-bold">{fechaHora(h.en)} · {h.por}:</span> {h.detalle}</li>

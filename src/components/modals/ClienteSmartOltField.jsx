@@ -72,7 +72,7 @@ export function ClienteSmartOltMensaje({ cliente, wrapperClassName }) {
               >
                 <span className="flex items-center gap-2">
                   {onu.zona && (
-                    <span className="shrink-0 text-[11px] max-lg:text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-secondary group-hover:bg-white dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                    <span className="shrink-0 text-[11px] max-lg:text-xs font-bold px-1.5 py-0.5 rounded bg-secondary group-hover:bg-white dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                       {onu.zona}
                     </span>
                   )}

@@ -19,6 +19,7 @@ import Chip from '../Chip';
 import InsigniaJM from '../InsigniaJM';
 import PagoDelCliente from '../PagoDelCliente';
 import Aviso from '../Aviso';
+import { legible } from '../../utils/nombreTecnico';
 
 // Una orden en la revisión de pagos: lo que se paga por ella, su estado y las acciones del administrador (aprobar, retener, excluir, corregir o volver a pendiente). Retener y excluir
 // piden un motivo y corregir deja elegir otro técnico y otro concepto: esos formularios se despliegan debajo de la fila. Una garantía de otro técnico (o cualquier orden, si la oficina olvidó marcarla) se
@@ -121,7 +122,7 @@ export default function FilaRevision({ item, precio, tasa, tecnicos, ocupado, on
           <p className={TEXTO_SUAVE}>{diaLegible(item.dia).slice(0, 5)} · {item.concepto ? nombreConcepto(item.concepto) : <span className="font-bold text-amber-700 dark:text-amber-300">Sin concepto: corrígela</span>}</p>
           {esGarantiaDeOtro && item.descuento <= 0 && !item.garantiaSinDescuento && <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Garantía de otro técnico: de la orden {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}). Decide si se le descuenta algo antes de aprobarla.</p>}
           {esGarantiaDeOtro && item.garantiaSinDescuento && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Garantía de {item.garantiaDe.codigo || 's/c'} ({item.garantiaDe.tecnico}) sin descuento: {item.garantiaSinDescuento}</p>}
-          {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {item.tecnico}.</p>}
+          {item.descuento > 0 && item.descuentoDe && <p className="text-xs font-bold text-sky-800 dark:text-sky-300">Descuento de {dolares(item.descuento)} de la orden {item.descuentoDe.codigo || 's/c'} ({item.descuentoDe.tecnico}) por esta garantía: se le suma a {legible(item.tecnico)}.</p>}
           {item.corregida && <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Corregida: {[item.revision?.tecnicoCorregido && `técnico ${item.revision.tecnicoCorregido} (era ${item.tecnicoOriginal})`, item.revision?.conceptoCorregido && `concepto ${nombreConcepto(item.revision.conceptoCorregido)}${item.conceptoOriginal ? ` (era ${nombreConcepto(item.conceptoOriginal)})` : ''}`].filter(Boolean).join(' · ')}</p>}
           {item.cambioDespues && <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">La orden cambió después de revisarse: hay que revisarla otra vez.</p>}
           {sinPago && <Aviso nivel="atencion" compact titulo="Falta el pago del cliente">Lo registra el técnico{item.orden.tecnico ? ` (${item.orden.tecnico})` : ''}; si no puede, regístralo tú. No se puede aprobar hasta que esté registrado.</Aviso>}

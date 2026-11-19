@@ -33,6 +33,7 @@ import { formatCedula, getEstadoPastel, getFechaStyles, getTipoTrabajoEstilo, re
 import { buildSmartOltUrl } from '../utils/smartolt';
 import { fallaVisible } from '../utils/fallaVisible';
 import EstadoVacio from './EstadoVacio';
+import { oracion } from '../utils/oracion';
 
 export default function TicketsMobileList({
   filteredTickets,
@@ -93,7 +94,7 @@ export default function TicketsMobileList({
         return (
         <Fragment key={ticket._clave || ticket.id}>
         {primeraCerrada && (
-          <h2 className="mt-2 px-3 py-2 rounded-campo bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">FINALIZADAS Y CANCELADAS ({cerradasEnBusqueda})</h2>
+          <h2 className="mt-2 px-3 py-2 rounded-campo bg-zinc-700 dark:bg-zinc-800 text-white text-xs font-black">Finalizadas y canceladas ({cerradasEnBusqueda})</h2>
         )}
         <div style={{ '--i': index }} className={`entrada-lista bg-card rounded-card shadow-card border overflow-hidden flex flex-col transition-colors ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-red-700/60 dark:border-red-800/60' : 'border-emerald-700/60 dark:border-emerald-800/60') : prioritaria ? 'border-red-500 dark:border-red-500/80 ring-2 ring-red-500/40' : viaje ? (viaje === ESTADO_EN_SITIO ? 'border-teal-500 dark:border-teal-500/70' : 'border-sky-500 dark:border-sky-500/70') : ticket.estado === 'CANCELADO' ? 'border-red-500/40 dark:border-red-900/40' : ticket.estado === 'PRE-FINALIZADO' || ticket.estado === 'PRE-FINALIZADA' ? 'border-amber-400/60 dark:border-amber-600/40' : 'border-transparent'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}`}>
           {/* Cabecera en una cuadrícula de dos columnas: fila 1 = código con la bandera y el estado, fila 2 = tipo y falla con la fecha. Así todo comparte el centro de su fila. */}
@@ -110,7 +111,7 @@ export default function TicketsMobileList({
               {/* El tipo de trabajo y la falla van bajo el código (antes, en una fila aparte con un ícono): la tarjeta pierde una fila entera. */}
               <div className="col-start-1 row-start-2 min-w-0 flex flex-col items-start gap-1 text-xs">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{ticket.tipoTrabajo || 'AVERÍA'}</span>
+                  <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${getTipoTrabajoEstilo(ticket.tipoTrabajo || 'AVERÍA').badge}`}>{oracion(ticket.tipoTrabajo || 'AVERÍA')}</span>
                   <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
                   {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                 </div>
@@ -122,7 +123,7 @@ export default function TicketsMobileList({
             </div>
             <div className="contents">
               <span className={`col-start-2 row-start-1 justify-self-end text-xs font-black px-3 py-1 rounded-full ${getEstadoPastel(ticket.estado)}`}>
-                {ticket.estado}
+                {oracion(ticket.estado)}
               </span>
               <span className={`col-start-2 row-start-2 self-start justify-self-end text-xs font-bold flex items-center gap-1 ${getFechaStyles(ticket.fecha, ticket.estado)}`}><Calendar className="w-3.5 h-3.5" /> {ticket.fecha}</span>
               {ticket.estado === 'PENDIENTE' && <div className="col-start-2 row-start-3 justify-self-end">{renderProgramadaBadge(ticket.fechaProgramada, ticket.tecnico)}</div>}

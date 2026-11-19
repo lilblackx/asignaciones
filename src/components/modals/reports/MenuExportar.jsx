@@ -83,13 +83,13 @@ export default function MenuExportar({ formatos, grupos, onElegir, ocupado, extr
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor={idReporte} className="block text-xs font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">1. Reporte</label>
+            <label htmlFor={idReporte} className="block text-xs font-bold text-zinc-600 dark:text-zinc-300">1. Reporte</label>
             <SelectMenu id={idReporte} ariaLabel="Reporte a exportar" value={grupo.clave} onChange={setClave} items={grupos.map((g) => ({ value: g.clave, label: g.titulo }))} className={`${claseSelector('normal')} w-full aria-expanded:border-red-600`} />
             {grupo.detalle && <p className="text-xs text-zinc-600 dark:text-zinc-300">{grupo.detalle}</p>}
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-xs font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">2. Formato</p>
+            <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">2. Formato</p>
             <div className="grid grid-cols-3 gap-2">
               {grupo.formatos.map((f) => {
                 const { etiqueta, corta, detalle, Icono } = OPCIONES[f];

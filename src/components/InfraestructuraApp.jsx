@@ -236,7 +236,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
                   {/* Escritorio: tabla. */}
                   <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
+                      <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs text-muted-foreground">
                         <tr>
                           {['Fecha', 'Código', 'Cliente', 'Dirección', 'Técnico', 'NAP', 'Puerto', 'Puertos libres', 'Plantilla', 'Anotada'].map((c) => <th key={c} scope="col" className="px-3 py-2.5 font-bold">{c}</th>)}
                         </tr>

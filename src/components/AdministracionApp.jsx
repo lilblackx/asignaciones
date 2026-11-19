@@ -38,6 +38,7 @@ import {
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
 import EstadoVacio from './EstadoVacio';
 import Cargando from './Cargando';
+import { oracion } from '../utils/oracion';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
@@ -148,7 +149,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
   const esperaPago = (c) => c.estado === ESTADO_COBRO.PENDIENTE && faltaElPagoDelTecnico(c);
   const accionTexto = (c) => (tieneCambioDeMonto(c) ? 'Corregir' : esperaPago(c) ? 'Ver' : c.estado === ESTADO_COBRO.PENDIENTE ? 'Cargar' : 'Ver');
   const accionDestacada = (c) => tieneCambioDeMonto(c) || (c.estado === ESTADO_COBRO.PENDIENTE && !esperaPago(c));
-  const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [c.tipoTrabajo, c.falla].filter(Boolean).join(' · '));
+  const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [oracion(c.tipoTrabajo), c.falla].filter(Boolean).join(' · '));
 
   const campana = esAdministracion && (
     <NotificationBell
@@ -251,7 +252,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                   {/* Escritorio: tabla. */}
                   <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-secondary text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
+                      <thead className="bg-secondary text-[11px] max-lg:text-xs text-muted-foreground">
                         <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
                       </thead>
                       <tbody className="divide-y divide-border">

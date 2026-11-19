@@ -144,7 +144,7 @@ export default function EscanearSerialModal({ onLeido, onClose }) {
             <>
               <div className="rounded-campo border border-emerald-600/40 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2.5 text-center">
                 <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">{leido.etiqueta}</p>
-                <p className="text-2xl font-black text-foreground tracking-wide break-all">{leido.serial}</p>
+                <p className="text-2xl font-black text-foreground break-all">{leido.serial}</p>
               </div>
               <p className="text-sm text-muted-foreground text-center">Revisa que coincida con la etiqueta de la caja.</p>
               <div className="flex gap-3">

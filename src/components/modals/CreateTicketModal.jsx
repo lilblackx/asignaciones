@@ -26,6 +26,8 @@ import { CAMPO_FECHA_ORDEN, CAMPO_ORDEN, claseCampo, claseSelector } from '../es
 import { MENSAJE_PROMOTOR_CAMPO, claveNombre } from '../../utils/promotora';
 import Aviso from '../Aviso';
 import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
+import { legible } from '../../utils/nombreTecnico';
 
 const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
 const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
@@ -289,7 +291,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
                 Firestore trae el ticket recién creado (misma cédula, PENDIENTE)
                 antes de que este modal termine de cerrarse, y se compara consigo mismo. */}
             {ticketDuplicado && !isSubmitting && (
-              <Aviso nivel="atencion" compact className="col-span-2 sm:col-span-5">Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. Puedes seguir creando igual si es una avería distinta.</Aviso>
+              <Aviso nivel="atencion" compact className="col-span-2 sm:col-span-5">Ya existe una orden <strong>{oracion(ticketDuplicado.estado)}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. Puedes seguir creando igual si es una avería distinta.</Aviso>
             )}
 
             {reincidencias.length > 0 && !isSubmitting && (
@@ -303,7 +305,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
                   <ul className="list-disc pl-4">
                     {reincidencias.slice(0, 3).map(({ ticket, dias }) => (
                       <li key={ticket.id}>
-                        <strong>{ticket.codigo || 'S/C'}</strong> · {ticket.tipoTrabajo}{ticket.falla ? ` (${ticket.falla})` : ''} · {textoHace(dias)}{ticket.tecnico ? ` · ${ticket.tecnico}` : ''}
+                        <strong>{ticket.codigo || 'S/C'}</strong> · {oracion(ticket.tipoTrabajo)}{ticket.falla ? ` (${ticket.falla})` : ''} · {textoHace(dias)}{ticket.tecnico ? ` · ${ticket.tecnico}` : ''}
                       </li>
                     ))}
                   </ul>
@@ -389,7 +391,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
                     <div role="group" aria-label="Código de la orden original" className="flex flex-wrap gap-1.5">
                       {codigosOriginales.map((o) => (
                         <button key={o.codigo} type="button" onClick={() => handleCreateChange({ target: { name: 'codigo', value: o.codigo, type: 'text' } })} aria-pressed={formData.codigo.trim().toUpperCase() === o.codigo} className="max-lg:min-h-11 px-2.5 py-1 rounded-campo border border-zinc-300 dark:border-zinc-600 font-bold aria-pressed:bg-black aria-pressed:text-white aria-pressed:border-black">
-                          {o.codigo}<span className="font-normal"> · {o.tipoTrabajo}{o.tecnico ? ` · ${o.tecnico}` : ''}</span>
+                          {o.codigo}<span className="font-normal"> · {oracion(o.tipoTrabajo)}{o.tecnico ? ` · ${o.tecnico}` : ''}</span>
                         </button>
                       ))}
                     </div>
@@ -402,7 +404,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
             )}
 
             {esInstalacion && esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
-              <Aviso nivel="exito" icono={Star} compact className="col-span-2 sm:col-span-5">Venta de <strong>{formData.tecnico}</strong>: se asigna directo y no consume el turno{turnoSugerido ? <> (el turno sugerido sigue siendo <strong>{turnoSugerido}</strong>)</> : null}.</Aviso>
+              <Aviso nivel="exito" icono={Star} compact className="col-span-2 sm:col-span-5">Venta de <strong>{legible(formData.tecnico)}</strong>: se asigna directo y no consume el turno{turnoSugerido ? <> (el turno sugerido sigue siendo <strong>{turnoSugerido}</strong>)</> : null}.</Aviso>
             )}
 
             {esInstalacion && turnoSugerido && !esVentaDelTecnico(formData.ventaTecnico, formData.tecnico) && (
@@ -545,7 +547,7 @@ export default function CreateTicketModal({ formData, handleCreateChange, handle
               </div>
               <h2 className="text-xl font-black text-foreground mb-2">¿Cédula duplicada?</h2>
               <p className="text-muted-foreground text-sm mb-4">
-                Ya existe una orden <strong>{ticketDuplicado.estado}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. ¿Crear esta de todas formas?
+                Ya existe una orden <strong>{oracion(ticketDuplicado.estado)}</strong> con esta cédula: <strong>{ticketDuplicado.codigo || 'S/C'}</strong> - {ticketDuplicado.nombre}{ticketDuplicado.tecnico ? ` (${ticketDuplicado.tecnico})` : ''}. ¿Crear esta de todas formas?
               </p>
             </div>
             <div className="p-6 bg-sunken flex gap-3 border-t border-border">

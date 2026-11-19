@@ -6,7 +6,7 @@ export default function VlanVisitaCampo({ vlan, onVlan, error = '' }) {
   return (
     <div className="space-y-1 rounded-campo border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3">
       <label htmlFor="pf-vlan-visita" className="text-xs font-bold text-card-foreground ml-1">
-        VLAN CONFIGURADA <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+        VLAN configurada <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <input
         id="pf-vlan-visita"

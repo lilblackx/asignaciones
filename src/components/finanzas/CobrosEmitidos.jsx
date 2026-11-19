@@ -13,6 +13,7 @@ import { etiquetaRango } from '../../utils/periodoReporte';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import EstadoVacio from '../EstadoVacio';
 import Cargando from '../Cargando';
+import { oracion } from '../../utils/oracion';
 import {
   ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, cobrosDelPeriodo, filtrarCobros, resumenCobros, textoDeCobro, tieneCambioDeMonto,
 } from '../../utils/cobrosClientes';
@@ -49,7 +50,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
   ];
   const estadoChip = (c) => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_ESTADO[c.estado] || ''}`}>{ETIQUETA_ESTADO_COBRO[c.estado] || c.estado}</span>;
   const alerta = (c) => tieneCambioDeMonto(c) && <span className="inline-flex items-center gap-1 text-[11px] max-lg:text-xs font-bold text-amber-800 dark:text-amber-300"><AlertTriangle className="w-3 h-3" aria-hidden="true" />Cambió el monto</span>;
-  const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [c.tipoTrabajo, c.falla].filter(Boolean).join(' · '));
+  const tipoTexto = (c) => (c.esInstalacion ? 'Instalación' : [oracion(c.tipoTrabajo), c.falla].filter(Boolean).join(' · '));
 
   return (
     <div className="space-y-5">
@@ -107,7 +108,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
           {/* Escritorio: tabla. */}
           <div className={`${TARJETA} hidden lg:block overflow-x-auto`}>
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="bg-zinc-100 dark:bg-zinc-950 text-[11px] max-lg:text-xs text-muted-foreground">
                 <tr>{['Emitido', 'Código', 'Cliente', 'Técnico', 'Trabajo', 'Monto', 'Estado', 'Pago del cliente', 'Cargado por', ''].map((t, i) => <th key={`${t}${i}`} scope="col" className="px-3 py-2.5 font-bold">{t}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">

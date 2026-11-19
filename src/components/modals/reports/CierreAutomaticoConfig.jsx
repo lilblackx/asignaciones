@@ -100,7 +100,7 @@ export default function CierreAutomaticoConfig({ isAdmin, usuario }) {
         <h3 className="min-w-0 text-base font-bold text-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="flex items-center gap-2"><Clock className="w-5 h-5 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /> Cierre automático</span>
           {!loading && (
-            <span className={`shrink-0 whitespace-nowrap text-[11px] max-lg:text-xs font-black uppercase px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>
+            <span className={`shrink-0 whitespace-nowrap text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded ${guardado.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-muted-foreground'}`}>
               {guardado.activo ? 'Activo' : 'Desactivado'}
             </span>
           )}

@@ -30,6 +30,8 @@ import { claseArea } from '../estilos';
 import PagoDelCliente from '../PagoDelCliente';
 import Aviso from '../Aviso';
 import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
+import { legible } from '../../utils/nombreTecnico';
 
 const PASO_ETIQUETA = { revisar: 'Revisar', autorizar: 'Autorizar', cobro: 'Cobro', valores: 'Valores', decision: 'Decisión' };
 const PASO_DE = (clave) => ({ clave, etiqueta: PASO_ETIQUETA[clave] });
@@ -194,8 +196,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
         <div className="encabezado-d bg-black px-4 py-3.5 border-b-2 border-blue-500 flex justify-between items-center sticky top-0 z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="bg-blue-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded tracking-wide">
-                {finalizando ? 'REVISAR ANTES DE FINALIZAR' : 'REVISAR ANTES DE APROBAR'}
+              <span className="bg-blue-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-0.5 rounded">
+                {finalizando ? 'Revisar antes de finalizar' : 'Revisar antes de aprobar'}
               </span>
               <span className="text-xs font-bold text-blue-400">{ticket.codigo || 'S/C'}</span>
             </div>
@@ -221,8 +223,8 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
   );
   const resumenNode = (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-foreground">
-            <span className="inline-flex items-center gap-1.5"><Wrench className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /><span className="font-black text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-card-foreground">- {ticket.falla}</span>}</span>
-            {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />Técnico: <span className="font-black">{ticket.tecnico}</span></span>}
+            <span className="inline-flex items-center gap-1.5"><Wrench className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0" aria-hidden="true" /><span className="font-black text-red-700 dark:text-red-400">{oracion(ticket.tipoTrabajo)}</span>{ticket.falla && ticket.falla !== ticket.tipoTrabajo && <span className="font-medium text-card-foreground">- {ticket.falla}</span>}</span>
+            {ticket.tecnico && <span className="inline-flex items-center gap-1.5"><User className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />Técnico: <span className="font-black">{legible(ticket.tecnico)}</span></span>}
             {ticket.creado && <span className="text-card-foreground">Creado por: <span className="font-bold">{ticket.creado}</span></span>}
           </div>
   );
@@ -233,7 +235,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
     <>
           {esRecableado(ticket.tipoVisita) && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-campo p-3 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
-              <p className="flex items-center gap-2 font-black"><Cable className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> RECABLEADO</p>
+              <p className="flex items-center gap-2 font-black"><Cable className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" /> Recableado</p>
               {tieneDatosRecableado(ticket)
                 ? (
                   <div className="ml-6 space-y-1.5">
@@ -291,14 +293,14 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
     <>
           {/* Lo que describió el técnico va aparte de la nota de la oficina. En las órdenes viejas (sin campo propio) queda un solo bloque. */}
           <div className="space-y-1">
-            <span className="text-xs font-bold text-card-foreground ml-1">OBSERVACIÓN / DETALLES DEL TRABAJO</span>
+            <span className="text-xs font-bold text-card-foreground ml-1">Observación / detalles del trabajo</span>
             <div className="bg-sunken border border-border rounded-campo p-3 text-xs text-foreground whitespace-pre-wrap break-words min-h-[3rem]">
               {ticket.observacionTecnico || ticket.observacion || <span className="text-muted-foreground italic">Sin observación registrada.</span>}
             </div>
           </div>
           {ticket.observacionTecnico && ticket.observacion && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-card-foreground ml-1">NOTA DE LA OFICINA</span>
+              <span className="text-xs font-bold text-card-foreground ml-1">Nota de la oficina</span>
               <div className="bg-zinc-100 dark:bg-zinc-900 border border-border rounded-campo p-3 text-xs text-card-foreground whitespace-pre-wrap break-words">
                 {ticket.observacion}
               </div>
@@ -331,7 +333,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
     <>
           {ticket.potenciaDbm != null && (
             <div className="space-y-1">
-              <span className="text-xs font-bold text-card-foreground ml-1">POTENCIA ÓPTICA</span>
+              <span className="text-xs font-bold text-card-foreground ml-1">Potencia óptica</span>
               <div className="bg-sunken border border-border rounded-campo p-3 text-xs flex items-center justify-between gap-2">
                 <span className="font-black text-foreground">{ticket.potenciaDbm} dBm</span>
                 {evaluarPotencia(ticket.potenciaDbm) && (
@@ -353,7 +355,7 @@ export default function AprobarFinalizarModal({ ticket, actual, otrosRevisando =
             {devolviendo && (
               <div ref={mostrarMotivo} className="space-y-1">
                 <label htmlFor="aprobar-motivo" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1 flex items-center gap-1">
-                  <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> MOTIVO DE LA DEVOLUCIÓN <span className="font-normal">(obligatorio)</span>
+                  <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> Motivo de la devolución <span className="font-normal">(obligatorio)</span>
                 </label>
                 <textarea
                   value={motivo}

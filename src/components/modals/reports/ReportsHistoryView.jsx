@@ -6,6 +6,7 @@ import CierreAutomaticoConfig from './CierreAutomaticoConfig';
 import AvisoCargarAnteriores from '../../AvisoCargarAnteriores';
 import Boton from '../../Boton';
 import EstadoVacio from '../../EstadoVacio';
+import { oracion } from '../../../utils/oracion';
 
 function todayIsoDate() {
   const d = new Date();
@@ -24,7 +25,7 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
             <FileText className="w-5 h-5 text-red-700 dark:text-red-400" /> Cierre de Jornada
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Esta acción archiva todas las órdenes con estado <strong>FINALIZADO</strong> y <strong>CANCELADO</strong> en el historial de reportes y limpia la tabla principal.
+            Esta acción archiva todas las órdenes con estado <strong>Finalizado</strong> y <strong>Cancelado</strong> en el historial de reportes y limpia la tabla principal.
           </p>
         </div>
         {/* En PC el botón está en el encabezado; aquí queda en pantallas angostas. */}
@@ -51,8 +52,8 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                   <div>
                     <h4 className="font-black text-foreground flex items-center gap-1.5">
                       <Calendar className="w-4 h-4 text-muted-foreground" /> {rep.fechaCierre}
-                      {rep.tipoReporte === 'CANCELADOS' && <span className="ml-1 text-[11px] max-lg:text-xs bg-red-600 text-white px-2 py-0.5 rounded">CANCELADOS</span>}
-                      {(!rep.tipoReporte || rep.tipoReporte === 'CIERRE') && <span className="ml-1 text-[11px] max-lg:text-xs bg-blue-600 text-white px-2 py-0.5 rounded">CIERRE</span>}
+                      {rep.tipoReporte === 'CANCELADOS' && <span className="ml-1 text-[11px] max-lg:text-xs bg-red-600 text-white px-2 py-0.5 rounded">Cancelados</span>}
+                      {(!rep.tipoReporte || rep.tipoReporte === 'CIERRE') && <span className="ml-1 text-[11px] max-lg:text-xs bg-blue-600 text-white px-2 py-0.5 rounded">Cierre</span>}
                     </h4>
                     <span className="text-[11px] max-lg:text-xs text-muted-foreground font-bold">{rep.horaCierre} - OP: {rep.operador}</span>
                     {rep.canceladas !== undefined && (
@@ -64,14 +65,14 @@ export default function ReportsHistoryView({ reports, hasMoreReports, isLoadingR
                     )}
                   </div>
                   <div className="bg-secondary text-card-foreground px-3 py-1 rounded-campo text-center">
-                    <span className="block text-xs font-bold leading-none">TOTAL</span>
+                    <span className="block text-xs font-bold leading-none">Total</span>
                     <span className="block text-xl font-black leading-none mt-1">{rep.total}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs font-medium mb-4">
                   {Object.entries(rep.desglose || {}).map(([tipo, cantidad]) => (
                      <div key={tipo} className="flex justify-between items-center bg-sunken p-2 rounded border border-border">
-                        <span className="text-muted-foreground truncate pr-2">{tipo}</span>
+                        <span className="text-muted-foreground truncate pr-2">{oracion(tipo)}</span>
                         <span className="font-bold text-foreground text-sm bg-card px-2 rounded shadow-sm">{cantidad}</span>
                      </div>
                   ))}

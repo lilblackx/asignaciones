@@ -11,7 +11,7 @@ import { devolucionPendiente } from '../utils/devolucion';
 import NotaTecnico from './NotaTecnico';
 import { DetalleConsultaCobro, MarcaConsultaCobro } from './ConsultaCobroAviso';
 import { estadoConsulta } from '../utils/consultaCobro';
-import InfraestructuraAviso from './InfraestructuraAviso';
+import { DetalleInfraestructura, MarcaInfraestructura } from './InfraestructuraAviso';
 import CancelacionAviso from './CancelacionAviso';
 import AvisoRevision from './AvisoRevision';
 import CobroAviso from './CobroAviso';
@@ -32,6 +32,7 @@ import { enInfraestructura, puedeEscalar } from '../utils/infraestructura';
 import { useDeslizarPreFinalizadas } from '../hooks/useDeslizarPreFinalizadas';
 import { esCerrada, fechaCierreTexto } from '../utils/ordenesCerradas';
 import { fallaVisible } from '../utils/fallaVisible';
+import { oracion } from '../utils/oracion';
 
 const COLUMNAS = 8;
 // Al bajar por la lista quedan a la vista el título de las columnas y el separador del grupo en que vas (PRIORIDAD ALTA, HOY...).
@@ -79,6 +80,7 @@ export default function TicketsTable({
   const [desplegadas, setDesplegadas] = useState(() => new Set());
   const devolucionAbierta = (t) => devolucionPendiente(t) && (isTecnico || desplegadas.has(`devolucion-${t.id}`));
   const consultaAbierta = (t) => Boolean(estadoConsulta(t)) && (isTecnico || desplegadas.has(`consulta-${t.id}`));
+  const infraAbierta = (t) => enInfraestructura(t) && desplegadas.has(`infra-${t.id}`);
   const alternar = (clave) => setDesplegadas((previas) => { const n = new Set(previas); if (n.has(clave)) n.delete(clave); else n.add(clave); return n; });
   // Con orden "más recientes" o por fecha las órdenes de un mismo día quedan
   // juntas: se agrupan bajo un encabezado. Con otros órdenes la fecha va en la fila.
@@ -89,17 +91,17 @@ export default function TicketsTable({
   return (
     <div className="hidden lg:block bg-card rounded-card shadow-md dark:shadow-sm border border-transparent overflow-clip transition-colors w-full shadow-card">
       <table className="w-full text-xs text-left table-fixed">
-        <thead className="sticky z-[5] text-[11px] max-lg:text-xs text-muted-foreground uppercase bg-secondary" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
+        <thead className="sticky z-[5] text-[11px] max-lg:text-xs text-muted-foreground bg-secondary" style={{ top: ALTO_ENCABEZADO_PAGINA }}>
           
           <tr>
-            <th className="px-3 py-3 w-[8%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
-            <th className="px-3 py-3 w-[21%] min-[1440px]:w-[22%] align-middle text-center">NOMBRE</th>
-            <th className="px-3 py-3 w-[10%] align-middle text-center">CÉDULA</th>
-            <th className="px-3 py-3 w-[14%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 w-[13%] align-middle text-center">FALLA / TRABAJO</th>
-            <th className="px-3 py-3 w-[11%] align-middle text-center">TÉCNICO</th>
-            <th className="px-3 py-3 w-[13%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
-            <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
+            <th className="px-3 py-3 w-[8%] min-[1440px]:w-[7%] align-middle text-center">Código</th>
+            <th className="px-3 py-3 w-[21%] min-[1440px]:w-[22%] align-middle text-center">Nombre</th>
+            <th className="px-3 py-3 w-[10%] align-middle text-center">Cédula</th>
+            <th className="px-3 py-3 w-[14%] align-middle text-center">Dirección</th>
+            <th className="px-3 py-3 w-[13%] align-middle text-center">Falla / trabajo</th>
+            <th className="px-3 py-3 w-[11%] align-middle text-center">Técnico</th>
+            <th className="px-3 py-3 w-[13%] min-[1440px]:w-[12%] align-middle text-center">Estado</th>
+            <th className="px-2 py-3 align-middle text-center w-[10%]">Acciones</th>
           </tr>
         </thead>
         <tbody ref={cuerpo}>
@@ -115,7 +117,7 @@ export default function TicketsTable({
             const grupoDe = (t) => (enSeccionCerradas(t) ? 'CERRADAS' : esPrioritaria(t) ? 'PRIORIDAD' : t.fecha);
             const anterior = filteredTickets[index - 1];
             const nuevoDia = (agrupado && (index === 0 || grupoDe(anterior) !== grupoDe(ticket))) || (cerrada && (index === 0 || !enSeccionCerradas(anterior)));
-            const dia = nuevoDia ? (cerrada ? { texto: `FINALIZADAS Y CANCELADAS (${cerradasEnBusqueda})`, cerradas: true } : prioritaria ? { texto: 'PRIORIDAD ALTA', prioridad: true } : getEtiquetaDia(ticket.fecha, ticket.estado)) : null;
+            const dia = nuevoDia ? (cerrada ? { texto: `Finalizadas y canceladas (${cerradasEnBusqueda})`, cerradas: true } : prioritaria ? { texto: 'Prioridad alta', prioridad: true } : getEtiquetaDia(ticket.fecha, ticket.estado)) : null;
             return [
               nuevoDia && (
                 <tr key={`dia-${ticket._clave || ticket.id}`} className="border-b border-border">
@@ -124,7 +126,7 @@ export default function TicketsTable({
                   </td>
                 </tr>
               ),
-              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border ${devolucionAbierta(ticket) || consultaAbierta(ticket) ? 'border-b-transparent' : ''} hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
+              <tr key={ticket._clave || ticket.id} data-fila={ticket.id} className={`border-b border-border ${devolucionAbierta(ticket) || consultaAbierta(ticket) || infraAbierta(ticket) ? 'border-b-transparent' : ''} hover:bg-secondary/50 transition-colors ${cerrada ? 'bg-zinc-100 dark:bg-zinc-950/60' : prioritaria ? 'bg-red-50 dark:bg-red-950/25' : enViaje ? 'bg-sky-50 dark:bg-sky-950/25' : index % 2 === 0 ? 'bg-card' : 'bg-zinc-100/70 dark:bg-zinc-900/50'} ${esProgramadaFutura(ticket) ? 'opacity-60 hover:opacity-100' : ''}${filasCambiadas?.has(ticket.id) ? ' animate-destello-fila' : ''}`}>
                 <td className={`px-3 py-3 border-l-4 ${cerrada ? (ticket.estado === 'CANCELADO' ? 'border-l-red-700' : 'border-l-emerald-700') : ''} font-bold text-zinc-800 dark:text-zinc-100 whitespace-normal break-words align-middle`} title={ticket.creado ? `Creada por ${ticket.creado}` : undefined}>
                   <div className="min-h-[2rem] flex flex-col justify-center gap-1">
                     <div className="flex items-center gap-1.5">
@@ -150,7 +152,7 @@ export default function TicketsTable({
                     <CancelacionAviso ticket={ticket} compact />
                     <CobroAviso ticket={ticket} compact />
                     <MarcaConsultaCobro ticket={ticket} id={`consulta-${ticket.id}`} abierto={consultaAbierta(ticket)} onAlternar={() => alternar(`consulta-${ticket.id}`)} />
-                    <InfraestructuraAviso ticket={ticket} compact onResolver={canEditTickets ? onResolverInfra : undefined} />
+                    <MarcaInfraestructura ticket={ticket} id={`infra-${ticket.id}`} abierto={infraAbierta(ticket)} onAlternar={() => alternar(`infra-${ticket.id}`)} />
                     {isTecnico && ticket.estado === 'PENDIENTE' && (
                       <ViajeControl ticket={ticket} ahora={ahora} onIniciar={onIniciarViaje} onLlegue={onLlegue} onCancelar={onCancelarViaje} compact />
                     )}
@@ -188,7 +190,7 @@ export default function TicketsTable({
                 <td className="px-3 py-3 whitespace-normal leading-tight font-medium align-middle">
                   <div className="flex flex-col items-start justify-center h-full min-h-[2rem] gap-1">
                     <div className="flex flex-wrap items-center gap-1">
-                      <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{ticket.tipoTrabajo}</span>
+                      <span className={`inline-block text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${tipoEstilo.badge}`}>{oracion(ticket.tipoTrabajo)}</span>
                       <InsigniaVentaTecnico ticket={ticket} paraTecnico={isTecnico} />
                       {!isTecnico && <InsigniaGarantia ticket={ticket} />}
                     </div>
@@ -218,7 +220,7 @@ export default function TicketsTable({
                 </td>
                 <td className="px-2 py-3 text-center align-middle">
                   <div className="flex flex-col items-center justify-center h-full min-h-[2rem] gap-0.5">
-                    <span className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-1 text-[11px] max-lg:text-xs font-black rounded-full leading-tight text-center ${getEstadoPastel(ticket.estado)}`}>{ticket.estado}</span>
+                    <span className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-1 text-[11px] max-lg:text-xs font-black rounded-full leading-tight text-center ${getEstadoPastel(ticket.estado)}`}>{oracion(ticket.estado)}</span>
                     {isTecnico && <FaltaPorCompletar ticket={ticket} />}
                     {cerrada && (
                       <span className="text-[11px] max-lg:text-xs font-medium text-muted-foreground leading-tight">
@@ -294,6 +296,13 @@ export default function TicketsTable({
                 <tr key={`consulta-${ticket._clave || ticket.id}`} className="border-b border-border">
                   <td colSpan={COLUMNAS} className="px-3 pb-3 pt-0 pl-[8%]">
                     <DetalleConsultaCobro ticket={ticket} id={`consulta-${ticket.id}`} onResponder={onResponderCobro} />
+                  </td>
+                </tr>
+              ),
+              infraAbierta(ticket) && (
+                <tr key={`infra-${ticket._clave || ticket.id}`} className="border-b border-border">
+                  <td colSpan={COLUMNAS} className="px-3 pb-3 pt-0 pl-[8%]">
+                    <DetalleInfraestructura ticket={ticket} id={`infra-${ticket.id}`} onResolver={canEditTickets ? onResolverInfra : undefined} />
                   </td>
                 </tr>
               )

@@ -17,6 +17,7 @@ import { faltanDetalles } from '../../utils/detallesOrden';
 import { esInstalacion } from '../../utils/instalacion';
 import { normalizarFormasPago } from '../../utils/formasPago';
 import { valoresGuardados } from '../../utils/valoresCliente';
+import { oracion } from '../../utils/oracion';
 
 function Dato({ icon: Icon, etiqueta, valor }) {
   if (!valor) return null;
@@ -90,7 +91,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
       <h3 className="text-base font-black text-foreground">Datos de la orden</h3>
       <Dato icon={User} etiqueta="Cliente" valor={ticket.nombre} />
       <Dato icon={Tag} etiqueta="Cédula" valor={ticket.cedula ? formatCedula(ticket.cedula, ticket.tipoDocumento) : ''} />
-      <Dato icon={Wrench} etiqueta="Trabajo" valor={[ticket.tipoTrabajo, ticket.falla].filter(Boolean).join(' - ')} />
+      <Dato icon={Wrench} etiqueta="Trabajo" valor={[oracion(ticket.tipoTrabajo), ticket.falla].filter(Boolean).join(' - ')} />
       <Dato icon={MapPin} etiqueta="Dirección" valor={ticket.direccion} />
       <Dato icon={Tag} etiqueta="NAP / caja / puerto" valor={ticket.nap} />
     </div>
@@ -113,7 +114,7 @@ export default function CobroResultanteModal({ ticket, restantes = 0, formasPago
         <p className="mt-2 text-lg font-black text-emerald-800 dark:text-emerald-300 leading-tight">Registra el pago que recibiste del cliente.</p>
       ) : exonerado ? (
         <>
-          <p className="mt-1 text-5xl sm:text-6xl font-black text-emerald-700 dark:text-emerald-400 leading-none">EXONERADA</p>
+          <p className="mt-1 text-5xl sm:text-6xl font-black text-emerald-700 dark:text-emerald-400 leading-none">Exonerada</p>
           <p className="mt-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">Esta visita se exoneró: no le cobres nada al cliente.</p>
         </>
       ) : (

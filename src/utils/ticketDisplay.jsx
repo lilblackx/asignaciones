@@ -128,7 +128,7 @@ export const renderProgramadaBadge = (fechaProgStr, tecnico) => {
   if (sinTecnico && categoria !== 'futura') {
     return (
       <div className="bg-red-600 text-white text-[11px] max-lg:text-xs font-black px-2 py-1 rounded mt-1 flex flex-col items-center justify-center shadow-sm w-max animate-pulse leading-none gap-0.5">
-        <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> ¡ASIGNAR!</span>
+        <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> ¡Asignar!</span>
         <span>{formatted}</span>
       </div>
     );

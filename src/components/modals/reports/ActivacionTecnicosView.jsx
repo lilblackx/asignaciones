@@ -6,6 +6,7 @@ import { cifrasActivacion } from '../../../utils/modelosReporte';
 import { useAhora } from '../../../hooks/useAhora';
 import Cifras from './Cifras';
 import Aviso from '../../Aviso';
+import { legible } from '../../../utils/nombreTecnico';
 
 const HORAS_EJE = [0, 6, 12, 18, 24];
 const hora = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms));
@@ -97,7 +98,7 @@ export default function ActivacionTecnicosView({ eventos, cargando, error, trunc
               {movimientos.map((m, i) => (
                 <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-sunken border border-border rounded-campo px-3 py-2 text-xs">
                   <span className={`text-[11px] max-lg:text-xs font-black px-1.5 py-0.5 rounded ${m.accion === 'ACTIVADO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{m.accion}</span>
-                  <span className="font-bold">{m.tecnico}</span>
+                  <span className="font-bold">{legible(m.tecnico)}</span>
                   <span className="text-muted-foreground">{m.fechaHora}</span>
                   {m.por && <span className="text-muted-foreground ml-auto">por {m.por}</span>}
                 </li>

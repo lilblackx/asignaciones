@@ -8,6 +8,8 @@ import {
 import Cifras from './Cifras';
 import TablaReporte from './TablaReporte';
 import AvisoHistorial from './AvisoHistorial';
+import { oracion } from '../../../utils/oracion';
+import { legible } from '../../../utils/nombreTecnico';
 
 function ColaDeEspera({ titulo, nota, cola, vacio }) {
   return (
@@ -22,8 +24,8 @@ function ColaDeEspera({ titulo, nota, cola, vacio }) {
             <li key={orden.id ?? orden.codigo} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-sunken border border-border rounded-campo px-3 py-2 text-xs">
               <span className="font-black text-red-700 dark:text-red-400">{orden.codigo}</span>
               <span className="font-bold truncate max-w-[14rem]">{orden.nombre}</span>
-              <span className="text-muted-foreground">{orden.tipoTrabajo}</span>
-              <span className="text-muted-foreground">{orden.tecnico || 'Sin técnico'}</span>
+              <span className="text-muted-foreground">{oracion(orden.tipoTrabajo)}</span>
+              <span className="text-muted-foreground">{legible(orden.tecnico || 'Sin técnico')}</span>
               <span className="ml-auto font-black text-zinc-800 dark:text-zinc-100">{formatoTiempo(esperaMs)}</span>
             </li>
           ))}

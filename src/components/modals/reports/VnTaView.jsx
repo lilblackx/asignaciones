@@ -89,7 +89,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             </select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="vnta-tecnico" className={ETIQUETA_CAMPO}>Técnico que apoyó <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-tecnico" className={ETIQUETA_CAMPO}>Técnico que apoyó <span className="font-normal">(opcional)</span></label>
             <select id="vnta-tecnico" value={form.tecnico} onChange={(e) => cambiar('tecnico', e.target.value)} className={CAMPO}>
               <option value="">Sin técnico</option>
               {tecnicos.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
@@ -100,7 +100,7 @@ export default function VnTaView({ registros, cargando, error, agregar, actualiz
             <CampoFecha id="vnta-fecha" ariaLabel="Fecha del trabajo" valor={form.fecha} onChange={(v) => v && cambiar('fecha', v)} flotante clase={claseFecha('normal')} />
           </div>
           <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-            <label htmlFor="vnta-observacion" className={ETIQUETA_CAMPO}>Observación <span className="font-normal normal-case">(opcional)</span></label>
+            <label htmlFor="vnta-observacion" className={ETIQUETA_CAMPO}>Observación <span className="font-normal">(opcional)</span></label>
             <textarea id="vnta-observacion" value={form.observacion} onChange={(e) => cambiar('observacion', stripEmojis(e.target.value))} rows={2} maxLength={MAX_LARGO_OBSERVACION} placeholder="Ej. Apoyo en reparar NAP en residencia la colina" className={`${CAMPO} resize-none`} />
           </div>
         </div>

@@ -5,6 +5,7 @@ import { atrasoOrden, esAveriaLos, fechaCorta, fechaOrden, textoPlantillaFinal }
 import { formatearCedula } from '../utils/cedula';
 import { motivoCancelacion } from '../utils/cancelacion';
 import { getTipoTrabajoEstilo } from '../utils/ticketDisplay';
+import { legible } from '../utils/nombreTecnico';
 
 // Las mismas órdenes que las tarjetas (TarjetaInstalacion), en modo lista: una fila por orden, más compacta, para ver muchas de un vistazo.
 // En pantallas anchas es una tabla; en el celular, filas apiladas con lo esencial. Solo lectura; "Ver plantilla" como en la tarjeta (el copiado está dentro de esa ventana).
@@ -35,7 +36,7 @@ function datos(orden, onVerPlantilla, ahora) {
 }
 
 function Tecnico({ orden, programada }) {
-  if (orden.tecnico) return <span>{orden.tecnico}</span>;
+  if (orden.tecnico) return <span>{legible(orden.tecnico)}</span>;
   if (programada) return <span className="text-xs font-bold text-muted-foreground">Por asignar</span>;
   return <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Sin técnico</span>;
 }
@@ -100,7 +101,7 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, mostrarTip
       {/* Pantallas anchas: tabla. */}
       <div className="hidden md:block rounded-card border border-transparent bg-card overflow-x-auto shadow-card">
         <table className="w-full text-sm text-left">
-          <thead className="bg-secondary text-[11px] max-lg:text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="bg-secondary text-[11px] max-lg:text-xs text-muted-foreground">
             <tr>
               {ENCABEZADOS.map((c, i) => <th key={c || i} scope="col" className="px-3 py-2.5 font-bold">{c || <span className="sr-only">Plantilla</span>}</th>)}
             </tr>

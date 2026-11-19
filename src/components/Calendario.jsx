@@ -34,7 +34,7 @@ export default function Calendario({ valor, min, max, hoy: hoyElegido, onElegir,
       </div>
 
       <div data-sin-minimo className="grid grid-cols-7 gap-0.5 max-lg:gap-0 text-center">
-        {DIAS_SEMANA.map((d, i) => <span key={i} className={`py-1 ${grande ? 'text-base text-zinc-700 dark:text-zinc-200' : 'text-[11px] max-lg:text-xs text-muted-foreground'} font-bold uppercase`} aria-hidden="true">{d}</span>)}
+        {DIAS_SEMANA.map((d, i) => <span key={i} className={`py-1 ${grande ? 'text-base text-zinc-700 dark:text-zinc-200' : 'text-[11px] max-lg:text-xs text-muted-foreground'} font-bold`} aria-hidden="true">{d}</span>)}
         {casillasDelMes(vista.anio, vista.mes).map((iso, i) => {
           if (!iso) return <span key={`hueco-${i}`} />;
           const elegido = iso === valor;

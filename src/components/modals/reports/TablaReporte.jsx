@@ -10,7 +10,7 @@ export default function TablaReporte({ titulo, nota, columnas, filas, vacio = 'S
         <div className="overflow-x-auto mt-3">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[11px] max-lg:text-xs uppercase text-muted-foreground border-b border-border">
+              <tr className="text-[11px] max-lg:text-xs text-muted-foreground border-b border-border">
                 {columnas.map(({ titulo: t, derecha }) => <th key={t} className={`py-2 pr-3 font-bold whitespace-nowrap ${derecha ? 'text-right' : 'text-left'}`}>{t}</th>)}
               </tr>
             </thead>

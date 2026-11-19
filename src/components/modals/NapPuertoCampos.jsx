@@ -13,7 +13,7 @@ export default function NapPuertoCampos({ nap, onNap, napError, puerto, onPuerto
         Nomenclatura de la NAP <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <label htmlFor="pf-puerto" className="col-start-2 row-start-1 block text-xs font-bold text-card-foreground ml-1">
-        PUERTO <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+        Puerto <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
       </label>
       <input
         id="pf-nap"

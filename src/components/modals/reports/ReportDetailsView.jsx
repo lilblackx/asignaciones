@@ -7,11 +7,13 @@ import { motivoCancelacion } from '../../../utils/cancelacion';
 import { CENTRADO_AMPLIO } from '../../Modal';
 import EncabezadoModulo from '../../EncabezadoModulo';
 import PagoDelCliente from '../../PagoDelCliente';
+import { oracion } from '../../../utils/oracion';
+import { legible } from '../../../utils/nombreTecnico';
 
 // Los cierres nuevos traen en un solo reporte las órdenes finalizadas y las canceladas; cada una se marca con su estado.
 function EstadoOrden({ ticket }) {
   return (
-    <span className={`block mt-1 text-[11px] max-lg:text-xs font-black uppercase ${ticket.estado === 'CANCELADO' ? 'text-red-700 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+    <span className={`block mt-1 text-[11px] max-lg:text-xs font-black ${ticket.estado === 'CANCELADO' ? 'text-red-700 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
       {ticket.estado === 'CANCELADO' ? 'Cancelada' : 'Finalizada'}
     </span>
   );
@@ -59,7 +61,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
           <div className="flex flex-wrap gap-2">
             {Object.entries(report.desglose || {}).map(([tipo, count]) => (
               <span key={tipo} className="bg-card border border-transparent px-3.5 py-2 rounded-card text-xs font-bold text-card-foreground shadow-sm shadow-card">
-                {tipo}: <span className="text-red-700 dark:text-red-400 font-black ml-1">{count}</span>
+                {oracion(tipo)}: <span className="text-red-700 dark:text-red-400 font-black ml-1">{count}</span>
               </span>
             ))}
           </div>
@@ -70,7 +72,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
         <div className="hidden md:block bg-card rounded-card border border-transparent overflow-hidden shadow-sm shadow-card">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-secondary text-card-foreground font-bold border-b border-border uppercase text-[11px] max-lg:text-xs">
+              <tr className="bg-secondary text-card-foreground font-bold border-b border-border text-[11px] max-lg:text-xs">
                 <th className="px-4 py-3 w-[10%]">Código</th>
                 <th className="px-4 py-3 w-[25%]">Nombre Cliente</th>
                 <th className="px-4 py-3 w-[25%]">Dirección</th>
@@ -89,7 +91,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-snug align-middle">{ticket.direccion}</td>
                   <td className="px-4 py-3 align-middle">
-                    <span className="block text-[11px] max-lg:text-xs font-black text-red-700 dark:text-red-400 uppercase mb-1">{ticket.tipoTrabajo}</span>
+                    <span className="block text-[11px] max-lg:text-xs font-black text-red-700 dark:text-red-400 mb-1">{oracion(ticket.tipoTrabajo)}</span>
                     <div className="text-card-foreground leading-tight">{ticket.falla}</div>
                   </td>
                   <td className="px-4 py-3 align-middle">
@@ -115,7 +117,7 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
           {(report.ticketsDetalle || []).map((ticket) => (
             <div key={ticket.id} className="bg-card p-4 rounded-card border border-transparent shadow-sm flex flex-col gap-2 shadow-card">
               <div className="flex justify-between items-center">
-                <span className="font-black text-red-700 dark:text-red-400 text-sm">{ticket.codigo}{conCanceladas && <span className={`ml-2 text-[11px] max-lg:text-xs uppercase ${ticket.estado === 'CANCELADO' ? 'text-red-700 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{ticket.estado === 'CANCELADO' ? 'Cancelada' : 'Finalizada'}</span>}</span>
+                <span className="font-black text-red-700 dark:text-red-400 text-sm">{ticket.codigo}{conCanceladas && <span className={`ml-2 text-[11px] max-lg:text-xs ${ticket.estado === 'CANCELADO' ? 'text-red-700 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{ticket.estado === 'CANCELADO' ? 'Cancelada' : 'Finalizada'}</span>}</span>
                 <span className="text-muted-foreground text-xs font-bold">{ticket.fecha}</span>
               </div>
               <div>
@@ -124,8 +126,8 @@ export default function ReportDetailsView({ report, getTecnicoColor, onBack, onC
               </div>
               <p className="text-xs text-muted-foreground leading-snug"><span className="font-semibold text-foreground">Dirección:</span> {ticket.direccion}</p>
               <div className="border-t border-border/80 pt-2 flex flex-col gap-1 text-xs">
-                <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span> - {ticket.falla}</p>
-                <p><span className="font-semibold">Técnico:</span> {ticket.tecnico || 'Sin técnico'}</p>
+                <p><span className="font-semibold">Trabajo:</span> <span className="font-bold text-red-700 dark:text-red-400">{oracion(ticket.tipoTrabajo)}</span> - {ticket.falla}</p>
+                <p><span className="font-semibold">Técnico:</span> {legible(ticket.tecnico || 'Sin técnico')}</p>
                 {motivoCancelacion(ticket) && <p className="text-red-700 dark:text-red-300"><span className="font-semibold">Motivo de la cancelación:</span> {motivoCancelacion(ticket)}</p>}
                 {ticket.observacion && (
                   <p className="flex items-start gap-1.5 text-muted-foreground">

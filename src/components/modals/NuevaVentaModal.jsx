@@ -18,6 +18,7 @@ import Boton from '../Boton';
 import { CAMPO_ORDEN, SELECTOR_ORDEN, claseCampo } from '../estilos';
 import Aviso from '../Aviso';
 import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
 
 const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
 const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
@@ -134,7 +135,7 @@ export default function NuevaVentaModal({ perfil, tickets, onCrear, onClose }) {
           <Seccion>Cliente</Seccion>
           <CedulaField variant="create" wrapperClassName="col-span-2 space-y-0.5" idPrefix="nv" tipoDocumento={form.tipoDocumento} cedula={form.cedula} onChange={cambiar} error={faltaCedula ? 'Escribe la cédula o el RIF del cliente.' : ''} />
           {duplicada && (
-            <Aviso nivel="atencion" compact className="col-span-2">Ya hay una orden <strong>{duplicada.estado}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</Aviso>
+            <Aviso nivel="atencion" compact className="col-span-2">Ya hay una orden <strong>{oracion(duplicada.estado)}</strong> con esta cédula: <strong>{duplicada.codigo || 'S/C'}</strong> - {duplicada.nombre}. Puedes seguir si es otra venta.</Aviso>
           )}
 
           <div className="col-span-2 space-y-0.5">

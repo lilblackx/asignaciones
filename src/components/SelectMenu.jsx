@@ -140,7 +140,7 @@ export default function SelectMenu({
         data-index={i}
         role="option"
         aria-selected={isSelected}
-        className={`flex items-center justify-between gap-2 px-3 py-2 mx-1 rounded-xl text-sm normal-case font-medium cursor-pointer transition-colors ${
+        className={`flex items-center justify-between gap-2 px-3 py-2 mx-1 rounded-xl text-sm font-medium cursor-pointer transition-colors ${
           i === activeIndex ? 'bg-secondary' : ''
         } ${isSelected ? '!font-bold text-red-700 dark:text-red-400' : 'text-zinc-700 dark:text-zinc-200'}`}
         onPointerEnter={() => setActiveIndex(i)}

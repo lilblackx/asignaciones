@@ -16,6 +16,7 @@ import { ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, MENSAJE_SIN_PAGO_DEL_TECNICO, dias
 import { TIPO_PAGO, pagoClienteDe } from '../../utils/pagoEnOrden';
 import Aviso from '../Aviso';
 import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const fechaHora = (ms) => (ms ? new Date(Number(ms)).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
@@ -120,7 +121,7 @@ export default function CobroModal({ cobro, onTrabajar = null, soloLectura = fal
                 <TelefonoAccion telefono={cobro.telefono} tipo="chat" nombre={cobro.nombre} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-boton bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" />
               </Dato>
             </div>
-            <Dato copiado={copiado} onCopiar={copiar} clave="trabajo" etiqueta="Trabajo" valor={[cobro.tipoTrabajo, cobro.falla].filter(Boolean).join(' · ')} copiable={false} />
+            <Dato copiado={copiado} onCopiar={copiar} clave="trabajo" etiqueta="Trabajo" valor={[oracion(cobro.tipoTrabajo), cobro.falla].filter(Boolean).join(' · ')} copiable={false} />
             <Dato copiado={copiado} onCopiar={copiar} clave="tecnico" etiqueta="Técnico" valor={cobro.tecnico} copiable={false} />
             <Dato copiado={copiado} onCopiar={copiar} clave="emitido" etiqueta="Emitido" valor={`${fechaHora(cobro.creadoEn)}${pendiente ? ` · ${diasEsperando(cobro)} d esperando` : ''}`} copiable={false} />
             {!pendiente && <Dato copiado={copiado} onCopiar={copiar} clave="cargado" etiqueta="Cargado en el portal" valor={`${cobro.cargadoPor} · ${fechaHora(cobro.cargadoEn)}`} copiable={false} />}

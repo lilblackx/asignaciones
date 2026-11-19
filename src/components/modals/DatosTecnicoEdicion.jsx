@@ -70,7 +70,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
 
       {instalacion ? (
         <>
-          <Campo id="ed-serial" etiqueta="SERIAL" error={errores.serial} className="col-span-2">
+          <Campo id="ed-serial" etiqueta="Serial" error={errores.serial} className="col-span-2">
             <input id="ed-serial" type="text" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={MAX_LARGO_SERIAL} placeholder="Ej. HWTC1A2B3C4D" value={form.serial} onChange={(e) => onChange({ serial: e.target.value.replace(/[^0-9a-zA-Z-]/g, '').toUpperCase() })} aria-invalid={!!errores.serial} aria-describedby={errores.serial ? 'ed-serial-error' : undefined} className={claseInput(errores.serial || (avisoSerial && evaluacionSerial.estado === 'error'), avisoSerial && evaluacionSerial.estado === 'ok')} />
             {avisoSerial && !errores.serial && <AvisoSerialOlt serial={form.serial} />}
           </Campo>
@@ -78,7 +78,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             <input id="ed-vlan" type="text" inputMode="numeric" autoComplete="off" maxLength="4" placeholder="Ej. 100" value={form.vlan} onChange={(e) => onChange({ vlan: soloDigitos(e.target.value, 4) })} aria-invalid={!!errores.vlan} aria-describedby={errores.vlan ? 'ed-vlan-error' : undefined} className={claseInput(errores.vlan)} />
           </Campo>
           <div className="col-span-2 space-y-1">
-            <p className={claseEtiqueta}>METRAJE DEL DROP <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
+            <p className={claseEtiqueta}>Metraje del drop <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
             <MetrajeInicialFinal
               idInicial="ed-metraje-inicial"
               idFinal="ed-metraje-final"
@@ -100,7 +100,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           <Campo id="ed-nap" etiqueta="NAP" error={errores.nap}>
             <input id="ed-nap" type="text" maxLength="40" placeholder="Ej. NAP 08" value={form.nap} onChange={(e) => onChange({ nap: stripEmojis(e.target.value) })} aria-invalid={!!errores.nap} aria-describedby={errores.nap ? 'ed-nap-error' : undefined} className={claseInput(errores.nap)} />
           </Campo>
-          <Campo id="ed-puerto" etiqueta="PUERTO" error={errores.puerto}>
+          <Campo id="ed-puerto" etiqueta="Puerto" error={errores.puerto}>
             <input id="ed-puerto" type="text" inputMode="numeric" autoComplete="off" maxLength="3" placeholder="Ej. 3" value={form.puerto} onChange={(e) => onChange({ puerto: soloDigitos(e.target.value, 3) })} aria-invalid={!!errores.puerto} aria-describedby={errores.puerto ? 'ed-puerto-error' : undefined} className={claseInput(errores.puerto)} />
           </Campo>
 
@@ -122,12 +122,12 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
             {errores.posteadura && <p role="alert" className="text-[11px] max-lg:text-xs text-red-700 dark:text-red-400 font-bold ml-1">{errores.posteadura}</p>}
           </div>
 
-          <Campo id="ed-puertos-disponibles" etiqueta="PUERTOS DISPONIBLES" error={errores.puertosDisponibles} ayuda="Los que quedan libres en la NAP (0 si ninguno)." className="col-span-2">
+          <Campo id="ed-puertos-disponibles" etiqueta="Puertos disponibles" error={errores.puertosDisponibles} ayuda="Los que quedan libres en la NAP (0 si ninguno)." className="col-span-2">
             <input id="ed-puertos-disponibles" type="text" autoComplete="off" maxLength={MAX_LARGO_PUERTOS_DISPONIBLES} placeholder="Ej. 6" value={form.puertosDisponibles} onChange={(e) => onChange({ puertosDisponibles: stripEmojis(e.target.value) })} aria-invalid={!!errores.puertosDisponibles} aria-describedby={errores.puertosDisponibles ? 'ed-puertos-disponibles-error' : undefined} className={claseInput(errores.puertosDisponibles)} />
           </Campo>
 
           <div className="col-span-2 space-y-1.5" role="group" aria-labelledby="ed-conectores-etiqueta">
-            <p id="ed-conectores-etiqueta" className={claseEtiqueta}>CONECTORES USADOS <span className="font-normal text-muted-foreground">cuántos de cada tipo y color</span></p>
+            <p id="ed-conectores-etiqueta" className={claseEtiqueta}>Conectores usados <span className="font-normal text-muted-foreground">cuántos de cada tipo y color</span></p>
             <div className="grid grid-cols-3 gap-2">
               <CampoConectores id="ed-cant-ext-verde" etiqueta="Ext. verdes" valor={form.extVerde} onChange={(v) => onChange({ extVerde: v })} error={errores.conectores?.campo === 'externoVerde' ? conectoresError : ''} />
               <CampoConectores id="ed-cant-int-verde" etiqueta="Int. verdes" valor={form.intVerde} onChange={(v) => onChange({ intVerde: v })} error={errores.conectores?.campo === 'internoVerde' ? conectoresError : ''} />
@@ -140,7 +140,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
       ) : (
         <>
           <div className="col-span-2 space-y-1">
-            <label htmlFor="ed-tipo-visita" className={claseEtiqueta}>TIPO DE VISITA</label>
+            <label htmlFor="ed-tipo-visita" className={claseEtiqueta}>Tipo de visita</label>
             <SelectMenu
               id="ed-tipo-visita"
               ariaLabel="Tipo de visita"
@@ -155,7 +155,7 @@ export default function DatosTecnicoEdicion({ instalacion, form, onChange, error
           {esRecableado(tipoVisita) && (
             <div className="col-span-2 space-y-3">
               <div className="space-y-1">
-                <p className={claseEtiqueta}>METRAJE DEL CABLE <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
+                <p className={claseEtiqueta}>Metraje del cable <span className="font-normal text-muted-foreground">marca inicial y final del cable</span></p>
                 <MetrajeInicialFinal
                   idInicial="pf-metros-inicial"
                   idFinal="pf-metros-final"

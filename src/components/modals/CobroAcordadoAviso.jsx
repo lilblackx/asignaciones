@@ -17,7 +17,7 @@ export default function CobroAcordadoAviso({ ticket }) {
     <div className="space-y-2 text-left">
       {acordado && (
         <div role="note" className="rounded-campo border border-sky-300 dark:border-sky-800 bg-white dark:bg-sky-950/40 p-2.5 text-xs text-sky-900 dark:text-sky-100">
-          <p className="flex items-center gap-1.5 font-black tracking-wide"><Handshake className="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400" aria-hidden="true" /> ACORDADO CON EL CLIENTE</p>
+          <p className="flex items-center gap-1.5 font-black"><Handshake className="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400" aria-hidden="true" /> Acordado con el cliente</p>
           <p className="mt-1 font-bold text-sm">{textoCobroAcordado(acordado)}</p>
           {(acordado.por || acordado.en > 0) && (
             <p className="mt-0.5 text-[11px] max-lg:text-xs opacity-80">Anotado{acordado.por ? ` por ${acordado.por}` : ''}{acordado.en > 0 ? ` el ${fechaCorta(acordado.en)}` : ''}.</p>

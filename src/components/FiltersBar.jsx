@@ -6,6 +6,7 @@ import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
 import Colapsable from './Colapsable';
 import BotonFiltros from './BotonFiltros';
 import { BUSCADOR } from './estilos';
+import { oracion } from '../utils/oracion';
 
 export default function FiltersBar({
   searchTerm, setSearchTerm,
@@ -43,7 +44,7 @@ export default function FiltersBar({
   ];
   const tipoItems = [
     { value: 'TODOS', label: 'Todos' },
-    ...TIPOS_TRABAJO.map(tipo => ({ value: tipo.toUpperCase(), label: tipo }))
+    ...TIPOS_TRABAJO.map(tipo => ({ value: tipo.toUpperCase(), label: oracion(tipo) }))
   ];
   const sortItems = [
     { value: 'DEFECTO', label: 'Más recientes' },

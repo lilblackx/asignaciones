@@ -14,7 +14,7 @@ export default function PromotorField({ id, value, onChange, wrapperClassName, l
   return (
     <div className={wrapperClassName}>
       <label htmlFor={id} className={labelClassName}>
-        {suave ? <>Promotor<span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span></> : <>PROMOTOR<span className="text-red-700 dark:text-red-400"> *</span></>} <span className="font-normal normal-case text-muted-foreground">{ayuda}</span>
+        {suave ? <>Promotor<span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span></> : <>Promotor<span className="text-red-700 dark:text-red-400"> *</span></>} <span className="font-normal text-muted-foreground">{ayuda}</span>
       </label>
       <input ref={ref} id={id} required type="text" maxLength="100" name="promotora" value={value} onChange={onChange} aria-invalid={error ? 'true' : undefined} className={inputClassName} />
       {error && <p role="alert" className="text-xs font-bold text-red-700 dark:text-red-400 ml-1">{error}</p>}

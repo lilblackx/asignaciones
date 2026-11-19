@@ -16,6 +16,8 @@ import CobroClienteDetalle from '../CobroClienteDetalle';
 import FotosDeOrden from '../FotosDeOrden';
 import { fotosDe } from '../../utils/detallesOrden';
 import Aviso from '../Aviso';
+import { legible } from '../../utils/nombreTecnico';
+import { oracion } from '../../utils/oracion';
 
 // El detalle de una orden que se le paga al técnico: quién es el cliente, qué trabajo fue, cómo se cobró y con qué precio se le paga. Solo lectura.
 // Una fila del registro de VN y TA (item.registro) no es una orden: muestra el código, el trabajo, la fecha, quién la registró y la observación.
@@ -47,7 +49,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
   // Una orden ya pagada muestra lo que se le pagó; una por pagar, el precio de hoy.
   const precio = item.pagada ? item.monto : tarifas[concepto] || 0;
   const terminada = culminadaEn(orden) || Number(orden.finalizadoEn) || 0;
-  const trabajo = [orden.tipoTrabajo, orden.falla].filter(Boolean).join(' · ');
+  const trabajo = [oracion(orden.tipoTrabajo), orden.falla].filter(Boolean).join(' · ');
 
   // Garantías de otro técnico ligadas a esta orden: lo que se le descuenta (si es la original) o lo que se le paga (si es la garantía).
   const delDescuento = ajustes.filter((a) => a.tipo === 'DESCUENTO' && a.claveOrigen === item.clave);
@@ -67,7 +69,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           {registro ? (
             <div className="grid grid-cols-2 gap-4">
               <Dato etiqueta="Trabajo realizado">{TRABAJOS_VNTA[registro.trabajo]?.nombre}</Dato>
-              <Dato etiqueta="Técnico que apoyó">{registro.tecnico}</Dato>
+              <Dato etiqueta="Técnico que apoyó">{legible(registro.tecnico)}</Dato>
               <Dato etiqueta="Fecha">{fechaLegible(registro.fecha)}</Dato>
               <Dato etiqueta="Registrado por">{registro.operador}</Dato>
             </div>
@@ -75,7 +77,7 @@ export default function DetalleOrdenFinanzas({ item, tarifas, tasa = null, onClo
           <div className="grid grid-cols-2 gap-4">
             <Dato etiqueta="Cliente">{orden.nombre}</Dato>
             <Dato etiqueta="Cédula">{formatearCedula(orden.cedula, orden.tipoDocumento)}</Dato>
-            <Dato etiqueta="Técnico">{orden.tecnico}</Dato>
+            <Dato etiqueta="Técnico">{legible(orden.tecnico)}</Dato>
             <Dato etiqueta="Terminada">{terminada ? fechaHoraLegible(terminada) : ''}</Dato>
             <Dato etiqueta="Trabajo">{trabajo}</Dato>
             <Dato etiqueta="Tipo de visita">{etiquetaTipoVisita(orden.tipoVisita)}</Dato>

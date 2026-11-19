@@ -28,6 +28,7 @@ import CobroAcordadoField from './CobroAcordadoField';
 import { COBRO_PAGADA, formularioCobroAcordado, resolverCobroAcordado } from '../../utils/cobroAcordado';
 import { llevaCobro } from '../../utils/cobro';
 import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
 
 const OBLIGATORIO = <span className="font-normal text-red-700 dark:text-red-400"> (obligatorio)</span>;
 const OPCIONAL = <span className="font-normal text-muted-foreground"> (opcional)</span>;
@@ -113,7 +114,7 @@ export default function EditTicketModal({ editingTicket, handleEditChange, handl
   ];
   // FINALIZADO no se elige aquí (la orden no tendría cobro resultante): se finaliza con "Finalizar" o "Aprobar" de la lista.
   // Solo aparece si la orden ya está finalizada, para que se vea su estado.
-  const estadoItems = ['PENDIENTE', 'PRE-FINALIZADO', ...(isTecnico ? [] : [...(editingTicket.estado === 'FINALIZADO' ? ['FINALIZADO'] : []), 'CANCELADO'])].map(v => ({ value: v, label: v }));
+  const estadoItems = ['PENDIENTE', 'PRE-FINALIZADO', ...(isTecnico ? [] : [...(editingTicket.estado === 'FINALIZADO' ? ['FINALIZADO'] : []), 'CANCELADO'])].map(v => ({ value: v, label: oracion(v) }));
 
   const handleTipoTrabajoChange = (e) => {
     handleEditChange(e);

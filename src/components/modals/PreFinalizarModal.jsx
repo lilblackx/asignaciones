@@ -37,6 +37,7 @@ import { claseArea, claseCampo } from '../estilos';
 import { guardarBorrador, leerBorrador, olvidarBorrador, versionDeOrden } from '../../utils/borradorPrefinalizar';
 import Aviso from '../Aviso';
 import BotonCerrar from '../BotonCerrar';
+import { oracion } from '../../utils/oracion';
 
 const marcaTexto = (v) => (v == null ? '' : String(v));
 
@@ -332,7 +333,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           <div className="bg-sunken p-3 rounded-campo border border-border space-y-1.5 text-xs text-card-foreground">
             <div className="flex items-center gap-2">
               <Wrench className="w-3.5 h-3.5 text-red-700 dark:text-red-400 shrink-0" />
-              <span className="font-bold text-red-700 dark:text-red-400">{ticket.tipoTrabajo}</span>
+              <span className="font-bold text-red-700 dark:text-red-400">{oracion(ticket.tipoTrabajo)}</span>
               {ticket.falla && <span className="text-muted-foreground">({ticket.falla})</span>}
             </div>
             <div className="flex items-start gap-2">
@@ -355,7 +356,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           {!esInstalacion && (
           <div className="space-y-1">
             <label htmlFor="pf-tipo-visita" className="text-xs font-bold text-card-foreground ml-1">
-              TIPO DE VISITA <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
+              Tipo de visita <span className="font-normal text-red-700 dark:text-red-400">(obligatorio)</span>
             </label>
             <SelectMenu
               id="pf-tipo-visita"
@@ -599,7 +600,7 @@ function FormularioPreFinalizar({ ticket, usuario, borrador, onDescartarBorrador
           </div>
   );
   const bloqueAvisoPre = (
-          <Aviso nivel="atencion" icono={AlertCircle} compact>Esta orden quedará en estado <strong>PRE-FINALIZADA</strong> para que el administrador u operador revise y realice la finalización definitiva.</Aviso>
+          <Aviso nivel="atencion" icono={AlertCircle} compact>Esta orden quedará en estado <strong>pre-finalizada</strong> para que el administrador u operador revise y realice la finalización definitiva.</Aviso>
   );
 
   // El contenido de cada paso. Si la oficina devolvió la orden, su motivo se ve completo en el primer paso y resumido en los demás.
