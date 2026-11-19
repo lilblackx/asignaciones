@@ -1,4 +1,4 @@
-import { AlarmClock, CalendarClock, ClipboardCopy, FileText } from 'lucide-react';
+import { AlarmClock, CalendarClock, FileText } from 'lucide-react';
 import { promotoraDeOrden } from '../utils/whatsapp';
 import { ESTILO_ESTADO_PROMOTORA } from './estilosInstalacion';
 import { legible } from '../utils/nombreTecnico';
@@ -10,7 +10,7 @@ import BotonCopiar from './BotonCopiar';
 import { useCopiado } from '../hooks/useCopiado';
 
 // Una orden vista por ventas o por la promotora: quién es el cliente, dónde, y en qué va. Solo lectura. En las finalizadas,
-// "Ver plantilla" (`onVerPlantilla`) abre la plantilla final ya llena por el técnico, para leerla y copiarla.
+// "Ver plantilla" (`onVerPlantilla`) abre la plantilla final ya llena por el técnico; ahí mismo está el botón para copiarla.
 // Usa el lenguaje de la oficina: etiquetas en minúscula, estados en pastel
 // (ver estilosInstalacion) y la etiqueta de tipo de la tabla (ticketDisplay); tarjeta con rounded-card y shadow-card, sin íconos delante de los datos.
 
@@ -20,7 +20,7 @@ const VALOR = 'text-sm text-foreground mt-0.5 break-words';
 const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded-boton border border-input px-2.5 py-1 text-foreground hover:bg-secondary transition-colors';
 
 // `onCopy(texto, mensaje)` (opcional) copia y avisa con el toast; con él, el nombre del cliente lleva su botón de copiar.
-export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlantilla, onCopy, mostrarTipo = false, ahora }) {
+export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, mostrarTipo = false, ahora }) {
   const { copiado, copiar } = useCopiado(onCopy);
   const { vista } = orden;
   const esLos = esAveriaLos(orden);
@@ -46,7 +46,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
       </div>
 
       {atraso && (
-        <div className={`w-full px-5 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold ${atraso.nivel === 'urgente' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'}`}>
+        <div className={`w-full px-5 py-1.5 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold ${atraso.nivel === 'urgente' ? 'bg-red-100 text-red-900 dark:bg-red-950/60 dark:text-red-200' : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'}`}>
           <AlarmClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>{atraso.que} · {atraso.dias === 1 ? '1 día' : `${atraso.dias} días`}</span>
         </div>
@@ -114,11 +114,6 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopiarPlan
             <button type="button" onClick={() => onVerPlantilla(orden)} className={BOTON}>
               <FileText className="w-3 h-3 shrink-0" aria-hidden="true" /><span>Ver plantilla</span>
             </button>
-            {onCopiarPlantilla && (
-              <button type="button" onClick={() => onCopiarPlantilla(orden)} aria-label={`Copiar la plantilla de ${orden.codigo || 'la orden'}`} title="Copiar plantilla" className={BOTON}>
-                <ClipboardCopy className="w-3 h-3" aria-hidden="true" /> Copiar
-              </button>
-            )}
           </div>
         )}
       </div>

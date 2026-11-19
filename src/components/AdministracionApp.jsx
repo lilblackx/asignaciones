@@ -4,6 +4,7 @@ import { ROLES, etiquetaRol } from '../constants';
 import BotonExportar from './BotonExportar';
 import BotonFiltros from './BotonFiltros';
 import BotonLimpiarBusqueda from './BotonLimpiarBusqueda';
+import Aviso from './Aviso';
 import Boton from './Boton';
 import Chip from './Chip';
 import { legible } from '../utils/nombreTecnico';
@@ -117,7 +118,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
     const porCargar = clave === ESTADO_COBRO.PENDIENTE;
     return (
       <button key={clave} type="button" onClick={() => setEstado(estado === clave ? 'TODOS' : clave)} aria-pressed={estado === clave}
-        className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'border-red-600' : 'border-transparent hover:border-muted-foreground'} shadow-card`}>
+        className={`text-left rounded-card border border-transparent p-3 transition-shadow bg-card ${porCargar ? 'col-span-2 lg:col-span-1 ' : ''}${estado === clave || (porCargar && r.cantidad > 0 && estado === 'TODOS') ? 'ring-2 ring-red-600' : 'hover:ring-2 hover:ring-muted-foreground'} shadow-card`}>
         <p className={`font-black tabular-nums ${porCargar ? 'text-4xl' : 'text-2xl'} ${porCargar && r.cantidad > 0 ? 'text-red-700 dark:text-red-400' : ''}`}>{r.cantidad}</p>
         <p className="text-xs font-bold">{titulo}</p>
         {(montos.length > 0 || (porCargar && r.cantidad > 0)) && <p className={`${ETIQUETA} tabular-nums`}>{[...montos, porCargar && r.cantidad > 0 && 'de cualquier fecha'].filter(Boolean).join(' · ')}</p>}
@@ -127,7 +128,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
   };
   const tarjetaAlertas = (
     <button type="button" onClick={() => setEstado(estado === 'ALERTA' ? 'TODOS' : 'ALERTA')} aria-pressed={estado === 'ALERTA'}
-      className={`text-left rounded-card border-2 p-3 transition-colors bg-card ${estado === 'ALERTA' || resumen.alertas > 0 ? 'border-amber-500' : 'border-transparent hover:border-muted-foreground'} shadow-card`}>
+      className={`text-left rounded-card border border-transparent p-3 transition-shadow bg-card ${estado === 'ALERTA' || resumen.alertas > 0 ? 'ring-2 ring-amber-500' : 'hover:ring-2 hover:ring-muted-foreground'} shadow-card`}>
       <p className={`text-2xl font-black tabular-nums ${resumen.alertas > 0 ? 'text-amber-700 dark:text-amber-400' : ''}`}>{resumen.alertas}</p>
       <p className="text-xs font-bold">Con cambio de monto</p>
       {resumen.alertas > 0 && <p className={ETIQUETA}>corrígelos en el portal</p>}
@@ -140,7 +141,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
   );
   // El técnico todavía no registró el pago del cliente: el cobro se ve, pero no se puede marcar como cargado hasta que lo registre (ver faltaElPagoDelTecnico).
   const sinPago = (c) => faltaElPagoDelTecnico(c) && (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2 py-0.5 rounded-md bg-red-600 text-white"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200"><Ban className="w-3 h-3 shrink-0" aria-hidden="true" />Técnico sin registrar el pago</span>
   );
   const esperaPago = (c) => c.estado === ESTADO_COBRO.PENDIENTE && faltaElPagoDelTecnico(c);
   const accionTexto = (c) => (tieneCambioDeMonto(c) ? 'Corregir' : esperaPago(c) ? 'Ver' : c.estado === ESTADO_COBRO.PENDIENTE ? 'Cargar' : 'Ver');
@@ -169,7 +170,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
           {!cargado && !error ? (
             <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando cobros...</p>
           ) : error && !cargado ? (
-            <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar los cobros. Revisa tu conexión e intenta de nuevo.</p>
+            <Aviso nivel="error" titulo="No se pudieron cargar los cobros">Revisa tu conexión e intenta de nuevo.</Aviso>
           ) : (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
@@ -231,7 +232,9 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
                         </div>
                         <p className="text-sm font-bold break-words">{textoDeCobro(c)}</p>
                         <PagoDelCliente orden={c} tamano="grande" />
-                        {sinPago(c) && <div className="space-y-1">{sinPago(c)}{esperaPago(c) && <p className="text-xs text-card-foreground">No marques este cobro como cargado todavía: no sabes si el cliente ya pagó.</p>}</div>}
+                        {faltaElPagoDelTecnico(c) && (esperaPago(c)
+                          ? <Aviso nivel="atencion" compact titulo="Técnico sin registrar el pago">No marques este cobro como cargado todavía: no sabes si el cliente ya pagó.</Aviso>
+                          : sinPago(c))}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           {alerta(c)}
                           {c.estado === ESTADO_COBRO.PENDIENTE && <span className={ETIQUETA}>{diasEsperando(c, ahora)} d esperando</span>}

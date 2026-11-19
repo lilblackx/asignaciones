@@ -1,4 +1,4 @@
-import { AlarmClock, CalendarClock, ClipboardCopy, FileText } from 'lucide-react';
+import { AlarmClock, CalendarClock, FileText } from 'lucide-react';
 import { promotoraDeOrden } from '../utils/whatsapp';
 import { ESTILO_ESTADO_PROMOTORA } from './estilosInstalacion';
 import { atrasoOrden, esAveriaLos, fechaCorta, fechaOrden, textoPlantillaFinal } from '../utils/estadoInstalacion';
@@ -7,7 +7,7 @@ import { motivoCancelacion } from '../utils/cancelacion';
 import { getTipoTrabajoEstilo } from '../utils/ticketDisplay';
 
 // Las mismas órdenes que las tarjetas (TarjetaInstalacion), en modo lista: una fila por orden, más compacta, para ver muchas de un vistazo.
-// En pantallas anchas es una tabla; en el celular, filas apiladas con lo esencial. Solo lectura; "Ver plantilla" y "Copiar" como en la tarjeta.
+// En pantallas anchas es una tabla; en el celular, filas apiladas con lo esencial. Solo lectura; "Ver plantilla" como en la tarjeta (el copiado está dentro de esa ventana).
 
 const fecha = (ms) => (ms ? new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 const BOTON = 'inline-flex items-center justify-center gap-1 text-[11px] max-lg:text-xs font-bold rounded-boton border border-input px-2.5 py-1 text-foreground hover:bg-secondary transition-colors whitespace-nowrap';
@@ -44,7 +44,7 @@ function Avisos({ d }) {
   return (
     <>
       {d.atraso && (
-        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] max-lg:text-xs font-bold ${d.atraso.nivel === 'urgente' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'}`}>
+        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] max-lg:text-xs font-bold ${d.atraso.nivel === 'urgente' ? 'bg-red-100 text-red-900 dark:bg-red-950/60 dark:text-red-200' : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'}`}>
           <AlarmClock className="w-3 h-3 shrink-0" aria-hidden="true" />
           {d.atraso.que} · {d.atraso.dias === 1 ? '1 día' : `${d.atraso.dias} días`}
         </span>
@@ -59,23 +59,18 @@ function Avisos({ d }) {
   );
 }
 
-function Plantilla({ orden, d, onVerPlantilla, onCopiarPlantilla }) {
+function Plantilla({ orden, d, onVerPlantilla }) {
   if (!d.conPlantilla) return null;
   return (
     <div className="flex items-center gap-1.5">
       <button type="button" onClick={() => onVerPlantilla(orden)} className={BOTON}>
         <FileText className="w-3 h-3 shrink-0" aria-hidden="true" /><span>Ver plantilla</span>
       </button>
-      {onCopiarPlantilla && (
-        <button type="button" onClick={() => onCopiarPlantilla(orden)} aria-label={`Copiar la plantilla de ${orden.codigo || 'la orden'}`} title="Copiar plantilla" className={BOTON}>
-          <ClipboardCopy className="w-3 h-3" aria-hidden="true" /> Copiar
-        </button>
-      )}
     </div>
   );
 }
 
-export default function ListaInstalaciones({ ordenes, onVerPlantilla, onCopiarPlantilla, mostrarTipo = false, ahora, className = '' }) {
+export default function ListaInstalaciones({ ordenes, onVerPlantilla, mostrarTipo = false, ahora, className = '' }) {
   const filas = ordenes.map((o) => ({ orden: o, d: datos(o, onVerPlantilla, ahora) }));
 
   return (
@@ -97,7 +92,7 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, onCopiarPl
             </p>
             {(d.atraso || d.programada) && <div className="flex flex-wrap gap-1.5"><Avisos d={d} /></div>}
             {d.motivo && <p className="text-[11px] max-lg:text-xs leading-snug text-red-800 dark:text-red-300 break-words"><span className="font-black">Motivo:</span> {d.motivo}</p>}
-            {d.conPlantilla && <Plantilla orden={orden} d={d} onVerPlantilla={onVerPlantilla} onCopiarPlantilla={onCopiarPlantilla} />}
+            {d.conPlantilla && <Plantilla orden={orden} d={d} onVerPlantilla={onVerPlantilla} />}
           </li>
         ))}
       </ul>
@@ -130,7 +125,7 @@ export default function ListaInstalaciones({ ordenes, onVerPlantilla, onCopiarPl
                   {(d.atraso || d.programada) && <div className="mt-1.5 flex flex-col items-start gap-1"><Avisos d={d} /></div>}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-xs tabular-nums text-muted-foreground">{d.cuando}</td>
-                <td className="px-3 py-2.5"><Plantilla orden={orden} d={d} onVerPlantilla={onVerPlantilla} onCopiarPlantilla={onCopiarPlantilla} /></td>
+                <td className="px-3 py-2.5"><Plantilla orden={orden} d={d} onVerPlantilla={onVerPlantilla} /></td>
               </tr>
             ))}
           </tbody>

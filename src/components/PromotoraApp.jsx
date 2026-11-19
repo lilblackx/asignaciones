@@ -122,8 +122,6 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
     }
   };
 
-  // "Copiar" de la tarjeta: la misma plantilla que muestra "Ver plantilla", sin abrirla.
-  const copiarDeTarjeta = (orden) => copiar(textoPlantillaFinal(orden), `Plantilla de ${orden.codigo || 'la orden'} copiada.`);
 
   // Totales del mes (solo ventas): lo cerrado sale de un documento por mes; lo de hoy, de las órdenes en vivo que ya están cargadas.
   const meses = useMemo(() => mesesDeTotales(ahora), [ahora]);
@@ -334,10 +332,10 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           ) : visibles.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">{ordenes.length === 0 ? (vista === 'LOS' ? 'Todavía no hay averías LOS.' : vista === 'TODO' ? 'Todavía no hay órdenes.' : 'Todavía no hay instalaciones.') : 'Ninguna orden coincide con los filtros.'}</p>
           ) : formato === 'LISTA' ? (
-            <ListaInstalaciones key={`${categoria}-${vista}-lista`} className="lg:animate-fade-in" ordenes={visibles} onVerPlantilla={setPlantillaDe} onCopiarPlantilla={copiarDeTarjeta} mostrarTipo={verTodasInstalaciones} ahora={ahora} />
+            <ListaInstalaciones key={`${categoria}-${vista}-lista`} className="lg:animate-fade-in" ordenes={visibles} onVerPlantilla={setPlantillaDe} mostrarTipo={verTodasInstalaciones} ahora={ahora} />
           ) : (
             <ul key={`${categoria}-${vista}`} className="grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 lg:animate-fade-in">
-              {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} onCopiarPlantilla={copiarDeTarjeta} onCopy={copiar} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}
+              {visibles.map((o) => <TarjetaInstalacion key={o.id} orden={o} onVerPlantilla={setPlantillaDe} onCopy={copiar} mostrarTipo={verTodasInstalaciones} ahora={ahora} />)}
             </ul>
           )}
 
