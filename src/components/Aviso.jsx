@@ -84,7 +84,7 @@ export default function Aviso({ nivel = 'atencion', titulo, children, codigos, o
         </div>
         {boton && !compact && <div className="shrink-0 self-center max-sm:hidden">{boton}</div>}
       </div>
-      {boton && (compact ? <div className="mt-2">{boton}</div> : <div className="mt-2.5 sm:hidden [&>button]:w-full">{boton}</div>)}
+      {boton && (compact ? <div className="mt-2 [&>button]:w-full">{boton}</div> : <div className="mt-2.5 sm:hidden [&>button]:w-full">{boton}</div>)}
     </div>
   );
 }

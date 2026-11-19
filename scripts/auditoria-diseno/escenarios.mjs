@@ -135,6 +135,10 @@ export default [
       { id: 'filtros', preparar: (n) => n.clicEtiqueta('^filtros$'), limpiar: (n) => n.clicEtiqueta('^filtros$') },
       // En celular las píldoras de técnicos van plegadas en un resumen: se abre para ver la lista con sus interruptores.
       // Una orden esperando a infraestructura (AR709, sembrada a mano en el emulador) y una devuelta por la oficina (PD3): sus avisos en la tarjeta.
+      // Una orden devuelta por la oficina, con el comentario del técnico (PD3 de la siembra).
+      { id: 'devolucion-orden', preparar: (n) => n.ev(() => { const e = [...document.querySelectorAll('[role="alert"], [role="status"]')].find((x) => x.getClientRects().length && /devuelta por/i.test(x.innerText)); if (!e) return false; e.scrollIntoView({ block: 'center' }); return true; }), espera: 800 },
+      // La consulta de cobro de un recableado (AR701 de la siembra).
+      { id: 'consulta-cobro-orden', preparar: (n) => n.ev(() => { const e = [...document.querySelectorAll('[role="alert"], [role="status"]')].find((x) => x.getClientRects().length && /consulta de cobro/i.test(x.innerText)); if (!e) return false; e.scrollIntoView({ block: 'center' }); return true; }), espera: 800 },
       { id: 'avisos-orden', preparar: (n) => n.ev(() => { const e = [...document.querySelectorAll('[role="status"], [role="alert"]')].find((x) => /en infraestructura/i.test(x.innerText)); if (!e) return false; e.scrollIntoView({ block: 'center' }); return true; }), espera: 800 },
       { id: 'tecnicos-lista', preparar: (n) => n.clic('técnicos ·'), limpiar: (n) => n.clic('técnicos ·') },
       // La campana de la oficina con sus avisos (el pre-finalizado de la siembra y los que genera la app).
@@ -142,7 +146,7 @@ export default [
       // El pegado manual de la ubicación (el ícono "Sin ubicación" de una orden): la ventana con su encabezado y esquinas.
       { id: 'ubicacion-pegar', preparar: (n) => n.clicEtiqueta('^sin ubicación: pegar'), limpiar: (n) => n.esc(), espera: 1200 },
       // La oficina responde la consulta de cobro de un recableado (la siembra: una consulta pendiente en AR701).
-      { id: 'responder-cobro', preparar: (n) => clicTexto(n, 'responder cobro'), limpiar: (n) => n.esc(), espera: 1200 },
+      { id: 'responder-cobro', preparar: (n) => clicTexto(n, 'responder'), limpiar: (n) => n.esc(), espera: 1200 },
       { id: 'nueva-orden', preparar: (n) => n.clic('nueva orden'), limpiar: seguir },
       // El calendario del campo de fecha (Fecha programada de Nueva asignación).
       { id: 'nueva-orden-calendario', preparar: (n) => n.clicEtiqueta('^fecha programada:'), limpiar: (n) => clicTexto(n, 'cerrar'), espera: 1800 },

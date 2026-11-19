@@ -7,6 +7,7 @@ import { getEnlaceLlamada, getEnlaceWhatsApp, parseTelefonos } from '../utils/te
 import TelefonoAccion from './TelefonoAccion';
 import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
+import NotaTecnico from './NotaTecnico';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
 import InfraestructuraAviso from './InfraestructuraAviso';
 import CancelacionAviso from './CancelacionAviso';
@@ -207,12 +208,7 @@ export default function TicketsMobileList({
                 <span className="text-card-foreground leading-tight">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
               </div>
             )}
-            {ticket.observacionTecnico && (
-              <div className="flex items-start gap-2 text-sm">
-                <Wrench className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-label="Observación del técnico" role="img" />
-                <span className="text-amber-800 dark:text-amber-300 leading-tight">{ticket.observacionTecnico}</span>
-              </div>
-            )}
+            <NotaTecnico texto={ticket.observacionTecnico} />
             <PagoDelCliente orden={ticket} tamano="grande" avisarFalta={!isTecnico} />
           </div>
           {/* El técnico solo ve sus propias órdenes: repetir su nombre (y el creador,

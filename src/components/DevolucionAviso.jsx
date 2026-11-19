@@ -17,6 +17,9 @@ function ValorLinea({ etiqueta, valor }) {
   );
 }
 
+// El operador se guarda como su usuario en minúscula ("rcova"): se muestra con la inicial en mayúscula.
+const nombreDe = (usuario) => String(usuario).charAt(0).toUpperCase() + String(usuario).slice(1);
+
 export default function DevolucionAviso({ ticket, compact = false, conValores = false, className = '' }) {
   const devolucion = devolucionPendiente(ticket);
   if (!devolucion) return null;
@@ -26,10 +29,10 @@ export default function DevolucionAviso({ ticket, compact = false, conValores = 
       nivel="error"
       icono={Undo2}
       compact={compact}
-      titulo={`Devuelta${devolucion.operador ? ` por ${devolucion.operador}` : ''}${devolucion.fecha && !compact ? ` · ${devolucion.fecha}` : ''}`}
+      titulo={`Devuelta${devolucion.operador ? ` por ${nombreDe(devolucion.operador)}` : ''}${devolucion.fecha && !compact ? ` · ${devolucion.fecha}` : ''}`}
       className={className}
     >
-      {devolucion.motivo}
+      <span className="font-bold">Motivo:</span> {devolucion.motivo}
       {conValores && valoresGuardados(ticket) && (
         <div className="mt-1.5 pt-1.5 border-t border-red-200 dark:border-red-900/50 whitespace-normal">
           <p className="font-bold">Valores con los que quedó el cliente:</p>

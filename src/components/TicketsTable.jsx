@@ -7,6 +7,7 @@ import { buildSmartOltUrl } from '../utils/smartolt';
 import { esProgramadaFutura } from '../utils/programada';
 import RowMenu from './RowMenu';
 import DevolucionAviso from './DevolucionAviso';
+import NotaTecnico from './NotaTecnico';
 import ConsultaCobroAviso from './ConsultaCobroAviso';
 import InfraestructuraAviso from './InfraestructuraAviso';
 import CancelacionAviso from './CancelacionAviso';
@@ -85,12 +86,12 @@ export default function TicketsTable({
           
           <tr>
             <th className="px-3 py-3 w-[8%] min-[1440px]:w-[7%] align-middle text-center">CÓDIGO</th>
-            <th className="px-3 py-3 w-[15%] min-[1440px]:w-[16%] align-middle text-center">NOMBRE</th>
-            <th className="px-3 py-3 w-[13%] min-[1440px]:w-[12%] align-middle text-center">CÉDULA</th>
-            <th className="px-3 py-3 w-[15%] min-[1440px]:w-[18%] align-middle text-center">DIRECCIÓN</th>
-            <th className="px-3 py-3 w-[15%] align-middle text-center">FALLA / TRABAJO</th>
+            <th className="px-3 py-3 w-[21%] min-[1440px]:w-[22%] align-middle text-center">NOMBRE</th>
+            <th className="px-3 py-3 w-[10%] align-middle text-center">CÉDULA</th>
+            <th className="px-3 py-3 w-[14%] align-middle text-center">DIRECCIÓN</th>
+            <th className="px-3 py-3 w-[13%] align-middle text-center">FALLA / TRABAJO</th>
             <th className="px-3 py-3 w-[11%] align-middle text-center">TÉCNICO</th>
-            <th className="px-3 py-3 w-[14%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
+            <th className="px-3 py-3 w-[13%] min-[1440px]:w-[12%] align-middle text-center">ESTADO</th>
             <th className="px-2 py-3 align-middle text-center w-[10%]">ACCIONES</th>
           </tr>
         </thead>
@@ -152,12 +153,7 @@ export default function TicketsTable({
                         <span className="line-clamp-2">{isTecnico ? observacionParaTecnico(ticket) : ticket.observacion}</span>
                       </span>
                     )}
-                    {ticket.observacionTecnico && (
-                      <span className="flex items-start gap-1 text-[11px] max-lg:text-xs text-amber-700 dark:text-amber-400" title={`Técnico: ${ticket.observacionTecnico}`}>
-                        <Wrench className="w-3 h-3 shrink-0 mt-px" aria-label="Observación del técnico" role="img" />
-                        <span className="line-clamp-2">{ticket.observacionTecnico}</span>
-                      </span>
-                    )}
+                    <NotaTecnico texto={ticket.observacionTecnico} compact />
                     <PagoDelCliente orden={ticket} tamano="compacto" avisarFalta={!isTecnico} />
                   </div>
                 </td>

@@ -1,5 +1,6 @@
 import { Banknote, Hourglass } from 'lucide-react';
 import Aviso from './Aviso';
+import { legible } from '../utils/nombreTecnico';
 import { consultaCobroDe, consultaPendiente, respuestaVigente, textoRespuesta } from '../utils/consultaCobro';
 
 // Estado de la consulta del cobro de un recableado, para la lista de órdenes: pendiente (la oficina aún no responde) o con la
@@ -21,9 +22,11 @@ export default function ConsultaCobroAviso({ ticket, compact = false, onResponde
       nivel="atencion"
       icono={Hourglass}
       compact={compact}
-      titulo={onResponder ? `${ticket.tecnico || 'El técnico'} pregunta el cobro del recableado (${consulta.metros} m)` : `Consulta de cobro enviada (${consulta.metros} m): esperando a la oficina`}
-      accion={pendiente && onResponder ? { etiqueta: 'Responder cobro', icono: Banknote, onClick: () => onResponder(ticket) } : null}
+      titulo={onResponder ? 'Consulta de cobro del recableado' : 'Consulta de cobro enviada'}
+      accion={pendiente && onResponder ? { etiqueta: 'Responder', icono: Banknote, onClick: () => onResponder(ticket) } : null}
       className={className}
-    />
+    >
+      {onResponder ? `${legible(ticket.tecnico) || 'El técnico'} pregunta cuánto se cobra por ${consulta.metros} m.` : `${consulta.metros} m: esperando a la oficina.`}
+    </Aviso>
   );
 }
