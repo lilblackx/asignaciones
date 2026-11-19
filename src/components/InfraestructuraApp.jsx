@@ -24,6 +24,7 @@ import RangoFechas from './RangoFechas';
 import { FilaDeslizable } from './BarraFiltros';
 import HistorialInfra from './HistorialInfra';
 import EstadoVacio from './EstadoVacio';
+import Cargando from './Cargando';
 
 const fechaHora = (ms) => (ms ? new Date(ms).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '-');
 const dato = (valor) => valor || '-';
@@ -153,7 +154,7 @@ export default function InfraestructuraApp({ auth, onAbrirMenu }) {
 
         <main className={`p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3${verHistorial ? ' hidden' : ''}`}>
           {!cargado ? (
-            <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando instalaciones...</p>
+            <Cargando texto="Cargando instalaciones..." />
           ) : error && !actualizadoEn ? (
             <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : (

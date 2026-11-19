@@ -11,6 +11,7 @@ import { SELECTOR, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { etiquetaRango } from '../../utils/periodoReporte';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import EstadoVacio from '../EstadoVacio';
+import Cargando from '../Cargando';
 import {
   CLASE_PAGO_FINANZAS, ETIQUETA_PAGO_FINANZAS, FILTROS_TIPO_PAGO, cifrasPagosClientes, filtrarPagosClientes, pagosClientesDelPeriodo, resumenPorForma, textoPago, tipoPagoFinanzas,
 } from '../../utils/pagoCliente';
@@ -35,7 +36,7 @@ export default function HistorialPagosClientes({ pagos, rango, tecnico, cargado,
   const pagoAbierto = abierto ? delPeriodo.find((p) => p.id === abierto) || null : null;
 
   if (error && !cargado) return <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron leer los pagos de los clientes. Recarga la página e intenta de nuevo.</p>;
-  if (!cargado) return <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando los pagos...</p>;
+  if (!cargado) return <Cargando texto="Cargando los pagos..." />;
 
   const estadoChip = () => <span className={`inline-block whitespace-nowrap text-[11px] max-lg:text-xs leading-tight font-black px-2 py-0.5 rounded ${CLASE_PAGO_FINANZAS}`}>{ETIQUETA_PAGO_FINANZAS}</span>;
   const detalle = (p) => (p.pago ? textoPago(p.pago) : p.compartidoCon ? `Pagó junto con ${p.compartidoCon.codigo}` : p.cobro ? `Debe ${monto(p.cobro.monto, p.cobro.moneda)}` : 'Sin pago');

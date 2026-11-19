@@ -37,6 +37,7 @@ import TabuladorPrecios from './finanzas/TabuladorPrecios';
 import TabuladorAdicionales from './finanzas/TabuladorAdicionales';
 import Aviso from './Aviso';
 import { BOTON_ENCABEZADO } from './estilos';
+import Cargando from './Cargando';
 
 // "3:45 p. m." (hora de Caracas) de cuando se leyeron las órdenes por última vez.
 const horaLegible = (ms) => new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(ms));
@@ -236,7 +237,7 @@ export default function FinanzasApp({ auth, onAbrirMenu }) {
           {error && !actualizadoEn ? (
             <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
-            <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando...</p>
+            <Cargando />
           ) : (
             <>
               {seccion !== 'PRECIOS' && (

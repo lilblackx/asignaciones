@@ -12,6 +12,7 @@ import { TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { etiquetaRango } from '../../utils/periodoReporte';
 import { formatoMontoBs, textoMonto } from '../../utils/cobro';
 import EstadoVacio from '../EstadoVacio';
+import Cargando from '../Cargando';
 import {
   ESTADO_COBRO, ETIQUETA_ESTADO_COBRO, cobrosDelPeriodo, filtrarCobros, resumenCobros, textoDeCobro, tieneCambioDeMonto,
 } from '../../utils/cobrosClientes';
@@ -36,7 +37,7 @@ export default function CobrosEmitidos({ cobros, rango, tecnico, cargado, error 
   const cobroAbierto = abierto ? delPeriodo.find((c) => c.id === abierto) || null : null;
 
   if (error && !cargado) return <p role="alert" className="text-base text-red-700 dark:text-red-400 text-center py-10">No se pudieron leer los cobros de los clientes. Recarga la página e intenta de nuevo.</p>;
-  if (!cargado) return <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando los cobros...</p>;
+  if (!cargado) return <Cargando texto="Cargando los cobros..." />;
 
   const total = resumen.PENDIENTE.cantidad + resumen.CARGADO.cantidad;
   const emitido = ['USD', 'BS'].map((m) => [m, resumen.PENDIENTE.montos[m] + resumen.CARGADO.montos[m]]).filter(([, v]) => v > 0).map(([m, v]) => monto(v, m));

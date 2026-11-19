@@ -37,6 +37,7 @@ import {
 } from '../utils/cobrosClientes';
 import { formatoMontoBs, textoMonto } from '../utils/cobro';
 import EstadoVacio from './EstadoVacio';
+import Cargando from './Cargando';
 
 const CLASE_ESTADO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const ETIQUETA = 'text-[11px] max-lg:text-xs font-bold text-muted-foreground';
@@ -169,7 +170,7 @@ export default function AdministracionApp({ auth, onAbrirMenu }) {
 
         <main className="p-4 sm:p-6 max-w-[1400px] mx-auto w-full flex-1 space-y-3">
           {!cargado && !error ? (
-            <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando cobros...</p>
+            <Cargando texto="Cargando cobros..." />
           ) : error && !cargado ? (
             <Aviso nivel="error" titulo="No se pudieron cargar los cobros">Revisa tu conexión e intenta de nuevo.</Aviso>
           ) : (

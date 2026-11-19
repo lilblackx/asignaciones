@@ -68,6 +68,7 @@ import FiltersBar from './components/FiltersBar';
 import TechnicianWorkload from './components/TechnicianWorkload';
 import TicketsMobileList from './components/TicketsMobileList';
 import TicketsTable from './components/TicketsTable';
+import Cargando from './components/Cargando';
 // Modales: ninguno se ve en la primera pintura (todos cuelgan de un estado que
 // arranca en false/null), así que van en chunks separados en vez del bundle inicial.
 const CreateTicketModal = lazy(() => import('./components/modals/CreateTicketModal'));
@@ -877,9 +878,7 @@ export default function App({ auth, moduloActivo = null, onAbrirModulo, renderMo
         </div>
 
         <Suspense fallback={
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" role="presentation">
-            <div className="w-8 h-8 border-4 border-zinc-600 border-t-red-600 rounded-full animate-spin" aria-label="Cargando" />
-          </div>
+          <Cargando variante="pantalla" velo texto="" />
         }>
         {isCreateModalOpen && (
           <CreateTicketModal

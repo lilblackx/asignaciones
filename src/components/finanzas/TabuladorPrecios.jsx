@@ -3,6 +3,7 @@ import Spinner from '../Spinner';
 import { BOTON_GRANDE, CAMPO, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos';
 import { stripEmojis } from '../../utils/sanitizeInput';
 import { CONCEPTOS_PAGO, aBs, bolivares, parseTarifa } from '../../utils/finanzas';
+import Cargando from '../Cargando';
 
 // El tabulador de precios en filas grandes, sin cajas: el concepto, su precio en dólares (el campo) y su equivalente en bolívares a la tasa BCV de hoy.
 const enTexto = (valor) => String(valor).replace('.', ',');
@@ -65,6 +66,6 @@ function Formulario({ tarifas, tasa, ocupado, onGuardar }) {
 
 // La pestaña "Tabulador de precios": lo que se paga por cada tipo de orden. El formulario se vuelve a armar (key) cuando cambian los precios guardados.
 export default function TabuladorPrecios({ tarifas, tasa = null, tarifasCargadas, ocupado, onGuardar }) {
-  if (!tarifasCargadas) return <p role="status" className="text-base text-zinc-600 dark:text-zinc-300 text-center py-10">Cargando...</p>;
+  if (!tarifasCargadas) return <Cargando />;
   return <Formulario key={JSON.stringify(tarifas)} tarifas={tarifas} tasa={tasa} ocupado={ocupado} onGuardar={onGuardar} />;
 }

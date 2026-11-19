@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Flag, LoaderCircle, MapPin, Navigation, Route } from 'lucide-react';
+import { ArrowDown, ArrowUp, Flag, MapPin, Navigation, Route } from 'lucide-react';
 import Modal from '../Modal';
 import Boton from '../Boton';
 import { FUENTE_NAP, enlacesDeRuta, kmDeRuta, ordenSugerido } from '../../utils/rutaDelDia';
 import Aviso from '../Aviso';
 import BotonCerrar from '../BotonCerrar';
+import Cargando from '../Cargando';
 
 // La Ruta del día del técnico (ver utils/rutaDelDia.js): sus paradas en el orden sugerido (primero la prioridad alta, luego de la más cercana a la
 // más lejana desde donde está), con flechas para cambiarlo y el botón que abre el recorrido en Google Maps. Al abrirse pide la ubicación una sola vez;
@@ -53,7 +54,7 @@ export default function RutaDelDiaModal({ paradas, sinPunto, onClose }) {
 
         <div className="p-4 space-y-3 overflow-y-auto">
           {buscando ? (
-            <p role="status" className="flex items-center gap-2 text-sm font-bold text-card-foreground"><LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" /> Buscando tu ubicación...</p>
+            <Cargando variante="linea" texto="Buscando tu ubicación..." />
           ) : paradas.length === 0 ? (
             <p className="text-sm text-card-foreground">Ninguna de tus órdenes de hoy tiene ubicación del cliente ni de la NAP, así que no hay ruta que armar.</p>
           ) : (

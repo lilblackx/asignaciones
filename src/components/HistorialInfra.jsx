@@ -9,6 +9,7 @@ import { tiempoTranscurrido } from '../utils/enCamino';
 import { generarMensajeDesdePlantilla, generarMensajeWhatsApp, generarMensajeWhatsAppInstalacion, ordenSinPlantilla, tipoUsaPlantillaPromotora } from '../utils/whatsapp';
 import Boton from './Boton';
 import OrdersHistoryModal from './modals/OrdersHistoryModal';
+import Cargando from './Cargando';
 
 // El historial como página: ocupa lo que queda de la pantalla bajo el encabezado y las franjas de arriba (la pantalla de Infraestructura es una columna de alto fijo mientras se ve).
 const CLASE_PAGINA = 'w-full flex-1 min-h-0 overflow-y-auto bg-fondo flex flex-col';
@@ -46,7 +47,7 @@ export default function HistorialInfra({ auth, visible, copiar, setToastMsg, ran
         ranura,
       )}
       {!cargado ? (
-        <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando el historial...</p>
+        <Cargando texto="Cargando el historial..." />
       ) : error && !actualizadoEn ? (
         <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudo cargar el historial. Revisa tu conexión e intenta de nuevo.</p>
       ) : (

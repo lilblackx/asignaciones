@@ -11,6 +11,7 @@ import { CHIP, ETIQUETA, TARJETA, TEXTO_SUAVE, TITULO_SECCION } from './estilos'
 import { EN_LINEA_MS, avisosDePantalla, enLinea, haceCuanto, ordenarEstaciones } from '../utils/estaciones';
 import { CUOTA_GRATIS, UMBRALES_PROYECTO } from '../utils/usoFirestore';
 import Aviso from './Aviso';
+import Cargando from './Cargando';
 
 // Estaciones (solo para los usuarios de USUARIOS_ESTACIONES): todo lo que puede afectar a producción en Firestore. Arriba, el uso del proyecto
 // entero (lo calcula el Worker cada 15 minutos con las métricas de Google Cloud: estadoFirestore/actual); abajo, cada navegador con la app abierta,
@@ -88,7 +89,7 @@ function ColumnasPorHora({ titulo, horas, campo, umbral, unidad }) {
 
 function PanelProyecto({ estado, cargado, error, ahora }) {
   if (error) return <Aviso nivel="error" compact>No se pudo leer el uso del proyecto.</Aviso>;
-  if (!cargado) return <p className={TEXTO_SUAVE}>Cargando el uso del proyecto…</p>;
+  if (!cargado) return <Cargando variante="linea" texto="Cargando el uso del proyecto..." />;
   if (!estado) return <p className={TEXTO_SUAVE}>Todavía no hay resumen del proyecto: el Worker lo calcula cada 15 minutos.</p>;
   const viejo = ahora - (Number(estado.actualizadoEn) || 0) > 40 * 60 * 1000;
   const horas = estado.porHora || [];
@@ -235,7 +236,7 @@ export default function EstacionesView({ enPagina = false, onClose }) {
               <ChipFiltro activo={!soloEnLinea} onClick={() => setSoloEnLinea(false)}>Últimos 7 días ({recientes.length})</ChipFiltro>
             </div>
             {estaciones.error && <Aviso nivel="error" compact>No se pudieron leer las estaciones.</Aviso>}
-            {!estaciones.cargado && <p className={TEXTO_SUAVE}>Cargando…</p>}
+            {!estaciones.cargado && <Cargando variante="linea" />}
             {estaciones.cargado && !estaciones.error && visibles.length === 0 && (
               <p className={TEXTO_SUAVE}>{soloEnLinea ? 'No hay estaciones en línea ahora.' : 'Ninguna estación reportó en los últimos 7 días.'}</p>
             )}

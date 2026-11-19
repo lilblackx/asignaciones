@@ -5,6 +5,7 @@ import { db, appId } from '../lib/firebase';
 import { leerCobro } from '../lib/cobrosClientes';
 import { ETIQUETA_ESTADO_COBRO, textoDeCobro } from '../utils/cobrosClientes';
 import { CLASE_PAGO_FINANZAS, ETIQUETA_PAGO_FINANZAS, etiquetaEstadoPago, textoPago } from '../utils/pagoCliente';
+import Cargando from './Cargando';
 
 const CLASE_COBRO = { PENDIENTE: 'bg-amber-400 text-black', CARGADO: 'bg-emerald-700 text-white' };
 const CLASE_PAGO = { PENDIENTE_COBRO: 'bg-amber-400 text-black', POR_CONCILIAR: 'bg-sky-700 text-white', CONCILIADO: 'bg-emerald-700 text-white', SIN_COBRAR: 'bg-red-600 text-white' };
@@ -31,7 +32,7 @@ export default function CobroClienteDetalle({ ticketId, paraFinanzas = false }) 
   }, [ticketId]);
 
   const { cargando, cobro, pago, error } = estado;
-  if (cargando) return <p className="text-xs text-muted-foreground">Cargando el cobro...</p>;
+  if (cargando) return <Cargando variante="linea" texto="Cargando el cobro..." />;
   if (error) return <p className="text-xs text-red-700 dark:text-red-400">No se pudo leer el cobro.</p>;
   if (cobro && !cobro.anulado) {
     return (

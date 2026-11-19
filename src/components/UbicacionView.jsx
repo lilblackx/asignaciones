@@ -10,6 +10,7 @@ import { ESTADOS, MOTIVOS_PUNTO, enlaceGoogleMaps, estadoUbicacion, haceCuanto, 
 import Interruptor from './Interruptor';
 import { legible } from '../utils/nombreTecnico';
 import Aviso from './Aviso';
+import Cargando from './Cargando';
 
 // El módulo Ubicación del administrador (menú lateral): pide la ubicación de un técnico en la calle y la ve en un mapa completo (ver utils/ubicacionTecnico.js). El técnico no recibe ningún aviso: su app la envía
 // sola cuando la abra, durante los 30 minutos de la solicitud. Además muestra la última ubicación conocida (un punto al marcar En camino, Llegué o pre-finalizar). Solo escucha con el módulo abierto y la función encendida.
@@ -140,7 +141,7 @@ export default function UbicacionView({ firebaseUser, technicians, tickets, usua
         <section aria-label="Técnicos" className="order-2 lg:order-1 space-y-3 min-w-0">
           <p className={TEXTO_SUAVE}>Pide la ubicación de un técnico: no recibe ningún aviso. Su teléfono la envía sola en cuanto abra la app, durante 30 minutos (al abrirla cada 30 segundos y luego cada 2 minutos). Además, al marcar En camino, Llegué o pre-finalizar queda un punto: la última ubicación conocida, por 24 horas.</p>
           {error && <Aviso nivel="error" compact>No se pudo leer la ubicación. Lo que ves puede estar desactualizado.</Aviso>}
-          {!cargado && !error && <p role="status" className={TEXTO_SUAVE}>Cargando...</p>}
+          {!cargado && !error && <Cargando variante="linea" />}
           {cargado && filas.length === 0 && <p className="text-sm text-card-foreground">No hay técnicos activos.</p>}
 
           <ul className="space-y-2">

@@ -35,6 +35,7 @@ import { BUSCADOR } from './estilos';
 import Chip from './Chip';
 import Boton from './Boton';
 import EstadoVacio from './EstadoVacio';
+import Cargando from './Cargando';
 
 const NuevaVentaModal = lazy(() => import('./modals/NuevaVentaModal'));
 
@@ -316,7 +317,7 @@ export default function PromotoraApp({ auth, onAbrirMenu }) {
           ) : error ? (
             <p role="alert" className="text-sm text-red-700 dark:text-red-400 text-center py-10">No se pudieron cargar las instalaciones. Revisa tu conexión e intenta de nuevo.</p>
           ) : !cargado ? (
-            <p role="status" className="text-sm text-muted-foreground text-center py-10">Cargando instalaciones...</p>
+            <Cargando texto="Cargando instalaciones..." />
           ) : visibles.length === 0 ? (
             ordenes.length === 0
               ? <EstadoVacio titulo={vista === 'LOS' ? 'Todavía no hay averías LOS' : vista === 'TODO' ? 'Todavía no hay órdenes' : 'Todavía no hay instalaciones'} />

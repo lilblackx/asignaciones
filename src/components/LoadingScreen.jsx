@@ -15,8 +15,8 @@ export default function LoadingScreen({ isDarkMode, connectionError }) {
           </>
         ) : (
           <>
-            <Loader2 className="w-12 h-12 text-red-600 animate-spin mb-4" />
-            <h2 className="text-card-foreground font-bold">Conectando a la nube...</h2>
+            <Loader2 className="w-10 h-10 text-primary animate-spin motion-reduce:animate-pulse mb-3" aria-hidden="true" />
+            <h2 role="status" className="text-sm text-card-foreground font-bold">Conectando a la nube...</h2>
           </>
         )}
         </div>
