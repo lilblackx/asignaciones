@@ -68,7 +68,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, most
 
       <div className="px-5 pb-4 pt-1 flex-1 flex flex-col gap-3">
         <div className="min-w-0">
-          <div className="flex items-start gap-1.5">
+          <div className="flex items-center gap-1.5">
             <h3 className="text-[15px] font-bold text-foreground leading-tight break-words min-w-0">{orden.nombre || 'Sin nombre'}</h3>
             {onCopy && orden.nombre && (
               <BotonCopiar
@@ -76,7 +76,7 @@ export default function TarjetaInstalacion({ orden, onVerPlantilla, onCopy, most
                 onClick={() => copiar('nombre', orden.nombre, 'Nombre copiado.')}
                 etiqueta={`Copiar el nombre de ${orden.nombre}`}
                 titulo="Copiar nombre"
-                className="shrink-0 p-1 -my-0.5 rounded-md"
+                className="shrink-0 p-1 -my-1 rounded-md"
                 tono="text-muted-foreground hover:text-foreground hover:bg-accent"
                 tonoCopiado="text-emerald-600 dark:text-emerald-400"
                 iconoClase="w-3.5 h-3.5"
