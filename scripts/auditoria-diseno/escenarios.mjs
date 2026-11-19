@@ -144,6 +144,8 @@ export default [
       // La oficina responde la consulta de cobro de un recableado (la siembra: una consulta pendiente en AR701).
       { id: 'responder-cobro', preparar: (n) => clicTexto(n, 'responder cobro'), limpiar: (n) => n.esc(), espera: 1200 },
       { id: 'nueva-orden', preparar: (n) => n.clic('nueva orden'), limpiar: seguir },
+      // El calendario del campo de fecha (Fecha programada de Nueva asignación).
+      { id: 'nueva-orden-calendario', preparar: (n) => n.clicEtiqueta('^fecha programada:'), limpiar: (n) => clicTexto(n, 'cerrar'), espera: 1800 },
       { id: 'nueva-orden-errores', preparar: (n) => n.clic('guardar', { dentro: true }) },
       { id: 'detalle', preparar: (n) => n.clicEtiqueta('^ver detalle de la orden as2$') },
       { id: 'editar', preparar: accionOrden({ pc: 'editar', movil: 'editar' }) },

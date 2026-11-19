@@ -25,12 +25,20 @@ export default function CampoFecha({ id, valor, onChange, min, max, ariaLabel, v
     return () => { document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', tecla); };
   }, [abierto, flotante]);
 
+  // Un calendario dentro del formulario se abre debajo del campo: se lleva a la vista cuando termina de desplegarse.
+  useEffect(() => {
+    if (!abierto || flotante) return undefined;
+    const t = setTimeout(() => caja.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 260);
+    return () => clearTimeout(t);
+  }, [abierto, flotante]);
+
   const calendario = (
     <Calendario
       valor={valor}
       min={min}
       max={max}
       grande={grande}
+      llena={!flotante}
       onElegir={(iso) => { onChange(iso); setAbierto(false); }}
       onBorrar={permitirBorrar && valor ? () => { onChange(''); setAbierto(false); } : undefined}
       onCerrar={() => setAbierto(false)}

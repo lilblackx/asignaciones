@@ -5,6 +5,10 @@ import { enInfraestructura } from '../utils/infraestructura';
 import NumeroPulso from './NumeroPulso';
 import { iniciales, legible } from '../utils/nombreTecnico';
 
+// Las píldoras de estado (sin técnico, en camino, en sitio, infraestructura): la misma forma y tamaño que las de los técnicos; solo cambia el tono suave. El número va en una cápsula, como en las de los técnicos.
+const PILDORA_ESTADO = 'inline-flex items-center gap-2 rounded-boton border px-3 py-1 max-lg:min-h-11 text-xs font-bold leading-none transition-colors cursor-pointer';
+const CONTADOR_ESTADO = 'rounded-full bg-white/60 dark:bg-black/20 px-2 py-0.5 text-[11px] max-lg:text-xs font-black leading-none';
+
 // `rutaBoton`: el atajo a la Ruta del día (solo el técnico, y solo con la función encendida en Configuración); va al final de la misma fila, a la derecha.
 export default function TechnicianWorkload({ tickets, technicians, getTecnicoColor, canEditTickets, isTecnico, onToggleActivo, onOpenSinTecnico, ahora, onOpenViaje, rutaBoton = null }) {
   // TECNICO solo recibe (por query scoping) su propio técnico en `technicians`,
@@ -59,16 +63,16 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           onClick={onOpenSinTecnico}
           aria-label={`${sinTecnico} ${sinTecnico === 1 ? 'orden pendiente sin técnico' : 'órdenes pendientes sin técnico'}. Ver lista`}
           title="Ver órdenes pendientes sin técnico"
-          className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] max-lg:text-xs font-bold rounded max-lg:rounded-boton leading-none bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/40 dark:hover:bg-amber-500/25 transition-colors cursor-pointer"
+          className={`${PILDORA_ESTADO} bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/40 dark:hover:bg-amber-500/25`}
         >
-          SIN TÉCNICO
-          <span className="bg-white/60 dark:bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={sinTecnico} /></span>
+          Sin técnico
+          <span className={CONTADOR_ESTADO}><NumeroPulso valor={sinTecnico} /></span>
         </button>
       )}
       {[
-        { filtro: 'EN_CAMINO', cantidad: viajes.enCamino, etiqueta: 'EN CAMINO', singular: 'técnico en camino', plural: 'técnicos en camino', Icono: Car, clase: 'bg-sky-100 text-sky-800 border-sky-300 hover:bg-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/40 dark:hover:bg-sky-500/25' },
-        { filtro: 'EN_SITIO', cantidad: viajes.enSitio, etiqueta: 'EN SITIO', singular: 'técnico en sitio', plural: 'técnicos en sitio', Icono: MapPin, clase: 'bg-teal-100 text-teal-800 border-teal-300 hover:bg-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/40 dark:hover:bg-teal-500/25' },
-        { filtro: 'EN_INFRAESTRUCTURA', cantidad: enInfra, etiqueta: 'INFRAESTRUCTURA', singular: 'orden en infraestructura', plural: 'órdenes en infraestructura', Icono: HardHat, clase: 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/40 dark:hover:bg-orange-500/25' },
+        { filtro: 'EN_CAMINO', cantidad: viajes.enCamino, etiqueta: 'En camino', singular: 'técnico en camino', plural: 'técnicos en camino', Icono: Car, clase: 'bg-sky-100 text-sky-800 border-sky-300 hover:bg-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/40 dark:hover:bg-sky-500/25' },
+        { filtro: 'EN_SITIO', cantidad: viajes.enSitio, etiqueta: 'En sitio', singular: 'técnico en sitio', plural: 'técnicos en sitio', Icono: MapPin, clase: 'bg-teal-100 text-teal-800 border-teal-300 hover:bg-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/40 dark:hover:bg-teal-500/25' },
+        { filtro: 'EN_INFRAESTRUCTURA', cantidad: enInfra, etiqueta: 'Infraestructura', singular: 'orden en infraestructura', plural: 'órdenes en infraestructura', Icono: HardHat, clase: 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/40 dark:hover:bg-orange-500/25' },
       ].filter(v => v.cantidad > 0).map(({ filtro, cantidad, etiqueta, singular, plural, Icono, clase }) => (
         <button
           key={filtro}
@@ -76,11 +80,11 @@ export default function TechnicianWorkload({ tickets, technicians, getTecnicoCol
           onClick={() => onOpenViaje?.(filtro)}
           aria-label={`${cantidad} ${cantidad === 1 ? singular : plural}. Ver lista`}
           title={filtro === 'EN_INFRAESTRUCTURA' ? 'Ver las órdenes en infraestructura' : `Ver órdenes con ${plural}`}
-          className={`inline-flex items-center gap-1.5 px-2 py-1 max-lg:min-h-11 max-lg:px-3 text-[11px] max-lg:text-xs font-bold rounded max-lg:rounded-boton leading-none border transition-colors cursor-pointer ${clase}`}
+          className={`${PILDORA_ESTADO} ${clase}`}
         >
-          <Icono className="w-3 h-3" aria-hidden="true" />
+          <Icono className="w-3.5 h-3.5" aria-hidden="true" />
           {etiqueta}
-          <span className="bg-white/60 dark:bg-black/15 rounded px-1.5 py-0.5"><NumeroPulso valor={cantidad} /></span>
+          <span className={CONTADOR_ESTADO}><NumeroPulso valor={cantidad} /></span>
         </button>
       ))}
       {agrupar && (
