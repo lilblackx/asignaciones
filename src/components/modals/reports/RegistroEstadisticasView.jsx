@@ -7,6 +7,7 @@ import AvisoHistorial from './AvisoHistorial';
 import VnTaView from './VnTaView';
 import DetalleOrdenesModal from './DetalleOrdenesModal';
 import Aviso from '../../Aviso';
+import Pestanas from '../../Pestanas';
 
 // Registro de estadísticas: lo que el departamento lleva en su hoja de cálculo, armado desde las órdenes. Una pestaña por hoja (visitas técnicas,
 // averías e instalaciones), cada una con sus cifras, el cuadro de estadística, los materiales y la lista de cada orden.
@@ -25,20 +26,7 @@ export default function RegistroEstadisticasView({ ordenes, rango, tecnico, hist
 
   return (
     <div>
-      <div role="tablist" aria-label="Hoja del registro" className="inline-flex flex-wrap rounded-campo border border-input overflow-hidden mb-4">
-        {HOJAS.map(({ id, nombre }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={hojaId === id}
-            onClick={() => { setHojaId(id); setDetalle(null); }}
-            className={`px-4 py-2 text-xs font-bold transition-colors ${hojaId === id ? 'bg-red-600 text-white' : 'bg-card text-card-foreground hover:bg-secondary'}`}
-          >
-            {nombre}
-          </button>
-        ))}
-      </div>
+      <Pestanas className="mb-4" ariaLabel="Hoja del registro" opciones={HOJAS.map(({ id, nombre }) => ({ id, etiqueta: nombre }))} valor={hojaId} onCambiar={(id) => { setHojaId(id); setDetalle(null); }} />
 
       <div key={hojaId} className="lg:animate-fade-in">
       {manual ? <VnTaView {...vnta} tecnico={tecnico} /> : (

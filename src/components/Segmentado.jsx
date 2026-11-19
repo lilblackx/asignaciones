@@ -10,7 +10,7 @@ export default function Segmentado({ opciones, valor, onCambiar, ariaLabel, comp
           aria-pressed={valor === id}
           disabled={deshabilitado || sinUso}
           onClick={() => onCambiar(id)}
-          className={`min-w-0 ${llena ? 'flex-1' : 'shrink-0'} ${compacto ? 'h-8 px-3 text-xs' : grande ? 'h-11 px-4 text-sm' : 'h-9 px-4 text-sm'} rounded-campo font-bold whitespace-nowrap transition-colors disabled:opacity-60 ${valor === id ? 'bg-card text-foreground shadow-card' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`min-w-0 ${llena ? 'flex-1' : 'shrink-0'} ${compacto ? 'h-8 px-3 text-xs' : grande ? 'h-11 min-w-11 px-4 text-sm' : 'h-9 px-4 text-sm'} rounded-campo font-bold whitespace-nowrap transition-colors disabled:opacity-60 ${valor === id ? 'bg-card text-foreground shadow-card' : 'text-muted-foreground hover:text-foreground'}`}
         >{etiqueta}</button>
       ))}
     </div>

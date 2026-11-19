@@ -9,7 +9,7 @@ function Contenido({ etiqueta, valor, detalle }) {
     <>
       <div className="text-[11px] max-lg:text-xs font-bold text-muted-foreground leading-tight">{etiqueta}</div>
       <div className="text-xl sm:text-2xl font-black text-foreground leading-tight mt-1 break-words"><NumeroContado valor={valor} /></div>
-      {detalle && <div className="text-[11px] max-lg:text-xs text-muted-foreground mt-0.5 truncate">{detalle}</div>}
+      {detalle && <div className="text-[11px] max-lg:text-xs text-muted-foreground mt-0.5 leading-snug">{detalle}</div>}
     </>
   );
 }
@@ -38,7 +38,7 @@ export function CifrasDestacadas({ items }) {
 // El resto de las cifras, en una sola tarjeta: nombre a la izquierda, valor a la derecha y el detalle debajo.
 export function CifrasLista({ items }) {
   return (
-    <dl className="bg-card border border-transparent rounded-card divide-y divide-zinc-200 dark:divide-zinc-800 mb-4 shadow-card">
+    <dl className="bg-card border border-transparent rounded-card divide-y divide-border mb-4 shadow-card">
       {items.map(({ etiqueta, valor, detalle, onClick }) => {
         const fila = (
           <>

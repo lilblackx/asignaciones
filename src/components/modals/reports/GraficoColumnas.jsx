@@ -32,7 +32,7 @@ export default function GraficoColumnas({ titulo, subtitulo, series, meses }) {
           <h3 className="text-sm font-bold text-foreground">{titulo}</h3>
           {subtitulo && <p className="text-[11px] max-lg:text-xs text-muted-foreground mt-0.5">{subtitulo}</p>}
         </div>
-        <button type="button" onClick={() => setTabla((v) => !v)} className="shrink-0 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold px-2.5 py-1.5 rounded-boton bg-secondary text-zinc-700 dark:text-zinc-200 hover:bg-accent transition-colors">
+        <button type="button" onClick={() => setTabla((v) => !v)} className="shrink-0 flex items-center gap-1.5 text-[11px] max-lg:text-xs font-bold px-2.5 py-1.5 rounded-boton bg-secondary text-card-foreground hover:bg-accent transition-colors">
           {tabla ? <BarChart3 className="w-3.5 h-3.5" aria-hidden="true" /> : <Table2 className="w-3.5 h-3.5" aria-hidden="true" />} {tabla ? 'Ver gráfico' : 'Ver tabla'}
         </button>
       </header>

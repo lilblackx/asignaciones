@@ -195,6 +195,8 @@ export default [
       { id: 'exportar', preparar: (n) => n.clic('exportar'), limpiar: (n) => n.esc() },
       ...['Estadísticas', 'Registro de estadísticas', 'Causas de avería', 'Cobros y exoneraciones', 'Tendencia mensual', 'Tiempo de atención', 'Esperas del ciclo', 'Productividad', 'Calidad y reincidencias', 'Activación de técnicos']
         .map((nombre) => ({ id: nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, '-'), preparar: vistaReporte(nombre), espera: 2200 })),
+      // El detalle de las órdenes que forman una cifra del Registro (la ventana sobre el reporte).
+      { id: 'registro-detalle', preparar: async (n) => { if (!(await vistaReporte('Registro de estadísticas')(n))) return false; await n.dormir(1500); return n.clicEtiqueta('^total visitas: .*ver detalle$'); }, espera: 1500 },
     ],
   },
   // Finanzas con su propio usuario: su pantalla de inicio con la barra de filtros.

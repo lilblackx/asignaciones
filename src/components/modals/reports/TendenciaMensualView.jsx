@@ -5,6 +5,7 @@ import { useAhora } from '../../../hooks/useAhora';
 import { cifrasTendencia } from '../../../utils/modelosReporte';
 import Cifras from './Cifras';
 import GraficoColumnas from './GraficoColumnas';
+import Segmentado from '../../Segmentado';
 import Aviso from '../../Aviso';
 
 // Colores de las series: rojo de marca y gris cálido (la misma paleta de los PDF). Cada tipo de trabajo conserva el suyo en todos los gráficos.
@@ -24,11 +25,7 @@ export default function TendenciaMensualView({ contadores, cargando, error, tick
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-[11px] max-lg:text-xs font-bold text-muted-foreground">Meses a mostrar</span>
-        <div role="group" aria-label="Meses a mostrar" className="flex rounded-campo border border-input overflow-hidden bg-card shadow-card">
-          {VENTANAS_MESES.map((n) => (
-            <button key={n} type="button" aria-pressed={ventana === n} onClick={() => onVentana(n)} className={`px-3 py-1.5 text-xs font-bold transition-colors ${ventana === n ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}>{n}</button>
-          ))}
-        </div>
+        <Segmentado grande ariaLabel="Meses a mostrar" opciones={VENTANAS_MESES.map((n) => ({ id: n, etiqueta: String(n) }))} valor={ventana} onCambiar={onVentana} />
         <span className="text-[11px] max-lg:text-xs text-muted-foreground">{cargando ? 'Cargando...' : `Mes en curso: ${etiquetaMes(actual.mes)}`}</span>
       </div>
 
